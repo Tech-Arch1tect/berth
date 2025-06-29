@@ -135,7 +135,7 @@ export default function RolesIndex({ roles }: Props) {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
                                     Role for organizing users into groups
                                 </p>
                             </CardContent>

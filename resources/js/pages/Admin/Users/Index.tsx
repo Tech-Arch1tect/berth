@@ -82,7 +82,7 @@ export default function UsersIndex({ users, roles }: Props) {
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <CardTitle>{user.name}</CardTitle>
-                                        <p className="text-sm text-gray-600">{user.email}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
                                     </div>
                                     <div className="space-x-2">
                                         <Button

@@ -283,7 +283,7 @@ export default function ServersIndex({ servers }: Props) {
                                                 </Badge>
                                             )}
                                         </CardTitle>
-                                        <p className="text-sm text-gray-600 mt-1">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             {server.https ? "https" : "http"}://{server.hostname}:{server.port}
                                         </p>
                                     </div>
@@ -321,37 +321,37 @@ export default function ServersIndex({ servers }: Props) {
                                 <div className="space-y-3">
                                     {/* Health Status Details */}
                                     {healthStatus[server.id] && (
-                                        <div className="border rounded-lg p-3 bg-gray-50">
+                                        <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium">Health Status</span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Health Status</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
                                                     {new Date(healthStatus[server.id].checked_at).toLocaleString()}
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-sm">
                                                 {healthStatus[server.id].service && (
                                                     <div>
-                                                        <span className="text-gray-600">Service:</span>
-                                                        <span className="ml-1 font-mono">{healthStatus[server.id].service}</span>
+                                                        <span className="text-gray-600 dark:text-gray-400">Service:</span>
+                                                        <span className="ml-1 font-mono text-gray-900 dark:text-gray-100">{healthStatus[server.id].service}</span>
                                                     </div>
                                                 )}
                                                 {healthStatus[server.id].docker_compose && (
                                                     <div>
-                                                        <span className="text-gray-600">Docker Compose:</span>
-                                                        <span className="ml-1 font-mono">
+                                                        <span className="text-gray-600 dark:text-gray-400">Docker Compose:</span>
+                                                        <span className="ml-1 font-mono text-gray-900 dark:text-gray-100">
                                                             {healthStatus[server.id].docker_compose?.version}
                                                         </span>
                                                     </div>
                                                 )}
                                                 {healthStatus[server.id].response_time && (
                                                     <div>
-                                                        <span className="text-gray-600">Response Time:</span>
-                                                        <span className="ml-1">{Math.round(healthStatus[server.id].response_time! * 1000)}ms</span>
+                                                        <span className="text-gray-600 dark:text-gray-400">Response Time:</span>
+                                                        <span className="ml-1 text-gray-900 dark:text-gray-100">{Math.round(healthStatus[server.id].response_time! * 1000)}ms</span>
                                                     </div>
                                                 )}
                                             </div>
                                             {healthStatus[server.id].message && (
-                                                <div className="text-sm text-red-600 mt-2">
+                                                <div className="text-sm text-red-600 dark:text-red-400 mt-2">
                                                     {healthStatus[server.id].message}
                                                 </div>
                                             )}
@@ -360,14 +360,14 @@ export default function ServersIndex({ servers }: Props) {
                                     
                                     {/* Access Secret */}
                                     <div className="flex items-center space-x-2">
-                                        <span className="text-sm font-medium">Access Secret:</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Access Secret:</span>
                                         <div className="flex items-center space-x-2">
                                             {showSecret[server.id] ? (
-                                                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                                <code className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
                                                     {serverSecrets[server.id] || '***'}
                                                 </code>
                                             ) : (
-                                                <span className="text-sm text-gray-500">********</span>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">********</span>
                                             )}
                                             <Button
                                                 variant="ghost"
@@ -379,7 +379,7 @@ export default function ServersIndex({ servers }: Props) {
                                         </div>
                                     </div>
                                     
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                         Created: {new Date(server.created_at).toLocaleString()}
                                     </div>
                                 </div>
