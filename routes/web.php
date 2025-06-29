@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ServerController;
 use App\Http\Middleware\CheckAdminRole;
 
 Route::get('/', function () {
@@ -28,6 +29,13 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.updateRoles');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    
+    // Server management
+    Route::get('servers', [ServerController::class, 'index'])->name('servers.index');
+    Route::post('servers', [ServerController::class, 'store'])->name('servers.store');
+    Route::get('servers/{server}', [ServerController::class, 'show'])->name('servers.show');
+    Route::put('servers/{server}', [ServerController::class, 'update'])->name('servers.update');
+    Route::delete('servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
 });
 
 require __DIR__.'/settings.php';

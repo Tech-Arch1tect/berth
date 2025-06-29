@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Users, Shield } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Users, Shield, Server } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -25,6 +25,11 @@ const adminNavItems: NavItem[] = [
         title: 'Roles',
         href: '/admin/roles',
         icon: Shield,
+    },
+    {
+        title: 'Servers',
+        href: '/admin/servers',
+        icon: Server,
     },
 ];
 
