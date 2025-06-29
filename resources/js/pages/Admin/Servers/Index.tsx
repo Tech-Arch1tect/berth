@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 
@@ -299,6 +299,13 @@ export default function ServersIndex({ servers }: Props) {
                                             ) : (
                                                 <Activity size={16} />
                                             )}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => window.location.href = `/admin/servers/${server.id}/permissions`}
+                                        >
+                                            <Shield size={16} />
                                         </Button>
                                         <Button
                                             variant="outline"

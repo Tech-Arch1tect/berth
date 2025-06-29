@@ -45,4 +45,26 @@ class Server extends Model
     {
         return $this->getFullUrlAttribute() . '/health';
     }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)
+            ->withPivot(['can_read', 'can_write', 'can_start_stop'])
+            ->withTimestamps();
+    }
+
+    public function getRolesWithPermissions()
+    {
+        return $this->roles()->get()->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'permissions' => [
+                    'read' => $role->pivot->can_read,
+                    'write' => $role->pivot->can_write,
+                    'start-stop' => $role->pivot->can_start_stop,
+                ]
+            ];
+        });
+    }
 }

@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
+use App\Http\Controllers\Admin\ServerPermissionController;
 use App\Http\Middleware\CheckAdminRole;
 
 Route::get('/', function () {
@@ -37,6 +38,12 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     Route::put('servers/{server}', [ServerController::class, 'update'])->name('servers.update');
     Route::delete('servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
     Route::get('servers/{server}/health', [ServerController::class, 'healthCheck'])->name('servers.health');
+    
+    // Server permissions
+    Route::get('servers/{server}/permissions', [ServerPermissionController::class, 'index'])->name('servers.permissions.index');
+    Route::post('servers/{server}/permissions/assign', [ServerPermissionController::class, 'assignRole'])->name('servers.permissions.assign');
+    Route::put('servers/{server}/permissions/roles/{role}', [ServerPermissionController::class, 'updateRolePermissions'])->name('servers.permissions.update');
+    Route::delete('servers/{server}/permissions/roles/{role}', [ServerPermissionController::class, 'removeRole'])->name('servers.permissions.remove');
 });
 
 require __DIR__.'/settings.php';

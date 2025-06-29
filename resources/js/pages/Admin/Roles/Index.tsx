@@ -7,9 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 
+interface Server {
+    id: number;
+    display_name: string;
+    hostname: string;
+    port: number;
+    https: boolean;
+    pivot?: {
+        can_read: boolean;
+        can_write: boolean;
+        can_start_stop: boolean;
+    };
+}
+
 interface Role {
     id: number;
     name: string;
+    servers?: Server[];
 }
 
 interface Props {
@@ -135,9 +149,37 @@ export default function RolesIndex({ roles }: Props) {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Role for organizing users into groups
-                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Role for organizing users into groups
+                                    </p>
+                                    
+                                    {role.servers && role.servers.length > 0 ? (
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                                Server Access ({role.servers.length}):
+                                            </p>
+                                            <div className="space-y-1">
+                                                {role.servers.map((server) => (
+                                                    <div key={server.id} className="text-xs text-gray-600 dark:text-gray-400">
+                                                        <span className="font-medium">{server.display_name}</span>
+                                                        <span className="ml-2">
+                                                            {[
+                                                                server.pivot?.can_read && 'Read',
+                                                                server.pivot?.can_write && 'Write', 
+                                                                server.pivot?.can_start_stop && 'Start/Stop'
+                                                            ].filter(Boolean).join(', ') || 'No permissions'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            No server access configured
+                                        </p>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     ))}

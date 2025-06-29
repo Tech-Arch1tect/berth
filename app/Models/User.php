@@ -51,4 +51,59 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin');
     }
+
+    public function hasServerPermission(Server $server, string $permission): bool
+    {
+        // Admins have all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Check if any of the user's roles have the required permission for this server
+        foreach ($this->roles as $role) {
+            if ($role->hasServerPermission($server, $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getServerPermissions(Server $server): array
+    {
+        // Admins have all permissions
+        if ($this->isAdmin()) {
+            return ['read' => true, 'write' => true, 'start-stop' => true];
+        }
+
+        $permissions = ['read' => false, 'write' => false, 'start-stop' => false];
+
+        // Aggregate permissions from all roles
+        foreach ($this->roles as $role) {
+            $rolePermissions = $role->getServerPermissions($server);
+            $permissions['read'] = $permissions['read'] || $rolePermissions['read'];
+            $permissions['write'] = $permissions['write'] || $rolePermissions['write'];
+            $permissions['start-stop'] = $permissions['start-stop'] || $rolePermissions['start-stop'];
+        }
+
+        return $permissions;
+    }
+
+    public function getAccessibleServers(): \Illuminate\Database\Eloquent\Collection
+    {
+        // Admins can access all servers
+        if ($this->isAdmin()) {
+            return Server::all();
+        }
+
+        // Get servers that this user has access to through their roles
+        $serverIds = collect();
+        
+        foreach ($this->roles as $role) {
+            $roleServerIds = $role->servers()->pluck('servers.id');
+            $serverIds = $serverIds->merge($roleServerIds);
+        }
+
+        return Server::whereIn('id', $serverIds->unique())->get();
+    }
 }
