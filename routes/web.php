@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
 use App\Http\Controllers\Admin\ServerPermissionController;
+use App\Http\Controllers\StackController;
 use App\Http\Middleware\CheckAdminRole;
 
 Route::get('/', function () {
@@ -14,8 +15,20 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $user = auth()->user();
+        $servers = $user->getAccessibleServers();
+        
+        return Inertia::render('dashboard', [
+            'servers' => $servers,
+            'isAdmin' => $user->isAdmin(),
+        ]);
     })->name('dashboard');
+    
+    // Stack viewing (available to all authenticated users with server permissions)
+    Route::get('servers/{server}/stacks', [StackController::class, 'index'])->name('stacks.index');
+    Route::get('servers/{server}/stacks/{stackName}', [StackController::class, 'show'])->name('stacks.show');
+    Route::get('servers/{server}/stacks/refresh', [StackController::class, 'refresh'])->name('stacks.refresh');
+    Route::get('api/servers/{server}/stacks', [StackController::class, 'apiIndex'])->name('api.stacks.index');
 });
 
 // Admin routes

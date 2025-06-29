@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield } from 'lucide-react';
+import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield, Container } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 
@@ -293,6 +293,7 @@ export default function ServersIndex({ servers }: Props) {
                                             size="sm"
                                             onClick={() => checkServerHealth(server.id)}
                                             disabled={checkingHealth[server.id]}
+                                            title="Check Health"
                                         >
                                             {checkingHealth[server.id] ? (
                                                 <Clock className="animate-spin" size={16} />
@@ -303,7 +304,16 @@ export default function ServersIndex({ servers }: Props) {
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => window.location.href = `/servers/${server.id}/stacks`}
+                                            title="View Stacks"
+                                        >
+                                            <Container size={16} />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => window.location.href = `/admin/servers/${server.id}/permissions`}
+                                            title="Manage Permissions"
                                         >
                                             <Shield size={16} />
                                         </Button>

@@ -59,6 +59,13 @@ class User extends Authenticatable
             return true;
         }
 
+        // Load roles with servers relationship if not already loaded
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.servers');
+        } else {
+            $this->roles->load('servers');
+        }
+
         // Check if any of the user's roles have the required permission for this server
         foreach ($this->roles as $role) {
             if ($role->hasServerPermission($server, $permission)) {
@@ -74,6 +81,13 @@ class User extends Authenticatable
         // Admins have all permissions
         if ($this->isAdmin()) {
             return ['read' => true, 'write' => true, 'start-stop' => true];
+        }
+
+        // Load roles with servers relationship if not already loaded
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.servers');
+        } else {
+            $this->roles->load('servers');
         }
 
         $permissions = ['read' => false, 'write' => false, 'start-stop' => false];
@@ -96,11 +110,18 @@ class User extends Authenticatable
             return Server::all();
         }
 
+        // Load roles with servers relationship if not already loaded
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.servers');
+        } else {
+            $this->roles->load('servers');
+        }
+
         // Get servers that this user has access to through their roles
         $serverIds = collect();
         
         foreach ($this->roles as $role) {
-            $roleServerIds = $role->servers()->pluck('servers.id');
+            $roleServerIds = $role->servers->pluck('id');
             $serverIds = $serverIds->merge($roleServerIds);
         }
 

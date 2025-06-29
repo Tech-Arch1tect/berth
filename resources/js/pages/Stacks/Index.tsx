@@ -1,0 +1,283 @@
+import { useState, useEffect } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, RefreshCw, Container, Network, HardDrive, ExternalLink, AlertCircle } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+
+interface Server {
+    id: number;
+    display_name: string;
+    hostname: string;
+    port: number;
+    https: boolean;
+}
+
+interface Service {
+    command: string | null;
+    entrypoint: string | null;
+    image: string;
+    networks: Record<string, any>;
+    ports?: Array<{
+        mode: string;
+        target: number;
+        published: string;
+        protocol: string;
+    }>;
+    restart: string;
+    volumes?: Array<{
+        type: string;
+        source: string;
+        target: string;
+        read_only: boolean;
+    }>;
+}
+
+interface Stack {
+    name: string;
+    path: string;
+    services: Record<string, Service>;
+    networks: Record<string, any>;
+    parsed_successfully: boolean;
+    service_count: number;
+    service_names: string[];
+    port_mappings: Array<{
+        service: string;
+        published: string | null;
+        target: number | null;
+        protocol: string;
+    }>;
+    volume_mappings: Array<{
+        service: string;
+        source: string | null;
+        target: string | null;
+        type: string;
+        read_only: boolean;
+    }>;
+}
+
+interface UserPermissions {
+    read: boolean;
+    write: boolean;
+    'start-stop': boolean;
+}
+
+interface Props {
+    server: Server;
+    stacks: Stack[];
+    error?: string;
+    userPermissions: UserPermissions;
+}
+
+export default function StacksIndex({ server, stacks: initialStacks, error, userPermissions }: Props) {
+    const [stacks, setStacks] = useState<Stack[]>(initialStacks);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+    const refreshStacks = async () => {
+        setIsRefreshing(true);
+        try {
+            const response = await fetch(`/servers/${server.id}/stacks/refresh`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                setStacks(data.stacks);
+                setLastRefresh(new Date());
+            } else {
+                console.error('Failed to refresh stacks:', data.error);
+            }
+        } catch (err) {
+            console.error('Failed to refresh stacks:', err);
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
+    const getStackStatus = (stack: Stack) => {
+        if (!stack.parsed_successfully) {
+            return { variant: 'destructive' as const, text: 'Parse Error' };
+        }
+        if (stack.service_count === 0) {
+            return { variant: 'secondary' as const, text: 'No Services' };
+        }
+        return null;
+    };
+
+    return (
+        <AppLayout>
+            <Head title={`Stacks - ${server.display_name}`} />
+            
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/servers">
+                        <Button variant="ghost" size="sm">
+                            <ArrowLeft size={16} />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold flex items-center gap-2">
+                            <Container size={24} />
+                            Docker Stacks - {server.display_name}
+                        </h1>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {server.https ? "https" : "http"}://{server.hostname}:{server.port}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-lg font-semibold">
+                            Compose Stacks ({stacks.length})
+                        </h2>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Last updated: {lastRefresh.toLocaleTimeString()}
+                        </span>
+                    </div>
+                    <Button
+                        onClick={refreshStacks}
+                        disabled={isRefreshing}
+                        variant="outline"
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                </div>
+
+                {error && (
+                    <Card className="border-red-200 dark:border-red-800">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <AlertCircle size={20} />
+                                <span>{error}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {stacks.length === 0 && !error ? (
+                    <Card>
+                        <CardContent className="text-center py-8">
+                            <Container className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                No stacks found
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                No Docker Compose stacks are currently running on this server.
+                            </p>
+                            <Button onClick={refreshStacks} variant="outline">
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Refresh
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-4">
+                        {stacks.map((stack) => {
+                            const status = getStackStatus(stack);
+                            return (
+                                <Card key={stack.name} className="hover:shadow-md transition-shadow">
+                                    <CardHeader>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <CardTitle className="flex items-center gap-2">
+                                                    {stack.name}
+                                                    {status && (
+                                                        <Badge variant={status.variant}>
+                                                            {status.text}
+                                                        </Badge>
+                                                    )}
+                                                </CardTitle>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                    {stack.path}
+                                                </p>
+                                            </div>
+                                            <div className="space-x-2">
+                                                <Link href={`/servers/${server.id}/stacks/${stack.name}`}>
+                                                    <Button variant="outline" size="sm">
+                                                        <ExternalLink size={16} />
+                                                    </Button>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {/* Services */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Container size={16} />
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                        Services ({stack.service_count})
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {stack.service_names.slice(0, 3).map((service) => (
+                                                        <div key={service} className="text-xs text-gray-600 dark:text-gray-400">
+                                                            {service}
+                                                        </div>
+                                                    ))}
+                                                    {stack.service_names.length > 3 && (
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                            +{stack.service_names.length - 3} more...
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Port Mappings */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Network size={16} />
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                        Ports ({stack.port_mappings.length})
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {stack.port_mappings.slice(0, 3).map((port, index) => (
+                                                        <div key={index} className="text-xs text-gray-600 dark:text-gray-400">
+                                                            {port.published}:{port.target} ({port.protocol})
+                                                        </div>
+                                                    ))}
+                                                    {stack.port_mappings.length > 3 && (
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                            +{stack.port_mappings.length - 3} more...
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Volume Mappings */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <HardDrive size={16} />
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                        Volumes ({stack.volume_mappings.length})
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {stack.volume_mappings.slice(0, 2).map((volume, index) => (
+                                                        <div key={index} className="text-xs text-gray-600 dark:text-gray-400">
+                                                            {volume.source?.split('/').pop()} → {volume.target?.split('/').pop()}
+                                                            {volume.read_only && ' (RO)'}
+                                                        </div>
+                                                    ))}
+                                                    {stack.volume_mappings.length > 2 && (
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                            +{stack.volume_mappings.length - 2} more...
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </AppLayout>
+    );
+}
