@@ -55,6 +55,23 @@ interface Stack {
         type: string;
         read_only: boolean;
     }>;
+    service_status?: {
+        stack: string;
+        services: Array<{
+            name: string;
+            command: string;
+            state: string;
+            ports: string;
+        }> | null;
+    };
+    running_services_count?: number;
+    total_services_count?: number;
+    service_status_summary?: {
+        running: number;
+        stopped: number;
+        total: number;
+    };
+    overall_status?: 'running' | 'stopped' | 'partial' | 'unknown';
 }
 
 interface UserPermissions {
@@ -76,6 +93,67 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+    // Fetch service status for initial stacks on component mount
+    useEffect(() => {
+        const fetchInitialStatus = async () => {
+            if (initialStacks.length > 0) {
+                setIsRefreshing(true);
+                const stacksWithStatus = await Promise.all(
+                    initialStacks.map(async (stack) => {
+                        const serviceStatus = await fetchServiceStatus(stack.name);
+                        
+                        // Calculate status summary
+                        let statusSummary = { running: 0, stopped: 0, total: 0 };
+                        let overallStatus: 'running' | 'stopped' | 'partial' | 'unknown' = 'unknown';
+                        
+                        if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
+                            const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
+                            const total = serviceStatus.services.length;
+                            const stopped = total - running;
+                            
+                            statusSummary = { running, stopped, total };
+                            
+                            if (running === 0) {
+                                overallStatus = 'stopped';
+                            } else if (running === total) {
+                                overallStatus = 'running';
+                            } else {
+                                overallStatus = 'partial';
+                            }
+                        } else if (serviceStatus && serviceStatus.services === null) {
+                            overallStatus = 'stopped';
+                        }
+                        
+                        return { 
+                            ...stack, 
+                            service_status: serviceStatus,
+                            service_status_summary: statusSummary,
+                            overall_status: overallStatus,
+                            running_services_count: statusSummary.running,
+                            total_services_count: statusSummary.total
+                        };
+                    })
+                );
+                setStacks(stacksWithStatus);
+                setIsRefreshing(false);
+            }
+        };
+
+        fetchInitialStatus();
+    }, []);
+
+    const fetchServiceStatus = async (stackName: string) => {
+        try {
+            const response = await fetch(`/api/servers/${server.id}/stacks/${stackName}/status`);
+            if (response.ok) {
+                return await response.json();
+            }
+        } catch (err) {
+            console.error(`Failed to fetch status for stack ${stackName}:`, err);
+        }
+        return null;
+    };
+
     const refreshStacks = async () => {
         setIsRefreshing(true);
         try {
@@ -83,7 +161,45 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
             const data = await response.json();
             
             if (response.ok) {
-                setStacks(data.stacks);
+                // Fetch service status for each stack
+                const stacksWithStatus = await Promise.all(
+                    data.stacks.map(async (stack: Stack) => {
+                        const serviceStatus = await fetchServiceStatus(stack.name);
+                        
+                        // Calculate status summary
+                        let statusSummary = { running: 0, stopped: 0, total: 0 };
+                        let overallStatus: 'running' | 'stopped' | 'partial' | 'unknown' = 'unknown';
+                        
+                        if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
+                            const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
+                            const total = serviceStatus.services.length;
+                            const stopped = total - running;
+                            
+                            statusSummary = { running, stopped, total };
+                            
+                            if (running === 0) {
+                                overallStatus = 'stopped';
+                            } else if (running === total) {
+                                overallStatus = 'running';
+                            } else {
+                                overallStatus = 'partial';
+                            }
+                        } else if (serviceStatus && serviceStatus.services === null) {
+                            overallStatus = 'stopped';
+                        }
+                        
+                        return { 
+                            ...stack, 
+                            service_status: serviceStatus,
+                            service_status_summary: statusSummary,
+                            overall_status: overallStatus,
+                            running_services_count: statusSummary.running,
+                            total_services_count: statusSummary.total
+                        };
+                    })
+                );
+                
+                setStacks(stacksWithStatus);
                 setLastRefresh(new Date());
             } else {
                 console.error('Failed to refresh stacks:', data.error);
@@ -102,6 +218,22 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
         if (stack.service_count === 0) {
             return { variant: 'secondary' as const, text: 'No Services' };
         }
+        
+        // Show service status if available
+        if (stack.overall_status) {
+            switch (stack.overall_status) {
+                case 'running':
+                    return { variant: 'default' as const, text: 'Running' };
+                case 'stopped':
+                    return { variant: 'outline' as const, text: 'Stopped' };
+                case 'partial':
+                    return { variant: 'secondary' as const, text: 'Partial' };
+                case 'unknown':
+                default:
+                    return { variant: 'outline' as const, text: 'Unknown' };
+            }
+        }
+        
         return null;
     };
 
@@ -211,14 +343,36 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                                     <Container size={16} />
                                                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                         Services ({stack.service_count})
+                                                        {stack.service_status_summary && (
+                                                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                                                {stack.service_status_summary.running}/{stack.service_status_summary.total} running
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 </div>
                                                 <div className="space-y-1">
-                                                    {stack.service_names.slice(0, 3).map((service) => (
-                                                        <div key={service} className="text-xs text-gray-600 dark:text-gray-400">
-                                                            {service}
-                                                        </div>
-                                                    ))}
+                                                    {stack.service_names.slice(0, 3).map((service) => {
+                                                        // Find status for this service
+                                                        const serviceStatus = stack.service_status?.services?.find(s => 
+                                                            s.name.includes(service)
+                                                        );
+                                                        
+                                                        return (
+                                                            <div key={service} className="flex items-center gap-2">
+                                                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                                    {service}
+                                                                </div>
+                                                                {serviceStatus && (
+                                                                    <Badge 
+                                                                        variant={serviceStatus.state === 'running' ? 'default' : 'outline'}
+                                                                        className="h-4 text-xs"
+                                                                    >
+                                                                        {serviceStatus.state}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                     {stack.service_names.length > 3 && (
                                                         <div className="text-xs text-gray-500 dark:text-gray-400">
                                                             +{stack.service_names.length - 3} more...

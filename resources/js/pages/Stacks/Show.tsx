@@ -1,8 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock } from 'lucide-react';
+import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface Server {
@@ -54,6 +55,23 @@ interface Stack {
         type: string;
         read_only: boolean;
     }>;
+    service_status?: {
+        stack: string;
+        services: Array<{
+            name: string;
+            command: string;
+            state: string;
+            ports: string;
+        }> | null;
+    };
+    running_services_count?: number;
+    total_services_count?: number;
+    service_status_summary?: {
+        running: number;
+        stopped: number;
+        total: number;
+    };
+    overall_status?: 'running' | 'stopped' | 'partial' | 'unknown';
 }
 
 interface UserPermissions {
@@ -69,6 +87,15 @@ interface Props {
 }
 
 export default function StackShow({ server, stack, userPermissions }: Props) {
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const refreshStack = () => {
+        setIsRefreshing(true);
+        router.reload({
+            onFinish: () => setIsRefreshing(false)
+        });
+    };
+
     const getStatusBadge = () => {
         if (!stack.parsed_successfully) {
             return <Badge variant="destructive">Parse Error</Badge>;
@@ -76,6 +103,22 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         if (stack.service_count === 0) {
             return <Badge variant="secondary">No Services</Badge>;
         }
+        
+        // Show service status if available
+        if (stack.overall_status) {
+            switch (stack.overall_status) {
+                case 'running':
+                    return <Badge variant="default">Running</Badge>;
+                case 'stopped':
+                    return <Badge variant="outline">Stopped</Badge>;
+                case 'partial':
+                    return <Badge variant="secondary">Partial</Badge>;
+                case 'unknown':
+                default:
+                    return <Badge variant="outline">Unknown</Badge>;
+            }
+        }
+        
         return null;
     };
 
@@ -84,22 +127,32 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             <Head title={`${stack.name} - ${server.display_name}`} />
             
             <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link href={`/servers/${server.id}/stacks`}>
-                        <Button variant="ghost" size="sm">
-                            <ArrowLeft size={16} />
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Container size={24} />
-                            {stack.name}
-                            {getStatusBadge()}
-                        </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {stack.path} on {server.display_name}
-                        </p>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link href={`/servers/${server.id}/stacks`}>
+                            <Button variant="ghost" size="sm">
+                                <ArrowLeft size={16} />
+                            </Button>
+                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold flex items-center gap-2">
+                                <Container size={24} />
+                                {stack.name}
+                                {getStatusBadge()}
+                            </h1>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {stack.path} on {server.display_name}
+                            </p>
+                        </div>
                     </div>
+                    <Button
+                        onClick={refreshStack}
+                        disabled={isRefreshing}
+                        variant="outline"
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
                 </div>
 
                 {!stack.parsed_successfully && (
@@ -120,16 +173,59 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             <CardTitle className="flex items-center gap-2">
                                 <Container size={20} />
                                 Services ({stack.service_count})
+                                {stack.service_status_summary && (
+                                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                                        {stack.service_status_summary.running}/{stack.service_status_summary.total} running
+                                    </span>
+                                )}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {Object.entries(stack.services).map(([serviceName, service]) => (
-                                    <div key={serviceName} className="border rounded-lg p-4 dark:border-gray-700">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h3 className="font-semibold text-lg">{serviceName}</h3>
-                                            <Badge variant="outline">{service.restart}</Badge>
-                                        </div>
+                                {Object.entries(stack.services).map(([serviceName, service]) => {
+                                    // Find the runtime status for this service
+                                    const serviceStatus = stack.service_status?.services?.find(s => 
+                                        s.name.includes(serviceName)
+                                    );
+                                    
+                                    return (
+                                        <div key={serviceName} className="border rounded-lg p-4 dark:border-gray-700">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-semibold text-lg">{serviceName}</h3>
+                                                    {serviceStatus && (
+                                                        <Badge 
+                                                            variant={serviceStatus.state === 'running' ? 'default' : 'outline'}
+                                                        >
+                                                            {serviceStatus.state}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <Badge variant="outline">{service.restart}</Badge>
+                                            </div>
+                                            
+                                            {/* Show runtime information if available */}
+                                            {serviceStatus && (
+                                                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Runtime Status</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">Container:</span>
+                                                            <span className="ml-2 font-mono text-gray-900 dark:text-gray-100">{serviceStatus.name}</span>
+                                                        </div>
+                                                        {serviceStatus.ports && (
+                                                            <div>
+                                                                <span className="text-gray-600 dark:text-gray-400">Ports:</span>
+                                                                <span className="ml-2 font-mono text-gray-900 dark:text-gray-100">{serviceStatus.ports}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="md:col-span-2">
+                                                            <span className="text-gray-600 dark:text-gray-400">Command:</span>
+                                                            <span className="ml-2 font-mono text-gray-900 dark:text-gray-100 break-all">{serviceStatus.command}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -191,7 +287,8 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                             )}
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </CardContent>
                     </Card>

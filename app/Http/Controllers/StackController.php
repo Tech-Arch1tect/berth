@@ -52,6 +52,19 @@ class StackController extends Controller
                 abort(404, 'Stack not found.');
             }
 
+            // Fetch service status for this specific stack
+            try {
+                $serviceStatus = $this->fetchServiceStatusFromServer($server, $stackName);
+                $stack['service_status'] = $serviceStatus;
+                
+                // Create a Stack model instance to calculate status fields
+                $stackModel = Stack::fromArray($stack);
+                $stack = $stackModel->toArray();
+            } catch (\Exception $e) {
+                // If we can't fetch service status, continue without it
+                $stack['service_status'] = null;
+            }
+
             return Inertia::render('Stacks/Show', [
                 'server' => $server,
                 'stack' => $stack,
@@ -106,6 +119,31 @@ class StackController extends Controller
         }, $stacksData);
     }
 
+    protected function fetchServiceStatusFromServer(Server $server, string $stackName): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/ps";
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])
+            ->get($url);
+
+        if (!$response->successful()) {
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $statusData = $response->json();
+        
+        if (!is_array($statusData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $statusData;
+    }
+
     public function refresh(Request $request, Server $server)
     {
         // Check if user has read permission for this server
@@ -122,6 +160,23 @@ class StackController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to refresh stacks: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getServiceStatus(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'read')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $serviceStatus = $this->fetchServiceStatusFromServer($server, $stackName);
+            return response()->json($serviceStatus);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch service status: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -9,6 +9,7 @@ class Stack
     public array $services;
     public array $networks;
     public bool $parsed_successfully;
+    public ?array $service_status;
 
     public function __construct(array $data)
     {
@@ -17,6 +18,7 @@ class Stack
         $this->services = $data['services'] ?? [];
         $this->networks = $data['networks'] ?? [];
         $this->parsed_successfully = $data['parsed_successfully'] ?? false;
+        $this->service_status = $data['service_status'] ?? null;
     }
 
     public function getServiceCount(): int
@@ -66,6 +68,73 @@ class Stack
         return $volumes;
     }
 
+    public function getRunningServicesCount(): int
+    {
+        if (!$this->service_status || !isset($this->service_status['services']) || !is_array($this->service_status['services'])) {
+            return 0;
+        }
+
+        return count(array_filter($this->service_status['services'], function ($service) {
+            return isset($service['state']) && $service['state'] === 'running';
+        }));
+    }
+
+    public function getTotalServicesCount(): int
+    {
+        if (!$this->service_status || !isset($this->service_status['services'])) {
+            return 0;
+        }
+
+        return is_array($this->service_status['services']) ? count($this->service_status['services']) : 0;
+    }
+
+    public function getServiceStatusSummary(): array
+    {
+        if (!$this->service_status || !isset($this->service_status['services']) || !is_array($this->service_status['services'])) {
+            return ['running' => 0, 'stopped' => 0, 'total' => 0];
+        }
+
+        $running = 0;
+        $stopped = 0;
+
+        foreach ($this->service_status['services'] as $service) {
+            if (isset($service['state'])) {
+                if ($service['state'] === 'running') {
+                    $running++;
+                } else {
+                    $stopped++;
+                }
+            }
+        }
+
+        return [
+            'running' => $running,
+            'stopped' => $stopped,
+            'total' => $running + $stopped,
+        ];
+    }
+
+    public function getOverallStatus(): string
+    {
+        if (!$this->service_status || !isset($this->service_status['services'])) {
+            return 'unknown';
+        }
+
+        if (!is_array($this->service_status['services']) || empty($this->service_status['services'])) {
+            return 'stopped';
+        }
+
+        $summary = $this->getServiceStatusSummary();
+        
+        if ($summary['running'] === 0) {
+            return 'stopped';
+        } elseif ($summary['running'] === $summary['total']) {
+            return 'running';
+        } else {
+            return 'partial';
+        }
+    }
+
     public function toArray(): array
     {
         return [
@@ -78,6 +147,11 @@ class Stack
             'service_names' => $this->getServiceNames(),
             'port_mappings' => $this->getPortMappings(),
             'volume_mappings' => $this->getVolumeMappings(),
+            'service_status' => $this->service_status,
+            'running_services_count' => $this->getRunningServicesCount(),
+            'total_services_count' => $this->getTotalServicesCount(),
+            'service_status_summary' => $this->getServiceStatusSummary(),
+            'overall_status' => $this->getOverallStatus(),
         ];
     }
 
