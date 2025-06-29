@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface Server {
@@ -86,8 +87,19 @@ interface Props {
     userPermissions: UserPermissions;
 }
 
+interface LogsResponse {
+    stack: string;
+    service?: string;
+    lines: number;
+    logs: string;
+}
+
 export default function StackShow({ server, stack, userPermissions }: Props) {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [logs, setLogs] = useState<LogsResponse | null>(null);
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+    const [selectedService, setSelectedService] = useState<string>('all');
+    const [logTail, setLogTail] = useState<string>('100');
 
     const refreshStack = () => {
         setIsRefreshing(true);
@@ -95,6 +107,35 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             onFinish: () => setIsRefreshing(false)
         });
     };
+
+    const fetchLogs = async () => {
+        setIsLoadingLogs(true);
+        try {
+            const params = new URLSearchParams({ tail: logTail });
+            if (selectedService !== 'all') {
+                params.append('service', selectedService);
+            }
+            
+            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/logs?${params}`);
+            if (response.ok) {
+                const logsData = await response.json();
+                setLogs(logsData);
+            } else {
+                console.error('Failed to fetch logs:', response.statusText);
+            }
+        } catch (err) {
+            console.error('Failed to fetch logs:', err);
+        } finally {
+            setIsLoadingLogs(false);
+        }
+    };
+
+    // Auto-refresh logs when service or tail options change
+    useEffect(() => {
+        if (logs) {
+            fetchLogs();
+        }
+    }, [selectedService, logTail]);
 
     const getStatusBadge = () => {
         if (!stack.parsed_successfully) {
@@ -318,6 +359,93 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* Logs */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText size={20} />
+                                    Container Logs
+                                    {logs && (
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                                            ({logs.lines} lines)
+                                        </span>
+                                    )}
+                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Select value={selectedService} onValueChange={setSelectedService}>
+                                        <SelectTrigger className="w-40">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Services</SelectItem>
+                                            {stack.service_names.map((service) => (
+                                                <SelectItem key={service} value={service}>
+                                                    {service}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={logTail} onValueChange={setLogTail}>
+                                        <SelectTrigger className="w-24">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="50">50</SelectItem>
+                                            <SelectItem value="100">100</SelectItem>
+                                            <SelectItem value="200">200</SelectItem>
+                                            <SelectItem value="500">500</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        onClick={fetchLogs}
+                                        disabled={isLoadingLogs}
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+                                        Load Logs
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {logs ? (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                                        <span>
+                                            {logs.service ? `Service: ${logs.service}` : 'All services'} • 
+                                            Last {logTail} lines
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                const blob = new Blob([logs.logs], { type: 'text/plain' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `${stack.name}${logs.service ? `-${logs.service}` : ''}-logs.txt`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            }}
+                                        >
+                                            <Download size={14} />
+                                        </Button>
+                                    </div>
+                                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
+                                        {logs.logs || 'No logs available'}
+                                    </pre>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                    <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                    <p>Click "Load Logs" to view container logs</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     {/* Raw Configuration */}
                     {userPermissions.write && (

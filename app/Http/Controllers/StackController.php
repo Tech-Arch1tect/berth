@@ -144,6 +144,36 @@ class StackController extends Controller
         return $statusData;
     }
 
+    protected function fetchLogsFromServer(Server $server, string $stackName, ?string $service = null, string $tail = '100'): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/logs";
+        
+        $queryParams = ['tail' => $tail];
+        if ($service) {
+            $queryParams['service'] = $service;
+        }
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])
+            ->get($url, $queryParams);
+
+        if (!$response->successful()) {
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $logsData = $response->json();
+        
+        if (!is_array($logsData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $logsData;
+    }
+
     public function refresh(Request $request, Server $server)
     {
         // Check if user has read permission for this server
@@ -177,6 +207,26 @@ class StackController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch service status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getLogs(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'read')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $service = $request->query('service');
+            $tail = $request->query('tail', '100');
+            
+            $logs = $this->fetchLogsFromServer($server, $stackName, $service, $tail);
+            return response()->json($logs);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch logs: ' . $e->getMessage()
             ], 500);
         }
     }

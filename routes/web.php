@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('servers/{server}/stacks/refresh', [StackController::class, 'refresh'])->name('stacks.refresh');
     Route::get('api/servers/{server}/stacks', [StackController::class, 'apiIndex'])->name('api.stacks.index');
     Route::get('api/servers/{server}/stacks/{stackName}/status', [StackController::class, 'getServiceStatus'])->name('api.stacks.status');
+    Route::get('api/servers/{server}/stacks/{stackName}/logs', [StackController::class, 'getLogs'])->name('api.stacks.logs');
 });
 
 // Admin routes
