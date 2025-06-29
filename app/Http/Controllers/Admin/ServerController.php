@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Server;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class ServerController extends Controller
@@ -85,5 +86,41 @@ class ServerController extends Controller
             'created_at' => $server->created_at,
             'updated_at' => $server->updated_at,
         ]);
+    }
+
+    public function healthCheck(Server $server)
+    {
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/health";
+            
+            $response = Http::timeout(10)->get($url);
+            
+            if ($response->successful()) {
+                $healthData = $response->json();
+                return response()->json([
+                    'status' => 'success',
+                    'health_status' => $healthData['status'] ?? 'unknown',
+                    'service' => $healthData['service'] ?? null,
+                    'docker_compose' => $healthData['docker_compose'] ?? null,
+                    'response_time' => $response->transferStats?->getTransferTime() ?? null,
+                    'checked_at' => now()->toISOString(),
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Server returned status: ' . $response->status(),
+                    'health_status' => 'unhealthy',
+                    'checked_at' => now()->toISOString(),
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to connect: ' . $e->getMessage(),
+                'health_status' => 'unreachable',
+                'checked_at' => now()->toISOString(),
+            ], 200);
+        }
     }
 }

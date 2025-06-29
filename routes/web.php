@@ -36,6 +36,7 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     Route::get('servers/{server}', [ServerController::class, 'show'])->name('servers.show');
     Route::put('servers/{server}', [ServerController::class, 'update'])->name('servers.update');
     Route::delete('servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
+    Route::get('servers/{server}/health', [ServerController::class, 'healthCheck'])->name('servers.health');
 });
 
 require __DIR__.'/settings.php';

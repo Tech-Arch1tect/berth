@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 
@@ -20,6 +20,19 @@ interface Server {
     updated_at: string;
 }
 
+interface HealthStatus {
+    status: 'success' | 'error';
+    health_status: 'healthy' | 'unhealthy' | 'unreachable' | 'unknown';
+    service?: string;
+    docker_compose?: {
+        available: boolean;
+        version: string;
+    };
+    response_time?: number;
+    message?: string;
+    checked_at: string;
+}
+
 interface Props {
     servers: Server[];
 }
@@ -29,6 +42,8 @@ export default function ServersIndex({ servers }: Props) {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [showSecret, setShowSecret] = useState<Record<number, boolean>>({});
     const [serverSecrets, setServerSecrets] = useState<Record<number, string>>({});
+    const [healthStatus, setHealthStatus] = useState<Record<number, HealthStatus>>({});
+    const [checkingHealth, setCheckingHealth] = useState<Record<number, boolean>>({});
 
     const createForm = useForm({
         display_name: '',
@@ -98,6 +113,59 @@ export default function ServersIndex({ servers }: Props) {
             setShowSecret(prev => ({ ...prev, [serverId]: true }));
         } catch (error) {
             console.error('Failed to fetch server details:', error);
+        }
+    };
+
+    const checkServerHealth = async (serverId: number) => {
+        setCheckingHealth(prev => ({ ...prev, [serverId]: true }));
+        
+        try {
+            const response = await fetch(`/admin/servers/${serverId}/health`);
+            const healthData = await response.json();
+            setHealthStatus(prev => ({ ...prev, [serverId]: healthData }));
+        } catch (error) {
+            console.error('Failed to check server health:', error);
+            setHealthStatus(prev => ({ 
+                ...prev, 
+                [serverId]: {
+                    status: 'error',
+                    health_status: 'unreachable',
+                    message: 'Failed to connect',
+                    checked_at: new Date().toISOString(),
+                }
+            }));
+        } finally {
+            setCheckingHealth(prev => ({ ...prev, [serverId]: false }));
+        }
+    };
+
+    const getHealthIcon = (health: HealthStatus | undefined) => {
+        if (!health) return <Activity className="text-gray-400" size={16} />;
+        
+        switch (health.health_status) {
+            case 'healthy':
+                return <CheckCircle className="text-green-500" size={16} />;
+            case 'unhealthy':
+                return <AlertCircle className="text-yellow-500" size={16} />;
+            case 'unreachable':
+                return <AlertCircle className="text-red-500" size={16} />;
+            default:
+                return <Activity className="text-gray-400" size={16} />;
+        }
+    };
+
+    const getHealthBadgeVariant = (health: HealthStatus | undefined) => {
+        if (!health) return 'outline' as const;
+        
+        switch (health.health_status) {
+            case 'healthy':
+                return 'default' as const;
+            case 'unhealthy':
+                return 'secondary' as const;
+            case 'unreachable':
+                return 'destructive' as const;
+            default:
+                return 'outline' as const;
         }
     };
 
@@ -206,12 +274,32 @@ export default function ServersIndex({ servers }: Props) {
                                             <Badge variant={server.https ? "default" : "secondary"}>
                                                 {server.https ? "HTTPS" : "HTTP"}
                                             </Badge>
+                                            {healthStatus[server.id] && (
+                                                <Badge variant={getHealthBadgeVariant(healthStatus[server.id])}>
+                                                    {getHealthIcon(healthStatus[server.id])}
+                                                    <span className="ml-1 capitalize">
+                                                        {healthStatus[server.id].health_status}
+                                                    </span>
+                                                </Badge>
+                                            )}
                                         </CardTitle>
                                         <p className="text-sm text-gray-600 mt-1">
                                             {server.https ? "https" : "http"}://{server.hostname}:{server.port}
                                         </p>
                                     </div>
                                     <div className="space-x-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => checkServerHealth(server.id)}
+                                            disabled={checkingHealth[server.id]}
+                                        >
+                                            {checkingHealth[server.id] ? (
+                                                <Clock className="animate-spin" size={16} />
+                                            ) : (
+                                                <Activity size={16} />
+                                            )}
+                                        </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"
@@ -230,7 +318,47 @@ export default function ServersIndex({ servers }: Props) {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
+                                    {/* Health Status Details */}
+                                    {healthStatus[server.id] && (
+                                        <div className="border rounded-lg p-3 bg-gray-50">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium">Health Status</span>
+                                                <span className="text-xs text-gray-500">
+                                                    {new Date(healthStatus[server.id].checked_at).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                {healthStatus[server.id].service && (
+                                                    <div>
+                                                        <span className="text-gray-600">Service:</span>
+                                                        <span className="ml-1 font-mono">{healthStatus[server.id].service}</span>
+                                                    </div>
+                                                )}
+                                                {healthStatus[server.id].docker_compose && (
+                                                    <div>
+                                                        <span className="text-gray-600">Docker Compose:</span>
+                                                        <span className="ml-1 font-mono">
+                                                            {healthStatus[server.id].docker_compose?.version}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {healthStatus[server.id].response_time && (
+                                                    <div>
+                                                        <span className="text-gray-600">Response Time:</span>
+                                                        <span className="ml-1">{Math.round(healthStatus[server.id].response_time! * 1000)}ms</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {healthStatus[server.id].message && (
+                                                <div className="text-sm text-red-600 mt-2">
+                                                    {healthStatus[server.id].message}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Access Secret */}
                                     <div className="flex items-center space-x-2">
                                         <span className="text-sm font-medium">Access Secret:</span>
                                         <div className="flex items-center space-x-2">
@@ -250,6 +378,7 @@ export default function ServersIndex({ servers }: Props) {
                                             </Button>
                                         </div>
                                     </div>
+                                    
                                     <div className="text-xs text-gray-500">
                                         Created: {new Date(server.created_at).toLocaleString()}
                                     </div>

@@ -40,4 +40,9 @@ class Server extends Model
     {
         return $this->https ? 'HTTPS' : 'HTTP';
     }
+
+    public function getHealthEndpointAttribute(): string
+    {
+        return $this->getFullUrlAttribute() . '/health';
+    }
 }
