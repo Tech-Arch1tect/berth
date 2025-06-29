@@ -24,6 +24,7 @@ class StackController extends Controller
                 'server' => $server,
                 'stacks' => $stacks,
                 'userPermissions' => auth()->user()->getServerPermissions($server),
+                'isAdmin' => auth()->user()->isAdmin(),
             ]);
         } catch (\Exception $e) {
             return Inertia::render('Stacks/Index', [
@@ -31,6 +32,7 @@ class StackController extends Controller
                 'stacks' => [],
                 'error' => 'Failed to fetch stacks: ' . $e->getMessage(),
                 'userPermissions' => auth()->user()->getServerPermissions($server),
+                'isAdmin' => auth()->user()->isAdmin(),
             ]);
         }
     }

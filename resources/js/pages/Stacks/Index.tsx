@@ -68,9 +68,10 @@ interface Props {
     stacks: Stack[];
     error?: string;
     userPermissions: UserPermissions;
+    isAdmin?: boolean;
 }
 
-export default function StacksIndex({ server, stacks: initialStacks, error, userPermissions }: Props) {
+export default function StacksIndex({ server, stacks: initialStacks, error, userPermissions, isAdmin = false }: Props) {
     const [stacks, setStacks] = useState<Stack[]>(initialStacks);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -110,7 +111,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
             
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/servers">
+                    <Link href={isAdmin ? "/admin/servers" : "/dashboard"}>
                         <Button variant="ghost" size="sm">
                             <ArrowLeft size={16} />
                         </Button>
