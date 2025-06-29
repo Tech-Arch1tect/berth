@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\Role;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class UserController extends Controller
+{
+    public function index()
+    {
+        $users = User::with('roles')->get();
+        $roles = Role::all();
+        
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users,
+            'roles' => $roles,
+        ]);
+    }
+
+    public function updateRoles(Request $request, User $user)
+    {
+        $request->validate([
+            'roles' => 'array',
+            'roles.*' => 'exists:roles,name',
+        ]);
+
+        // Prevent removing admin role from the last admin
+        if ($user->hasRole('admin') && !in_array('admin', $request->roles ?? [])) {
+            $adminCount = User::role('admin')->count();
+            if ($adminCount <= 1) {
+                return back()->withErrors(['error' => 'Cannot remove admin role from the last admin user.']);
+            }
+        }
+
+        $user->syncRoles($request->roles ?? []);
+
+        return back()->with('success', 'User roles updated successfully.');
+    }
+
+    public function destroy(User $user)
+    {
+        // Prevent deleting the last admin
+        if ($user->hasRole('admin')) {
+            $adminCount = User::role('admin')->count();
+            if ($adminCount <= 1) {
+                return back()->withErrors(['error' => 'Cannot delete the last admin user.']);
+            }
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'User deleted successfully.');
+    }
+}
