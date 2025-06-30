@@ -80,7 +80,7 @@ class User extends Authenticatable
     {
         // Admins have all permissions
         if ($this->isAdmin()) {
-            return ['read' => true, 'write' => true, 'start-stop' => true];
+            return ['read' => true, 'write' => true, 'start-stop' => true, 'exec' => true];
         }
 
         // Load roles with servers relationship if not already loaded
@@ -90,7 +90,7 @@ class User extends Authenticatable
             $this->roles->load('servers');
         }
 
-        $permissions = ['read' => false, 'write' => false, 'start-stop' => false];
+        $permissions = ['read' => false, 'write' => false, 'start-stop' => false, 'exec' => false];
 
         // Aggregate permissions from all roles
         foreach ($this->roles as $role) {
@@ -98,6 +98,7 @@ class User extends Authenticatable
             $permissions['read'] = $permissions['read'] || $rolePermissions['read'];
             $permissions['write'] = $permissions['write'] || $rolePermissions['write'];
             $permissions['start-stop'] = $permissions['start-stop'] || $rolePermissions['start-stop'];
+            $permissions['exec'] = $permissions['exec'] || $rolePermissions['exec'];
         }
 
         return $permissions;

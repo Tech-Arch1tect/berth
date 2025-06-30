@@ -49,7 +49,7 @@ class Server extends Model
     public function roles()
     {
         return $this->belongsToMany(Role::class)
-            ->withPivot(['can_read', 'can_write', 'can_start_stop'])
+            ->withPivot(['can_read', 'can_write', 'can_start_stop', 'can_exec'])
             ->withTimestamps();
     }
 
@@ -63,6 +63,7 @@ class Server extends Model
                     'read' => $role->pivot->can_read,
                     'write' => $role->pivot->can_write,
                     'start-stop' => $role->pivot->can_start_stop,
+                    'exec' => $role->pivot->can_exec,
                 ]
             ];
         });

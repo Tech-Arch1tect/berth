@@ -80,6 +80,7 @@ interface UserPermissions {
     read: boolean;
     write: boolean;
     'start-stop': boolean;
+    exec: boolean;
 }
 
 interface Props {
@@ -598,7 +599,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     </Card>
 
                     {/* Command Execution */}
-                    {userPermissions.write && (
+                    {userPermissions.exec && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">

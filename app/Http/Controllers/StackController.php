@@ -281,8 +281,8 @@ class StackController extends Controller
 
     public function composeExec(Request $request, Server $server, string $stackName)
     {
-        // Check if user has write permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'write')) {
+        // Check if user has exec permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'exec')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 

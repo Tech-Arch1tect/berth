@@ -30,6 +30,7 @@ interface ServerRole {
         read: boolean;
         write: boolean;
         'start-stop': boolean;
+        exec: boolean;
     };
 }
 
@@ -49,6 +50,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
             read: false,
             write: false,
             'start-stop': false,
+            exec: false,
         },
     });
 
@@ -57,6 +59,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
             read: false,
             write: false,
             'start-stop': false,
+            exec: false,
         },
     });
 
@@ -95,6 +98,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                 read: role.permissions.read,
                 write: role.permissions.write,
                 'start-stop': role.permissions['start-stop'],
+                exec: role.permissions.exec,
             },
         });
     };
@@ -111,6 +115,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
         if (permissions.read) badges.push(<Badge key="read" variant="default">Read</Badge>);
         if (permissions.write) badges.push(<Badge key="write" variant="default">Write</Badge>);
         if (permissions['start-stop']) badges.push(<Badge key="start-stop" variant="default">Start/Stop</Badge>);
+        if (permissions.exec) badges.push(<Badge key="exec" variant="default">Exec</Badge>);
         return badges.length > 0 ? badges : [<Badge key="none" variant="outline">No Permissions</Badge>];
     };
 
@@ -215,6 +220,18 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                                 Start/Stop - Control container lifecycle
                                             </Label>
                                         </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="assign-exec"
+                                                checked={assignForm.data.permissions.exec}
+                                                onCheckedChange={(checked) =>
+                                                    handlePermissionChange('exec', checked as boolean, assignForm)
+                                                }
+                                            />
+                                            <Label htmlFor="assign-exec" className="text-sm">
+                                                Exec - Execute commands in containers
+                                            </Label>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -287,6 +304,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                         <p><strong>Read:</strong> {role.permissions.read ? 'Allowed' : 'Denied'}</p>
                                         <p><strong>Write:</strong> {role.permissions.write ? 'Allowed' : 'Denied'}</p>
                                         <p><strong>Start/Stop:</strong> {role.permissions['start-stop'] ? 'Allowed' : 'Denied'}</p>
+                                        <p><strong>Exec:</strong> {role.permissions.exec ? 'Allowed' : 'Denied'}</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -338,6 +356,18 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                         />
                                         <Label htmlFor="edit-start-stop" className="text-sm">
                                             Start/Stop - Control container lifecycle
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="edit-exec"
+                                            checked={editForm.data.permissions.exec}
+                                            onCheckedChange={(checked) =>
+                                                handlePermissionChange('exec', checked as boolean, editForm)
+                                            }
+                                        />
+                                        <Label htmlFor="edit-exec" className="text-sm">
+                                            Exec - Execute commands in containers
                                         </Label>
                                     </div>
                                 </div>
