@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download, Play, Square } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download, Play, Square, Terminal } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface Server {
@@ -102,6 +103,10 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [logTail, setLogTail] = useState<string>('100');
     const [isStarting, setIsStarting] = useState(false);
     const [isStopping, setIsStopping] = useState(false);
+    const [execService, setExecService] = useState<string>('');
+    const [execCommand, setExecCommand] = useState<string>('');
+    const [execResult, setExecResult] = useState<any>(null);
+    const [isExecuting, setIsExecuting] = useState(false);
 
     const refreshStack = () => {
         setIsRefreshing(true);
@@ -192,6 +197,42 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             console.error('Failed to stop stack:', err);
         } finally {
             setIsStopping(false);
+        }
+    };
+
+    const executeCommand = async () => {
+        if (!execService || !execCommand.trim()) {
+            return;
+        }
+
+        setIsExecuting(true);
+        setExecResult(null);
+        
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/exec`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify({ 
+                    service: execService,
+                    command: execCommand.trim().split(' ').filter(cmd => cmd.length > 0)
+                }),
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                setExecResult(result);
+            } else {
+                const error = await response.json();
+                setExecResult({ error: error.error || 'Command execution failed' });
+            }
+        } catch (err) {
+            setExecResult({ error: `Failed to execute command: ${err}` });
+        } finally {
+            setIsExecuting(false);
         }
     };
 
@@ -555,6 +596,104 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Command Execution */}
+                    {userPermissions.write && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Terminal size={20} />
+                                    Execute Command
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2">Service</label>
+                                            <Select value={execService} onValueChange={setExecService}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select service" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {stack.service_names.map((service) => (
+                                                        <SelectItem key={service} value={service}>
+                                                            {service}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium mb-2">Command</label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    value={execCommand}
+                                                    onChange={(e) => setExecCommand(e.target.value)}
+                                                    placeholder="e.g., ls -la, cat /etc/hosts, whoami"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && !isExecuting && execService && execCommand.trim()) {
+                                                            executeCommand();
+                                                        }
+                                                    }}
+                                                />
+                                                <Button
+                                                    onClick={executeCommand}
+                                                    disabled={isExecuting || !execService || !execCommand.trim()}
+                                                    variant="default"
+                                                >
+                                                    <Terminal className={`mr-2 h-4 w-4 ${isExecuting ? 'animate-spin' : ''}`} />
+                                                    Execute
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {execResult && (
+                                        <div className="mt-4">
+                                            <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                                <span>
+                                                    Command: {execResult.command || execCommand} 
+                                                    {execResult.service && ` (${execResult.service})`}
+                                                </span>
+                                                {execResult.output && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const blob = new Blob([execResult.output], { type: 'text/plain' });
+                                                            const url = URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = `${stack.name}-${execResult.service || execService}-exec-output.txt`;
+                                                            a.click();
+                                                            URL.revokeObjectURL(url);
+                                                        }}
+                                                    >
+                                                        <Download size={14} />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            {execResult.error ? (
+                                                <pre className="bg-red-900 text-red-100 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
+                                                    Error: {execResult.error}
+                                                </pre>
+                                            ) : (
+                                                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
+                                                    {execResult.output || 'Command executed successfully (no output)'}
+                                                </pre>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                        <strong>Note:</strong> Commands are executed non-interactively in the selected service container.
+                                        Use simple commands like <code>ls</code>, <code>ps</code>, <code>cat filename</code>, etc.
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Raw Configuration */}
                     {userPermissions.write && (

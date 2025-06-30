@@ -279,6 +279,37 @@ class StackController extends Controller
         }
     }
 
+    public function composeExec(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has write permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'write')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $service = $request->input('service');
+            $command = $request->input('command');
+            
+            // Validate required fields
+            if (!$service || !$command || !is_array($command) || empty($command)) {
+                return response()->json([
+                    'error' => 'Service and command array are required'
+                ], 400);
+            }
+            
+            $result = $this->sendComposeCommand($server, $stackName, 'exec', [
+                'service' => $service,
+                'command' => $command
+            ]);
+            
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to execute command: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     protected function sendComposeCommand(Server $server, string $stackName, string $action, array $params = []): array
     {
         $protocol = $server->https ? 'https' : 'http';
