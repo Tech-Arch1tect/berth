@@ -230,4 +230,82 @@ class StackController extends Controller
             ], 500);
         }
     }
+
+    public function composeUp(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has start-stop permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $services = $request->input('services', []);
+            
+            $result = $this->sendComposeCommand($server, $stackName, 'up', [
+                'services' => $services
+            ]);
+            
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to start services: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function composeDown(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has start-stop permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $services = $request->input('services', []);
+            $removeVolumes = $request->input('remove_volumes', false);
+            $removeImages = $request->input('remove_images', false);
+            
+            $result = $this->sendComposeCommand($server, $stackName, 'down', [
+                'services' => $services,
+                'remove_volumes' => $removeVolumes,
+                'remove_images' => $removeImages
+            ]);
+            
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to stop services: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    protected function sendComposeCommand(Server $server, string $stackName, string $action, array $params = []): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/{$action}";
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])
+            ->post($url, $params);
+
+        if (!$response->successful()) {
+            $errorData = $response->json();
+            if (isset($errorData['error'])) {
+                throw new \Exception($errorData['error']);
+            }
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $responseData = $response->json();
+        
+        if (!is_array($responseData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $responseData;
+    }
 }

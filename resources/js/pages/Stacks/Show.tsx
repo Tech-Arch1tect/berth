@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download, Play, Square } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface Server {
@@ -100,6 +100,8 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [selectedService, setSelectedService] = useState<string>('all');
     const [logTail, setLogTail] = useState<string>('100');
+    const [isStarting, setIsStarting] = useState(false);
+    const [isStopping, setIsStopping] = useState(false);
 
     const refreshStack = () => {
         setIsRefreshing(true);
@@ -136,6 +138,62 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             fetchLogs();
         }
     }, [selectedService, logTail]);
+
+    const startStack = async (services?: string[]) => {
+        setIsStarting(true);
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/up`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify({ services: services || [] }),
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Stack started:', result);
+                refreshStack();
+            } else {
+                const error = await response.json();
+                console.error('Failed to start stack:', error);
+            }
+        } catch (err) {
+            console.error('Failed to start stack:', err);
+        } finally {
+            setIsStarting(false);
+        }
+    };
+
+    const stopStack = async (services?: string[]) => {
+        setIsStopping(true);
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/down`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify({ services: services || [] }),
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Stack stopped:', result);
+                refreshStack();
+            } else {
+                const error = await response.json();
+                console.error('Failed to stop stack:', error);
+            }
+        } catch (err) {
+            console.error('Failed to stop stack:', err);
+        } finally {
+            setIsStopping(false);
+        }
+    };
 
     const getStatusBadge = () => {
         if (!stack.parsed_successfully) {
@@ -186,14 +244,39 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button
-                        onClick={refreshStack}
-                        disabled={isRefreshing}
-                        variant="outline"
-                    >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {userPermissions['start-stop'] && (
+                            <>
+                                <Button
+                                    onClick={() => startStack()}
+                                    disabled={isStarting || isRefreshing}
+                                    variant="default"
+                                    size="sm"
+                                >
+                                    <Play className={`mr-2 h-4 w-4 ${isStarting ? 'animate-spin' : ''}`} />
+                                    Start All
+                                </Button>
+                                <Button
+                                    onClick={() => stopStack()}
+                                    disabled={isStopping || isRefreshing}
+                                    variant="destructive"
+                                    size="sm"
+                                >
+                                    <Square className={`mr-2 h-4 w-4 ${isStopping ? 'animate-spin' : ''}`} />
+                                    Stop All
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            onClick={refreshStack}
+                            disabled={isRefreshing}
+                            variant="outline"
+                            size="sm"
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
                 {!stack.parsed_successfully && (
@@ -242,7 +325,29 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <Badge variant="outline">{service.restart}</Badge>
+                                                <div className="flex items-center gap-2">
+                                                    {userPermissions['start-stop'] && (
+                                                        <>
+                                                            <Button
+                                                                onClick={() => startStack([serviceName])}
+                                                                disabled={isStarting || isRefreshing}
+                                                                variant="outline"
+                                                                size="sm"
+                                                            >
+                                                                <Play className="h-3 w-3" />
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => stopStack([serviceName])}
+                                                                disabled={isStopping || isRefreshing}
+                                                                variant="outline"
+                                                                size="sm"
+                                                            >
+                                                                <Square className="h-3 w-3" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    <Badge variant="outline">{service.restart}</Badge>
+                                                </div>
                                             </div>
                                             
                                             {/* Show runtime information if available */}
