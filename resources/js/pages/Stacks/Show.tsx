@@ -307,10 +307,14 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         <CardContent>
                             <div className="space-y-4">
                                 {Object.entries(stack.services).map(([serviceName, service]) => {
-                                    // Find the runtime status for this service
-                                    const serviceStatus = stack.service_status?.services?.find(s => 
-                                        s.name.includes(serviceName)
-                                    );
+                                    const serviceStatus = stack.service_status?.services?.find(s => {
+                                        const containerName = s.name.toLowerCase();
+                                        const searchService = serviceName.toLowerCase();
+                                        const stackNameLower = stack.name.toLowerCase();
+                                        const exactPattern = `${stackNameLower}-${searchService}-\\d+$`;
+                                        const regex = new RegExp(exactPattern);
+                                        return regex.test(containerName);
+                                    });
                                     
                                     return (
                                         <div key={serviceName} className="border rounded-lg p-4 dark:border-gray-700">
