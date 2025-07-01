@@ -6,13 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
+import type { Server as BaseServer } from '@/types/entities';
 
-interface Server {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
+interface Server extends BaseServer {
     pivot?: {
         can_read: boolean;
         can_write: boolean;

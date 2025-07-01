@@ -9,14 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Shield, Eye, Edit, Trash, Server } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-
-interface Server {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
-}
+import type { Server } from '@/types/entities';
 
 interface Role {
     id: number;

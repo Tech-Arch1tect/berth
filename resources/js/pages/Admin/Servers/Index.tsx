@@ -9,29 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield, Container } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-
-interface Server {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-interface HealthStatus {
-    status: 'success' | 'error';
-    health_status: 'healthy' | 'unhealthy' | 'unreachable' | 'unknown';
-    service?: string;
-    docker_compose?: {
-        available: boolean;
-        version: string;
-    };
-    response_time?: number;
-    message?: string;
-    checked_at: string;
-}
+import type { Server, HealthStatus } from '@/types/entities';
 
 interface Props {
     servers: Server[];

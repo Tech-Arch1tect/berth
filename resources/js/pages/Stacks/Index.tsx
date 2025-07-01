@@ -5,74 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, RefreshCw, Container, Network, HardDrive, ExternalLink, AlertCircle } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-
-interface Server {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
-}
-
-interface Service {
-    command: string | null;
-    entrypoint: string | null;
-    image: string;
-    networks: Record<string, any>;
-    ports?: Array<{
-        mode: string;
-        target: number;
-        published: string;
-        protocol: string;
-    }>;
-    restart: string;
-    volumes?: Array<{
-        type: string;
-        source: string;
-        target: string;
-        read_only: boolean;
-    }>;
-}
-
-interface Stack {
-    name: string;
-    path: string;
-    services: Record<string, Service>;
-    networks: Record<string, any>;
-    parsed_successfully: boolean;
-    service_count: number;
-    service_names: string[];
-    port_mappings: Array<{
-        service: string;
-        published: string | null;
-        target: number | null;
-        protocol: string;
-    }>;
-    volume_mappings: Array<{
-        service: string;
-        source: string | null;
-        target: string | null;
-        type: string;
-        read_only: boolean;
-    }>;
-    service_status?: {
-        stack: string;
-        services: Array<{
-            name: string;
-            command: string;
-            state: string;
-            ports: string;
-        }> | null;
-    };
-    running_services_count?: number;
-    total_services_count?: number;
-    service_status_summary?: {
-        running: number;
-        stopped: number;
-        total: number;
-    };
-    overall_status?: 'running' | 'stopped' | 'partial' | 'unknown';
-}
+import StackStatusBadge from '@/components/StackStatusBadge';
+import type { Server, Stack } from '@/types/entities';
+import { calculateServiceStatusSummary, findServiceStatus } from '@/utils/stack-utils';
 
 interface UserPermissions {
     read: boolean;
@@ -103,27 +38,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                         const serviceStatus = await fetchServiceStatus(stack.name);
                         
                         // Calculate status summary
-                        let statusSummary = { running: 0, stopped: 0, total: 0 };
-                        let overallStatus: 'running' | 'stopped' | 'partial' | 'unknown' = 'unknown';
-                        
-                        if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
-                            const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
-                            const total = stack.service_count;
-                            const stopped = total - running;
-                            
-                            statusSummary = { running, stopped, total };
-                            
-                            if (running === 0) {
-                                overallStatus = 'stopped';
-                            } else if (running === total) {
-                                overallStatus = 'running';
-                            } else {
-                                overallStatus = 'partial';
-                            }
-                        } else if (serviceStatus && serviceStatus.services === null) {
-                            statusSummary = { running: 0, stopped: stack.service_count, total: stack.service_count };
-                            overallStatus = 'stopped';
-                        }
+                        const { statusSummary, overallStatus } = calculateServiceStatusSummary(stack, serviceStatus);
                         
                         return { 
                             ...stack, 
@@ -168,27 +83,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                         const serviceStatus = await fetchServiceStatus(stack.name);
                         
                         // Calculate status summary
-                        let statusSummary = { running: 0, stopped: 0, total: 0 };
-                        let overallStatus: 'running' | 'stopped' | 'partial' | 'unknown' = 'unknown';
-                        
-                        if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
-                            const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
-                            const total = stack.service_count;
-                            const stopped = total - running;
-                            
-                            statusSummary = { running, stopped, total };
-                            
-                            if (running === 0) {
-                                overallStatus = 'stopped';
-                            } else if (running === total) {
-                                overallStatus = 'running';
-                            } else {
-                                overallStatus = 'partial';
-                            }
-                        } else if (serviceStatus && serviceStatus.services === null) {
-                            statusSummary = { running: 0, stopped: stack.service_count, total: stack.service_count };
-                            overallStatus = 'stopped';
-                        }
+                        const { statusSummary, overallStatus } = calculateServiceStatusSummary(stack, serviceStatus);
                         
                         return { 
                             ...stack, 
@@ -213,31 +108,6 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
         }
     };
 
-    const getStackStatus = (stack: Stack) => {
-        if (!stack.parsed_successfully) {
-            return { variant: 'destructive' as const, text: 'Parse Error' };
-        }
-        if (stack.service_count === 0) {
-            return { variant: 'secondary' as const, text: 'No Services' };
-        }
-        
-        // Show service status if available
-        if (stack.overall_status) {
-            switch (stack.overall_status) {
-                case 'running':
-                    return { variant: 'default' as const, text: 'Running' };
-                case 'stopped':
-                    return { variant: 'outline' as const, text: 'Stopped' };
-                case 'partial':
-                    return { variant: 'secondary' as const, text: 'Partial' };
-                case 'unknown':
-                default:
-                    return { variant: 'outline' as const, text: 'Unknown' };
-            }
-        }
-        
-        return null;
-    };
 
     return (
         <AppLayout>
@@ -310,7 +180,6 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                 ) : (
                     <div className="grid gap-4">
                         {stacks.map((stack) => {
-                            const status = getStackStatus(stack);
                             return (
                                 <Card key={stack.name} className="hover:shadow-md transition-shadow">
                                     <CardHeader>
@@ -318,11 +187,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                             <div>
                                                 <CardTitle className="flex items-center gap-2">
                                                     {stack.name}
-                                                    {status && (
-                                                        <Badge variant={status.variant}>
-                                                            {status.text}
-                                                        </Badge>
-                                                    )}
+                                                    <StackStatusBadge stack={stack} />
                                                 </CardTitle>
                                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                                     {stack.path}
@@ -354,15 +219,8 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                                 </div>
                                                 <div className="space-y-1">
                                                     {stack.service_names.slice(0, 3).map((service) => {
-                                                        const serviceStatus = stack.service_status?.services?.find(s => {
-                                                            const containerName = s.name.toLowerCase();
-                                                            const searchService = service.toLowerCase();
-                                                            const stackNameLower = stack.name.toLowerCase();
-                                                            const exactPattern = `${stackNameLower}-${searchService}-\\d+$`;
-                                                            const regex = new RegExp(exactPattern);
-                                                            return regex.test(containerName);
-                                                        });
-                                                        
+                                                        // Find status for this service using utility function
+                                                        const serviceStatus = findServiceStatus(stack, service);
                                                         const isRunning = serviceStatus?.state === 'running';
                                                         const displayState = serviceStatus?.state || 'stopped';
                                                         

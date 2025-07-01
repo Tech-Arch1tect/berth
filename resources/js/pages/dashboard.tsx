@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Server, Container, Settings, Globe, Lock, Shield } from 'lucide-react';
+import type { Server as ServerType } from '@/types/entities';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -13,16 +14,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
 ];
-
-interface ServerType {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
-    created_at: string;
-    updated_at: string;
-}
 
 interface Props {
     servers: ServerType[];

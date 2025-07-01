@@ -8,94 +8,14 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download, Play, Square, Terminal } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
-
-interface Server {
-    id: number;
-    display_name: string;
-    hostname: string;
-    port: number;
-    https: boolean;
-}
-
-interface Service {
-    command: string | null;
-    entrypoint: string | null;
-    image: string;
-    networks: Record<string, any>;
-    ports?: Array<{
-        mode: string;
-        target: number;
-        published: string;
-        protocol: string;
-    }>;
-    restart: string;
-    volumes?: Array<{
-        type: string;
-        source: string;
-        target: string;
-        read_only: boolean;
-    }>;
-}
-
-interface Stack {
-    name: string;
-    path: string;
-    services: Record<string, Service>;
-    networks: Record<string, any>;
-    parsed_successfully: boolean;
-    service_count: number;
-    service_names: string[];
-    port_mappings: Array<{
-        service: string;
-        published: string | null;
-        target: number | null;
-        protocol: string;
-    }>;
-    volume_mappings: Array<{
-        service: string;
-        source: string | null;
-        target: string | null;
-        type: string;
-        read_only: boolean;
-    }>;
-    service_status?: {
-        stack: string;
-        services: Array<{
-            name: string;
-            command: string;
-            state: string;
-            ports: string;
-        }> | null;
-    };
-    running_services_count?: number;
-    total_services_count?: number;
-    service_status_summary?: {
-        running: number;
-        stopped: number;
-        total: number;
-    };
-    overall_status?: 'running' | 'stopped' | 'partial' | 'unknown';
-}
-
-interface UserPermissions {
-    access: boolean;
-    filemanager_access: boolean;
-    filemanager_write: boolean;
-    'start-stop': boolean;
-    exec: boolean;
-}
+import StackStatusBadge from '@/components/StackStatusBadge';
+import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
+import { findServiceStatus, getServiceDisplayState } from '@/utils/stack-utils';
 
 interface Props {
     server: Server;
     stack: Stack;
     userPermissions: UserPermissions;
-}
-
-interface LogsResponse {
-    stack: string;
-    service?: string;
-    lines: number;
-    logs: string;
 }
 
 export default function StackShow({ server, stack, userPermissions }: Props) {
@@ -239,31 +159,6 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         }
     };
 
-    const getStatusBadge = () => {
-        if (!stack.parsed_successfully) {
-            return <Badge variant="destructive">Parse Error</Badge>;
-        }
-        if (stack.service_count === 0) {
-            return <Badge variant="secondary">No Services</Badge>;
-        }
-        
-        // Show service status if available
-        if (stack.overall_status) {
-            switch (stack.overall_status) {
-                case 'running':
-                    return <Badge variant="default">Running</Badge>;
-                case 'stopped':
-                    return <Badge variant="outline">Stopped</Badge>;
-                case 'partial':
-                    return <Badge variant="secondary">Partial</Badge>;
-                case 'unknown':
-                default:
-                    return <Badge variant="outline">Unknown</Badge>;
-            }
-        }
-        
-        return null;
-    };
 
     return (
         <AppLayout>
@@ -281,7 +176,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             <h1 className="text-2xl font-bold flex items-center gap-2">
                                 <Container size={24} />
                                 {stack.name}
-                                {getStatusBadge()}
+                                <StackStatusBadge stack={stack} />
                             </h1>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {stack.path} on {server.display_name}
@@ -351,17 +246,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         <CardContent>
                             <div className="space-y-4">
                                 {Object.entries(stack.services).map(([serviceName, service]) => {
-                                    const serviceStatus = stack.service_status?.services?.find(s => {
-                                        const containerName = s.name.toLowerCase();
-                                        const searchService = serviceName.toLowerCase();
-                                        const stackNameLower = stack.name.toLowerCase();
-                                        const exactPattern = `${stackNameLower}-${searchService}-\\d+$`;
-                                        const regex = new RegExp(exactPattern);
-                                        return regex.test(containerName);
-                                    });
-                                    
-                                    const isRunning = serviceStatus?.state === 'running';
-                                    const displayState = serviceStatus?.state || 'stopped';
+                                    const { isRunning, displayState, serviceStatus } = getServiceDisplayState(stack, serviceName);
                                     
                                     return (
                                         <div key={serviceName} className="border rounded-lg p-4 dark:border-gray-700">
