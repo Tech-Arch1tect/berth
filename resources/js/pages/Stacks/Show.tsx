@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Container, Network, HardDrive, Settings, Globe, Lock, RefreshCw, FileText, Download, Play, Square, Terminal } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import FileManager from '@/components/file-manager';
 
 interface Server {
     id: number;
@@ -695,6 +696,13 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* File Manager */}
+                    <FileManager 
+                        serverId={server.id}
+                        stackName={stack.name}
+                        title="Stack Files"
+                    />
 
                     {/* Raw Configuration */}
                     {userPermissions.write && (

@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('api/servers/{server}/stacks', [StackController::class, 'apiIndex'])->name('api.stacks.index');
     Route::get('api/servers/{server}/stacks/{stackName}/status', [StackController::class, 'getServiceStatus'])->name('api.stacks.status');
     Route::get('api/servers/{server}/stacks/{stackName}/logs', [StackController::class, 'getLogs'])->name('api.stacks.logs');
+    Route::get('api/servers/{server}/stacks/{stackName}/files', [StackController::class, 'listFiles'])->name('api.stacks.files');
     Route::post('api/servers/{server}/stacks/{stackName}/up', [StackController::class, 'composeUp'])->name('api.stacks.up');
     Route::post('api/servers/{server}/stacks/{stackName}/down', [StackController::class, 'composeDown'])->name('api.stacks.down');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');
