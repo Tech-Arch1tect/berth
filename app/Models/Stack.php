@@ -90,8 +90,10 @@ class Stack
 
     public function getServiceStatusSummary(): array
     {
+        $totalDefinedServices = $this->getServiceCount();
+        
         if (!$this->service_status || !isset($this->service_status['services']) || !is_array($this->service_status['services'])) {
-            return ['running' => 0, 'stopped' => 0, 'total' => 0];
+            return ['running' => 0, 'stopped' => $totalDefinedServices, 'total' => $totalDefinedServices];
         }
 
         $running = 0;
@@ -107,10 +109,13 @@ class Stack
             }
         }
 
+        // Account for services not appearing in status (they are stopped)
+        $stoppedTotal = $totalDefinedServices - $running;
+
         return [
             'running' => $running,
-            'stopped' => $stopped,
-            'total' => $running + $stopped,
+            'stopped' => $stoppedTotal,
+            'total' => $totalDefinedServices,
         ];
     }
 
