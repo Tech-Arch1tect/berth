@@ -27,8 +27,9 @@ interface ServerRole {
     id: number;
     name: string;
     permissions: {
-        read: boolean;
-        write: boolean;
+        access: boolean;
+        filemanager_access: boolean;
+        filemanager_write: boolean;
         'start-stop': boolean;
         exec: boolean;
     };
@@ -47,8 +48,9 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
     const assignForm = useForm({
         role_id: '',
         permissions: {
-            read: false,
-            write: false,
+            access: false,
+            filemanager_access: false,
+            filemanager_write: false,
             'start-stop': false,
             exec: false,
         },
@@ -56,8 +58,9 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
 
     const editForm = useForm({
         permissions: {
-            read: false,
-            write: false,
+            access: false,
+            filemanager_access: false,
+            filemanager_write: false,
             'start-stop': false,
             exec: false,
         },
@@ -95,8 +98,9 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
         setEditingRole(role);
         editForm.setData({
             permissions: {
-                read: role.permissions.read,
-                write: role.permissions.write,
+                access: role.permissions.access,
+                filemanager_access: role.permissions.filemanager_access,
+                filemanager_write: role.permissions.filemanager_write,
                 'start-stop': role.permissions['start-stop'],
                 exec: role.permissions.exec,
             },
@@ -112,8 +116,9 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
 
     const getPermissionBadges = (permissions: ServerRole['permissions']) => {
         const badges = [];
-        if (permissions.read) badges.push(<Badge key="read" variant="default">Read</Badge>);
-        if (permissions.write) badges.push(<Badge key="write" variant="default">Write</Badge>);
+        if (permissions.access) badges.push(<Badge key="access" variant="default">Access</Badge>);
+        if (permissions.filemanager_access) badges.push(<Badge key="filemanager_access" variant="default">File Manager</Badge>);
+        if (permissions.filemanager_write) badges.push(<Badge key="filemanager_write" variant="default">File Edit</Badge>);
         if (permissions['start-stop']) badges.push(<Badge key="start-stop" variant="default">Start/Stop</Badge>);
         if (permissions.exec) badges.push(<Badge key="exec" variant="default">Exec</Badge>);
         return badges.length > 0 ? badges : [<Badge key="none" variant="outline">No Permissions</Badge>];
@@ -186,26 +191,38 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                     <div className="space-y-2 mt-2">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
-                                                id="assign-read"
-                                                checked={assignForm.data.permissions.read}
+                                                id="assign-access"
+                                                checked={assignForm.data.permissions.access}
                                                 onCheckedChange={(checked) =>
-                                                    handlePermissionChange('read', checked as boolean, assignForm)
+                                                    handlePermissionChange('access', checked as boolean, assignForm)
                                                 }
                                             />
-                                            <Label htmlFor="assign-read" className="text-sm">
-                                                Read - View logs and containers
+                                            <Label htmlFor="assign-access" className="text-sm">
+                                                Access - View stacks, logs and containers
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
-                                                id="assign-write"
-                                                checked={assignForm.data.permissions.write}
+                                                id="assign-filemanager-access"
+                                                checked={assignForm.data.permissions.filemanager_access}
                                                 onCheckedChange={(checked) =>
-                                                    handlePermissionChange('write', checked as boolean, assignForm)
+                                                    handlePermissionChange('filemanager_access', checked as boolean, assignForm)
                                                 }
                                             />
-                                            <Label htmlFor="assign-write" className="text-sm">
-                                                Write - Change configurations
+                                            <Label htmlFor="assign-filemanager-access" className="text-sm">
+                                                File Manager Access - Browse stack files
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="assign-filemanager-write"
+                                                checked={assignForm.data.permissions.filemanager_write}
+                                                onCheckedChange={(checked) =>
+                                                    handlePermissionChange('filemanager_write', checked as boolean, assignForm)
+                                                }
+                                            />
+                                            <Label htmlFor="assign-filemanager-write" className="text-sm">
+                                                File Manager Write - Edit and modify files
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -301,8 +318,9 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                                        <p><strong>Read:</strong> {role.permissions.read ? 'Allowed' : 'Denied'}</p>
-                                        <p><strong>Write:</strong> {role.permissions.write ? 'Allowed' : 'Denied'}</p>
+                                        <p><strong>Access:</strong> {role.permissions.access ? 'Allowed' : 'Denied'}</p>
+                                        <p><strong>File Manager Access:</strong> {role.permissions.filemanager_access ? 'Allowed' : 'Denied'}</p>
+                                        <p><strong>File Manager Write:</strong> {role.permissions.filemanager_write ? 'Allowed' : 'Denied'}</p>
                                         <p><strong>Start/Stop:</strong> {role.permissions['start-stop'] ? 'Allowed' : 'Denied'}</p>
                                         <p><strong>Exec:</strong> {role.permissions.exec ? 'Allowed' : 'Denied'}</p>
                                     </div>
@@ -324,26 +342,38 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                                 <div className="space-y-2 mt-2">
                                     <div className="flex items-center space-x-2">
                                         <Checkbox
-                                            id="edit-read"
-                                            checked={editForm.data.permissions.read}
+                                            id="edit-access"
+                                            checked={editForm.data.permissions.access}
                                             onCheckedChange={(checked) =>
-                                                handlePermissionChange('read', checked as boolean, editForm)
+                                                handlePermissionChange('access', checked as boolean, editForm)
                                             }
                                         />
-                                        <Label htmlFor="edit-read" className="text-sm">
-                                            Read - View logs and containers
+                                        <Label htmlFor="edit-access" className="text-sm">
+                                            Access - View stacks, logs and containers
                                         </Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <Checkbox
-                                            id="edit-write"
-                                            checked={editForm.data.permissions.write}
+                                            id="edit-filemanager-access"
+                                            checked={editForm.data.permissions.filemanager_access}
                                             onCheckedChange={(checked) =>
-                                                handlePermissionChange('write', checked as boolean, editForm)
+                                                handlePermissionChange('filemanager_access', checked as boolean, editForm)
                                             }
                                         />
-                                        <Label htmlFor="edit-write" className="text-sm">
-                                            Write - Change configurations
+                                        <Label htmlFor="edit-filemanager-access" className="text-sm">
+                                            File Manager Access - Browse stack files
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="edit-filemanager-write"
+                                            checked={editForm.data.permissions.filemanager_write}
+                                            onCheckedChange={(checked) =>
+                                                handlePermissionChange('filemanager_write', checked as boolean, editForm)
+                                            }
+                                        />
+                                        <Label htmlFor="edit-filemanager-write" className="text-sm">
+                                            File Manager Write - Edit and modify files
                                         </Label>
                                     </div>
                                     <div className="flex items-center space-x-2">

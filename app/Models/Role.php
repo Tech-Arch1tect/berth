@@ -30,7 +30,7 @@ class Role extends SpatieRole
     public function servers()
     {
         return $this->belongsToMany(Server::class)
-            ->withPivot(['can_read', 'can_write', 'can_start_stop', 'can_exec'])
+            ->withPivot(['can_access', 'can_filemanager_access', 'can_filemanager_write', 'can_start_stop', 'can_exec'])
             ->withTimestamps();
     }
 
@@ -43,8 +43,9 @@ class Role extends SpatieRole
         }
 
         return match($permission) {
-            'read' => $serverRole->pivot->can_read,
-            'write' => $serverRole->pivot->can_write,
+            'access' => $serverRole->pivot->can_access,
+            'filemanager_access' => $serverRole->pivot->can_filemanager_access,
+            'filemanager_write' => $serverRole->pivot->can_filemanager_write,
             'start-stop' => $serverRole->pivot->can_start_stop,
             'exec' => $serverRole->pivot->can_exec,
             default => false,
@@ -56,12 +57,19 @@ class Role extends SpatieRole
         $serverRole = $this->servers()->where('server_id', $server->id)->first();
         
         if (!$serverRole) {
-            return ['read' => false, 'write' => false, 'start-stop' => false, 'exec' => false];
+            return [
+                'access' => false, 
+                'filemanager_access' => false, 
+                'filemanager_write' => false, 
+                'start-stop' => false, 
+                'exec' => false
+            ];
         }
 
         return [
-            'read' => $serverRole->pivot->can_read,
-            'write' => $serverRole->pivot->can_write,
+            'access' => $serverRole->pivot->can_access,
+            'filemanager_access' => $serverRole->pivot->can_filemanager_access,
+            'filemanager_write' => $serverRole->pivot->can_filemanager_write,
             'start-stop' => $serverRole->pivot->can_start_stop,
             'exec' => $serverRole->pivot->can_exec,
         ];

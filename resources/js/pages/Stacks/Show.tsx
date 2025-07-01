@@ -78,8 +78,9 @@ interface Stack {
 }
 
 interface UserPermissions {
-    read: boolean;
-    write: boolean;
+    access: boolean;
+    filemanager_access: boolean;
+    filemanager_write: boolean;
     'start-stop': boolean;
     exec: boolean;
 }
@@ -698,14 +699,16 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     )}
 
                     {/* File Manager */}
-                    <FileManager 
-                        serverId={server.id}
-                        stackName={stack.name}
-                        title="Stack Files"
-                    />
+                    {userPermissions.filemanager_access && (
+                        <FileManager 
+                            serverId={server.id}
+                            stackName={stack.name}
+                            title="Stack Files"
+                        />
+                    )}
 
                     {/* Raw Configuration */}
-                    {userPermissions.write && (
+                    {userPermissions.filemanager_write && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">

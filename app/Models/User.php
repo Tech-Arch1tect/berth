@@ -80,7 +80,13 @@ class User extends Authenticatable
     {
         // Admins have all permissions
         if ($this->isAdmin()) {
-            return ['read' => true, 'write' => true, 'start-stop' => true, 'exec' => true];
+            return [
+                'access' => true, 
+                'filemanager_access' => true, 
+                'filemanager_write' => true, 
+                'start-stop' => true, 
+                'exec' => true
+            ];
         }
 
         // Load roles with servers relationship if not already loaded
@@ -90,13 +96,20 @@ class User extends Authenticatable
             $this->roles->load('servers');
         }
 
-        $permissions = ['read' => false, 'write' => false, 'start-stop' => false, 'exec' => false];
+        $permissions = [
+            'access' => false, 
+            'filemanager_access' => false, 
+            'filemanager_write' => false, 
+            'start-stop' => false, 
+            'exec' => false
+        ];
 
         // Aggregate permissions from all roles
         foreach ($this->roles as $role) {
             $rolePermissions = $role->getServerPermissions($server);
-            $permissions['read'] = $permissions['read'] || $rolePermissions['read'];
-            $permissions['write'] = $permissions['write'] || $rolePermissions['write'];
+            $permissions['access'] = $permissions['access'] || $rolePermissions['access'];
+            $permissions['filemanager_access'] = $permissions['filemanager_access'] || $rolePermissions['filemanager_access'];
+            $permissions['filemanager_write'] = $permissions['filemanager_write'] || $rolePermissions['filemanager_write'];
             $permissions['start-stop'] = $permissions['start-stop'] || $rolePermissions['start-stop'];
             $permissions['exec'] = $permissions['exec'] || $rolePermissions['exec'];
         }

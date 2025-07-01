@@ -30,8 +30,9 @@ class ServerPermissionController extends Controller
             'rolePermissions' => 'required|array',
             'rolePermissions.*.role_id' => 'required|exists:roles,id',
             'rolePermissions.*.permissions' => 'required|array',
-            'rolePermissions.*.permissions.read' => 'boolean',
-            'rolePermissions.*.permissions.write' => 'boolean',
+            'rolePermissions.*.permissions.access' => 'boolean',
+            'rolePermissions.*.permissions.filemanager_access' => 'boolean',
+            'rolePermissions.*.permissions.filemanager_write' => 'boolean',
             'rolePermissions.*.permissions.start-stop' => 'boolean',
             'rolePermissions.*.permissions.exec' => 'boolean',
         ]);
@@ -44,10 +45,11 @@ class ServerPermissionController extends Controller
             $permissions = $rolePermission['permissions'];
             
             // Only attach if at least one permission is granted
-            if ($permissions['read'] || $permissions['write'] || $permissions['start-stop'] || $permissions['exec']) {
+            if ($permissions['access'] || $permissions['filemanager_access'] || $permissions['filemanager_write'] || $permissions['start-stop'] || $permissions['exec']) {
                 $server->roles()->attach($rolePermission['role_id'], [
-                    'can_read' => $permissions['read'],
-                    'can_write' => $permissions['write'],
+                    'can_access' => $permissions['access'],
+                    'can_filemanager_access' => $permissions['filemanager_access'],
+                    'can_filemanager_write' => $permissions['filemanager_write'],
                     'can_start_stop' => $permissions['start-stop'],
                     'can_exec' => $permissions['exec'],
                 ]);
@@ -62,8 +64,9 @@ class ServerPermissionController extends Controller
         $request->validate([
             'role_id' => 'required|exists:roles,id',
             'permissions' => 'required|array',
-            'permissions.read' => 'boolean',
-            'permissions.write' => 'boolean',
+            'permissions.access' => 'boolean',
+            'permissions.filemanager_access' => 'boolean',
+            'permissions.filemanager_write' => 'boolean',
             'permissions.start-stop' => 'boolean',
             'permissions.exec' => 'boolean',
         ]);
@@ -76,13 +79,14 @@ class ServerPermissionController extends Controller
         }
 
         // Only assign if at least one permission is granted
-        if (!$permissions['read'] && !$permissions['write'] && !$permissions['start-stop'] && !$permissions['exec']) {
+        if (!$permissions['access'] && !$permissions['filemanager_access'] && !$permissions['filemanager_write'] && !$permissions['start-stop'] && !$permissions['exec']) {
             return back()->withErrors(['error' => 'At least one permission must be granted.']);
         }
 
         $server->roles()->attach($request->role_id, [
-            'can_read' => $permissions['read'],
-            'can_write' => $permissions['write'],
+            'can_access' => $permissions['access'],
+            'can_filemanager_access' => $permissions['filemanager_access'],
+            'can_filemanager_write' => $permissions['filemanager_write'],
             'can_start_stop' => $permissions['start-stop'],
             'can_exec' => $permissions['exec'],
         ]);
@@ -101,8 +105,9 @@ class ServerPermissionController extends Controller
     {
         $request->validate([
             'permissions' => 'required|array',
-            'permissions.read' => 'boolean',
-            'permissions.write' => 'boolean',
+            'permissions.access' => 'boolean',
+            'permissions.filemanager_access' => 'boolean',
+            'permissions.filemanager_write' => 'boolean',
             'permissions.start-stop' => 'boolean',
             'permissions.exec' => 'boolean',
         ]);
@@ -110,15 +115,16 @@ class ServerPermissionController extends Controller
         $permissions = $request->permissions;
 
         // If no permissions are granted, remove the role from the server
-        if (!$permissions['read'] && !$permissions['write'] && !$permissions['start-stop'] && !$permissions['exec']) {
+        if (!$permissions['access'] && !$permissions['filemanager_access'] && !$permissions['filemanager_write'] && !$permissions['start-stop'] && !$permissions['exec']) {
             $server->roles()->detach($role->id);
             return back()->with('success', 'Role removed from server (no permissions granted).');
         }
 
         // Update the permissions
         $server->roles()->updateExistingPivot($role->id, [
-            'can_read' => $permissions['read'],
-            'can_write' => $permissions['write'],
+            'can_access' => $permissions['access'],
+            'can_filemanager_access' => $permissions['filemanager_access'],
+            'can_filemanager_write' => $permissions['filemanager_write'],
             'can_start_stop' => $permissions['start-stop'],
             'can_exec' => $permissions['exec'],
         ]);

@@ -12,8 +12,8 @@ class StackController extends Controller
 {
     public function index(Request $request, Server $server)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
@@ -39,8 +39,8 @@ class StackController extends Controller
 
     public function show(Request $request, Server $server, string $stackName)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
@@ -77,8 +77,8 @@ class StackController extends Controller
 
     public function apiIndex(Request $request, Server $server)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 
@@ -176,8 +176,8 @@ class StackController extends Controller
 
     public function refresh(Request $request, Server $server)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 
@@ -196,8 +196,8 @@ class StackController extends Controller
 
     public function getServiceStatus(Request $request, Server $server, string $stackName)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 
@@ -213,8 +213,8 @@ class StackController extends Controller
 
     public function getLogs(Request $request, Server $server, string $stackName)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 
@@ -312,8 +312,8 @@ class StackController extends Controller
 
     public function listFiles(Request $request, Server $server, string $stackName)
     {
-        // Check if user has read permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'read')) {
+        // Check if user has filemanager_access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_access')) {
             return response()->json(['error' => 'Insufficient permissions'], 403);
         }
 
