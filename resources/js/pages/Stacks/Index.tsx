@@ -108,7 +108,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                         
                         if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
                             const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
-                            const total = serviceStatus.services.length;
+                            const total = stack.service_count;
                             const stopped = total - running;
                             
                             statusSummary = { running, stopped, total };
@@ -121,6 +121,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                 overallStatus = 'partial';
                             }
                         } else if (serviceStatus && serviceStatus.services === null) {
+                            statusSummary = { running: 0, stopped: stack.service_count, total: stack.service_count };
                             overallStatus = 'stopped';
                         }
                         
@@ -172,7 +173,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                         
                         if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
                             const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
-                            const total = serviceStatus.services.length;
+                            const total = stack.service_count;
                             const stopped = total - running;
                             
                             statusSummary = { running, stopped, total };
@@ -185,6 +186,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                 overallStatus = 'partial';
                             }
                         } else if (serviceStatus && serviceStatus.services === null) {
+                            statusSummary = { running: 0, stopped: stack.service_count, total: stack.service_count };
                             overallStatus = 'stopped';
                         }
                         
@@ -352,24 +354,29 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                                                 </div>
                                                 <div className="space-y-1">
                                                     {stack.service_names.slice(0, 3).map((service) => {
-                                                        // Find status for this service
-                                                        const serviceStatus = stack.service_status?.services?.find(s => 
-                                                            s.name.includes(service)
-                                                        );
+                                                        const serviceStatus = stack.service_status?.services?.find(s => {
+                                                            const containerName = s.name.toLowerCase();
+                                                            const searchService = service.toLowerCase();
+                                                            const stackNameLower = stack.name.toLowerCase();
+                                                            const exactPattern = `${stackNameLower}-${searchService}-\\d+$`;
+                                                            const regex = new RegExp(exactPattern);
+                                                            return regex.test(containerName);
+                                                        });
+                                                        
+                                                        const isRunning = serviceStatus?.state === 'running';
+                                                        const displayState = serviceStatus?.state || 'stopped';
                                                         
                                                         return (
                                                             <div key={service} className="flex items-center gap-2">
                                                                 <div className="text-xs text-gray-600 dark:text-gray-400">
                                                                     {service}
                                                                 </div>
-                                                                {serviceStatus && (
-                                                                    <Badge 
-                                                                        variant={serviceStatus.state === 'running' ? 'default' : 'outline'}
-                                                                        className="h-4 text-xs"
-                                                                    >
-                                                                        {serviceStatus.state}
-                                                                    </Badge>
-                                                                )}
+                                                                <Badge 
+                                                                    variant={isRunning ? 'default' : 'outline'}
+                                                                    className="h-4 text-xs"
+                                                                >
+                                                                    {displayState}
+                                                                </Badge>
                                                             </div>
                                                         );
                                                     })}

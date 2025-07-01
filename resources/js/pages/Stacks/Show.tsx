@@ -360,18 +360,19 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                         return regex.test(containerName);
                                     });
                                     
+                                    const isRunning = serviceStatus?.state === 'running';
+                                    const displayState = serviceStatus?.state || 'stopped';
+                                    
                                     return (
                                         <div key={serviceName} className="border rounded-lg p-4 dark:border-gray-700">
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-semibold text-lg">{serviceName}</h3>
-                                                    {serviceStatus && (
-                                                        <Badge 
-                                                            variant={serviceStatus.state === 'running' ? 'default' : 'outline'}
-                                                        >
-                                                            {serviceStatus.state}
-                                                        </Badge>
-                                                    )}
+                                                    <Badge 
+                                                        variant={isRunning ? 'default' : 'outline'}
+                                                    >
+                                                        {displayState}
+                                                    </Badge>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {userPermissions['start-stop'] && (
