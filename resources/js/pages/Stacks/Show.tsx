@@ -296,7 +296,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                     size="sm"
                                 >
                                     <Play className={`mr-2 h-4 w-4 ${isStarting ? 'animate-spin' : ''}`} />
-                                    Start All
+                                    Up All
                                 </Button>
                                 <Button
                                     onClick={() => stopStack()}
@@ -305,7 +305,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                     size="sm"
                                 >
                                     <Square className={`mr-2 h-4 w-4 ${isStopping ? 'animate-spin' : ''}`} />
-                                    Stop All
+                                    Down All
                                 </Button>
                             </>
                         )}
