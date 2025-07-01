@@ -8,6 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import StackStatusBadge from '@/components/StackStatusBadge';
 import type { Server, Stack } from '@/types/entities';
 import { calculateServiceStatusSummary, findServiceStatus } from '@/utils/stack-utils';
+import { apiGet } from '@/utils/api';
 
 interface UserPermissions {
     read: boolean;
@@ -60,9 +61,11 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
 
     const fetchServiceStatus = async (stackName: string) => {
         try {
-            const response = await fetch(`/api/servers/${server.id}/stacks/${stackName}/status`);
-            if (response.ok) {
-                return await response.json();
+            const response = await apiGet(`/api/servers/${server.id}/stacks/${stackName}/status`);
+            if (response.success) {
+                return response.data;
+            } else {
+                console.error(`Failed to fetch status for stack ${stackName}:`, response.error);
             }
         } catch (err) {
             console.error(`Failed to fetch status for stack ${stackName}:`, err);
@@ -73,13 +76,12 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
     const refreshStacks = async () => {
         setIsRefreshing(true);
         try {
-            const response = await fetch(`/servers/${server.id}/stacks/refresh`);
-            const data = await response.json();
+            const response = await apiGet(`/servers/${server.id}/stacks/refresh`);
             
-            if (response.ok) {
+            if (response.success && response.data) {
                 // Fetch service status for each stack
                 const stacksWithStatus = await Promise.all(
-                    data.stacks.map(async (stack: Stack) => {
+                    response.data.stacks.map(async (stack: Stack) => {
                         const serviceStatus = await fetchServiceStatus(stack.name);
                         
                         // Calculate status summary
@@ -99,7 +101,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error, user
                 setStacks(stacksWithStatus);
                 setLastRefresh(new Date());
             } else {
-                console.error('Failed to refresh stacks:', data.error);
+                console.error('Failed to refresh stacks:', response.error);
             }
         } catch (err) {
             console.error('Failed to refresh stacks:', err);

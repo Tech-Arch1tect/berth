@@ -11,6 +11,7 @@ import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
 import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
 import { findServiceStatus, getServiceDisplayState } from '@/utils/stack-utils';
+import { apiPost, apiGet } from '@/utils/api';
 
 interface Props {
     server: Server;
@@ -46,12 +47,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                 params.append('service', selectedService);
             }
             
-            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/logs?${params}`);
-            if (response.ok) {
-                const logsData = await response.json();
-                setLogs(logsData);
+            const response = await apiGet<LogsResponse>(`/api/servers/${server.id}/stacks/${stack.name}/logs?${params}`);
+            if (response.success) {
+                setLogs(response.data || null);
             } else {
-                console.error('Failed to fetch logs:', response.statusText);
+                console.error('Failed to fetch logs:', response.error);
             }
         } catch (err) {
             console.error('Failed to fetch logs:', err);
@@ -70,23 +70,15 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const startStack = async (services?: string[]) => {
         setIsStarting(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/up`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                body: JSON.stringify({ services: services || [] }),
+            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/up`, {
+                services: services || []
             });
             
-            if (response.ok) {
-                const result = await response.json();
-                console.log('Stack started:', result);
+            if (response.success) {
+                console.log('Stack started:', response.data);
                 refreshStack();
             } else {
-                const error = await response.json();
-                console.error('Failed to start stack:', error);
+                console.error('Failed to start stack:', response.error);
             }
         } catch (err) {
             console.error('Failed to start stack:', err);
@@ -98,23 +90,15 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const stopStack = async (services?: string[]) => {
         setIsStopping(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/down`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                body: JSON.stringify({ services: services || [] }),
+            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/down`, {
+                services: services || []
             });
             
-            if (response.ok) {
-                const result = await response.json();
-                console.log('Stack stopped:', result);
+            if (response.success) {
+                console.log('Stack stopped:', response.data);
                 refreshStack();
             } else {
-                const error = await response.json();
-                console.error('Failed to stop stack:', error);
+                console.error('Failed to stop stack:', response.error);
             }
         } catch (err) {
             console.error('Failed to stop stack:', err);
@@ -132,25 +116,15 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         setExecResult(null);
         
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const response = await fetch(`/api/servers/${server.id}/stacks/${stack.name}/exec`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                body: JSON.stringify({ 
-                    service: execService,
-                    command: execCommand.trim().split(' ').filter(cmd => cmd.length > 0)
-                }),
+            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/exec`, {
+                service: execService,
+                command: execCommand.trim().split(' ').filter(cmd => cmd.length > 0)
             });
             
-            if (response.ok) {
-                const result = await response.json();
-                setExecResult(result);
+            if (response.success) {
+                setExecResult(response.data);
             } else {
-                const error = await response.json();
-                setExecResult({ error: error.error || 'Command execution failed' });
+                setExecResult({ error: response.error || 'Command execution failed' });
             }
         } catch (err) {
             setExecResult({ error: `Failed to execute command: ${err}` });
