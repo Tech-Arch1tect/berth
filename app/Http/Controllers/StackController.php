@@ -328,6 +328,28 @@ class StackController extends Controller
         }
     }
 
+    public function readFile(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_access')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $path = $request->query('path');
+            if (!$path) {
+                return response()->json(['error' => 'Path parameter is required'], 400);
+            }
+            
+            $fileData = $this->fetchFileFromServer($server, $stackName, $path);
+            return response()->json($fileData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     protected function fetchFilesFromServer(Server $server, string $stackName, string $path = '.'): array
     {
         $protocol = $server->https ? 'https' : 'http';
@@ -353,6 +375,37 @@ class StackController extends Controller
         }
 
         return $filesData;
+    }
+
+    protected function fetchFileFromServer(Server $server, string $stackName, string $path): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
+        
+        $queryParams = ['path' => $path];
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])
+            ->get($url, $queryParams);
+
+        if (!$response->successful()) {
+            $errorData = $response->json();
+            if (isset($errorData['error'])) {
+                throw new \Exception($errorData['error']);
+            }
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $fileData = $response->json();
+        
+        if (!is_array($fileData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $fileData;
     }
 
     protected function sendComposeCommand(Server $server, string $stackName, string $action, array $params = []): array

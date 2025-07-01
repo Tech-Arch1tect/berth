@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Folder, File, ArrowLeft, RefreshCw, FolderOpen } from 'lucide-react';
+import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye } from 'lucide-react';
+import FileViewer from '@/components/file-viewer';
 
 interface FileInfo {
     name: string;
@@ -27,6 +28,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [currentPath, setCurrentPath] = useState<string>('.');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [viewingFile, setViewingFile] = useState<{ path: string; name: string } | null>(null);
 
     const fetchFiles = async (path: string = '.') => {
         setIsLoading(true);
@@ -79,6 +81,24 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         if (currentPath === '.') return ['root'];
         const parts = currentPath.split('/').filter(part => part !== '');
         return ['root', ...parts];
+    };
+
+    const handleFileClick = (file: FileInfo) => {
+        if (file.isDir) {
+            const newPath = currentPath === '.' 
+                ? file.name 
+                : `${currentPath}/${file.name}`;
+            navigateToPath(newPath);
+        } else {
+            const filePath = currentPath === '.' 
+                ? file.name 
+                : `${currentPath}/${file.name}`;
+            setViewingFile({ path: filePath, name: file.name });
+        }
+    };
+
+    const closeFileViewer = () => {
+        setViewingFile(null);
     };
 
     return (
@@ -174,21 +194,12 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                     .map((file) => (
                                         <div
                                             key={file.name}
-                                            className={`flex items-center justify-between p-3 rounded-lg border dark:border-gray-700 ${
-                                                file.isDir 
-                                                    ? 'hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer' 
-                                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                                            }`}
-                                            onClick={() => {
-                                                if (file.isDir) {
-                                                    const newPath = currentPath === '.' 
-                                                        ? file.name 
-                                                        : `${currentPath}/${file.name}`;
-                                                    navigateToPath(newPath);
-                                                }
-                                            }}
+                                            className="flex items-center justify-between p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div 
+                                                className={`flex items-center gap-3 flex-1 ${file.isDir ? 'cursor-pointer' : ''}`}
+                                                onClick={() => file.isDir && handleFileClick(file)}
+                                            >
                                                 {file.isDir ? (
                                                     <Folder size={20} className="text-blue-500 dark:text-blue-400" />
                                                 ) : (
@@ -206,6 +217,16 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {!file.isDir && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleFileClick(file)}
+                                                    >
+                                                        <Eye size={14} className="mr-1" />
+                                                        View
+                                                    </Button>
+                                                )}
                                                 <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
                                                     {file.isDir ? 'Directory' : 'File'}
                                                 </Badge>
@@ -222,6 +243,18 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     </div>
                 )}
             </CardContent>
+            
+            {/* File Viewer */}
+            {viewingFile && (
+                <FileViewer
+                    serverId={serverId}
+                    stackName={stackName}
+                    filePath={viewingFile.path}
+                    fileName={viewingFile.name}
+                    isOpen={!!viewingFile}
+                    onClose={closeFileViewer}
+                />
+            )}
         </Card>
     );
 }
