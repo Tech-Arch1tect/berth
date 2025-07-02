@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus } from 'lucide-react';
+import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2 } from 'lucide-react';
 import FileViewer from '@/components/file-viewer';
 
 interface FileInfo {
@@ -36,6 +36,9 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [newFileName, setNewFileName] = useState('');
     const [newFileContent, setNewFileContent] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchFiles = async (path: string = '.') => {
         setIsLoading(true);
@@ -143,6 +146,53 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         } finally {
             setIsCreating(false);
         }
+    };
+
+    const deleteFileOrFolder = async () => {
+        if (!fileToDelete) return;
+        
+        setIsDeleting(true);
+        setError(null);
+        
+        try {
+            const filePath = currentPath === '.' ? fileToDelete.name : `${currentPath}/${fileToDelete.name}`;
+            const params = new URLSearchParams({ path: filePath });
+            
+            if (fileToDelete.isDir) {
+                params.append('recursive', 'true');
+            }
+            
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+
+            if (response.ok) {
+                setDeleteConfirmOpen(false);
+                setFileToDelete(null);
+                await fetchFiles(currentPath);
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to delete file');
+                setDeleteConfirmOpen(false);
+            }
+        } catch (err) {
+            setError(`Failed to delete file: ${err}`);
+            setDeleteConfirmOpen(false);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleDeleteClick = (file: FileInfo) => {
+        setFileToDelete(file);
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleFileDeleted = () => {
+        fetchFiles(currentPath);
     };
 
     return (
@@ -336,6 +386,17 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         View
                                                     </Button>
                                                 )}
+                                                {canWrite && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteClick(file)}
+                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                                    >
+                                                        <Trash2 size={14} className="mr-1" />
+                                                        Delete
+                                                    </Button>
+                                                )}
                                                 <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
                                                     {file.isDir ? 'Directory' : 'File'}
                                                 </Badge>
@@ -363,8 +424,44 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     isOpen={!!viewingFile}
                     onClose={closeFileViewer}
                     canWrite={canWrite}
+                    onFileDeleted={handleFileDeleted}
                 />
             )}
+            
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Trash2 size={20} className="text-red-500" />
+                            Delete {fileToDelete?.isDir ? 'Directory' : 'File'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>{fileToDelete?.name}</strong>? 
+                            {fileToDelete?.isDir && ' This will delete the directory and all its contents.'} This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteConfirmOpen(false);
+                                setFileToDelete(null);
+                            }}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={deleteFileOrFolder}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

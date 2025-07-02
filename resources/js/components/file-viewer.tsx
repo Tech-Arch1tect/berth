@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { File, Download, Copy, Eye, Edit, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { File, Download, Copy, Eye, Edit, Save, X, Trash2 } from 'lucide-react';
 
 interface FileData {
     stack: string;
@@ -20,15 +20,18 @@ interface FileViewerProps {
     isOpen: boolean;
     onClose: () => void;
     canWrite?: boolean;
+    onFileDeleted?: () => void;
 }
 
-export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false }: FileViewerProps) {
+export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false, onFileDeleted }: FileViewerProps) {
     const [fileData, setFileData] = useState<FileData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchFile = async () => {
         if (!isOpen || !filePath) return;
@@ -142,6 +145,40 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         }
     };
 
+    const deleteFile = async () => {
+        if (!fileData) return;
+        
+        setIsDeleting(true);
+        setError(null);
+        
+        try {
+            const params = new URLSearchParams({ path: filePath });
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+
+            if (response.ok) {
+                setShowDeleteConfirm(false);
+                onClose();
+                if (onFileDeleted) {
+                    onFileDeleted();
+                }
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to delete file');
+                setShowDeleteConfirm(false);
+            }
+        } catch (err) {
+            setError(`Failed to delete file: ${err}`);
+            setShowDeleteConfirm(false);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -182,14 +219,25 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                             ) : (
                                 <>
                                     {canWrite && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={startEditing}
-                                        >
-                                            <Edit size={14} className="mr-1" />
-                                            Edit
-                                        </Button>
+                                        <>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={startEditing}
+                                            >
+                                                <Edit size={14} className="mr-1" />
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setShowDeleteConfirm(true)}
+                                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                            >
+                                                <Trash2 size={14} className="mr-1" />
+                                                Delete
+                                            </Button>
+                                        </>
                                     )}
                                     <Button
                                         variant="outline"
@@ -270,6 +318,37 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                     )}
                 </div>
             </DialogContent>
+            
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Trash2 size={20} className="text-red-500" />
+                            Delete File
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>{fileName}</strong>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={deleteFile}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Deleting...' : 'Delete File'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     );
 }

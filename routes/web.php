@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'readFile'])->name('api.stacks.file');
     Route::post('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'createFile'])->name('api.stacks.file.create');
     Route::put('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'updateFile'])->name('api.stacks.file.update');
+    Route::delete('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'deleteFile'])->name('api.stacks.file.delete');
     Route::post('api/servers/{server}/stacks/{stackName}/up', [StackController::class, 'composeUp'])->name('api.stacks.up');
     Route::post('api/servers/{server}/stacks/{stackName}/down', [StackController::class, 'composeDown'])->name('api.stacks.down');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');

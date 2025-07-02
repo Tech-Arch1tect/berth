@@ -398,6 +398,30 @@ class StackController extends Controller
         }
     }
 
+    public function deleteFile(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_write permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_write')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $path = $request->query('path');
+            $recursive = $request->query('recursive', 'false') === 'true';
+            
+            if (!$path) {
+                return response()->json(['error' => 'Path parameter is required'], 400);
+            }
+            
+            $result = $this->sendFileDeleteRequest($server, $stackName, $path, $recursive);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to delete file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     protected function fetchFilesFromServer(Server $server, string $stackName, string $path = '.'): array
     {
         $protocol = $server->https ? 'https' : 'http';
@@ -534,6 +558,40 @@ class StackController extends Controller
                 'Content-Type' => 'application/json',
             ])
             ->put($url . '?' . http_build_query($queryParams), $bodyData);
+
+        if (!$response->successful()) {
+            $errorData = $response->json();
+            if (isset($errorData['error'])) {
+                throw new \Exception($errorData['error']);
+            }
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $responseData = $response->json();
+        
+        if (!is_array($responseData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $responseData;
+    }
+
+    protected function sendFileDeleteRequest(Server $server, string $stackName, string $path, bool $recursive = false): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
+        
+        $queryParams = ['path' => $path];
+        if ($recursive) {
+            $queryParams['recursive'] = 'true';
+        }
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])
+            ->delete($url . '?' . http_build_query($queryParams));
 
         if (!$response->successful()) {
             $errorData = $response->json();
