@@ -362,6 +362,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     fileName={viewingFile.name}
                     isOpen={!!viewingFile}
                     onClose={closeFileViewer}
+                    canWrite={canWrite}
                 />
             )}
         </Card>

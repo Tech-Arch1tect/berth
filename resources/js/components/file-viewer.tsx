@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { File, Download, Copy, Eye } from 'lucide-react';
+import { File, Download, Copy, Eye, Edit, Save, X } from 'lucide-react';
 
 interface FileData {
     stack: string;
@@ -19,12 +19,16 @@ interface FileViewerProps {
     fileName: string;
     isOpen: boolean;
     onClose: () => void;
+    canWrite?: boolean;
 }
 
-export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose }: FileViewerProps) {
+export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false }: FileViewerProps) {
     const [fileData, setFileData] = useState<FileData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     const fetchFile = async () => {
         if (!isOpen || !filePath) return;
@@ -86,6 +90,58 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         }
     };
 
+    const startEditing = () => {
+        if (fileData?.content) {
+            setEditContent(fileData.content);
+            setIsEditing(true);
+        }
+    };
+
+    const cancelEditing = () => {
+        setIsEditing(false);
+        setEditContent('');
+        setError(null);
+    };
+
+    const saveFile = async () => {
+        if (!fileData) return;
+        
+        setIsSaving(true);
+        setError(null);
+        
+        try {
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    path: filePath,
+                    content: editContent
+                })
+            });
+
+            if (response.ok) {
+                const updatedData = await response.json();
+                setFileData({
+                    ...fileData,
+                    content: editContent,
+                    size: updatedData.size || editContent.length
+                });
+                setIsEditing(false);
+                setEditContent('');
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to save file');
+            }
+        } catch (err) {
+            setError(`Failed to save file: ${err}`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -102,23 +158,58 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                     </DialogTitle>
                     {fileData && (
                         <div className="flex items-center gap-2 mt-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={copyToClipboard}
-                                disabled={!fileData.content}
-                            >
-                                <Copy size={14} className="mr-1" />
-                                Copy
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={downloadFile}
-                            >
-                                <Download size={14} className="mr-1" />
-                                Download
-                            </Button>
+                            {isEditing ? (
+                                <>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={saveFile}
+                                        disabled={isSaving}
+                                    >
+                                        <Save size={14} className="mr-1" />
+                                        {isSaving ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={cancelEditing}
+                                        disabled={isSaving}
+                                    >
+                                        <X size={14} className="mr-1" />
+                                        Cancel
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    {canWrite && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={startEditing}
+                                        >
+                                            <Edit size={14} className="mr-1" />
+                                            Edit
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={copyToClipboard}
+                                        disabled={!fileData.content}
+                                    >
+                                        <Copy size={14} className="mr-1" />
+                                        Copy
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={downloadFile}
+                                    >
+                                        <Download size={14} className="mr-1" />
+                                        Download
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     )}
                 </DialogHeader>
@@ -152,10 +243,21 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                 <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b text-sm text-gray-600 dark:text-gray-400">
                                     <span>Path: {fileData.path}</span>
                                     <span className="ml-4">Size: {formatFileSize(fileData.size)}</span>
+                                    {isEditing && <span className="ml-4 text-orange-500 dark:text-orange-400">Editing</span>}
                                 </div>
-                                <pre className="bg-gray-900 text-green-400 p-4 text-sm font-mono whitespace-pre-wrap overflow-auto h-full">
-                                    {fileData.content}
-                                </pre>
+                                {isEditing ? (
+                                    <textarea
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        className="w-full h-full p-4 text-sm font-mono bg-gray-900 text-green-400 border-0 outline-none resize-none"
+                                        style={{ minHeight: '400px' }}
+                                        placeholder="Enter file content..."
+                                    />
+                                ) : (
+                                    <pre className="bg-gray-900 text-green-400 p-4 text-sm font-mono whitespace-pre-wrap overflow-auto h-full">
+                                        {fileData.content}
+                                    </pre>
+                                )}
                             </div>
                         </div>
                     ) : (
