@@ -432,6 +432,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             serverId={server.id}
                             stackName={stack.name}
                             title="Stack Files"
+                            canWrite={userPermissions.filemanager_write}
                         />
                     )}
 

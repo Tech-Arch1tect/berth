@@ -350,6 +350,30 @@ class StackController extends Controller
         }
     }
 
+    public function createFile(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_write permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_write')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $path = $request->input('path');
+            $content = $request->input('content', '');
+            
+            if (!$path) {
+                return response()->json(['error' => 'Path parameter is required'], 400);
+            }
+            
+            $result = $this->sendFileCreateRequest($server, $stackName, $path, $content);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to create file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     protected function fetchFilesFromServer(Server $server, string $stackName, string $path = '.'): array
     {
         $protocol = $server->https ? 'https' : 'http';
@@ -420,6 +444,39 @@ class StackController extends Controller
                 'Content-Type' => 'application/json',
             ])
             ->post($url, $params);
+
+        if (!$response->successful()) {
+            $errorData = $response->json();
+            if (isset($errorData['error'])) {
+                throw new \Exception($errorData['error']);
+            }
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $responseData = $response->json();
+        
+        if (!is_array($responseData)) {
+            throw new \Exception("Invalid response format from server");
+        }
+
+        return $responseData;
+    }
+
+    protected function sendFileCreateRequest(Server $server, string $stackName, string $path, string $content): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
+        
+        $queryParams = ['path' => $path];
+        $bodyData = ['content' => $content];
+        
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])
+            ->post($url . '?' . http_build_query($queryParams), $bodyData);
 
         if (!$response->successful()) {
             $errorData = $response->json();

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus } from 'lucide-react';
 import FileViewer from '@/components/file-viewer';
 
 interface FileInfo {
@@ -21,14 +23,19 @@ interface FileManagerProps {
     serverId: number;
     stackName: string;
     title?: string;
+    canWrite?: boolean;
 }
 
-export default function FileManager({ serverId, stackName, title = "Stack Files" }: FileManagerProps) {
+export default function FileManager({ serverId, stackName, title = "Stack Files", canWrite = false }: FileManagerProps) {
     const [files, setFiles] = useState<FilesResponse | null>(null);
     const [currentPath, setCurrentPath] = useState<string>('.');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [viewingFile, setViewingFile] = useState<{ path: string; name: string } | null>(null);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [newFileName, setNewFileName] = useState('');
+    const [newFileContent, setNewFileContent] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
 
     const fetchFiles = async (path: string = '.') => {
         setIsLoading(true);
@@ -101,6 +108,43 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         setViewingFile(null);
     };
 
+    const createFile = async () => {
+        if (!newFileName.trim()) {
+            setError('File name is required');
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            const filePath = currentPath === '.' ? newFileName : `${currentPath}/${newFileName}`;
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    path: filePath,
+                    content: newFileContent
+                })
+            });
+
+            if (response.ok) {
+                setCreateDialogOpen(false);
+                setNewFileName('');
+                setNewFileContent('');
+                await fetchFiles(currentPath); // Refresh the file list
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to create file');
+            }
+        } catch (err) {
+            setError(`Failed to create file: ${err}`);
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -114,15 +158,80 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             </span>
                         )}
                     </CardTitle>
-                    <Button
-                        onClick={() => fetchFiles(currentPath)}
-                        disabled={isLoading}
-                        variant="outline"
-                        size="sm"
-                    >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {canWrite && (
+                            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create File
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Create New File</DialogTitle>
+                                        <DialogDescription>
+                                            Create a new file in the current directory ({currentPath === '.' ? 'root' : currentPath})
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label htmlFor="fileName" className="text-sm font-medium">
+                                                File Name
+                                            </label>
+                                            <Input
+                                                id="fileName"
+                                                value={newFileName}
+                                                onChange={(e) => setNewFileName(e.target.value)}
+                                                placeholder="example.txt"
+                                                className="mt-1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="fileContent" className="text-sm font-medium">
+                                                File Content
+                                            </label>
+                                            <textarea
+                                                id="fileContent"
+                                                value={newFileContent}
+                                                onChange={(e) => setNewFileContent(e.target.value)}
+                                                placeholder="Enter file content..."
+                                                rows={10}
+                                                className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono resize-vertical"
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setCreateDialogOpen(false);
+                                                setNewFileName('');
+                                                setNewFileContent('');
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={createFile}
+                                            disabled={isCreating || !newFileName.trim()}
+                                        >
+                                            {isCreating ? 'Creating...' : 'Create File'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                        <Button
+                            onClick={() => fetchFiles(currentPath)}
+                            disabled={isLoading}
+                            variant="outline"
+                            size="sm"
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
