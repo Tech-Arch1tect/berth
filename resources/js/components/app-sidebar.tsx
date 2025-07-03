@@ -37,12 +37,12 @@ const adminNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        href: 'https://github.com/Tech-Arch1tect/berth',
         icon: Folder,
     },
     {
         title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        href: 'https://github.com/Tech-Arch1tect/berth/blob/main/README.md',
         icon: BookOpen,
     },
 ];
