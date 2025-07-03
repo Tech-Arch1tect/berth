@@ -11,10 +11,12 @@ interface FlashMessages {
 }
 
 export default function FlashMessages() {
-    const { flash } = usePage().props as { flash: FlashMessages };
+    const { flash } = usePage().props as { flash?: FlashMessages };
     const [visible, setVisible] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
+        // If no flash messages, don't do anything
+        if (!flash) return;
         // Show any new flash messages
         const newVisible: Record<string, boolean> = {};
         Object.entries(flash).forEach(([type, message]) => {
@@ -66,6 +68,9 @@ export default function FlashMessages() {
                 return '';
         }
     };
+
+    // If no flash messages, don't render anything
+    if (!flash) return null;
 
     return (
         <div className="space-y-2">

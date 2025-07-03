@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Container, Network, Settings, RefreshCw, FileText, Download, Play, Square, Terminal, AlertCircle, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import { Container, Network, Settings, RefreshCw, FileText, Download, Terminal, AlertCircle, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
@@ -82,7 +82,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         if (logs) {
             fetchLogs();
         }
-    }, [selectedService, logTail, fetchLogs]);
+    }, [logs, selectedService, logTail, fetchLogs]);
 
     const bringStackUp = async (services?: string[]) => {
         setIsBringingUp(true);

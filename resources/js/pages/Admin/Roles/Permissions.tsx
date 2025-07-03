@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,7 +36,16 @@ interface Props {
 
 export default function RolePermissions({ role, roleServers, allServers }: Props) {
     const [serverPermissions, setServerPermissions] = useState(() => {
-        const permissions: Record<number, any> = {};
+        const permissions: Record<number, {
+            server_id: number;
+            permissions: {
+                access: boolean;
+                filemanager_access: boolean;
+                filemanager_write: boolean;
+                'start-stop': boolean;
+                exec: boolean;
+            };
+        }> = {};
         
         roleServers.forEach((server) => {
             permissions[server.id] = {
@@ -91,7 +100,7 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
             onSuccess: () => {
                 setProcessing(false);
             },
-            onError: (errors) => {
+            onError: () => {
                 setProcessing(false);
             },
             onFinish: () => {

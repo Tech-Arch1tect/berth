@@ -3,8 +3,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Server, Container, Activity, Layers3, ChevronRight, Plus, Settings } from 'lucide-react';
+import { Server, Container, Activity, Layers3, ChevronRight, Settings } from 'lucide-react';
 import type { Server as ServerType } from '@/types/entities';
 
 const breadcrumbs: BreadcrumbItem[] = [
