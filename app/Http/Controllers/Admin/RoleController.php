@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\Server;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -54,5 +55,54 @@ class RoleController extends Controller
         $role->delete();
 
         return back()->with('success', 'Role deleted successfully.');
+    }
+
+    public function permissions(Role $role)
+    {
+        $role->load('servers');
+        $allServers = Server::all();
+        
+        $roleServers = $role->getServersWithPermissions();
+        
+        return Inertia::render('Admin/Roles/Permissions', [
+            'role' => $role,
+            'roleServers' => $roleServers,
+            'allServers' => $allServers,
+        ]);
+    }
+
+    public function updatePermissions(Request $request, Role $role)
+    {
+        $request->validate([
+            'serverPermissions' => 'required|array',
+            'serverPermissions.*.server_id' => 'required|exists:servers,id',
+            'serverPermissions.*.permissions' => 'required|array',
+            'serverPermissions.*.permissions.access' => 'boolean',
+            'serverPermissions.*.permissions.filemanager_access' => 'boolean',
+            'serverPermissions.*.permissions.filemanager_write' => 'boolean',
+            'serverPermissions.*.permissions.start-stop' => 'boolean',
+            'serverPermissions.*.permissions.exec' => 'boolean',
+        ]);
+
+        // Clear existing permissions for this role
+        $role->servers()->detach();
+
+        // Add new permissions
+        foreach ($request->serverPermissions as $serverPermission) {
+            $permissions = $serverPermission['permissions'];
+            
+            // Only attach if at least one permission is granted
+            if ($permissions['access'] || $permissions['filemanager_access'] || $permissions['filemanager_write'] || $permissions['start-stop'] || $permissions['exec']) {
+                $role->servers()->attach($serverPermission['server_id'], [
+                    'can_access' => $permissions['access'],
+                    'can_filemanager_access' => $permissions['filemanager_access'],
+                    'can_filemanager_write' => $permissions['filemanager_write'],
+                    'can_start_stop' => $permissions['start-stop'],
+                    'can_exec' => $permissions['exec'],
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Role permissions updated successfully.');
     }
 }

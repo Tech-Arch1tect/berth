@@ -5,7 +5,6 @@ use Inertia\Inertia;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
-use App\Http\Controllers\Admin\ServerPermissionController;
 use App\Http\Controllers\StackController;
 use App\Http\Middleware\CheckAdminRole;
 
@@ -47,6 +46,10 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     
+    // Role permissions management
+    Route::get('roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+    Route::post('roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
+    
     // User management
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.updateRoles');
@@ -60,11 +63,6 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     Route::delete('servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
     Route::get('servers/{server}/health', [ServerController::class, 'healthCheck'])->name('servers.health');
     
-    // Server permissions
-    Route::get('servers/{server}/permissions', [ServerPermissionController::class, 'index'])->name('servers.permissions.index');
-    Route::post('servers/{server}/permissions/assign', [ServerPermissionController::class, 'assignRole'])->name('servers.permissions.assign');
-    Route::put('servers/{server}/permissions/roles/{role}', [ServerPermissionController::class, 'updateRolePermissions'])->name('servers.permissions.update');
-    Route::delete('servers/{server}/permissions/roles/{role}', [ServerPermissionController::class, 'removeRole'])->name('servers.permissions.remove');
 });
 
 require __DIR__.'/settings.php';

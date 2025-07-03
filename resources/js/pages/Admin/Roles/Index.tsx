@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Shield } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import type { Server as BaseServer } from '@/types/entities';
 
 interface Server extends BaseServer {
     pivot?: {
-        can_read: boolean;
-        can_write: boolean;
+        can_access: boolean;
+        can_filemanager_access: boolean;
+        can_filemanager_write: boolean;
         can_start_stop: boolean;
+        can_exec: boolean;
     };
 }
 
@@ -128,6 +131,16 @@ export default function RolesIndex({ roles }: Props) {
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            asChild
+                                        >
+                                            <Link href={`/admin/roles/${role.id}/permissions`}>
+                                                <Shield className="h-4 w-4 mr-1" />
+                                                Permissions
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => openEditDialog(role)}
                                         >
                                             Edit
@@ -156,23 +169,30 @@ export default function RolesIndex({ roles }: Props) {
                                                 Server Access ({role.servers.length}):
                                             </p>
                                             <div className="space-y-1">
-                                                {role.servers.map((server) => (
+                                                {role.servers.slice(0, 3).map((server) => (
                                                     <div key={server.id} className="text-xs text-gray-600 dark:text-gray-400">
                                                         <span className="font-medium">{server.display_name}</span>
                                                         <span className="ml-2">
                                                             {[
-                                                                server.pivot?.can_read && 'Read',
-                                                                server.pivot?.can_write && 'Write', 
-                                                                server.pivot?.can_start_stop && 'Start/Stop'
+                                                                server.pivot?.can_access && 'Access',
+                                                                server.pivot?.can_filemanager_access && 'Files',
+                                                                server.pivot?.can_filemanager_write && 'Edit', 
+                                                                server.pivot?.can_start_stop && 'Up/Down',
+                                                                server.pivot?.can_exec && 'Exec'
                                                             ].filter(Boolean).join(', ') || 'No permissions'}
                                                         </span>
                                                     </div>
                                                 ))}
+                                                {role.servers.length > 3 && (
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        and {role.servers.length - 3} more servers...
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     ) : (
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            No server access configured
+                                            No server access configured - Click "Permissions" to grant access
                                         </p>
                                     )}
                                 </div>

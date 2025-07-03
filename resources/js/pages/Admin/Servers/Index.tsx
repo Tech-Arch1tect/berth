@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield, Container, Server as ServerIcon, Plus, Edit, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Container, Server as ServerIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -313,14 +313,6 @@ export default function ServersIndex({ servers }: Props) {
                                             title="View Stacks"
                                         >
                                             <Container className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => window.location.href = `/admin/servers/${server.id}/permissions`}
-                                            title="Manage Permissions"
-                                        >
-                                            <Shield className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="outline"

@@ -74,4 +74,24 @@ class Role extends SpatieRole
             'exec' => $serverRole->pivot->can_exec,
         ];
     }
+
+    public function getServersWithPermissions(): array
+    {
+        return $this->servers()->get()->map(function ($server) {
+            return [
+                'id' => $server->id,
+                'display_name' => $server->display_name,
+                'hostname' => $server->hostname,
+                'port' => $server->port,
+                'https' => $server->https,
+                'permissions' => [
+                    'access' => $server->pivot->can_access,
+                    'filemanager_access' => $server->pivot->can_filemanager_access,
+                    'filemanager_write' => $server->pivot->can_filemanager_write,
+                    'start-stop' => $server->pivot->can_start_stop,
+                    'exec' => $server->pivot->can_exec,
+                ],
+            ];
+        })->toArray();
+    }
 }

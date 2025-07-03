@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Server, Container, Shield, Activity, Layers3, ChevronRight, Plus, Settings } from 'lucide-react';
+import { Server, Container, Activity, Layers3, ChevronRight, Plus, Settings } from 'lucide-react';
 import type { Server as ServerType } from '@/types/entities';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -107,18 +107,6 @@ export default function Dashboard({ isAdmin }: Props) {
                                                 </div>
                                             </div>
                                             
-                                            {isAdmin && (
-                                                <div className="mt-3 pt-3 border-t">
-                                                    <Link 
-                                                        href={`/admin/servers/${server.id}/permissions`}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
-                                                    >
-                                                        <Shield className="h-3 w-3" />
-                                                        Permissions
-                                                    </Link>
-                                                </div>
-                                            )}
                                         </CardContent>
                                     </Link>
                                 </Card>
