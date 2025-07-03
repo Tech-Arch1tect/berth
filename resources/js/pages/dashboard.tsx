@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +15,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Props {
-    servers: ServerType[];
     isAdmin: boolean;
 }
 
-export default function Dashboard({ servers, isAdmin }: Props) {
+export default function Dashboard({ isAdmin }: Props) {
+    const { servers } = usePage().props as unknown as { servers: ServerType[] };
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />

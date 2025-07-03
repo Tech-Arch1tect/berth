@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user()?->load('roles'),
             ],
+            'servers' => $request->user() ? $request->user()->getAccessibleServers() : [],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

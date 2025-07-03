@@ -6,6 +6,7 @@ import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Users, Shield, Server } from 'lucide-react';
 import AppLogo from './app-logo';
+import type { Server as ServerType } from '@/types/entities';
 
 const mainNavItems: NavItem[] = [
     {
@@ -47,7 +48,10 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props as unknown as { auth: { user: { roles: { name: string }[] } } };
+    const { auth, servers } = usePage().props as unknown as { 
+        auth: { user: { roles: { name: string }[] } }; 
+        servers?: ServerType[];
+    };
     const user = auth?.user;
     const isAdmin = user?.roles?.some((role) => role.name === 'admin');
 
@@ -67,6 +71,32 @@ export function AppSidebar() {
 
             <SidebarContent className="py-2">
                 <NavMain items={mainNavItems} />
+                
+                {/* Servers Section */}
+                {servers && servers.length > 0 && (
+                    <>
+                        <SidebarSeparator className="my-2" />
+                        <div className="px-3 py-2">
+                            <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
+                                Servers
+                            </p>
+                        </div>
+                        <SidebarMenu>
+                            {servers.map((server) => (
+                                <SidebarMenuItem key={server.id}>
+                                    <SidebarMenuButton asChild tooltip={server.display_name}>
+                                        <Link href={`/servers/${server.id}/stacks`} prefetch>
+                                            <Server className="h-4 w-4" />
+                                            <span>{server.display_name}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </>
+                )}
+                
+                {/* Admin Section */}
                 {isAdmin && (
                     <>
                         <SidebarSeparator className="my-2" />
