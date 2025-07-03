@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Container, Network, HardDrive, Settings, RefreshCw, FileText, Download, Play, Square, Terminal } from 'lucide-react';
+import { ArrowLeft, Container, Network, Settings, RefreshCw, FileText, Download, Play, Square, Terminal, AlertCircle, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
 import StackServices from '@/components/StackServices';
 import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
+import { type BreadcrumbItem } from '@/types';
 import { apiPost, apiGet } from '@/utils/api';
 
 interface Props {
@@ -25,12 +25,29 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [selectedService, setSelectedService] = useState<string>('all');
     const [logTail, setLogTail] = useState<string>('100');
-    const [isStarting, setIsStarting] = useState(false);
-    const [isStopping, setIsStopping] = useState(false);
+    const [isBringingUp, setIsBringingUp] = useState(false);
+    const [isBringingDown, setIsBringingDown] = useState(false);
     const [execService, setExecService] = useState<string>('');
     const [execCommand, setExecCommand] = useState<string>('');
-    const [execResult, setExecResult] = useState<any>(null);
+    const [execResult, setExecResult] = useState<{command?: string, service?: string, output?: string, error?: string} | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [openSections, setOpenSections] = useState<Set<string>>(new Set(['services']));
+
+    const toggleSection = (section: string) => {
+        const newOpenSections = new Set(openSections);
+        if (newOpenSections.has(section)) {
+            newOpenSections.delete(section);
+        } else {
+            newOpenSections.add(section);
+        }
+        setOpenSections(newOpenSections);
+    };
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: server.display_name, href: `/servers/${server.id}/stacks` },
+        { title: stack.name, href: `/servers/${server.id}/stacks/${stack.name}` },
+    ];
 
     const refreshStack = () => {
         setIsRefreshing(true);
@@ -39,7 +56,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         });
     };
 
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setIsLoadingLogs(true);
         try {
             const params = new URLSearchParams({ tail: logTail });
@@ -58,52 +75,52 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         } finally {
             setIsLoadingLogs(false);
         }
-    };
+    }, [server.id, stack.name, selectedService, logTail]);
 
     // Auto-refresh logs when service or tail options change
     useEffect(() => {
         if (logs) {
             fetchLogs();
         }
-    }, [selectedService, logTail]);
+    }, [selectedService, logTail, fetchLogs]);
 
-    const startStack = async (services?: string[]) => {
-        setIsStarting(true);
+    const bringStackUp = async (services?: string[]) => {
+        setIsBringingUp(true);
         try {
             const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/up`, {
                 services: services || []
             });
             
             if (response.success) {
-                console.log('Stack started:', response.data);
+                console.log('Stack brought up:', response.data);
                 refreshStack();
             } else {
-                console.error('Failed to start stack:', response.error);
+                console.error('Failed to bring stack up:', response.error);
             }
         } catch (err) {
-            console.error('Failed to start stack:', err);
+            console.error('Failed to bring stack up:', err);
         } finally {
-            setIsStarting(false);
+            setIsBringingUp(false);
         }
     };
 
-    const stopStack = async (services?: string[]) => {
-        setIsStopping(true);
+    const bringStackDown = async (services?: string[]) => {
+        setIsBringingDown(true);
         try {
             const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/down`, {
                 services: services || []
             });
             
             if (response.success) {
-                console.log('Stack stopped:', response.data);
+                console.log('Stack brought down:', response.data);
                 refreshStack();
             } else {
-                console.error('Failed to stop stack:', response.error);
+                console.error('Failed to bring stack down:', response.error);
             }
         } catch (err) {
-            console.error('Failed to stop stack:', err);
+            console.error('Failed to bring stack down:', err);
         } finally {
-            setIsStopping(false);
+            setIsBringingDown(false);
         }
     };
 
@@ -122,7 +139,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             });
             
             if (response.success) {
-                setExecResult(response.data);
+                setExecResult(response.data as {command?: string, service?: string, output?: string, error?: string});
             } else {
                 setExecResult({ error: response.error || 'Command execution failed' });
             }
@@ -135,84 +152,127 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
 
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${stack.name} - ${server.display_name}`} />
             
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href={`/servers/${server.id}/stacks`}>
-                            <Button variant="ghost" size="sm">
-                                <ArrowLeft size={16} />
-                            </Button>
-                        </Link>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                            <Container className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
                             <h1 className="text-2xl font-bold flex items-center gap-2">
-                                <Container size={24} />
                                 {stack.name}
                                 <StackStatusBadge stack={stack} />
                             </h1>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-muted-foreground font-mono">
                                 {stack.path} on {server.display_name}
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {userPermissions['start-stop'] && (
-                            <>
-                                <Button
-                                    onClick={() => startStack()}
-                                    disabled={isStarting || isRefreshing}
-                                    variant="default"
-                                    size="sm"
-                                >
-                                    <Play className={`mr-2 h-4 w-4 ${isStarting ? 'animate-spin' : ''}`} />
-                                    Up All
-                                </Button>
-                                <Button
-                                    onClick={() => stopStack()}
-                                    disabled={isStopping || isRefreshing}
-                                    variant="destructive"
-                                    size="sm"
-                                >
-                                    <Square className={`mr-2 h-4 w-4 ${isStopping ? 'animate-spin' : ''}`} />
-                                    Down All
-                                </Button>
-                            </>
-                        )}
-                        <Button
-                            onClick={refreshStack}
-                            disabled={isRefreshing}
-                            variant="outline"
-                            size="sm"
-                        >
-                            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={refreshStack}
+                        disabled={isRefreshing}
+                        variant="outline"
+                        size="sm"
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
                 </div>
 
                 {!stack.parsed_successfully && (
-                    <Card className="border-red-200 dark:border-red-800">
+                    <Card className="border-destructive/50 bg-destructive/5">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                                <Settings size={20} />
-                                <span>This stack has parsing errors and may not be functioning correctly.</span>
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="h-5 w-5 text-destructive" />
+                                <span className="text-destructive font-medium">This stack has parsing errors and may not be functioning correctly.</span>
                             </div>
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Stack Stats Overview */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                                    <Container className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Services</p>
+                                    <p className="text-2xl font-bold">
+                                        {stack.service_status_summary ? 
+                                            `${stack.service_status_summary.running}/${stack.service_status_summary.total}` : 
+                                            stack.service_count
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    {stack.port_mappings.length > 0 && (
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
+                                        <Network className="h-4 w-4 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Exposed Ports</p>
+                                        <p className="text-2xl font-bold">{stack.port_mappings.length}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                    
+                    {stack.volume_mappings.length > 0 && (
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                                        <HardDrive className="h-4 w-4 text-purple-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Volumes</p>
+                                        <p className="text-2xl font-bold">{stack.volume_mappings.length}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                    
+                    {Object.keys(stack.networks).length > 0 && (
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                                        <Network className="h-4 w-4 text-orange-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Networks</p>
+                                        <p className="text-2xl font-bold">{Object.keys(stack.networks).length}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 <div className="grid gap-6">
                     {/* Services */}
                     <StackServices
                         stack={stack}
                         userPermissions={userPermissions}
-                        isStarting={isStarting}
-                        isStopping={isStopping}
+                        isStarting={isBringingUp}
+                        isStopping={isBringingDown}
                         isRefreshing={isRefreshing}
-                        onStartService={startStack}
-                        onStopService={stopStack}
+                        onStartService={bringStackUp}
+                        onStopService={bringStackDown}
                     />
 
                     {/* Networks */}
@@ -227,11 +287,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             <CardContent>
                                 <div className="space-y-3">
                                     {Object.entries(stack.networks).map(([networkName, network]) => (
-                                        <div key={networkName} className="border rounded-lg p-3 dark:border-gray-700">
+                                        <div key={networkName} className="border rounded-lg p-3 border-border">
                                             <div className="flex justify-between items-center">
                                                 <h3 className="font-medium">{networkName}</h3>
-                                                <code className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                                    {(network as any)?.name || networkName}
+                                                <code className="text-sm bg-muted px-2 py-1 rounded">
+                                                    {(network as Record<string, unknown>)?.name as string || networkName}
                                                 </code>
                                             </div>
                                         </div>
@@ -241,19 +301,32 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         </Card>
                     )}
 
-                    {/* Logs */}
+                    {/* Container Logs */}
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-center">
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText size={20} />
-                                    Container Logs
-                                    {logs && (
-                                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                                            ({logs.lines} lines)
-                                        </span>
-                                    )}
-                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => toggleSection('logs')}
+                                    >
+                                        {openSections.has('logs') ? 
+                                            <ChevronDown className="h-3 w-3" /> : 
+                                            <ChevronRight className="h-3 w-3" />
+                                        }
+                                    </Button>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        Container Logs
+                                        {logs && (
+                                            <span className="text-sm text-muted-foreground">
+                                                ({logs.lines} lines)
+                                            </span>
+                                        )}
+                                    </CardTitle>
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <Select value={selectedService} onValueChange={setSelectedService}>
                                         <SelectTrigger className="w-40">
@@ -291,10 +364,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
+                        {openSections.has('logs') && (
+                            <CardContent>
                             {logs ? (
                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <div className="flex justify-between items-center text-sm text-muted-foreground">
                                         <span>
                                             {logs.service ? `Service: ${logs.service}` : 'All services'} • 
                                             Last {logTail} lines
@@ -315,28 +389,55 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                             <Download size={14} />
                                         </Button>
                                     </div>
-                                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
-                                        {logs.logs || 'No logs available'}
-                                    </pre>
+                                    <div className="border border-border rounded-lg overflow-hidden">
+                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                <span className="text-xs text-muted-foreground ml-2 font-mono">Container Logs</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-card p-4 max-h-96 overflow-auto">
+                                            <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                                {logs.logs || 'No logs available'}
+                                            </pre>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
                                     <p>Click "Load Logs" to view container logs</p>
                                 </div>
                             )}
-                        </CardContent>
+                            </CardContent>
+                        )}
                     </Card>
 
                     {/* Command Execution */}
                     {userPermissions.exec && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Terminal size={20} />
-                                    Execute Command
-                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => toggleSection('exec')}
+                                    >
+                                        {openSections.has('exec') ? 
+                                            <ChevronDown className="h-3 w-3" /> : 
+                                            <ChevronRight className="h-3 w-3" />
+                                        }
+                                    </Button>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Terminal className="h-5 w-5" />
+                                        Execute Command
+                                    </CardTitle>
+                                </div>
                             </CardHeader>
+                            {openSections.has('exec') && (
                             <CardContent>
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -382,7 +483,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                     
                                     {execResult && (
                                         <div className="mt-4">
-                                            <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                            <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
                                                 <span>
                                                     Command: {execResult.command || execCommand} 
                                                     {execResult.service && ` (${execResult.service})`}
@@ -392,7 +493,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => {
-                                                            const blob = new Blob([execResult.output], { type: 'text/plain' });
+                                                            const blob = new Blob([execResult.output || ''], { type: 'text/plain' });
                                                             const url = URL.createObjectURL(blob);
                                                             const a = document.createElement('a');
                                                             a.href = url;
@@ -405,24 +506,36 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                     </Button>
                                                 )}
                                             </div>
-                                            {execResult.error ? (
-                                                <pre className="bg-red-900 text-red-100 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
-                                                    Error: {execResult.error}
-                                                </pre>
-                                            ) : (
-                                                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96 font-mono whitespace-pre-wrap">
-                                                    {execResult.output || 'Command executed successfully (no output)'}
-                                                </pre>
-                                            )}
+                                            <div className="border border-border rounded-lg overflow-hidden">
+                                                <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                        <span className="text-xs text-muted-foreground ml-2 font-mono">
+                                                            {execResult.error ? 'Command Failed' : 'Command Output'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className={`p-4 max-h-96 overflow-auto ${execResult.error ? 'bg-destructive/5' : 'bg-card'}`}>
+                                                    <pre className={`text-sm font-mono whitespace-pre-wrap leading-relaxed ${execResult.error ? 'text-destructive' : 'text-foreground'}`}>
+                                                        {execResult.error ? 
+                                                            `Error: ${execResult.error}` : 
+                                                            (execResult.output || 'Command executed successfully (no output)')
+                                                        }
+                                                    </pre>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                     
-                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    <div className="text-sm text-muted-foreground">
                                         <strong>Note:</strong> Commands are executed non-interactively in the selected service container.
                                         Use simple commands like <code>ls</code>, <code>ps</code>, <code>cat filename</code>, etc.
                                     </div>
                                 </div>
                             </CardContent>
+                            )}
                         </Card>
                     )}
 
@@ -440,16 +553,31 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     {userPermissions.filemanager_write && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Settings size={20} />
-                                    Raw Configuration
-                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => toggleSection('config')}
+                                    >
+                                        {openSections.has('config') ? 
+                                            <ChevronDown className="h-3 w-3" /> : 
+                                            <ChevronRight className="h-3 w-3" />
+                                        }
+                                    </Button>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Settings className="h-5 w-5" />
+                                        Raw Configuration
+                                    </CardTitle>
+                                </div>
                             </CardHeader>
+                            {openSections.has('config') && (
                             <CardContent>
-                                <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto text-xs">
+                                <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs">
                                     {JSON.stringify(stack, null, 2)}
                                 </pre>
                             </CardContent>
+                            )}
                         </Card>
                     )}
                 </div>

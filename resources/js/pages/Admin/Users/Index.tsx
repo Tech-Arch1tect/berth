@@ -4,9 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Users, Edit, Trash2, Shield, Mail, User } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Administration', href: '/admin' },
+    { title: 'Users', href: '/admin/users' },
+];
 
 interface User {
     id: number;
@@ -67,29 +75,48 @@ export default function UsersIndex({ users, roles }: Props) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="User Management" />
             
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">User Management</h1>
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
+                        <Users className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold">User Management</h1>
+                        <p className="text-sm text-muted-foreground">
+                            Manage user accounts and role assignments
+                        </p>
+                    </div>
                 </div>
 
+                {/* Users List */}
                 <div className="grid gap-4">
                     {users.map((user) => (
-                        <Card key={user.id}>
+                        <Card key={user.id} className="group hover:shadow-md transition-all">
                             <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <CardTitle>{user.name}</CardTitle>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                                            <User className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-lg">{user.name}</CardTitle>
+                                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                <Mail className="h-3 w-3" />
+                                                {user.email}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-x-2">
+                                    <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openEditDialog(user)}
                                         >
+                                            <Edit className="h-4 w-4 mr-2" />
                                             Edit Roles
                                         </Button>
                                         {!user.roles.some(role => role.name === 'admin') || 
@@ -99,13 +126,17 @@ export default function UsersIndex({ users, roles }: Props) {
                                                 size="sm"
                                                 onClick={() => handleDeleteUser(user)}
                                             >
-                                                Delete
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         ) : null}
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Shield className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Roles:</span>
+                                </div>
                                 <div className="flex flex-wrap gap-2">
                                     {user.roles.map((role) => (
                                         <Badge 
@@ -132,10 +163,13 @@ export default function UsersIndex({ users, roles }: Props) {
                         </DialogHeader>
                         <form onSubmit={handleEditUser} className="space-y-4">
                             <div>
-                                <Label>Roles</Label>
-                                <div className="grid grid-cols-1 gap-2 mt-2">
+                                <Label className="text-base font-medium">Roles</Label>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Select the roles to assign to this user
+                                </p>
+                                <div className="grid grid-cols-1 gap-3">
                                     {roles.map((role) => (
-                                        <div key={role.id} className="flex items-center space-x-2">
+                                        <div key={role.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                                             <Checkbox
                                                 id={`role-${role.name}`}
                                                 checked={editForm.data.roles.includes(role.name)}
@@ -143,17 +177,22 @@ export default function UsersIndex({ users, roles }: Props) {
                                                     handleRoleChange(role.name, checked as boolean)
                                                 }
                                             />
-                                            <Label htmlFor={`role-${role.name}`} className="text-sm capitalize">
+                                            <Label htmlFor={`role-${role.name}`} className="text-sm font-medium capitalize flex-1">
                                                 {role.name}
                                             </Label>
+                                            {role.name === 'admin' && (
+                                                <Badge variant="outline" className="text-xs">
+                                                    Full Access
+                                                </Badge>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                                 {editForm.errors.roles && (
-                                    <p className="text-red-500 text-sm mt-1">{editForm.errors.roles}</p>
+                                    <p className="text-destructive text-sm mt-2">{editForm.errors.roles}</p>
                                 )}
                             </div>
-                            <div className="flex justify-end space-x-2">
+                            <div className="flex justify-end space-x-2 pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"

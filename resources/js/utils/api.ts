@@ -8,7 +8,7 @@ export function getCSRFToken(): string {
 /**
  * API response interface
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;
     error?: string;
@@ -29,7 +29,7 @@ function createHeaders(additionalHeaders: Record<string, string> = {}): Record<s
 /**
  * Generic API request helper
  */
-async function apiRequest<T = any>(
+async function apiRequest<T = unknown>(
     url: string, 
     options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
@@ -67,9 +67,9 @@ async function apiRequest<T = any>(
 /**
  * POST request with JSON body
  */
-export async function apiPost<T = any>(
+export async function apiPost<T = unknown>(
     url: string, 
-    data?: any, 
+    data?: unknown, 
     options: Omit<RequestInit, 'method' | 'body'> = {}
 ): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
@@ -82,7 +82,7 @@ export async function apiPost<T = any>(
 /**
  * GET request
  */
-export async function apiGet<T = any>(
+export async function apiGet<T = unknown>(
     url: string, 
     options: Omit<RequestInit, 'method'> = {}
 ): Promise<ApiResponse<T>> {
@@ -95,9 +95,9 @@ export async function apiGet<T = any>(
 /**
  * PUT request with JSON body
  */
-export async function apiPut<T = any>(
+export async function apiPut<T = unknown>(
     url: string, 
-    data?: any, 
+    data?: unknown, 
     options: Omit<RequestInit, 'method' | 'body'> = {}
 ): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
@@ -110,7 +110,7 @@ export async function apiPut<T = any>(
 /**
  * DELETE request
  */
-export async function apiDelete<T = any>(
+export async function apiDelete<T = unknown>(
     url: string, 
     options: Omit<RequestInit, 'method'> = {}
 ): Promise<ApiResponse<T>> {

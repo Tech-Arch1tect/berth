@@ -19,12 +19,23 @@ export function findServiceStatus(stack: Stack, serviceName: string) {
  * Calculate service status summary for a stack
  * Accounts for services not appearing in runtime status (they are stopped)
  */
-export function calculateServiceStatusSummary(stack: Stack, serviceStatus: any) {
+export function calculateServiceStatusSummary(stack: Stack, serviceStatus: {
+    stack: string;
+    services: Array<{
+        name: string;
+        command: string;
+        state: string;
+        ports: string;
+    }> | null;
+} | null): {
+    statusSummary: { running: number; stopped: number; total: number };
+    overallStatus: 'running' | 'stopped' | 'partial' | 'unknown';
+} {
     let statusSummary = { running: 0, stopped: 0, total: 0 };
     let overallStatus: 'running' | 'stopped' | 'partial' | 'unknown' = 'unknown';
     
     if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
-        const running = serviceStatus.services.filter((s: any) => s.state === 'running').length;
+        const running = serviceStatus.services.filter((s) => s.state === 'running').length;
         const total = stack.service_count; // Use defined services count, not runtime count
         const stopped = total - running;
         

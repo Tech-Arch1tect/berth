@@ -12,7 +12,7 @@ export interface Service {
     command: string | null;
     entrypoint: string | null;
     image: string;
-    networks: Record<string, any>;
+    networks: Record<string, unknown>;
     ports?: Array<{
         mode: string;
         target: number;
@@ -32,7 +32,7 @@ export interface Stack {
     name: string;
     path: string;
     services: Record<string, Service>;
-    networks: Record<string, any>;
+    networks: Record<string, unknown>;
     parsed_successfully: boolean;
     service_count: number;
     service_names: string[];

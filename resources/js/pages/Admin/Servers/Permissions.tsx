@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Shield, Eye, Edit, Trash, Server } from 'lucide-react';
+import { ArrowLeft, Shield, Edit, Trash, Server as ServerIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import type { Server } from '@/types/entities';
 
@@ -49,7 +49,15 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
         },
     });
 
-    const editForm = useForm({
+    const editForm = useForm<{
+        permissions: {
+            access: boolean;
+            filemanager_access: boolean;
+            filemanager_write: boolean;
+            'start-stop': boolean;
+            exec: boolean;
+        };
+    }>({
         permissions: {
             access: false,
             filemanager_access: false,
@@ -100,7 +108,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
         });
     };
 
-    const handlePermissionChange = (permission: string, checked: boolean, form: any) => {
+    const handlePermissionChange = (permission: string, checked: boolean, form: { setData: (key: string, value: unknown) => void; data: { permissions: Record<string, boolean> } }) => {
         form.setData('permissions', {
             ...form.data.permissions,
             [permission]: checked,
@@ -134,7 +142,7 @@ export default function ServerPermissions({ server, serverRoles, allRoles }: Pro
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Server size={24} />
+                            <ServerIcon size={24} />
                             {server.display_name} - Permissions
                         </h1>
                         <p className="text-sm text-gray-600 dark:text-gray-400">

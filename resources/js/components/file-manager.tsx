@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2 } from 'lucide-react';
+import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home } from 'lucide-react';
 import FileViewer from '@/components/file-viewer';
 
 interface FileInfo {
@@ -40,7 +40,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const fetchFiles = async (path: string = '.') => {
+    const fetchFiles = useCallback(async (path: string = '.') => {
         setIsLoading(true);
         setError(null);
         try {
@@ -60,11 +60,11 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [serverId, stackName]);
 
     useEffect(() => {
         fetchFiles('.');
-    }, [serverId, stackName]);
+    }, [serverId, stackName, fetchFiles]);
 
     const navigateToPath = (path: string) => {
         fetchFiles(path);
@@ -196,37 +196,60 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center gap-2">
-                        <FolderOpen size={20} />
-                        {title}
-                        {files && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                                ({files.files.length} items)
-                            </span>
-                        )}
-                    </CardTitle>
+        <Card className="bg-gradient-to-br from-card to-muted/20 border border-border/60 shadow-lg">
+            <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                        <CardTitle className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                                <FolderOpen className="h-4 w-4 text-primary" />
+                            </div>
+                            <span className="text-lg">{title}</span>
+                            {files && (
+                                <Badge variant="outline" className="text-xs">
+                                    {files.files.length} items
+                                </Badge>
+                            )}
+                        </CardTitle>
+                        
+                        {/* Breadcrumb Navigation */}
+                        <div className="flex items-center gap-2 text-sm">
+                            <Home className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                                {getBreadcrumbs().map((part, index) => (
+                                    <div key={index} className="flex items-center gap-1">
+                                        {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                                        <span className="font-mono bg-muted/30 px-2 py-1 rounded-md text-xs">
+                                            {part}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div className="flex items-center gap-2">
                         {canWrite && (
                             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" className="transition-all hover:scale-105">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Create File
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-w-2xl">
                                     <DialogHeader>
-                                        <DialogTitle>Create New File</DialogTitle>
+                                        <DialogTitle className="flex items-center gap-2">
+                                            <Plus className="h-5 w-5 text-primary" />
+                                            Create New File
+                                        </DialogTitle>
                                         <DialogDescription>
-                                            Create a new file in the current directory ({currentPath === '.' ? 'root' : currentPath})
+                                            Create a new file in <span className="font-mono bg-muted px-1 rounded">{currentPath === '.' ? 'root' : currentPath}</span>
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label htmlFor="fileName" className="text-sm font-medium">
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <label htmlFor="fileName" className="text-sm font-semibold">
                                                 File Name
                                             </label>
                                             <Input
@@ -234,11 +257,11 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 value={newFileName}
                                                 onChange={(e) => setNewFileName(e.target.value)}
                                                 placeholder="example.txt"
-                                                className="mt-1"
+                                                className="font-mono"
                                             />
                                         </div>
-                                        <div>
-                                            <label htmlFor="fileContent" className="text-sm font-medium">
+                                        <div className="space-y-2">
+                                            <label htmlFor="fileContent" className="text-sm font-semibold">
                                                 File Content
                                             </label>
                                             <textarea
@@ -246,8 +269,8 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 value={newFileContent}
                                                 onChange={(e) => setNewFileContent(e.target.value)}
                                                 placeholder="Enter file content..."
-                                                rows={10}
-                                                className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono resize-vertical"
+                                                rows={12}
+                                                className="w-full px-3 py-3 border border-border rounded-lg text-sm bg-card text-card-foreground font-mono resize-vertical focus:ring-2 focus:ring-ring focus:border-transparent"
                                             />
                                         </div>
                                     </div>
@@ -265,6 +288,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                         <Button
                                             onClick={createFile}
                                             disabled={isCreating || !newFileName.trim()}
+                                            className="transition-all hover:scale-105"
                                         >
                                             {isCreating ? 'Creating...' : 'Create File'}
                                         </Button>
@@ -277,6 +301,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             disabled={isLoading}
                             variant="outline"
                             size="sm"
+                            className="transition-all hover:scale-105"
                         >
                             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                             Refresh
@@ -286,61 +311,55 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
             </CardHeader>
             <CardContent>
                 {error ? (
-                    <div className="text-center py-8 text-red-500 dark:text-red-400">
-                        <File className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                        <p>{error}</p>
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <File className="h-10 w-10 text-destructive" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Error Loading Files</h3>
+                        <p className="text-destructive mb-4">{error}</p>
                         <Button
                             onClick={() => fetchFiles(currentPath)}
                             variant="outline"
-                            size="sm"
-                            className="mt-2"
+                            className="transition-all hover:scale-105"
                         >
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Retry
                         </Button>
                     </div>
                 ) : isLoading ? (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                        <RefreshCw className="mx-auto h-12 w-12 mb-4 animate-spin opacity-50" />
-                        <p>Loading files...</p>
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <RefreshCw className="h-10 w-10 text-primary animate-spin" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Loading Files</h3>
+                        <p className="text-muted-foreground">Please wait while we fetch the directory contents...</p>
                     </div>
                 ) : files ? (
-                    <div className="space-y-4">
-                        {/* Breadcrumb Navigation */}
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span>Path:</span>
-                            <div className="flex items-center gap-1">
-                                {getBreadcrumbs().map((part, index, array) => (
-                                    <div key={index} className="flex items-center gap-1">
-                                        {index > 0 && <span>/</span>}
-                                        <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">
-                                            {part}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
+                    <div className="space-y-6">
                         {/* Navigation Controls */}
-                        <div className="flex items-center gap-2">
-                            {currentPath !== '.' && (
+                        {currentPath !== '.' && (
+                            <div className="flex items-center gap-2">
                                 <Button
                                     onClick={navigateUp}
                                     variant="outline"
                                     size="sm"
+                                    className="transition-all hover:scale-105"
                                 >
                                     <ArrowLeft size={14} className="mr-1" />
-                                    Back
+                                    Back to Parent
                                 </Button>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         {/* File List */}
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                             {files.files.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                    <Folder className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                                    <p>This directory is empty</p>
+                                <div className="text-center py-12">
+                                    <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Folder className="h-10 w-10 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold mb-2">Empty Directory</h3>
+                                    <p className="text-muted-foreground">This directory contains no files or folders.</p>
                                 </div>
                             ) : (
                                 files.files
@@ -350,56 +369,66 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                         if (!a.isDir && b.isDir) return 1;
                                         return a.name.localeCompare(b.name);
                                     })
-                                    .map((file) => (
+                                    .map((file, index) => (
                                         <div
                                             key={file.name}
-                                            className="flex items-center justify-between p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            className="animate-in slide-in-from-bottom-4 duration-300 group"
+                                            style={{ animationDelay: `${index * 50}ms` }}
                                         >
-                                            <div 
-                                                className={`flex items-center gap-3 flex-1 ${file.isDir ? 'cursor-pointer' : ''}`}
-                                                onClick={() => file.isDir && handleFileClick(file)}
-                                            >
-                                                {file.isDir ? (
-                                                    <Folder size={20} className="text-blue-500 dark:text-blue-400" />
-                                                ) : (
-                                                    <File size={20} className="text-gray-500 dark:text-gray-400" />
-                                                )}
-                                                <div>
-                                                    <div className="font-medium text-sm">
-                                                        {file.name}
+                                            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/40 hover:border-border transition-all duration-200">
+                                                <div 
+                                                    className={`flex items-center gap-4 flex-1 ${file.isDir ? 'cursor-pointer' : ''}`}
+                                                    onClick={() => file.isDir && handleFileClick(file)}
+                                                >
+                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background border border-border/50">
+                                                        {file.isDir ? (
+                                                            <Folder className="h-5 w-5 text-blue-500" />
+                                                        ) : (
+                                                            <File className="h-5 w-5 text-muted-foreground" />
+                                                        )}
                                                     </div>
-                                                    {!file.isDir && (
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                            {formatFileSize(file.size)}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                                                            {file.name}
                                                         </div>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
+                                                                {file.isDir ? 'Directory' : 'File'}
+                                                            </Badge>
+                                                            {!file.isDir && (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {formatFileSize(file.size)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {!file.isDir && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleFileClick(file)}
+                                                            className="transition-all hover:scale-105"
+                                                        >
+                                                            <Eye size={14} className="mr-1" />
+                                                            View
+                                                        </Button>
+                                                    )}
+                                                    {file.isDir && (
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                    )}
+                                                    {canWrite && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteClick(file)}
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {!file.isDir && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleFileClick(file)}
-                                                    >
-                                                        <Eye size={14} className="mr-1" />
-                                                        View
-                                                    </Button>
-                                                )}
-                                                {canWrite && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteClick(file)}
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
-                                                    >
-                                                        <Trash2 size={14} className="mr-1" />
-                                                        Delete
-                                                    </Button>
-                                                )}
-                                                <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
-                                                    {file.isDir ? 'Directory' : 'File'}
-                                                </Badge>
                                             </div>
                                         </div>
                                     ))
@@ -407,9 +436,12 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                        <FolderOpen className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                        <p>Click refresh to load files</p>
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FolderOpen className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Ready to Browse</h3>
+                        <p className="text-muted-foreground">Click refresh to load the directory contents.</p>
                     </div>
                 )}
             </CardContent>
@@ -433,12 +465,23 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <Trash2 size={20} className="text-red-500" />
+                            <div className="w-8 h-8 bg-destructive/10 rounded-lg flex items-center justify-center">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </div>
                             Delete {fileToDelete?.isDir ? 'Directory' : 'File'}
                         </DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete <strong>{fileToDelete?.name}</strong>? 
-                            {fileToDelete?.isDir && ' This will delete the directory and all its contents.'} This action cannot be undone.
+                        <DialogDescription className="space-y-2">
+                            <p>
+                                Are you sure you want to delete <span className="font-mono bg-muted px-1 rounded">{fileToDelete?.name}</span>?
+                            </p>
+                            {fileToDelete?.isDir && (
+                                <p className="text-destructive text-sm">
+                                    ⚠️ This will delete the directory and all its contents.
+                                </p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                                This action cannot be undone.
+                            </p>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -456,6 +499,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             variant="destructive"
                             onClick={deleteFileOrFolder}
                             disabled={isDeleting}
+                            className="transition-all hover:scale-105"
                         >
                             {isDeleting ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
                         </Button>

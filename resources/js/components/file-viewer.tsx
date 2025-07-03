@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { File, Download, Copy, Eye, Edit, Save, X, Trash2 } from 'lucide-react';
@@ -33,7 +32,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const fetchFile = async () => {
+    const fetchFile = useCallback(async () => {
         if (!isOpen || !filePath) return;
         
         setIsLoading(true);
@@ -56,11 +55,11 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isOpen, filePath, serverId, stackName]);
 
     useEffect(() => {
         fetchFile();
-    }, [isOpen, filePath, serverId, stackName]);
+    }, [isOpen, filePath, serverId, stackName, fetchFile]);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -288,29 +287,51 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                     ) : fileData ? (
                         <div className="h-full overflow-auto">
                             <div className="h-full">
-                                <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b text-sm text-gray-600 dark:text-gray-400">
+                                <div className="bg-muted/30 px-4 py-2 border-b border-border text-sm text-muted-foreground">
                                     <span>Path: {fileData.path}</span>
                                     <span className="ml-4">Size: {formatFileSize(fileData.size)}</span>
-                                    {isEditing && <span className="ml-4 text-orange-500 dark:text-orange-400">Editing</span>}
+                                    {isEditing && <span className="ml-4 text-yellow-600 dark:text-yellow-400">Editing</span>}
                                 </div>
                                 {isEditing ? (
-                                    <textarea
-                                        value={editContent}
-                                        onChange={(e) => setEditContent(e.target.value)}
-                                        className="w-full h-full p-4 text-sm font-mono bg-gray-900 text-green-400 border-0 outline-none resize-none"
-                                        style={{ minHeight: '400px' }}
-                                        placeholder="Enter file content..."
-                                    />
+                                    <div className="border border-border rounded-lg overflow-hidden h-full">
+                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{fileName} (editing)</span>
+                                            </div>
+                                        </div>
+                                        <textarea
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            className="w-full p-4 text-sm font-mono bg-card text-foreground border-0 outline-none resize-none focus:ring-0"
+                                            style={{ minHeight: '400px' }}
+                                            placeholder="Enter file content..."
+                                        />
+                                    </div>
                                 ) : (
-                                    <pre className="bg-gray-900 text-green-400 p-4 text-sm font-mono whitespace-pre-wrap overflow-auto h-full">
-                                        {fileData.content}
-                                    </pre>
+                                    <div className="border border-border rounded-lg overflow-hidden h-full">
+                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{fileName}</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-card p-4 overflow-auto" style={{ minHeight: '400px' }}>
+                                            <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                                {fileData.content}
+                                            </pre>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     ) : (
                         <div className="flex items-center justify-center h-64">
-                            <div className="text-center text-gray-500 dark:text-gray-400">
+                            <div className="text-center text-muted-foreground">
                                 <Eye className="mx-auto h-12 w-12 mb-4 opacity-50" />
                                 <p>Click to view file content</p>
                             </div>

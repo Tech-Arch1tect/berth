@@ -47,16 +47,16 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props as any;
+    const { auth } = usePage().props as unknown as { auth: { user: { roles: { name: string }[] } } };
     const user = auth?.user;
-    const isAdmin = user?.roles?.some((role: any) => role.name === 'admin');
+    const isAdmin = user?.roles?.some((role) => role.name === 'admin');
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+        <Sidebar collapsible="icon" variant="inset" className="border-r">
+            <SidebarHeader className="border-b border-sidebar-border/50">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton size="lg" asChild className="hover:bg-sidebar-accent">
                             <Link href="/dashboard" prefetch>
                                 <AppLogo />
                             </Link>
@@ -65,19 +65,25 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="py-2">
                 <NavMain items={mainNavItems} />
                 {isAdmin && (
                     <>
-                        <SidebarSeparator />
+                        <SidebarSeparator className="my-2" />
+                        <div className="px-3 py-2">
+                            <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
+                                Administration
+                            </p>
+                        </div>
                         <NavMain items={adminNavItems} />
                     </>
                 )}
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+            <SidebarFooter className="border-t border-sidebar-border/50 p-2">
                 <NavUser />
+                <SidebarSeparator className="my-2" />
+                <NavFooter items={footerNavItems} />
             </SidebarFooter>
         </Sidebar>
     );

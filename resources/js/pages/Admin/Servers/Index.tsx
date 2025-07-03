@@ -6,10 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield, Container } from 'lucide-react';
+import { Eye, EyeOff, Activity, AlertCircle, CheckCircle, Clock, Shield, Container, Server as ServerIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import type { Server, HealthStatus } from '@/types/entities';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Administration', href: '/admin' },
+    { title: 'Servers', href: '/admin/servers' },
+];
 
 interface Props {
     servers: Server[];
@@ -27,7 +34,7 @@ export default function ServersIndex({ servers }: Props) {
         display_name: '',
         hostname: '',
         port: '',
-        https: true,
+        https: true as boolean,
         access_secret: '',
     });
 
@@ -35,7 +42,7 @@ export default function ServersIndex({ servers }: Props) {
         display_name: '',
         hostname: '',
         port: '',
-        https: true,
+        https: true as boolean,
         access_secret: '',
     });
 
@@ -148,15 +155,29 @@ export default function ServersIndex({ servers }: Props) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Server Management" />
             
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Server Management</h1>
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-lg flex items-center justify-center">
+                            <ServerIcon className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold">Server Management</h1>
+                            <p className="text-sm text-muted-foreground">
+                                Manage and monitor your berth-agent servers
+                            </p>
+                        </div>
+                    </div>
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button>Add Server</Button>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Server
+                            </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
@@ -207,7 +228,7 @@ export default function ServersIndex({ servers }: Props) {
                                     <Checkbox
                                         id="https"
                                         checked={createForm.data.https}
-                                        onCheckedChange={(checked) => createForm.setData('https', checked as boolean)}
+                                        onCheckedChange={(checked) => createForm.setData('https', !!checked)}
                                     />
                                     <Label htmlFor="https">Use HTTPS</Label>
                                 </div>
@@ -241,31 +262,37 @@ export default function ServersIndex({ servers }: Props) {
                     </Dialog>
                 </div>
 
+                {/* Servers List */}
                 <div className="grid gap-4">
                     {servers.map((server) => (
-                        <Card key={server.id}>
+                        <Card key={server.id} className="group hover:shadow-md transition-all">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="flex items-center gap-2">
-                                            {server.display_name}
-                                            <Badge variant={server.https ? "default" : "secondary"}>
-                                                {server.https ? "HTTPS" : "HTTP"}
-                                            </Badge>
-                                            {healthStatus[server.id] && (
-                                                <Badge variant={getHealthBadgeVariant(healthStatus[server.id])}>
-                                                    {getHealthIcon(healthStatus[server.id])}
-                                                    <span className="ml-1 capitalize">
-                                                        {healthStatus[server.id].health_status}
-                                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                                            <ServerIcon className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="flex items-center gap-2 text-lg">
+                                                {server.display_name}
+                                                <Badge variant={server.https ? "default" : "secondary"} className="text-xs">
+                                                    {server.https ? "HTTPS" : "HTTP"}
                                                 </Badge>
-                                            )}
-                                        </CardTitle>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            {server.https ? "https" : "http"}://{server.hostname}:{server.port}
-                                        </p>
+                                                {healthStatus[server.id] && (
+                                                    <Badge variant={getHealthBadgeVariant(healthStatus[server.id])} className="text-xs">
+                                                        {getHealthIcon(healthStatus[server.id])}
+                                                        <span className="ml-1 capitalize">
+                                                            {healthStatus[server.id].health_status}
+                                                        </span>
+                                                    </Badge>
+                                                )}
+                                            </CardTitle>
+                                            <p className="text-sm text-muted-foreground font-mono">
+                                                {server.https ? "https" : "http"}://{server.hostname}:{server.port}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="space-x-2">
+                                    <div className="flex items-center gap-2">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -274,9 +301,9 @@ export default function ServersIndex({ servers }: Props) {
                                             title="Check Health"
                                         >
                                             {checkingHealth[server.id] ? (
-                                                <Clock className="animate-spin" size={16} />
+                                                <Clock className="animate-spin h-4 w-4" />
                                             ) : (
-                                                <Activity size={16} />
+                                                <Activity className="h-4 w-4" />
                                             )}
                                         </Button>
                                         <Button
@@ -285,7 +312,7 @@ export default function ServersIndex({ servers }: Props) {
                                             onClick={() => window.location.href = `/servers/${server.id}/stacks`}
                                             title="View Stacks"
                                         >
-                                            <Container size={16} />
+                                            <Container className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -293,21 +320,21 @@ export default function ServersIndex({ servers }: Props) {
                                             onClick={() => window.location.href = `/admin/servers/${server.id}/permissions`}
                                             title="Manage Permissions"
                                         >
-                                            <Shield size={16} />
+                                            <Shield className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openEditDialog(server)}
                                         >
-                                            Edit
+                                            <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="destructive"
                                             size="sm"
                                             onClick={() => handleDeleteServer(server)}
                                         >
-                                            Delete
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
@@ -316,37 +343,37 @@ export default function ServersIndex({ servers }: Props) {
                                 <div className="space-y-3">
                                     {/* Health Status Details */}
                                     {healthStatus[server.id] && (
-                                        <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                                        <div className="border rounded-lg p-3 bg-muted/30">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Health Status</span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                <span className="text-sm font-medium">Health Status</span>
+                                                <span className="text-xs text-muted-foreground">
                                                     {new Date(healthStatus[server.id].checked_at).toLocaleString()}
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-sm">
                                                 {healthStatus[server.id].service && (
                                                     <div>
-                                                        <span className="text-gray-600 dark:text-gray-400">Service:</span>
-                                                        <span className="ml-1 font-mono text-gray-900 dark:text-gray-100">{healthStatus[server.id].service}</span>
+                                                        <span className="text-muted-foreground">Service:</span>
+                                                        <span className="ml-1 font-mono">{healthStatus[server.id].service}</span>
                                                     </div>
                                                 )}
                                                 {healthStatus[server.id].docker_compose && (
                                                     <div>
-                                                        <span className="text-gray-600 dark:text-gray-400">Docker Compose:</span>
-                                                        <span className="ml-1 font-mono text-gray-900 dark:text-gray-100">
+                                                        <span className="text-muted-foreground">Docker Compose:</span>
+                                                        <span className="ml-1 font-mono">
                                                             {healthStatus[server.id].docker_compose?.version}
                                                         </span>
                                                     </div>
                                                 )}
                                                 {healthStatus[server.id].response_time && (
                                                     <div>
-                                                        <span className="text-gray-600 dark:text-gray-400">Response Time:</span>
-                                                        <span className="ml-1 text-gray-900 dark:text-gray-100">{Math.round(healthStatus[server.id].response_time! * 1000)}ms</span>
+                                                        <span className="text-muted-foreground">Response Time:</span>
+                                                        <span className="ml-1">{Math.round(healthStatus[server.id].response_time! * 1000)}ms</span>
                                                     </div>
                                                 )}
                                             </div>
                                             {healthStatus[server.id].message && (
-                                                <div className="text-sm text-red-600 dark:text-red-400 mt-2">
+                                                <div className="text-sm text-destructive mt-2">
                                                     {healthStatus[server.id].message}
                                                 </div>
                                             )}
@@ -355,27 +382,27 @@ export default function ServersIndex({ servers }: Props) {
                                     
                                     {/* Access Secret */}
                                     <div className="flex items-center space-x-2">
-                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Access Secret:</span>
+                                        <span className="text-sm font-medium">Access Secret:</span>
                                         <div className="flex items-center space-x-2">
                                             {showSecret[server.id] ? (
-                                                <code className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
                                                     {serverSecrets[server.id] || '***'}
                                                 </code>
                                             ) : (
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">********</span>
+                                                <span className="text-sm text-muted-foreground">********</span>
                                             )}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => toggleSecretVisibility(server.id)}
                                             >
-                                                {showSecret[server.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                {showSecret[server.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </Button>
                                         </div>
                                     </div>
                                     
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Created: {new Date(server.created_at).toLocaleString()}
+                                    <div className="text-xs text-muted-foreground">
+                                        Created: {server.created_at ? new Date(server.created_at).toLocaleString() : 'Unknown'}
                                     </div>
                                 </div>
                             </CardContent>
@@ -433,7 +460,7 @@ export default function ServersIndex({ servers }: Props) {
                                 <Checkbox
                                     id="edit-https"
                                     checked={editForm.data.https}
-                                    onCheckedChange={(checked) => editForm.setData('https', checked as boolean)}
+                                    onCheckedChange={(checked) => editForm.setData('https', !!checked)}
                                 />
                                 <Label htmlFor="edit-https">Use HTTPS</Label>
                             </div>
