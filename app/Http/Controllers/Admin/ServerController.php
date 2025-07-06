@@ -94,7 +94,10 @@ class ServerController extends Controller
             $protocol = $server->https ? 'https' : 'http';
             $url = "{$protocol}://{$server->hostname}:{$server->port}/health";
             
-            $response = Http::timeout(10)->get($url);
+            $response = Http::timeout(10)->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])->get($url);
             
             if ($response->successful()) {
                 $healthData = $response->json();
