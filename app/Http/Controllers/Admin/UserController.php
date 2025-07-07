@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -19,6 +21,32 @@ class UserController extends Controller
             'users' => $users,
             'roles' => $roles,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'roles' => 'array',
+            'roles.*' => 'exists:roles,name',
+            'email_verified' => 'boolean',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'email_verified_at' => $request->email_verified ? now() : null,
+        ]);
+
+        // Assign roles if provided
+        if ($request->roles) {
+            $user->assignRole($request->roles);
+        }
+
+        return back()->with('success', 'User created successfully.');
     }
 
     public function updateRoles(Request $request, User $user)

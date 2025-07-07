@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')-
     
     // User management
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.updateRoles');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     
