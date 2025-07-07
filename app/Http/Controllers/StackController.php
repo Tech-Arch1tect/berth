@@ -95,7 +95,7 @@ class StackController extends Controller
         $protocol = $server->https ? 'https' : 'http';
         $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/stacks";
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -124,7 +124,7 @@ class StackController extends Controller
         $protocol = $server->https ? 'https' : 'http';
         $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/ps";
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -154,7 +154,7 @@ class StackController extends Controller
             $queryParams['service'] = $service;
         }
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -429,7 +429,7 @@ class StackController extends Controller
         
         $queryParams = ['path' => $path];
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -456,7 +456,7 @@ class StackController extends Controller
         
         $queryParams = ['path' => $path];
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -485,7 +485,7 @@ class StackController extends Controller
         $protocol = $server->https ? 'https' : 'http';
         $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/{$action}";
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -518,7 +518,7 @@ class StackController extends Controller
         $queryParams = ['path' => $path];
         $bodyData = ['content' => $content];
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -551,7 +551,7 @@ class StackController extends Controller
         $queryParams = ['path' => $path];
         $bodyData = ['content' => $content];
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
@@ -586,7 +586,7 @@ class StackController extends Controller
             $queryParams['recursive'] = 'true';
         }
         
-        $response = Http::timeout(30)
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',

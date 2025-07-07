@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Agent HTTP Client Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This configuration option determines the timeout value for HTTP requests
+    | made to Docker Compose server agents. This includes all operations like
+    | stack management, compose commands, file operations, and health checks.
+    |
+    */
+
+    'agent_http_timeout' => env('AGENT_HTTP_TIMEOUT', 120),
+
 ];
