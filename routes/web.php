@@ -6,13 +6,15 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
 use App\Http\Controllers\StackController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Middleware\CheckAdminRole;
+use App\Http\Middleware\TwoFactorMiddleware;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(function () {
     Route::get('dashboard', function () {
         $user = auth()->user();
         
@@ -36,10 +38,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('api/servers/{server}/stacks/{stackName}/up', [StackController::class, 'composeUp'])->name('api.stacks.up');
     Route::post('api/servers/{server}/stacks/{stackName}/down', [StackController::class, 'composeDown'])->name('api.stacks.down');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');
+    
+    // Two-factor authentication routes
+    Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
+    Route::post('two-factor', [TwoFactorController::class, 'store'])->name('two-factor.store');
+    Route::delete('two-factor', [TwoFactorController::class, 'destroy'])->name('two-factor.destroy');
+    Route::get('two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes'])->name('two-factor.recovery-codes');
+    Route::post('two-factor/recovery-codes', [TwoFactorController::class, 'newRecoveryCodes'])->name('two-factor.recovery-codes.new');
+});
+
+// 2FA Challenge routes (outside of auth middleware to avoid infinite redirects)
+Route::middleware(['auth'])->group(function () {
+    Route::get('two-factor/challenge', [TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('two-factor/challenge', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
 });
 
 // Admin routes
-Route::middleware(['auth', 'verified', CheckAdminRole::class])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', TwoFactorMiddleware::class, CheckAdminRole::class])->prefix('admin')->name('admin.')->group(function () {
     // Role management
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     Route::post('roles', [RoleController::class, 'store'])->name('roles.store');

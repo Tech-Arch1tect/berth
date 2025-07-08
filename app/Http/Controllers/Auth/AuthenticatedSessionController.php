@@ -32,6 +32,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        // Clear 2FA verification status on new login
+        $request->session()->forget('two_factor_verified');
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

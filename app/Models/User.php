@@ -23,6 +23,9 @@ class User extends Authenticatable
         'email',
         'password',
         'email_verified_at',
+        'google2fa_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
     ];
 
     /**
@@ -33,6 +36,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'google2fa_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -45,6 +50,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_recovery_codes' => 'array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -141,5 +148,56 @@ class User extends Authenticatable
         }
 
         return Server::whereIn('id', $serverIds->unique())->get();
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !empty($this->google2fa_secret) && !is_null($this->two_factor_confirmed_at);
+    }
+
+    public function generateTwoFactorSecret(): string
+    {
+        $google2fa = app(\PragmaRX\Google2FALaravel\Google2FA::class);
+        return $google2fa->generateSecretKey();
+    }
+
+    public function getTwoFactorQrCode(): string
+    {
+        $google2fa = app(\PragmaRX\Google2FALaravel\Google2FA::class);
+        return $google2fa->getQRCodeInline(
+            config('app.name'),
+            $this->email,
+            $this->google2fa_secret
+        );
+    }
+
+    public function verifyTwoFactorCode(string $code): bool
+    {
+        $google2fa = app(\PragmaRX\Google2FALaravel\Google2FA::class);
+        return $google2fa->verifyKey($this->google2fa_secret, $code);
+    }
+
+    public function generateRecoveryCodes(): array
+    {
+        $codes = [];
+        for ($i = 0; $i < 8; $i++) {
+            $codes[] = substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(32))), 0, 10);
+        }
+        return $codes;
+    }
+
+    public function useRecoveryCode(string $code): bool
+    {
+        $codes = $this->two_factor_recovery_codes ?? [];
+        $index = array_search($code, $codes);
+        
+        if ($index !== false) {
+            unset($codes[$index]);
+            $this->two_factor_recovery_codes = array_values($codes);
+            $this->save();
+            return true;
+        }
+        
+        return false;
     }
 }
