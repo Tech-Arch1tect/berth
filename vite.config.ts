@@ -14,6 +14,11 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    server: {
+        watch: {
+            ignored: ['**/*.db'],
+        },
+    },
     esbuild: {
         jsx: 'automatic',
     },
