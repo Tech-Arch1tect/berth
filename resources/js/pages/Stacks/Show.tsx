@@ -86,7 +86,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         }
     }, [logs, selectedService, logTail, fetchLogs]);
 
-    const bringStackUp = async (services?: string[]) => {
+    const bringStackUp = async (services?: string[], build?: boolean) => {
         if (showProgressModal) {
             return;
         }
@@ -95,9 +95,13 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             services: services?.join(',') || ''
         });
         
+        if (build) {
+            params.set('build', 'true');
+        }
+        
         const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/up/stream?${params}`;
         setProgressUrl(streamUrl);
-        setProgressTitle(`Starting Stack: ${stack.name}`);
+        setProgressTitle(`Starting Stack: ${stack.name}${build ? ' (with --build)' : ''}`);
         setShowProgressModal(true);
     };
 

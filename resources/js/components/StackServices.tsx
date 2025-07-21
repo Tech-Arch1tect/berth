@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Container, Globe, HardDrive, Lock, Play, Square, ChevronDown, ChevronRight, Image, Command, Activity } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Container, Globe, HardDrive, Lock, Play, Square, ChevronDown, ChevronRight, Image, Command, Activity, Hammer } from 'lucide-react';
 import type { Stack, UserPermissions } from '@/types/entities';
 import { getServiceDisplayState } from '@/utils/stack-utils';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
@@ -12,7 +13,7 @@ interface StackServicesProps {
     userPermissions: UserPermissions;
     isOperating: boolean;
     isRefreshing: boolean;
-    onStartService: (services: string[]) => void;
+    onStartService: (services: string[], build?: boolean) => void;
     onStopService: (services: string[]) => void;
 }
 
@@ -51,15 +52,40 @@ export default function StackServices({
                     </div>
                     {userPermissions['start-stop'] && (
                         <div className="flex items-center gap-2">
-                            <Button
-                                onClick={() => onStartService([])}
-                                disabled={isOperating || isRefreshing}
-                                variant="default"
-                                size="sm"
-                            >
-                                <Play className="h-3 w-3 mr-1" />
-                                Up All
-                            </Button>
+                            <div className="flex">
+                                <Button
+                                    onClick={() => onStartService([], false)}
+                                    disabled={isOperating || isRefreshing}
+                                    variant="default"
+                                    size="sm"
+                                    className="rounded-r-none pr-3"
+                                >
+                                    <Play className="h-3 w-3 mr-1" />
+                                    Up All
+                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            disabled={isOperating || isRefreshing}
+                                            variant="default"
+                                            size="sm"
+                                            className="rounded-l-none pl-2 pr-2 border-l border-l-primary-foreground/20"
+                                        >
+                                            <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => onStartService([], false)}>
+                                            <Play className="h-3 w-3 mr-2" />
+                                            Up All
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onStartService([], true)}>
+                                            <Hammer className="h-3 w-3 mr-2" />
+                                            Up All --build
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                             <Button
                                 onClick={() => onStopService([])}
                                 disabled={isOperating || isRefreshing}
@@ -105,15 +131,39 @@ export default function StackServices({
                                         <div className="flex items-center gap-2">
                                             {userPermissions['start-stop'] && (
                                                 <>
-                                                    <Button
-                                                        onClick={() => onStartService([serviceName])}
-                                                        disabled={isOperating || isRefreshing || isRunning}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-7 w-7 p-0"
-                                                    >
-                                                        <Play className="h-3 w-3" />
-                                                    </Button>
+                                                    <div className="flex">
+                                                        <Button
+                                                            onClick={() => onStartService([serviceName], false)}
+                                                            disabled={isOperating || isRefreshing || isRunning}
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-7 w-7 p-0 rounded-r-none"
+                                                        >
+                                                            <Play className="h-3 w-3" />
+                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    disabled={isOperating || isRefreshing || isRunning}
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="h-7 w-4 p-0 rounded-l-none border-l-0"
+                                                                >
+                                                                    <ChevronDown className="h-2 w-2" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => onStartService([serviceName], false)}>
+                                                                    <Play className="h-3 w-3 mr-2" />
+                                                                    Up
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onStartService([serviceName], true)}>
+                                                                    <Hammer className="h-3 w-3 mr-2" />
+                                                                    Up --build
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
                                                     <Button
                                                         onClick={() => onStopService([serviceName])}
                                                         disabled={isOperating || isRefreshing || !isRunning}

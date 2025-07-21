@@ -292,6 +292,7 @@ class StackController extends Controller
             if ($operation === 'up') {
                 $services = $request->query('services', '');
                 $params['services'] = $services ? explode(',', $services) : [];
+                $params['build'] = $request->query('build', false) === 'true';
             } elseif ($operation === 'down') {
                 $services = $request->query('services', '');
                 $params['services'] = $services ? explode(',', $services) : [];
@@ -306,6 +307,9 @@ class StackController extends Controller
                     $queryParams = [];
                     if (isset($params['services']) && !empty($params['services'])) {
                         $queryParams['services'] = implode(',', $params['services']);
+                    }
+                    if (isset($params['build']) && $params['build']) {
+                        $queryParams['build'] = 'true';
                     }
                     if (isset($params['remove_volumes']) && $params['remove_volumes']) {
                         $queryParams['remove_volumes'] = 'true';
