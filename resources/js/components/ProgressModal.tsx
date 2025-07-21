@@ -354,7 +354,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className={`max-w-4xl max-h-[85vh] flex flex-col ${isMinimized ? 'h-20' : 'h-[75vh]'}`}>
+            <DialogContent className={`max-w-7xl w-[95vw] max-h-[90vh] flex flex-col ${isMinimized ? 'h-20' : 'h-[85vh]'} bg-gradient-to-br from-background via-background to-muted/5`}>
                 <DialogHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <DialogTitle className="flex items-center gap-2">
@@ -386,12 +386,16 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                     <div className="flex-1 overflow-hidden">
                         <div className="h-full overflow-y-auto pr-2">
                             {output ? (
-                                <div className="font-mono text-xs whitespace-pre-wrap break-words bg-gray-900 p-4 rounded text-gray-100">
+                                <div className="font-mono text-sm whitespace-pre-wrap break-words bg-gradient-to-br from-slate-950 to-slate-900 p-6 rounded-xl border border-border/20 text-slate-100 shadow-inner">
                                     {output}
                                 </div>
                             ) : (
-                                <div className="text-center text-gray-500 py-8">
-                                    Waiting for operation to start...
+                                <div className="text-center text-muted-foreground py-12">
+                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Activity className="h-8 w-8 text-primary animate-spin" />
+                                    </div>
+                                    <p className="text-lg font-medium">Preparing Operation</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Please wait while we establish connection...</p>
                                 </div>
                             )}
                             <div ref={outputEndRef} />

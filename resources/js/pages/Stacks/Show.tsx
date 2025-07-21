@@ -394,17 +394,19 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                             <Download size={14} />
                                         </Button>
                                     </div>
-                                    <div className="border border-border rounded-lg overflow-hidden">
-                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <span className="text-xs text-muted-foreground ml-2 font-mono">Container Logs</span>
+                                    <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
+                                        <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
+                                                    <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
+                                                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+                                                </div>
+                                                <span className="text-sm font-medium text-foreground ml-2 font-mono">Container Logs Terminal</span>
                                             </div>
                                         </div>
-                                        <div className="bg-card p-4 max-h-96 overflow-auto">
-                                            <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                        <div className="bg-gradient-to-br from-slate-950 to-slate-900 p-6 max-h-[70vh] overflow-auto">
+                                            <pre className="text-sm font-mono text-slate-100 whitespace-pre-wrap leading-relaxed">
                                                 {logs.logs || 'No logs available'}
                                             </pre>
                                         </div>
@@ -511,19 +513,21 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                     </Button>
                                                 )}
                                             </div>
-                                            <div className="border border-border rounded-lg overflow-hidden">
-                                                <div className="bg-muted/50 px-3 py-2 border-b border-border">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                        <span className="text-xs text-muted-foreground ml-2 font-mono">
-                                                            {execResult.error ? 'Command Failed' : 'Command Output'}
+                                            <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
+                                                <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
+                                                            <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
+                                                            <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+                                                        </div>
+                                                        <span className="text-sm font-medium ml-2 font-mono">
+                                                            {execResult.error ? '❌ Command Failed' : '✅ Command Output'}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className={`p-4 max-h-96 overflow-auto ${execResult.error ? 'bg-destructive/5' : 'bg-card'}`}>
-                                                    <pre className={`text-sm font-mono whitespace-pre-wrap leading-relaxed ${execResult.error ? 'text-destructive' : 'text-foreground'}`}>
+                                                <div className={`p-6 max-h-[60vh] overflow-auto ${execResult.error ? 'bg-gradient-to-br from-red-950/20 to-red-900/10' : 'bg-gradient-to-br from-slate-950 to-slate-900'}`}>
+                                                    <pre className={`text-sm font-mono whitespace-pre-wrap leading-relaxed ${execResult.error ? 'text-red-300' : 'text-slate-100'}`}>
                                                         {execResult.error ? 
                                                             `Error: ${execResult.error}` : 
                                                             (execResult.output || 'Command executed successfully (no output)')

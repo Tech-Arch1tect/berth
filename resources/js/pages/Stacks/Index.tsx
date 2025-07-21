@@ -244,11 +244,11 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                         </Button>
                     </Card>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {stacks.map((stack) => (
-                            <Card key={stack.name} className="group hover:shadow-md transition-all">
+                            <Card key={stack.name} className="group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/30 bg-gradient-to-br from-card via-card to-muted/20 backdrop-blur-sm">
                                 <Link href={`/servers/${server.id}/stacks/${stack.name}`} className="block">
-                                    <CardHeader className="pb-4">
+                                    <CardHeader className="pb-6">
                                         <div className="flex justify-between items-start">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
@@ -267,8 +267,8 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                         </div>
                                     </CardHeader>
-                                                <CardContent>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                <CardContent className="pt-2">
+                                                    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
                                                         {/* Services */}
                                                         <div className="space-y-3">
                                                             <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                                                     const displayState = serviceStatus?.state || (stack.isLoadingStatus ? 'loading' : 'stopped');
                                                                     
                                                                     return (
-                                                                        <div key={service} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                                                                        <div key={service} className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30">
                                                                             <span className="text-sm font-medium truncate">{service}</span>
                                                                             {stack.isLoadingStatus ? (
                                                                                 <Badge variant="outline" className="text-xs bg-muted/50">
@@ -325,7 +325,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                                             </div>
                                                             <div className="space-y-2">
                                                                 {stack.port_mappings.slice(0, 3).map((port, index) => (
-                                                                    <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30">
                                                                         <span className="text-sm font-mono">{port.published}:{port.target}</span>
                                                                         <Badge variant="outline" className="text-xs">
                                                                             {port.protocol}
@@ -350,7 +350,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                                             </div>
                                                             <div className="space-y-2">
                                                                 {stack.volume_mappings.slice(0, 2).map((volume, index) => (
-                                                                    <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30">
                                                                         <div className="text-sm font-mono truncate">
                                                                             <span className="text-muted-foreground">{volume.source?.split('/').pop()}</span>
                                                                             <span className="mx-2">→</span>

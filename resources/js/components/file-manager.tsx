@@ -237,7 +237,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                         Create File
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
+                                <DialogContent className="max-w-4xl w-[90vw] max-h-[85vh] flex flex-col">
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2">
                                             <Plus className="h-5 w-5 text-primary" />
@@ -247,8 +247,8 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                             Create a new file in <span className="font-mono bg-muted px-1 rounded">{currentPath === '.' ? 'root' : currentPath}</span>
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
+                                    <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
+                                        <div className="space-y-2 flex-shrink-0">
                                             <label htmlFor="fileName" className="text-sm font-semibold">
                                                 File Name
                                             </label>
@@ -260,7 +260,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 className="font-mono"
                                             />
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
                                             <label htmlFor="fileContent" className="text-sm font-semibold">
                                                 File Content
                                             </label>
@@ -269,8 +269,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 value={newFileContent}
                                                 onChange={(e) => setNewFileContent(e.target.value)}
                                                 placeholder="Enter file content..."
-                                                rows={12}
-                                                className="w-full px-3 py-3 border border-border rounded-lg text-sm bg-card text-card-foreground font-mono resize-vertical focus:ring-2 focus:ring-ring focus:border-transparent"
+                                                className="flex-1 w-full px-4 py-4 border border-border/20 rounded-xl text-sm bg-gradient-to-br from-background to-muted/10 text-foreground font-mono resize-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-inner min-h-[400px]"
                                             />
                                         </div>
                                     </div>
@@ -375,7 +374,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                             className="animate-in slide-in-from-bottom-4 duration-300 group"
                                             style={{ animationDelay: `${index * 50}ms` }}
                                         >
-                                            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/40 hover:border-border transition-all duration-200">
+                                            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/30 hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/20 hover:border-border/60 hover:shadow-md transition-all duration-300 group-hover:translate-x-1">
                                                 <div 
                                                     className={`flex items-center gap-4 flex-1 ${file.isDir ? 'cursor-pointer' : ''}`}
                                                     onClick={() => file.isDir && handleFileClick(file)}
