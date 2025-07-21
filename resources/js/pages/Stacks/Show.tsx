@@ -84,7 +84,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         if (logs) {
             fetchLogs();
         }
-    }, [logs, selectedService, logTail, fetchLogs]);
+    }, [selectedService, logTail, fetchLogs]);
 
     const bringStackUp = async (services?: string[], build?: boolean) => {
         if (showProgressModal) {
