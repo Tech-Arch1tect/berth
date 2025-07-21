@@ -39,8 +39,7 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
 
     const handleDisable = (e: React.FormEvent) => {
         e.preventDefault();
-        destroy(route('two-factor.destroy'), {
-            data: { password: data.password },
+        destroy(route('two-factor.destroy', { password: data.password }), {
             onSuccess: () => {
                 reset('password');
                 setShowDisableForm(false);
