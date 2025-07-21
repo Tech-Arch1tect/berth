@@ -1,22 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Clock, Activity, Terminal, Minimize2 } from 'lucide-react';
+import { CheckCircle, XCircle, Activity, Minimize2 } from 'lucide-react';
 
-export interface ProgressEvent {
-    type: 'progress' | 'status' | 'complete' | 'error' | 'connection';
-    operation: string;
-    stage?: string;
-    service?: string;
-    message: string;
-    progress?: {
+interface ComposeEvent {
+    type: string;
+    timestamp: string;
+    status?: {
         current: number;
         total: number;
     };
-    timestamp: string;
-    output?: string;
+    service?: {
+        name: string;
+        action: string;
+        progress?: string;
+        size?: string;
+        duration?: string;
+    };
+    network?: {
+        name: string;
+        action: string;
+        duration?: string;
+    };
+    container?: {
+        name: string;
+        action: string;
+        duration?: string;
+    };
+    message?: string;
+}
+
+interface ServiceState {
+    name: string;
+    action: string;
+    progress?: string;
+    duration?: string;
+    lastUpdated: number;
 }
 
 interface Props {
@@ -28,20 +48,124 @@ interface Props {
     onClose: () => void;
 }
 
+class StructuredEventProcessor {
+    private services: Map<string, ServiceState> = new Map();
+    private containers: Map<string, ServiceState> = new Map();
+    private networks: Map<string, ServiceState> = new Map();
+    private generalMessages: string[] = [];
+    private overallStatus: { current: number; total: number } | null = null;
+
+    processEvent(event: ComposeEvent): void {
+        const now = Date.now();
+        
+        switch (event.type) {
+            case 'status':
+                if (event.status) {
+                    this.overallStatus = event.status;
+                }
+                break;
+                
+            case 'service':
+                if (event.service) {
+                    this.services.set(event.service.name, {
+                        name: event.service.name,
+                        action: event.service.action,
+                        progress: event.service.progress,
+                        duration: event.service.duration,
+                        lastUpdated: now
+                    });
+                }
+                break;
+                
+            case 'container':
+                if (event.container) {
+                    this.containers.set(event.container.name, {
+                        name: event.container.name,
+                        action: event.container.action,
+                        duration: event.container.duration,
+                        lastUpdated: now
+                    });
+                }
+                break;
+                
+            case 'network':
+                if (event.network) {
+                    this.networks.set(event.network.name, {
+                        name: event.network.name,
+                        action: event.network.action,
+                        duration: event.network.duration,
+                        lastUpdated: now
+                    });
+                }
+                break;
+                
+            case 'connection':
+            case 'complete':
+            case 'error':
+            case 'log':
+                if (event.message) {
+                    this.generalMessages.push(event.message);
+                }
+                break;
+        }
+    }
+
+    getDisplay(): string {
+        const lines: string[] = [];
+        
+        if (this.overallStatus) {
+            lines.push(`[+] Running ${this.overallStatus.current}/${this.overallStatus.total}`);
+        }
+        
+        this.services.forEach(service => {
+            let line = ` ✔ ${service.name} ${service.action}`;
+            if (service.progress) line += ` ${service.progress}`;
+            if (service.duration) line += ` ${service.duration}`;
+            lines.push(line);
+        });
+        
+        this.containers.forEach(container => {
+            let line = ` ✔ Container ${container.name} ${container.action}`;
+            if (container.duration) line += ` ${container.duration}`;
+            lines.push(line);
+        });
+        
+        this.networks.forEach(network => {
+            let line = ` ✔ Network ${network.name} ${network.action}`;
+            if (network.duration) line += ` ${network.duration}`;
+            lines.push(line);
+        });
+        
+        const recentMessages = this.generalMessages.slice(-10);
+        lines.push(...recentMessages);
+        
+        return lines.join('\n');
+    }
+
+    reset(): void {
+        this.services.clear();
+        this.containers.clear();
+        this.networks.clear();
+        this.generalMessages = [];
+        this.overallStatus = null;
+    }
+}
+
 export default function ProgressModal({ url, onComplete, onError, title, isOpen, onClose }: Props) {
-    const [events, setEvents] = useState<ProgressEvent[]>([]);
+    const [output, setOutput] = useState<string>('');
     const [isConnected, setIsConnected] = useState(false);
-    const [currentProgress, setCurrentProgress] = useState<{ current: number; total: number } | null>(null);
     const [overallStatus, setOverallStatus] = useState<'running' | 'completed' | 'error'>('running');
     const [isMinimized, setIsMinimized] = useState(false);
     const [completedAt, setCompletedAt] = useState<Date | null>(null);
     const eventSourceRef = useRef<AbortController | null>(null);
-    const eventsEndRef = useRef<HTMLDivElement>(null);
+    const outputEndRef = useRef<HTMLDivElement>(null);
     const shouldConnectRef = useRef<boolean>(true);
+    const eventProcessor = useRef(new StructuredEventProcessor());
+    const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [events]);
+        outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [output]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -50,8 +174,8 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                 eventSourceRef.current.abort();
                 eventSourceRef.current = null;
             }
-            setEvents([]);
-            setCurrentProgress(null);
+            setOutput('');
+            eventProcessor.current.reset();
             setOverallStatus('running');
             setIsConnected(false);
             setIsMinimized(false);
@@ -64,8 +188,8 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
         }
 
         shouldConnectRef.current = true;
-        setEvents([]);
-        setCurrentProgress(null);
+        setOutput('');
+        eventProcessor.current.reset();
         setOverallStatus('running');
         setIsConnected(false);
         setIsMinimized(false);
@@ -105,6 +229,17 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                     const { done, value } = await reader.read();
                     
                     if (done) {
+                        if (updateTimeoutRef.current) {
+                            clearTimeout(updateTimeoutRef.current);
+                        }
+                        const finalDisplay = eventProcessor.current.getDisplay();
+                        setOutput(finalDisplay);
+                        
+                        setOverallStatus('completed');
+                        setCompletedAt(new Date());
+                        setIsConnected(false);
+                        shouldConnectRef.current = false;
+                        onComplete?.(true);
                         break;
                     }
 
@@ -114,41 +249,29 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
-                            const data = line.slice(6).trim();
-                            if (data) {
-                                try {
-                                    const progressEvent: ProgressEvent = JSON.parse(data);
-                                    
-                                    setEvents(prev => [...prev, progressEvent]);
-                                    
-                                    if (progressEvent.progress) {
-                                        setCurrentProgress(progressEvent.progress);
-                                    }
-                                    
-                                    if (progressEvent.type === 'complete') {
-                                        setOverallStatus('completed');
-                                        setCompletedAt(new Date());
-                                        setIsConnected(false);
-                                        shouldConnectRef.current = false;
-                                        onComplete?.(true);
-                                        reader.cancel();
-                                        return;
-                                    } else if (progressEvent.type === 'error') {
-                                        setOverallStatus('error');
-                                        setCompletedAt(new Date());
-                                        setIsConnected(false);
-                                        shouldConnectRef.current = false;
-                                        onError?.(progressEvent.message);
-                                        onComplete?.(false);
-                                        reader.cancel();
-                                        return;
-                                    }
-                                } catch (err) {
-                                    console.error('Failed to parse progress event:', err);
-                                }
+                            try {
+                                const eventData = line.substring(6);
+                                const event: ComposeEvent = JSON.parse(eventData);
+                                eventProcessor.current.processEvent(event);
+                            } catch (parseError) {
+                                console.warn('Failed to parse event:', line, parseError);
+                                eventProcessor.current.processEvent({
+                                    type: 'log',
+                                    timestamp: new Date().toISOString(),
+                                    message: line
+                                });
                             }
                         }
                     }
+                    
+                    if (updateTimeoutRef.current) {
+                        clearTimeout(updateTimeoutRef.current);
+                    }
+                    
+                    updateTimeoutRef.current = setTimeout(() => {
+                        const currentDisplay = eventProcessor.current.getDisplay();
+                        setOutput(currentDisplay);
+                    }, 50);
                 }
 
                 reader.cancel();
@@ -177,43 +300,6 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
         };
     }, [url, isOpen, onComplete, onError]);
 
-    const getStatusIcon = (event: ProgressEvent) => {
-        switch (event.type) {
-            case 'complete':
-                return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case 'error':
-                return <XCircle className="h-4 w-4 text-red-500" />;
-            case 'progress':
-                return <Activity className="h-4 w-4 text-blue-500" />;
-            case 'connection':
-                return <Terminal className="h-4 w-4 text-gray-500" />;
-            default:
-                return <Clock className="h-4 w-4 text-yellow-500" />;
-        }
-    };
-
-    const getStageColor = (stage?: string) => {
-        switch (stage) {
-            case 'pulling':
-                return 'bg-blue-100 text-blue-800';
-            case 'creating':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'starting':
-                return 'bg-green-100 text-green-800';
-            case 'removing':
-                return 'bg-red-100 text-red-800';
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'error':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    const progressPercentage = currentProgress 
-        ? Math.round((currentProgress.current / currentProgress.total) * 100)
-        : 0;
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
@@ -256,61 +342,21 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                             )}
                         </div>
                     </div>
-                    
-                    {!isMinimized && currentProgress && (
-                        <div className="space-y-2 pt-2">
-                            <div className="flex justify-between text-sm">
-                                <span>Progress</span>
-                                <span>{currentProgress.current}/{currentProgress.total} ({progressPercentage}%)</span>
-                            </div>
-                            <Progress value={progressPercentage} className="h-2" />
-                        </div>
-                    )}
                 </DialogHeader>
                 
                 {!isMinimized && (
                     <div className="flex-1 overflow-hidden">
-                        <div className="h-full overflow-y-auto space-y-2 pr-2">
-                            {events.map((event, index) => (
-                                <div key={index} className="flex items-start gap-3 text-sm">
-                                    {getStatusIcon(event)}
-                                    
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            {event.stage && (
-                                                <Badge variant="outline" className={`text-xs ${getStageColor(event.stage)}`}>
-                                                    {event.stage}
-                                                </Badge>
-                                            )}
-                                            {event.service && (
-                                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                                    {event.service}
-                                                </Badge>
-                                            )}
-                                            <span className="text-xs text-gray-500">
-                                                {event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'N/A'}
-                                            </span>
-                                        </div>
-                                        
-                                        <p className="mt-1 font-mono text-xs break-all">
-                                            {event.message}
-                                        </p>
-                                        
-                                        {event.output && event.output !== event.message && (
-                                            <pre className="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                                                {event.output}
-                                            </pre>
-                                        )}
-                                    </div>
+                        <div className="h-full overflow-y-auto pr-2">
+                            {output ? (
+                                <div className="font-mono text-xs whitespace-pre-wrap break-words bg-gray-900 p-4 rounded text-gray-100">
+                                    {output}
                                 </div>
-                            ))}
-                            
-                            {events.length === 0 && (
+                            ) : (
                                 <div className="text-center text-gray-500 py-8">
                                     Waiting for operation to start...
                                 </div>
                             )}
-                            <div ref={eventsEndRef} />
+                            <div ref={outputEndRef} />
                         </div>
                     </div>
                 )}

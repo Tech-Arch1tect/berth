@@ -300,12 +300,6 @@ class StackController extends Controller
             }
 
             return response()->stream(function () use ($url, $server, $params) {
-                echo "data: " . json_encode([
-                    'type' => 'connection',
-                    'message' => 'Connected to agent stream'
-                ]) . "\n\n";
-                flush();
-
                 try {
                     $queryParams = [];
                     if (isset($params['services']) && !empty($params['services'])) {
@@ -346,23 +340,17 @@ class StackController extends Controller
                     
                     if ($result === false || $httpCode !== 200) {
                         $error = curl_error($ch);
-                        echo "data: " . json_encode([
-                            'type' => 'error',
-                            'message' => $error ?: "HTTP {$httpCode}"
-                        ]) . "\n\n";
+                        echo "data: {\"type\":\"error\",\"timestamp\":\"" . date('c') . "\",\"message\":\"" . ($error ?: "HTTP {$httpCode}") . "\"}\n\n";
                         flush();
                     }
                     
                     curl_close($ch);
                 } catch (\Exception $e) {
-                    echo "data: " . json_encode([
-                        'type' => 'error',
-                        'message' => $e->getMessage()
-                    ]) . "\n\n";
+                    echo "data: {\"type\":\"error\",\"timestamp\":\"" . date('c') . "\",\"message\":\"" . addslashes($e->getMessage()) . "\"}\n\n";
                     flush();
                 }
             }, 200, [
-                'Content-Type' => 'text/event-stream',
+                'Content-Type' => 'text/event-stream; charset=utf-8',
                 'Cache-Control' => 'no-cache',
                 'Connection' => 'keep-alive',
                 'X-Accel-Buffering' => 'no',
