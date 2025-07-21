@@ -134,7 +134,7 @@ export default function StackServices({
                                                     <div className="flex">
                                                         <Button
                                                             onClick={() => onStartService([serviceName], false)}
-                                                            disabled={isOperating || isRefreshing || isRunning}
+                                                            disabled={isOperating || isRefreshing }
                                                             variant="outline"
                                                             size="sm"
                                                             className="h-7 w-7 p-0 rounded-r-none"
@@ -144,7 +144,7 @@ export default function StackServices({
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button
-                                                                    disabled={isOperating || isRefreshing || isRunning}
+                                                                    disabled={isOperating || isRefreshing}
                                                                     variant="outline"
                                                                     size="sm"
                                                                     className="h-7 w-4 p-0 rounded-l-none border-l-0"
