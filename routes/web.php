@@ -40,6 +40,9 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::get('api/servers/{server}/stacks/{stackName}/up/stream', [StackController::class, 'composeUpStream'])->name('api.stacks.up.stream');
     Route::get('api/servers/{server}/stacks/{stackName}/down/stream', [StackController::class, 'composeDownStream'])->name('api.stacks.down.stream');
     
+    // Configuration endpoints
+    Route::get('api/config', [StackController::class, 'getConfig'])->name('api.config');
+    
     // Two-factor authentication routes
     Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
     Route::post('two-factor', [TwoFactorController::class, 'store'])->name('two-factor.store');

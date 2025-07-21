@@ -157,15 +157,35 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
     const [overallStatus, setOverallStatus] = useState<'running' | 'completed' | 'error'>('running');
     const [isMinimized, setIsMinimized] = useState(false);
     const [completedAt, setCompletedAt] = useState<Date | null>(null);
+    const [agentTimeout, setAgentTimeout] = useState<number>(600000);
     const eventSourceRef = useRef<AbortController | null>(null);
     const outputEndRef = useRef<HTMLDivElement>(null);
     const shouldConnectRef = useRef<boolean>(true);
     const eventProcessor = useRef(new StructuredEventProcessor());
     const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [output]);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await fetch('/api/config', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const config = await response.json();
+                    setAgentTimeout(config.agent_timeout || 600000);
+                }
+            } catch (error) {
+                console.warn('Failed to fetch config, using default timeout:', error);
+            }
+        };
+        
+        fetchConfig();
+    }, []);
 
     useEffect(() => {
         if (!isOpen) {
@@ -173,6 +193,10 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
             if (eventSourceRef.current) {
                 eventSourceRef.current.abort();
                 eventSourceRef.current = null;
+            }
+            if (fetchTimeoutRef.current) {
+                clearTimeout(fetchTimeoutRef.current);
+                fetchTimeoutRef.current = null;
             }
             setOutput('');
             eventProcessor.current.reset();
@@ -197,6 +221,10 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
         const abortController = new AbortController();
         eventSourceRef.current = abortController;
+
+        fetchTimeoutRef.current = setTimeout(() => {
+            abortController.abort();
+        }, agentTimeout);
 
         const startStreaming = async () => {
             try {
@@ -231,6 +259,9 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                     if (done) {
                         if (updateTimeoutRef.current) {
                             clearTimeout(updateTimeoutRef.current);
+                        }
+                        if (fetchTimeoutRef.current) {
+                            clearTimeout(fetchTimeoutRef.current);
                         }
                         const finalDisplay = eventProcessor.current.getDisplay();
                         setOutput(finalDisplay);
@@ -276,6 +307,10 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
                 reader.cancel();
             } catch (error) {
+                if (fetchTimeoutRef.current) {
+                    clearTimeout(fetchTimeoutRef.current);
+                }
+                
                 if (error instanceof Error && error.name === 'AbortError') {
                     return;
                 }
@@ -296,9 +331,12 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
         return () => {
             shouldConnectRef.current = false;
+            if (fetchTimeoutRef.current) {
+                clearTimeout(fetchTimeoutRef.current);
+            }
             abortController.abort();
         };
-    }, [url, isOpen, onComplete, onError]);
+    }, [url, isOpen, onComplete, onError, agentTimeout]);
 
 
     const handleOpenChange = (open: boolean) => {

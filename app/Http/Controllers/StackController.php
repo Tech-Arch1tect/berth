@@ -301,6 +301,8 @@ class StackController extends Controller
 
             return response()->stream(function () use ($url, $server, $params) {
                 try {
+                    $timeout = config('app.agent_http_timeout', 600);
+                    
                     $queryParams = [];
                     if (isset($params['services']) && !empty($params['services'])) {
                         $queryParams['services'] = implode(',', $params['services']);
@@ -311,6 +313,7 @@ class StackController extends Controller
                     if (isset($params['remove_images']) && $params['remove_images']) {
                         $queryParams['remove_images'] = 'true';
                     }
+                    $queryParams['timeout'] = $timeout;
                     
                     $finalUrl = $url;
                     if (!empty($queryParams)) {
@@ -330,7 +333,7 @@ class StackController extends Controller
                             flush();
                             return strlen($data);
                         },
-                        CURLOPT_TIMEOUT => config('app.agent_http_timeout', 120),
+                        CURLOPT_TIMEOUT => $timeout,
                         CURLOPT_FOLLOWLOCATION => true,
                         CURLOPT_SSL_VERIFYPEER => false,
                     ]);
@@ -449,6 +452,13 @@ class StackController extends Controller
                 'error' => 'Failed to update file: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getConfig(Request $request)
+    {
+        return response()->json([
+            'agent_timeout' => config('app.agent_http_timeout', 600) * 1000
+        ]);
     }
 
     public function deleteFile(Request $request, Server $server, string $stackName)
