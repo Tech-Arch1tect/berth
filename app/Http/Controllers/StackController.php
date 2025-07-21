@@ -231,53 +231,6 @@ class StackController extends Controller
         }
     }
 
-    public function composeUp(Request $request, Server $server, string $stackName)
-    {
-        // Check if user has start-stop permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
-            return response()->json(['error' => 'Insufficient permissions'], 403);
-        }
-
-        try {
-            $services = $request->input('services', []);
-            
-            $result = $this->sendComposeCommand($server, $stackName, 'up', [
-                'services' => $services
-            ]);
-            
-            return response()->json($result);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to start services: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function composeDown(Request $request, Server $server, string $stackName)
-    {
-        // Check if user has start-stop permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
-            return response()->json(['error' => 'Insufficient permissions'], 403);
-        }
-
-        try {
-            $services = $request->input('services', []);
-            $removeVolumes = $request->input('remove_volumes', false);
-            $removeImages = $request->input('remove_images', false);
-            
-            $result = $this->sendComposeCommand($server, $stackName, 'down', [
-                'services' => $services,
-                'remove_volumes' => $removeVolumes,
-                'remove_images' => $removeImages
-            ]);
-            
-            return response()->json($result);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to stop services: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     public function composeExec(Request $request, Server $server, string $stackName)
     {
@@ -306,6 +259,118 @@ class StackController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to execute command: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function composeUpStream(Request $request, Server $server, string $stackName)
+    {
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        return $this->streamComposeOperation($request, $server, $stackName, 'up');
+    }
+
+    public function composeDownStream(Request $request, Server $server, string $stackName)
+    {
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        return $this->streamComposeOperation($request, $server, $stackName, 'down');
+    }
+
+
+    protected function streamComposeOperation(Request $request, Server $server, string $stackName, string $operation)
+    {
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/{$operation}/stream";
+            
+            $params = [];
+            if ($operation === 'up') {
+                $services = $request->query('services', '');
+                $params['services'] = $services ? explode(',', $services) : [];
+            } elseif ($operation === 'down') {
+                $services = $request->query('services', '');
+                $params['services'] = $services ? explode(',', $services) : [];
+                $params['remove_volumes'] = $request->query('remove_volumes', false) === 'true';
+                $params['remove_images'] = $request->query('remove_images', false) === 'true';
+            }
+
+            return response()->stream(function () use ($url, $server, $params) {
+                echo "data: " . json_encode([
+                    'type' => 'connection',
+                    'message' => 'Connected to agent stream'
+                ]) . "\n\n";
+                flush();
+
+                try {
+                    $queryParams = [];
+                    if (isset($params['services']) && !empty($params['services'])) {
+                        $queryParams['services'] = implode(',', $params['services']);
+                    }
+                    if (isset($params['remove_volumes']) && $params['remove_volumes']) {
+                        $queryParams['remove_volumes'] = 'true';
+                    }
+                    if (isset($params['remove_images']) && $params['remove_images']) {
+                        $queryParams['remove_images'] = 'true';
+                    }
+                    
+                    $finalUrl = $url;
+                    if (!empty($queryParams)) {
+                        $finalUrl .= '?' . http_build_query($queryParams);
+                    }
+
+                    $ch = curl_init();
+                    curl_setopt_array($ch, [
+                        CURLOPT_URL => $finalUrl,
+                        CURLOPT_HTTPGET => true,
+                        CURLOPT_HTTPHEADER => [
+                            'Authorization: Bearer ' . $server->access_secret,
+                            'Accept: text/event-stream',
+                        ],
+                        CURLOPT_WRITEFUNCTION => function($ch, $data) {
+                            echo $data;
+                            flush();
+                            return strlen($data);
+                        },
+                        CURLOPT_TIMEOUT => config('app.agent_http_timeout', 120),
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                    ]);
+
+                    $result = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    
+                    if ($result === false || $httpCode !== 200) {
+                        $error = curl_error($ch);
+                        echo "data: " . json_encode([
+                            'type' => 'error',
+                            'message' => $error ?: "HTTP {$httpCode}"
+                        ]) . "\n\n";
+                        flush();
+                    }
+                    
+                    curl_close($ch);
+                } catch (\Exception $e) {
+                    echo "data: " . json_encode([
+                        'type' => 'error',
+                        'message' => $e->getMessage()
+                    ]) . "\n\n";
+                    flush();
+                }
+            }, 200, [
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache',
+                'Connection' => 'keep-alive',
+                'X-Accel-Buffering' => 'no',
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to start streaming operation: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -35,9 +35,10 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::post('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'createFile'])->name('api.stacks.file.create');
     Route::put('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'updateFile'])->name('api.stacks.file.update');
     Route::delete('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'deleteFile'])->name('api.stacks.file.delete');
-    Route::post('api/servers/{server}/stacks/{stackName}/up', [StackController::class, 'composeUp'])->name('api.stacks.up');
-    Route::post('api/servers/{server}/stacks/{stackName}/down', [StackController::class, 'composeDown'])->name('api.stacks.down');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');
+    
+    Route::get('api/servers/{server}/stacks/{stackName}/up/stream', [StackController::class, 'composeUpStream'])->name('api.stacks.up.stream');
+    Route::get('api/servers/{server}/stacks/{stackName}/down/stream', [StackController::class, 'composeDownStream'])->name('api.stacks.down.stream');
     
     // Two-factor authentication routes
     Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');

@@ -10,8 +10,7 @@ import { useState } from 'react';
 interface StackServicesProps {
     stack: Stack;
     userPermissions: UserPermissions;
-    isStarting: boolean;
-    isStopping: boolean;
+    isOperating: boolean;
     isRefreshing: boolean;
     onStartService: (services: string[]) => void;
     onStopService: (services: string[]) => void;
@@ -20,8 +19,7 @@ interface StackServicesProps {
 export default function StackServices({
     stack,
     userPermissions,
-    isStarting,
-    isStopping,
+    isOperating,
     isRefreshing,
     onStartService,
     onStopService,
@@ -55,7 +53,7 @@ export default function StackServices({
                         <div className="flex items-center gap-2">
                             <Button
                                 onClick={() => onStartService([])}
-                                disabled={isStarting || isRefreshing}
+                                disabled={isOperating || isRefreshing}
                                 variant="default"
                                 size="sm"
                             >
@@ -64,7 +62,7 @@ export default function StackServices({
                             </Button>
                             <Button
                                 onClick={() => onStopService([])}
-                                disabled={isStopping || isRefreshing}
+                                disabled={isOperating || isRefreshing}
                                 variant="destructive"
                                 size="sm"
                             >
@@ -109,7 +107,7 @@ export default function StackServices({
                                                 <>
                                                     <Button
                                                         onClick={() => onStartService([serviceName])}
-                                                        disabled={isStarting || isRefreshing || isRunning}
+                                                        disabled={isOperating || isRefreshing || isRunning}
                                                         variant="outline"
                                                         size="sm"
                                                         className="h-7 w-7 p-0"
@@ -118,7 +116,7 @@ export default function StackServices({
                                                     </Button>
                                                     <Button
                                                         onClick={() => onStopService([serviceName])}
-                                                        disabled={isStopping || isRefreshing || !isRunning}
+                                                        disabled={isOperating || isRefreshing || !isRunning}
                                                         variant="outline"
                                                         size="sm"
                                                         className="h-7 w-7 p-0"

@@ -9,6 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
 import StackServices from '@/components/StackServices';
+import ProgressModal from '@/components/ProgressModal';
 import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
 import { type BreadcrumbItem } from '@/types';
 import { apiPost, apiGet } from '@/utils/api';
@@ -25,8 +26,9 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [selectedService, setSelectedService] = useState<string>('all');
     const [logTail, setLogTail] = useState<string>('100');
-    const [isBringingUp, setIsBringingUp] = useState(false);
-    const [isBringingDown, setIsBringingDown] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
+    const [progressUrl, setProgressUrl] = useState<string>('');
+    const [progressTitle, setProgressTitle] = useState<string>('');
     const [execService, setExecService] = useState<string>('');
     const [execCommand, setExecCommand] = useState<string>('');
     const [execResult, setExecResult] = useState<{command?: string, service?: string, output?: string, error?: string} | null>(null);
@@ -85,43 +87,43 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     }, [logs, selectedService, logTail, fetchLogs]);
 
     const bringStackUp = async (services?: string[]) => {
-        setIsBringingUp(true);
-        try {
-            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/up`, {
-                services: services || []
-            });
-            
-            if (response.success) {
-                console.log('Stack brought up:', response.data);
-                refreshStack();
-            } else {
-                console.error('Failed to bring stack up:', response.error);
-            }
-        } catch (err) {
-            console.error('Failed to bring stack up:', err);
-        } finally {
-            setIsBringingUp(false);
+        if (showProgressModal) {
+            return;
         }
+        
+        const params = new URLSearchParams({
+            services: services?.join(',') || ''
+        });
+        
+        const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/up/stream?${params}`;
+        setProgressUrl(streamUrl);
+        setProgressTitle(`Starting Stack: ${stack.name}`);
+        setShowProgressModal(true);
     };
 
     const bringStackDown = async (services?: string[]) => {
-        setIsBringingDown(true);
-        try {
-            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/down`, {
-                services: services || []
-            });
-            
-            if (response.success) {
-                console.log('Stack brought down:', response.data);
-                refreshStack();
-            } else {
-                console.error('Failed to bring stack down:', response.error);
-            }
-        } catch (err) {
-            console.error('Failed to bring stack down:', err);
-        } finally {
-            setIsBringingDown(false);
+        if (showProgressModal) {
+            return;
         }
+        
+        const params = new URLSearchParams({
+            services: services?.join(',') || ''
+        });
+        
+        const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/down/stream?${params}`;
+        setProgressUrl(streamUrl);
+        setProgressTitle(`Stopping Stack: ${stack.name}`);
+        setShowProgressModal(true);
+    };
+
+    const handleProgressComplete = (success: boolean) => {
+        if (success) {
+            refreshStack();
+        }
+    };
+
+    const handleProgressClose = () => {
+        setShowProgressModal(false);
     };
 
     const executeCommand = async () => {
@@ -268,8 +270,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     <StackServices
                         stack={stack}
                         userPermissions={userPermissions}
-                        isStarting={isBringingUp}
-                        isStopping={isBringingDown}
+                        isOperating={showProgressModal}
                         isRefreshing={isRefreshing}
                         onStartService={bringStackUp}
                         onStopService={bringStackDown}
@@ -582,6 +583,14 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     )}
                 </div>
             </div>
+
+            <ProgressModal
+                url={progressUrl}
+                onComplete={handleProgressComplete}
+                title={progressTitle}
+                isOpen={showProgressModal}
+                onClose={handleProgressClose}
+            />
         </AppLayout>
     );
 }
