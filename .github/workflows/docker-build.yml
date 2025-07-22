@@ -67,7 +67,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        dockerfile: Dockerfile
+        file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta-app.outputs.tags }}
@@ -79,7 +79,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        dockerfile: nginx.Dockerfile
+        file: ./nginx.Dockerfile
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta-nginx.outputs.tags }}
