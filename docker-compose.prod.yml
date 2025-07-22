@@ -1,0 +1,51 @@
+services:
+  app:
+    image: techarchitect/berth:${IMAGE_TAG:-latest}
+    container_name: berth-app
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./berth-storage:/var/www/html/storage
+      - ./berth-database:/var/www/html/database
+    networks:
+      - berth-network
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: techarchitect/berth-nginx:${IMAGE_TAG:-latest}
+    container_name: berth-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - berth-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  queue:
+    image: techarchitect/berth:${IMAGE_TAG:-latest}
+    container_name: berth-queue
+    restart: unless-stopped
+    env_file: .env
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    volumes:
+      - ./berth-storage:/var/www/html/storage
+      - ./berth-database:/var/www/html/database
+    depends_on:
+      - app
+    networks:
+      - berth-network
+
+networks:
+  berth-network:
+    driver: bridge
