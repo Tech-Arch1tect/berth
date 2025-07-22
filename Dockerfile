@@ -33,9 +33,6 @@ RUN composer run-script post-autoload-dump --no-interaction || true \
 
 USER appuser
 
-RUN php artisan route:cache \
-    && php artisan view:cache
-
 USER root
 
 EXPOSE 9000
