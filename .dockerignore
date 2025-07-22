@@ -1,0 +1,63 @@
+# Laravel
+.env
+.env.*
+!.env.example
+!.env.production
+
+# Development
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+
+# Tests
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Development tools
+docker-compose.yml
+docker-compose.override.yml
+.sail/
+
+# Storage and logs (will be created at runtime)
+storage/app/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+bootstrap/cache/
+
+# Database
+database/database.sqlite
+
+# Build artifacts
+public/hot
+public/build/
+public/storage
+
+# Vendor (will be installed during build)
+vendor/
+
+# Misc
+.editorconfig
+.styleci.yml
