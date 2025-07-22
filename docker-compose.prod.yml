@@ -6,7 +6,7 @@ services:
     env_file: .env
     volumes:
       - ./berth-storage:/var/www/html/storage
-      - ./berth-database:/var/www/html/database
+      - ./berth-database.sqlite:/var/www/html/database/database.sqlite
     networks:
       - berth-network
     healthcheck:
@@ -40,7 +40,7 @@ services:
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
     volumes:
       - ./berth-storage:/var/www/html/storage
-      - ./berth-database:/var/www/html/database
+      - ./berth-database.sqlite:/var/www/html/database/database.sqlite
     depends_on:
       - app
     networks:
