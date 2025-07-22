@@ -26,14 +26,19 @@ RUN mkdir -p bootstrap/cache storage/logs storage/framework/cache storage/framew
     && chmod -R 775 /var/www/html/bootstrap/cache
 
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-RUN composer run-script post-autoload-dump --no-interaction || true
+RUN composer run-script post-autoload-dump --no-interaction || true \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 USER appuser
 
 RUN php artisan route:cache \
     && php artisan view:cache
 
+USER root
+
 EXPOSE 9000
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
