@@ -14,7 +14,7 @@ RUN npm run build
 FROM techarchitect/berth-php-base:latest
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN composer install --optimize-autoloader --no-interaction --no-scripts
 
 COPY . .
 COPY --from=node-build /app/public/build ./public/build
