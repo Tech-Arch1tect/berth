@@ -11,7 +11,7 @@ use App\Http\Middleware\CheckAdminRole;
 use App\Http\Middleware\TwoFactorMiddleware;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('dashboard');
 })->name('home');
 
 Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(function () {
