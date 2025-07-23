@@ -36,6 +36,7 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::put('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'updateFile'])->name('api.stacks.file.update');
     Route::delete('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'deleteFile'])->name('api.stacks.file.delete');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');
+    Route::get('api/servers/{server}/stacks/{stackName}/terminal/{service}', [StackController::class, 'terminalSession'])->name('api.stacks.terminal');
     
     Route::get('api/servers/{server}/stacks/{stackName}/up/stream', [StackController::class, 'composeUpStream'])->name('api.stacks.up.stream');
     Route::get('api/servers/{server}/stacks/{stackName}/down/stream', [StackController::class, 'composeDownStream'])->name('api.stacks.down.stream');

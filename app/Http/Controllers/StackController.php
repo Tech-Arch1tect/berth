@@ -676,4 +676,39 @@ class StackController extends Controller
 
         return $responseData;
     }
+
+    public function terminalSession(Server $server, string $stackName, string $service)
+    {
+        // Check if user has exec permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'exec')) {
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        try {
+            $shell = request()->query('shell', 'auto');
+            
+            $allowedShells = ['auto', 'bash', 'sh', 'zsh', 'fish', 'dash'];
+            if (!in_array($shell, $allowedShells)) {
+                $shell = 'auto';
+            }
+            
+            $protocol = $server->https ? 'wss' : 'ws';
+            $wsUrl = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/terminal/session/{$service}";
+            
+            $wsUrl .= "?shell=" . urlencode($shell);
+            
+            return response()->json([
+                'websocket_url' => $wsUrl,
+                'access_token' => $server->access_secret,
+                'stack_name' => $stackName,
+                'service' => $service,
+                'server_name' => $server->display_name,
+                'shell' => $shell
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to create terminal session: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

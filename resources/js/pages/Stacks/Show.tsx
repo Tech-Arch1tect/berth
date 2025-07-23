@@ -10,6 +10,7 @@ import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
 import StackServices from '@/components/StackServices';
 import ProgressModal from '@/components/ProgressModal';
+import TerminalSession from '@/components/TerminalSession';
 import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
 import { type BreadcrumbItem } from '@/types';
 import { apiPost, apiGet } from '@/utils/api';
@@ -34,6 +35,9 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [execResult, setExecResult] = useState<{command?: string, service?: string, output?: string, error?: string} | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
     const [openSections, setOpenSections] = useState<Set<string>>(new Set(['services']));
+    const [terminalSessions, setTerminalSessions] = useState<{id: string, service: string, shell: string}[]>([]);
+    const [terminalService, setTerminalService] = useState<string>('');
+    const [terminalShell, setTerminalShell] = useState<string>('auto');
 
     const toggleSection = (section: string) => {
         const newOpenSections = new Set(openSections);
@@ -154,6 +158,18 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         } finally {
             setIsExecuting(false);
         }
+    };
+
+    const openTerminalSession = () => {
+        if (!terminalService) return;
+        
+        const sessionId = `${terminalService}-${terminalShell}-${Date.now()}`;
+        setTerminalSessions(prev => [...prev, { id: sessionId, service: terminalService, shell: terminalShell }]);
+        setTerminalService('');
+    };
+
+    const closeTerminalSession = (sessionId: string) => {
+        setTerminalSessions(prev => prev.filter(session => session.id !== sessionId));
     };
 
 
@@ -440,7 +456,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                     </Button>
                                     <CardTitle className="flex items-center gap-2">
                                         <Terminal className="h-5 w-5" />
-                                        Execute Command
+                                        Command Execution & Terminal
                                     </CardTitle>
                                 </div>
                             </CardHeader>
@@ -537,10 +553,130 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Terminal Sessions */}
+                                    <div className="border-t border-border/20 pt-6 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                    <Terminal className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-base font-semibold">Interactive Terminal</h3>
+                                                    <p className="text-xs text-muted-foreground">Open shell sessions in service containers</p>
+                                                </div>
+                                            </div>
+                                            {terminalSessions.length > 0 && (
+                                                <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                                                    {terminalSessions.length} active session{terminalSessions.length !== 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="space-y-3">
+                                            <div className="flex gap-3">
+                                                <div className="flex-1">
+                                                    <Select value={terminalService} onValueChange={setTerminalService}>
+                                                        <SelectTrigger className="font-mono text-sm">
+                                                            <SelectValue placeholder="Choose service..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {stack.service_names.map((service) => (
+                                                                <SelectItem key={service} value={service} className="font-mono">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
+                                                                        {service}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="w-32">
+                                                    <Select value={terminalShell} onValueChange={setTerminalShell}>
+                                                        <SelectTrigger className="font-mono text-sm">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="auto" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">🔍</span>
+                                                                    auto
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="bash" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">$</span>
+                                                                    bash
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="sh" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">$</span>
+                                                                    sh
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="zsh" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">❯</span>
+                                                                    zsh
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="fish" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">🐟</span>
+                                                                    fish
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="dash" className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-muted-foreground">$</span>
+                                                                    dash
+                                                                </div>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <Button
+                                                    onClick={openTerminalSession}
+                                                    disabled={!terminalService}
+                                                    className="gap-2"
+                                                    size="default"
+                                                >
+                                                    <Terminal className="h-4 w-4" />
+                                                    Launch Terminal
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Active Terminal Sessions */}
+                                        <div className="space-y-3">
+                                            {terminalSessions.map((session, index) => (
+                                                <div key={session.id} className="space-y-2">
+                                                    {index > 0 && <div className="border-t border-border/10" />}
+                                                    <TerminalSession
+                                                        serverId={server.id}
+                                                        stackName={stack.name}
+                                                        service={session.service}
+                                                        shell={session.shell}
+                                                        onClose={() => closeTerminalSession(session.id)}
+                                                        className="w-full"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                     
-                                    <div className="text-sm text-muted-foreground">
-                                        <strong>Note:</strong> Commands are executed non-interactively in the selected service container.
-                                        Use simple commands like <code>ls</code>, <code>ps</code>, <code>cat filename</code>, etc.
+                                    <div className="text-sm text-muted-foreground border-t border-border/20 pt-4 bg-muted/20 rounded-lg p-3 mt-4">
+                                        <div className="flex items-start gap-2">
+                                            <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
+                                            </div>
+                                            <div className="text-xs leading-relaxed">
+                                                <strong>Command Execution:</strong> Use for simple one-off commands with immediate output.<br />
+                                                <strong>Interactive Terminal:</strong> Use for full shell sessions with continuous interaction.
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
