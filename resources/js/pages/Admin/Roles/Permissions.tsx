@@ -75,16 +75,47 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
     const [processing, setProcessing] = useState(false);
 
     const handlePermissionChange = (serverId: number, permission: string, checked: boolean) => {
-        setServerPermissions(prev => ({
-            ...prev,
-            [serverId]: {
-                ...prev[serverId],
-                permissions: {
-                    ...prev[serverId].permissions,
-                    [permission]: checked
+        setServerPermissions(prev => {
+            const currentPerms = prev[serverId].permissions;
+            let newPerms = { ...currentPerms, [permission]: checked };
+            
+            if (checked) {
+                if (permission === 'filemanager_access' && !newPerms.access) {
+                    newPerms.access = true;
+                }
+                if (permission === 'filemanager_write' && (!newPerms.access || !newPerms.filemanager_access)) {
+                    newPerms.access = true;
+                    newPerms.filemanager_access = true;
+                }
+                if (permission === 'start-stop' && !newPerms.access) {
+                    newPerms.access = true;
+                }
+                if (permission === 'exec' && !newPerms.access) {
+                    newPerms.access = true;
+                }
+            } else {
+                if (permission === 'access') {
+                    newPerms = {
+                        access: false,
+                        filemanager_access: false,
+                        filemanager_write: false,
+                        'start-stop': false,
+                        exec: false,
+                    };
+                }
+                if (permission === 'filemanager_access') {
+                    newPerms.filemanager_write = false;
                 }
             }
-        }));
+            
+            return {
+                ...prev,
+                [serverId]: {
+                    ...prev[serverId],
+                    permissions: newPerms
+                }
+            };
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {

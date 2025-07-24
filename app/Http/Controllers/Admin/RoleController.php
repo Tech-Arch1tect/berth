@@ -91,6 +91,19 @@ class RoleController extends Controller
         foreach ($request->serverPermissions as $serverPermission) {
             $permissions = $serverPermission['permissions'];
             
+            if ($permissions['filemanager_access'] && !$permissions['access']) {
+                return back()->withErrors(['error' => 'File Manager access requires basic Access permission.']);
+            }
+            if ($permissions['filemanager_write'] && (!$permissions['access'] || !$permissions['filemanager_access'])) {
+                return back()->withErrors(['error' => 'File Edit requires both Access and File Manager permissions.']);
+            }
+            if ($permissions['start-stop'] && !$permissions['access']) {
+                return back()->withErrors(['error' => 'Up/Down control requires basic Access permission.']);
+            }
+            if ($permissions['exec'] && !$permissions['access']) {
+                return back()->withErrors(['error' => 'Exec commands require basic Access permission.']);
+            }
+            
             // Only attach if at least one permission is granted
             if ($permissions['access'] || $permissions['filemanager_access'] || $permissions['filemanager_write'] || $permissions['start-stop'] || $permissions['exec']) {
                 $role->servers()->attach($serverPermission['server_id'], [
