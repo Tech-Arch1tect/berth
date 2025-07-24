@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::get('api/servers/{server}/stacks/{stackName}/logs', [StackController::class, 'getLogs'])->name('api.stacks.logs');
     Route::get('api/servers/{server}/stacks/{stackName}/files', [StackController::class, 'listFiles'])->name('api.stacks.files');
     Route::get('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'readFile'])->name('api.stacks.file');
+    Route::get('api/servers/{server}/stacks/{stackName}/file/metadata', [StackController::class, 'getFileMetadata'])->name('api.stacks.file.metadata');
+    Route::get('api/servers/{server}/stacks/{stackName}/file/download', [StackController::class, 'downloadFile'])->name('api.stacks.file.download');
     Route::post('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'createFile'])->name('api.stacks.file.create');
     Route::put('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'updateFile'])->name('api.stacks.file.update');
     Route::delete('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'deleteFile'])->name('api.stacks.file.delete');

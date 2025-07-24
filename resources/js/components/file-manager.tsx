@@ -4,13 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Folder, File, ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home, Download, Upload, FileText, Files, File as FileIcon, Folder } from 'lucide-react';
 import FileViewer from '@/components/file-viewer';
+import { getFileIcon, getFileTypeLabel, isEditable } from '@/utils/file-icons';
 
 interface FileInfo {
     name: string;
     isDir: boolean;
     size: number;
+    mimeType: string;
+    isBinary: boolean;
+    modTime: string;
 }
 
 interface FilesResponse {
@@ -33,9 +37,13 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [error, setError] = useState<string | null>(null);
     const [viewingFile, setViewingFile] = useState<{ path: string; name: string } | null>(null);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [createMode, setCreateMode] = useState<'text' | 'upload'>('text');
     const [newFileName, setNewFileName] = useState('');
     const [newFileContent, setNewFileContent] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -111,13 +119,37 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         setViewingFile(null);
     };
 
+    const handleDownloadFile = (file: FileInfo) => {
+        const filePath = currentPath === '.' 
+            ? file.name 
+            : `${currentPath}/${file.name}`;
+        
+        const downloadUrl = `/api/servers/${serverId}/stacks/${stackName}/file/download?path=${encodeURIComponent(filePath)}`;
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const createFile = async () => {
+        if (createMode === 'text') {
+            return await createTextFile();
+        } else {
+            return await uploadFile();
+        }
+    };
+
+    const createTextFile = async () => {
         if (!newFileName.trim()) {
-            setError('File name is required');
+            setCreateError('File name is required');
             return;
         }
 
         setIsCreating(true);
+        setCreateError(null);
         try {
             const filePath = currentPath === '.' ? newFileName : `${currentPath}/${newFileName}`;
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
@@ -128,24 +160,133 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 },
                 body: JSON.stringify({
                     path: filePath,
-                    content: newFileContent
+                    content: newFileContent,
+                    isBinary: false,
+                    isBase64: false
                 })
             });
 
             if (response.ok) {
-                setCreateDialogOpen(false);
-                setNewFileName('');
-                setNewFileContent('');
-                await fetchFiles(currentPath); // Refresh the file list
+                resetCreateDialog();
+                await fetchFiles(currentPath);
             } else {
                 const errorData = await response.json();
-                setError(errorData.error || 'Failed to create file');
+                setCreateError(errorData.error || 'Failed to create file');
             }
         } catch (err) {
-            setError(`Failed to create file: ${err}`);
+            setCreateError(`Failed to create file: ${err}`);
         } finally {
             setIsCreating(false);
         }
+    };
+
+    const uploadFile = async () => {
+        if (!selectedFile) {
+            setCreateError('Please select a file to upload');
+            return;
+        }
+
+        const maxSizeBytes = 100 * 1024 * 1024;
+        if (selectedFile.size > maxSizeBytes) {
+            setCreateError(`File size (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB) exceeds the maximum allowed size of 100MB`);
+            return;
+        }
+
+        const fileName = newFileName.trim() || selectedFile.name;
+        
+        setIsCreating(true);
+        setCreateError(null);
+        try {
+            const filePath = currentPath === '.' ? fileName : `${currentPath}/${fileName}`;
+            
+            const isBinary = !selectedFile.type.startsWith('text/') && 
+                           !['application/json', 'application/xml', 'application/yaml', 'application/x-yaml'].includes(selectedFile.type);
+            
+            let content: string;
+            let isBase64 = false;
+
+            if (isBinary) {
+                content = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result as string;
+                        const base64Content = base64.split(',')[1];
+                        resolve(base64Content);
+                    };
+                    reader.onerror = () => reject(reader.error);
+                    reader.readAsDataURL(selectedFile);
+                });
+                isBase64 = true;
+            } else {
+                content = await selectedFile.text();
+                isBase64 = false;
+            }
+
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    path: filePath,
+                    content: content,
+                    isBinary: isBinary,
+                    isBase64: isBase64
+                })
+            });
+
+            if (response.ok) {
+                resetCreateDialog();
+                await fetchFiles(currentPath);
+            } else {
+                const errorData = await response.json();
+                setCreateError(errorData.error || 'Failed to upload file');
+            }
+        } catch (err) {
+            setCreateError(`Failed to upload file: ${err}`);
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const resetCreateDialog = () => {
+        setCreateDialogOpen(false);
+        setCreateMode('text');
+        setNewFileName('');
+        setNewFileContent('');
+        setSelectedFile(null);
+        setDragOver(false);
+        setCreateError(null);
+    };
+
+    const handleFileSelect = (file: File) => {
+        setSelectedFile(file);
+        setCreateError(null);
+        if (!newFileName.trim()) {
+            setNewFileName(file.name);
+        }
+    };
+
+    const handleFileDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+            setCreateMode('upload');
+            handleFileSelect(files[0]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
     };
 
     const deleteFileOrFolder = async () => {
@@ -241,55 +382,189 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2">
                                             <Plus className="h-5 w-5 text-primary" />
-                                            Create New File
+                                            {createMode === 'text' ? 'Create New File' : 'Upload File'}
                                         </DialogTitle>
                                         <DialogDescription>
-                                            Create a new file in <span className="font-mono bg-muted px-1 rounded">{currentPath === '.' ? 'root' : currentPath}</span>
+                                            {createMode === 'text' ? 'Create a new text file' : 'Upload a file'} in <span className="font-mono bg-muted px-1 rounded">{currentPath === '.' ? 'root' : currentPath}</span>
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
-                                        <div className="space-y-2 flex-shrink-0">
-                                            <label htmlFor="fileName" className="text-sm font-semibold">
-                                                File Name
-                                            </label>
-                                            <Input
-                                                id="fileName"
-                                                value={newFileName}
-                                                onChange={(e) => setNewFileName(e.target.value)}
-                                                placeholder="example.txt"
-                                                className="font-mono"
-                                            />
+                                        {/* Mode Toggle */}
+                                        <div className="flex items-center justify-center space-x-1 bg-muted rounded-lg p-1">
+                                            <Button
+                                                variant={createMode === 'text' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => {
+                                                    setCreateMode('text');
+                                                    setCreateError(null);
+                                                }}
+                                                className="flex-1"
+                                            >
+                                                <FileText className="w-4 h-4 mr-2" />
+                                                Create Text File
+                                            </Button>
+                                            <Button
+                                                variant={createMode === 'upload' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => {
+                                                    setCreateMode('upload');
+                                                    setCreateError(null);
+                                                }}
+                                                className="flex-1"
+                                            >
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                Upload File
+                                            </Button>
                                         </div>
-                                        <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
-                                            <label htmlFor="fileContent" className="text-sm font-semibold">
-                                                File Content
-                                            </label>
-                                            <textarea
-                                                id="fileContent"
-                                                value={newFileContent}
-                                                onChange={(e) => setNewFileContent(e.target.value)}
-                                                placeholder="Enter file content..."
-                                                className="flex-1 w-full px-4 py-4 border border-border/20 rounded-xl text-sm bg-gradient-to-br from-background to-muted/10 text-foreground font-mono resize-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-inner min-h-[400px]"
-                                            />
-                                        </div>
+
+                                        {/* Error Display */}
+                                        {createError && (
+                                            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-destructive-foreground text-xs font-bold">!</span>
+                                                    </div>
+                                                    <p className="text-sm text-destructive font-medium">{createError}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {createMode === 'text' ? (
+                                            <>
+                                                <div className="space-y-2 flex-shrink-0">
+                                                    <label htmlFor="fileName" className="text-sm font-semibold">
+                                                        File Name
+                                                    </label>
+                                                    <Input
+                                                        id="fileName"
+                                                        value={newFileName}
+                                                        onChange={(e) => {
+                                                            setNewFileName(e.target.value);
+                                                            setCreateError(null);
+                                                        }}
+                                                        placeholder="example.txt"
+                                                        className="font-mono"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+                                                    <label htmlFor="fileContent" className="text-sm font-semibold">
+                                                        File Content
+                                                    </label>
+                                                    <textarea
+                                                        id="fileContent"
+                                                        value={newFileContent}
+                                                        onChange={(e) => setNewFileContent(e.target.value)}
+                                                        placeholder="Enter file content..."
+                                                        className="flex-1 w-full px-4 py-4 border border-border/20 rounded-xl text-sm bg-gradient-to-br from-background to-muted/10 text-foreground font-mono resize-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-inner min-h-[400px]"
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="space-y-2 flex-shrink-0">
+                                                    <label htmlFor="fileName" className="text-sm font-semibold">
+                                                        File Name (optional)
+                                                    </label>
+                                                    <Input
+                                                        id="fileName"
+                                                        value={newFileName}
+                                                        onChange={(e) => {
+                                                            setNewFileName(e.target.value);
+                                                            setCreateError(null);
+                                                        }}
+                                                        placeholder={selectedFile ? selectedFile.name : "Will use original filename if empty"}
+                                                        className="font-mono"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+                                                    <label className="text-sm font-semibold">
+                                                        Select File
+                                                    </label>
+                                                    <div 
+                                                        className={`flex-1 border-2 border-dashed rounded-xl p-8 text-center transition-colors min-h-[400px] flex flex-col items-center justify-center ${
+                                                            dragOver ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-border/80'
+                                                        }`}
+                                                        onDrop={handleFileDrop}
+                                                        onDragOver={handleDragOver}
+                                                        onDragLeave={handleDragLeave}
+                                                    >
+                                                        {selectedFile ? (
+                                                            <div className="space-y-4">
+                                                                <div className="w-16 h-16 mx-auto rounded-lg bg-primary/10 flex items-center justify-center">
+                                                                    <Files className="w-8 h-8 text-primary" />
+                                                                </div>
+                                                                <div>
+                                                                    <h3 className="font-medium text-lg">{selectedFile.name}</h3>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        {selectedFile.size > 1024 * 1024 
+                                                                            ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` 
+                                                                            : `${(selectedFile.size / 1024).toFixed(1)} KB`
+                                                                        } • {selectedFile.type || 'Unknown type'}
+                                                                    </p>
+                                                                    {selectedFile.size > 100 * 1024 * 1024 && (
+                                                                        <p className="text-sm text-destructive mt-1">
+                                                                            ⚠️ File exceeds 100MB limit
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() => setSelectedFile(null)}
+                                                                    size="sm"
+                                                                >
+                                                                    Choose Different File
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4">
+                                                                <div className="w-16 h-16 mx-auto rounded-lg bg-muted flex items-center justify-center">
+                                                                    <Upload className="w-8 h-8 text-muted-foreground" />
+                                                                </div>
+                                                                <div>
+                                                                    <h3 className="font-medium text-lg">Drop your file here</h3>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        or click to browse files
+                                                                    </p>
+                                                                </div>
+                                                                <input
+                                                                    type="file"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) handleFileSelect(file);
+                                                                    }}
+                                                                    className="hidden"
+                                                                    id="fileUpload"
+                                                                />
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() => document.getElementById('fileUpload')?.click()}
+                                                                >
+                                                                    Choose File
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                     <DialogFooter>
                                         <Button
                                             variant="outline"
-                                            onClick={() => {
-                                                setCreateDialogOpen(false);
-                                                setNewFileName('');
-                                                setNewFileContent('');
-                                            }}
+                                            onClick={resetCreateDialog}
                                         >
                                             Cancel
                                         </Button>
                                         <Button
                                             onClick={createFile}
-                                            disabled={isCreating || !newFileName.trim()}
+                                            disabled={isCreating || (createMode === 'text' ? !newFileName.trim() : !selectedFile)}
                                             className="transition-all hover:scale-105"
                                         >
-                                            {isCreating ? 'Creating...' : 'Create File'}
+                                            {isCreating ? (
+                                                createMode === 'text' ? 'Creating...' : 'Uploading...'
+                                            ) : (
+                                                createMode === 'text' ? 'Create File' : 'Upload File'
+                                            )}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
@@ -308,11 +583,30 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent 
+                className="relative"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => {
+                    handleFileDrop(e);
+                    setCreateDialogOpen(true);
+                }}
+            >
+                {/* Drag and Drop Overlay */}
+                {dragOver && (
+                    <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-10">
+                        <div className="text-center">
+                            <Upload className="w-12 h-12 text-primary mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-primary">Drop file to upload</h3>
+                            <p className="text-muted-foreground">Release to upload file to current directory</p>
+                        </div>
+                    </div>
+                )}
+
                 {error ? (
                     <div className="text-center py-12">
                         <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <File className="h-10 w-10 text-destructive" />
+                            <FileIcon className="h-10 w-10 text-destructive" />
                         </div>
                         <h3 className="text-lg font-semibold mb-2">Error Loading Files</h3>
                         <p className="text-destructive mb-4">{error}</p>
@@ -380,11 +674,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                     onClick={() => file.isDir && handleFileClick(file)}
                                                 >
                                                     <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background border border-border/50">
-                                                        {file.isDir ? (
-                                                            <Folder className="h-5 w-5 text-blue-500" />
-                                                        ) : (
-                                                            <File className="h-5 w-5 text-muted-foreground" />
-                                                        )}
+                                                        {getFileIcon(file.name, file.mimeType || 'application/octet-stream', file.isDir)}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
@@ -392,27 +682,46 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
-                                                                {file.isDir ? 'Directory' : 'File'}
+                                                                {file.isDir ? 'Directory' : getFileTypeLabel(file.name, file.mimeType || 'application/octet-stream', file.isBinary || false)}
                                                             </Badge>
                                                             {!file.isDir && (
                                                                 <span className="text-xs text-muted-foreground">
                                                                     {formatFileSize(file.size)}
                                                                 </span>
                                                             )}
+                                                            {!file.isDir && file.isBinary && (
+                                                                <Badge variant="destructive" className="text-xs">
+                                                                    Binary
+                                                                </Badge>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {!file.isDir && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleFileClick(file)}
-                                                            className="transition-all hover:scale-105"
-                                                        >
-                                                            <Eye size={14} className="mr-1" />
-                                                            View
-                                                        </Button>
+                                                        <>
+                                                            {isEditable(file.mimeType || 'application/octet-stream', file.isBinary || false) ? (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleFileClick(file)}
+                                                                    className="transition-all hover:scale-105"
+                                                                >
+                                                                    <Eye size={14} className="mr-1" />
+                                                                    View
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleDownloadFile(file)}
+                                                                    className="transition-all hover:scale-105"
+                                                                >
+                                                                    <Download size={14} className="mr-1" />
+                                                                    Download
+                                                                </Button>
+                                                            )}
+                                                        </>
                                                     )}
                                                     {file.isDir && (
                                                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />

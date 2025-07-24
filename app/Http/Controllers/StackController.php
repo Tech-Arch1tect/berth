@@ -711,4 +711,73 @@ class StackController extends Controller
             ], 500);
         }
     }
+
+    public function getFileMetadata(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_access permission
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_access')) {
+            return response()->json(['error' => 'You do not have permission to access files on this server.'], 403);
+        }
+
+        try {
+            $path = $request->query('path', '');
+            
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file/metadata";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->get($url, ['path' => $path]);
+
+            if (!$response->successful()) {
+                $errorData = $response->json();
+                if (isset($errorData['error'])) {
+                    throw new \Exception($errorData['error']);
+                }
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function downloadFile(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_access permission
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_access')) {
+            abort(403, 'You do not have permission to access files on this server.');
+        }
+
+        try {
+            $path = $request->query('path', '');
+            
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file/download";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                ])
+                ->get($url, ['path' => $path]);
+
+            if (!$response->successful()) {
+                abort(404, 'File not found or server error');
+            }
+
+            $filename = basename($path);
+            
+            return response($response->body())
+                ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Content-Length', $response->header('Content-Length') ?: strlen($response->body()));
+                
+        } catch (\Exception $e) {
+            abort(500, 'Failed to download file: ' . $e->getMessage());
+        }
+    }
 }

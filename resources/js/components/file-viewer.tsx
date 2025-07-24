@@ -2,13 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { File, Download, Copy, Eye, Edit, Save, X, Trash2 } from 'lucide-react';
+import { File, Download, Copy, Eye, Edit, Save, X, Trash2, AlertTriangle } from 'lucide-react';
+import { getFileIcon, getFileTypeLabel, formatFileSize, isEditable } from '@/utils/file-icons';
 
 interface FileData {
     stack: string;
     path: string;
     content: string;
     size: number;
+    mimeType: string;
+    isBinary: boolean;
+    isBase64: boolean;
+    modTime: string;
 }
 
 interface FileViewerProps {
@@ -82,13 +87,29 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
 
     const downloadFile = () => {
         if (fileData?.content) {
-            const blob = new Blob([fileData.content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(url);
+            if (fileData.isBinary && fileData.isBase64) {
+                const byteCharacters = atob(fileData.content);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: fileData.mimeType || 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                const blob = new Blob([fileData.content], { type: fileData.mimeType || 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
         }
     };
 
@@ -219,14 +240,16 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                 <>
                                     {canWrite && (
                                         <>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={startEditing}
-                                            >
-                                                <Edit size={14} className="mr-1" />
-                                                Edit
-                                            </Button>
+                                            {!fileData.isBinary && isEditable(fileData.mimeType, fileData.isBinary) && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={startEditing}
+                                                >
+                                                    <Edit size={14} className="mr-1" />
+                                                    Edit
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -321,9 +344,40 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                             </div>
                                         </div>
                                         <div className="bg-card p-4 overflow-auto" style={{ minHeight: '400px' }}>
-                                            <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
-                                                {fileData.content}
-                                            </pre>
+                                            {fileData.isBinary ? (
+                                                <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                                                    <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
+                                                    <h3 className="text-lg font-medium mb-2">Binary File</h3>
+                                                    <p className="text-muted-foreground mb-4">
+                                                        This file contains binary data and cannot be displayed as text.
+                                                    </p>
+                                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                        <span>Type: {getFileTypeLabel(fileName, fileData.mimeType, fileData.isBinary)}</span>
+                                                        <span>Size: {formatFileSize(fileData.size)}</span>
+                                                    </div>
+                                                    <Button 
+                                                        onClick={downloadFile} 
+                                                        className="mt-4"
+                                                        variant="outline"
+                                                    >
+                                                        <Download size={16} className="mr-2" />
+                                                        Download File
+                                                    </Button>
+                                                </div>
+                                            ) : fileData.mimeType?.startsWith('image/') ? (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <img 
+                                                        src={`data:${fileData.mimeType};base64,${fileData.content}`}
+                                                        alt={fileName}
+                                                        className="max-w-full max-h-full object-contain"
+                                                        style={{ maxHeight: '400px' }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                                    {fileData.content}
+                                                </pre>
+                                            )}
                                         </div>
                                     </div>
                                 )}
