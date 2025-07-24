@@ -23,6 +23,20 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
         ]);
     })->name('dashboard');
     
+    // API endpoint for dashboard statistics
+    Route::get('api/dashboard/stats', function () {
+        $user = auth()->user();
+        $servers = $user->getAccessibleServers();
+        $serverStats = [];
+        
+        $stackController = new \App\Http\Controllers\StackController();
+        foreach ($servers as $server) {
+            $serverStats[$server->id] = $stackController->getServerStatistics($server);
+        }
+        
+        return response()->json($serverStats);
+    })->name('api.dashboard.stats');
+    
     // Stack viewing (available to all authenticated users with server permissions)
     Route::get('servers/{server}/stacks', [StackController::class, 'index'])->name('stacks.index');
     Route::get('servers/{server}/stacks/{stackName}', [StackController::class, 'show'])->name('stacks.show');

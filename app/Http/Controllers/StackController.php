@@ -90,7 +90,7 @@ class StackController extends Controller
         }
     }
 
-    protected function fetchStacksFromServer(Server $server): array
+    public function fetchStacksFromServer(Server $server): array
     {
         $protocol = $server->https ? 'https' : 'http';
         $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/stacks";
@@ -119,7 +119,7 @@ class StackController extends Controller
         }, $stacksData);
     }
 
-    protected function fetchServiceStatusFromServer(Server $server, string $stackName): array
+    public function fetchServiceStatusFromServer(Server $server, string $stackName): array
     {
         $protocol = $server->https ? 'https' : 'http';
         $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/ps";
@@ -820,6 +820,59 @@ class StackController extends Controller
             return response()->json($response->json());
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to rename file: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getServerStatistics(Server $server): array
+    {
+        try {
+            $stacks = $this->fetchStacksFromServer($server);
+            
+            $totalStacks = count($stacks);
+            $runningStacks = 0;
+            $totalServices = 0;
+            $runningServices = 0;
+            
+            foreach ($stacks as $stackData) {
+                $totalServices += $stackData['service_count'] ?? 0;
+                
+                try {
+                    $serviceStatus = $this->fetchServiceStatusFromServer($server, $stackData['name']);
+                    $stackData['service_status'] = $serviceStatus ? [
+                        'stack' => $serviceStatus['stack'] ?? $stackData['name'],
+                        'services' => $serviceStatus['services'] ?? []
+                    ] : null;
+                    
+                    $stackModel = \App\Models\Stack::fromArray($stackData);
+                    $statusSummary = $stackModel->getServiceStatusSummary();
+                    $overallStatus = $stackModel->getOverallStatus();
+                    
+                    $runningServices += $statusSummary['running'] ?? 0;
+                    if ($overallStatus === 'running') {
+                        $runningStacks++;
+                    }
+                } catch (\Exception $e) {
+                    // If we can't get service status for this stack, assume it's stopped
+                    // but still count its total services
+                }
+            }
+            
+            return [
+                'total_stacks' => $totalStacks,
+                'running_stacks' => $runningStacks,
+                'total_services' => $totalServices,
+                'running_services' => $runningServices,
+                'status' => 'online'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'total_stacks' => 0,
+                'running_stacks' => 0,
+                'total_services' => 0,
+                'running_services' => 0,
+                'status' => 'offline',
+                'error' => $e->getMessage()
+            ];
         }
     }
 }
