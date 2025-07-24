@@ -287,23 +287,30 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                                                     const serviceStatus = findServiceStatus(stack, service);
                                                                     const isRunning = serviceStatus?.state === 'running';
                                                                     const displayState = serviceStatus?.state || (stack.isLoadingStatus ? 'loading' : 'stopped');
+                                                                    const serviceConfig = stack.services[service];
+                                                                    const imageName = serviceConfig?.image || 'Unknown';
                                                                     
                                                                     return (
-                                                                        <div key={service} className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30">
-                                                                            <span className="text-sm font-medium truncate">{service}</span>
-                                                                            {stack.isLoadingStatus ? (
-                                                                                <Badge variant="outline" className="text-xs bg-muted/50">
-                                                                                    <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
-                                                                                    Loading
-                                                                                </Badge>
-                                                                            ) : (
-                                                                                <Badge 
-                                                                                    variant={isRunning ? 'default' : 'outline'}
-                                                                                    className={`text-xs ${isRunning ? 'bg-green-500/10 text-green-700 border-green-500/30 dark:text-green-400' : 'bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400'}`}
-                                                                                >
-                                                                                    {displayState}
-                                                                                </Badge>
-                                                                            )}
+                                                                        <div key={service} className="p-3 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30 space-y-2">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium truncate">{service}</span>
+                                                                                {stack.isLoadingStatus ? (
+                                                                                    <Badge variant="outline" className="text-xs bg-muted/50">
+                                                                                        <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
+                                                                                        Loading
+                                                                                    </Badge>
+                                                                                ) : (
+                                                                                    <Badge 
+                                                                                        variant={isRunning ? 'default' : 'outline'}
+                                                                                        className={`text-xs ${isRunning ? 'bg-green-500/10 text-green-700 border-green-500/30 dark:text-green-400' : 'bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400'}`}
+                                                                                    >
+                                                                                        {displayState}
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground font-mono truncate" title={imageName}>
+                                                                                {imageName}
+                                                                            </div>
                                                                         </div>
                                                                     );
                                                                 })}
