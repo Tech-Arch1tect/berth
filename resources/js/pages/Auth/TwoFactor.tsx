@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, ShieldCheck, ShieldX, Copy, Download, RefreshCw } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldX, Copy, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
 

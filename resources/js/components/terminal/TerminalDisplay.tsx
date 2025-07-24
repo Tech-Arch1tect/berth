@@ -24,54 +24,11 @@ const TerminalDisplay = forwardRef<TerminalDisplayRef, TerminalDisplayProps>(({
     const terminalRef = useRef<HTMLDivElement>(null);
     const terminalInstance = useRef<Terminal | null>(null);
     const fitAddon = useRef<FitAddon | null>(null);
+    const onTerminalReadyRef = useRef(onTerminalReady);
 
-    const setupTerminal = () => {
-        if (!terminalRef.current || terminalInstance.current) return;
-
-        const terminal = new Terminal(terminalOptions);
-
-        const fitAddonInstance = new FitAddon();
-        terminal.loadAddon(fitAddonInstance);
-
-        terminal.open(terminalRef.current);
-        fitAddonInstance.fit();
-
-        setTimeout(() => {
-            if (terminalRef.current) {
-                const xtermElement = terminalRef.current.querySelector('.xterm');
-                const xtermViewport = terminalRef.current.querySelector('.xterm-viewport');
-                const xtermScreen = terminalRef.current.querySelector('.xterm-screen');
-                const xtermHelpers = terminalRef.current.querySelector('.xterm-helpers');
-                
-                if (xtermElement) {
-                    (xtermElement as HTMLElement).style.padding = '6px';
-                    (xtermElement as HTMLElement).style.background = 'transparent';
-                }
-                if (xtermViewport) {
-                    (xtermViewport as HTMLElement).style.background = 'transparent';
-                }
-                if (xtermScreen) {
-                    (xtermScreen as HTMLElement).style.background = 'transparent';
-                }
-                if (xtermHelpers) {
-                    (xtermHelpers as HTMLElement).style.background = 'transparent';
-                }
-            }
-        }, 50);
-
-        terminalInstance.current = terminal;
-        fitAddon.current = fitAddonInstance;
-        
-        setTimeout(() => {
-            fitAddonInstance.fit();
-        }, 60);
-        
-        setTimeout(() => {
-            if (onTerminalReady) {
-                onTerminalReady(terminal, fitAddonInstance);
-            }
-        }, 80);
-    };
+    useEffect(() => {
+        onTerminalReadyRef.current = onTerminalReady;
+    }, [onTerminalReady]);
 
     const fit = () => {
         if (fitAddon.current) {
@@ -92,6 +49,51 @@ const TerminalDisplay = forwardRef<TerminalDisplayRef, TerminalDisplayProps>(({
     };
 
     useEffect(() => {
+        const setupTerminal = () => {
+            if (!terminalRef.current || terminalInstance.current) return;
+
+            const terminal = new Terminal(terminalOptions);
+            const fitAddonInstance = new FitAddon();
+
+            terminal.loadAddon(fitAddonInstance);
+            terminal.open(terminalRef.current);
+            fitAddonInstance.fit();
+
+            setTimeout(() => {
+                if (terminalRef.current) {
+                    const xtermElement = terminalRef.current.querySelector('.xterm');
+                    const xtermViewport = terminalRef.current.querySelector('.xterm-viewport');
+                    const xtermScreen = terminalRef.current.querySelector('.xterm-screen');
+                    const xtermHelpers = terminalRef.current.querySelector('.xterm-helpers');
+
+                    if (xtermElement) {
+                        (xtermElement as HTMLElement).style.padding = '6px';
+                        (xtermElement as HTMLElement).style.background = 'transparent';
+                    }
+                    if (xtermViewport) {
+                        (xtermViewport as HTMLElement).style.background = 'transparent';
+                    }
+                    if (xtermScreen) {
+                        (xtermScreen as HTMLElement).style.background = 'transparent';
+                    }
+                    if (xtermHelpers) {
+                        (xtermHelpers as HTMLElement).style.background = 'transparent';
+                    }
+                }
+            }, 50);
+
+            terminalInstance.current = terminal;
+            fitAddon.current = fitAddonInstance;
+
+            setTimeout(() => {
+                fitAddonInstance.fit();
+            }, 60);
+
+            setTimeout(() => {
+                onTerminalReadyRef.current?.(terminal, fitAddonInstance);
+            }, 80);
+        };
+
         setupTerminal();
         return dispose;
     }, []);

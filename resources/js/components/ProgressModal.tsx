@@ -336,7 +336,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
             }
             abortController.abort();
         };
-    }, [url, isOpen, onComplete, onError, agentTimeout]);
+    }, [url, isOpen, onComplete, onError, agentTimeout, overallStatus]);
 
 
     const handleOpenChange = (open: boolean) => {

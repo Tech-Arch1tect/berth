@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { File, Download, Copy, Eye, Edit, Save, X, Trash2, AlertTriangle, Edit3 } from 'lucide-react';
-import { getFileIcon, getFileTypeLabel, formatFileSize, isEditable } from '@/utils/file-icons';
+import { getFileTypeLabel, isEditable } from '@/utils/file-icons';
 
 interface FileData {
     stack: string;
@@ -241,7 +241,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
             });
 
             if (response.ok) {
-                const result = await response.json();
+                await response.json();
                 const oldName = currentFileName;
                 setCurrentFileName(newFileName.trim());
                 setShowRenameDialog(false);

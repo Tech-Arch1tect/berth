@@ -8,13 +8,6 @@ import {
     SidebarMenuSubItem,
     SidebarMenuSubButton
 } from '@/components/ui/sidebar';
-import { 
-    DropdownMenu, 
-    DropdownMenuContent, 
-    DropdownMenuItem, 
-    DropdownMenuTrigger,
-    DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -26,7 +19,7 @@ import {
     AlertCircle,
     Loader2
 } from 'lucide-react';
-import type { Server as ServerType } from '@/types/entities';
+import type { Server as ServerType, Stack } from '@/types/entities';
 import { apiGet } from '@/utils/api';
 import { calculateServiceStatusSummary } from '@/utils/stack-utils';
 
@@ -81,10 +74,10 @@ export function NavServers({ servers }: NavServersProps) {
         try {
             const response = await apiGet(`/api/servers/${serverId}/stacks`);
             if (response.success) {
-                const stacks = (response.data as { stacks: any[] }).stacks;
+                const stacks = (response.data as { stacks: StackWithStatus[] }).stacks;
                 
                 const stacksWithStatus = await Promise.all(
-                    stacks.map(async (stack: any) => {
+                    stacks.map(async (stack: StackWithStatus) => {
                         try {
                             const statusResponse = await apiGet(`/api/servers/${serverId}/stacks/${stack.name}/status`);
                             if (statusResponse.success) {
@@ -98,7 +91,12 @@ export function NavServers({ servers }: NavServersProps) {
                                     }> | null;
                                 };
                                 
-                                const { overallStatus } = calculateServiceStatusSummary(stack, serviceStatus);
+                                const stackForCalc = {
+                                    name: stack.name,
+                                    service_count: stack.service_count || 0
+                                } as Pick<Stack, 'name' | 'service_count'>;
+                                
+                                const { overallStatus } = calculateServiceStatusSummary(stackForCalc as Stack, serviceStatus);
                                 
                                 return {
                                     name: stack.name,

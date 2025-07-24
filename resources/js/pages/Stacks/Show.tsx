@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +38,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [terminalSessions, setTerminalSessions] = useState<{id: string, service: string, shell: string}[]>([]);
     const [terminalService, setTerminalService] = useState<string>('');
     const [terminalShell, setTerminalShell] = useState<string>('auto');
+    const prevLogOptionsRef = useRef({ selectedService, logTail });
 
     const toggleSection = (section: string) => {
         const newOpenSections = new Set(openSections);
@@ -85,10 +86,15 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
 
     // Auto-refresh logs when service or tail options change
     useEffect(() => {
-        if (logs) {
+        const prev = prevLogOptionsRef.current;
+        const hasOptionsChanged = prev.selectedService !== selectedService || prev.logTail !== logTail;
+        
+        if (logs !== null && hasOptionsChanged) {
             fetchLogs();
         }
-    }, [selectedService, logTail, fetchLogs]);
+        
+        prevLogOptionsRef.current = { selectedService, logTail };
+    }, [selectedService, logTail, logs, fetchLogs]);
 
     const bringStackUp = async (services?: string[], build?: boolean) => {
         if (showProgressModal) {

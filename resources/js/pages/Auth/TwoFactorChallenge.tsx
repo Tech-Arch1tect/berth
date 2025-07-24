@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Smartphone, Key } from 'lucide-react';
+import { Smartphone, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthLayout from '@/layouts/auth-layout';
 

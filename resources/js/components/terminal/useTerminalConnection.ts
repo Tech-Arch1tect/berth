@@ -35,12 +35,12 @@ export const useTerminalConnection = ({
     const websocket = useRef<WebSocket | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
     const [connectionInfo, setConnectionInfo] = useState<TerminalConnectionInfo | null>(null);
-    const hasInitializedRef = useRef(false);
 
     const initializeTerminalSession = useCallback(async () => {
         try {
             const url = new URL(`/api/servers/${serverId}/stacks/${stackName}/terminal/${service}`, window.location.origin);
             url.searchParams.set('shell', shell);
+            
             
             const response = await fetch(url.toString(), {
                 method: 'GET',
@@ -51,7 +51,13 @@ export const useTerminalConnection = ({
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to get terminal connection info: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Terminal session initialization failed:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorText
+                });
+                throw new Error(`Failed to get terminal connection info: ${response.status} - ${errorText}`);
             }
 
             const data: TerminalConnectionInfo = await response.json();
@@ -70,57 +76,66 @@ export const useTerminalConnection = ({
         
         const ws = new WebSocket(url.toString());
 
+        const sendMessage = (message: TerminalMessage) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+            }
+        };
+
         ws.onopen = () => {
             setConnectionStatus('connected');
             
-            const { cols, rows } = terminal;
-            sendMessage({ type: 'resize', cols, rows });
-            
-            terminal.onData((data) => {
-                sendMessage({ type: 'input', data });
-            });
+            try {
+                fitAddon.fit();
+                
+                setTimeout(() => {
+                    if (terminal.cols && terminal.rows) {
+                        const { cols, rows } = terminal;
+                        sendMessage({ type: 'resize', cols, rows });
+                    } else {
+                        sendMessage({ type: 'resize', cols: 80, rows: 24 });
+                    }
+                }, 10);
+                
+                terminal.onData((data) => {
+                    sendMessage({ type: 'input', data });
+                });
 
-            terminal.onResize(({ cols, rows }) => {
-                sendMessage({ type: 'resize', cols, rows });
-            });
+                terminal.onResize(({ cols, rows }) => {
+                    sendMessage({ type: 'resize', cols, rows });
+                });
+                
+            } catch (error) {
+                console.error('Error setting up terminal connection:', error);
+                sendMessage({ type: 'resize', cols: 80, rows: 24 });
+            }
         };
 
         ws.onmessage = (event) => {
             terminal.write(event.data);
         };
 
-        ws.onclose = () => {
-            setConnectionStatus('disconnected');
+        ws.onclose = (event) => {
+            if (event.code === 1006) {
+                console.warn('Terminal WebSocket closed abnormally - possible network or server issue');
+                setConnectionStatus('error');
+            } else {
+                setConnectionStatus('disconnected');
+            }
         };
 
         ws.onerror = (error) => {
-            console.error('Terminal WebSocket error:', error);
+            console.error('Terminal WebSocket error:', {
+                error,
+                readyState: ws.readyState,
+                url: ws.url,
+                protocol: ws.protocol
+            });
             setConnectionStatus('error');
         };
 
         websocket.current = ws;
-
-        const sendMessage = (message: TerminalMessage) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify(message));
-            }
-        };
     }, []);
-
-    const connect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
-        try {
-            const info = await initializeTerminalSession();
-            connectWebSocket(info, terminal, fitAddon);
-        } catch (error) {
-            console.error('Failed to connect terminal:', error);
-        }
-    }, [initializeTerminalSession, connectWebSocket]);
-
-    const reconnect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
-        setConnectionStatus('connecting');
-        disconnect();
-        await connect(terminal, fitAddon);
-    }, [connect]);
 
     const disconnect = useCallback(() => {
         if (websocket.current) {
@@ -128,6 +143,26 @@ export const useTerminalConnection = ({
             websocket.current = null;
         }
     }, []);
+
+    const connect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
+        if (websocket.current && websocket.current.readyState !== WebSocket.CLOSED) {
+            return;
+        }
+        
+        try {
+            const info = await initializeTerminalSession();
+            connectWebSocket(info, terminal, fitAddon);
+        } catch (error) {
+            console.error('Failed to connect terminal:', error);
+            setConnectionStatus('error');
+        }
+    }, [initializeTerminalSession, connectWebSocket]);
+
+    const reconnect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
+        setConnectionStatus('connecting');
+        disconnect();
+        await connect(terminal, fitAddon);
+    }, [connect, disconnect]);
 
     const close = useCallback(() => {
         if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
