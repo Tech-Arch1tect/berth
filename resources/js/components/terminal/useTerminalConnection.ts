@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { Terminal } from '@xterm/xterm';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ConnectionStatus } from './TerminalHeader';
 
 interface TerminalMessage {
@@ -26,12 +26,7 @@ interface UseTerminalConnectionParams {
     shell: string;
 }
 
-export const useTerminalConnection = ({
-    serverId,
-    stackName,
-    service,
-    shell
-}: UseTerminalConnectionParams) => {
+export const useTerminalConnection = ({ serverId, stackName, service, shell }: UseTerminalConnectionParams) => {
     const websocket = useRef<WebSocket | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
     const [connectionInfo, setConnectionInfo] = useState<TerminalConnectionInfo | null>(null);
@@ -40,12 +35,11 @@ export const useTerminalConnection = ({
         try {
             const url = new URL(`/api/servers/${serverId}/stacks/${stackName}/terminal/${service}`, window.location.origin);
             url.searchParams.set('shell', shell);
-            
-            
+
             const response = await fetch(url.toString(), {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
             });
@@ -55,7 +49,7 @@ export const useTerminalConnection = ({
                 console.error('Terminal session initialization failed:', {
                     status: response.status,
                     statusText: response.statusText,
-                    body: errorText
+                    body: errorText,
                 });
                 throw new Error(`Failed to get terminal connection info: ${response.status} - ${errorText}`);
             }
@@ -73,7 +67,7 @@ export const useTerminalConnection = ({
     const connectWebSocket = useCallback((connectionInfo: TerminalConnectionInfo, terminal: Terminal, fitAddon: FitAddon) => {
         const url = new URL(connectionInfo.websocket_url);
         url.searchParams.set('token', connectionInfo.access_token);
-        
+
         const ws = new WebSocket(url.toString());
 
         const sendMessage = (message: TerminalMessage) => {
@@ -84,10 +78,10 @@ export const useTerminalConnection = ({
 
         ws.onopen = () => {
             setConnectionStatus('connected');
-            
+
             try {
                 fitAddon.fit();
-                
+
                 setTimeout(() => {
                     if (terminal.cols && terminal.rows) {
                         const { cols, rows } = terminal;
@@ -96,7 +90,7 @@ export const useTerminalConnection = ({
                         sendMessage({ type: 'resize', cols: 80, rows: 24 });
                     }
                 }, 10);
-                
+
                 terminal.onData((data) => {
                     sendMessage({ type: 'input', data });
                 });
@@ -104,7 +98,6 @@ export const useTerminalConnection = ({
                 terminal.onResize(({ cols, rows }) => {
                     sendMessage({ type: 'resize', cols, rows });
                 });
-                
             } catch (error) {
                 console.error('Error setting up terminal connection:', error);
                 sendMessage({ type: 'resize', cols: 80, rows: 24 });
@@ -129,7 +122,7 @@ export const useTerminalConnection = ({
                 error,
                 readyState: ws.readyState,
                 url: ws.url,
-                protocol: ws.protocol
+                protocol: ws.protocol,
             });
             setConnectionStatus('error');
         };
@@ -144,25 +137,31 @@ export const useTerminalConnection = ({
         }
     }, []);
 
-    const connect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
-        if (websocket.current && websocket.current.readyState !== WebSocket.CLOSED) {
-            return;
-        }
-        
-        try {
-            const info = await initializeTerminalSession();
-            connectWebSocket(info, terminal, fitAddon);
-        } catch (error) {
-            console.error('Failed to connect terminal:', error);
-            setConnectionStatus('error');
-        }
-    }, [initializeTerminalSession, connectWebSocket]);
+    const connect = useCallback(
+        async (terminal: Terminal, fitAddon: FitAddon) => {
+            if (websocket.current && websocket.current.readyState !== WebSocket.CLOSED) {
+                return;
+            }
 
-    const reconnect = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
-        setConnectionStatus('connecting');
-        disconnect();
-        await connect(terminal, fitAddon);
-    }, [connect, disconnect]);
+            try {
+                const info = await initializeTerminalSession();
+                connectWebSocket(info, terminal, fitAddon);
+            } catch (error) {
+                console.error('Failed to connect terminal:', error);
+                setConnectionStatus('error');
+            }
+        },
+        [initializeTerminalSession, connectWebSocket],
+    );
+
+    const reconnect = useCallback(
+        async (terminal: Terminal, fitAddon: FitAddon) => {
+            setConnectionStatus('connecting');
+            disconnect();
+            await connect(terminal, fitAddon);
+        },
+        [connect, disconnect],
+    );
 
     const close = useCallback(() => {
         if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
@@ -181,6 +180,6 @@ export const useTerminalConnection = ({
         connect,
         reconnect,
         disconnect,
-        close
+        close,
     };
 };

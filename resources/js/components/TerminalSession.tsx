@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { FitAddon } from '@xterm/addon-fit';
+import { Terminal } from '@xterm/xterm';
 import { RotateCcw, WifiOff } from 'lucide-react';
-import TerminalHeader from './terminal/TerminalHeader';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import TerminalDisplay, { type TerminalDisplayRef } from './terminal/TerminalDisplay';
+import TerminalHeader from './terminal/TerminalHeader';
 import { useTerminalConnection } from './terminal/useTerminalConnection';
 
 interface TerminalSessionProps {
@@ -17,22 +17,15 @@ interface TerminalSessionProps {
     className?: string;
 }
 
-const TerminalSession: React.FC<TerminalSessionProps> = ({
-    serverId,
-    stackName,
-    service,
-    shell = 'auto',
-    onClose,
-    className = ''
-}) => {
+const TerminalSession: React.FC<TerminalSessionProps> = ({ serverId, stackName, service, shell = 'auto', onClose, className = '' }) => {
     const terminalDisplayRef = useRef<TerminalDisplayRef>(null);
     const [isMaximized, setIsMaximized] = useState(false);
-    
+
     const connection = useTerminalConnection({
         serverId,
         stackName,
         service,
-        shell
+        shell,
     });
 
     const handleResize = () => {
@@ -66,9 +59,12 @@ const TerminalSession: React.FC<TerminalSessionProps> = ({
         return () => window.removeEventListener('resize', handleWindowResize);
     }, []);
 
-    const handleTerminalReady = useCallback(async (terminal: Terminal, fitAddon: FitAddon) => {
-        await connection.connect(terminal, fitAddon);
-    }, [connection]);
+    const handleTerminalReady = useCallback(
+        async (terminal: Terminal, fitAddon: FitAddon) => {
+            await connection.connect(terminal, fitAddon);
+        },
+        [connection],
+    );
 
     return (
         <Card className={`${className} ${isMaximized ? 'fixed inset-4 z-50 shadow-2xl' : 'min-h-[400px]'} flex flex-col border-border/20`}>
@@ -83,30 +79,28 @@ const TerminalSession: React.FC<TerminalSessionProps> = ({
                     onClose={handleClose}
                 />
             </CardHeader>
-            <CardContent className="flex-1 p-0 relative overflow-visible" style={{ minHeight: 0 }}>
+            <CardContent className="relative flex-1 overflow-visible p-0" style={{ minHeight: 0 }}>
                 <TerminalDisplay ref={terminalDisplayRef} onTerminalReady={handleTerminalReady} />
-                
+
                 {/* Loading overlay */}
                 {connection.connectionStatus === 'connecting' && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                        <div className="text-center space-y-3">
-                            <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            <div className="text-sm text-muted-foreground font-medium">
-                                Connecting to {service}...
-                            </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                        <div className="space-y-3 text-center">
+                            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            <div className="text-sm font-medium text-muted-foreground">Connecting to {service}...</div>
                         </div>
                     </div>
                 )}
-                
+
                 {/* Error overlay */}
                 {connection.connectionStatus === 'error' && (
-                    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center">
-                        <div className="text-center space-y-4 p-6">
-                            <div className="w-12 h-12 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm">
+                        <div className="space-y-4 p-6 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                                 <WifiOff className="h-6 w-6 text-destructive" />
                             </div>
                             <div>
-                                <div className="text-sm font-medium text-destructive mb-1">Connection Failed</div>
+                                <div className="mb-1 text-sm font-medium text-destructive">Connection Failed</div>
                                 <div className="text-xs text-muted-foreground">Unable to connect to {service}</div>
                             </div>
                             <Button onClick={handleReconnect} size="sm" variant="outline" className="gap-2">

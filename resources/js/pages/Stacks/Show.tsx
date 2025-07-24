@@ -3,7 +3,6 @@ import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Container, Network, Settings, RefreshCw, FileText, Download, Terminal, AlertCircle, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
@@ -13,7 +12,7 @@ import ProgressModal from '@/components/ProgressModal';
 import TerminalSession from '@/components/TerminalSession';
 import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
 import { type BreadcrumbItem } from '@/types';
-import { apiPost, apiGet } from '@/utils/api';
+import { apiGet } from '@/utils/api';
 
 interface Props {
     server: Server;
@@ -30,10 +29,6 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUrl, setProgressUrl] = useState<string>('');
     const [progressTitle, setProgressTitle] = useState<string>('');
-    const [execService, setExecService] = useState<string>('');
-    const [execCommand, setExecCommand] = useState<string>('');
-    const [execResult, setExecResult] = useState<{command?: string, service?: string, output?: string, error?: string} | null>(null);
-    const [isExecuting, setIsExecuting] = useState(false);
     const [openSections, setOpenSections] = useState<Set<string>>(new Set(['services']));
     const [terminalSessions, setTerminalSessions] = useState<{id: string, service: string, shell: string}[]>([]);
     const [terminalService, setTerminalService] = useState<string>('');
@@ -140,31 +135,6 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         setShowProgressModal(false);
     };
 
-    const executeCommand = async () => {
-        if (!execService || !execCommand.trim()) {
-            return;
-        }
-
-        setIsExecuting(true);
-        setExecResult(null);
-        
-        try {
-            const response = await apiPost(`/api/servers/${server.id}/stacks/${stack.name}/exec`, {
-                service: execService,
-                command: execCommand.trim().split(' ').filter(cmd => cmd.length > 0)
-            });
-            
-            if (response.success) {
-                setExecResult(response.data as {command?: string, service?: string, output?: string, error?: string});
-            } else {
-                setExecResult({ error: response.error || 'Command execution failed' });
-            }
-        } catch (err) {
-            setExecResult({ error: `Failed to execute command: ${err}` });
-        } finally {
-            setIsExecuting(false);
-        }
-    };
 
     const openTerminalSession = () => {
         if (!terminalService) return;
@@ -444,7 +414,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         )}
                     </Card>
 
-                    {/* Command Execution */}
+                    {/* Interactive Terminal */}
                     {userPermissions.exec && (
                         <Card>
                             <CardHeader>
@@ -462,197 +432,104 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                     </Button>
                                     <CardTitle className="flex items-center gap-2">
                                         <Terminal className="h-5 w-5" />
-                                        Command Execution & Terminal
+                                        Interactive Terminal
                                     </CardTitle>
                                 </div>
                             </CardHeader>
                             {openSections.has('exec') && (
                             <CardContent>
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">Service</label>
-                                            <Select value={execService} onValueChange={setExecService}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select service" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {stack.service_names.map((service) => (
-                                                        <SelectItem key={service} value={service}>
-                                                            {service}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium mb-2">Command</label>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    value={execCommand}
-                                                    onChange={(e) => setExecCommand(e.target.value)}
-                                                    placeholder="e.g., ls -la, cat /etc/hosts, whoami"
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && !isExecuting && execService && execCommand.trim()) {
-                                                            executeCommand();
-                                                        }
-                                                    }}
-                                                />
-                                                <Button
-                                                    onClick={executeCommand}
-                                                    disabled={isExecuting || !execService || !execCommand.trim()}
-                                                    variant="default"
-                                                >
-                                                    <Terminal className={`mr-2 h-4 w-4 ${isExecuting ? 'animate-spin' : ''}`} />
-                                                    Execute
-                                                </Button>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                <Terminal className="h-4 w-4 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-semibold">Interactive Terminal</h3>
+                                                <p className="text-xs text-muted-foreground">Open shell sessions in service containers</p>
                                             </div>
                                         </div>
+                                        {terminalSessions.length > 0 && (
+                                            <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                                                {terminalSessions.length} active session{terminalSessions.length !== 1 ? 's' : ''}
+                                            </div>
+                                        )}
                                     </div>
                                     
-                                    {execResult && (
-                                        <div className="mt-4">
-                                            <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-                                                <span>
-                                                    Command: {execResult.command || execCommand} 
-                                                    {execResult.service && ` (${execResult.service})`}
-                                                </span>
-                                                {execResult.output && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const blob = new Blob([execResult.output || ''], { type: 'text/plain' });
-                                                            const url = URL.createObjectURL(blob);
-                                                            const a = document.createElement('a');
-                                                            a.href = url;
-                                                            a.download = `${stack.name}-${execResult.service || execService}-exec-output.txt`;
-                                                            a.click();
-                                                            URL.revokeObjectURL(url);
-                                                        }}
-                                                    >
-                                                        <Download size={14} />
-                                                    </Button>
-                                                )}
+                                    <div className="space-y-3">
+                                        <div className="flex gap-3">
+                                            <div className="flex-1">
+                                                <Select value={terminalService} onValueChange={setTerminalService}>
+                                                    <SelectTrigger className="font-mono text-sm">
+                                                        <SelectValue placeholder="Choose service..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {stack.service_names.map((service) => (
+                                                            <SelectItem key={service} value={service} className="font-mono">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
+                                                                    {service}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                            <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
-                                                <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
-                                                            <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
-                                                            <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
-                                                        </div>
-                                                        <span className="text-sm font-medium ml-2 font-mono">
-                                                            {execResult.error ? '❌ Command Failed' : '✅ Command Output'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className={`p-6 max-h-[60vh] overflow-auto ${execResult.error ? 'bg-gradient-to-br from-red-950/20 to-red-900/10' : 'bg-gradient-to-br from-slate-950 to-slate-900'}`}>
-                                                    <pre className={`text-sm font-mono whitespace-pre-wrap leading-relaxed ${execResult.error ? 'text-red-300' : 'text-slate-100'}`}>
-                                                        {execResult.error ? 
-                                                            `Error: ${execResult.error}` : 
-                                                            (execResult.output || 'Command executed successfully (no output)')
-                                                        }
-                                                    </pre>
-                                                </div>
+                                            <div className="w-32">
+                                                <Select value={terminalShell} onValueChange={setTerminalShell}>
+                                                    <SelectTrigger className="font-mono text-sm">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="auto" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">🔍</span>
+                                                                auto
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="bash" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">$</span>
+                                                                bash
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="sh" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">$</span>
+                                                                sh
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="zsh" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">❯</span>
+                                                                zsh
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="fish" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">🐟</span>
+                                                                fish
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="dash" className="font-mono">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-muted-foreground">$</span>
+                                                                dash
+                                                            </div>
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
+                                            <Button
+                                                onClick={openTerminalSession}
+                                                disabled={!terminalService}
+                                                className="gap-2"
+                                                size="default"
+                                            >
+                                                <Terminal className="h-4 w-4" />
+                                                Launch Terminal
+                                            </Button>
                                         </div>
-                                    )}
-
-                                    {/* Terminal Sessions */}
-                                    <div className="border-t border-border/20 pt-6 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                                                    <Terminal className="h-4 w-4 text-primary" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-base font-semibold">Interactive Terminal</h3>
-                                                    <p className="text-xs text-muted-foreground">Open shell sessions in service containers</p>
-                                                </div>
-                                            </div>
-                                            {terminalSessions.length > 0 && (
-                                                <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
-                                                    {terminalSessions.length} active session{terminalSessions.length !== 1 ? 's' : ''}
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="space-y-3">
-                                            <div className="flex gap-3">
-                                                <div className="flex-1">
-                                                    <Select value={terminalService} onValueChange={setTerminalService}>
-                                                        <SelectTrigger className="font-mono text-sm">
-                                                            <SelectValue placeholder="Choose service..." />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {stack.service_names.map((service) => (
-                                                                <SelectItem key={service} value={service} className="font-mono">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
-                                                                        {service}
-                                                                    </div>
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="w-32">
-                                                    <Select value={terminalShell} onValueChange={setTerminalShell}>
-                                                        <SelectTrigger className="font-mono text-sm">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="auto" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">🔍</span>
-                                                                    auto
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="bash" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">$</span>
-                                                                    bash
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="sh" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">$</span>
-                                                                    sh
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="zsh" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">❯</span>
-                                                                    zsh
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="fish" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">🐟</span>
-                                                                    fish
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="dash" className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-muted-foreground">$</span>
-                                                                    dash
-                                                                </div>
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <Button
-                                                    onClick={openTerminalSession}
-                                                    disabled={!terminalService}
-                                                    className="gap-2"
-                                                    size="default"
-                                                >
-                                                    <Terminal className="h-4 w-4" />
-                                                    Launch Terminal
-                                                </Button>
-                                            </div>
                                         </div>
 
                                         {/* Active Terminal Sessions */}
@@ -672,19 +549,6 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                             ))}
                                         </div>
                                     </div>
-                                    
-                                    <div className="text-sm text-muted-foreground border-t border-border/20 pt-4 bg-muted/20 rounded-lg p-3 mt-4">
-                                        <div className="flex items-start gap-2">
-                                            <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
-                                            </div>
-                                            <div className="text-xs leading-relaxed">
-                                                <strong>Command Execution:</strong> Use for simple one-off commands with immediate output.<br />
-                                                <strong>Interactive Terminal:</strong> Use for full shell sessions with continuous interaction.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </CardContent>
                             )}
                         </Card>
