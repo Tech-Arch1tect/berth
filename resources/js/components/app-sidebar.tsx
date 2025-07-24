@@ -1,6 +1,7 @@
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { NavServers } from '@/components/nav-servers';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -69,7 +70,7 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="py-2 overflow-x-hidden">
+            <SidebarContent className="py-2 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <NavMain items={mainNavItems} />
                 
                 {/* Servers Section */}
@@ -81,18 +82,7 @@ export function AppSidebar() {
                                 Servers
                             </p>
                         </div>
-                        <SidebarMenu>
-                            {servers.map((server) => (
-                                <SidebarMenuItem key={server.id}>
-                                    <SidebarMenuButton asChild tooltip={server.display_name}>
-                                        <Link href={`/servers/${server.id}/stacks`} prefetch>
-                                            <Server className="h-4 w-4 shrink-0" />
-                                            <span className="truncate">{server.display_name}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
+                        <NavServers servers={servers} />
                     </>
                 )}
                 
