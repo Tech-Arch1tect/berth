@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Square, Pause, Activity, Loader2 } from 'lucide-react';
 import type { Stack } from '@/types/entities';
+import { Activity, AlertTriangle, Loader2, Pause, Square } from 'lucide-react';
 
 interface StackStatusBadgeProps {
     stack: Stack & { isLoadingStatus?: boolean };
@@ -23,13 +23,13 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
 
     if (!stack.parsed_successfully) {
         return (
-            <Badge variant="destructive" className={`bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400 ${className}`}>
+            <Badge variant="destructive" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className}`}>
                 <AlertTriangle className={`${iconSize} mr-1`} />
                 Parse Error
             </Badge>
         );
     }
-    
+
     if (stack.service_count === 0) {
         return (
             <Badge variant="secondary" className={`bg-muted/50 ${className}`}>
@@ -38,27 +38,27 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
             </Badge>
         );
     }
-    
+
     // Show service status if available
     if (stack.overall_status) {
         switch (stack.overall_status) {
             case 'running':
                 return (
-                    <Badge variant="default" className={`bg-green-500/10 text-green-700 border-green-500/30 dark:text-green-400 ${className}`}>
+                    <Badge variant="default" className={`border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400 ${className}`}>
                         <Activity className={`${iconSize} mr-1`} />
                         Running
                     </Badge>
                 );
             case 'stopped':
                 return (
-                    <Badge variant="outline" className={`bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400 ${className}`}>
+                    <Badge variant="outline" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className}`}>
                         <Square className={`${iconSize} mr-1`} />
                         Stopped
                     </Badge>
                 );
             case 'partial':
                 return (
-                    <Badge variant="secondary" className={`bg-yellow-500/10 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 ${className}`}>
+                    <Badge variant="secondary" className={`border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 ${className}`}>
                         <Pause className={`${iconSize} mr-1`} />
                         Partial
                     </Badge>
@@ -73,6 +73,6 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
                 );
         }
     }
-    
+
     return null;
 }

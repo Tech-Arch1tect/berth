@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, ShieldCheck, ShieldX, Copy, Download } from 'lucide-react';
-import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
+import { Head, useForm } from '@inertiajs/react';
+import { Copy, Download, Shield, ShieldCheck, ShieldX } from 'lucide-react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 interface TwoFactorProps {
     qrCode: string;
@@ -19,7 +19,15 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
     const [showSecret, setShowSecret] = useState(false);
     const [showDisableForm, setShowDisableForm] = useState(false);
 
-    const { data, setData, post, delete: destroy, processing, errors, reset } = useForm({
+    const {
+        data,
+        setData,
+        post,
+        delete: destroy,
+        processing,
+        errors,
+        reset,
+    } = useForm({
         code: '',
         password: '',
     });
@@ -67,26 +75,20 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
         <AppLayout>
             <Head title="Two-Factor Authentication" />
 
-            <div className="max-w-4xl mx-auto p-6">
+            <div className="mx-auto max-w-4xl p-6">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                        <Shield className="w-8 h-8" />
+                    <h1 className="flex items-center gap-2 text-3xl font-bold">
+                        <Shield className="h-8 w-8" />
                         Two-Factor Authentication
                     </h1>
-                    <p className="text-gray-600 mt-2">
-                        Add an extra layer of security to your account with two-factor authentication.
-                    </p>
+                    <p className="mt-2 text-gray-600">Add an extra layer of security to your account with two-factor authentication.</p>
                 </div>
 
                 <div className="grid gap-6">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                {enabled ? (
-                                    <ShieldCheck className="w-5 h-5 text-green-600" />
-                                ) : (
-                                    <ShieldX className="w-5 h-5 text-red-600" />
-                                )}
+                                {enabled ? <ShieldCheck className="h-5 w-5 text-green-600" /> : <ShieldX className="h-5 w-5 text-red-600" />}
                                 Status: {enabled ? 'Enabled' : 'Disabled'}
                             </CardTitle>
                             <CardDescription>
@@ -110,24 +112,16 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                                     <div className="space-y-4">
                                         <h3 className="text-lg font-medium">1. Scan QR Code</h3>
                                         <div className="flex justify-center">
-                                            <div 
-                                                className="p-4 bg-white rounded-lg border"
-                                                dangerouslySetInnerHTML={{ __html: qrCode }}
-                                            />
+                                            <div className="rounded-lg border bg-white p-4" dangerouslySetInnerHTML={{ __html: qrCode }} />
                                         </div>
                                         <div className="flex justify-center">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={downloadQrCode}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <Download className="w-4 h-4" />
+                                            <Button type="button" variant="outline" onClick={downloadQrCode} className="flex items-center gap-2">
+                                                <Download className="h-4 w-4" />
                                                 Download QR Code
                                             </Button>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="space-y-4">
                                         <h3 className="text-lg font-medium">2. Manual Setup (Optional)</h3>
                                         <Alert>
@@ -136,27 +130,12 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                                             </AlertDescription>
                                         </Alert>
                                         <div className="flex items-center gap-2">
-                                            <Input
-                                                type={showSecret ? "text" : "password"}
-                                                value={secret}
-                                                readOnly
-                                                className="font-mono"
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setShowSecret(!showSecret)}
-                                            >
+                                            <Input type={showSecret ? 'text' : 'password'} value={secret} readOnly className="font-mono" />
+                                            <Button type="button" variant="outline" size="sm" onClick={() => setShowSecret(!showSecret)}>
                                                 {showSecret ? 'Hide' : 'Show'}
                                             </Button>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={copySecret}
-                                            >
-                                                <Copy className="w-4 h-4" />
+                                            <Button type="button" variant="outline" size="sm" onClick={copySecret}>
+                                                <Copy className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -172,11 +151,9 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                                             onChange={(e) => setData('code', e.target.value)}
                                             placeholder="000000"
                                             maxLength={6}
-                                            className="font-mono text-center text-lg tracking-widest"
+                                            className="text-center font-mono text-lg tracking-widest"
                                         />
-                                        {errors.code && (
-                                            <p className="text-sm text-red-600 mt-1">{errors.code}</p>
-                                        )}
+                                        {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
                                     </div>
                                     <Button type="submit" disabled={processing} className="w-full">
                                         {processing ? 'Enabling...' : 'Enable Two-Factor Authentication'}
@@ -191,13 +168,11 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Recovery Codes</CardTitle>
-                                    <CardDescription>
-                                        View and manage your recovery codes for emergency access.
-                                    </CardDescription>
+                                    <CardDescription>View and manage your recovery codes for emergency access.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <Button
-                                        onClick={() => window.location.href = route('two-factor.recovery-codes')}
+                                        onClick={() => (window.location.href = route('two-factor.recovery-codes'))}
                                         variant="outline"
                                         className="w-full"
                                     >
@@ -209,17 +184,11 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Disable Two-Factor Authentication</CardTitle>
-                                    <CardDescription>
-                                        Remove two-factor authentication from your account.
-                                    </CardDescription>
+                                    <CardDescription>Remove two-factor authentication from your account.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {!showDisableForm ? (
-                                        <Button
-                                            onClick={() => setShowDisableForm(true)}
-                                            variant="destructive"
-                                            className="w-full"
-                                        >
+                                        <Button onClick={() => setShowDisableForm(true)} variant="destructive" className="w-full">
                                             Disable Two-Factor Authentication
                                         </Button>
                                     ) : (
@@ -233,17 +202,10 @@ export default function TwoFactor({ qrCode, secret, enabled }: TwoFactorProps) {
                                                     onChange={(e) => setData('password', e.target.value)}
                                                     placeholder="Enter your password"
                                                 />
-                                                {errors.password && (
-                                                    <p className="text-sm text-red-600 mt-1">{errors.password}</p>
-                                                )}
+                                                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button
-                                                    type="submit"
-                                                    disabled={processing}
-                                                    variant="destructive"
-                                                    className="flex-1"
-                                                >
+                                                <Button type="submit" disabled={processing} variant="destructive" className="flex-1">
                                                     {processing ? 'Disabling...' : 'Confirm Disable'}
                                                 </Button>
                                                 <Button

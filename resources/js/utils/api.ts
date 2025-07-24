@@ -29,10 +29,7 @@ function createHeaders(additionalHeaders: Record<string, string> = {}): Record<s
 /**
  * Generic API request helper
  */
-async function apiRequest<T = unknown>(
-    url: string, 
-    options: RequestInit = {}
-): Promise<ApiResponse<T>> {
+async function apiRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
         const response = await fetch(url, {
             headers: createHeaders(),
@@ -67,11 +64,7 @@ async function apiRequest<T = unknown>(
 /**
  * POST request with JSON body
  */
-export async function apiPost<T = unknown>(
-    url: string, 
-    data?: unknown, 
-    options: Omit<RequestInit, 'method' | 'body'> = {}
-): Promise<ApiResponse<T>> {
+export async function apiPost<T = unknown>(url: string, data?: unknown, options: Omit<RequestInit, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
         method: 'POST',
         body: data ? JSON.stringify(data) : undefined,
@@ -82,10 +75,7 @@ export async function apiPost<T = unknown>(
 /**
  * GET request
  */
-export async function apiGet<T = unknown>(
-    url: string, 
-    options: Omit<RequestInit, 'method'> = {}
-): Promise<ApiResponse<T>> {
+export async function apiGet<T = unknown>(url: string, options: Omit<RequestInit, 'method'> = {}): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
         method: 'GET',
         ...options,
@@ -95,11 +85,7 @@ export async function apiGet<T = unknown>(
 /**
  * PUT request with JSON body
  */
-export async function apiPut<T = unknown>(
-    url: string, 
-    data?: unknown, 
-    options: Omit<RequestInit, 'method' | 'body'> = {}
-): Promise<ApiResponse<T>> {
+export async function apiPut<T = unknown>(url: string, data?: unknown, options: Omit<RequestInit, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
         method: 'PUT',
         body: data ? JSON.stringify(data) : undefined,
@@ -110,10 +96,7 @@ export async function apiPut<T = unknown>(
 /**
  * DELETE request
  */
-export async function apiDelete<T = unknown>(
-    url: string, 
-    options: Omit<RequestInit, 'method'> = {}
-): Promise<ApiResponse<T>> {
+export async function apiDelete<T = unknown>(url: string, options: Omit<RequestInit, 'method'> = {}): Promise<ApiResponse<T>> {
     return apiRequest<T>(url, {
         method: 'DELETE',
         ...options,

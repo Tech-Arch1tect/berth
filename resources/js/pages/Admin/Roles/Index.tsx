@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Head, useForm, router, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Shield } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import type { Server as BaseServer } from '@/types/entities';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Shield } from 'lucide-react';
+import { useState } from 'react';
 
 interface Server extends BaseServer {
     pivot?: {
@@ -54,7 +54,7 @@ export default function RolesIndex({ roles }: Props) {
     const handleEditRole = (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingRole) return;
-        
+
         editForm.put(`/admin/roles/${editingRole.id}`, {
             onSuccess: () => {
                 editForm.reset();
@@ -79,9 +79,9 @@ export default function RolesIndex({ roles }: Props) {
     return (
         <AppLayout>
             <Head title="Role Management" />
-            
+
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Role Management</h1>
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogTrigger asChild>
@@ -100,16 +100,10 @@ export default function RolesIndex({ roles }: Props) {
                                         onChange={(e) => createForm.setData('name', e.target.value)}
                                         required
                                     />
-                                    {createForm.errors.name && (
-                                        <p className="text-red-500 text-sm mt-1">{createForm.errors.name}</p>
-                                    )}
+                                    {createForm.errors.name && <p className="mt-1 text-sm text-red-500">{createForm.errors.name}</p>}
                                 </div>
                                 <div className="flex justify-end space-x-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setIsCreateDialogOpen(false)}
-                                    >
+                                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                                         Cancel
                                     </Button>
                                     <Button type="submit" disabled={createForm.processing}>
@@ -125,32 +119,20 @@ export default function RolesIndex({ roles }: Props) {
                     {roles.map((role) => (
                         <Card key={role.id}>
                             <CardHeader>
-                                <div className="flex justify-between items-center">
+                                <div className="flex items-center justify-between">
                                     <CardTitle className="capitalize">{role.name}</CardTitle>
                                     <div className="space-x-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
+                                        <Button variant="outline" size="sm" asChild>
                                             <Link href={`/admin/roles/${role.id}/permissions`}>
-                                                <Shield className="h-4 w-4 mr-1" />
+                                                <Shield className="mr-1 h-4 w-4" />
                                                 Permissions
                                             </Link>
                                         </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => openEditDialog(role)}
-                                        >
+                                        <Button variant="outline" size="sm" onClick={() => openEditDialog(role)}>
                                             Edit
                                         </Button>
                                         {role.name !== 'admin' && (
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleDeleteRole(role)}
-                                            >
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteRole(role)}>
                                                 Delete
                                             </Button>
                                         )}
@@ -159,13 +141,11 @@ export default function RolesIndex({ roles }: Props) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-2">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        Role for organizing users into groups
-                                    </p>
-                                    
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Role for organizing users into groups</p>
+
                                     {role.servers && role.servers.length > 0 ? (
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                            <p className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                                                 Server Access ({role.servers.length}):
                                             </p>
                                             <div className="space-y-1">
@@ -176,10 +156,12 @@ export default function RolesIndex({ roles }: Props) {
                                                             {[
                                                                 server.pivot?.can_access && 'Access',
                                                                 server.pivot?.can_filemanager_access && 'Files',
-                                                                server.pivot?.can_filemanager_write && 'Edit', 
+                                                                server.pivot?.can_filemanager_write && 'Edit',
                                                                 server.pivot?.can_start_stop && 'Up/Down',
-                                                                server.pivot?.can_exec && 'Exec'
-                                                            ].filter(Boolean).join(', ') || 'No permissions'}
+                                                                server.pivot?.can_exec && 'Exec',
+                                                            ]
+                                                                .filter(Boolean)
+                                                                .join(', ') || 'No permissions'}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -216,16 +198,10 @@ export default function RolesIndex({ roles }: Props) {
                                     onChange={(e) => editForm.setData('name', e.target.value)}
                                     required
                                 />
-                                {editForm.errors.name && (
-                                    <p className="text-red-500 text-sm mt-1">{editForm.errors.name}</p>
-                                )}
+                                {editForm.errors.name && <p className="mt-1 text-sm text-red-500">{editForm.errors.name}</p>}
                             </div>
                             <div className="flex justify-end space-x-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setEditingRole(null)}
-                                >
+                                <Button type="button" variant="outline" onClick={() => setEditingRole(null)}>
                                     Cancel
                                 </Button>
                                 <Button type="submit" disabled={editForm.processing}>

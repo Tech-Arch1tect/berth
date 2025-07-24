@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { usePage } from '@inertiajs/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface FlashMessages {
     success?: string;
@@ -25,13 +25,13 @@ export default function FlashMessages() {
                 // Auto-hide success messages after 4 seconds
                 if (type === 'success') {
                     setTimeout(() => {
-                        setVisible(prev => ({ ...prev, [type]: false }));
+                        setVisible((prev) => ({ ...prev, [type]: false }));
                     }, 4000);
                 }
                 // Auto-hide info messages after 5 seconds
                 if (type === 'info') {
                     setTimeout(() => {
-                        setVisible(prev => ({ ...prev, [type]: false }));
+                        setVisible((prev) => ({ ...prev, [type]: false }));
                     }, 5000);
                 }
             }
@@ -74,21 +74,21 @@ export default function FlashMessages() {
 
     return (
         <div className="space-y-2">
-            {Object.entries(flash).map(([type, message]) => 
+            {Object.entries(flash).map(([type, message]) =>
                 message && visible[type] ? (
                     <Alert key={type} className={`${getAlertClass(type)} transition-all duration-300`}>
                         {getIcon(type)}
-                        <AlertDescription className="flex items-start justify-between w-full">
+                        <AlertDescription className="flex w-full items-start justify-between">
                             <span className="flex-1">{message}</span>
                             <button
-                                onClick={() => setVisible(prev => ({ ...prev, [type]: false }))}
-                                className="flex-shrink-0 text-current opacity-70 hover:opacity-100 transition-opacity ml-4"
+                                onClick={() => setVisible((prev) => ({ ...prev, [type]: false }))}
+                                className="ml-4 flex-shrink-0 text-current opacity-70 transition-opacity hover:opacity-100"
                             >
                                 ×
                             </button>
                         </AlertDescription>
                     </Alert>
-                ) : null
+                ) : null,
             )}
         </div>
     );

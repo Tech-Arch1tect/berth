@@ -1,12 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+import FileViewer from '@/components/file-viewer';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home, Download, Upload, FileText, Files, File as FileIcon, Folder, Edit2 } from 'lucide-react';
-import FileViewer from '@/components/file-viewer';
+import { Input } from '@/components/ui/input';
 import { getFileIcon, getFileTypeLabel, isEditable } from '@/utils/file-icons';
+import {
+    ArrowLeft,
+    ChevronRight,
+    Download,
+    Edit2,
+    Eye,
+    File as FileIcon,
+    FileText,
+    Files,
+    Folder,
+    FolderOpen,
+    Home,
+    Plus,
+    RefreshCw,
+    Trash2,
+    Upload,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface FileInfo {
     name: string;
@@ -30,7 +46,7 @@ interface FileManagerProps {
     canWrite?: boolean;
 }
 
-export default function FileManager({ serverId, stackName, title = "Stack Files", canWrite = false }: FileManagerProps) {
+export default function FileManager({ serverId, stackName, title = 'Stack Files', canWrite = false }: FileManagerProps) {
     const [files, setFiles] = useState<FilesResponse | null>(null);
     const [currentPath, setCurrentPath] = useState<string>('.');
     const [isLoading, setIsLoading] = useState(false);
@@ -53,27 +69,30 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameError, setRenameError] = useState<string | null>(null);
 
-    const fetchFiles = useCallback(async (path: string = '.') => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams({ path });
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/files?${params}`);
-            
-            if (response.ok) {
-                const filesData = await response.json();
-                setFiles(filesData);
-                setCurrentPath(path);
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to fetch files');
+    const fetchFiles = useCallback(
+        async (path: string = '.') => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const params = new URLSearchParams({ path });
+                const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/files?${params}`);
+
+                if (response.ok) {
+                    const filesData = await response.json();
+                    setFiles(filesData);
+                    setCurrentPath(path);
+                } else {
+                    const errorData = await response.json();
+                    setError(errorData.error || 'Failed to fetch files');
+                }
+            } catch (err) {
+                setError(`Failed to fetch files: ${err}`);
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            setError(`Failed to fetch files: ${err}`);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [serverId, stackName]);
+        },
+        [serverId, stackName],
+    );
 
     useEffect(() => {
         fetchFiles('.');
@@ -85,8 +104,8 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
 
     const navigateUp = () => {
         if (currentPath === '.' || currentPath === '/') return;
-        
-        const pathParts = currentPath.split('/').filter(part => part !== '');
+
+        const pathParts = currentPath.split('/').filter((part) => part !== '');
         pathParts.pop();
         const parentPath = pathParts.length === 0 ? '.' : pathParts.join('/');
         navigateToPath(parentPath);
@@ -102,20 +121,16 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
 
     const getBreadcrumbs = () => {
         if (currentPath === '.') return ['root'];
-        const parts = currentPath.split('/').filter(part => part !== '');
+        const parts = currentPath.split('/').filter((part) => part !== '');
         return ['root', ...parts];
     };
 
     const handleFileClick = (file: FileInfo) => {
         if (file.isDir) {
-            const newPath = currentPath === '.' 
-                ? file.name 
-                : `${currentPath}/${file.name}`;
+            const newPath = currentPath === '.' ? file.name : `${currentPath}/${file.name}`;
             navigateToPath(newPath);
         } else {
-            const filePath = currentPath === '.' 
-                ? file.name 
-                : `${currentPath}/${file.name}`;
+            const filePath = currentPath === '.' ? file.name : `${currentPath}/${file.name}`;
             setViewingFile({ path: filePath, name: file.name });
         }
     };
@@ -125,12 +140,10 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     };
 
     const handleDownloadFile = (file: FileInfo) => {
-        const filePath = currentPath === '.' 
-            ? file.name 
-            : `${currentPath}/${file.name}`;
-        
+        const filePath = currentPath === '.' ? file.name : `${currentPath}/${file.name}`;
+
         const downloadUrl = `/api/servers/${serverId}/stacks/${stackName}/file/download?path=${encodeURIComponent(filePath)}`;
-        
+
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = file.name;
@@ -161,14 +174,14 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
                     path: filePath,
                     content: newFileContent,
                     isBinary: false,
-                    isBase64: false
-                })
+                    isBase64: false,
+                }),
             });
 
             if (response.ok) {
@@ -198,15 +211,16 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         }
 
         const fileName = newFileName.trim() || selectedFile.name;
-        
+
         setIsCreating(true);
         setCreateError(null);
         try {
             const filePath = currentPath === '.' ? fileName : `${currentPath}/${fileName}`;
-            
-            const isBinary = !selectedFile.type.startsWith('text/') && 
-                           !['application/json', 'application/xml', 'application/yaml', 'application/x-yaml'].includes(selectedFile.type);
-            
+
+            const isBinary =
+                !selectedFile.type.startsWith('text/') &&
+                !['application/json', 'application/xml', 'application/yaml', 'application/x-yaml'].includes(selectedFile.type);
+
             let content: string;
             let isBase64 = false;
 
@@ -231,14 +245,14 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
                     path: filePath,
                     content: content,
                     isBinary: isBinary,
-                    isBase64: isBase64
-                })
+                    isBase64: isBase64,
+                }),
             });
 
             if (response.ok) {
@@ -276,7 +290,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const handleFileDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOver(false);
-        
+
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
             setCreateMode('upload');
@@ -316,19 +330,17 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         setRenameError(null);
 
         try {
-            const filePath = currentPath === '.' 
-                ? fileToRename.name 
-                : `${currentPath}/${fileToRename.name}`;
+            const filePath = currentPath === '.' ? fileToRename.name : `${currentPath}/${fileToRename.name}`;
 
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?path=${encodeURIComponent(filePath)}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    newName: newRenameFileName.trim()
-                })
+                    newName: newRenameFileName.trim(),
+                }),
             });
 
             if (response.ok) {
@@ -349,23 +361,23 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
 
     const deleteFileOrFolder = async () => {
         if (!fileToDelete) return;
-        
+
         setIsDeleting(true);
         setError(null);
-        
+
         try {
             const filePath = currentPath === '.' ? fileToDelete.name : `${currentPath}/${fileToDelete.name}`;
             const params = new URLSearchParams({ path: filePath });
-            
+
             if (fileToDelete.isDir) {
                 params.append('recursive', 'true');
             }
-            
+
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
             });
 
             if (response.ok) {
@@ -396,22 +408,20 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
 
     const handleFileRenamed = (oldName: string, newName: string) => {
         if (viewingFile && viewingFile.name === oldName) {
-            const newPath = currentPath === '.' 
-                ? newName 
-                : `${currentPath}/${newName}`;
+            const newPath = currentPath === '.' ? newName : `${currentPath}/${newName}`;
             setViewingFile({ path: newPath, name: newName });
         }
-        
+
         fetchFiles(currentPath);
     };
 
     return (
-        <Card className="bg-gradient-to-br from-card to-muted/20 border border-border/60 shadow-lg">
+        <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-lg">
             <CardHeader className="pb-4">
-                <div className="flex justify-between items-start">
+                <div className="flex items-start justify-between">
                     <div className="space-y-2">
                         <CardTitle className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
                                 <FolderOpen className="h-4 w-4 text-primary" />
                             </div>
                             <span className="text-lg">{title}</span>
@@ -421,7 +431,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                 </Badge>
                             )}
                         </CardTitle>
-                        
+
                         {/* Breadcrumb Navigation */}
                         <div className="flex items-center gap-2 text-sm">
                             <Home className="h-4 w-4 text-muted-foreground" />
@@ -429,15 +439,13 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                 {getBreadcrumbs().map((part, index) => (
                                     <div key={index} className="flex items-center gap-1">
                                         {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-                                        <span className="font-mono bg-muted/30 px-2 py-1 rounded-md text-xs">
-                                            {part}
-                                        </span>
+                                        <span className="rounded-md bg-muted/30 px-2 py-1 font-mono text-xs">{part}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                         {canWrite && (
                             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -447,19 +455,20 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                         Create File
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-4xl w-[90vw] max-h-[85vh] flex flex-col">
+                                <DialogContent className="flex max-h-[85vh] w-[90vw] max-w-4xl flex-col">
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2">
                                             <Plus className="h-5 w-5 text-primary" />
                                             {createMode === 'text' ? 'Create New File' : 'Upload File'}
                                         </DialogTitle>
                                         <DialogDescription>
-                                            {createMode === 'text' ? 'Create a new text file' : 'Upload a file'} in <span className="font-mono bg-muted px-1 rounded">{currentPath === '.' ? 'root' : currentPath}</span>
+                                            {createMode === 'text' ? 'Create a new text file' : 'Upload a file'} in{' '}
+                                            <span className="rounded bg-muted px-1 font-mono">{currentPath === '.' ? 'root' : currentPath}</span>
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
+                                    <div className="flex flex-1 flex-col space-y-6 overflow-hidden">
                                         {/* Mode Toggle */}
-                                        <div className="flex items-center justify-center space-x-1 bg-muted rounded-lg p-1">
+                                        <div className="flex items-center justify-center space-x-1 rounded-lg bg-muted p-1">
                                             <Button
                                                 variant={createMode === 'text' ? 'default' : 'ghost'}
                                                 size="sm"
@@ -469,7 +478,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 }}
                                                 className="flex-1"
                                             >
-                                                <FileText className="w-4 h-4 mr-2" />
+                                                <FileText className="mr-2 h-4 w-4" />
                                                 Create Text File
                                             </Button>
                                             <Button
@@ -481,26 +490,26 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                 }}
                                                 className="flex-1"
                                             >
-                                                <Upload className="w-4 h-4 mr-2" />
+                                                <Upload className="mr-2 h-4 w-4" />
                                                 Upload File
                                             </Button>
                                         </div>
 
                                         {/* Error Display */}
                                         {createError && (
-                                            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                                            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-destructive-foreground text-xs font-bold">!</span>
+                                                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-destructive">
+                                                        <span className="text-xs font-bold text-destructive-foreground">!</span>
                                                     </div>
-                                                    <p className="text-sm text-destructive font-medium">{createError}</p>
+                                                    <p className="text-sm font-medium text-destructive">{createError}</p>
                                                 </div>
                                             </div>
                                         )}
 
                                         {createMode === 'text' ? (
                                             <>
-                                                <div className="space-y-2 flex-shrink-0">
+                                                <div className="flex-shrink-0 space-y-2">
                                                     <label htmlFor="fileName" className="text-sm font-semibold">
                                                         File Name
                                                     </label>
@@ -515,7 +524,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         className="font-mono"
                                                     />
                                                 </div>
-                                                <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+                                                <div className="flex flex-1 flex-col space-y-2 overflow-hidden">
                                                     <label htmlFor="fileContent" className="text-sm font-semibold">
                                                         File Content
                                                     </label>
@@ -524,13 +533,13 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         value={newFileContent}
                                                         onChange={(e) => setNewFileContent(e.target.value)}
                                                         placeholder="Enter file content..."
-                                                        className="flex-1 w-full px-4 py-4 border border-border/20 rounded-xl text-sm bg-gradient-to-br from-background to-muted/10 text-foreground font-mono resize-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-inner min-h-[400px]"
+                                                        className="min-h-[400px] w-full flex-1 resize-none rounded-xl border border-border/20 bg-gradient-to-br from-background to-muted/10 px-4 py-4 font-mono text-sm text-foreground shadow-inner focus:border-transparent focus:ring-2 focus:ring-ring"
                                                     />
                                                 </div>
                                             </>
                                         ) : (
                                             <>
-                                                <div className="space-y-2 flex-shrink-0">
+                                                <div className="flex-shrink-0 space-y-2">
                                                     <label htmlFor="fileName" className="text-sm font-semibold">
                                                         File Name (optional)
                                                     </label>
@@ -541,16 +550,14 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                             setNewFileName(e.target.value);
                                                             setCreateError(null);
                                                         }}
-                                                        placeholder={selectedFile ? selectedFile.name : "Will use original filename if empty"}
+                                                        placeholder={selectedFile ? selectedFile.name : 'Will use original filename if empty'}
                                                         className="font-mono"
                                                     />
                                                 </div>
-                                                <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
-                                                    <label className="text-sm font-semibold">
-                                                        Select File
-                                                    </label>
-                                                    <div 
-                                                        className={`flex-1 border-2 border-dashed rounded-xl p-8 text-center transition-colors min-h-[400px] flex flex-col items-center justify-center ${
+                                                <div className="flex flex-1 flex-col space-y-2 overflow-hidden">
+                                                    <label className="text-sm font-semibold">Select File</label>
+                                                    <div
+                                                        className={`flex min-h-[400px] flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
                                                             dragOver ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-border/80'
                                                         }`}
                                                         onDrop={handleFileDrop}
@@ -559,41 +566,33 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                     >
                                                         {selectedFile ? (
                                                             <div className="space-y-4">
-                                                                <div className="w-16 h-16 mx-auto rounded-lg bg-primary/10 flex items-center justify-center">
-                                                                    <Files className="w-8 h-8 text-primary" />
+                                                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10">
+                                                                    <Files className="h-8 w-8 text-primary" />
                                                                 </div>
                                                                 <div>
-                                                                    <h3 className="font-medium text-lg">{selectedFile.name}</h3>
+                                                                    <h3 className="text-lg font-medium">{selectedFile.name}</h3>
                                                                     <p className="text-sm text-muted-foreground">
-                                                                        {selectedFile.size > 1024 * 1024 
-                                                                            ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` 
-                                                                            : `${(selectedFile.size / 1024).toFixed(1)} KB`
-                                                                        } • {selectedFile.type || 'Unknown type'}
+                                                                        {selectedFile.size > 1024 * 1024
+                                                                            ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`
+                                                                            : `${(selectedFile.size / 1024).toFixed(1)} KB`}{' '}
+                                                                        • {selectedFile.type || 'Unknown type'}
                                                                     </p>
                                                                     {selectedFile.size > 100 * 1024 * 1024 && (
-                                                                        <p className="text-sm text-destructive mt-1">
-                                                                            ⚠️ File exceeds 100MB limit
-                                                                        </p>
+                                                                        <p className="mt-1 text-sm text-destructive">⚠️ File exceeds 100MB limit</p>
                                                                     )}
                                                                 </div>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    onClick={() => setSelectedFile(null)}
-                                                                    size="sm"
-                                                                >
+                                                                <Button variant="outline" onClick={() => setSelectedFile(null)} size="sm">
                                                                     Choose Different File
                                                                 </Button>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-4">
-                                                                <div className="w-16 h-16 mx-auto rounded-lg bg-muted flex items-center justify-center">
-                                                                    <Upload className="w-8 h-8 text-muted-foreground" />
+                                                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
+                                                                    <Upload className="h-8 w-8 text-muted-foreground" />
                                                                 </div>
                                                                 <div>
-                                                                    <h3 className="font-medium text-lg">Drop your file here</h3>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        or click to browse files
-                                                                    </p>
+                                                                    <h3 className="text-lg font-medium">Drop your file here</h3>
+                                                                    <p className="text-sm text-muted-foreground">or click to browse files</p>
                                                                 </div>
                                                                 <input
                                                                     type="file"
@@ -618,10 +617,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                         )}
                                     </div>
                                     <DialogFooter>
-                                        <Button
-                                            variant="outline"
-                                            onClick={resetCreateDialog}
-                                        >
+                                        <Button variant="outline" onClick={resetCreateDialog}>
                                             Cancel
                                         </Button>
                                         <Button
@@ -629,11 +625,13 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                             disabled={isCreating || (createMode === 'text' ? !newFileName.trim() : !selectedFile)}
                                             className="transition-all hover:scale-105"
                                         >
-                                            {isCreating ? (
-                                                createMode === 'text' ? 'Creating...' : 'Uploading...'
-                                            ) : (
-                                                createMode === 'text' ? 'Create File' : 'Upload File'
-                                            )}
+                                            {isCreating
+                                                ? createMode === 'text'
+                                                    ? 'Creating...'
+                                                    : 'Uploading...'
+                                                : createMode === 'text'
+                                                  ? 'Create File'
+                                                  : 'Upload File'}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
@@ -652,7 +650,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     </div>
                 </div>
             </CardHeader>
-            <CardContent 
+            <CardContent
                 className="relative"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -663,9 +661,9 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
             >
                 {/* Drag and Drop Overlay */}
                 {dragOver && (
-                    <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-10">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5">
                         <div className="text-center">
-                            <Upload className="w-12 h-12 text-primary mx-auto mb-4" />
+                            <Upload className="mx-auto mb-4 h-12 w-12 text-primary" />
                             <h3 className="text-lg font-semibold text-primary">Drop file to upload</h3>
                             <p className="text-muted-foreground">Release to upload file to current directory</p>
                         </div>
@@ -673,27 +671,23 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 )}
 
                 {error ? (
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="py-12 text-center">
+                        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
                             <FileIcon className="h-10 w-10 text-destructive" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">Error Loading Files</h3>
-                        <p className="text-destructive mb-4">{error}</p>
-                        <Button
-                            onClick={() => fetchFiles(currentPath)}
-                            variant="outline"
-                            className="transition-all hover:scale-105"
-                        >
+                        <h3 className="mb-2 text-lg font-semibold">Error Loading Files</h3>
+                        <p className="mb-4 text-destructive">{error}</p>
+                        <Button onClick={() => fetchFiles(currentPath)} variant="outline" className="transition-all hover:scale-105">
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Retry
                         </Button>
                     </div>
                 ) : isLoading ? (
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <RefreshCw className="h-10 w-10 text-primary animate-spin" />
+                    <div className="py-12 text-center">
+                        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                            <RefreshCw className="h-10 w-10 animate-spin text-primary" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">Loading Files</h3>
+                        <h3 className="mb-2 text-lg font-semibold">Loading Files</h3>
                         <p className="text-muted-foreground">Please wait while we fetch the directory contents...</p>
                     </div>
                 ) : files ? (
@@ -701,12 +695,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                         {/* Navigation Controls */}
                         {currentPath !== '.' && (
                             <div className="flex items-center gap-2">
-                                <Button
-                                    onClick={navigateUp}
-                                    variant="outline"
-                                    size="sm"
-                                    className="transition-all hover:scale-105"
-                                >
+                                <Button onClick={navigateUp} variant="outline" size="sm" className="transition-all hover:scale-105">
                                     <ArrowLeft size={14} className="mr-1" />
                                     Back to Parent
                                 </Button>
@@ -716,11 +705,11 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                         {/* File List */}
                         <div className="space-y-2">
                             {files.files.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="py-12 text-center">
+                                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/30">
                                         <Folder className="h-10 w-10 text-muted-foreground" />
                                     </div>
-                                    <h3 className="text-lg font-semibold mb-2">Empty Directory</h3>
+                                    <h3 className="mb-2 text-lg font-semibold">Empty Directory</h3>
                                     <p className="text-muted-foreground">This directory contains no files or folders.</p>
                                 </div>
                             ) : (
@@ -734,29 +723,33 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                     .map((file, index) => (
                                         <div
                                             key={file.name}
-                                            className="animate-in slide-in-from-bottom-4 duration-300 group"
+                                            className="group duration-300 animate-in slide-in-from-bottom-4"
                                             style={{ animationDelay: `${index * 50}ms` }}
                                         >
-                                            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/30 hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/20 hover:border-border/60 hover:shadow-md transition-all duration-300 group-hover:translate-x-1">
-                                                <div 
-                                                    className={`flex items-center gap-4 flex-1 ${file.isDir ? 'cursor-pointer' : ''}`}
+                                            <div className="flex items-center justify-between rounded-xl border border-border/30 bg-gradient-to-r from-muted/30 to-muted/10 p-4 transition-all duration-300 group-hover:translate-x-1 hover:border-border/60 hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/20 hover:shadow-md">
+                                                <div
+                                                    className={`flex flex-1 items-center gap-4 ${file.isDir ? 'cursor-pointer' : ''}`}
                                                     onClick={() => file.isDir && handleFileClick(file)}
                                                 >
-                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background border border-border/50">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border/50 bg-background">
                                                         {getFileIcon(file.name, file.mimeType || 'application/octet-stream', file.isDir)}
                                                     </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-medium transition-colors group-hover:text-primary">
                                                             {file.name}
                                                         </div>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <Badge variant={file.isDir ? "secondary" : "outline"} className="text-xs">
-                                                                {file.isDir ? 'Directory' : getFileTypeLabel(file.name, file.mimeType || 'application/octet-stream', file.isBinary || false)}
+                                                        <div className="mt-1 flex items-center gap-2">
+                                                            <Badge variant={file.isDir ? 'secondary' : 'outline'} className="text-xs">
+                                                                {file.isDir
+                                                                    ? 'Directory'
+                                                                    : getFileTypeLabel(
+                                                                          file.name,
+                                                                          file.mimeType || 'application/octet-stream',
+                                                                          file.isBinary || false,
+                                                                      )}
                                                             </Badge>
                                                             {!file.isDir && (
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {formatFileSize(file.size)}
-                                                                </span>
+                                                                <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
                                                             )}
                                                             {!file.isDir && file.isBinary && (
                                                                 <Badge variant="destructive" className="text-xs">
@@ -793,7 +786,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         </>
                                                     )}
                                                     {file.isDir && (
-                                                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
                                                     )}
                                                     {canWrite && (
                                                         <>
@@ -801,7 +794,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => handleRenameClick(file)}
-                                                                className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                                                className="text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                                 title="Rename"
                                                             >
                                                                 <Edit2 size={14} />
@@ -810,7 +803,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => handleDeleteClick(file)}
-                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                             >
                                                                 <Trash2 size={14} />
                                                             </Button>
@@ -824,16 +817,16 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="py-12 text-center">
+                        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/30">
                             <FolderOpen className="h-10 w-10 text-muted-foreground" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">Ready to Browse</h3>
+                        <h3 className="mb-2 text-lg font-semibold">Ready to Browse</h3>
                         <p className="text-muted-foreground">Click refresh to load the directory contents.</p>
                     </div>
                 )}
             </CardContent>
-            
+
             {/* File Viewer */}
             {viewingFile && (
                 <FileViewer
@@ -848,29 +841,25 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     onFileRenamed={handleFileRenamed}
                 />
             )}
-            
+
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-destructive/10 rounded-lg flex items-center justify-center">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
                                 <Trash2 className="h-4 w-4 text-destructive" />
                             </div>
                             Delete {fileToDelete?.isDir ? 'Directory' : 'File'}
                         </DialogTitle>
                         <DialogDescription className="space-y-2">
                             <p>
-                                Are you sure you want to delete <span className="font-mono bg-muted px-1 rounded">{fileToDelete?.name}</span>?
+                                Are you sure you want to delete <span className="rounded bg-muted px-1 font-mono">{fileToDelete?.name}</span>?
                             </p>
                             {fileToDelete?.isDir && (
-                                <p className="text-destructive text-sm">
-                                    ⚠️ This will delete the directory and all its contents.
-                                </p>
+                                <p className="text-sm text-destructive">⚠️ This will delete the directory and all its contents.</p>
                             )}
-                            <p className="text-sm text-muted-foreground">
-                                This action cannot be undone.
-                            </p>
+                            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -884,12 +873,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                         >
                             Cancel
                         </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={deleteFileOrFolder}
-                            disabled={isDeleting}
-                            className="transition-all hover:scale-105"
-                        >
+                        <Button variant="destructive" onClick={deleteFileOrFolder} disabled={isDeleting} className="transition-all hover:scale-105">
                             {isDeleting ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
                         </Button>
                     </DialogFooter>
@@ -901,7 +885,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                                 <Edit2 className="h-4 w-4 text-primary" />
                             </div>
                             Rename {fileToRename?.isDir ? 'Directory' : 'File'}
@@ -914,19 +898,19 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             )}
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4">
                         {renameError && (
-                            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
-                                        <span className="text-destructive-foreground text-xs font-bold">!</span>
+                                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-destructive">
+                                        <span className="text-xs font-bold text-destructive-foreground">!</span>
                                     </div>
-                                    <p className="text-sm text-destructive font-medium">{renameError}</p>
+                                    <p className="text-sm font-medium text-destructive">{renameError}</p>
                                 </div>
                             </div>
                         )}
-                        
+
                         <div className="space-y-2">
                             <label htmlFor="renameInput" className="text-sm font-semibold">
                                 New Name
@@ -949,7 +933,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             />
                         </div>
                     </div>
-                    
+
                     <DialogFooter>
                         <Button
                             variant="outline"

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, Download, RefreshCw, Shield, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
+import { Head, useForm } from '@inertiajs/react';
+import { AlertTriangle, Copy, Download, RefreshCw, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 interface TwoFactorRecoveryCodesProps {
     codes: string[];
@@ -55,14 +55,15 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
         <AppLayout>
             <Head title="Two-Factor Recovery Codes" />
 
-            <div className="max-w-4xl mx-auto p-6">
+            <div className="mx-auto max-w-4xl p-6">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                        <Shield className="w-8 h-8" />
+                    <h1 className="flex items-center gap-2 text-3xl font-bold">
+                        <Shield className="h-8 w-8" />
                         Recovery Codes
                     </h1>
-                    <p className="text-gray-600 mt-2">
-                        Store these recovery codes in a secure location. They can be used to recover access to your account if you lose your authenticator device.
+                    <p className="mt-2 text-gray-600">
+                        Store these recovery codes in a secure location. They can be used to recover access to your account if you lose your
+                        authenticator device.
                     </p>
                 </div>
 
@@ -70,42 +71,33 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
                     <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
-                            <strong>Important:</strong> Each recovery code can only be used once. Make sure to store them securely and consider generating new ones after use.
+                            <strong>Important:</strong> Each recovery code can only be used once. Make sure to store them securely and consider
+                            generating new ones after use.
                         </AlertDescription>
                     </Alert>
 
                     <Card>
                         <CardHeader>
                             <CardTitle>Your Recovery Codes</CardTitle>
-                            <CardDescription>
-                                You have {codes.length} recovery codes remaining.
-                            </CardDescription>
+                            <CardDescription>You have {codes.length} recovery codes remaining.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg font-mono text-sm">
+                                <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-4 font-mono text-sm">
                                     {codes.map((code, index) => (
-                                        <div key={index} className="p-2 bg-white rounded border text-center">
+                                        <div key={index} className="rounded border bg-white p-2 text-center">
                                             {code}
                                         </div>
                                     ))}
                                 </div>
-                                
+
                                 <div className="flex gap-2">
-                                    <Button
-                                        onClick={copyAllCodes}
-                                        variant="outline"
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Copy className="w-4 h-4" />
+                                    <Button onClick={copyAllCodes} variant="outline" className="flex items-center gap-2">
+                                        <Copy className="h-4 w-4" />
                                         Copy All
                                     </Button>
-                                    <Button
-                                        onClick={downloadCodes}
-                                        variant="outline"
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Download className="w-4 h-4" />
+                                    <Button onClick={downloadCodes} variant="outline" className="flex items-center gap-2">
+                                        <Download className="h-4 w-4" />
                                         Download
                                     </Button>
                                 </div>
@@ -116,18 +108,12 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
                     <Card>
                         <CardHeader>
                             <CardTitle>Generate New Recovery Codes</CardTitle>
-                            <CardDescription>
-                                Generate a new set of recovery codes. This will invalidate all existing codes.
-                            </CardDescription>
+                            <CardDescription>Generate a new set of recovery codes. This will invalidate all existing codes.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {!showRegenerateForm ? (
-                                <Button
-                                    onClick={() => setShowRegenerateForm(true)}
-                                    variant="outline"
-                                    className="flex items-center gap-2"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
+                                <Button onClick={() => setShowRegenerateForm(true)} variant="outline" className="flex items-center gap-2">
+                                    <RefreshCw className="h-4 w-4" />
                                     Generate New Recovery Codes
                                 </Button>
                             ) : (
@@ -135,10 +121,11 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
                                     <Alert>
                                         <AlertTriangle className="h-4 w-4" />
                                         <AlertDescription>
-                                            <strong>Warning:</strong> Generating new recovery codes will invalidate all existing codes. Make sure you have access to your authenticator app.
+                                            <strong>Warning:</strong> Generating new recovery codes will invalidate all existing codes. Make sure you
+                                            have access to your authenticator app.
                                         </AlertDescription>
                                     </Alert>
-                                    
+
                                     <div>
                                         <Label htmlFor="password">Confirm Password</Label>
                                         <Input
@@ -148,18 +135,11 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
                                             onChange={(e) => setData('password', e.target.value)}
                                             placeholder="Enter your password"
                                         />
-                                        {errors.password && (
-                                            <p className="text-sm text-red-600 mt-1">{errors.password}</p>
-                                        )}
+                                        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
                                     </div>
-                                    
+
                                     <div className="flex gap-2">
-                                        <Button
-                                            type="submit"
-                                            disabled={processing}
-                                            variant="destructive"
-                                            className="flex-1"
-                                        >
+                                        <Button type="submit" disabled={processing} variant="destructive" className="flex-1">
                                             {processing ? 'Generating...' : 'Generate New Codes'}
                                         </Button>
                                         <Button
@@ -180,16 +160,10 @@ export default function TwoFactorRecoveryCodes({ codes }: TwoFactorRecoveryCodes
                     </Card>
 
                     <div className="flex justify-between">
-                        <Button
-                            onClick={() => window.location.href = route('two-factor.show')}
-                            variant="outline"
-                        >
+                        <Button onClick={() => (window.location.href = route('two-factor.show'))} variant="outline">
                             Back to Two-Factor Settings
                         </Button>
-                        <Button
-                            onClick={() => window.location.href = route('dashboard')}
-                            variant="outline"
-                        >
+                        <Button onClick={() => (window.location.href = route('dashboard'))} variant="outline">
                             Back to Dashboard
                         </Button>
                     </div>

@@ -1,27 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
-import { 
-    SidebarMenu, 
-    SidebarMenuItem, 
-    SidebarMenuButton,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
-    SidebarMenuSubButton
-} from '@/components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { 
-    Server, 
-    ChevronRight, 
-    Container, 
-    Layers3, 
-    Activity,
-    AlertCircle,
-    Loader2
-} from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from '@/components/ui/sidebar';
 import type { Server as ServerType, Stack } from '@/types/entities';
 import { apiGet } from '@/utils/api';
 import { calculateServiceStatusSummary } from '@/utils/stack-utils';
+import { Link } from '@inertiajs/react';
+import { Activity, AlertCircle, ChevronRight, Container, Layers3, Loader2, Server } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ServerStats {
     total_stacks: number;
@@ -68,14 +53,14 @@ export function NavServers({ servers }: NavServersProps) {
 
     const fetchServerStacks = async (serverId: number) => {
         if (serverStacks[serverId]) return;
-        
-        setLoadingStacks(prev => new Set(prev).add(serverId));
-        
+
+        setLoadingStacks((prev) => new Set(prev).add(serverId));
+
         try {
             const response = await apiGet(`/api/servers/${serverId}/stacks`);
             if (response.success) {
                 const stacks = (response.data as { stacks: StackWithStatus[] }).stacks;
-                
+
                 const stacksWithStatus = await Promise.all(
                     stacks.map(async (stack: StackWithStatus) => {
                         try {
@@ -90,41 +75,41 @@ export function NavServers({ servers }: NavServersProps) {
                                         ports: string;
                                     }> | null;
                                 };
-                                
+
                                 const stackForCalc = {
                                     name: stack.name,
-                                    service_count: stack.service_count || 0
+                                    service_count: stack.service_count || 0,
                                 } as Pick<Stack, 'name' | 'service_count'>;
-                                
+
                                 const { overallStatus } = calculateServiceStatusSummary(stackForCalc as Stack, serviceStatus);
-                                
+
                                 return {
                                     name: stack.name,
                                     service_count: stack.service_count || 0,
-                                    overall_status: overallStatus
+                                    overall_status: overallStatus,
                                 };
                             }
                         } catch (statusError) {
                             console.error(`Failed to fetch status for stack ${stack.name}:`, statusError);
                         }
-                        
+
                         return {
                             name: stack.name,
                             service_count: stack.service_count || 0,
-                            overall_status: 'unknown' as const
+                            overall_status: 'unknown' as const,
                         };
-                    })
+                    }),
                 );
-                
-                setServerStacks(prev => ({
+
+                setServerStacks((prev) => ({
                     ...prev,
-                    [serverId]: stacksWithStatus
+                    [serverId]: stacksWithStatus,
                 }));
             }
         } catch (error) {
             console.error(`Failed to fetch stacks for server ${serverId}:`, error);
         } finally {
-            setLoadingStacks(prev => {
+            setLoadingStacks((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(serverId);
                 return newSet;
@@ -153,43 +138,45 @@ export function NavServers({ servers }: NavServersProps) {
                 const isLoadingServerStacks = loadingStacks.has(server.id);
 
                 return (
-                    <Collapsible
-                        key={server.id}
-                        open={isExpanded}
-                        onOpenChange={() => toggleServer(server.id)}
-                    >
+                    <Collapsible key={server.id} open={isExpanded} onOpenChange={() => toggleServer(server.id)}>
                         <SidebarMenuItem>
                             <CollapsibleTrigger asChild>
-                                <SidebarMenuButton 
+                                <SidebarMenuButton
                                     tooltip={`${server.display_name} - ${server.hostname}:${server.port}`}
-                                    className="group w-full overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                    className="group w-full overflow-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                                 >
-                                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                                    <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                                         {isOffline ? (
                                             <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
                                         ) : (
                                             <Server className="h-4 w-4 shrink-0" />
                                         )}
-                                        <span className="truncate flex-1 min-w-0">{server.display_name}</span>
+                                        <span className="min-w-0 flex-1 truncate">{server.display_name}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 shrink-0 min-w-0">
+                                    <div className="flex min-w-0 shrink-0 items-center gap-1">
                                         {isLoadingStats ? (
-                                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground flex-shrink-0" />
+                                            <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-muted-foreground" />
                                         ) : stats && !isOffline ? (
-                                            <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-                                                <Badge variant="outline" className="text-xs px-1 py-0 h-4 whitespace-nowrap flex-shrink-0 overflow-hidden">
+                                            <div className="flex min-w-0 items-center gap-1 overflow-hidden">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="h-4 flex-shrink-0 overflow-hidden px-1 py-0 text-xs whitespace-nowrap"
+                                                >
                                                     {stats.running_stacks}/{stats.total_stacks}
                                                 </Badge>
-                                                <Badge variant="outline" className="text-xs px-1 py-0 h-4 whitespace-nowrap flex-shrink-0 overflow-hidden">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="h-4 flex-shrink-0 overflow-hidden px-1 py-0 text-xs whitespace-nowrap"
+                                                >
                                                     {stats.running_services}/{stats.total_services}
                                                 </Badge>
                                             </div>
                                         ) : isOffline ? (
-                                            <Badge variant="destructive" className="text-xs px-1 py-0 h-4 whitespace-nowrap flex-shrink-0">
+                                            <Badge variant="destructive" className="h-4 flex-shrink-0 px-1 py-0 text-xs whitespace-nowrap">
                                                 Offline
                                             </Badge>
                                         ) : null}
-                                        <ChevronRight className={`h-3 w-3 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
+                                        <ChevronRight className={`h-3 w-3 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                                     </div>
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
@@ -204,46 +191,44 @@ export function NavServers({ servers }: NavServersProps) {
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
-                                    
+
                                     {/* Loading state for stacks */}
                                     {isLoadingServerStacks && (
                                         <SidebarMenuSubItem>
-                                            <div className="px-1 py-1 flex items-center gap-1 text-sm text-muted-foreground">
-                                                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                                            <div className="flex items-center gap-1 px-1 py-1 text-sm text-muted-foreground">
+                                                <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
                                                 <span>Loading stacks...</span>
                                             </div>
                                         </SidebarMenuSubItem>
                                     )}
-                                    
+
                                     {/* Stack Items */}
                                     {!isLoadingServerStacks && stacks.length > 0 && (
                                         <>
                                             <div className="px-1 py-1">
-                                                <div className="text-xs text-muted-foreground font-medium">
-                                                    Stacks ({stacks.length})
-                                                </div>
+                                                <div className="text-xs font-medium text-muted-foreground">Stacks ({stacks.length})</div>
                                             </div>
                                             {stacks.map((stack) => (
                                                 <SidebarMenuSubItem key={stack.name}>
                                                     <SidebarMenuSubButton asChild className="px-1 py-1">
-                                                        <Link 
+                                                        <Link
                                                             href={`/servers/${server.id}/stacks/${stack.name}`}
-                                                            className="flex items-center justify-between w-full min-w-0 gap-1"
+                                                            className="flex w-full min-w-0 items-center justify-between gap-1"
                                                         >
-                                                            <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
+                                                            <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
                                                                 <Layers3 className="h-3 w-3 shrink-0" />
                                                                 <span className="truncate text-sm">{stack.name}</span>
                                                             </div>
-                                                            <Badge 
+                                                            <Badge
                                                                 variant={stack.overall_status === 'running' ? 'default' : 'outline'}
-                                                                className={`text-[10px] px-0.5 py-0 h-3.5 capitalize shrink-0 ${
-                                                                    stack.overall_status === 'running' 
-                                                                        ? 'bg-green-500/10 text-green-700 border-green-500/30 dark:text-green-400' 
+                                                                className={`h-3.5 shrink-0 px-0.5 py-0 text-[10px] capitalize ${
+                                                                    stack.overall_status === 'running'
+                                                                        ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
                                                                         : stack.overall_status === 'partial'
-                                                                        ? 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30 dark:text-yellow-400'
-                                                                        : stack.overall_status === 'stopped'
-                                                                        ? 'bg-red-500/10 text-red-700 border-red-500/30 dark:text-red-400'
-                                                                        : 'bg-gray-500/10 text-gray-700 border-gray-500/30 dark:text-gray-400'
+                                                                          ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
+                                                                          : stack.overall_status === 'stopped'
+                                                                            ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400'
+                                                                            : 'border-gray-500/30 bg-gray-500/10 text-gray-700 dark:text-gray-400'
                                                                 }`}
                                                             >
                                                                 {stack.overall_status || 'unknown'}
@@ -254,10 +239,10 @@ export function NavServers({ servers }: NavServersProps) {
                                             ))}
                                         </>
                                     )}
-                                    
+
                                     {!isLoadingServerStacks && stacks.length === 0 && !isOffline && (
                                         <SidebarMenuSubItem>
-                                            <div className="px-1 py-1 flex items-center gap-1 text-sm text-muted-foreground">
+                                            <div className="flex items-center gap-1 px-1 py-1 text-sm text-muted-foreground">
                                                 <Container className="h-3 w-3 shrink-0" />
                                                 <span>No stacks found</span>
                                             </div>

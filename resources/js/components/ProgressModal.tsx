@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Activity, Minimize2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Activity, CheckCircle, Minimize2, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ComposeEvent {
     type: string;
@@ -57,14 +57,14 @@ class StructuredEventProcessor {
 
     processEvent(event: ComposeEvent): void {
         const now = Date.now();
-        
+
         switch (event.type) {
             case 'status':
                 if (event.status) {
                     this.overallStatus = event.status;
                 }
                 break;
-                
+
             case 'service':
                 if (event.service) {
                     this.services.set(event.service.name, {
@@ -72,33 +72,33 @@ class StructuredEventProcessor {
                         action: event.service.action,
                         progress: event.service.progress,
                         duration: event.service.duration,
-                        lastUpdated: now
+                        lastUpdated: now,
                     });
                 }
                 break;
-                
+
             case 'container':
                 if (event.container) {
                     this.containers.set(event.container.name, {
                         name: event.container.name,
                         action: event.container.action,
                         duration: event.container.duration,
-                        lastUpdated: now
+                        lastUpdated: now,
                     });
                 }
                 break;
-                
+
             case 'network':
                 if (event.network) {
                     this.networks.set(event.network.name, {
                         name: event.network.name,
                         action: event.network.action,
                         duration: event.network.duration,
-                        lastUpdated: now
+                        lastUpdated: now,
                     });
                 }
                 break;
-                
+
             case 'connection':
             case 'complete':
             case 'error':
@@ -112,33 +112,33 @@ class StructuredEventProcessor {
 
     getDisplay(): string {
         const lines: string[] = [];
-        
+
         if (this.overallStatus) {
             lines.push(`[+] Running ${this.overallStatus.current}/${this.overallStatus.total}`);
         }
-        
-        this.services.forEach(service => {
+
+        this.services.forEach((service) => {
             let line = ` ✔ ${service.name} ${service.action}`;
             if (service.progress) line += ` ${service.progress}`;
             if (service.duration) line += ` ${service.duration}`;
             lines.push(line);
         });
-        
-        this.containers.forEach(container => {
+
+        this.containers.forEach((container) => {
             let line = ` ✔ Container ${container.name} ${container.action}`;
             if (container.duration) line += ` ${container.duration}`;
             lines.push(line);
         });
-        
-        this.networks.forEach(network => {
+
+        this.networks.forEach((network) => {
             let line = ` ✔ Network ${network.name} ${network.action}`;
             if (network.duration) line += ` ${network.duration}`;
             lines.push(line);
         });
-        
+
         const recentMessages = this.generalMessages.slice(-10);
         lines.push(...recentMessages);
-        
+
         return lines.join('\n');
     }
 
@@ -173,7 +173,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
         const fetchConfig = async () => {
             try {
                 const response = await fetch('/api/config', {
-                    credentials: 'include'
+                    credentials: 'include',
                 });
                 if (response.ok) {
                     const config = await response.json();
@@ -183,7 +183,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                 console.warn('Failed to fetch config, using default timeout:', error);
             }
         };
-        
+
         fetchConfig();
     }, []);
 
@@ -233,9 +233,9 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                     credentials: 'include',
                     signal: abortController.signal,
                     headers: {
-                        'Accept': 'text/event-stream',
+                        Accept: 'text/event-stream',
                         'Cache-Control': 'no-cache',
-                    }
+                    },
                 });
 
                 if (!response.ok) {
@@ -243,7 +243,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                 }
 
                 setIsConnected(true);
-                
+
                 const reader = response.body?.getReader();
                 const decoder = new TextDecoder();
 
@@ -255,7 +255,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
 
                 while (shouldConnectRef.current) {
                     const { done, value } = await reader.read();
-                    
+
                     if (done) {
                         if (updateTimeoutRef.current) {
                             clearTimeout(updateTimeoutRef.current);
@@ -265,7 +265,7 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                         }
                         const finalDisplay = eventProcessor.current.getDisplay();
                         setOutput(finalDisplay);
-                        
+
                         setOverallStatus('completed');
                         setCompletedAt(new Date());
                         setIsConnected(false);
@@ -289,16 +289,16 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                                 eventProcessor.current.processEvent({
                                     type: 'log',
                                     timestamp: new Date().toISOString(),
-                                    message: line
+                                    message: line,
                                 });
                             }
                         }
                     }
-                    
+
                     if (updateTimeoutRef.current) {
                         clearTimeout(updateTimeoutRef.current);
                     }
-                    
+
                     updateTimeoutRef.current = setTimeout(() => {
                         const currentDisplay = eventProcessor.current.getDisplay();
                         setOutput(currentDisplay);
@@ -310,15 +310,15 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
                 if (fetchTimeoutRef.current) {
                     clearTimeout(fetchTimeoutRef.current);
                 }
-                
+
                 if (error instanceof Error && error.name === 'AbortError') {
                     return;
                 }
-                
+
                 console.error('Streaming error:', error);
                 setIsConnected(false);
                 shouldConnectRef.current = false;
-                
+
                 setOverallStatus('error');
                 setCompletedAt(new Date());
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -338,7 +338,6 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
         };
     }, [url, isOpen, onComplete, onError, agentTimeout, overallStatus]);
 
-
     const handleOpenChange = (open: boolean) => {
         if (!open) {
             if (overallStatus === 'running') {
@@ -349,62 +348,57 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
         }
     };
 
-
     if (!isOpen) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className={`max-w-7xl w-[95vw] max-h-[90vh] flex flex-col ${isMinimized ? 'h-20' : 'h-[85vh]'} bg-gradient-to-br from-background via-background to-muted/5`}>
+            <DialogContent
+                className={`flex max-h-[90vh] w-[95vw] max-w-7xl flex-col ${isMinimized ? 'h-20' : 'h-[85vh]'} bg-gradient-to-br from-background via-background to-muted/5`}
+            >
                 <DialogHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <DialogTitle className="flex items-center gap-2">
                             {overallStatus === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
                             {overallStatus === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
-                            {overallStatus === 'running' && <Activity className="h-5 w-5 text-blue-500 animate-spin" />}
+                            {overallStatus === 'running' && <Activity className="h-5 w-5 animate-spin text-blue-500" />}
                             {title}
                         </DialogTitle>
-                        
+
                         <div className="flex items-center gap-2">
-                            <Badge variant={isConnected ? 'default' : 'destructive'}>
-                                {isConnected ? 'Connected' : 'Disconnected'}
-                            </Badge>
-                            
+                            <Badge variant={isConnected ? 'default' : 'destructive'}>{isConnected ? 'Connected' : 'Disconnected'}</Badge>
+
                             {overallStatus === 'running' && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsMinimized(!isMinimized)}
-                                >
+                                <Button variant="ghost" size="sm" onClick={() => setIsMinimized(!isMinimized)}>
                                     <Minimize2 className="h-4 w-4" />
                                 </Button>
                             )}
                         </div>
                     </div>
                 </DialogHeader>
-                
+
                 {!isMinimized && (
                     <div className="flex-1 overflow-hidden">
                         <div className="h-full overflow-y-auto pr-2">
                             {output ? (
-                                <div className="font-mono text-sm whitespace-pre-wrap break-words bg-gradient-to-br from-slate-950 to-slate-900 p-6 rounded-xl border border-border/20 text-slate-100 shadow-inner">
+                                <div className="rounded-xl border border-border/20 bg-gradient-to-br from-slate-950 to-slate-900 p-6 font-mono text-sm break-words whitespace-pre-wrap text-slate-100 shadow-inner">
                                     {output}
                                 </div>
                             ) : (
-                                <div className="text-center text-muted-foreground py-12">
-                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Activity className="h-8 w-8 text-primary animate-spin" />
+                                <div className="py-12 text-center text-muted-foreground">
+                                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                        <Activity className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                     <p className="text-lg font-medium">Preparing Operation</p>
-                                    <p className="text-sm text-muted-foreground mt-1">Please wait while we establish connection...</p>
+                                    <p className="mt-1 text-sm text-muted-foreground">Please wait while we establish connection...</p>
                                 </div>
                             )}
                             <div ref={outputEndRef} />
                         </div>
                     </div>
                 )}
-                
+
                 {overallStatus === 'completed' && completedAt && (
-                    <div className="flex-shrink-0 pt-2 text-xs text-gray-500 text-center">
+                    <div className="flex-shrink-0 pt-2 text-center text-xs text-gray-500">
                         Operation completed at {completedAt.toLocaleTimeString()}
                     </div>
                 )}

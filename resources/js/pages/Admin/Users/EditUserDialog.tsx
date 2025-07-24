@@ -1,10 +1,10 @@
-import React from 'react';
-import { useForm } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { useForm } from '@inertiajs/react';
+import React from 'react';
 
 interface Role {
     id: number;
@@ -26,13 +26,13 @@ interface EditUserDialogProps {
 
 export default function EditUserDialog({ user, onClose, roles }: EditUserDialogProps) {
     const editForm = useForm({
-        roles: user?.roles.map(r => r.name) || [] as string[],
+        roles: user?.roles.map((r) => r.name) || ([] as string[]),
     });
 
     const handleEditUser = (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
-        
+
         editForm.put(`/admin/users/${user.id}/roles`, {
             onSuccess: () => {
                 editForm.reset();
@@ -46,14 +46,20 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
         if (checked) {
             editForm.setData('roles', [...currentRoles, roleName]);
         } else {
-            editForm.setData('roles', currentRoles.filter(r => r !== roleName));
+            editForm.setData(
+                'roles',
+                currentRoles.filter((r) => r !== roleName),
+            );
         }
     };
 
     // Reset form data when user changes
     React.useEffect(() => {
         if (user) {
-            editForm.setData('roles', user.roles.map(r => r.name));
+            editForm.setData(
+                'roles',
+                user.roles.map((r) => r.name),
+            );
         }
     }, [user, editForm]);
 
@@ -66,20 +72,16 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
                 <form onSubmit={handleEditUser} className="space-y-4">
                     <div>
                         <Label className="text-base font-medium">Roles</Label>
-                        <p className="text-sm text-muted-foreground mb-3">
-                            Select the roles to assign to this user
-                        </p>
+                        <p className="mb-3 text-sm text-muted-foreground">Select the roles to assign to this user</p>
                         <div className="grid grid-cols-1 gap-3">
                             {roles.map((role) => (
-                                <div key={role.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                                <div key={role.id} className="flex items-center space-x-3 rounded-lg border p-3">
                                     <Checkbox
                                         id={`role-${role.name}`}
                                         checked={editForm.data.roles.includes(role.name)}
-                                        onCheckedChange={(checked) =>
-                                            handleRoleChange(role.name, checked as boolean)
-                                        }
+                                        onCheckedChange={(checked) => handleRoleChange(role.name, checked as boolean)}
                                     />
-                                    <Label htmlFor={`role-${role.name}`} className="text-sm font-medium capitalize flex-1">
+                                    <Label htmlFor={`role-${role.name}`} className="flex-1 text-sm font-medium capitalize">
                                         {role.name}
                                     </Label>
                                     {role.name === 'admin' && (
@@ -90,16 +92,10 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
                                 </div>
                             ))}
                         </div>
-                        {editForm.errors.roles && (
-                            <p className="text-destructive text-sm mt-2">{editForm.errors.roles}</p>
-                        )}
+                        {editForm.errors.roles && <p className="mt-2 text-sm text-destructive">{editForm.errors.roles}</p>}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onClose}
-                        >
+                        <Button type="button" variant="outline" onClick={onClose}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={editForm.processing}>

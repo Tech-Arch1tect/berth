@@ -1,13 +1,22 @@
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
 import { NavServers } from '@/components/nav-servers';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from '@/components/ui/sidebar';
+import { NavUser } from '@/components/nav-user';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarSeparator,
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Users, Shield, Server } from 'lucide-react';
-import AppLogo from './app-logo';
 import type { Server as ServerType } from '@/types/entities';
+import { Link, usePage } from '@inertiajs/react';
+import { BookOpen, Folder, LayoutGrid, Server, Shield, Users } from 'lucide-react';
+import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
@@ -49,15 +58,15 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth, servers } = usePage().props as unknown as { 
-        auth: { user: { roles: { name: string }[] } }; 
+    const { auth, servers } = usePage().props as unknown as {
+        auth: { user: { roles: { name: string }[] } };
         servers?: ServerType[];
     };
     const user = auth?.user;
     const isAdmin = user?.roles?.some((role) => role.name === 'admin');
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="border-r overflow-x-hidden">
+        <Sidebar collapsible="icon" variant="inset" className="overflow-x-hidden border-r">
             <SidebarHeader className="border-b border-sidebar-border/50">
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -70,30 +79,26 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="py-2 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <SidebarContent className="overflow-x-hidden py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <NavMain items={mainNavItems} />
-                
+
                 {/* Servers Section */}
                 {servers && servers.length > 0 && (
                     <>
                         <SidebarSeparator className="my-2" />
-                        <div className="px-3 py-2 overflow-hidden">
-                            <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider truncate">
-                                Servers
-                            </p>
+                        <div className="overflow-hidden px-3 py-2">
+                            <p className="truncate text-xs font-semibold tracking-wider text-sidebar-foreground/70 uppercase">Servers</p>
                         </div>
                         <NavServers servers={servers} />
                     </>
                 )}
-                
+
                 {/* Admin Section */}
                 {isAdmin && (
                     <>
                         <SidebarSeparator className="my-2" />
-                        <div className="px-3 py-2 overflow-hidden">
-                            <p className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider truncate">
-                                Administration
-                            </p>
+                        <div className="overflow-hidden px-3 py-2">
+                            <p className="truncate text-xs font-semibold tracking-wider text-sidebar-foreground/70 uppercase">Administration</p>
                         </div>
                         <NavMain items={adminNavItems} />
                     </>

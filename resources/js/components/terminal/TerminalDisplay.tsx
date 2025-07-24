@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { terminalOptions } from './terminalTheme';
+import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { terminalOptions } from './terminalTheme';
 
 export interface TerminalDisplayRef {
     terminal: Terminal | null;
@@ -17,10 +17,7 @@ interface TerminalDisplayProps {
     onTerminalReady?: (terminal: Terminal, fitAddon: FitAddon) => void;
 }
 
-const TerminalDisplay = forwardRef<TerminalDisplayRef, TerminalDisplayProps>(({
-    className = '',
-    onTerminalReady
-}, ref) => {
+const TerminalDisplay = forwardRef<TerminalDisplayRef, TerminalDisplayProps>(({ className = '', onTerminalReady }, ref) => {
     const terminalRef = useRef<HTMLDivElement>(null);
     const terminalInstance = useRef<Terminal | null>(null);
     const fitAddon = useRef<FitAddon | null>(null);
@@ -103,17 +100,17 @@ const TerminalDisplay = forwardRef<TerminalDisplayRef, TerminalDisplayProps>(({
         fitAddon: fitAddon.current,
         fit,
         dispose,
-        isReady
+        isReady,
     }));
 
     return (
-        <div className={`flex-1 p-0 relative bg-gradient-to-br from-slate-950 to-slate-900 ${className}`} style={{ minHeight: '350px' }}>
+        <div className={`relative flex-1 bg-gradient-to-br from-slate-950 to-slate-900 p-0 ${className}`} style={{ minHeight: '350px' }}>
             <div
                 ref={terminalRef}
                 className="w-full"
-                style={{ 
+                style={{
                     minHeight: '350px',
-                    background: 'linear-gradient(to bottom right, rgb(2 6 23), rgb(15 23 42))'
+                    background: 'linear-gradient(to bottom right, rgb(2 6 23), rgb(15 23 42))',
                 }}
             />
         </div>

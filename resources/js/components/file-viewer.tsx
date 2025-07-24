@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { File, Download, Copy, Eye, Edit, Save, X, Trash2, AlertTriangle, Edit3 } from 'lucide-react';
 import { getFileTypeLabel, isEditable } from '@/utils/file-icons';
+import { AlertTriangle, Copy, Download, Edit, Edit3, Eye, File, Save, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface FileData {
     stack: string;
@@ -29,7 +29,17 @@ interface FileViewerProps {
     onFileRenamed?: (oldName: string, newName: string) => void;
 }
 
-export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false, onFileDeleted, onFileRenamed }: FileViewerProps) {
+export default function FileViewer({
+    serverId,
+    stackName,
+    filePath,
+    fileName,
+    isOpen,
+    onClose,
+    canWrite = false,
+    onFileDeleted,
+    onFileRenamed,
+}: FileViewerProps) {
     const [fileData, setFileData] = useState<FileData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,15 +55,15 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
 
     const fetchFile = useCallback(async () => {
         if (!isOpen || !filePath) return;
-        
+
         setIsLoading(true);
         setError(null);
         setFileData(null);
-        
+
         try {
             const params = new URLSearchParams({ path: filePath });
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`);
-            
+
             if (response.ok) {
                 const data = await response.json();
                 setFileData(data);
@@ -83,7 +93,6 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
-
 
     const copyToClipboard = async () => {
         if (fileData?.content) {
@@ -138,21 +147,21 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
 
     const saveFile = async () => {
         if (!fileData) return;
-        
+
         setIsSaving(true);
         setError(null);
-        
+
         try {
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
                     path: filePath,
-                    content: editContent
-                })
+                    content: editContent,
+                }),
             });
 
             if (response.ok) {
@@ -160,7 +169,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                 setFileData({
                     ...fileData,
                     content: editContent,
-                    size: updatedData.size || editContent.length
+                    size: updatedData.size || editContent.length,
                 });
                 setIsEditing(false);
                 setEditContent('');
@@ -177,17 +186,17 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
 
     const deleteFile = async () => {
         if (!fileData) return;
-        
+
         setIsDeleting(true);
         setError(null);
-        
+
         try {
             const params = new URLSearchParams({ path: filePath });
             const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
             });
 
             if (response.ok) {
@@ -235,9 +244,9 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify({ newName: newFileName.trim() })
+                body: JSON.stringify({ newName: newFileName.trim() }),
             });
 
             if (response.ok) {
@@ -246,7 +255,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                 setCurrentFileName(newFileName.trim());
                 setShowRenameDialog(false);
                 setNewFileName('');
-                
+
                 if (onFileRenamed) {
                     onFileRenamed(oldName, newFileName.trim());
                 }
@@ -261,10 +270,9 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         }
     };
 
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+            <DialogContent className="flex max-h-[90vh] max-w-6xl flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <File size={20} />
@@ -276,24 +284,14 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                         )}
                     </DialogTitle>
                     {fileData && (
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="mt-2 flex items-center gap-2">
                             {isEditing ? (
                                 <>
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        onClick={saveFile}
-                                        disabled={isSaving}
-                                    >
+                                    <Button variant="default" size="sm" onClick={saveFile} disabled={isSaving}>
                                         <Save size={14} className="mr-1" />
                                         {isSaving ? 'Saving...' : 'Save'}
                                     </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={cancelEditing}
-                                        disabled={isSaving}
-                                    >
+                                    <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSaving}>
                                         <X size={14} className="mr-1" />
                                         Cancel
                                     </Button>
@@ -303,20 +301,12 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                     {canWrite && (
                                         <>
                                             {!fileData.isBinary && isEditable(fileData.mimeType, fileData.isBinary) && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={startEditing}
-                                                >
+                                                <Button variant="outline" size="sm" onClick={startEditing}>
                                                     <Edit size={14} className="mr-1" />
                                                     Edit
                                                 </Button>
                                             )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={openRenameDialog}
-                                            >
+                                            <Button variant="outline" size="sm" onClick={openRenameDialog}>
                                                 <Edit3 size={14} className="mr-1" />
                                                 Rename
                                             </Button>
@@ -324,27 +314,18 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setShowDeleteConfirm(true)}
-                                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
                                             >
                                                 <Trash2 size={14} className="mr-1" />
                                                 Delete
                                             </Button>
                                         </>
                                     )}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={copyToClipboard}
-                                        disabled={!fileData.content}
-                                    >
+                                    <Button variant="outline" size="sm" onClick={copyToClipboard} disabled={!fileData.content}>
                                         <Copy size={14} className="mr-1" />
                                         Copy
                                     </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={downloadFile}
-                                    >
+                                    <Button variant="outline" size="sm" onClick={downloadFile}>
                                         <Download size={14} className="mr-1" />
                                         Download
                                     </Button>
@@ -353,26 +334,21 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                         </div>
                     )}
                 </DialogHeader>
-                
+
                 <div className="flex-1 overflow-hidden">
                     {isLoading ? (
-                        <div className="flex items-center justify-center h-64">
+                        <div className="flex h-64 items-center justify-center">
                             <div className="text-center">
-                                <Eye className="mx-auto h-12 w-12 mb-4 animate-pulse opacity-50" />
+                                <Eye className="mx-auto mb-4 h-12 w-12 animate-pulse opacity-50" />
                                 <p className="text-gray-500 dark:text-gray-400">Loading file...</p>
                             </div>
                         </div>
                     ) : error ? (
-                        <div className="flex items-center justify-center h-64">
+                        <div className="flex h-64 items-center justify-center">
                             <div className="text-center text-red-500 dark:text-red-400">
-                                <File className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                <File className="mx-auto mb-4 h-12 w-12 opacity-50" />
                                 <p>{error}</p>
-                                <Button
-                                    onClick={fetchFile}
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-2"
-                                >
+                                <Button onClick={fetchFile} variant="outline" size="sm" className="mt-2">
                                     Retry
                                 </Button>
                             </div>
@@ -380,71 +356,67 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                     ) : fileData ? (
                         <div className="h-full overflow-auto">
                             <div className="h-full">
-                                <div className="bg-muted/30 px-4 py-2 border-b border-border text-sm text-muted-foreground">
+                                <div className="border-b border-border bg-muted/30 px-4 py-2 text-sm text-muted-foreground">
                                     <span>Path: {fileData.path}</span>
                                     <span className="ml-4">Size: {formatFileSize(fileData.size)}</span>
                                     {isEditing && <span className="ml-4 text-yellow-600 dark:text-yellow-400">Editing</span>}
                                 </div>
                                 {isEditing ? (
-                                    <div className="border border-border rounded-lg overflow-hidden h-full">
-                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                    <div className="h-full overflow-hidden rounded-lg border border-border">
+                                        <div className="border-b border-border bg-muted/50 px-3 py-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{currentFileName} (editing)</span>
+                                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                                                <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                                <span className="ml-2 font-mono text-xs text-muted-foreground">{currentFileName} (editing)</span>
                                             </div>
                                         </div>
                                         <textarea
                                             value={editContent}
                                             onChange={(e) => setEditContent(e.target.value)}
-                                            className="w-full p-4 text-sm font-mono bg-card text-foreground border-0 outline-none resize-none focus:ring-0"
+                                            className="w-full resize-none border-0 bg-card p-4 font-mono text-sm text-foreground outline-none focus:ring-0"
                                             style={{ minHeight: '400px' }}
                                             placeholder="Enter file content..."
                                         />
                                     </div>
                                 ) : (
-                                    <div className="border border-border rounded-lg overflow-hidden h-full">
-                                        <div className="bg-muted/50 px-3 py-2 border-b border-border">
+                                    <div className="h-full overflow-hidden rounded-lg border border-border">
+                                        <div className="border-b border-border bg-muted/50 px-3 py-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{currentFileName}</span>
+                                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                                                <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                                <span className="ml-2 font-mono text-xs text-muted-foreground">{currentFileName}</span>
                                             </div>
                                         </div>
-                                        <div className="bg-card p-4 overflow-auto" style={{ minHeight: '400px' }}>
+                                        <div className="overflow-auto bg-card p-4" style={{ minHeight: '400px' }}>
                                             {fileData.isBinary ? (
-                                                <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                                                    <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
-                                                    <h3 className="text-lg font-medium mb-2">Binary File</h3>
-                                                    <p className="text-muted-foreground mb-4">
+                                                <div className="flex h-full flex-col items-center justify-center py-8 text-center">
+                                                    <AlertTriangle className="mb-4 h-16 w-16 text-yellow-500" />
+                                                    <h3 className="mb-2 text-lg font-medium">Binary File</h3>
+                                                    <p className="mb-4 text-muted-foreground">
                                                         This file contains binary data and cannot be displayed as text.
                                                     </p>
                                                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                         <span>Type: {getFileTypeLabel(fileName, fileData.mimeType, fileData.isBinary)}</span>
                                                         <span>Size: {formatFileSize(fileData.size)}</span>
                                                     </div>
-                                                    <Button 
-                                                        onClick={downloadFile} 
-                                                        className="mt-4"
-                                                        variant="outline"
-                                                    >
+                                                    <Button onClick={downloadFile} className="mt-4" variant="outline">
                                                         <Download size={16} className="mr-2" />
                                                         Download File
                                                     </Button>
                                                 </div>
                                             ) : fileData.mimeType?.startsWith('image/') ? (
-                                                <div className="flex items-center justify-center h-full">
-                                                    <img 
+                                                <div className="flex h-full items-center justify-center">
+                                                    <img
                                                         src={`data:${fileData.mimeType};base64,${fileData.content}`}
                                                         alt={currentFileName}
-                                                        className="max-w-full max-h-full object-contain"
+                                                        className="max-h-full max-w-full object-contain"
                                                         style={{ maxHeight: '400px' }}
                                                     />
                                                 </div>
                                             ) : (
-                                                <pre className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                                <pre className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                                                     {fileData.content}
                                                 </pre>
                                             )}
@@ -454,16 +426,16 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-64">
+                        <div className="flex h-64 items-center justify-center">
                             <div className="text-center text-muted-foreground">
-                                <Eye className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                <Eye className="mx-auto mb-4 h-12 w-12 opacity-50" />
                                 <p>Click to view file content</p>
                             </div>
                         </div>
                     )}
                 </div>
             </DialogContent>
-            
+
             {/* Delete Confirmation Dialog */}
             <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                 <DialogContent>
@@ -477,24 +449,16 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowDeleteConfirm(false)}
-                            disabled={isDeleting}
-                        >
+                        <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>
                             Cancel
                         </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={deleteFile}
-                            disabled={isDeleting}
-                        >
+                        <Button variant="destructive" onClick={deleteFile} disabled={isDeleting}>
                             {isDeleting ? 'Deleting...' : 'Delete File'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            
+
             {/* Rename Dialog */}
             <Dialog open={showRenameDialog} onOpenChange={closeRenameDialog}>
                 <DialogContent>
@@ -522,24 +486,13 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                 disabled={isRenaming}
                             />
                         </div>
-                        {error && (
-                            <div className="text-sm text-red-600 dark:text-red-400">
-                                {error}
-                            </div>
-                        )}
+                        {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
                     </div>
                     <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={closeRenameDialog}
-                            disabled={isRenaming}
-                        >
+                        <Button variant="outline" onClick={closeRenameDialog} disabled={isRenaming}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={renameFile}
-                            disabled={isRenaming || !newFileName.trim() || newFileName.trim() === currentFileName}
-                        >
+                        <Button onClick={renameFile} disabled={isRenaming || !newFileName.trim() || newFileName.trim() === currentFileName}>
                             {isRenaming ? 'Renaming...' : 'Rename'}
                         </Button>
                     </DialogFooter>

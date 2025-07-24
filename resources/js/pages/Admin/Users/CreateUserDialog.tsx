@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import InputError from '@/components/input-error';
+import { Label } from '@/components/ui/label';
+import { useForm } from '@inertiajs/react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
 interface Role {
     id: number;
@@ -34,7 +34,7 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
 
     const handleCreateUser = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         createForm.post('/admin/users', {
             onSuccess: () => {
                 createForm.reset();
@@ -49,7 +49,10 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
         if (checked) {
             createForm.setData('roles', [...currentRoles, roleName]);
         } else {
-            createForm.setData('roles', currentRoles.filter(r => r !== roleName));
+            createForm.setData(
+                'roles',
+                currentRoles.filter((r) => r !== roleName),
+            );
         }
     };
 
@@ -99,7 +102,7 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
                             <div className="relative">
                                 <Input
                                     id="password"
-                                    type={showPassword ? "text" : "password"}
+                                    type={showPassword ? 'text' : 'password'}
                                     value={createForm.data.password}
                                     onChange={(e) => createForm.setData('password', e.target.value)}
                                     placeholder="Enter password"
@@ -109,14 +112,10 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
-                                    {showPassword ? (
-                                        <EyeOff className="h-4 w-4" />
-                                    ) : (
-                                        <Eye className="h-4 w-4" />
-                                    )}
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </Button>
                             </div>
                             <InputError message={createForm.errors.password} />
@@ -125,7 +124,7 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
                             <Label htmlFor="password_confirmation">Confirm Password</Label>
                             <Input
                                 id="password_confirmation"
-                                type={showPassword ? "text" : "password"}
+                                type={showPassword ? 'text' : 'password'}
                                 value={createForm.data.password_confirmation}
                                 onChange={(e) => createForm.setData('password_confirmation', e.target.value)}
                                 placeholder="Confirm password"
@@ -136,33 +135,29 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
                     </div>
 
                     <div>
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="mb-3 flex items-center justify-between">
                             <Label className="text-base font-medium">Roles</Label>
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="email_verified"
                                     checked={createForm.data.email_verified}
-                                    onCheckedChange={(checked) =>
-                                        createForm.setData('email_verified', !!checked)
-                                    }
+                                    onCheckedChange={(checked) => createForm.setData('email_verified', !!checked)}
                                 />
-                                <Label htmlFor="email_verified" className="text-sm">Email verified</Label>
+                                <Label htmlFor="email_verified" className="text-sm">
+                                    Email verified
+                                </Label>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                            Select the roles to assign to this user
-                        </p>
-                        <div className="grid grid-cols-1 gap-3 max-h-40 overflow-y-auto">
+                        <p className="mb-3 text-sm text-muted-foreground">Select the roles to assign to this user</p>
+                        <div className="grid max-h-40 grid-cols-1 gap-3 overflow-y-auto">
                             {roles.map((role) => (
-                                <div key={role.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                                <div key={role.id} className="flex items-center space-x-3 rounded-lg border p-3">
                                     <Checkbox
                                         id={`create-role-${role.name}`}
                                         checked={createForm.data.roles.includes(role.name)}
-                                        onCheckedChange={(checked) =>
-                                            handleCreateRoleChange(role.name, checked as boolean)
-                                        }
+                                        onCheckedChange={(checked) => handleCreateRoleChange(role.name, checked as boolean)}
                                     />
-                                    <Label htmlFor={`create-role-${role.name}`} className="text-sm font-medium capitalize flex-1">
+                                    <Label htmlFor={`create-role-${role.name}`} className="flex-1 text-sm font-medium capitalize">
                                         {role.name}
                                     </Label>
                                     {role.name === 'admin' && (
@@ -177,11 +172,7 @@ export default function CreateUserDialog({ isOpen, onClose, roles }: CreateUserD
                     </div>
 
                     <div className="flex justify-end space-x-2 pt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleClose}
-                        >
+                        <Button type="button" variant="outline" onClick={handleClose}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={createForm.processing}>

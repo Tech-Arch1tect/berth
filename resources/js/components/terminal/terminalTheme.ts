@@ -20,7 +20,7 @@ export const terminalTheme: ITerminalOptions['theme'] = {
     brightBlue: 'hsl(var(--primary))',
     brightMagenta: '#9333ea',
     brightCyan: '#0891b2',
-    brightWhite: 'hsl(var(--foreground))'
+    brightWhite: 'hsl(var(--foreground))',
 };
 
 export const terminalOptions: ITerminalOptions = {

@@ -11,18 +11,12 @@ export function AppShell({ children, variant = 'header' }: AppShellProps) {
     const isOpen = usePage<SharedData>().props.sidebarOpen;
 
     if (variant === 'header') {
-        return (
-            <div className="flex min-h-screen w-full flex-col bg-background">
-                {children}
-            </div>
-        );
+        return <div className="flex min-h-screen w-full flex-col bg-background">{children}</div>;
     }
 
     return (
         <SidebarProvider defaultOpen={isOpen}>
-            <div className="flex min-h-screen w-full bg-background">
-                {children}
-            </div>
+            <div className="flex min-h-screen w-full bg-background">{children}</div>
         </SidebarProvider>
     );
 }

@@ -1,11 +1,11 @@
+import ServiceStatusBadge from '@/components/ServiceStatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Container, Globe, HardDrive, Lock, Play, Square, ChevronDown, ChevronRight, Image, Command, Activity, Hammer } from 'lucide-react';
 import type { Stack, UserPermissions } from '@/types/entities';
 import { getServiceDisplayState } from '@/utils/stack-utils';
-import ServiceStatusBadge from '@/components/ServiceStatusBadge';
+import { Activity, ChevronDown, ChevronRight, Command, Container, Globe, Hammer, HardDrive, Image, Lock, Play, Square } from 'lucide-react';
 import { useState } from 'react';
 
 interface StackServicesProps {
@@ -17,14 +17,7 @@ interface StackServicesProps {
     onStopService: (services: string[]) => void;
 }
 
-export default function StackServices({
-    stack,
-    userPermissions,
-    isOperating,
-    isRefreshing,
-    onStartService,
-    onStopService,
-}: StackServicesProps) {
+export default function StackServices({ stack, userPermissions, isOperating, isRefreshing, onStartService, onStopService }: StackServicesProps) {
     const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
     const toggleServiceExpansion = (serviceName: string) => {
@@ -60,7 +53,7 @@ export default function StackServices({
                                     size="sm"
                                     className="rounded-r-none pr-3"
                                 >
-                                    <Play className="h-3 w-3 mr-1" />
+                                    <Play className="mr-1 h-3 w-3" />
                                     Up All
                                 </Button>
                                 <DropdownMenu>
@@ -69,30 +62,25 @@ export default function StackServices({
                                             disabled={isOperating || isRefreshing}
                                             variant="default"
                                             size="sm"
-                                            className="rounded-l-none pl-2 pr-2 border-l border-l-primary-foreground/20"
+                                            className="rounded-l-none border-l border-l-primary-foreground/20 pr-2 pl-2"
                                         >
                                             <ChevronDown className="h-3 w-3" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => onStartService([], false)}>
-                                            <Play className="h-3 w-3 mr-2" />
+                                            <Play className="mr-2 h-3 w-3" />
                                             Up All
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => onStartService([], true)}>
-                                            <Hammer className="h-3 w-3 mr-2" />
+                                            <Hammer className="mr-2 h-3 w-3" />
                                             Up All --build
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
-                            <Button
-                                onClick={() => onStopService([])}
-                                disabled={isOperating || isRefreshing}
-                                variant="destructive"
-                                size="sm"
-                            >
-                                <Square className="h-3 w-3 mr-1" />
+                            <Button onClick={() => onStopService([])} disabled={isOperating || isRefreshing} variant="destructive" size="sm">
+                                <Square className="mr-1 h-3 w-3" />
                                 Down All
                             </Button>
                         </div>
@@ -104,9 +92,9 @@ export default function StackServices({
                     {Object.entries(stack.services).map(([serviceName, service]) => {
                         const { isRunning, displayState, serviceStatus } = getServiceDisplayState(stack, serviceName);
                         const isExpanded = expandedServices.has(serviceName);
-                        
+
                         return (
-                            <div key={serviceName} className="border rounded-lg border-border bg-card">
+                            <div key={serviceName} className="rounded-lg border border-border bg-card">
                                 {/* Service Header */}
                                 <div className="p-4">
                                     <div className="flex items-center justify-between">
@@ -117,10 +105,7 @@ export default function StackServices({
                                                 className="h-6 w-6 p-0"
                                                 onClick={() => toggleServiceExpansion(serviceName)}
                                             >
-                                                {isExpanded ? 
-                                                    <ChevronDown className="h-3 w-3" /> : 
-                                                    <ChevronRight className="h-3 w-3" />
-                                                }
+                                                {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                                             </Button>
                                             <div className="flex items-center gap-2">
                                                 <Container className="h-4 w-4 text-muted-foreground" />
@@ -134,10 +119,10 @@ export default function StackServices({
                                                     <div className="flex">
                                                         <Button
                                                             onClick={() => onStartService([serviceName], false)}
-                                                            disabled={isOperating || isRefreshing }
+                                                            disabled={isOperating || isRefreshing}
                                                             variant="outline"
                                                             size="sm"
-                                                            className="h-7 w-7 p-0 rounded-r-none"
+                                                            className="h-7 w-7 rounded-r-none p-0"
                                                         >
                                                             <Play className="h-3 w-3" />
                                                         </Button>
@@ -147,18 +132,18 @@ export default function StackServices({
                                                                     disabled={isOperating || isRefreshing}
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    className="h-7 w-4 p-0 rounded-l-none border-l-0"
+                                                                    className="h-7 w-4 rounded-l-none border-l-0 p-0"
                                                                 >
                                                                     <ChevronDown className="h-2 w-2" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => onStartService([serviceName], false)}>
-                                                                    <Play className="h-3 w-3 mr-2" />
+                                                                    <Play className="mr-2 h-3 w-3" />
                                                                     Up
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => onStartService([serviceName], true)}>
-                                                                    <Hammer className="h-3 w-3 mr-2" />
+                                                                    <Hammer className="mr-2 h-3 w-3" />
                                                                     Up --build
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
@@ -177,49 +162,57 @@ export default function StackServices({
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     {/* Quick Info Bar */}
                                     <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
                                             <Image className="h-3 w-3" />
                                             <span className="font-mono text-xs">{service.image}</span>
                                         </div>
-                                        <Badge variant="outline" className="text-xs">{service.restart}</Badge>
+                                        <Badge variant="outline" className="text-xs">
+                                            {service.restart}
+                                        </Badge>
                                         {serviceStatus?.ports ? (
-                                            <span className={`text-xs ${serviceStatus.ports.includes('->') ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                                            <span
+                                                className={`text-xs ${serviceStatus.ports.includes('->') ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
+                                            >
                                                 {serviceStatus.ports}
                                             </span>
                                         ) : service.ports && service.ports.length > 0 ? (
-                                            <span className="text-xs">{service.ports.length} port{service.ports.length !== 1 ? 's' : ''}</span>
+                                            <span className="text-xs">
+                                                {service.ports.length} port{service.ports.length !== 1 ? 's' : ''}
+                                            </span>
                                         ) : null}
                                         {service.volumes && service.volumes.length > 0 && (
-                                            <span className="text-xs">{service.volumes.length} volume{service.volumes.length !== 1 ? 's' : ''}</span>
+                                            <span className="text-xs">
+                                                {service.volumes.length} volume{service.volumes.length !== 1 ? 's' : ''}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-                                
+
                                 {/* Expandable Details */}
                                 {isExpanded && (
                                     <div className="border-t border-border bg-muted/30">
-                                        <div className="p-4 space-y-4">
+                                        <div className="space-y-4 p-4">
                                             {/* Runtime Status */}
                                             {serviceStatus && (
                                                 <div className="space-y-2">
-                                                    <h4 className="font-medium text-sm flex items-center gap-2">
+                                                    <h4 className="flex items-center gap-2 text-sm font-medium">
                                                         <Activity className="h-3 w-3" />
                                                         Runtime Status
                                                     </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                    <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                                                         <div className="space-y-1">
                                                             <span className="text-muted-foreground">Container:</span>
-                                                            <code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
+                                                            <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">
                                                                 {serviceStatus.name}
                                                             </code>
                                                         </div>
                                                         {serviceStatus.command && (
                                                             <div className="space-y-1">
                                                                 <span className="text-muted-foreground">Running Command:</span>
-                                                                <code className="block text-xs bg-muted px-2 py-1 rounded font-mono break-all">
+                                                                <code className="block rounded bg-muted px-2 py-1 font-mono text-xs break-all">
                                                                     {serviceStatus.command}
                                                                 </code>
                                                             </div>
@@ -227,54 +220,50 @@ export default function StackServices({
                                                     </div>
                                                 </div>
                                             )}
-                                            
+
                                             {/* Configuration Details */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 {/* Image */}
                                                 <div className="space-y-2">
-                                                    <h4 className="font-medium text-sm flex items-center gap-2">
+                                                    <h4 className="flex items-center gap-2 text-sm font-medium">
                                                         <Image className="h-3 w-3" />
                                                         Image
                                                     </h4>
-                                                    <code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
-                                                        {service.image}
-                                                    </code>
+                                                    <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">{service.image}</code>
                                                 </div>
-                                                
+
                                                 {/* Command */}
                                                 {service.command && (
                                                     <div className="space-y-2">
-                                                        <h4 className="font-medium text-sm flex items-center gap-2">
+                                                        <h4 className="flex items-center gap-2 text-sm font-medium">
                                                             <Command className="h-3 w-3" />
                                                             Command
                                                         </h4>
-                                                        <code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
-                                                            {service.command}
-                                                        </code>
+                                                        <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">{service.command}</code>
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* Ports */}
                                                 {service.ports && service.ports.length > 0 && (
                                                     <div className="space-y-2">
-                                                        <h4 className="font-medium text-sm flex items-center gap-2">
+                                                        <h4 className="flex items-center gap-2 text-sm font-medium">
                                                             <Globe className="h-3 w-3" />
                                                             Ports ({service.ports.length})
                                                         </h4>
                                                         <div className="space-y-1">
                                                             {service.ports.map((port, index) => (
-                                                                <Badge key={index} variant="outline" className="text-xs mr-1">
+                                                                <Badge key={index} variant="outline" className="mr-1 text-xs">
                                                                     {port.published}:{port.target} ({port.protocol})
                                                                 </Badge>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* Volumes */}
                                                 {service.volumes && service.volumes.length > 0 && (
                                                     <div className="space-y-2">
-                                                        <h4 className="font-medium text-sm flex items-center gap-2">
+                                                        <h4 className="flex items-center gap-2 text-sm font-medium">
                                                             <HardDrive className="h-3 w-3" />
                                                             Volumes ({service.volumes.length})
                                                         </h4>
@@ -282,11 +271,13 @@ export default function StackServices({
                                                             {service.volumes.map((volume, index) => (
                                                                 <div key={index} className="flex items-center gap-2 text-xs">
                                                                     {volume.read_only && <Lock className="h-3 w-3 text-muted-foreground" />}
-                                                                    <code className="bg-muted px-2 py-1 rounded font-mono">
+                                                                    <code className="rounded bg-muted px-2 py-1 font-mono">
                                                                         {volume.source} → {volume.target}
                                                                     </code>
                                                                     {volume.read_only && (
-                                                                        <Badge variant="outline" className="text-xs">RO</Badge>
+                                                                        <Badge variant="outline" className="text-xs">
+                                                                            RO
+                                                                        </Badge>
                                                                     )}
                                                                 </div>
                                                             ))}
@@ -297,7 +288,7 @@ export default function StackServices({
                                         </div>
                                     </div>
                                 )}
-                        </div>
+                            </div>
                         );
                     })}
                 </div>
