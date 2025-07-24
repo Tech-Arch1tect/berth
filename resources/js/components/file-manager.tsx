@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home, Download, Upload, FileText, Files, File as FileIcon, Folder } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FolderOpen, Eye, Plus, Trash2, ChevronRight, Home, Download, Upload, FileText, Files, File as FileIcon, Folder, Edit2 } from 'lucide-react';
 import FileViewer from '@/components/file-viewer';
 import { getFileIcon, getFileTypeLabel, isEditable } from '@/utils/file-icons';
 
@@ -47,6 +47,11 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [fileToRename, setFileToRename] = useState<FileInfo | null>(null);
+    const [newRenameFileName, setNewRenameFileName] = useState('');
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renameError, setRenameError] = useState<string | null>(null);
 
     const fetchFiles = useCallback(async (path: string = '.') => {
         setIsLoading(true);
@@ -289,6 +294,59 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
         setDragOver(false);
     };
 
+    const handleRenameClick = (file: FileInfo) => {
+        setFileToRename(file);
+        setNewRenameFileName(file.name);
+        setRenameError(null);
+        setRenameDialogOpen(true);
+    };
+
+    const renameFile = async () => {
+        if (!fileToRename || !newRenameFileName.trim()) {
+            setRenameError('File name is required');
+            return;
+        }
+
+        if (newRenameFileName.trim() === fileToRename.name) {
+            setRenameDialogOpen(false);
+            return;
+        }
+
+        setIsRenaming(true);
+        setRenameError(null);
+
+        try {
+            const filePath = currentPath === '.' 
+                ? fileToRename.name 
+                : `${currentPath}/${fileToRename.name}`;
+
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?path=${encodeURIComponent(filePath)}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    newName: newRenameFileName.trim()
+                })
+            });
+
+            if (response.ok) {
+                setRenameDialogOpen(false);
+                setFileToRename(null);
+                setNewRenameFileName('');
+                await fetchFiles(currentPath);
+            } else {
+                const errorData = await response.json();
+                setRenameError(errorData.error || 'Failed to rename file');
+            }
+        } catch (err) {
+            setRenameError(`Failed to rename file: ${err}`);
+        } finally {
+            setIsRenaming(false);
+        }
+    };
+
     const deleteFileOrFolder = async () => {
         if (!fileToDelete) return;
         
@@ -333,6 +391,17 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
     };
 
     const handleFileDeleted = () => {
+        fetchFiles(currentPath);
+    };
+
+    const handleFileRenamed = (oldName: string, newName: string) => {
+        if (viewingFile && viewingFile.name === oldName) {
+            const newPath = currentPath === '.' 
+                ? newName 
+                : `${currentPath}/${newName}`;
+            setViewingFile({ path: newPath, name: newName });
+        }
+        
         fetchFiles(currentPath);
     };
 
@@ -727,14 +796,25 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                                                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                                     )}
                                                     {canWrite && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDeleteClick(file)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </Button>
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleRenameClick(file)}
+                                                                className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                                                title="Rename"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteClick(file)}
+                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </Button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -765,6 +845,7 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                     onClose={closeFileViewer}
                     canWrite={canWrite}
                     onFileDeleted={handleFileDeleted}
+                    onFileRenamed={handleFileRenamed}
                 />
             )}
             
@@ -810,6 +891,81 @@ export default function FileManager({ serverId, stackName, title = "Stack Files"
                             className="transition-all hover:scale-105"
                         >
                             {isDeleting ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Rename Dialog */}
+            <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <Edit2 className="h-4 w-4 text-primary" />
+                            </div>
+                            Rename {fileToRename?.isDir ? 'Directory' : 'File'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {fileToRename && (
+                                <span>
+                                    Enter a new name for <strong>{fileToRename.name}</strong>
+                                </span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                        {renameError && (
+                            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
+                                        <span className="text-destructive-foreground text-xs font-bold">!</span>
+                                    </div>
+                                    <p className="text-sm text-destructive font-medium">{renameError}</p>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                            <label htmlFor="renameInput" className="text-sm font-semibold">
+                                New Name
+                            </label>
+                            <Input
+                                id="renameInput"
+                                value={newRenameFileName}
+                                onChange={(e) => {
+                                    setNewRenameFileName(e.target.value);
+                                    setRenameError(null);
+                                }}
+                                placeholder="Enter new name..."
+                                className="font-mono"
+                                disabled={isRenaming}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        renameFile();
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                    
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setRenameDialogOpen(false);
+                                setRenameError(null);
+                            }}
+                            disabled={isRenaming}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={renameFile}
+                            disabled={isRenaming || !newRenameFileName.trim() || newRenameFileName.trim() === fileToRename?.name}
+                        >
+                            {isRenaming ? 'Renaming...' : 'Rename'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

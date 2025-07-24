@@ -780,4 +780,46 @@ class StackController extends Controller
             abort(500, 'Failed to download file: ' . $e->getMessage());
         }
     }
+
+    public function renameFile(Request $request, Server $server, string $stackName)
+    {
+        // Check if user has filemanager_write permission
+        if (!auth()->user()->hasServerPermission($server, 'filemanager_write')) {
+            return response()->json(['error' => 'You do not have permission to rename files on this server.'], 403);
+        }
+
+        try {
+            $path = $request->query('path', '');
+            $newName = $request->input('newName');
+            
+            if (empty($newName)) {
+                return response()->json(['error' => 'New name is required'], 400);
+            }
+
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ])
+                ->patch($url . '?' . http_build_query(['path' => $path]), [
+                    'newName' => $newName
+                ]);
+
+            if (!$response->successful()) {
+                $errorData = $response->json();
+                if (isset($errorData['error'])) {
+                    return response()->json(['error' => $errorData['error']], $response->status());
+                }
+                return response()->json(['error' => "Server returned status: {$response->status()}"], $response->status());
+            }
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to rename file: ' . $e->getMessage()], 500);
+        }
+    }
 }

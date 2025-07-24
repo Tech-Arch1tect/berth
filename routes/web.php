@@ -36,6 +36,7 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::get('api/servers/{server}/stacks/{stackName}/file/download', [StackController::class, 'downloadFile'])->name('api.stacks.file.download');
     Route::post('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'createFile'])->name('api.stacks.file.create');
     Route::put('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'updateFile'])->name('api.stacks.file.update');
+    Route::patch('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'renameFile'])->name('api.stacks.file.rename');
     Route::delete('api/servers/{server}/stacks/{stackName}/file', [StackController::class, 'deleteFile'])->name('api.stacks.file.delete');
     Route::post('api/servers/{server}/stacks/{stackName}/exec', [StackController::class, 'composeExec'])->name('api.stacks.exec');
     Route::get('api/servers/{server}/stacks/{stackName}/terminal/{service}', [StackController::class, 'terminalSession'])->name('api.stacks.terminal');

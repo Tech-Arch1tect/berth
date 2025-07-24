@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { File, Download, Copy, Eye, Edit, Save, X, Trash2, AlertTriangle } from 'lucide-react';
+import { File, Download, Copy, Eye, Edit, Save, X, Trash2, AlertTriangle, Edit3 } from 'lucide-react';
 import { getFileIcon, getFileTypeLabel, formatFileSize, isEditable } from '@/utils/file-icons';
 
 interface FileData {
@@ -25,9 +26,10 @@ interface FileViewerProps {
     onClose: () => void;
     canWrite?: boolean;
     onFileDeleted?: () => void;
+    onFileRenamed?: (oldName: string, newName: string) => void;
 }
 
-export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false, onFileDeleted }: FileViewerProps) {
+export default function FileViewer({ serverId, stackName, filePath, fileName, isOpen, onClose, canWrite = false, onFileDeleted, onFileRenamed }: FileViewerProps) {
     const [fileData, setFileData] = useState<FileData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,10 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showRenameDialog, setShowRenameDialog] = useState(false);
+    const [newFileName, setNewFileName] = useState('');
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [currentFileName, setCurrentFileName] = useState(fileName);
 
     const fetchFile = useCallback(async () => {
         if (!isOpen || !filePath) return;
@@ -65,6 +71,10 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
     useEffect(() => {
         fetchFile();
     }, [isOpen, filePath, serverId, stackName, fetchFile]);
+
+    useEffect(() => {
+        setCurrentFileName(fileName);
+    }, [fileName]);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -199,6 +209,58 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
         }
     };
 
+    const openRenameDialog = () => {
+        setNewFileName(currentFileName);
+        setShowRenameDialog(true);
+        setError(null);
+    };
+
+    const closeRenameDialog = () => {
+        setShowRenameDialog(false);
+        setNewFileName('');
+        setError(null);
+    };
+
+    const renameFile = async () => {
+        if (!newFileName.trim() || newFileName.trim() === currentFileName) {
+            setError('Please enter a different name');
+            return;
+        }
+
+        setIsRenaming(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?path=${encodeURIComponent(filePath)}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({ newName: newFileName.trim() })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                const oldName = currentFileName;
+                setCurrentFileName(newFileName.trim());
+                setShowRenameDialog(false);
+                setNewFileName('');
+                
+                if (onFileRenamed) {
+                    onFileRenamed(oldName, newFileName.trim());
+                }
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to rename file');
+            }
+        } catch (err) {
+            setError(`Failed to rename file: ${err}`);
+        } finally {
+            setIsRenaming(false);
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -206,7 +268,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <File size={20} />
-                        {fileName}
+                        {currentFileName}
                         {fileData && (
                             <Badge variant="outline" className="text-xs">
                                 {formatFileSize(fileData.size)}
@@ -250,6 +312,14 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                                     Edit
                                                 </Button>
                                             )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={openRenameDialog}
+                                            >
+                                                <Edit3 size={14} className="mr-1" />
+                                                Rename
+                                            </Button>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -322,7 +392,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{fileName} (editing)</span>
+                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{currentFileName} (editing)</span>
                                             </div>
                                         </div>
                                         <textarea
@@ -340,7 +410,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{fileName}</span>
+                                                <span className="text-xs text-muted-foreground ml-2 font-mono">{currentFileName}</span>
                                             </div>
                                         </div>
                                         <div className="bg-card p-4 overflow-auto" style={{ minHeight: '400px' }}>
@@ -368,7 +438,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                                                 <div className="flex items-center justify-center h-full">
                                                     <img 
                                                         src={`data:${fileData.mimeType};base64,${fileData.content}`}
-                                                        alt={fileName}
+                                                        alt={currentFileName}
                                                         className="max-w-full max-h-full object-contain"
                                                         style={{ maxHeight: '400px' }}
                                                     />
@@ -403,7 +473,7 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                             Delete File
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete <strong>{fileName}</strong>? This action cannot be undone.
+                            Are you sure you want to delete <strong>{currentFileName}</strong>? This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -420,6 +490,57 @@ export default function FileViewer({ serverId, stackName, filePath, fileName, is
                             disabled={isDeleting}
                         >
                             {isDeleting ? 'Deleting...' : 'Delete File'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            
+            {/* Rename Dialog */}
+            <Dialog open={showRenameDialog} onOpenChange={closeRenameDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Edit3 size={20} />
+                            Rename File
+                        </DialogTitle>
+                        <DialogDescription>
+                            Enter a new name for <strong>{currentFileName}</strong>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Input
+                                value={newFileName}
+                                onChange={(e) => setNewFileName(e.target.value)}
+                                placeholder="Enter new file name"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        renameFile();
+                                    }
+                                }}
+                                disabled={isRenaming}
+                            />
+                        </div>
+                        {error && (
+                            <div className="text-sm text-red-600 dark:text-red-400">
+                                {error}
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={closeRenameDialog}
+                            disabled={isRenaming}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={renameFile}
+                            disabled={isRenaming || !newFileName.trim() || newFileName.trim() === currentFileName}
+                        >
+                            {isRenaming ? 'Renaming...' : 'Rename'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
