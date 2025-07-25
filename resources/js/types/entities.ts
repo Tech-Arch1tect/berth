@@ -28,6 +28,22 @@ export interface Service {
     }>;
 }
 
+export interface NetworkInfo {
+    name: string;
+    ip_address: string;
+    gateway: string;
+}
+
+export interface ContainerInfo {
+    id: string;
+    name: string;
+    service: string;
+    state: string;
+    image: string;
+    ports: string;
+    networks: NetworkInfo[];
+}
+
 export interface Stack {
     name: string;
     path: string;
@@ -52,10 +68,13 @@ export interface Stack {
     service_status?: {
         stack: string;
         services: Array<{
+            id: string;
             name: string;
             command: string;
             state: string;
             ports: string;
+            image: string;
+            networks: NetworkInfo[];
         }> | null;
     };
     running_services_count?: number;
@@ -66,6 +85,7 @@ export interface Stack {
         total: number;
     };
     overall_status?: 'running' | 'stopped' | 'partial' | 'unknown';
+    containers?: ContainerInfo[];
 }
 
 export interface UserPermissions {

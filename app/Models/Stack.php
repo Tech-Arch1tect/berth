@@ -140,6 +140,42 @@ class Stack
         }
     }
 
+    public function getContainerInformation(): array
+    {
+        if (!$this->service_status || !isset($this->service_status['services']) || !is_array($this->service_status['services'])) {
+            return [];
+        }
+
+        $containers = [];
+        foreach ($this->service_status['services'] as $service) {
+            $containerInfo = [
+                'id' => $service['id'] ?? '',
+                'name' => $service['name'] ?? '',
+                'service' => $this->extractServiceNameFromContainer($service['name'] ?? ''),
+                'state' => $service['state'] ?? 'unknown',
+                'image' => $service['image'] ?? '',
+                'ports' => $service['ports'] ?? '',
+                'networks' => $service['networks'] ?? [],
+            ];
+            
+            $containers[] = $containerInfo;
+        }
+
+        return $containers;
+    }
+
+    private function extractServiceNameFromContainer(string $containerName): string
+    {
+        $parts = explode('-', $containerName);
+        if (count($parts) >= 3) {
+            array_shift($parts);
+            array_pop($parts);
+            return implode('-', $parts);
+        }
+        
+        return $containerName;
+    }
+
     public function toArray(): array
     {
         return [
@@ -157,6 +193,7 @@ class Stack
             'total_services_count' => $this->getTotalServicesCount(),
             'service_status_summary' => $this->getServiceStatusSummary(),
             'overall_status' => $this->getOverallStatus(),
+            'containers' => $this->getContainerInformation(),
         ];
     }
 

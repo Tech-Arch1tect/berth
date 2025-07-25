@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Stack, UserPermissions } from '@/types/entities';
 import { getServiceDisplayState } from '@/utils/stack-utils';
-import { Activity, ChevronDown, ChevronRight, Command, Container, Globe, Hammer, HardDrive, Image, Lock, Play, Square } from 'lucide-react';
+import { Activity, ChevronDown, ChevronRight, Command, Container, Globe, Hammer, HardDrive, Image, Lock, Network, Play, Square } from 'lucide-react';
 import { useState } from 'react';
 
 interface StackServicesProps {
@@ -183,6 +183,14 @@ export default function StackServices({ stack, userPermissions, isOperating, isR
                                                 {service.ports.length} port{service.ports.length !== 1 ? 's' : ''}
                                             </span>
                                         ) : null}
+                                        {serviceStatus?.networks && serviceStatus.networks.length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <Network className="h-3 w-3" />
+                                                <span className="font-mono text-xs text-blue-600 dark:text-blue-400">
+                                                    {serviceStatus.networks.map(network => network.ip_address).filter(Boolean).join(', ')}
+                                                </span>
+                                            </div>
+                                        )}
                                         {service.volumes && service.volumes.length > 0 && (
                                             <span className="text-xs">
                                                 {service.volumes.length} volume{service.volumes.length !== 1 ? 's' : ''}
@@ -209,14 +217,59 @@ export default function StackServices({ stack, userPermissions, isOperating, isR
                                                                 {serviceStatus.name}
                                                             </code>
                                                         </div>
-                                                        {serviceStatus.command && (
+                                                        {serviceStatus.id && (
                                                             <div className="space-y-1">
+                                                                <span className="text-muted-foreground">Container ID:</span>
+                                                                <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">
+                                                                    {serviceStatus.id.substring(0, 12)}
+                                                                </code>
+                                                            </div>
+                                                        )}
+                                                        {serviceStatus.command && (
+                                                            <div className="space-y-1 md:col-span-2">
                                                                 <span className="text-muted-foreground">Running Command:</span>
                                                                 <code className="block rounded bg-muted px-2 py-1 font-mono text-xs break-all">
                                                                     {serviceStatus.command}
                                                                 </code>
                                                             </div>
                                                         )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Network Information */}
+                                            {serviceStatus && serviceStatus.networks && serviceStatus.networks.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="flex items-center gap-2 text-sm font-medium">
+                                                        <Network className="h-3 w-3" />
+                                                        Networks ({serviceStatus.networks.length})
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {serviceStatus.networks.map((network, index) => (
+                                                            <div key={index} className="rounded bg-muted/50 p-3">
+                                                                <div className="mb-2 flex items-center justify-between">
+                                                                    <span className="text-sm font-medium">{network.name}</span>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                                                                    {network.ip_address && (
+                                                                        <div className="flex justify-between">
+                                                                            <span className="text-muted-foreground">IP Address:</span>
+                                                                            <code className="rounded bg-background px-2 py-1 font-mono">
+                                                                                {network.ip_address}
+                                                                            </code>
+                                                                        </div>
+                                                                    )}
+                                                                    {network.gateway && (
+                                                                        <div className="flex justify-between">
+                                                                            <span className="text-muted-foreground">Gateway:</span>
+                                                                            <code className="rounded bg-background px-2 py-1 font-mono">
+                                                                                {network.gateway}
+                                                                            </code>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
