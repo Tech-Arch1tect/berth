@@ -3,7 +3,8 @@ import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Container, Network, Settings, RefreshCw, FileText, Download, Terminal, AlertCircle, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Container, Network, Settings, RefreshCw, FileText, Download, Terminal, AlertCircle, HardDrive, Activity, Globe } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import FileManager from '@/components/file-manager';
 import StackStatusBadge from '@/components/StackStatusBadge';
@@ -29,21 +30,10 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUrl, setProgressUrl] = useState<string>('');
     const [progressTitle, setProgressTitle] = useState<string>('');
-    const [openSections, setOpenSections] = useState<Set<string>>(new Set(['services']));
     const [terminalSessions, setTerminalSessions] = useState<{id: string, service: string, shell: string}[]>([]);
     const [terminalService, setTerminalService] = useState<string>('');
     const [terminalShell, setTerminalShell] = useState<string>('auto');
     const prevLogOptionsRef = useRef({ selectedService, logTail });
-
-    const toggleSection = (section: string) => {
-        const newOpenSections = new Set(openSections);
-        if (newOpenSections.has(section)) {
-            newOpenSections.delete(section);
-        } else {
-            newOpenSections.add(section);
-        }
-        setOpenSections(newOpenSections);
-    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -135,7 +125,6 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         setShowProgressModal(false);
     };
 
-
     const openTerminalSession = () => {
         if (!terminalService) return;
         
@@ -148,38 +137,103 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         setTerminalSessions(prev => prev.filter(session => session.id !== sessionId));
     };
 
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${stack.name} - ${server.display_name}`} />
             
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
-                            <Container className="h-5 w-5 text-primary" />
+                {/* Modern Header */}
+                <div className="bg-gradient-to-r from-background via-background to-muted/20 rounded-xl border p-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
+                                <Container className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold flex items-center gap-3">
+                                    {stack.name}
+                                    <StackStatusBadge stack={stack} />
+                                </h1>
+                                <p className="text-muted-foreground font-mono mt-1">
+                                    {stack.path} on {server.display_name}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2">
-                                {stack.name}
-                                <StackStatusBadge stack={stack} />
-                            </h1>
-                            <p className="text-sm text-muted-foreground font-mono">
-                                {stack.path} on {server.display_name}
-                            </p>
-                        </div>
+                        <Button
+                            onClick={refreshStack}
+                            disabled={isRefreshing}
+                            variant="outline"
+                            size="lg"
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
                     </div>
-                    <Button
-                        onClick={refreshStack}
-                        disabled={isRefreshing}
-                        variant="outline"
-                        size="sm"
-                    >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+
+                    {/* Stack Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                        <div className="bg-background/50 rounded-lg border p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                                    <Container className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Services</p>
+                                    <p className="text-xl font-bold">
+                                        {stack.service_status_summary ? 
+                                            `${stack.service_status_summary.running}/${stack.service_status_summary.total}` : 
+                                            stack.service_count
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {stack.port_mappings.length > 0 && (
+                            <div className="bg-background/50 rounded-lg border p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
+                                        <Globe className="h-4 w-4 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Exposed Ports</p>
+                                        <p className="text-xl font-bold">{stack.port_mappings.length}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {stack.volume_mappings.length > 0 && (
+                            <div className="bg-background/50 rounded-lg border p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                                        <HardDrive className="h-4 w-4 text-purple-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Volumes</p>
+                                        <p className="text-xl font-bold">{stack.volume_mappings.length}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {Object.keys(stack.networks).length > 0 && (
+                            <div className="bg-background/50 rounded-lg border p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                                        <Network className="h-4 w-4 text-orange-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Networks</p>
+                                        <p className="text-xl font-bold">{Object.keys(stack.networks).length}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
+                {/* Parsing Error Alert */}
                 {!stack.parsed_successfully && (
                     <Card className="border-destructive/50 bg-destructive/5">
                         <CardContent className="pt-6">
@@ -191,411 +245,283 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     </Card>
                 )}
 
-                {/* Stack Stats Overview */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                                    <Container className="h-4 w-4 text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Services</p>
-                                    <p className="text-2xl font-bold">
-                                        {stack.service_status_summary ? 
-                                            `${stack.service_status_summary.running}/${stack.service_status_summary.total}` : 
-                                            stack.service_count
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    {stack.port_mappings.length > 0 && (
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-                                        <Network className="h-4 w-4 text-green-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Exposed Ports</p>
-                                        <p className="text-2xl font-bold">{stack.port_mappings.length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    
-                    {stack.volume_mappings.length > 0 && (
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                                        <HardDrive className="h-4 w-4 text-purple-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Volumes</p>
-                                        <p className="text-2xl font-bold">{stack.volume_mappings.length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    
-                    {Object.keys(stack.networks).length > 0 && (
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
-                                        <Network className="h-4 w-4 text-orange-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Networks</p>
-                                        <p className="text-2xl font-bold">{Object.keys(stack.networks).length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                {/* Modern Tabbed Interface */}
+                <Tabs defaultValue="services" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 lg:grid-cols-4">
+                        <TabsTrigger value="services" className="flex items-center gap-2">
+                            <Container className="h-4 w-4" />
+                            Services
+                        </TabsTrigger>
+                        <TabsTrigger value="networks" className="flex items-center gap-2">
+                            <Network className="h-4 w-4" />
+                            Networks
+                        </TabsTrigger>
+                        <TabsTrigger value="logs" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Logs
+                        </TabsTrigger>
+                        {userPermissions.filemanager_access && (
+                            <TabsTrigger value="files" className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Files
+                            </TabsTrigger>
+                        )}
+                    </TabsList>
 
-                <div className="grid gap-6">
-                    {/* Services */}
-                    <StackServices
-                        stack={stack}
-                        userPermissions={userPermissions}
-                        isOperating={showProgressModal}
-                        isRefreshing={isRefreshing}
-                        onStartService={bringStackUp}
-                        onStopService={bringStackDown}
-                    />
+                    <TabsContent value="services" className="mt-6">
+                        <StackServices
+                            stack={stack}
+                            userPermissions={userPermissions}
+                            isOperating={showProgressModal}
+                            isRefreshing={isRefreshing}
+                            onStartService={bringStackUp}
+                            onStopService={bringStackDown}
+                        />
+                    </TabsContent>
 
-                    {/* Networks */}
-                    {Object.keys(stack.networks).length > 0 && (
+                    <TabsContent value="networks" className="mt-6">
+                        {Object.keys(stack.networks).length > 0 ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Network size={20} />
+                                        Networks ({Object.keys(stack.networks).length})
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {Object.entries(stack.networks).map(([networkName, network]) => (
+                                            <div key={networkName} className="border rounded-lg p-4 border-border">
+                                                <div className="flex justify-between items-center">
+                                                    <h3 className="font-medium text-lg">{networkName}</h3>
+                                                    <code className="text-sm bg-muted px-3 py-1 rounded">
+                                                        {(network as Record<string, unknown>)?.name as string || networkName}
+                                                    </code>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardContent className="text-center py-12">
+                                    <Network className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">No networks configured for this stack</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="logs" className="mt-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Network size={20} />
-                                    Networks ({Object.keys(stack.networks).length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {Object.entries(stack.networks).map(([networkName, network]) => (
-                                        <div key={networkName} className="border rounded-lg p-3 border-border">
-                                            <div className="flex justify-between items-center">
-                                                <h3 className="font-medium">{networkName}</h3>
-                                                <code className="text-sm bg-muted px-2 py-1 rounded">
-                                                    {(network as Record<string, unknown>)?.name as string || networkName}
-                                                </code>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Container Logs */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => toggleSection('logs')}
-                                    >
-                                        {openSections.has('logs') ? 
-                                            <ChevronDown className="h-3 w-3" /> : 
-                                            <ChevronRight className="h-3 w-3" />
-                                        }
-                                    </Button>
+                                <div className="flex justify-between items-center">
                                     <CardTitle className="flex items-center gap-2">
                                         <FileText className="h-5 w-5" />
                                         Container Logs
                                         {logs && (
-                                            <span className="text-sm text-muted-foreground">
+                                            <span className="text-sm font-normal text-muted-foreground">
                                                 ({logs.lines} lines)
                                             </span>
                                         )}
                                     </CardTitle>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Select value={selectedService} onValueChange={setSelectedService}>
-                                        <SelectTrigger className="w-40">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Services</SelectItem>
-                                            {stack.service_names.map((service) => (
-                                                <SelectItem key={service} value={service}>
-                                                    {service}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Select value={logTail} onValueChange={setLogTail}>
-                                        <SelectTrigger className="w-24">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="50">50</SelectItem>
-                                            <SelectItem value="100">100</SelectItem>
-                                            <SelectItem value="200">200</SelectItem>
-                                            <SelectItem value="500">500</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        onClick={fetchLogs}
-                                        disabled={isLoadingLogs}
-                                        variant="outline"
-                                        size="sm"
-                                    >
-                                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
-                                        Load Logs
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        {openSections.has('logs') && (
-                            <CardContent>
-                            {logs ? (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                        <span>
-                                            {logs.service ? `Service: ${logs.service}` : 'All services'} • 
-                                            Last {logTail} lines
-                                        </span>
+                                    <div className="flex items-center gap-2">
+                                        <Select value={selectedService} onValueChange={setSelectedService}>
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Services</SelectItem>
+                                                {stack.service_names.map((service) => (
+                                                    <SelectItem key={service} value={service}>
+                                                        {service}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={logTail} onValueChange={setLogTail}>
+                                            <SelectTrigger className="w-24">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="50">50</SelectItem>
+                                                <SelectItem value="100">100</SelectItem>
+                                                <SelectItem value="200">200</SelectItem>
+                                                <SelectItem value="500">500</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                const blob = new Blob([logs.logs], { type: 'text/plain' });
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `${stack.name}${logs.service ? `-${logs.service}` : ''}-logs.txt`;
-                                                a.click();
-                                                URL.revokeObjectURL(url);
-                                            }}
+                                            onClick={fetchLogs}
+                                            disabled={isLoadingLogs}
+                                            variant="outline"
                                         >
-                                            <Download size={14} />
+                                            <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+                                            Load Logs
                                         </Button>
                                     </div>
-                                    <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
-                                        <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
-                                                    <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
-                                                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
-                                                </div>
-                                                <span className="text-sm font-medium text-foreground ml-2 font-mono">Container Logs Terminal</span>
-                                            </div>
-                                        </div>
-                                        <div className="bg-gradient-to-br from-slate-950 to-slate-900 p-6 max-h-[70vh] overflow-auto">
-                                            <pre className="text-sm font-mono text-slate-100 whitespace-pre-wrap leading-relaxed">
-                                                {logs.logs || 'No logs available'}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                                    <p>Click "Load Logs" to view container logs</p>
-                                </div>
-                            )}
-                            </CardContent>
-                        )}
-                    </Card>
-
-                    {/* Interactive Terminal */}
-                    {userPermissions.exec && (
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => toggleSection('exec')}
-                                    >
-                                        {openSections.has('exec') ? 
-                                            <ChevronDown className="h-3 w-3" /> : 
-                                            <ChevronRight className="h-3 w-3" />
-                                        }
-                                    </Button>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Terminal className="h-5 w-5" />
-                                        Interactive Terminal
-                                    </CardTitle>
                                 </div>
                             </CardHeader>
-                            {openSections.has('exec') && (
                             <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                                                <Terminal className="h-4 w-4 text-primary" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-base font-semibold">Interactive Terminal</h3>
-                                                <p className="text-xs text-muted-foreground">Open shell sessions in service containers</p>
-                                            </div>
-                                        </div>
-                                        {terminalSessions.length > 0 && (
-                                            <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
-                                                {terminalSessions.length} active session{terminalSessions.length !== 1 ? 's' : ''}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        <div className="flex gap-3">
-                                            <div className="flex-1">
-                                                <Select value={terminalService} onValueChange={setTerminalService}>
-                                                    <SelectTrigger className="font-mono text-sm">
-                                                        <SelectValue placeholder="Choose service..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {stack.service_names.map((service) => (
-                                                            <SelectItem key={service} value={service} className="font-mono">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
-                                                                    {service}
-                                                                </div>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="w-32">
-                                                <Select value={terminalShell} onValueChange={setTerminalShell}>
-                                                    <SelectTrigger className="font-mono text-sm">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="auto" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">🔍</span>
-                                                                auto
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="bash" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">$</span>
-                                                                bash
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="sh" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">$</span>
-                                                                sh
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="zsh" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">❯</span>
-                                                                zsh
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="fish" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">🐟</span>
-                                                                fish
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="dash" className="font-mono">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-muted-foreground">$</span>
-                                                                dash
-                                                            </div>
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                {logs ? (
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                            <span>
+                                                {logs.service ? `Service: ${logs.service}` : 'All services'} • 
+                                                Last {logTail} lines
+                                            </span>
                                             <Button
-                                                onClick={openTerminalSession}
-                                                disabled={!terminalService}
-                                                className="gap-2"
-                                                size="default"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    const blob = new Blob([logs.logs], { type: 'text/plain' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `${stack.name}${logs.service ? `-${logs.service}` : ''}-logs.txt`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                }}
                                             >
-                                                <Terminal className="h-4 w-4" />
-                                                Launch Terminal
+                                                <Download size={14} className="mr-2" />
+                                                Download
                                             </Button>
                                         </div>
-                                        </div>
-
-                                        {/* Active Terminal Sessions */}
-                                        <div className="space-y-3">
-                                            {terminalSessions.map((session, index) => (
-                                                <div key={session.id} className="space-y-2">
-                                                    {index > 0 && <div className="border-t border-border/10" />}
-                                                    <TerminalSession
-                                                        serverId={server.id}
-                                                        stackName={stack.name}
-                                                        service={session.service}
-                                                        shell={session.shell}
-                                                        onClose={() => closeTerminalSession(session.id)}
-                                                        className="w-full"
-                                                    />
+                                        <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
+                                            <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
+                                                        <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
+                                                        <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+                                                    </div>
+                                                    <span className="text-sm font-medium text-foreground ml-2 font-mono">Container Logs Terminal</span>
                                                 </div>
-                                            ))}
+                                            </div>
+                                            <div className="bg-gradient-to-br from-slate-950 to-slate-900 p-6 max-h-[70vh] overflow-auto">
+                                                <pre className="text-sm font-mono text-slate-100 whitespace-pre-wrap leading-relaxed">
+                                                    {logs.logs || 'No logs available'}
+                                                </pre>
+                                            </div>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                        <p>Click "Load Logs" to view container logs</p>
+                                    </div>
+                                )}
                             </CardContent>
-                            )}
                         </Card>
-                    )}
+                    </TabsContent>
 
-                    {/* File Manager */}
+
                     {userPermissions.filemanager_access && (
-                        <FileManager 
-                            serverId={server.id}
-                            stackName={stack.name}
-                            title="Stack Files"
-                            canWrite={userPermissions.filemanager_write}
-                        />
+                        <TabsContent value="files" className="mt-6">
+                            <FileManager 
+                                serverId={server.id}
+                                stackName={stack.name}
+                                title="Stack Files"
+                                canWrite={userPermissions.filemanager_write}
+                            />
+                        </TabsContent>
                     )}
+                </Tabs>
 
-                    {/* Raw Configuration */}
-                    {userPermissions.filemanager_write && (
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => toggleSection('config')}
-                                    >
-                                        {openSections.has('config') ? 
-                                            <ChevronDown className="h-3 w-3" /> : 
-                                            <ChevronRight className="h-3 w-3" />
-                                        }
-                                    </Button>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Settings className="h-5 w-5" />
-                                        Raw Configuration
-                                    </CardTitle>
+                {/* Persistent Terminal Section */}
+                {userPermissions.exec && (
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Terminal className="h-5 w-5" />
+                                Interactive Terminal
+                                {terminalSessions.length > 0 && (
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        ({terminalSessions.length} active session{terminalSessions.length !== 1 ? 's' : ''})
+                                    </span>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                            <Terminal className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-semibold">Launch New Terminal</h3>
+                                            <p className="text-xs text-muted-foreground">Open shell sessions in service containers - terminals persist while navigating tabs</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </CardHeader>
-                            {openSections.has('config') && (
-                            <CardContent>
-                                <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs">
-                                    {JSON.stringify(stack, null, 2)}
-                                </pre>
-                            </CardContent>
-                            )}
-                        </Card>
-                    )}
-                </div>
+                                
+                                <div className="flex gap-3">
+                                    <div className="flex-1">
+                                        <Select value={terminalService} onValueChange={setTerminalService}>
+                                            <SelectTrigger className="font-mono text-sm">
+                                                <SelectValue placeholder="Choose service..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {stack.service_names.map((service) => (
+                                                    <SelectItem key={service} value={service} className="font-mono">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
+                                                            {service}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="w-32">
+                                        <Select value={terminalShell} onValueChange={setTerminalShell}>
+                                            <SelectTrigger className="font-mono text-sm">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="auto" className="font-mono">auto</SelectItem>
+                                                <SelectItem value="bash" className="font-mono">bash</SelectItem>
+                                                <SelectItem value="sh" className="font-mono">sh</SelectItem>
+                                                <SelectItem value="zsh" className="font-mono">zsh</SelectItem>
+                                                <SelectItem value="fish" className="font-mono">fish</SelectItem>
+                                                <SelectItem value="dash" className="font-mono">dash</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button
+                                        onClick={openTerminalSession}
+                                        disabled={!terminalService}
+                                        className="gap-2"
+                                    >
+                                        <Terminal className="h-4 w-4" />
+                                        Launch Terminal
+                                    </Button>
+                                </div>
+
+                                {/* Active Terminal Sessions */}
+                                {terminalSessions.length > 0 && (
+                                    <div className="space-y-4">
+                                        <div className="border-t border-border/20" />
+                                        {terminalSessions.map((session, index) => (
+                                            <div key={session.id} className="space-y-2">
+                                                {index > 0 && <div className="border-t border-border/10" />}
+                                                <TerminalSession
+                                                    serverId={server.id}
+                                                    stackName={stack.name}
+                                                    service={session.service}
+                                                    shell={session.shell}
+                                                    onClose={() => closeTerminalSession(session.id)}
+                                                    className="w-full"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             <ProgressModal
