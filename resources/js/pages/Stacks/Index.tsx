@@ -45,10 +45,17 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
         ): Promise<{
             stack: string;
             services: Array<{
+                id: string;
                 name: string;
                 command: string;
                 state: string;
                 ports: string;
+                image: string;
+                networks: Array<{
+                    name: string;
+                    ip_address: string;
+                    gateway: string;
+                }>;
             }> | null;
         } | null> => {
             try {
@@ -57,10 +64,17 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                     return response.data as {
                         stack: string;
                         services: Array<{
+                            id: string;
                             name: string;
                             command: string;
                             state: string;
                             ports: string;
+                            image: string;
+                            networks: Array<{
+                                name: string;
+                                ip_address: string;
+                                gateway: string;
+                            }>;
                         }> | null;
                     };
                 } else {
@@ -308,8 +322,18 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                                                         </Badge>
                                                                     )}
                                                                 </div>
-                                                                <div className="truncate font-mono text-xs text-muted-foreground" title={imageName}>
-                                                                    {imageName}
+                                                                <div className="space-y-1">
+                                                                    <div className="truncate font-mono text-xs text-muted-foreground" title={imageName}>
+                                                                        {imageName}
+                                                                    </div>
+                                                                    {serviceStatus?.networks && serviceStatus.networks.length > 0 && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Network className="h-2.5 w-2.5 text-blue-500" />
+                                                                            <span className="truncate font-mono text-xs text-blue-600 dark:text-blue-400">
+                                                                                {serviceStatus.networks.map(network => network.ip_address).filter(Boolean).join(', ')}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         );
