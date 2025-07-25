@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Head, router } from '@inertiajs/react';
+import FileManager from '@/components/file-manager';
+import ProgressModal from '@/components/ProgressModal';
+import StackServices from '@/components/StackServices';
+import StackStatusBadge from '@/components/StackStatusBadge';
+import TerminalSession from '@/components/TerminalSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Container, Network, Settings, RefreshCw, FileText, Download, Terminal, AlertCircle, HardDrive, Activity, Globe } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-import FileManager from '@/components/file-manager';
-import StackStatusBadge from '@/components/StackStatusBadge';
-import StackServices from '@/components/StackServices';
-import ProgressModal from '@/components/ProgressModal';
-import TerminalSession from '@/components/TerminalSession';
-import type { Server, Stack, UserPermissions, LogsResponse } from '@/types/entities';
 import { type BreadcrumbItem } from '@/types';
+import type { LogsResponse, Server, Stack, UserPermissions } from '@/types/entities';
 import { apiGet } from '@/utils/api';
+import { Head, router } from '@inertiajs/react';
+import { AlertCircle, Container, Download, FileText, Globe, HardDrive, Network, RefreshCw, Terminal } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
     server: Server;
@@ -30,7 +30,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUrl, setProgressUrl] = useState<string>('');
     const [progressTitle, setProgressTitle] = useState<string>('');
-    const [terminalSessions, setTerminalSessions] = useState<{id: string, service: string, shell: string}[]>([]);
+    const [terminalSessions, setTerminalSessions] = useState<{ id: string; service: string; shell: string }[]>([]);
     const [terminalService, setTerminalService] = useState<string>('');
     const [terminalShell, setTerminalShell] = useState<string>('auto');
     const prevLogOptionsRef = useRef({ selectedService, logTail });
@@ -44,7 +44,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const refreshStack = () => {
         setIsRefreshing(true);
         router.reload({
-            onFinish: () => setIsRefreshing(false)
+            onFinish: () => setIsRefreshing(false),
         });
     };
 
@@ -55,7 +55,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
             if (selectedService !== 'all') {
                 params.append('service', selectedService);
             }
-            
+
             const response = await apiGet<LogsResponse>(`/api/servers/${server.id}/stacks/${stack.name}/logs?${params}`);
             if (response.success) {
                 setLogs(response.data || null);
@@ -73,11 +73,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     useEffect(() => {
         const prev = prevLogOptionsRef.current;
         const hasOptionsChanged = prev.selectedService !== selectedService || prev.logTail !== logTail;
-        
+
         if (logs !== null && hasOptionsChanged) {
             fetchLogs();
         }
-        
+
         prevLogOptionsRef.current = { selectedService, logTail };
     }, [selectedService, logTail, logs, fetchLogs]);
 
@@ -85,15 +85,15 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         if (showProgressModal) {
             return;
         }
-        
+
         const params = new URLSearchParams({
-            services: services?.join(',') || ''
+            services: services?.join(',') || '',
         });
-        
+
         if (build) {
             params.set('build', 'true');
         }
-        
+
         const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/up/stream?${params}`;
         setProgressUrl(streamUrl);
         setProgressTitle(`Starting Stack: ${stack.name}${build ? ' (with --build)' : ''}`);
@@ -104,11 +104,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         if (showProgressModal) {
             return;
         }
-        
+
         const params = new URLSearchParams({
-            services: services?.join(',') || ''
+            services: services?.join(',') || '',
         });
-        
+
         const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/down/stream?${params}`;
         setProgressUrl(streamUrl);
         setProgressTitle(`Stopping Stack: ${stack.name}`);
@@ -127,72 +127,66 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
 
     const openTerminalSession = () => {
         if (!terminalService) return;
-        
+
         const sessionId = `${terminalService}-${terminalShell}-${Date.now()}`;
-        setTerminalSessions(prev => [...prev, { id: sessionId, service: terminalService, shell: terminalShell }]);
+        setTerminalSessions((prev) => [...prev, { id: sessionId, service: terminalService, shell: terminalShell }]);
         setTerminalService('');
     };
 
     const closeTerminalSession = (sessionId: string) => {
-        setTerminalSessions(prev => prev.filter(session => session.id !== sessionId));
+        setTerminalSessions((prev) => prev.filter((session) => session.id !== sessionId));
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${stack.name} - ${server.display_name}`} />
-            
+
             <div className="space-y-6">
                 {/* Modern Header */}
-                <div className="bg-gradient-to-r from-background via-background to-muted/20 rounded-xl border p-6">
+                <div className="rounded-xl border bg-gradient-to-r from-background via-background to-muted/20 p-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
                                 <Container className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold flex items-center gap-3">
+                                <h1 className="flex items-center gap-3 text-3xl font-bold">
                                     {stack.name}
                                     <StackStatusBadge stack={stack} />
                                 </h1>
-                                <p className="text-muted-foreground font-mono mt-1">
+                                <p className="mt-1 font-mono text-muted-foreground">
                                     {stack.path} on {server.display_name}
                                 </p>
                             </div>
                         </div>
-                        <Button
-                            onClick={refreshStack}
-                            disabled={isRefreshing}
-                            variant="outline"
-                            size="lg"
-                        >
+                        <Button onClick={refreshStack} disabled={isRefreshing} variant="outline" size="lg">
                             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
                     </div>
 
                     {/* Stack Stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                        <div className="bg-background/50 rounded-lg border p-4">
+                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="rounded-lg border bg-background/50 p-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
                                     <Container className="h-4 w-4 text-blue-500" />
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Services</p>
                                     <p className="text-xl font-bold">
-                                        {stack.service_status_summary ? 
-                                            `${stack.service_status_summary.running}/${stack.service_status_summary.total}` : 
-                                            stack.service_count
-                                        }
+                                        {stack.service_status_summary
+                                            ? `${stack.service_status_summary.running}/${stack.service_status_summary.total}`
+                                            : stack.service_count}
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         {stack.port_mappings.length > 0 && (
-                            <div className="bg-background/50 rounded-lg border p-4">
+                            <div className="rounded-lg border bg-background/50 p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
                                         <Globe className="h-4 w-4 text-green-500" />
                                     </div>
                                     <div>
@@ -202,11 +196,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                 </div>
                             </div>
                         )}
-                        
+
                         {stack.volume_mappings.length > 0 && (
-                            <div className="bg-background/50 rounded-lg border p-4">
+                            <div className="rounded-lg border bg-background/50 p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
                                         <HardDrive className="h-4 w-4 text-purple-500" />
                                     </div>
                                     <div>
@@ -216,11 +210,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                 </div>
                             </div>
                         )}
-                        
+
                         {Object.keys(stack.networks).length > 0 && (
-                            <div className="bg-background/50 rounded-lg border p-4">
+                            <div className="rounded-lg border bg-background/50 p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
                                         <Network className="h-4 w-4 text-orange-500" />
                                     </div>
                                     <div>
@@ -239,7 +233,9 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         <CardContent className="pt-6">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="h-5 w-5 text-destructive" />
-                                <span className="text-destructive font-medium">This stack has parsing errors and may not be functioning correctly.</span>
+                                <span className="font-medium text-destructive">
+                                    This stack has parsing errors and may not be functioning correctly.
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
@@ -291,11 +287,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {Object.entries(stack.networks).map(([networkName, network]) => (
-                                            <div key={networkName} className="border rounded-lg p-4 border-border">
-                                                <div className="flex justify-between items-center">
-                                                    <h3 className="font-medium text-lg">{networkName}</h3>
-                                                    <code className="text-sm bg-muted px-3 py-1 rounded">
-                                                        {(network as Record<string, unknown>)?.name as string || networkName}
+                                            <div key={networkName} className="rounded-lg border border-border p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-lg font-medium">{networkName}</h3>
+                                                    <code className="rounded bg-muted px-3 py-1 text-sm">
+                                                        {((network as Record<string, unknown>)?.name as string) || networkName}
                                                     </code>
                                                 </div>
                                             </div>
@@ -305,8 +301,8 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             </Card>
                         ) : (
                             <Card>
-                                <CardContent className="text-center py-12">
-                                    <Network className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                                <CardContent className="py-12 text-center">
+                                    <Network className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                                     <p className="text-muted-foreground">No networks configured for this stack</p>
                                 </CardContent>
                             </Card>
@@ -316,15 +312,11 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     <TabsContent value="logs" className="mt-6">
                         <Card>
                             <CardHeader>
-                                <div className="flex justify-between items-center">
+                                <div className="flex items-center justify-between">
                                     <CardTitle className="flex items-center gap-2">
                                         <FileText className="h-5 w-5" />
                                         Container Logs
-                                        {logs && (
-                                            <span className="text-sm font-normal text-muted-foreground">
-                                                ({logs.lines} lines)
-                                            </span>
-                                        )}
+                                        {logs && <span className="text-sm font-normal text-muted-foreground">({logs.lines} lines)</span>}
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
                                         <Select value={selectedService} onValueChange={setSelectedService}>
@@ -351,11 +343,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 <SelectItem value="500">500</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Button
-                                            onClick={fetchLogs}
-                                            disabled={isLoadingLogs}
-                                            variant="outline"
-                                        >
+                                        <Button onClick={fetchLogs} disabled={isLoadingLogs} variant="outline">
                                             <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
                                             Load Logs
                                         </Button>
@@ -365,10 +353,9 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             <CardContent>
                                 {logs ? (
                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                        <div className="flex items-center justify-between text-sm text-muted-foreground">
                                             <span>
-                                                {logs.service ? `Service: ${logs.service}` : 'All services'} • 
-                                                Last {logTail} lines
+                                                {logs.service ? `Service: ${logs.service}` : 'All services'} • Last {logTail} lines
                                             </span>
                                             <Button
                                                 variant="ghost"
@@ -387,27 +374,29 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 Download
                                             </Button>
                                         </div>
-                                        <div className="border border-border/20 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-background to-muted/5">
-                                            <div className="bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3 border-b border-border/20">
+                                        <div className="overflow-hidden rounded-xl border border-border/20 bg-gradient-to-br from-background to-muted/5 shadow-lg">
+                                            <div className="border-b border-border/20 bg-gradient-to-r from-muted/40 to-muted/20 px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
-                                                        <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-sm"></div>
-                                                        <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
+                                                        <div className="h-3 w-3 rounded-full bg-red-500 shadow-sm"></div>
+                                                        <div className="h-3 w-3 rounded-full bg-yellow-500 shadow-sm"></div>
+                                                        <div className="h-3 w-3 rounded-full bg-green-500 shadow-sm"></div>
                                                     </div>
-                                                    <span className="text-sm font-medium text-foreground ml-2 font-mono">Container Logs Terminal</span>
+                                                    <span className="ml-2 font-mono text-sm font-medium text-foreground">
+                                                        Container Logs Terminal
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="bg-gradient-to-br from-slate-950 to-slate-900 p-6 max-h-[70vh] overflow-auto">
-                                                <pre className="text-sm font-mono text-slate-100 whitespace-pre-wrap leading-relaxed">
+                                            <div className="max-h-[70vh] overflow-auto bg-gradient-to-br from-slate-950 to-slate-900 p-6">
+                                                <pre className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-slate-100">
                                                     {logs.logs || 'No logs available'}
                                                 </pre>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                    <div className="py-12 text-center text-muted-foreground">
+                                        <FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
                                         <p>Click "Load Logs" to view container logs</p>
                                     </div>
                                 )}
@@ -415,10 +404,9 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                         </Card>
                     </TabsContent>
 
-
                     {userPermissions.filemanager_access && (
                         <TabsContent value="files" className="mt-6">
-                            <FileManager 
+                            <FileManager
                                 serverId={server.id}
                                 stackName={stack.name}
                                 title="Stack Files"
@@ -446,16 +434,18 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                                             <Terminal className="h-4 w-4 text-primary" />
                                         </div>
                                         <div>
                                             <h3 className="text-base font-semibold">Launch New Terminal</h3>
-                                            <p className="text-xs text-muted-foreground">Open shell sessions in service containers - terminals persist while navigating tabs</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Open shell sessions in service containers - terminals persist while navigating tabs
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex gap-3">
                                     <div className="flex-1">
                                         <Select value={terminalService} onValueChange={setTerminalService}>
@@ -466,7 +456,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 {stack.service_names.map((service) => (
                                                     <SelectItem key={service} value={service} className="font-mono">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-2 h-2 rounded-full bg-green-500/60"></div>
+                                                            <div className="h-2 w-2 rounded-full bg-green-500/60"></div>
                                                             {service}
                                                         </div>
                                                     </SelectItem>
@@ -480,20 +470,28 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="auto" className="font-mono">auto</SelectItem>
-                                                <SelectItem value="bash" className="font-mono">bash</SelectItem>
-                                                <SelectItem value="sh" className="font-mono">sh</SelectItem>
-                                                <SelectItem value="zsh" className="font-mono">zsh</SelectItem>
-                                                <SelectItem value="fish" className="font-mono">fish</SelectItem>
-                                                <SelectItem value="dash" className="font-mono">dash</SelectItem>
+                                                <SelectItem value="auto" className="font-mono">
+                                                    auto
+                                                </SelectItem>
+                                                <SelectItem value="bash" className="font-mono">
+                                                    bash
+                                                </SelectItem>
+                                                <SelectItem value="sh" className="font-mono">
+                                                    sh
+                                                </SelectItem>
+                                                <SelectItem value="zsh" className="font-mono">
+                                                    zsh
+                                                </SelectItem>
+                                                <SelectItem value="fish" className="font-mono">
+                                                    fish
+                                                </SelectItem>
+                                                <SelectItem value="dash" className="font-mono">
+                                                    dash
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <Button
-                                        onClick={openTerminalSession}
-                                        disabled={!terminalService}
-                                        className="gap-2"
-                                    >
+                                    <Button onClick={openTerminalSession} disabled={!terminalService} className="gap-2">
                                         <Terminal className="h-4 w-4" />
                                         Launch Terminal
                                     </Button>

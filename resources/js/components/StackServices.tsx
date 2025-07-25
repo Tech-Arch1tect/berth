@@ -187,7 +187,10 @@ export default function StackServices({ stack, userPermissions, isOperating, isR
                                             <div className="flex items-center gap-1">
                                                 <Network className="h-3 w-3" />
                                                 <span className="font-mono text-xs text-blue-600 dark:text-blue-400">
-                                                    {serviceStatus.networks.map(network => network.ip_address).filter(Boolean).join(', ')}
+                                                    {serviceStatus.networks
+                                                        .map((network) => network.ip_address)
+                                                        .filter(Boolean)
+                                                        .join(', ')}
                                                 </span>
                                             </div>
                                         )}
