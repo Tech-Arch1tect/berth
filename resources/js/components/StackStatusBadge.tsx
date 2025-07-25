@@ -14,17 +14,17 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
     // Show loading state while fetching status
     if (stack.isLoadingStatus) {
         return (
-            <Badge variant="outline" className={`bg-muted/50 ${className}`}>
-                <Loader2 className={`${iconSize} mr-1 animate-spin`} />
-                Loading...
+            <Badge variant="outline" className={`bg-muted/50 ${className} gap-1`}>
+                <Loader2 className={`${iconSize} animate-spin`} />
+                Loading
             </Badge>
         );
     }
 
     if (!stack.parsed_successfully) {
         return (
-            <Badge variant="destructive" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className}`}>
-                <AlertTriangle className={`${iconSize} mr-1`} />
+            <Badge variant="destructive" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className} gap-1`}>
+                <AlertTriangle className={iconSize} />
                 Parse Error
             </Badge>
         );
@@ -32,8 +32,8 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
 
     if (stack.service_count === 0) {
         return (
-            <Badge variant="secondary" className={`bg-muted/50 ${className}`}>
-                <Square className={`${iconSize} mr-1`} />
+            <Badge variant="secondary" className={`bg-muted/50 ${className} gap-1`}>
+                <Square className={iconSize} />
                 No Services
             </Badge>
         );
@@ -44,30 +44,33 @@ export default function StackStatusBadge({ stack, size = 'default' }: StackStatu
         switch (stack.overall_status) {
             case 'running':
                 return (
-                    <Badge variant="default" className={`border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400 ${className}`}>
-                        <Activity className={`${iconSize} mr-1`} />
+                    <Badge variant="default" className={`border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400 ${className} gap-1`}>
+                        <Activity className={iconSize} />
                         Running
                     </Badge>
                 );
             case 'stopped':
                 return (
-                    <Badge variant="outline" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className}`}>
-                        <Square className={`${iconSize} mr-1`} />
+                    <Badge variant="outline" className={`border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 ${className} gap-1`}>
+                        <Square className={iconSize} />
                         Stopped
                     </Badge>
                 );
             case 'partial':
                 return (
-                    <Badge variant="secondary" className={`border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 ${className}`}>
-                        <Pause className={`${iconSize} mr-1`} />
+                    <Badge
+                        variant="secondary"
+                        className={`border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 ${className} gap-1`}
+                    >
+                        <Pause className={iconSize} />
                         Partial
                     </Badge>
                 );
             case 'unknown':
             default:
                 return (
-                    <Badge variant="outline" className={`bg-muted/50 ${className}`}>
-                        <AlertTriangle className={`${iconSize} mr-1`} />
+                    <Badge variant="outline" className={`bg-muted/50 ${className} gap-1`}>
+                        <AlertTriangle className={iconSize} />
                         Unknown
                     </Badge>
                 );

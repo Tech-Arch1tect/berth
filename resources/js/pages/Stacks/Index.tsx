@@ -1,14 +1,15 @@
-import StackStatusBadge from '@/components/StackStatusBadge';
-import { Badge } from '@/components/ui/badge';
+import SearchAndFilters from '@/components/SearchAndFilters';
+import StackCard from '@/components/StackCard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { useStackFiltering } from '@/hooks/useStackFiltering';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import type { Server, Stack } from '@/types/entities';
 import { apiGet } from '@/utils/api';
-import { calculateServiceStatusSummary, findServiceStatus } from '@/utils/stack-utils';
-import { Head, Link, router } from '@inertiajs/react';
-import { Activity, AlertCircle, Clock, Container, ExternalLink, HardDrive, Layers3, Loader2, Network, RefreshCw } from 'lucide-react';
+import { calculateServiceStatusSummary } from '@/utils/stack-utils';
+import { Head, router } from '@inertiajs/react';
+import { Activity, AlertCircle, Clock, Container, Layers3, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -33,6 +34,21 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
     const [stacks, setStacks] = useState<StackWithLoading[]>(initialStacks.map((stack) => ({ ...stack, isLoadingStatus: true })));
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+    const {
+        filteredAndSortedStacks,
+        runningStacks,
+        totalServices,
+        runningServices,
+        uniqueStatuses,
+        searchTerm,
+        sortOption,
+        filterStatus,
+        setSearchTerm,
+        setSortOption,
+        setFilterStatus,
+        clearFilters,
+    } = useStackFiltering(stacks);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -138,31 +154,26 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
         });
     };
 
-    const loadedStacks = stacks.filter((stack) => !stack.isLoadingStatus);
-    const runningStacks = loadedStacks.filter((stack) => stack.overall_status === 'running').length;
-    const totalServices = stacks.reduce((acc, stack) => acc + (stack.service_status_summary?.total || stack.service_count), 0);
-    const runningServices = stacks.reduce((acc, stack) => acc + (stack.service_status_summary?.running || 0), 0);
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Stacks - ${server.display_name}`} />
 
             <div className="space-y-6">
                 {/* Header Section */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
-                            <Layers3 className="h-5 w-5 text-primary" />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
+                            <Layers3 className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold">{server.display_name} Stacks</h1>
+                            <h1 className="text-3xl font-bold">{server.display_name} Stacks</h1>
                             <p className="font-mono text-sm text-muted-foreground">
                                 {server.https ? 'https' : 'http'}://{server.hostname}:{server.port}
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshStacks} disabled={isRefreshing} variant="outline">
-                        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <Button onClick={refreshStacks} disabled={isRefreshing} size="lg" className="gap-2">
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
@@ -170,62 +181,74 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                 {/* Stats Overview */}
                 {stacks.length > 0 && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                                        <Layers3 className="h-4 w-4 text-blue-500" />
-                                    </div>
+                        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Total Stacks</p>
-                                        <p className="text-2xl font-bold">{stacks.length}</p>
+                                        <p className="text-sm font-medium text-muted-foreground">Total Stacks</p>
+                                        <p className="text-3xl font-bold">{filteredAndSortedStacks.length}</p>
+                                    </div>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                        <Layers3 className="h-5 w-5 text-primary" />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-                                        <Activity className="h-4 w-4 text-green-500" />
-                                    </div>
+                        <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-green-500/10 shadow-sm">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Running</p>
-                                        <p className="text-2xl font-bold text-green-500">{runningStacks}</p>
+                                        <p className="text-sm font-medium text-muted-foreground">Running</p>
+                                        <p className="text-3xl font-bold text-green-600">{runningStacks}</p>
+                                    </div>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                                        <Activity className="h-5 w-5 text-green-500" />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
-                                        <Container className="h-4 w-4 text-orange-500" />
-                                    </div>
+                        <Card className="border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-orange-500/10 shadow-sm">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Services</p>
-                                        <p className="text-2xl font-bold">
-                                            {runningServices}
-                                            <span className="text-sm text-muted-foreground">/{totalServices}</span>
+                                        <p className="text-sm font-medium text-muted-foreground">Services</p>
+                                        <p className="text-3xl font-bold">
+                                            <span className="text-orange-600">{runningServices}</span>
+                                            <span className="text-muted-foreground">/{totalServices}</span>
                                         </p>
                                     </div>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                                        <Container className="h-5 w-5 text-orange-500" />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
-                                        <Clock className="h-4 w-4 text-purple-500" />
-                                    </div>
+                        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-purple-500/10 shadow-sm">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Last Updated</p>
-                                        <p className="text-sm font-medium">{lastRefresh.toLocaleTimeString()}</p>
+                                        <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
+                                        <p className="text-lg font-semibold">{lastRefresh.toLocaleTimeString()}</p>
+                                    </div>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+                                        <Clock className="h-5 w-5 text-purple-500" />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
+                )}
+
+                {stacks.length > 0 && (
+                    <SearchAndFilters
+                        searchTerm={searchTerm}
+                        sortOption={sortOption}
+                        filterStatus={filterStatus}
+                        uniqueStatuses={uniqueStatuses}
+                        onSearchChange={setSearchTerm}
+                        onSortChange={setSortOption}
+                        onStatusFilterChange={setFilterStatus}
+                    />
                 )}
 
                 {/* Error State */}
@@ -241,174 +264,31 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                 )}
 
                 {/* Empty State */}
-                {stacks.length === 0 && !error ? (
+                {filteredAndSortedStacks.length === 0 && !error ? (
                     <Card className="p-12 text-center">
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
                             <Container className="h-12 w-12 text-muted-foreground" />
                         </div>
                         <h3 className="mb-3 text-xl font-semibold">No Stacks Found</h3>
                         <p className="mx-auto mb-6 max-w-md text-muted-foreground">
-                            No Docker Compose stacks are currently running on this server. Deploy some containers to get started.
+                            {searchTerm || filterStatus !== 'all'
+                                ? 'No stacks match your current filters. Try adjusting your search or filters.'
+                                : 'No Docker Compose stacks are currently running on this server. Deploy some containers to get started.'}
                         </p>
-                        <Button onClick={refreshStacks} variant="outline">
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Refresh
-                        </Button>
+                        <div className="flex justify-center gap-3">
+                            <Button onClick={refreshStacks} variant="outline">
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Refresh
+                            </Button>
+                            <Button variant="secondary" onClick={clearFilters}>
+                                Clear Filters
+                            </Button>
+                        </div>
                     </Card>
                 ) : (
                     <div className="space-y-6">
-                        {stacks.map((stack) => (
-                            <Card
-                                key={stack.name}
-                                className="group border-border/30 bg-gradient-to-br from-card via-card to-muted/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                            >
-                                <Link href={`/servers/${server.id}/stacks/${stack.name}`} className="block">
-                                    <CardHeader className="pb-6">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
-                                                    <Container className="h-5 w-5 text-primary" />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className="flex items-center gap-3 text-lg transition-colors group-hover:text-primary">
-                                                        {stack.name}
-                                                        <StackStatusBadge stack={stack} />
-                                                    </CardTitle>
-                                                    <p className="mt-1 font-mono text-sm text-muted-foreground">{stack.path}</p>
-                                                </div>
-                                            </div>
-                                            <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="pt-2">
-                                        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                                            {/* Services */}
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Container className="h-4 w-4 text-primary" />
-                                                    <span className="text-sm font-semibold">Services ({stack.service_count})</span>
-                                                    {stack.service_status_summary && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {stack.service_status_summary.running}/{stack.service_status_summary.total} running
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {stack.service_names.slice(0, 3).map((service) => {
-                                                        const serviceStatus = findServiceStatus(stack, service);
-                                                        const isRunning = serviceStatus?.state === 'running';
-                                                        const displayState = serviceStatus?.state || (stack.isLoadingStatus ? 'loading' : 'stopped');
-                                                        const serviceConfig = stack.services[service];
-                                                        const imageName = serviceConfig?.image || 'Unknown';
-
-                                                        return (
-                                                            <div
-                                                                key={service}
-                                                                className="space-y-2 rounded-xl border border-border/30 bg-gradient-to-r from-muted/40 to-muted/20 p-3"
-                                                            >
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="truncate text-sm font-medium">{service}</span>
-                                                                    {stack.isLoadingStatus ? (
-                                                                        <Badge variant="outline" className="bg-muted/50 text-xs">
-                                                                            <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
-                                                                            Loading
-                                                                        </Badge>
-                                                                    ) : (
-                                                                        <Badge
-                                                                            variant={isRunning ? 'default' : 'outline'}
-                                                                            className={`text-xs ${isRunning ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400' : 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400'}`}
-                                                                        >
-                                                                            {displayState}
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <div className="truncate font-mono text-xs text-muted-foreground" title={imageName}>
-                                                                        {imageName}
-                                                                    </div>
-                                                                    {serviceStatus?.networks && serviceStatus.networks.length > 0 && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <Network className="h-2.5 w-2.5 text-blue-500" />
-                                                                            <span className="truncate font-mono text-xs text-blue-600 dark:text-blue-400">
-                                                                                {serviceStatus.networks.map(network => network.ip_address).filter(Boolean).join(', ')}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {stack.service_names.length > 3 && (
-                                                        <p className="py-2 text-center text-xs text-muted-foreground">
-                                                            +{stack.service_names.length - 3} more services...
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Port Mappings */}
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Network className="h-4 w-4 text-blue-500" />
-                                                    <span className="text-sm font-semibold">Ports ({stack.port_mappings.length})</span>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {stack.port_mappings.slice(0, 3).map((port, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="flex items-center justify-between rounded-xl border border-border/30 bg-gradient-to-r from-muted/40 to-muted/20 p-3"
-                                                        >
-                                                            <span className="font-mono text-sm">
-                                                                {port.published}:{port.target}
-                                                            </span>
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {port.protocol}
-                                                            </Badge>
-                                                        </div>
-                                                    ))}
-                                                    {stack.port_mappings.length > 3 && (
-                                                        <p className="py-2 text-center text-xs text-muted-foreground">
-                                                            +{stack.port_mappings.length - 3} more ports...
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Volume Mappings */}
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <HardDrive className="h-4 w-4 text-orange-500" />
-                                                    <span className="text-sm font-semibold">Volumes ({stack.volume_mappings.length})</span>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {stack.volume_mappings.slice(0, 2).map((volume, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="flex items-center justify-between rounded-xl border border-border/30 bg-gradient-to-r from-muted/40 to-muted/20 p-3"
-                                                        >
-                                                            <div className="truncate font-mono text-sm">
-                                                                <span className="text-muted-foreground">{volume.source?.split('/').pop()}</span>
-                                                                <span className="mx-2">→</span>
-                                                                <span>{volume.target?.split('/').pop()}</span>
-                                                            </div>
-                                                            {volume.read_only && (
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    RO
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                    {stack.volume_mappings.length > 2 && (
-                                                        <p className="py-2 text-center text-xs text-muted-foreground">
-                                                            +{stack.volume_mappings.length - 2} more volumes...
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Link>
-                            </Card>
+                        {filteredAndSortedStacks.map((stack) => (
+                            <StackCard key={stack.name} stack={stack} server={server} />
                         ))}
                     </div>
                 )}
