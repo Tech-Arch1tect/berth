@@ -1,10 +1,6 @@
-import type { Stack } from '@/types/entities';
+import type { Stack, StackLike } from '@/types/entities';
 
-/**
- * Find a service's runtime status from the stack's service status list
- * Uses precise regex matching to prevent cross-service status issues
- */
-export function findServiceStatus(stack: Stack, serviceName: string) {
+export function findServiceStatus(stack: StackLike, serviceName: string) {
     return stack.service_status?.services?.find((s) => {
         const containerName = s.name.toLowerCase();
         const searchService = serviceName.toLowerCase();
@@ -15,10 +11,6 @@ export function findServiceStatus(stack: Stack, serviceName: string) {
     });
 }
 
-/**
- * Calculate service status summary for a stack
- * Accounts for services not appearing in runtime status (they are stopped)
- */
 export function calculateServiceStatusSummary(
     stack: Stack,
     serviceStatus: {
@@ -39,7 +31,7 @@ export function calculateServiceStatusSummary(
 
     if (serviceStatus && serviceStatus.services && Array.isArray(serviceStatus.services)) {
         const running = serviceStatus.services.filter((s) => s.state === 'running').length;
-        const total = stack.service_count; // Use defined services count, not runtime count
+        const total = stack.service_count;
         const stopped = total - running;
 
         statusSummary = { running, stopped, total };
@@ -59,11 +51,7 @@ export function calculateServiceStatusSummary(
     return { statusSummary, overallStatus };
 }
 
-/**
- * Get display state for a service
- * Returns 'stopped' if service doesn't appear in runtime status
- */
-export function getServiceDisplayState(stack: Stack, serviceName: string) {
+export function getServiceDisplayState(stack: StackLike, serviceName: string) {
     const serviceStatus = findServiceStatus(stack, serviceName);
     const isRunning = serviceStatus?.state === 'running';
     const displayState = serviceStatus?.state || 'stopped';

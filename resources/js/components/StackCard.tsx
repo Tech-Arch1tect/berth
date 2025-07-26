@@ -49,7 +49,10 @@ export default function StackCard({ stack, server }: StackCardProps) {
                                 </Badge>
                             </div>
 
-                            <ServiceStatusProgressBar serviceStatusSummary={stack.service_status_summary} isLoading={stack.isLoadingStatus} />
+                            <ServiceStatusProgressBar
+                                serviceStatusSummary={stack.service_status_summary}
+                                isLoading={stack.isLoadingStatus ?? false}
+                            />
 
                             <ServiceGrid stack={stack} />
                         </div>

@@ -416,30 +416,33 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
     };
 
     return (
-        <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-lg">
+        <Card className="shadow-sm">
             <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                    <div className="space-y-2">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="space-y-3">
                         <CardTitle className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
-                                <FolderOpen className="h-4 w-4 text-primary" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20">
+                                <FolderOpen className="h-5 w-5 text-blue-600" />
                             </div>
-                            <span className="text-lg">{title}</span>
-                            {files && (
-                                <Badge variant="outline" className="text-xs">
-                                    {files.files.length} items
-                                </Badge>
-                            )}
+                            <div>
+                                <span className="text-xl">{title}</span>
+                                {files && (
+                                    <p className="text-sm font-normal text-muted-foreground">
+                                        {files.files.length} items in {currentPath === '.' ? 'root' : currentPath}
+                                    </p>
+                                )}
+                            </div>
                         </CardTitle>
 
-                        {/* Breadcrumb Navigation */}
                         <div className="flex items-center gap-2 text-sm">
                             <Home className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                                 {getBreadcrumbs().map((part, index) => (
                                     <div key={index} className="flex items-center gap-1">
                                         {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-                                        <span className="rounded-md bg-muted/30 px-2 py-1 font-mono text-xs">{part}</span>
+                                        <Badge variant="secondary" className="font-mono text-xs">
+                                            {part}
+                                        </Badge>
                                     </div>
                                 ))}
                             </div>
@@ -447,11 +450,15 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button onClick={() => fetchFiles(currentPath)} disabled={isLoading} variant="outline" size="lg" className="gap-2">
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
                         {canWrite && (
                             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="transition-all hover:scale-105">
-                                        <Plus className="mr-2 h-4 w-4" />
+                                    <Button size="lg" className="gap-2">
+                                        <Plus className="h-4 w-4" />
                                         Create File
                                     </Button>
                                 </DialogTrigger>
@@ -467,7 +474,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="flex flex-1 flex-col space-y-6 overflow-hidden">
-                                        {/* Mode Toggle */}
                                         <div className="flex items-center justify-center space-x-1 rounded-lg bg-muted p-1">
                                             <Button
                                                 variant={createMode === 'text' ? 'default' : 'ghost'}
@@ -495,7 +501,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                             </Button>
                                         </div>
 
-                                        {/* Error Display */}
                                         {createError && (
                                             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
                                                 <div className="flex items-center gap-2">
@@ -659,7 +664,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                     setCreateDialogOpen(true);
                 }}
             >
-                {/* Drag and Drop Overlay */}
                 {dragOver && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5">
                         <div className="text-center">
@@ -692,7 +696,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                     </div>
                 ) : files ? (
                     <div className="space-y-6">
-                        {/* Navigation Controls */}
                         {currentPath !== '.' && (
                             <div className="flex items-center gap-2">
                                 <Button onClick={navigateUp} variant="outline" size="sm" className="transition-all hover:scale-105">
@@ -702,7 +705,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                             </div>
                         )}
 
-                        {/* File List */}
                         <div className="space-y-2">
                             {files.files.length === 0 ? (
                                 <div className="py-12 text-center">
@@ -715,7 +717,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                             ) : (
                                 files.files
                                     .sort((a, b) => {
-                                        // Directories first, then files
                                         if (a.isDir && !b.isDir) return -1;
                                         if (!a.isDir && b.isDir) return 1;
                                         return a.name.localeCompare(b.name);
@@ -827,7 +828,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                 )}
             </CardContent>
 
-            {/* File Viewer */}
             {viewingFile && (
                 <FileViewer
                     serverId={serverId}
@@ -842,7 +842,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                 />
             )}
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -880,7 +879,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                 </DialogContent>
             </Dialog>
 
-            {/* Rename Dialog */}
             <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
                 <DialogContent>
                     <DialogHeader>

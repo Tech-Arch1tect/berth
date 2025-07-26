@@ -44,11 +44,60 @@ export interface ContainerInfo {
     networks: NetworkInfo[];
 }
 
-export interface Stack {
+export interface NetworkRuntimeInfo {
     name: string;
-    path: string;
+    id: string;
+    driver: string;
+    scope: string;
+    internal: boolean;
+    ipam?: {
+        Driver?: string;
+        Options?: Record<string, unknown> | null;
+        Config?: Array<{
+            Subnet?: string;
+            Gateway?: string;
+            [key: string]: unknown;
+        }>;
+    };
+    options?: unknown[];
+    labels?: Record<string, string>;
+    created?: string;
+}
+
+export interface NetworkComposeConfig {
+    name: string;
+    ipam?: unknown;
+    [key: string]: unknown;
+}
+
+export interface StackNetwork {
+    compose_config?: NetworkComposeConfig;
+    runtime_info?: NetworkRuntimeInfo;
+    [key: string]: unknown;
+}
+
+export interface ServiceStatus {
+    stack: string;
+    services: Array<{
+        id: string;
+        name: string;
+        command: string;
+        state: string;
+        ports: string;
+        image: string;
+        networks: NetworkInfo[];
+    }> | null;
+}
+
+export interface StackLike {
+    name: string;
+    service_status?: ServiceStatus;
     services: Record<string, Service>;
-    networks: Record<string, unknown>;
+}
+
+export interface Stack extends StackLike {
+    path: string;
+    networks: Record<string, StackNetwork>;
     parsed_successfully: boolean;
     service_count: number;
     service_names: string[];
@@ -65,18 +114,6 @@ export interface Stack {
         type: string;
         read_only: boolean;
     }>;
-    service_status?: {
-        stack: string;
-        services: Array<{
-            id: string;
-            name: string;
-            command: string;
-            state: string;
-            ports: string;
-            image: string;
-            networks: NetworkInfo[];
-        }> | null;
-    };
     running_services_count?: number;
     total_services_count?: number;
     service_status_summary?: {
