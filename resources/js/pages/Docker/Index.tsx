@@ -9,7 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import type { Server } from '@/types/entities';
 import { apiDelete, apiGet, apiPost } from '@/utils/api';
 import { Head } from '@inertiajs/react';
-import { Activity, AlertTriangle, Database, HardDrive, Image, Info, Network, RefreshCw, Server as ServerIcon, Trash2, Volume } from 'lucide-react';
+import { Activity, AlertTriangle, Database, HardDrive, Image, Info, Network, RefreshCw, Server as ServerIcon, Settings, Trash2, Volume, Zap } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -172,6 +172,8 @@ export default function DockerIndex({ server }: Props) {
     const [isPruningImages, setIsPruningImages] = useState(false);
     const [isPruningVolumes, setIsPruningVolumes] = useState(false);
     const [isPruningNetworks, setIsPruningNetworks] = useState(false);
+    const [isPruningBuildCache, setIsPruningBuildCache] = useState(false);
+    const [isPerformingSystemPrune, setIsPerformingSystemPrune] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Servers', href: '/dashboard' },
@@ -399,6 +401,58 @@ export default function DockerIndex({ server }: Props) {
         }
     }, [server.id, fetchNetworks]);
 
+    const pruneBuildCache = useCallback(async (all = false, keepStorage?: string) => {
+        setIsPruningBuildCache(true);
+        try {
+            const body: Record<string, string> = {};
+            if (all) {
+                body.all = 'true';
+            }
+            if (keepStorage) {
+                body['keep-storage'] = keepStorage;
+            }
+
+            const response = await apiPost(`/api/servers/${server.id}/docker/buildcache/prune`, body);
+            if (response.success) {
+                await fetchDiskUsage();
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Failed to prune build cache');
+            }
+        } catch (error) {
+            console.error('Failed to prune build cache:', error);
+            throw error;
+        } finally {
+            setIsPruningBuildCache(false);
+        }
+    }, [server.id, fetchDiskUsage]);
+
+    const systemPrune = useCallback(async (all = false, volumes = false) => {
+        setIsPerformingSystemPrune(true);
+        try {
+            const body: Record<string, string> = {};
+            if (all) {
+                body.all = 'true';
+            }
+            if (volumes) {
+                body.volumes = 'true';
+            }
+
+            const response = await apiPost(`/api/servers/${server.id}/docker/system/prune`, body);
+            if (response.success) {
+                await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages(), fetchVolumes(), fetchNetworks()]);
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Failed to perform system prune');
+            }
+        } catch (error) {
+            console.error('Failed to perform system prune:', error);
+            throw error;
+        } finally {
+            setIsPerformingSystemPrune(false);
+        }
+    }, [server.id, fetchSystemInfo, fetchDiskUsage, fetchImages, fetchVolumes, fetchNetworks]);
+
     const refreshData = useCallback(async () => {
         await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages(), fetchVolumes(), fetchNetworks()]);
     }, [fetchSystemInfo, fetchDiskUsage, fetchImages, fetchVolumes, fetchNetworks]);
@@ -453,8 +507,8 @@ export default function DockerIndex({ server }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks}>
-                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks) ? 'animate-spin' : ''}`} />
+                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks || isPruningBuildCache || isPerformingSystemPrune}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks || isPruningBuildCache || isPerformingSystemPrune) ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
@@ -476,6 +530,10 @@ export default function DockerIndex({ server }: Props) {
                         <TabsTrigger value="networks" className="flex items-center gap-2">
                             <Network className="h-4 w-4" />
                             Networks ({networks.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="maintenance" className="flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            Maintenance
                         </TabsTrigger>
                     </TabsList>
 
@@ -971,6 +1029,139 @@ export default function DockerIndex({ server }: Props) {
                                         </div>
                                     </div>
                                 )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="maintenance" className="space-y-6">
+                        {/* Build Cache Management */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Database className="h-5 w-5" />
+                                        <CardTitle>Build Cache</CardTitle>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => pruneBuildCache(false)}
+                                            disabled={isPruningBuildCache}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Trash2 className={`mr-2 h-4 w-4 ${isPruningBuildCache ? 'animate-spin' : ''}`} />
+                                            Prune Unused
+                                        </Button>
+                                        <Button
+                                            onClick={() => pruneBuildCache(true)}
+                                            disabled={isPruningBuildCache}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <AlertTriangle className={`mr-2 h-4 w-4 ${isPruningBuildCache ? 'animate-spin' : ''}`} />
+                                            Prune All
+                                        </Button>
+                                    </div>
+                                </div>
+                                <CardDescription>
+                                    Clean up Docker build cache to free disk space
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="rounded-lg border p-4 bg-muted/25">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <Database className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <h4 className="font-medium">Build Cache Storage</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Current build cache usage: {diskUsage ? formatBytes(diskUsageStats.buildCache) : 'Loading...'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            <p>• <strong>Prune Unused:</strong> Remove only unused build cache entries</p>
+                                            <p>• <strong>Prune All:</strong> Remove all build cache entries (more aggressive cleanup)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* System Prune */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Zap className="h-5 w-5" />
+                                        <CardTitle>System Prune</CardTitle>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => systemPrune(false, false)}
+                                            disabled={isPerformingSystemPrune}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Trash2 className={`mr-2 h-4 w-4 ${isPerformingSystemPrune ? 'animate-spin' : ''}`} />
+                                            System Prune
+                                        </Button>
+                                        <Button
+                                            onClick={() => systemPrune(false, true)}
+                                            disabled={isPerformingSystemPrune}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Volume className={`mr-2 h-4 w-4 ${isPerformingSystemPrune ? 'animate-spin' : ''}`} />
+                                            Prune + Volumes
+                                        </Button>
+                                        <Button
+                                            onClick={() => systemPrune(true, true)}
+                                            disabled={isPerformingSystemPrune}
+                                            variant="destructive"
+                                            size="sm"
+                                        >
+                                            <AlertTriangle className={`mr-2 h-4 w-4 ${isPerformingSystemPrune ? 'animate-spin' : ''}`} />
+                                            Prune All + Volumes
+                                        </Button>
+                                    </div>
+                                </div>
+                                <CardDescription>
+                                    Comprehensive cleanup of Docker resources across the system
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="rounded-lg border p-4 bg-muted/25">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <Zap className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <h4 className="font-medium">Current Resource Usage</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Total Docker storage: {diskUsage ? formatBytes(diskUsageStats.total) : 'Loading...'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground space-y-1">
+                                            <p>• <strong>System Prune:</strong> Remove stopped containers, unused networks, and dangling images</p>
+                                            <p>• <strong>Prune + Volumes:</strong> Also remove unused anonymous volumes</p>
+                                            <p>• <strong>Prune All + Volumes:</strong> Remove all unused images, not just dangling ones</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                                            <div>
+                                                <h4 className="font-medium text-destructive mb-1">Warning</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    System prune operations will permanently delete Docker resources. 
+                                                    Make sure you don't need any stopped containers, unused images, or anonymous volumes before proceeding.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>

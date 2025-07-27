@@ -627,4 +627,134 @@ class DockerController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Prune Docker build cache
+     */
+    public function pruneBuildCache(Request $request, Server $server)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_buildcache_prune', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to prune Docker build cache on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/buildcache/prune";
+            
+            $queryParams = [];
+            if ($request->has('all')) {
+                $queryParams['all'] = $request->boolean('all') ? 'true' : 'false';
+            }
+            if ($request->has('keep-storage')) {
+                $queryParams['keep-storage'] = $request->get('keep-storage');
+            }
+            
+            if (!empty($queryParams)) {
+                $url .= '?' . http_build_query($queryParams);
+            }
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->post($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_buildcache_pruned', $server, [
+                'action' => 'prune_buildcache',
+                'space_reclaimed' => $result['space_reclaimed'] ?? 0,
+                'all_cache' => $request->boolean('all'),
+                'keep_storage' => $request->get('keep-storage'),
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_buildcache_prune_failed', $server, [
+                'action' => 'prune_buildcache',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to prune Docker build cache: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * System-wide Docker prune
+     */
+    public function systemPrune(Request $request, Server $server)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_system_prune', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to perform system prune on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/system/prune";
+            
+            $queryParams = [];
+            if ($request->has('all')) {
+                $queryParams['all'] = $request->boolean('all') ? 'true' : 'false';
+            }
+            if ($request->has('volumes')) {
+                $queryParams['volumes'] = $request->boolean('volumes') ? 'true' : 'false';
+            }
+            
+            if (!empty($queryParams)) {
+                $url .= '?' . http_build_query($queryParams);
+            }
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->post($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_system_pruned', $server, [
+                'action' => 'system_prune',
+                'space_reclaimed' => $result['space_reclaimed'] ?? 0,
+                'containers_deleted' => count($result['containers_deleted'] ?? []),
+                'images_deleted' => count($result['images_deleted'] ?? []),
+                'networks_deleted' => count($result['networks_deleted'] ?? []),
+                'volumes_deleted' => count($result['volumes_deleted'] ?? []),
+                'all' => $request->boolean('all'),
+                'volumes' => $request->boolean('volumes'),
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_system_prune_failed', $server, [
+                'action' => 'system_prune',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to perform Docker system prune: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

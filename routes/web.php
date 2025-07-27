@@ -75,6 +75,8 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::get('api/servers/{server}/docker/networks', [DockerController::class, 'listNetworks'])->name('api.docker.networks.list');
     Route::delete('api/servers/{server}/docker/networks/{networkId}', [DockerController::class, 'deleteNetwork'])->name('api.docker.networks.delete');
     Route::post('api/servers/{server}/docker/networks/prune', [DockerController::class, 'pruneNetworks'])->name('api.docker.networks.prune');
+    Route::post('api/servers/{server}/docker/buildcache/prune', [DockerController::class, 'pruneBuildCache'])->name('api.docker.buildcache.prune');
+    Route::post('api/servers/{server}/docker/system/prune', [DockerController::class, 'systemPrune'])->name('api.docker.system.prune');
     
     // Two-factor authentication routes
     Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
