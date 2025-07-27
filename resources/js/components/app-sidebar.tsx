@@ -15,7 +15,7 @@ import {
 import { type NavItem } from '@/types';
 import type { Server as ServerType } from '@/types/entities';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Server, Shield, Users } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, ScrollText, Server, Shield, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -41,6 +41,11 @@ const adminNavItems: NavItem[] = [
         title: 'Servers',
         href: '/admin/servers',
         icon: Server,
+    },
+    {
+        title: 'Audit Logs',
+        href: '/admin/audit-logs',
+        icon: ScrollText,
     },
 ];
 
