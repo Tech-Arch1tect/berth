@@ -61,7 +61,7 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
                 user.roles.map((r) => r.name),
             );
         }
-    }, [user, editForm]);
+    }, [user]);
 
     return (
         <Dialog open={!!user} onOpenChange={onClose}>
