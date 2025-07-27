@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface Role {
     id: number;
@@ -25,9 +25,12 @@ interface EditUserDialogProps {
 }
 
 export default function EditUserDialog({ user, onClose, roles }: EditUserDialogProps) {
+    const initialRoles = user?.roles.map((r) => r.name) || ([] as string[]);
     const editForm = useForm({
-        roles: user?.roles.map((r) => r.name) || ([] as string[]),
+        roles: initialRoles,
     });
+    
+    const editFormRef = useRef(editForm);
 
     const handleEditUser = (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,9 +57,9 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
     };
 
     // Reset form data when user changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (user) {
-            editForm.setData(
+            editFormRef.current.setData(
                 'roles',
                 user.roles.map((r) => r.name),
             );
