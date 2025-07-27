@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import type { Stack } from '@/types/entities';
-import { findServiceStatus } from '@/utils/stack-utils';
+import { getServiceDisplayState } from '@/utils/stack-utils';
 
 interface ServiceGridProps {
     stack: Stack & { isLoadingStatus?: boolean };
@@ -24,9 +24,7 @@ export default function ServiceGrid({ stack }: ServiceGridProps) {
             ) : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {stack.service_names.slice(0, 12).map((service) => {
-                        const serviceStatus = findServiceStatus(stack, service);
-                        const isRunning = serviceStatus?.state === 'running';
-                        const displayState = serviceStatus?.state || 'stopped';
+                        const { isRunning, displayState, serviceStatus } = getServiceDisplayState(stack, service);
                         const serviceConfig = stack.services[service];
                         const imageName = serviceConfig?.image || 'Unknown';
 

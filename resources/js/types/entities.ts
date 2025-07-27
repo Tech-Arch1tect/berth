@@ -89,9 +89,29 @@ export interface ServiceStatus {
     }> | null;
 }
 
+export interface ServiceStatus {
+    stack: string;
+    services: Array<{
+        id: string;
+        name: string;
+        command: string;
+        state: string;
+        ports: string;
+        image: string;
+        networks: NetworkInfo[];
+    }> | null;
+}
+
+export interface ServiceStatusSummary {
+    running: number;
+    stopped: number;
+    total: number;
+}
+
 export interface StackLike {
     name: string;
     service_status?: ServiceStatus;
+    service_status_summary?: ServiceStatusSummary;
     services: Record<string, Service>;
 }
 

@@ -1,16 +1,5 @@
 import type { Stack, StackLike } from '@/types/entities';
 
-export function findServiceStatus(stack: StackLike, serviceName: string) {
-    return stack.service_status?.services?.find((s) => {
-        const containerName = s.name.toLowerCase();
-        const searchService = serviceName.toLowerCase();
-        const stackNameLower = stack.name.toLowerCase();
-        const exactPattern = `${stackNameLower}-${searchService}-\\d+$`;
-        const regex = new RegExp(exactPattern);
-        return regex.test(containerName);
-    });
-}
-
 export function calculateServiceStatusSummary(
     stack: Stack,
     serviceStatus: {
@@ -52,9 +41,14 @@ export function calculateServiceStatusSummary(
 }
 
 export function getServiceDisplayState(stack: StackLike, serviceName: string) {
-    const serviceStatus = findServiceStatus(stack, serviceName);
-    const isRunning = serviceStatus?.state === 'running';
-    const displayState = serviceStatus?.state || 'stopped';
-
-    return { isRunning, displayState, serviceStatus };
+    const isRunning = stack.service_status_summary?.running !== undefined && stack.service_status_summary.running > 0;
+    return {
+        isRunning,
+        displayState: isRunning ? 'running' : 'stopped',
+        serviceStatus: stack.service_status?.services?.find((s) => {
+            const containerName = s.name.toLowerCase();
+            const searchService = serviceName.toLowerCase();
+            return containerName.includes(searchService);
+        }),
+    };
 }
