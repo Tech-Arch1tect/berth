@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import type { Server } from '@/types/entities';
-import { apiGet } from '@/utils/api';
+import { apiDelete, apiGet, apiPost } from '@/utils/api';
 import { Head } from '@inertiajs/react';
-import { Activity, Database, HardDrive, Info, RefreshCw, Server as ServerIcon } from 'lucide-react';
+import { Activity, AlertTriangle, Database, HardDrive, Image, Info, RefreshCw, Server as ServerIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -39,6 +39,16 @@ interface DockerSystemInfo {
     OperatingSystem: string;
     OSType: string;
     IndexServerAddress: string;
+}
+
+interface DockerImage {
+    id: string;
+    repo_tags: string[];
+    repo_digests: string[];
+    size: number;
+    created: number;
+    labels: Record<string, string>;
+    containers: number;
 }
 
 interface DockerDiskUsage {
@@ -123,10 +133,15 @@ interface Props {
 export default function DockerIndex({ server }: Props) {
     const [systemInfo, setSystemInfo] = useState<DockerSystemInfo | null>(null);
     const [diskUsage, setDiskUsage] = useState<DockerDiskUsage | null>(null);
+    const [images, setImages] = useState<DockerImage[]>([]);
     const [isLoadingSystemInfo, setIsLoadingSystemInfo] = useState(true);
     const [isLoadingDiskUsage, setIsLoadingDiskUsage] = useState(true);
+    const [isLoadingImages, setIsLoadingImages] = useState(true);
     const [systemInfoError, setSystemInfoError] = useState<string | null>(null);
     const [diskUsageError, setDiskUsageError] = useState<string | null>(null);
+    const [imagesError, setImagesError] = useState<string | null>(null);
+    const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
+    const [isPruningImages, setIsPruningImages] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Servers', href: '/dashboard' },
@@ -168,9 +183,74 @@ export default function DockerIndex({ server }: Props) {
         }
     }, [server.id]);
 
+    const fetchImages = useCallback(async () => {
+        setIsLoadingImages(true);
+        setImagesError(null);
+        try {
+            const response = await apiGet(`/api/servers/${server.id}/docker/images`);
+            if (response.success) {
+                setImages(response.data as DockerImage[]);
+            } else {
+                setImagesError(response.error || 'Failed to fetch images');
+            }
+        } catch (error) {
+            setImagesError(error instanceof Error ? error.message : 'Unknown error occurred');
+        } finally {
+            setIsLoadingImages(false);
+        }
+    }, [server.id]);
+
+    const deleteImage = useCallback(async (imageId: string, force = false) => {
+        setDeletingImages(prev => new Set(prev).add(imageId));
+        try {
+            const queryParams = new URLSearchParams();
+            if (force) {
+                queryParams.set('force', 'true');
+            }
+            
+            const url = `/api/servers/${server.id}/docker/images/${encodeURIComponent(imageId)}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+            
+            const response = await apiDelete(url);
+            if (response.success) {
+                await fetchImages();
+            } else {
+                throw new Error(response.error || 'Failed to delete image');
+            }
+        } catch (error) {
+            console.error('Failed to delete image:', error);
+            throw error;
+        } finally {
+            setDeletingImages(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(imageId);
+                return newSet;
+            });
+        }
+    }, [server.id, fetchImages]);
+
+    const pruneImages = useCallback(async (dangling = true) => {
+        setIsPruningImages(true);
+        try {
+            const response = await apiPost(`/api/servers/${server.id}/docker/images/prune`, {
+                dangling: dangling ? 'true' : 'false',
+            });
+            if (response.success) {
+                await fetchImages();
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Failed to prune images');
+            }
+        } catch (error) {
+            console.error('Failed to prune images:', error);
+            throw error;
+        } finally {
+            setIsPruningImages(false);
+        }
+    }, [server.id, fetchImages]);
+
     const refreshData = useCallback(async () => {
-        await Promise.all([fetchSystemInfo(), fetchDiskUsage()]);
-    }, [fetchSystemInfo, fetchDiskUsage]);
+        await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages()]);
+    }, [fetchSystemInfo, fetchDiskUsage, fetchImages]);
 
     useEffect(() => {
         refreshData();
@@ -222,8 +302,8 @@ export default function DockerIndex({ server }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage}>
-                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage) ? 'animate-spin' : ''}`} />
+                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages) ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
@@ -233,6 +313,10 @@ export default function DockerIndex({ server }: Props) {
                         <TabsTrigger value="overview" className="flex items-center gap-2">
                             <Activity className="h-4 w-4" />
                             System Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="images" className="flex items-center gap-2">
+                            <Image className="h-4 w-4" />
+                            Images ({images.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -395,6 +479,126 @@ export default function DockerIndex({ server }: Props) {
                                         </div>
                                     </div>
                                 ) : null}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="images" className="space-y-6">
+                        {/* Images Management */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Image className="h-5 w-5" />
+                                        <CardTitle>Docker Images</CardTitle>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => pruneImages(true)}
+                                            disabled={isPruningImages}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Trash2 className={`mr-2 h-4 w-4 ${isPruningImages ? 'animate-spin' : ''}`} />
+                                            Prune Dangling
+                                        </Button>
+                                        <Button
+                                            onClick={() => pruneImages(false)}
+                                            disabled={isPruningImages}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <AlertTriangle className={`mr-2 h-4 w-4 ${isPruningImages ? 'animate-spin' : ''}`} />
+                                            Prune All Unused
+                                        </Button>
+                                    </div>
+                                </div>
+                                <CardDescription>
+                                    Manage Docker images on this server
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingImages ? (
+                                    <div className="space-y-3">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <div key={i} className="flex items-center space-x-4">
+                                                <Skeleton className="h-4 w-4" />
+                                                <Skeleton className="h-4 flex-1" />
+                                                <Skeleton className="h-4 w-20" />
+                                                <Skeleton className="h-4 w-16" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : imagesError ? (
+                                    <div className="text-destructive">{imagesError}</div>
+                                ) : images.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        No Docker images found on this server
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="rounded-md border">
+                                            <div className="grid grid-cols-12 gap-4 p-3 font-medium text-sm bg-muted/50">
+                                                <div className="col-span-5">Repository:Tag</div>
+                                                <div className="col-span-2">Size</div>
+                                                <div className="col-span-2">Created</div>
+                                                <div className="col-span-2">In Use</div>
+                                                <div className="col-span-1">Actions</div>
+                                            </div>
+                                            {images.map((image) => (
+                                                <div
+                                                    key={image.id}
+                                                    className="grid grid-cols-12 gap-4 p-3 border-t items-center hover:bg-muted/25"
+                                                >
+                                                    <div className="col-span-5">
+                                                        <div className="space-y-1">
+                                                            {image.repo_tags && image.repo_tags.length > 0 ? (
+                                                                image.repo_tags.map((tag, idx) => (
+                                                                    <div key={idx} className="text-sm font-mono">
+                                                                        {tag}
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="text-sm font-mono text-muted-foreground">
+                                                                    &lt;none&gt;:{image.id.substring(7, 19)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        {formatBytes(image.size)}
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        {new Date(image.created * 1000).toLocaleDateString()}
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        <div className="flex items-center gap-1">
+                                                            <ServerIcon className="h-3 w-3" />
+                                                            {image.containers === 0 ? (
+                                                                <span className="text-muted-foreground">Not in use</span>
+                                                            ) : (
+                                                                <span className={image.containers > 0 ? "text-green-600 font-medium" : ""}>
+                                                                    {image.containers} container{image.containers !== 1 ? 's' : ''}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-1">
+                                                        <Button
+                                                            onClick={() => deleteImage(image.id)}
+                                                            disabled={deletingImages.has(image.id)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className={`h-3 w-3 ${deletingImages.has(image.id) ? 'animate-spin' : ''}`} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

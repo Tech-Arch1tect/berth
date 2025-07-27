@@ -66,6 +66,9 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     Route::get('servers/{server}/docker', [DockerController::class, 'index'])->name('docker.index');
     Route::get('api/servers/{server}/docker/system/info', [DockerController::class, 'getSystemInfo'])->name('api.docker.system.info');
     Route::get('api/servers/{server}/docker/system/df', [DockerController::class, 'getDiskUsage'])->name('api.docker.system.df');
+    Route::get('api/servers/{server}/docker/images', [DockerController::class, 'listImages'])->name('api.docker.images.list');
+    Route::delete('api/servers/{server}/docker/images/{imageId}', [DockerController::class, 'deleteImage'])->name('api.docker.images.delete');
+    Route::post('api/servers/{server}/docker/images/prune', [DockerController::class, 'pruneImages'])->name('api.docker.images.prune');
     
     // Two-factor authentication routes
     Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');

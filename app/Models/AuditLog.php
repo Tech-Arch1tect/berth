@@ -122,6 +122,12 @@ class AuditLog extends Model
             'docker_system_info_failed' => 'Docker system information fetch failed',
             'docker_disk_usage_viewed' => 'Docker disk usage viewed',
             'docker_disk_usage_failed' => 'Docker disk usage fetch failed',
+            'docker_images_viewed' => 'Docker images viewed',
+            'docker_images_list_failed' => 'Docker images list fetch failed',
+            'docker_image_deleted' => 'Docker image deleted',
+            'docker_image_delete_failed' => 'Docker image deletion failed',
+            'docker_images_pruned' => 'Docker images pruned',
+            'docker_images_prune_failed' => 'Docker images prune failed',
         ];
 
         return $eventDescriptions[$this->event] ?? ucfirst(str_replace('_', ' ', $this->event));
