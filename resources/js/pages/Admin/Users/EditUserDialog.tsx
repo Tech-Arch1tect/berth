@@ -29,7 +29,7 @@ export default function EditUserDialog({ user, onClose, roles }: EditUserDialogP
     const editForm = useForm({
         roles: initialRoles,
     });
-    
+
     const editFormRef = useRef(editForm);
 
     const handleEditUser = (e: React.FormEvent) => {

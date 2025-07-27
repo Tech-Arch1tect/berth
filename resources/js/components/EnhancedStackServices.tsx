@@ -4,7 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Stack, UserPermissions } from '@/types/entities';
 import { getServiceDisplayState } from '@/utils/stack-utils';
-import { Activity, ChevronDown, ChevronRight, Command, Container, Globe, Hammer, HardDrive, Image, Lock, Network, Play, Square } from 'lucide-react';
+import {
+    Activity,
+    ChevronDown,
+    ChevronRight,
+    Command,
+    Container,
+    Download,
+    Globe,
+    Hammer,
+    HardDrive,
+    Image,
+    Lock,
+    Network,
+    Play,
+    Square,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface EnhancedStackServicesProps {
@@ -14,6 +29,7 @@ interface EnhancedStackServicesProps {
     isRefreshing: boolean;
     onStartService: (services: string[], build?: boolean) => void;
     onStopService: (services: string[]) => void;
+    onPullService: (services: string[]) => void;
 }
 
 export default function EnhancedStackServices({
@@ -23,6 +39,7 @@ export default function EnhancedStackServices({
     isRefreshing,
     onStartService,
     onStopService,
+    onPullService,
 }: EnhancedStackServicesProps) {
     const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
@@ -99,6 +116,16 @@ export default function EnhancedStackServices({
                                 >
                                     <Square className="h-4 w-4" />
                                     Stop All
+                                </Button>
+                                <Button
+                                    onClick={() => onPullService([])}
+                                    disabled={isOperating || isRefreshing}
+                                    variant="secondary"
+                                    size="lg"
+                                    className="gap-2"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    Pull All
                                 </Button>
                             </div>
                         )}
@@ -197,6 +224,16 @@ export default function EnhancedStackServices({
                                                         >
                                                             <Square className="h-3 w-3" />
                                                             Stop
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => onPullService([serviceName])}
+                                                            disabled={isOperating || isRefreshing}
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="gap-1"
+                                                        >
+                                                            <Download className="h-3 w-3" />
+                                                            Pull
                                                         </Button>
                                                     </>
                                                 )}

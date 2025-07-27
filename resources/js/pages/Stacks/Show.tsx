@@ -85,6 +85,22 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
         [server.id, stack.name, showProgressModal],
     );
 
+    const pullStack = useCallback(
+        async (services: string[] = []) => {
+            if (showProgressModal) return;
+
+            const params = new URLSearchParams({
+                services: services.join(','),
+            });
+
+            const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/pull/stream?${params}`;
+            setProgressUrl(streamUrl);
+            setProgressTitle(`Pulling Images: ${stack.name}`);
+            setShowProgressModal(true);
+        },
+        [server.id, stack.name, showProgressModal],
+    );
+
     const handleProgressComplete = useCallback(
         (success: boolean) => {
             if (success) {
@@ -203,6 +219,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                             isRefreshing={isRefreshing}
                             onStartService={bringStackUp}
                             onStopService={bringStackDown}
+                            onPullService={pullStack}
                         />
                     </TabsContent>
                     <TabsContent value="ports" className="mt-6">

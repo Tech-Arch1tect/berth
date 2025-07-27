@@ -317,6 +317,34 @@ class StackController extends Controller
         return $this->streamComposeOperation($request, $server, $stackName, 'down');
     }
 
+    public function composePullStream(Request $request, Server $server, string $stackName)
+    {
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('stack_pull', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'stack_name' => $stackName,
+            ]);
+            return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        $services = $request->query('services', '');
+        $servicesArray = $services ? explode(',', $services) : [];
+        
+        if (!empty($servicesArray)) {
+            foreach ($servicesArray as $service) {
+                AuditLogService::logStackAction('service_pull', $server, $stackName, [
+                    'service' => trim($service),
+                ]);
+            }
+        } else {
+            AuditLogService::logStackAction('stack_pull', $server, $stackName, [
+                'services' => $services,
+            ]);
+        }
+
+        return $this->streamComposeOperation($request, $server, $stackName, 'pull');
+    }
 
     protected function streamComposeOperation(Request $request, Server $server, string $stackName, string $operation)
     {
@@ -334,6 +362,9 @@ class StackController extends Controller
                 $params['services'] = $services ? explode(',', $services) : [];
                 $params['remove_volumes'] = $request->query('remove_volumes', false) === 'true';
                 $params['remove_images'] = $request->query('remove_images', false) === 'true';
+            } elseif ($operation === 'pull') {
+                $services = $request->query('services', '');
+                $params['services'] = $services ? explode(',', $services) : [];
             }
 
             return response()->stream(function () use ($url, $server, $params) {

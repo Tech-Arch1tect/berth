@@ -8,6 +8,7 @@ interface StackServicesTabProps {
     isRefreshing: boolean;
     onStartService: (services?: string[], build?: boolean) => void;
     onStopService: (services?: string[]) => void;
+    onPullService: (services?: string[]) => void;
 }
 
 export default function StackServicesTab({
@@ -17,6 +18,7 @@ export default function StackServicesTab({
     isRefreshing,
     onStartService,
     onStopService,
+    onPullService,
 }: StackServicesTabProps) {
     return (
         <EnhancedStackServices
@@ -26,6 +28,7 @@ export default function StackServicesTab({
             isRefreshing={isRefreshing}
             onStartService={onStartService}
             onStopService={onStopService}
+            onPullService={onPullService}
         />
     );
 }

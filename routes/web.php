@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     
     Route::get('api/servers/{server}/stacks/{stackName}/up/stream', [StackController::class, 'composeUpStream'])->name('api.stacks.up.stream');
     Route::get('api/servers/{server}/stacks/{stackName}/down/stream', [StackController::class, 'composeDownStream'])->name('api.stacks.down.stream');
+    Route::get('api/servers/{server}/stacks/{stackName}/pull/stream', [StackController::class, 'composePullStream'])->name('api.stacks.pull.stream');
     
     // Configuration endpoints
     Route::get('api/config', [StackController::class, 'getConfig'])->name('api.config');
