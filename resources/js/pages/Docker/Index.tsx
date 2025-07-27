@@ -9,7 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import type { Server } from '@/types/entities';
 import { apiDelete, apiGet, apiPost } from '@/utils/api';
 import { Head } from '@inertiajs/react';
-import { Activity, AlertTriangle, Database, HardDrive, Image, Info, RefreshCw, Server as ServerIcon, Trash2 } from 'lucide-react';
+import { Activity, AlertTriangle, Database, HardDrive, Image, Info, RefreshCw, Server as ServerIcon, Trash2, Volume } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -49,6 +49,16 @@ interface DockerImage {
     created: number;
     labels: Record<string, string>;
     containers: number;
+}
+
+interface DockerVolume {
+    name: string;
+    driver: string;
+    mountpoint: string;
+    labels: Record<string, string>;
+    scope: string;
+    created_at: string;
+    status?: Record<string, unknown>;
 }
 
 interface DockerDiskUsage {
@@ -134,14 +144,19 @@ export default function DockerIndex({ server }: Props) {
     const [systemInfo, setSystemInfo] = useState<DockerSystemInfo | null>(null);
     const [diskUsage, setDiskUsage] = useState<DockerDiskUsage | null>(null);
     const [images, setImages] = useState<DockerImage[]>([]);
+    const [volumes, setVolumes] = useState<DockerVolume[]>([]);
     const [isLoadingSystemInfo, setIsLoadingSystemInfo] = useState(true);
     const [isLoadingDiskUsage, setIsLoadingDiskUsage] = useState(true);
     const [isLoadingImages, setIsLoadingImages] = useState(true);
+    const [isLoadingVolumes, setIsLoadingVolumes] = useState(true);
     const [systemInfoError, setSystemInfoError] = useState<string | null>(null);
     const [diskUsageError, setDiskUsageError] = useState<string | null>(null);
     const [imagesError, setImagesError] = useState<string | null>(null);
+    const [volumesError, setVolumesError] = useState<string | null>(null);
     const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
+    const [deletingVolumes, setDeletingVolumes] = useState<Set<string>>(new Set());
     const [isPruningImages, setIsPruningImages] = useState(false);
+    const [isPruningVolumes, setIsPruningVolumes] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Servers', href: '/dashboard' },
@@ -248,9 +263,72 @@ export default function DockerIndex({ server }: Props) {
         }
     }, [server.id, fetchImages]);
 
+    const fetchVolumes = useCallback(async () => {
+        setIsLoadingVolumes(true);
+        setVolumesError(null);
+        try {
+            const response = await apiGet(`/api/servers/${server.id}/docker/volumes`);
+            if (response.success) {
+                setVolumes(response.data as DockerVolume[]);
+            } else {
+                setVolumesError(response.error || 'Failed to fetch volumes');
+            }
+        } catch (error) {
+            setVolumesError(error instanceof Error ? error.message : 'Unknown error occurred');
+        } finally {
+            setIsLoadingVolumes(false);
+        }
+    }, [server.id]);
+
+    const deleteVolume = useCallback(async (volumeName: string, force = false) => {
+        setDeletingVolumes(prev => new Set(prev).add(volumeName));
+        try {
+            const queryParams = new URLSearchParams();
+            if (force) {
+                queryParams.set('force', 'true');
+            }
+            
+            const url = `/api/servers/${server.id}/docker/volumes/${encodeURIComponent(volumeName)}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+            
+            const response = await apiDelete(url);
+            if (response.success) {
+                await fetchVolumes();
+            } else {
+                throw new Error(response.error || 'Failed to delete volume');
+            }
+        } catch (error) {
+            console.error('Failed to delete volume:', error);
+            throw error;
+        } finally {
+            setDeletingVolumes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(volumeName);
+                return newSet;
+            });
+        }
+    }, [server.id, fetchVolumes]);
+
+    const pruneVolumes = useCallback(async () => {
+        setIsPruningVolumes(true);
+        try {
+            const response = await apiPost(`/api/servers/${server.id}/docker/volumes/prune`);
+            if (response.success) {
+                await fetchVolumes();
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Failed to prune volumes');
+            }
+        } catch (error) {
+            console.error('Failed to prune volumes:', error);
+            throw error;
+        } finally {
+            setIsPruningVolumes(false);
+        }
+    }, [server.id, fetchVolumes]);
+
     const refreshData = useCallback(async () => {
-        await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages()]);
-    }, [fetchSystemInfo, fetchDiskUsage, fetchImages]);
+        await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages(), fetchVolumes()]);
+    }, [fetchSystemInfo, fetchDiskUsage, fetchImages, fetchVolumes]);
 
     useEffect(() => {
         refreshData();
@@ -302,8 +380,8 @@ export default function DockerIndex({ server }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages}>
-                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages) ? 'animate-spin' : ''}`} />
+                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes) ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
@@ -317,6 +395,10 @@ export default function DockerIndex({ server }: Props) {
                         <TabsTrigger value="images" className="flex items-center gap-2">
                             <Image className="h-4 w-4" />
                             Images ({images.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="volumes" className="flex items-center gap-2">
+                            <Volume className="h-4 w-4" />
+                            Volumes ({volumes.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -592,6 +674,104 @@ export default function DockerIndex({ server }: Props) {
                                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className={`h-3 w-3 ${deletingImages.has(image.id) ? 'animate-spin' : ''}`} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="volumes" className="space-y-6">
+                        {/* Volumes Management */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Volume className="h-5 w-5" />
+                                        <CardTitle>Docker Volumes</CardTitle>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => pruneVolumes()}
+                                            disabled={isPruningVolumes}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Trash2 className={`mr-2 h-4 w-4 ${isPruningVolumes ? 'animate-spin' : ''}`} />
+                                            Prune Unused
+                                        </Button>
+                                    </div>
+                                </div>
+                                <CardDescription>
+                                    Manage Docker volumes on this server
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingVolumes ? (
+                                    <div className="space-y-3">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <div key={i} className="flex items-center space-x-4">
+                                                <Skeleton className="h-4 w-4" />
+                                                <Skeleton className="h-4 flex-1" />
+                                                <Skeleton className="h-4 w-20" />
+                                                <Skeleton className="h-4 w-16" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : volumesError ? (
+                                    <div className="text-destructive">{volumesError}</div>
+                                ) : volumes.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        No Docker volumes found on this server
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="rounded-md border">
+                                            <div className="grid grid-cols-12 gap-4 p-3 font-medium text-sm bg-muted/50">
+                                                <div className="col-span-4">Name</div>
+                                                <div className="col-span-2">Driver</div>
+                                                <div className="col-span-2">Scope</div>
+                                                <div className="col-span-3">Created</div>
+                                                <div className="col-span-1">Actions</div>
+                                            </div>
+                                            {volumes.map((volume) => (
+                                                <div
+                                                    key={volume.name}
+                                                    className="grid grid-cols-12 gap-4 p-3 border-t items-center hover:bg-muted/25"
+                                                >
+                                                    <div className="col-span-4">
+                                                        <div className="text-sm font-mono">
+                                                            {volume.name}
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        {volume.driver}
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                                            volume.scope === 'local' 
+                                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                                        }`}>
+                                                            {volume.scope}
+                                                        </span>
+                                                    </div>
+                                                    <div className="col-span-3 text-sm">
+                                                        {volume.created_at ? new Date(volume.created_at).toLocaleDateString() : 'N/A'}
+                                                    </div>
+                                                    <div className="col-span-1">
+                                                        <Button
+                                                            onClick={() => deleteVolume(volume.name)}
+                                                            disabled={deletingVolumes.has(volume.name)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className={`h-3 w-3 ${deletingVolumes.has(volume.name) ? 'animate-spin' : ''}`} />
                                                         </Button>
                                                     </div>
                                                 </div>

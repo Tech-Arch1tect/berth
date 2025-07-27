@@ -317,4 +317,165 @@ class DockerController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * List Docker volumes for a server
+     */
+    public function listVolumes(Request $request, Server $server)
+    {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
+            AuditLogService::logAccessDenied('docker_volumes_list', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to view Docker volumes on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->get($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $volumes = $response->json();
+            
+            AuditLogService::logServerAction('docker_volumes_viewed', $server, [
+                'action' => 'list_volumes',
+                'volume_count' => count($volumes),
+            ]);
+
+            return response()->json($volumes);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_volumes_list_failed', $server, [
+                'action' => 'list_volumes',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to fetch Docker volumes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a Docker volume
+     */
+    public function deleteVolume(Request $request, Server $server, string $volumeName)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_volume_delete', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'volume_name' => $volumeName,
+            ]);
+            abort(403, 'You do not have permission to delete Docker volumes on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes/" . urlencode($volumeName);
+            
+            // Add query parameters
+            $queryParams = [];
+            if ($request->has('force')) {
+                $queryParams['force'] = $request->boolean('force') ? 'true' : 'false';
+            }
+            
+            if (!empty($queryParams)) {
+                $url .= '?' . http_build_query($queryParams);
+            }
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->delete($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_volume_deleted', $server, [
+                'action' => 'delete_volume',
+                'volume_name' => $volumeName,
+                'force' => $request->boolean('force'),
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_volume_delete_failed', $server, [
+                'action' => 'delete_volume',
+                'volume_name' => $volumeName,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to delete Docker volume: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Prune unused Docker volumes
+     */
+    public function pruneVolumes(Request $request, Server $server)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_volumes_prune', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to prune Docker volumes on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes/prune";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->post($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_volumes_pruned', $server, [
+                'action' => 'prune_volumes',
+                'space_reclaimed' => $result['space_reclaimed'] ?? 0,
+                'volumes_deleted' => count($result['images_deleted'] ?? []), // Note: reusing field name from berth-agent
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_volumes_prune_failed', $server, [
+                'action' => 'prune_volumes',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to prune Docker volumes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
