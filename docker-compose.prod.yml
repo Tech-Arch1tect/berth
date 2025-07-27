@@ -45,6 +45,19 @@ services:
       - app
     networks:
       - berth-network
+  scheduler:
+    image: techarchitect/berth:${IMAGE_TAG:-latest}
+    container_name: berth-scheduler
+    restart: unless-stopped
+    env_file: .env
+    command: php artisan schedule:work
+    volumes:
+      - ./berth-storage:/var/www/html/storage
+      - ./berth-database.sqlite:/var/www/html/database.sqlite
+    depends_on:
+      - app
+    networks:
+      - berth-network
 
 networks:
   berth-network:
