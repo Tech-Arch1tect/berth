@@ -22,6 +22,12 @@ interface AuditLog {
     ip_address?: string;
     server_id?: number;
     stack_name?: string;
+    metadata?: {
+        target_user_id?: number;
+        target_user_name?: string;
+        target_user_email?: string;
+        [key: string]: any;
+    };
     created_at: string;
     formatted_created_at: string;
     user?: {
@@ -239,9 +245,15 @@ export default function Index() {
 
                                             <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                                                 <div>
-                                                    <span className="font-medium">User:</span> {log.user_name || 'Unknown'} (
+                                                    <span className="font-medium">Performed by:</span> {log.user_name || 'Unknown'} (
                                                     {log.user_email || 'No email'})
                                                 </div>
+                                                {log.metadata?.target_user_name && (
+                                                    <div>
+                                                        <span className="font-medium">Target user:</span> {log.metadata.target_user_name} (
+                                                        {log.metadata.target_user_email})
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <span className="font-medium">IP:</span> {log.ip_address || 'Unknown'}
                                                 </div>

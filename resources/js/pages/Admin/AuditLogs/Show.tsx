@@ -120,15 +120,41 @@ export default function Show() {
                         <CardTitle>User Information</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground">User Name</label>
-                                <div className="mt-1 text-sm">{auditLog.user_name || 'Unknown'}</div>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            {/* Acting User */}
+                            <div className="space-y-3">
+                                <h4 className="font-medium text-foreground">Performed By</h4>
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">Name</label>
+                                        <div className="mt-1 text-sm">{auditLog.user_name || 'Unknown'}</div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">Email</label>
+                                        <div className="mt-1 text-sm">{auditLog.user_email || 'Unknown'}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                                <div className="mt-1 text-sm">{auditLog.user_email || 'Unknown'}</div>
-                            </div>
+
+                            {/* Target User (if applicable) */}
+                            {auditLog.metadata?.target_user_name && (
+                                <div className="space-y-3">
+                                    <h4 className="font-medium text-foreground">Target User</h4>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <label className="text-sm font-medium text-muted-foreground">Name</label>
+                                            <div className="mt-1 text-sm">{auditLog.metadata.target_user_name}</div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-muted-foreground">Email</label>
+                                            <div className="mt-1 text-sm">{auditLog.metadata.target_user_email}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground">IP Address</label>
                                 <div className="mt-1 font-mono text-sm">{auditLog.ip_address || 'Unknown'}</div>

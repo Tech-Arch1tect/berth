@@ -48,11 +48,16 @@ class UserController extends Controller
             
             AuditLogService::logUserAction('role_assigned', $user, [
                 'roles' => $request->roles,
+                'target_user_id' => $user->id,
+                'target_user_name' => $user->name,
+                'target_user_email' => $user->email,
             ]);
         }
 
         AuditLogService::logUserAction('user_created', $user, [
-            'email' => $user->email,
+            'target_user_id' => $user->id,
+            'target_user_name' => $user->name,
+            'target_user_email' => $user->email,
             'email_verified' => $request->email_verified ? 'yes' : 'no',
         ]);
 
@@ -80,6 +85,9 @@ class UserController extends Controller
 
         AuditLogService::logUserAction('user_updated', $user, [
             'action' => 'roles_updated',
+            'target_user_id' => $user->id,
+            'target_user_name' => $user->name,
+            'target_user_email' => $user->email,
             'old_roles' => $oldRoles,
             'new_roles' => $newRoles,
         ]);
@@ -90,12 +98,18 @@ class UserController extends Controller
         foreach ($addedRoles as $role) {
             AuditLogService::logUserAction('role_assigned', $user, [
                 'role' => $role,
+                'target_user_id' => $user->id,
+                'target_user_name' => $user->name,
+                'target_user_email' => $user->email,
             ]);
         }
 
         foreach ($removedRoles as $role) {
             AuditLogService::logUserAction('role_removed', $user, [
                 'role' => $role,
+                'target_user_id' => $user->id,
+                'target_user_name' => $user->name,
+                'target_user_email' => $user->email,
             ]);
         }
 
@@ -113,7 +127,9 @@ class UserController extends Controller
         }
 
         AuditLogService::logUserAction('user_deleted', $user, [
-            'email' => $user->email,
+            'target_user_id' => $user->id,
+            'target_user_name' => $user->name,
+            'target_user_email' => $user->email,
             'roles' => $user->roles->pluck('name')->toArray(),
         ]);
 
