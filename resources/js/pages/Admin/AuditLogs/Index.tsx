@@ -26,7 +26,7 @@ interface AuditLog {
         target_user_id?: number;
         target_user_name?: string;
         target_user_email?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
     created_at: string;
     formatted_created_at: string;

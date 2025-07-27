@@ -17,7 +17,10 @@ interface AuditLog {
     method: string;
     old_values?: Record<string, unknown>;
     new_values?: Record<string, unknown>;
-    metadata?: Record<string, unknown>;
+    metadata?: Record<string, unknown> & {
+        target_user_name?: string;
+        target_user_email?: string;
+    };
     ip_address?: string;
     user_agent?: string;
     server_id?: number;
