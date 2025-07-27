@@ -8,8 +8,8 @@ import { type BreadcrumbItem } from '@/types';
 import type { Server, Stack } from '@/types/entities';
 import { apiGet } from '@/utils/api';
 import { calculateServiceStatusSummary } from '@/utils/stack-utils';
-import { Head, router } from '@inertiajs/react';
-import { Activity, AlertCircle, Clock, Container, Layers3, RefreshCw } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Activity, AlertCircle, Clock, Container, HardDrive, Layers3, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -172,10 +172,18 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshStacks} disabled={isRefreshing} size="lg" className="gap-2">
-                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button asChild variant="outline" size="lg" className="gap-2">
+                            <Link href={`/servers/${server.id}/docker`}>
+                                <HardDrive className="h-4 w-4" />
+                                Docker Maintenance
+                            </Link>
+                        </Button>
+                        <Button onClick={refreshStacks} disabled={isRefreshing} size="lg" className="gap-2">
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats Overview */}

@@ -5,7 +5,7 @@ import type { Server as ServerType, Stack } from '@/types/entities';
 import { apiGet } from '@/utils/api';
 import { calculateServiceStatusSummary } from '@/utils/stack-utils';
 import { Link } from '@inertiajs/react';
-import { Activity, AlertCircle, ChevronRight, Container, Layers3, Loader2, Server } from 'lucide-react';
+import { Activity, AlertCircle, ChevronRight, Container, HardDrive, Layers3, Loader2, Server } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ServerStats {
@@ -188,6 +188,16 @@ export function NavServers({ servers }: NavServersProps) {
                                             <Link href={`/servers/${server.id}/stacks`} className="flex items-center gap-1">
                                                 <Activity className="h-3 w-3 shrink-0" />
                                                 <span className="text-sm">Server Overview</span>
+                                            </Link>
+                                        </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+
+                                    {/* Docker Maintenance Item */}
+                                    <SidebarMenuSubItem>
+                                        <SidebarMenuSubButton asChild className="px-1 py-1">
+                                            <Link href={`/servers/${server.id}/docker`} className="flex items-center gap-1">
+                                                <HardDrive className="h-3 w-3 shrink-0" />
+                                                <span className="text-sm">Docker Maintenance</span>
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>

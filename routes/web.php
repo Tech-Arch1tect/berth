@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\StackController;
+use App\Http\Controllers\DockerController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Middleware\CheckAdminRole;
 use App\Http\Middleware\TwoFactorMiddleware;
@@ -60,6 +61,11 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     
     // Configuration endpoints
     Route::get('api/config', [StackController::class, 'getConfig'])->name('api.config');
+    
+    // Docker maintenance routes
+    Route::get('servers/{server}/docker', [DockerController::class, 'index'])->name('docker.index');
+    Route::get('api/servers/{server}/docker/system/info', [DockerController::class, 'getSystemInfo'])->name('api.docker.system.info');
+    Route::get('api/servers/{server}/docker/system/df', [DockerController::class, 'getDiskUsage'])->name('api.docker.system.df');
     
     // Two-factor authentication routes
     Route::get('two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');

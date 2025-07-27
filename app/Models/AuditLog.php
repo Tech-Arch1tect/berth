@@ -117,6 +117,11 @@ class AuditLog extends Model
             '2fa_recovery_code_used' => 'Two-factor recovery code used',
             'failed_login' => 'Failed login attempt',
             'audit_cleanup' => 'Audit log cleanup performed',
+            'docker_maintenance_viewed' => 'Docker maintenance dashboard viewed',
+            'docker_system_info_viewed' => 'Docker system information viewed',
+            'docker_system_info_failed' => 'Docker system information fetch failed',
+            'docker_disk_usage_viewed' => 'Docker disk usage viewed',
+            'docker_disk_usage_failed' => 'Docker disk usage fetch failed',
         ];
 
         return $eventDescriptions[$this->event] ?? ucfirst(str_replace('_', ' ', $this->event));
