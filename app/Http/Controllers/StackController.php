@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Server;
 use App\Models\Stack;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
@@ -14,11 +15,20 @@ class StackController extends Controller
     {
         // Check if user has access permission for this server
         if (!auth()->user()->hasServerPermission($server, 'access')) {
+            AuditLogService::logAccessDenied('stack_view', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
         try {
             $stacks = $this->fetchStacksFromServer($server);
+            
+            AuditLogService::logStackAction('stack_viewed', $server, 'index', [
+                'action' => 'list_stacks',
+                'stack_count' => count($stacks),
+            ]);
             
             return Inertia::render('Stacks/Index', [
                 'server' => $server,
@@ -41,6 +51,11 @@ class StackController extends Controller
     {
         // Check if user has access permission for this server
         if (!auth()->user()->hasServerPermission($server, 'access')) {
+            AuditLogService::logAccessDenied('stack_view', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'stack_name' => $stackName,
+            ]);
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
@@ -64,6 +79,11 @@ class StackController extends Controller
                 // If we can't fetch service status, continue without it
                 $stack['service_status'] = null;
             }
+
+            AuditLogService::logStackAction('stack_viewed', $server, $stackName, [
+                'action' => 'view_stack_details',
+                'service_count' => count($stack['service_status']['services'] ?? []),
+            ]);
 
             return Inertia::render('Stacks/Show', [
                 'server' => $server,
@@ -236,7 +256,29 @@ class StackController extends Controller
     public function composeUpStream(Request $request, Server $server, string $stackName)
     {
         if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('stack_start', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'stack_name' => $stackName,
+            ]);
             return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        $services = $request->query('services', '');
+        $servicesArray = $services ? explode(',', $services) : [];
+        
+        if (!empty($servicesArray)) {
+            foreach ($servicesArray as $service) {
+                AuditLogService::logStackAction('service_up', $server, $stackName, [
+                    'service' => trim($service),
+                    'build' => $request->query('build', false) === 'true',
+                ]);
+            }
+        } else {
+            AuditLogService::logStackAction('stack_up', $server, $stackName, [
+                'services' => $services,
+                'build' => $request->query('build', false) === 'true',
+            ]);
         }
 
         return $this->streamComposeOperation($request, $server, $stackName, 'up');
@@ -245,7 +287,31 @@ class StackController extends Controller
     public function composeDownStream(Request $request, Server $server, string $stackName)
     {
         if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('stack_stop', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'stack_name' => $stackName,
+            ]);
             return response()->json(['error' => 'Insufficient permissions'], 403);
+        }
+
+        $services = $request->query('services', '');
+        $servicesArray = $services ? explode(',', $services) : [];
+        
+        if (!empty($servicesArray)) {
+            foreach ($servicesArray as $service) {
+                AuditLogService::logStackAction('service_down', $server, $stackName, [
+                    'service' => trim($service),
+                    'remove_volumes' => $request->query('remove_volumes', false) === 'true',
+                    'remove_images' => $request->query('remove_images', false) === 'true',
+                ]);
+            }
+        } else {
+            AuditLogService::logStackAction('stack_down', $server, $stackName, [
+                'services' => $services,
+                'remove_volumes' => $request->query('remove_volumes', false) === 'true',
+                'remove_images' => $request->query('remove_images', false) === 'true',
+            ]);
         }
 
         return $this->streamComposeOperation($request, $server, $stackName, 'down');
@@ -372,6 +438,12 @@ class StackController extends Controller
             }
             
             $fileData = $this->fetchFileFromServer($server, $stackName, $path);
+            
+            AuditLogService::logFileAction('file_viewed', $server, $stackName, $path, [
+                'file_size' => isset($fileData['content']) ? strlen($fileData['content']) : 0,
+                'file_type' => pathinfo($path, PATHINFO_EXTENSION) ?: 'unknown',
+            ]);
+            
             return response()->json($fileData);
         } catch (\Exception $e) {
             return response()->json([
@@ -396,6 +468,11 @@ class StackController extends Controller
             }
             
             $result = $this->sendFileCreateRequest($server, $stackName, $path, $content);
+            
+            AuditLogService::logFileAction('file_created', $server, $stackName, $path, [
+                'file_size' => strlen($content),
+            ]);
+            
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
@@ -420,6 +497,11 @@ class StackController extends Controller
             }
             
             $result = $this->sendFileUpdateRequest($server, $stackName, $path, $content);
+            
+            AuditLogService::logFileAction('file_updated', $server, $stackName, $path, [
+                'file_size' => strlen($content),
+            ]);
+            
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
@@ -451,6 +533,11 @@ class StackController extends Controller
             }
             
             $result = $this->sendFileDeleteRequest($server, $stackName, $path, $recursive);
+            
+            AuditLogService::logFileAction('file_deleted', $server, $stackName, $path, [
+                'recursive' => $recursive,
+            ]);
+            
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
@@ -662,6 +749,11 @@ class StackController extends Controller
                 $shell = 'auto';
             }
             
+            AuditLogService::logStackAction('terminal_accessed', $server, $stackName, [
+                'service' => $service,
+                'shell' => $shell,
+            ]);
+            
             $protocol = $server->https ? 'wss' : 'ws';
             $wsUrl = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/terminal/session/{$service}";
             
@@ -741,6 +833,11 @@ class StackController extends Controller
 
             $filename = basename($path);
             
+            AuditLogService::logFileAction('file_downloaded', $server, $stackName, $path, [
+                'filename' => $filename,
+                'file_size' => strlen($response->body()),
+            ]);
+            
             return response($response->body())
                 ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream')
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
@@ -786,6 +883,12 @@ class StackController extends Controller
                 }
                 return response()->json(['error' => "Server returned status: {$response->status()}"], $response->status());
             }
+
+            AuditLogService::logFileAction('file_renamed', $server, $stackName, $path, [
+                'old_name' => basename($path),
+                'new_name' => $newName,
+                'directory' => dirname($path),
+            ]);
 
             return response()->json($response->json());
         } catch (\Exception $e) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Server;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
@@ -29,12 +30,19 @@ class ServerController extends Controller
             'access_secret' => 'required|string|max:500',
         ]);
 
-        Server::create([
+        $server = Server::create([
             'display_name' => $request->display_name,
             'hostname' => $request->hostname,
             'port' => $request->port,
             'https' => $request->https,
             'access_secret' => $request->access_secret,
+        ]);
+
+        AuditLogService::logServerAction('server_created', $server, [
+            'display_name' => $server->display_name,
+            'hostname' => $server->hostname,
+            'port' => $server->port,
+            'https' => $server->https,
         ]);
 
         return back()->with('success', 'Server created successfully.');
@@ -62,13 +70,25 @@ class ServerController extends Controller
             $updateData['access_secret'] = $request->access_secret;
         }
 
+        $oldValues = $server->toArray();
         $server->update($updateData);
+        
+        AuditLogService::logServerAction('server_updated', $server, [
+            'old_values' => $oldValues,
+            'new_values' => $updateData,
+        ]);
 
         return back()->with('success', 'Server updated successfully.');
     }
 
     public function destroy(Server $server)
     {
+        AuditLogService::logServerAction('server_deleted', $server, [
+            'display_name' => $server->display_name,
+            'hostname' => $server->hostname,
+            'port' => $server->port,
+        ]);
+
         $server->delete();
 
         return back()->with('success', 'Server deleted successfully.');
@@ -101,6 +121,12 @@ class ServerController extends Controller
             
             if ($response->successful()) {
                 $healthData = $response->json();
+                
+                AuditLogService::logServerAction('server_health_check', $server, [
+                    'status' => 'success',
+                    'health_status' => $healthData['status'] ?? 'unknown',
+                ]);
+                
                 return response()->json([
                     'status' => 'success',
                     'health_status' => $healthData['status'] ?? 'unknown',
@@ -110,6 +136,11 @@ class ServerController extends Controller
                     'checked_at' => now()->toISOString(),
                 ]);
             } else {
+                AuditLogService::logServerAction('server_health_check', $server, [
+                    'status' => 'error',
+                    'http_status' => $response->status(),
+                ]);
+                
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Server returned status: ' . $response->status(),
@@ -118,6 +149,11 @@ class ServerController extends Controller
                 ], 200);
             }
         } catch (\Exception $e) {
+            AuditLogService::logServerAction('server_health_check', $server, [
+                'status' => 'error',
+                'error_message' => $e->getMessage(),
+            ]);
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to connect: ' . $e->getMessage(),
