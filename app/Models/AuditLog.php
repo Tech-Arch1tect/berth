@@ -134,6 +134,12 @@ class AuditLog extends Model
             'docker_volume_delete_failed' => 'Docker volume deletion failed',
             'docker_volumes_pruned' => 'Docker volumes pruned',
             'docker_volumes_prune_failed' => 'Docker volumes prune failed',
+            'docker_networks_viewed' => 'Docker networks viewed',
+            'docker_networks_list_failed' => 'Docker networks list fetch failed',
+            'docker_network_deleted' => 'Docker network deleted',
+            'docker_network_delete_failed' => 'Docker network deletion failed',
+            'docker_networks_pruned' => 'Docker networks pruned',
+            'docker_networks_prune_failed' => 'Docker networks prune failed',
         ];
 
         return $eventDescriptions[$this->event] ?? ucfirst(str_replace('_', ' ', $this->event));

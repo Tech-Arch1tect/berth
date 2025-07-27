@@ -478,4 +478,153 @@ class DockerController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * List Docker networks for a server
+     */
+    public function listNetworks(Request $request, Server $server)
+    {
+        // Check if user has access permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'access')) {
+            AuditLogService::logAccessDenied('docker_networks_list', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to view Docker networks on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->get($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $networks = $response->json();
+            
+            AuditLogService::logServerAction('docker_networks_viewed', $server, [
+                'action' => 'list_networks',
+                'network_count' => count($networks),
+            ]);
+
+            return response()->json($networks);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_networks_list_failed', $server, [
+                'action' => 'list_networks',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to fetch Docker networks: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a Docker network
+     */
+    public function deleteNetwork(Request $request, Server $server, string $networkId)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_network_delete', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+                'network_id' => $networkId,
+            ]);
+            abort(403, 'You do not have permission to delete Docker networks on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks/" . urlencode($networkId);
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->delete($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_network_deleted', $server, [
+                'action' => 'delete_network',
+                'network_id' => $networkId,
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_network_delete_failed', $server, [
+                'action' => 'delete_network',
+                'network_id' => $networkId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to delete Docker network: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Prune unused Docker networks
+     */
+    public function pruneNetworks(Request $request, Server $server)
+    {
+        // Check if user has start-stop permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+            AuditLogService::logAccessDenied('docker_networks_prune', [
+                'server_id' => $server->id,
+                'server_name' => $server->display_name,
+            ]);
+            abort(403, 'You do not have permission to prune Docker networks on this server.');
+        }
+
+        try {
+            $protocol = $server->https ? 'https' : 'http';
+            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks/prune";
+            
+            $response = Http::timeout(config('app.agent_http_timeout', 120))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept' => 'application/json',
+                ])
+                ->post($url);
+
+            if (!$response->successful()) {
+                throw new \Exception("Server returned status: {$response->status()}");
+            }
+
+            $result = $response->json();
+            
+            AuditLogService::logServerAction('docker_networks_pruned', $server, [
+                'action' => 'prune_networks',
+                'networks_deleted' => count($result['images_deleted'] ?? []), // Note: reusing field name from berth-agent
+            ]);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            AuditLogService::logServerAction('docker_networks_prune_failed', $server, [
+                'action' => 'prune_networks',
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to prune Docker networks: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

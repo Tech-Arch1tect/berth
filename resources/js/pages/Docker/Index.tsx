@@ -9,7 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import type { Server } from '@/types/entities';
 import { apiDelete, apiGet, apiPost } from '@/utils/api';
 import { Head } from '@inertiajs/react';
-import { Activity, AlertTriangle, Database, HardDrive, Image, Info, RefreshCw, Server as ServerIcon, Trash2, Volume } from 'lucide-react';
+import { Activity, AlertTriangle, Database, HardDrive, Image, Info, Network, RefreshCw, Server as ServerIcon, Trash2, Volume } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UserPermissions {
@@ -59,6 +59,16 @@ interface DockerVolume {
     scope: string;
     created_at: string;
     status?: Record<string, unknown>;
+}
+
+interface DockerNetwork {
+    id: string;
+    name: string;
+    driver: string;
+    scope: string;
+    internal: boolean;
+    labels: Record<string, string>;
+    created: string;
 }
 
 interface DockerDiskUsage {
@@ -145,18 +155,23 @@ export default function DockerIndex({ server }: Props) {
     const [diskUsage, setDiskUsage] = useState<DockerDiskUsage | null>(null);
     const [images, setImages] = useState<DockerImage[]>([]);
     const [volumes, setVolumes] = useState<DockerVolume[]>([]);
+    const [networks, setNetworks] = useState<DockerNetwork[]>([]);
     const [isLoadingSystemInfo, setIsLoadingSystemInfo] = useState(true);
     const [isLoadingDiskUsage, setIsLoadingDiskUsage] = useState(true);
     const [isLoadingImages, setIsLoadingImages] = useState(true);
     const [isLoadingVolumes, setIsLoadingVolumes] = useState(true);
+    const [isLoadingNetworks, setIsLoadingNetworks] = useState(true);
     const [systemInfoError, setSystemInfoError] = useState<string | null>(null);
     const [diskUsageError, setDiskUsageError] = useState<string | null>(null);
     const [imagesError, setImagesError] = useState<string | null>(null);
     const [volumesError, setVolumesError] = useState<string | null>(null);
+    const [networksError, setNetworksError] = useState<string | null>(null);
     const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
     const [deletingVolumes, setDeletingVolumes] = useState<Set<string>>(new Set());
+    const [deletingNetworks, setDeletingNetworks] = useState<Set<string>>(new Set());
     const [isPruningImages, setIsPruningImages] = useState(false);
     const [isPruningVolumes, setIsPruningVolumes] = useState(false);
+    const [isPruningNetworks, setIsPruningNetworks] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Servers', href: '/dashboard' },
@@ -326,9 +341,67 @@ export default function DockerIndex({ server }: Props) {
         }
     }, [server.id, fetchVolumes]);
 
+    const fetchNetworks = useCallback(async () => {
+        setIsLoadingNetworks(true);
+        setNetworksError(null);
+        try {
+            const response = await apiGet(`/api/servers/${server.id}/docker/networks`);
+            if (response.success) {
+                setNetworks(response.data as DockerNetwork[]);
+            } else {
+                setNetworksError(response.error || 'Failed to fetch networks');
+            }
+        } catch (error) {
+            setNetworksError(error instanceof Error ? error.message : 'Unknown error occurred');
+        } finally {
+            setIsLoadingNetworks(false);
+        }
+    }, [server.id]);
+
+    const deleteNetwork = useCallback(async (networkId: string) => {
+        setDeletingNetworks(prev => new Set(prev).add(networkId));
+        try {
+            const url = `/api/servers/${server.id}/docker/networks/${encodeURIComponent(networkId)}`;
+            
+            const response = await apiDelete(url);
+            if (response.success) {
+                await fetchNetworks();
+            } else {
+                throw new Error(response.error || 'Failed to delete network');
+            }
+        } catch (error) {
+            console.error('Failed to delete network:', error);
+            throw error;
+        } finally {
+            setDeletingNetworks(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(networkId);
+                return newSet;
+            });
+        }
+    }, [server.id, fetchNetworks]);
+
+    const pruneNetworks = useCallback(async () => {
+        setIsPruningNetworks(true);
+        try {
+            const response = await apiPost(`/api/servers/${server.id}/docker/networks/prune`);
+            if (response.success) {
+                await fetchNetworks();
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Failed to prune networks');
+            }
+        } catch (error) {
+            console.error('Failed to prune networks:', error);
+            throw error;
+        } finally {
+            setIsPruningNetworks(false);
+        }
+    }, [server.id, fetchNetworks]);
+
     const refreshData = useCallback(async () => {
-        await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages(), fetchVolumes()]);
-    }, [fetchSystemInfo, fetchDiskUsage, fetchImages, fetchVolumes]);
+        await Promise.all([fetchSystemInfo(), fetchDiskUsage(), fetchImages(), fetchVolumes(), fetchNetworks()]);
+    }, [fetchSystemInfo, fetchDiskUsage, fetchImages, fetchVolumes, fetchNetworks]);
 
     useEffect(() => {
         refreshData();
@@ -380,8 +453,8 @@ export default function DockerIndex({ server }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes}>
-                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes) ? 'animate-spin' : ''}`} />
+                    <Button onClick={refreshData} disabled={isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${(isLoadingSystemInfo || isLoadingDiskUsage || isLoadingImages || isLoadingVolumes || isLoadingNetworks) ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
@@ -399,6 +472,10 @@ export default function DockerIndex({ server }: Props) {
                         <TabsTrigger value="volumes" className="flex items-center gap-2">
                             <Volume className="h-4 w-4" />
                             Volumes ({volumes.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="networks" className="flex items-center gap-2">
+                            <Network className="h-4 w-4" />
+                            Networks ({networks.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -772,6 +849,121 @@ export default function DockerIndex({ server }: Props) {
                                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className={`h-3 w-3 ${deletingVolumes.has(volume.name) ? 'animate-spin' : ''}`} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="networks" className="space-y-6">
+                        {/* Networks Management */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Network className="h-5 w-5" />
+                                        <CardTitle>Docker Networks</CardTitle>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => pruneNetworks()}
+                                            disabled={isPruningNetworks}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Trash2 className={`mr-2 h-4 w-4 ${isPruningNetworks ? 'animate-spin' : ''}`} />
+                                            Prune Unused
+                                        </Button>
+                                    </div>
+                                </div>
+                                <CardDescription>
+                                    Manage Docker networks on this server
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingNetworks ? (
+                                    <div className="space-y-3">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <div key={i} className="flex items-center space-x-4">
+                                                <Skeleton className="h-4 w-4" />
+                                                <Skeleton className="h-4 flex-1" />
+                                                <Skeleton className="h-4 w-20" />
+                                                <Skeleton className="h-4 w-16" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : networksError ? (
+                                    <div className="text-destructive">{networksError}</div>
+                                ) : networks.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        No Docker networks found on this server
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="rounded-md border">
+                                            <div className="grid grid-cols-12 gap-4 p-3 font-medium text-sm bg-muted/50">
+                                                <div className="col-span-3">Name</div>
+                                                <div className="col-span-2">Driver</div>
+                                                <div className="col-span-2">Scope</div>
+                                                <div className="col-span-1">Internal</div>
+                                                <div className="col-span-3">Created</div>
+                                                <div className="col-span-1">Actions</div>
+                                            </div>
+                                            {networks.map((network) => (
+                                                <div
+                                                    key={network.id}
+                                                    className="grid grid-cols-12 gap-4 p-3 border-t items-center hover:bg-muted/25"
+                                                >
+                                                    <div className="col-span-3">
+                                                        <div className="text-sm font-mono">
+                                                            {network.name}
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                                            network.driver === 'bridge' 
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                                : network.driver === 'host'
+                                                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                                        }`}>
+                                                            {network.driver}
+                                                        </span>
+                                                    </div>
+                                                    <div className="col-span-2 text-sm">
+                                                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                                            network.scope === 'local' 
+                                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                                        }`}>
+                                                            {network.scope}
+                                                        </span>
+                                                    </div>
+                                                    <div className="col-span-1 text-sm">
+                                                        {network.internal ? (
+                                                            <span className="text-orange-600 font-medium">Yes</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">No</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="col-span-3 text-sm">
+                                                        {network.created ? new Date(network.created).toLocaleDateString() : 'N/A'}
+                                                    </div>
+                                                    <div className="col-span-1">
+                                                        <Button
+                                                            onClick={() => deleteNetwork(network.id)}
+                                                            disabled={deletingNetworks.has(network.id) || ['bridge', 'host', 'none'].includes(network.name)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                                                            title={['bridge', 'host', 'none'].includes(network.name) ? 'Cannot delete system network' : 'Delete network'}
+                                                        >
+                                                            <Trash2 className={`h-3 w-3 ${deletingNetworks.has(network.id) ? 'animate-spin' : ''}`} />
                                                         </Button>
                                                     </div>
                                                 </div>
