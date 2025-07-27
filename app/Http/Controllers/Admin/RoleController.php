@@ -82,6 +82,8 @@ class RoleController extends Controller
             'serverPermissions.*.permissions.filemanager_write' => 'boolean',
             'serverPermissions.*.permissions.start-stop' => 'boolean',
             'serverPermissions.*.permissions.exec' => 'boolean',
+            'serverPermissions.*.permissions.docker_maintenance_read' => 'boolean',
+            'serverPermissions.*.permissions.docker_maintenance_write' => 'boolean',
         ]);
 
         // Clear existing permissions for this role
@@ -103,15 +105,23 @@ class RoleController extends Controller
             if ($permissions['exec'] && !$permissions['access']) {
                 return back()->withErrors(['error' => 'Exec commands require basic Access permission.']);
             }
+            if ($permissions['docker_maintenance_read'] && !$permissions['access']) {
+                return back()->withErrors(['error' => 'Docker Read requires basic Access permission.']);
+            }
+            if ($permissions['docker_maintenance_write'] && (!$permissions['access'] || !$permissions['docker_maintenance_read'])) {
+                return back()->withErrors(['error' => 'Docker Write requires both Access and Docker Read permissions.']);
+            }
             
             // Only attach if at least one permission is granted
-            if ($permissions['access'] || $permissions['filemanager_access'] || $permissions['filemanager_write'] || $permissions['start-stop'] || $permissions['exec']) {
+            if ($permissions['access'] || $permissions['filemanager_access'] || $permissions['filemanager_write'] || $permissions['start-stop'] || $permissions['exec'] || $permissions['docker_maintenance_read'] || $permissions['docker_maintenance_write']) {
                 $role->servers()->attach($serverPermission['server_id'], [
                     'can_access' => $permissions['access'],
                     'can_filemanager_access' => $permissions['filemanager_access'],
                     'can_filemanager_write' => $permissions['filemanager_write'],
                     'can_start_stop' => $permissions['start-stop'],
                     'can_exec' => $permissions['exec'],
+                    'can_docker_maintenance_read' => $permissions['docker_maintenance_read'],
+                    'can_docker_maintenance_write' => $permissions['docker_maintenance_write'],
                 ]);
             }
         }

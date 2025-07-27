@@ -94,7 +94,9 @@ class User extends Authenticatable
                 'filemanager_access' => true, 
                 'filemanager_write' => true, 
                 'start-stop' => true, 
-                'exec' => true
+                'exec' => true,
+                'docker_maintenance_read' => true,
+                'docker_maintenance_write' => true
             ];
         }
 
@@ -110,7 +112,9 @@ class User extends Authenticatable
             'filemanager_access' => false, 
             'filemanager_write' => false, 
             'start-stop' => false, 
-            'exec' => false
+            'exec' => false,
+            'docker_maintenance_read' => false,
+            'docker_maintenance_write' => false
         ];
 
         // Aggregate permissions from all roles
@@ -121,6 +125,8 @@ class User extends Authenticatable
             $permissions['filemanager_write'] = $permissions['filemanager_write'] || $rolePermissions['filemanager_write'];
             $permissions['start-stop'] = $permissions['start-stop'] || $rolePermissions['start-stop'];
             $permissions['exec'] = $permissions['exec'] || $rolePermissions['exec'];
+            $permissions['docker_maintenance_read'] = $permissions['docker_maintenance_read'] || $rolePermissions['docker_maintenance_read'];
+            $permissions['docker_maintenance_write'] = $permissions['docker_maintenance_write'] || $rolePermissions['docker_maintenance_write'];
         }
 
         return $permissions;

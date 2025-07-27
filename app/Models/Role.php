@@ -30,7 +30,7 @@ class Role extends SpatieRole
     public function servers()
     {
         return $this->belongsToMany(Server::class)
-            ->withPivot(['can_access', 'can_filemanager_access', 'can_filemanager_write', 'can_start_stop', 'can_exec'])
+            ->withPivot(['can_access', 'can_filemanager_access', 'can_filemanager_write', 'can_start_stop', 'can_exec', 'can_docker_maintenance_read', 'can_docker_maintenance_write'])
             ->withTimestamps();
     }
 
@@ -48,6 +48,8 @@ class Role extends SpatieRole
             'filemanager_write' => $serverRole->pivot->can_filemanager_write,
             'start-stop' => $serverRole->pivot->can_start_stop,
             'exec' => $serverRole->pivot->can_exec,
+            'docker_maintenance_read' => $serverRole->pivot->can_docker_maintenance_read,
+            'docker_maintenance_write' => $serverRole->pivot->can_docker_maintenance_write,
             default => false,
         };
     }
@@ -62,7 +64,9 @@ class Role extends SpatieRole
                 'filemanager_access' => false, 
                 'filemanager_write' => false, 
                 'start-stop' => false, 
-                'exec' => false
+                'exec' => false,
+                'docker_maintenance_read' => false,
+                'docker_maintenance_write' => false
             ];
         }
 
@@ -72,6 +76,8 @@ class Role extends SpatieRole
             'filemanager_write' => $serverRole->pivot->can_filemanager_write,
             'start-stop' => $serverRole->pivot->can_start_stop,
             'exec' => $serverRole->pivot->can_exec,
+            'docker_maintenance_read' => $serverRole->pivot->can_docker_maintenance_read,
+            'docker_maintenance_write' => $serverRole->pivot->can_docker_maintenance_write,
         ];
     }
 
@@ -90,6 +96,8 @@ class Role extends SpatieRole
                     'filemanager_write' => $server->pivot->can_filemanager_write,
                     'start-stop' => $server->pivot->can_start_stop,
                     'exec' => $server->pivot->can_exec,
+                    'docker_maintenance_read' => $server->pivot->can_docker_maintenance_read,
+                    'docker_maintenance_write' => $server->pivot->can_docker_maintenance_write,
                 ],
             ];
         })->toArray();

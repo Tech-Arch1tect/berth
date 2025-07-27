@@ -20,6 +20,8 @@ interface RoleServer {
         filemanager_write: boolean;
         'start-stop': boolean;
         exec: boolean;
+        docker_maintenance_read: boolean;
+        docker_maintenance_write: boolean;
     };
 }
 
@@ -46,6 +48,8 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                     filemanager_write: boolean;
                     'start-stop': boolean;
                     exec: boolean;
+                    docker_maintenance_read: boolean;
+                    docker_maintenance_write: boolean;
                 };
             }
         > = {};
@@ -67,6 +71,8 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                         filemanager_write: false,
                         'start-stop': false,
                         exec: false,
+                        docker_maintenance_read: false,
+                        docker_maintenance_write: false,
                     },
                 };
             }
@@ -96,6 +102,13 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                 if (permission === 'exec' && !newPerms.access) {
                     newPerms.access = true;
                 }
+                if (permission === 'docker_maintenance_read' && !newPerms.access) {
+                    newPerms.access = true;
+                }
+                if (permission === 'docker_maintenance_write' && (!newPerms.access || !newPerms.docker_maintenance_read)) {
+                    newPerms.access = true;
+                    newPerms.docker_maintenance_read = true;
+                }
             } else {
                 if (permission === 'access') {
                     newPerms = {
@@ -104,10 +117,15 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                         filemanager_write: false,
                         'start-stop': false,
                         exec: false,
+                        docker_maintenance_read: false,
+                        docker_maintenance_write: false,
                     };
                 }
                 if (permission === 'filemanager_access') {
                     newPerms.filemanager_write = false;
+                }
+                if (permission === 'docker_maintenance_read') {
+                    newPerms.docker_maintenance_write = false;
                 }
             }
 
@@ -149,7 +167,16 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
 
     const hasAnyPermission = (serverId: number) => {
         const perms = serverPermissions[serverId]?.permissions;
-        return perms && (perms.access || perms.filemanager_access || perms.filemanager_write || perms['start-stop'] || perms.exec);
+        return (
+            perms &&
+            (perms.access ||
+                perms.filemanager_access ||
+                perms.filemanager_write ||
+                perms['start-stop'] ||
+                perms.exec ||
+                perms.docker_maintenance_read ||
+                perms.docker_maintenance_write)
+        );
     };
 
     return (
@@ -190,7 +217,7 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 id={`${server.id}-access`}
@@ -264,15 +291,49 @@ export default function RolePermissions({ role, roleServers, allServers }: Props
                                                 Exec
                                             </label>
                                         </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`${server.id}-docker_maintenance_read`}
+                                                checked={serverPermissions[server.id]?.permissions.docker_maintenance_read || false}
+                                                onCheckedChange={(checked) =>
+                                                    handlePermissionChange(server.id, 'docker_maintenance_read', checked as boolean)
+                                                }
+                                            />
+                                            <label
+                                                htmlFor={`${server.id}-docker_maintenance_read`}
+                                                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                Docker Read
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`${server.id}-docker_maintenance_write`}
+                                                checked={serverPermissions[server.id]?.permissions.docker_maintenance_write || false}
+                                                onCheckedChange={(checked) =>
+                                                    handlePermissionChange(server.id, 'docker_maintenance_write', checked as boolean)
+                                                }
+                                            />
+                                            <label
+                                                htmlFor={`${server.id}-docker_maintenance_write`}
+                                                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                Docker Write
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <div className="mt-3 text-xs text-muted-foreground">
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
                                             <span>View stacks & logs</span>
                                             <span>Browse files</span>
                                             <span>Edit & delete files</span>
                                             <span>Start/stop containers</span>
                                             <span>Execute commands</span>
+                                            <span>View Docker maintenance</span>
+                                            <span>Perform Docker maintenance</span>
                                         </div>
                                     </div>
                                 </CardContent>

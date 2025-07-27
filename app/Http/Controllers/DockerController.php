@@ -15,8 +15,8 @@ class DockerController extends Controller
      */
     public function getSystemInfo(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_system_info', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -63,8 +63,8 @@ class DockerController extends Controller
      */
     public function getDiskUsage(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_disk_usage', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -111,8 +111,8 @@ class DockerController extends Controller
      */
     public function index(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_maintenance_view', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -136,8 +136,8 @@ class DockerController extends Controller
      */
     public function listImages(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_images_list', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -195,7 +195,7 @@ class DockerController extends Controller
      */
     public function deleteImage(Request $request, Server $server, string $imageId)
     {
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_image_delete', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -260,8 +260,8 @@ class DockerController extends Controller
      */
     public function pruneImages(Request $request, Server $server)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_images_prune', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -323,8 +323,8 @@ class DockerController extends Controller
      */
     public function listVolumes(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_volumes_list', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -372,8 +372,8 @@ class DockerController extends Controller
      */
     public function deleteVolume(Request $request, Server $server, string $volumeName)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_volume_delete', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -434,8 +434,8 @@ class DockerController extends Controller
      */
     public function pruneVolumes(Request $request, Server $server)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_volumes_prune', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -484,8 +484,8 @@ class DockerController extends Controller
      */
     public function listNetworks(Request $request, Server $server)
     {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
+        // Check if user has Docker maintenance read permission for this server
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_read')) {
             AuditLogService::logAccessDenied('docker_networks_list', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -533,8 +533,8 @@ class DockerController extends Controller
      */
     public function deleteNetwork(Request $request, Server $server, string $networkId)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_network_delete', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -584,8 +584,8 @@ class DockerController extends Controller
      */
     public function pruneNetworks(Request $request, Server $server)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_networks_prune', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -633,8 +633,8 @@ class DockerController extends Controller
      */
     public function pruneBuildCache(Request $request, Server $server)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_buildcache_prune', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
@@ -696,8 +696,8 @@ class DockerController extends Controller
      */
     public function systemPrune(Request $request, Server $server)
     {
-        // Check if user has start-stop permission for this server (destructive action)
-        if (!auth()->user()->hasServerPermission($server, 'start-stop')) {
+        // Check if user has Docker maintenance write permission for this server (destructive action)
+        if (!auth()->user()->hasServerPermission($server, 'docker_maintenance_write')) {
             AuditLogService::logAccessDenied('docker_system_prune', [
                 'server_id' => $server->id,
                 'server_name' => $server->display_name,
