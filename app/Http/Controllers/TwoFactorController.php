@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Services\AuditLogService;
 use Inertia\Inertia;
 
 class TwoFactorController extends Controller
@@ -43,6 +44,8 @@ class TwoFactorController extends Controller
         $user->two_factor_recovery_codes = $user->generateRecoveryCodes();
         $user->save();
 
+        AuditLogService::logUserAction('2fa_enabled', $user);
+
         return redirect()->back()->with('success', 'Two-factor authentication has been enabled.');
     }
 
@@ -63,6 +66,8 @@ class TwoFactorController extends Controller
         $user->two_factor_recovery_codes = null;
         $user->two_factor_confirmed_at = null;
         $user->save();
+
+        AuditLogService::logUserAction('2fa_disabled', $user);
 
         return redirect()->back()->with('success', 'Two-factor authentication has been disabled.');
     }
@@ -132,6 +137,9 @@ class TwoFactorController extends Controller
         // Try recovery code
         if ($user->useRecoveryCode($code)) {
             session(['two_factor_verified' => true]);
+            
+            AuditLogService::logUserAction('2fa_recovery_code_used', $user);
+            
             return redirect()->intended(route('dashboard'))->with('warning', 'You used a recovery code. Please consider regenerating your recovery codes.');
         }
 

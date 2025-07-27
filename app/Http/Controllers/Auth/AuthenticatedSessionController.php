@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,10 @@ class AuthenticatedSessionController extends Controller
         // Clear 2FA verification status on new login
         $request->session()->forget('two_factor_verified');
 
+        AuditLogService::logUserAction('login', auth()->user(), [
+            'login_method' => 'email_password',
+        ]);
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -44,6 +49,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if (auth()->check()) {
+            AuditLogService::logUserAction('logout', auth()->user());
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
