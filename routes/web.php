@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\StackController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Middleware\CheckAdminRole;
@@ -99,6 +100,11 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class, CheckAdminRol
     Route::put('servers/{server}', [ServerController::class, 'update'])->name('servers.update');
     Route::delete('servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
     Route::get('servers/{server}/health', [ServerController::class, 'healthCheck'])->name('servers.health');
+    
+    // Audit log management
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('audit-logs/{auditLog}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+    Route::get('audit-logs/export/csv', [AuditLogController::class, 'export'])->name('audit-logs.export');
     
 });
 
