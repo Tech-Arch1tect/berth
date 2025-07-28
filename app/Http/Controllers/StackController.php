@@ -139,6 +139,44 @@ class StackController extends Controller
         }, $stacksData);
     }
 
+    public function fetchStacksWithStatusFromServer(Server $server): array
+    {
+        $protocol = $server->https ? 'https' : 'http';
+        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/bulk/stacks-with-status";
+        
+        $response = Http::timeout(config('app.agent_http_timeout', 120))
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $server->access_secret,
+                'Accept' => 'application/json',
+            ])
+            ->get($url);
+
+        if (!$response->successful()) {
+            throw new \Exception("Server returned status: {$response->status()}");
+        }
+
+        $bulkData = $response->json();
+        
+        if (!isset($bulkData['stacks']) || !is_array($bulkData['stacks'])) {
+            throw new \Exception("Invalid bulk response format from server");
+        }
+
+        return array_map(function ($stackData) {
+            $serviceStatus = $stackData['service_status'] ?? null;
+            
+            unset($stackData['service_status']);
+            
+            $stack = Stack::fromArray($stackData);
+            $stackArray = $stack->toArray();
+            
+            if ($serviceStatus) {
+                $stackArray['service_status'] = $serviceStatus;
+            }
+            
+            return $stackArray;
+        }, $bulkData['stacks']);
+    }
+
     public function fetchServiceStatusFromServer(Server $server, string $stackName): array
     {
         $protocol = $server->https ? 'https' : 'http';
@@ -930,7 +968,7 @@ class StackController extends Controller
     public function getServerStatistics(Server $server): array
     {
         try {
-            $stacks = $this->fetchStacksFromServer($server);
+            $stacks = $this->fetchStacksWithStatusFromServer($server);
             
             $totalStacks = count($stacks);
             $runningStacks = 0;
@@ -940,13 +978,7 @@ class StackController extends Controller
             foreach ($stacks as $stackData) {
                 $totalServices += $stackData['service_count'] ?? 0;
                 
-                try {
-                    $serviceStatus = $this->fetchServiceStatusFromServer($server, $stackData['name']);
-                    $stackData['service_status'] = $serviceStatus ? [
-                        'stack' => $serviceStatus['stack'] ?? $stackData['name'],
-                        'services' => $serviceStatus['services'] ?? []
-                    ] : null;
-                    
+                if (isset($stackData['service_status'])) {
                     $stackModel = \App\Models\Stack::fromArray($stackData);
                     $statusSummary = $stackModel->getServiceStatusSummary();
                     $overallStatus = $stackModel->getOverallStatus();
@@ -955,9 +987,6 @@ class StackController extends Controller
                     if ($overallStatus === 'running') {
                         $runningStacks++;
                     }
-                } catch (\Exception $e) {
-                    // If we can't get service status for this stack, assume it's stopped
-                    // but still count its total services
                 }
             }
             
