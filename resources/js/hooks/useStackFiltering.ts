@@ -23,13 +23,13 @@ interface UseStackFilteringReturn {
     clearFilters: () => void;
 }
 
-export function useStackFiltering(stacks: StackWithLoading[]): UseStackFilteringReturn {
+export function useStackFiltering(stacks: StackWithLoading[] | undefined): UseStackFilteringReturn {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOption, setSortOption] = useState('name');
     const [filterStatus, setFilterStatus] = useState<string>('all');
 
     const filteredAndSortedStacks = useMemo(() => {
-        return stacks
+        return (stacks || [])
             .filter((stack) => {
                 const matchesSearch =
                     stack.name.toLowerCase().includes(searchTerm.toLowerCase()) || stack.path.toLowerCase().includes(searchTerm.toLowerCase());
@@ -64,7 +64,10 @@ export function useStackFiltering(stacks: StackWithLoading[]): UseStackFiltering
         [filteredAndSortedStacks],
     );
 
-    const uniqueStatuses = useMemo(() => Array.from(new Set(stacks.map((stack) => stack.overall_status).filter(Boolean))) as string[], [stacks]);
+    const uniqueStatuses = useMemo(
+        () => Array.from(new Set((stacks || []).map((stack) => stack.overall_status).filter(Boolean))) as string[],
+        [stacks],
+    );
 
     const clearFilters = () => {
         setSearchTerm('');

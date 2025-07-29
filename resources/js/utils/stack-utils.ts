@@ -41,14 +41,39 @@ export function calculateServiceStatusSummary(
 }
 
 export function getServiceDisplayState(stack: StackLike, serviceName: string) {
-    const isRunning = stack.service_status_summary?.running !== undefined && stack.service_status_summary.running > 0;
+    const serviceStatus = stack.service_status?.services?.find((s) => {
+        const containerName = s.name.toLowerCase();
+        const searchService = serviceName.toLowerCase();
+
+        if (containerName === searchService) {
+            return true;
+        }
+
+        const dockerComposePattern = new RegExp(`[^_]*_${searchService}_\\d+$`);
+        if (dockerComposePattern.test(containerName)) {
+            return true;
+        }
+
+        
+        const dashPattern = new RegExp(`[^-]*-${searchService}-\\d+$`);
+        if (dashPattern.test(containerName)) {
+            return true;
+        }
+
+        
+        if (containerName.endsWith(`_${searchService}`) || containerName.endsWith(`-${searchService}`)) {
+            return true;
+        }
+
+        return false;
+    });
+
+    
+    const isRunning = serviceStatus?.state === 'running';
+
     return {
         isRunning,
         displayState: isRunning ? 'running' : 'stopped',
-        serviceStatus: stack.service_status?.services?.find((s) => {
-            const containerName = s.name.toLowerCase();
-            const searchService = serviceName.toLowerCase();
-            return containerName.includes(searchService);
-        }),
+        serviceStatus,
     };
 }
