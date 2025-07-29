@@ -21,14 +21,13 @@ interface Props {
     server: Server;
     error?: string;
     userPermissions: UserPermissions;
-    initialStacks: Stack[];
 }
 
-export default function StacksIndex({ server, error, initialStacks }: Props) {
+export default function StacksIndex({ server, error }: Props) {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-    const { data: stacks = initialStacks, isLoading, refetch } = useServerStacks(server.id, true);
+    const { data: stacks = [], isLoading, refetch } = useServerStacks(server.id, true);
 
     const {
         filteredAndSortedStacks,
@@ -93,7 +92,7 @@ export default function StacksIndex({ server, error, initialStacks }: Props) {
                 </div>
 
                 {/* Stats Overview */}
-                {stacks && stacks.length > 0 && (
+                {stacks && stacks.length > 0 && !isLoading && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm">
                             <CardContent className="p-5">
@@ -153,7 +152,7 @@ export default function StacksIndex({ server, error, initialStacks }: Props) {
                     </div>
                 )}
 
-                {stacks && stacks.length > 0 && (
+                {stacks && stacks.length > 0 && !isLoading && (
                     <SearchAndFilters
                         searchTerm={searchTerm}
                         sortOption={sortOption}
@@ -177,8 +176,21 @@ export default function StacksIndex({ server, error, initialStacks }: Props) {
                     </Card>
                 )}
 
+                {/* Loading State */}
+                {isLoading && !stacks.length ? (
+                    <Card className="p-12 text-center">
+                        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
+                            <RefreshCw className="h-12 w-12 animate-spin text-muted-foreground" />
+                        </div>
+                        <h3 className="mb-3 text-xl font-semibold">Loading Stacks</h3>
+                        <p className="mx-auto max-w-md text-muted-foreground">
+                            Fetching Docker Compose stacks from {server.display_name}...
+                        </p>
+                    </Card>
+                ) : null}
+
                 {/* Empty State */}
-                {filteredAndSortedStacks.length === 0 && !error ? (
+                {filteredAndSortedStacks.length === 0 && !error && !isLoading ? (
                     <Card className="p-12 text-center">
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
                             <Container className="h-12 w-12 text-muted-foreground" />

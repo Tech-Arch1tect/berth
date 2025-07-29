@@ -22,29 +22,16 @@ class StackController extends Controller
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
-        try {
-            $stacks = $this->fetchStacksWithStatusFromServer($server);
-            
-            AuditLogService::logStackAction('stack_viewed', $server, 'index', [
-                'action' => 'list_stacks',
-                'stack_count' => count($stacks),
-            ]);
-            
-            return Inertia::render('Stacks/Index', [
-                'server' => $server,
-                'initialStacks' => $stacks,
-                'userPermissions' => auth()->user()->getServerPermissions($server),
-                'isAdmin' => auth()->user()->isAdmin(),
-            ]);
-        } catch (\Exception $e) {
-            return Inertia::render('Stacks/Index', [
-                'server' => $server,
-                'initialStacks' => [],
-                'error' => 'Failed to fetch stacks: ' . $e->getMessage(),
-                'userPermissions' => auth()->user()->getServerPermissions($server),
-                'isAdmin' => auth()->user()->isAdmin(),
-            ]);
-        }
+        AuditLogService::logStackAction('stack_viewed', $server, 'index', [
+            'action' => 'list_stacks_page_loaded',
+        ]);
+        
+        return Inertia::render('Stacks/Index', [
+            'server' => $server,
+            'initialStacks' => [],
+            'userPermissions' => auth()->user()->getServerPermissions($server),
+            'isAdmin' => auth()->user()->isAdmin(),
+        ]);
     }
 
     public function show(Request $request, Server $server, string $stackName)
