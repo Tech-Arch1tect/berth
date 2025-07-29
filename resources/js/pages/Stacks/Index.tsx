@@ -2,6 +2,7 @@ import SearchAndFilters from '@/components/SearchAndFilters';
 import StackCard from '@/components/StackCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useRefreshStacks } from '@/hooks/mutations/use-stack-mutations';
 import { useServerStacks } from '@/hooks/queries/use-server-stacks';
 import { useStackFiltering } from '@/hooks/useStackFiltering';
 import AppLayout from '@/layouts/app-layout';
@@ -24,10 +25,10 @@ interface Props {
 }
 
 export default function StacksIndex({ server, error }: Props) {
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-    const { data: stacks = [], isLoading, refetch } = useServerStacks(server.id, true);
+    const { data: stacks = [], isLoading } = useServerStacks(server.id, true);
+    const refreshStacksMutation = useRefreshStacks(server.id);
 
     const {
         filteredAndSortedStacks,
@@ -50,12 +51,11 @@ export default function StacksIndex({ server, error }: Props) {
     ];
 
     const refreshStacks = async () => {
-        setIsRefreshing(true);
         setLastRefresh(new Date());
         try {
-            await refetch();
-        } finally {
-            setIsRefreshing(false);
+            await refreshStacksMutation.mutateAsync();
+        } catch (error) {
+            console.error('Failed to refresh stacks:', error);
         }
     };
 
@@ -84,8 +84,8 @@ export default function StacksIndex({ server, error }: Props) {
                                 Docker Maintenance
                             </Link>
                         </Button>
-                        <Button onClick={refreshStacks} disabled={isRefreshing || isLoading} size="lg" className="gap-2">
-                            <RefreshCw className={`h-4 w-4 ${isRefreshing || isLoading ? 'animate-spin' : ''}`} />
+                        <Button onClick={refreshStacks} disabled={refreshStacksMutation.isPending || isLoading} size="lg" className="gap-2">
+                            <RefreshCw className={`h-4 w-4 ${refreshStacksMutation.isPending || isLoading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
                     </div>
@@ -177,7 +177,7 @@ export default function StacksIndex({ server, error }: Props) {
                 )}
 
                 {/* Loading State */}
-                {isLoading && !stacks.length ? (
+                {(isLoading || refreshStacksMutation.isPending) && !stacks.length ? (
                     <Card className="p-12 text-center">
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
                             <RefreshCw className="h-12 w-12 animate-spin text-muted-foreground" />

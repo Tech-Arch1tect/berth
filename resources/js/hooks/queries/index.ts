@@ -19,4 +19,10 @@ export { useServerStack } from './use-server-stack';
 export { useServerStacks } from './use-server-stacks';
 export { useStackLogs } from './use-stack-logs';
 
-export { useOptimisticStackUpdate, useRefreshStackStatus, useRefreshStacks } from '../mutations/use-stack-mutations';
+export {
+    useOptimisticStackUpdate,
+    useRefreshStackStatus,
+    useRefreshStacks,
+    useServerHealthRefresh,
+    useStackOperationSuccess,
+} from '../mutations/use-stack-mutations';

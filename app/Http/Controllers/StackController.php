@@ -193,25 +193,6 @@ class StackController extends Controller
         return $logsData;
     }
 
-    public function refresh(Request $request, Server $server)
-    {
-        // Check if user has access permission for this server
-        if (!auth()->user()->hasServerPermission($server, 'access')) {
-            return response()->json(['error' => 'Insufficient permissions'], 403);
-        }
-
-        try {
-            $stacks = $this->fetchStacksFromServer($server);
-            return response()->json([
-                'stacks' => $stacks,
-                'message' => 'Stacks refreshed successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to refresh stacks: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     public function getServiceStatus(Request $request, Server $server, string $stackName)
     {

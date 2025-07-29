@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useStackOperationSuccess } from '@/hooks/mutations/use-stack-mutations';
 import { useServerStack } from '@/hooks/queries';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -35,6 +36,7 @@ export default function StackShow({ server, stackName, userPermissions }: Props)
     const [terminalShell, setTerminalShell] = useState<string>('auto');
 
     const { data: stack, isLoading, refetch } = useServerStack(server.id, stackName, true);
+    const { invalidateStackData } = useStackOperationSuccess(server.id, stackName);
 
     const breadcrumbs = useMemo(
         (): BreadcrumbItem[] => [
@@ -109,10 +111,11 @@ export default function StackShow({ server, stackName, userPermissions }: Props)
     const handleProgressComplete = useCallback(
         (success: boolean) => {
             if (success) {
+                invalidateStackData();
                 refreshStack();
             }
         },
-        [refreshStack],
+        [invalidateStackData, refreshStack],
     );
 
     const handleProgressClose = useCallback(() => {

@@ -42,7 +42,6 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
     // Stack viewing (available to all authenticated users with server permissions)
     Route::get('servers/{server}/stacks', [StackController::class, 'index'])->name('stacks.index');
     Route::get('servers/{server}/stacks/{stackName}', [StackController::class, 'show'])->name('stacks.show');
-    Route::get('servers/{server}/stacks/refresh', [StackController::class, 'refresh'])->name('stacks.refresh');
     Route::get('api/servers/{server}/stacks', [StackController::class, 'apiIndex'])->name('api.stacks.index');
     Route::get('api/servers/{server}/stacks/{stackName}/status', [StackController::class, 'getServiceStatus'])->name('api.stacks.status');
     Route::get('api/servers/{server}/stacks/{stackName}/logs', [StackController::class, 'getLogs'])->name('api.stacks.logs');

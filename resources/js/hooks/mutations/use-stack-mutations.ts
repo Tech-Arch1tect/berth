@@ -1,5 +1,4 @@
 import type { Stack } from '@/types/entities';
-import { apiPost } from '@/utils/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useRefreshStacks(serverId: number) {
@@ -7,17 +6,12 @@ export function useRefreshStacks(serverId: number) {
 
     return useMutation({
         mutationFn: async () => {
-            const response = await apiPost(`/api/servers/${serverId}/stacks/refresh`);
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to refresh stacks');
-            }
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 queryKey: ['servers', serverId, 'stacks'],
             });
-
+            return { success: true };
+        },
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['dashboard', 'stats'],
             });
@@ -65,4 +59,64 @@ export function useOptimisticStackUpdate(serverId: number) {
         updateStackOptimistically,
         revertStackUpdate,
     };
+}
+
+export function useStackOperationSuccess(serverId: number, stackName?: string) {
+    const queryClient = useQueryClient();
+
+    const invalidateStackData = () => {
+        queryClient.invalidateQueries({
+            queryKey: ['servers', serverId, 'stacks'],
+        });
+
+        if (stackName) {
+            queryClient.invalidateQueries({
+                queryKey: ['servers', serverId, 'stacks', stackName],
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['servers', serverId, 'stacks', stackName, 'status'],
+            });
+        }
+
+        queryClient.invalidateQueries({
+            queryKey: ['dashboard', 'stats'],
+        });
+
+        queryClient.invalidateQueries({
+            queryKey: ['servers', serverId, 'docker', 'system'],
+        });
+
+        queryClient.invalidateQueries({
+            queryKey: ['servers', serverId, 'docker', 'system', 'df'],
+        });
+
+        queryClient.invalidateQueries({
+            queryKey: ['servers', serverId, 'docker', 'system', 'info'],
+        });
+
+        if (stackName) {
+            queryClient.invalidateQueries({
+                queryKey: ['servers', serverId, 'stacks', stackName, 'logs'],
+            });
+        }
+    };
+
+    return { invalidateStackData };
+}
+
+export function useServerHealthRefresh(serverId: number) {
+    const queryClient = useQueryClient();
+
+    const invalidateServerHealth = () => {
+        queryClient.invalidateQueries({
+            queryKey: ['admin', 'servers', serverId, 'health'],
+        });
+
+        queryClient.invalidateQueries({
+            queryKey: ['dashboard', 'stats'],
+        });
+    };
+
+    return { invalidateServerHealth };
 }
