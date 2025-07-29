@@ -190,7 +190,48 @@ class StackController extends Controller
             throw new \Exception("Invalid response format from server");
         }
 
-        return $logsData;
+        if (!isset($logsData['logs']) || !is_string($logsData['logs'])) {
+            throw new \Exception("Invalid logs response format: missing or invalid 'logs' field");
+        }
+        
+        $rawLogs = $logsData['logs'];
+        $logEntries = [];
+        
+        $lines = explode("\n", trim($rawLogs));
+        
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            
+            if (preg_match('/^([^|]+)\s*\|\s*(.*)$/', $line, $matches)) {
+                $serviceName = trim($matches[1]);
+                $message = trim($matches[2]);
+                
+                $timestamp = date('c');
+                if (preg_match('/^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})/', $message, $timeMatches)) {
+                    try {
+                        $timestamp = date('c', strtotime($timeMatches[1]));
+                    } catch (\Exception $e) {
+                        // Keep default timestamp if parsing fails
+                    }
+                }
+                
+                $logEntries[] = [
+                    'timestamp' => $timestamp,
+                    'service' => $serviceName,
+                    'message' => $message,
+                ];
+            } else {
+                $logEntries[] = [
+                    'timestamp' => date('c'),
+                    'service' => $logsData['service'] ?? '',
+                    'message' => $line,
+                ];
+            }
+        }
+        
+        return $logEntries;
     }
 
 

@@ -28,7 +28,5 @@ export function useStackLogs(serverId: number, stackName: string, serviceName?: 
             return response.data!;
         },
         enabled,
-        staleTime: 5 * 1000,
-        refetchInterval: 5 * 1000,
     });
 }
