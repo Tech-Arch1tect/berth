@@ -54,13 +54,11 @@ export function getServiceDisplayState(stack: StackLike, serviceName: string) {
             return true;
         }
 
-        
         const dashPattern = new RegExp(`[^-]*-${searchService}-\\d+$`);
         if (dashPattern.test(containerName)) {
             return true;
         }
 
-        
         if (containerName.endsWith(`_${searchService}`) || containerName.endsWith(`-${searchService}`)) {
             return true;
         }
@@ -68,7 +66,6 @@ export function getServiceDisplayState(stack: StackLike, serviceName: string) {
         return false;
     });
 
-    
     const isRunning = serviceStatus?.state === 'running';
 
     return {

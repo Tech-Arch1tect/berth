@@ -6,7 +6,7 @@ import { useServerStacks } from '@/hooks/queries/use-server-stacks';
 import { useStackFiltering } from '@/hooks/useStackFiltering';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import type { Server, Stack } from '@/types/entities';
+import type { Server } from '@/types/entities';
 import { Head, Link } from '@inertiajs/react';
 import { Activity, AlertCircle, Clock, Container, HardDrive, Layers3, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
@@ -183,9 +183,7 @@ export default function StacksIndex({ server, error }: Props) {
                             <RefreshCw className="h-12 w-12 animate-spin text-muted-foreground" />
                         </div>
                         <h3 className="mb-3 text-xl font-semibold">Loading Stacks</h3>
-                        <p className="mx-auto max-w-md text-muted-foreground">
-                            Fetching Docker Compose stacks from {server.display_name}...
-                        </p>
+                        <p className="mx-auto max-w-md text-muted-foreground">Fetching Docker Compose stacks from {server.display_name}...</p>
                     </Card>
                 ) : null}
 

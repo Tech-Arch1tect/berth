@@ -11,20 +11,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useServerStack } from '@/hooks/queries';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import type { Server, Stack, UserPermissions } from '@/types/entities';
-import { Head, router } from '@inertiajs/react';
-import { AlertCircle, Container, FileText, Globe, HardDrive, Network, Terminal } from 'lucide-react';
+import type { Server, UserPermissions } from '@/types/entities';
+import { Head } from '@inertiajs/react';
+import { AlertCircle, Container, FileText, Globe, HardDrive, Network, RefreshCw, Terminal } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 interface Props {
     server: Server;
-    stack: Stack;
+    stackName: string;
     userPermissions: UserPermissions;
 }
 
-export default function StackShow({ server, stack, userPermissions }: Props) {
+export default function StackShow({ server, stackName, userPermissions }: Props) {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUrl, setProgressUrl] = useState<string>('');
@@ -33,21 +34,25 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const [terminalService, setTerminalService] = useState<string>('');
     const [terminalShell, setTerminalShell] = useState<string>('auto');
 
+    const { data: stack, isLoading, refetch } = useServerStack(server.id, stackName, true);
+
     const breadcrumbs = useMemo(
         (): BreadcrumbItem[] => [
             { title: 'Dashboard', href: '/dashboard' },
             { title: server.display_name, href: `/servers/${server.id}/stacks` },
-            { title: stack.name, href: `/servers/${server.id}/stacks/${stack.name}` },
+            { title: stackName, href: `/servers/${server.id}/stacks/${stackName}` },
         ],
-        [server.display_name, server.id, stack.name],
+        [server.display_name, server.id, stackName],
     );
 
-    const refreshStack = useCallback(() => {
+    const refreshStack = useCallback(async () => {
         setIsRefreshing(true);
-        router.reload({
-            onFinish: () => setIsRefreshing(false),
-        });
-    }, []);
+        try {
+            await refetch();
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [refetch]);
 
     const bringStackUp = useCallback(
         async (services: string[] = [], build = false) => {
@@ -61,12 +66,12 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                 params.set('build', 'true');
             }
 
-            const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/up/stream?${params}`;
+            const streamUrl = `/api/servers/${server.id}/stacks/${stackName}/up/stream?${params}`;
             setProgressUrl(streamUrl);
-            setProgressTitle(`Starting Stack: ${stack.name}${build ? ' (with --build)' : ''}`);
+            setProgressTitle(`Starting Stack: ${stackName}${build ? ' (with --build)' : ''}`);
             setShowProgressModal(true);
         },
-        [server.id, stack.name, showProgressModal],
+        [server.id, stackName, showProgressModal],
     );
 
     const bringStackDown = useCallback(
@@ -77,12 +82,12 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                 services: services.join(','),
             });
 
-            const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/down/stream?${params}`;
+            const streamUrl = `/api/servers/${server.id}/stacks/${stackName}/down/stream?${params}`;
             setProgressUrl(streamUrl);
-            setProgressTitle(`Stopping Stack: ${stack.name}`);
+            setProgressTitle(`Stopping Stack: ${stackName}`);
             setShowProgressModal(true);
         },
-        [server.id, stack.name, showProgressModal],
+        [server.id, stackName, showProgressModal],
     );
 
     const pullStack = useCallback(
@@ -93,12 +98,12 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                 services: services.join(','),
             });
 
-            const streamUrl = `/api/servers/${server.id}/stacks/${stack.name}/pull/stream?${params}`;
+            const streamUrl = `/api/servers/${server.id}/stacks/${stackName}/pull/stream?${params}`;
             setProgressUrl(streamUrl);
-            setProgressTitle(`Pulling Images: ${stack.name}`);
+            setProgressTitle(`Pulling Images: ${stackName}`);
             setShowProgressModal(true);
         },
-        [server.id, stack.name, showProgressModal],
+        [server.id, stackName, showProgressModal],
     );
 
     const handleProgressComplete = useCallback(
@@ -115,6 +120,8 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     }, []);
 
     const networkContent = useMemo(() => {
+        if (!stack) return null;
+
         const networkEntries = Object.entries(stack.networks);
 
         if (networkEntries.length === 0) return null;
@@ -148,7 +155,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                 </CardContent>
             </Card>
         );
-    }, [stack.networks, stack.service_status, stack.services, stack.name]);
+    }, [stack]);
 
     const openTerminalSession = useCallback(() => {
         if (!terminalService) return;
@@ -161,6 +168,25 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
     const closeTerminalSession = useCallback((sessionId: string) => {
         setTerminalSessions((prev) => prev.filter((session) => session.id !== sessionId));
     }, []);
+
+    if (isLoading || !stack) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title={`${stackName} - ${server.display_name}`} />
+                <div className="space-y-6">
+                    <Card className="p-12 text-center">
+                        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
+                            <RefreshCw className="h-12 w-12 animate-spin text-muted-foreground" />
+                        </div>
+                        <h3 className="mb-3 text-xl font-semibold">Loading Stack Details</h3>
+                        <p className="mx-auto max-w-md text-muted-foreground">
+                            Fetching {stackName} details from {server.display_name}...
+                        </p>
+                    </Card>
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -236,7 +262,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                     </TabsContent>
                     {userPermissions.filemanager_access && (
                         <TabsContent value="files" className="mt-6">
-                            <FileManager serverId={server.id} stackName={stack.name} canWrite={!!userPermissions.filemanager_write} />
+                            <FileManager serverId={server.id} stackName={stackName} canWrite={!!userPermissions.filemanager_write} />
                         </TabsContent>
                     )}
                 </Tabs>
@@ -281,7 +307,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 <SelectValue placeholder="Choose service..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {stack.service_names.map((service) => (
+                                                {(stack?.service_names || []).map((service) => (
                                                     <SelectItem key={service} value={service} className="font-mono">
                                                         <div className="flex items-center gap-2">
                                                             <div className="h-2 w-2 rounded-full bg-green-500/60"></div>
@@ -333,7 +359,7 @@ export default function StackShow({ server, stack, userPermissions }: Props) {
                                                 {index > 0 && <div className="border-t border-border/10" />}
                                                 <TerminalSession
                                                     serverId={server.id}
-                                                    stackName={stack.name}
+                                                    stackName={stackName}
                                                     service={session.service}
                                                     shell={session.shell}
                                                     onClose={() => closeTerminalSession(session.id)}

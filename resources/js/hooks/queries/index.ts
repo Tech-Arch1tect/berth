@@ -15,6 +15,7 @@ export {
     usePruneDockerSystem,
     usePruneDockerVolumes,
 } from './use-docker-system';
+export { useServerStack } from './use-server-stack';
 export { useServerStacks } from './use-server-stacks';
 export { useStackLogs } from './use-stack-logs';
 

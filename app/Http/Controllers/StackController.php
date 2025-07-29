@@ -46,40 +46,15 @@ class StackController extends Controller
             abort(403, 'You do not have permission to view stacks on this server.');
         }
 
-        try {
-            $stacks = $this->fetchStacksFromServer($server);
-            $stack = collect($stacks)->firstWhere('name', $stackName);
-            
-            if (!$stack) {
-                abort(404, 'Stack not found.');
-            }
+        AuditLogService::logStackAction('stack_viewed', $server, $stackName, [
+            'action' => 'view_stack_details_page_loaded',
+        ]);
 
-            // Fetch service status for this specific stack
-            try {
-                $serviceStatus = $this->fetchServiceStatusFromServer($server, $stackName);
-                $stack['service_status'] = $serviceStatus;
-                
-                // Create a Stack model instance to calculate status fields
-                $stackModel = Stack::fromArray($stack);
-                $stack = $stackModel->toArray();
-            } catch (\Exception $e) {
-                // If we can't fetch service status, continue without it
-                $stack['service_status'] = null;
-            }
-
-            AuditLogService::logStackAction('stack_viewed', $server, $stackName, [
-                'action' => 'view_stack_details',
-                'service_count' => count($stack['service_status']['services'] ?? []),
-            ]);
-
-            return Inertia::render('Stacks/Show', [
-                'server' => $server,
-                'stack' => $stack,
-                'userPermissions' => auth()->user()->getServerPermissions($server),
-            ]);
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to fetch stack details: ' . $e->getMessage()]);
-        }
+        return Inertia::render('Stacks/Show', [
+            'server' => $server,
+            'stackName' => $stackName,
+            'userPermissions' => auth()->user()->getServerPermissions($server),
+        ]);
     }
 
     public function apiIndex(Request $request, Server $server)
