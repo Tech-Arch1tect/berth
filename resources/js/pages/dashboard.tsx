@@ -1,12 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDashboardStats } from '@/hooks/queries/use-dashboard-stats';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import type { Server as ServerType } from '@/types/entities';
-import { apiGet } from '@/utils/api';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Activity, AlertCircle, ChevronRight, Container, Cpu, Layers3, Server, Settings } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Activity, AlertCircle, ChevronRight, Container, Cpu, Layers3, RefreshCw, Server, Settings } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -15,40 +14,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface ServerStats {
-    total_stacks: number;
-    running_stacks: number;
-    total_services: number;
-    running_services: number;
-    status: 'online' | 'offline';
-    error?: string;
-}
-
 interface Props {
     isAdmin: boolean;
 }
 
 export default function Dashboard({ isAdmin }: Props) {
     const { servers } = usePage().props as unknown as { servers: ServerType[] };
-    const [serverStats, setServerStats] = useState<Record<number, ServerStats>>({});
-    const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await apiGet('/api/dashboard/stats');
-                if (response.success) {
-                    setServerStats(response.data as Record<number, ServerStats>);
-                }
-            } catch (error) {
-                console.error('Failed to fetch dashboard stats:', error);
-            } finally {
-                setIsLoadingStats(false);
-            }
-        };
-
-        fetchStats();
-    }, []);
+    const { data: serverStats = {}, isLoading: isLoadingStats, error: statsError, refetch: refetchStats, isFetching, isStale } = useDashboardStats();
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -65,9 +38,21 @@ export default function Dashboard({ isAdmin }: Props) {
                             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                             <p className="text-muted-foreground">Manage your Docker Compose infrastructure</p>
                         </div>
+                        <div className="ml-auto flex items-center gap-2">
+                            {isStale && !isFetching && <span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">Stale data</span>}
+                            {isFetching && (
+                                <span className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-600">
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                    Refreshing...
+                                </span>
+                            )}
+                            <Button variant="outline" size="sm" onClick={() => refetchStats()} disabled={isFetching}>
+                                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Stats Bar */}
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Activity className="h-4 w-4 text-green-500" />
@@ -75,7 +60,16 @@ export default function Dashboard({ isAdmin }: Props) {
                                 {servers.length} server{servers.length !== 1 ? 's' : ''} available
                             </span>
                         </div>
+
+                        {statsError && (
+                            <div className="flex items-center gap-2 text-destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Failed to load stats</span>
+                            </div>
+                        )}
+
                         {!isLoadingStats &&
+                            !statsError &&
                             Object.keys(serverStats).length > 0 &&
                             (() => {
                                 const totalStacks = Object.values(serverStats).reduce((sum, stats) => sum + stats.total_stacks, 0);
@@ -107,6 +101,7 @@ export default function Dashboard({ isAdmin }: Props) {
                                     </>
                                 );
                             })()}
+
                         {isLoadingStats && (
                             <div className="flex items-center gap-2">
                                 <Cpu className="h-4 w-4 animate-pulse text-muted-foreground" />
@@ -116,7 +111,6 @@ export default function Dashboard({ isAdmin }: Props) {
                     </div>
                 </div>
 
-                {/* Main Content */}
                 {servers.length === 0 ? (
                     <Card className="p-12 text-center">
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
@@ -220,7 +214,9 @@ export default function Dashboard({ isAdmin }: Props) {
                                                     <div className="flex items-center justify-center rounded-lg bg-muted/30 p-3">
                                                         <div className="flex items-center gap-2">
                                                             <Cpu className="h-4 w-4 animate-pulse text-muted-foreground" />
-                                                            <span className="text-sm text-muted-foreground">Loading...</span>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {isStale && !isFetching ? 'Stale data' : 'Loading...'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 )}

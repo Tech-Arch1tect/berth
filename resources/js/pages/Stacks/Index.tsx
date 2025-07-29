@@ -2,15 +2,14 @@ import SearchAndFilters from '@/components/SearchAndFilters';
 import StackCard from '@/components/StackCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useServerStacks } from '@/hooks/queries/use-server-stacks';
 import { useStackFiltering } from '@/hooks/useStackFiltering';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import type { Server, Stack } from '@/types/entities';
-import { apiGet } from '@/utils/api';
-import { calculateServiceStatusSummary } from '@/utils/stack-utils';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Activity, AlertCircle, Clock, Container, HardDrive, Layers3, RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface UserPermissions {
     read: boolean;
@@ -18,22 +17,18 @@ interface UserPermissions {
     'start-stop': boolean;
 }
 
-interface StackWithLoading extends Stack {
-    isLoadingStatus?: boolean;
-}
-
 interface Props {
     server: Server;
-    stacks: Stack[];
     error?: string;
     userPermissions: UserPermissions;
-    isAdmin?: boolean;
+    initialStacks: Stack[];
 }
 
-export default function StacksIndex({ server, stacks: initialStacks, error }: Props) {
-    const [stacks, setStacks] = useState<StackWithLoading[]>(initialStacks.map((stack) => ({ ...stack, isLoadingStatus: true })));
+export default function StacksIndex({ server, error, initialStacks }: Props) {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+    const { data: stacks = initialStacks, isLoading, refetch } = useServerStacks(server.id, true);
 
     const {
         filteredAndSortedStacks,
@@ -55,103 +50,14 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
         { title: server.display_name, href: `/servers/${server.id}/stacks` },
     ];
 
-    const fetchServiceStatus = useCallback(
-        async (
-            stackName: string,
-        ): Promise<{
-            stack: string;
-            services: Array<{
-                id: string;
-                name: string;
-                command: string;
-                state: string;
-                ports: string;
-                image: string;
-                networks: Array<{
-                    name: string;
-                    ip_address: string;
-                    gateway: string;
-                }>;
-            }> | null;
-        } | null> => {
-            try {
-                const response = await apiGet(`/api/servers/${server.id}/stacks/${stackName}/status`);
-                if (response.success) {
-                    return response.data as {
-                        stack: string;
-                        services: Array<{
-                            id: string;
-                            name: string;
-                            command: string;
-                            state: string;
-                            ports: string;
-                            image: string;
-                            networks: Array<{
-                                name: string;
-                                ip_address: string;
-                                gateway: string;
-                            }>;
-                        }> | null;
-                    };
-                } else {
-                    console.error(`Failed to fetch status for stack ${stackName}:`, response.error);
-                }
-            } catch (err) {
-                console.error(`Failed to fetch status for stack ${stackName}:`, err);
-            }
-            return null;
-        },
-        [server.id],
-    );
-
-    useEffect(() => {
-        const fetchInitialStatus = async () => {
-            if (initialStacks.length > 0) {
-                setStacks(initialStacks.map((stack) => ({ ...stack, isLoadingStatus: true })));
-
-                for (const stack of initialStacks) {
-                    try {
-                        const serviceStatus = await fetchServiceStatus(stack.name);
-                        const { statusSummary, overallStatus } = calculateServiceStatusSummary(stack, serviceStatus);
-
-                        setStacks((prevStacks) =>
-                            prevStacks.map((s) =>
-                                s.name === stack.name
-                                    ? {
-                                          ...s,
-                                          service_status: serviceStatus
-                                              ? {
-                                                    stack: serviceStatus.stack,
-                                                    services: serviceStatus.services,
-                                                }
-                                              : undefined,
-                                          service_status_summary: statusSummary,
-                                          overall_status: overallStatus,
-                                          running_services_count: statusSummary.running,
-                                          total_services_count: statusSummary.total,
-                                          isLoadingStatus: false,
-                                      }
-                                    : s,
-                            ),
-                        );
-                    } catch {
-                        setStacks((prevStacks) =>
-                            prevStacks.map((s) => (s.name === stack.name ? { ...s, isLoadingStatus: false, overall_status: 'unknown' as const } : s)),
-                        );
-                    }
-                }
-            }
-        };
-
-        fetchInitialStatus();
-    }, [initialStacks, fetchServiceStatus]);
-
-    const refreshStacks = () => {
+    const refreshStacks = async () => {
         setIsRefreshing(true);
         setLastRefresh(new Date());
-        router.reload({
-            onFinish: () => setIsRefreshing(false),
-        });
+        try {
+            await refetch();
+        } finally {
+            setIsRefreshing(false);
+        }
     };
 
     return (
@@ -179,15 +85,15 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                                 Docker Maintenance
                             </Link>
                         </Button>
-                        <Button onClick={refreshStacks} disabled={isRefreshing} size="lg" className="gap-2">
-                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <Button onClick={refreshStacks} disabled={isRefreshing || isLoading} size="lg" className="gap-2">
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing || isLoading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
                     </div>
                 </div>
 
                 {/* Stats Overview */}
-                {stacks.length > 0 && (
+                {stacks && stacks.length > 0 && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm">
                             <CardContent className="p-5">
@@ -247,7 +153,7 @@ export default function StacksIndex({ server, stacks: initialStacks, error }: Pr
                     </div>
                 )}
 
-                {stacks.length > 0 && (
+                {stacks && stacks.length > 0 && (
                     <SearchAndFilters
                         searchTerm={searchTerm}
                         sortOption={sortOption}
