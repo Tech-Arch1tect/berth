@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAppConfig } from '@/hooks/queries/use-config';
 import { Activity, CheckCircle, Minimize2, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -157,7 +158,6 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
     const [overallStatus, setOverallStatus] = useState<'running' | 'completed' | 'error'>('running');
     const [isMinimized, setIsMinimized] = useState(false);
     const [completedAt, setCompletedAt] = useState<Date | null>(null);
-    const [agentTimeout, setAgentTimeout] = useState<number>(600000);
     const eventSourceRef = useRef<AbortController | null>(null);
     const outputEndRef = useRef<HTMLDivElement>(null);
     const shouldConnectRef = useRef<boolean>(true);
@@ -165,27 +165,12 @@ export default function ProgressModal({ url, onComplete, onError, title, isOpen,
     const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const { data: config } = useAppConfig();
+    const agentTimeout = config?.agent_timeout || 600000;
+
     useEffect(() => {
         outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [output]);
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                const response = await fetch('/api/config', {
-                    credentials: 'include',
-                });
-                if (response.ok) {
-                    const config = await response.json();
-                    setAgentTimeout(config.agent_timeout || 600000);
-                }
-            } catch (error) {
-                console.warn('Failed to fetch config, using default timeout:', error);
-            }
-        };
-
-        fetchConfig();
-    }, []);
 
     useEffect(() => {
         if (!isOpen) {

@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { LogsResponse, Server, Stack } from '@/types/entities';
-import { apiGet } from '@/utils/api';
-import { AlertCircle, FileText } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useStackLogs } from '@/hooks/queries/use-stack-logs';
+import type { Server, Stack } from '@/types/entities';
+import { AlertCircle, FileText, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
 interface StackLogsTabProps {
     server: Server;
@@ -12,34 +12,16 @@ interface StackLogsTabProps {
 }
 
 export default function StackLogsTab({ server, stack }: StackLogsTabProps) {
-    const [logs, setLogs] = useState<LogsResponse | null>(null);
-    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [selectedService, setSelectedService] = useState<string>('all');
     const [logTail, setLogTail] = useState<string>('100');
 
-    const fetchLogs = useCallback(async () => {
-        setIsLoadingLogs(true);
-        try {
-            const params = new URLSearchParams({ tail: logTail });
-            if (selectedService !== 'all') {
-                params.append('service', selectedService);
-            }
-            const response = await apiGet<LogsResponse>(`/api/servers/${server.id}/stacks/${stack.name}/logs?${params}`);
-            if (response.success) {
-                setLogs(response.data || null);
-            } else {
-                setLogs(null);
-            }
-        } catch {
-            setLogs(null);
-        } finally {
-            setIsLoadingLogs(false);
-        }
-    }, [server.id, stack.name, selectedService, logTail]);
-
-    useEffect(() => {
-        fetchLogs();
-    }, [fetchLogs]);
+    const {
+        data: logs,
+        isLoading: isLoadingLogs,
+        error: logsError,
+        refetch: refetchLogs,
+        isFetching,
+    } = useStackLogs(server.id, stack.name, selectedService === 'all' ? undefined : selectedService, parseInt(logTail));
 
     const serviceOptions = [{ value: 'all', label: 'All Services' }, ...Object.keys(stack.services).map((name) => ({ value: name, label: name }))];
     const tailOptions = ['100', '500', '1000', '2000'];
@@ -82,17 +64,34 @@ export default function StackLogsTab({ server, stack }: StackLogsTabProps) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button onClick={fetchLogs} disabled={isLoadingLogs} variant="secondary">
-                        Fetch Logs
+                    <Button onClick={() => refetchLogs()} disabled={isFetching} variant="secondary">
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                        Refresh Logs
                     </Button>
                 </div>
                 {isLoadingLogs ? (
-                    <div>Loading logs...</div>
-                ) : logs ? (
-                    <pre className="max-h-96 overflow-x-auto rounded bg-muted/30 p-4 text-xs whitespace-pre-wrap">{logs.logs}</pre>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Loading logs...
+                    </div>
+                ) : logsError ? (
+                    <div className="flex items-center gap-2 text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        Failed to load logs: {logsError.message}
+                    </div>
+                ) : logs && logs.length > 0 ? (
+                    <div className="max-h-96 overflow-y-auto rounded bg-muted/30 p-4">
+                        {logs.map((log, index) => (
+                            <div key={index} className="mb-1 font-mono text-xs">
+                                <span className="text-muted-foreground">[{log.timestamp}]</span>
+                                {log.service && <span className="ml-1 text-primary">{log.service}:</span>}
+                                <span className="ml-1">{log.message}</span>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <AlertCircle className="h-4 w-4" />
+                        <FileText className="h-4 w-4" />
                         No logs available.
                     </div>
                 )}

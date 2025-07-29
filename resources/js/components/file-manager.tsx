@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useCreateFile, useDeleteFile, useRenameFile, useStackFiles } from '@/hooks/queries/use-file-manager';
 import { getFileIcon, getFileTypeLabel, isEditable } from '@/utils/file-icons';
 import {
     ArrowLeft,
@@ -22,7 +23,7 @@ import {
     Trash2,
     Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface FileInfo {
     name: string;
@@ -33,12 +34,6 @@ interface FileInfo {
     modTime: string;
 }
 
-interface FilesResponse {
-    stack: string;
-    path: string;
-    files: FileInfo[];
-}
-
 interface FileManagerProps {
     serverId: number;
     stackName: string;
@@ -47,59 +42,30 @@ interface FileManagerProps {
 }
 
 export default function FileManager({ serverId, stackName, title = 'Stack Files', canWrite = false }: FileManagerProps) {
-    const [files, setFiles] = useState<FilesResponse | null>(null);
     const [currentPath, setCurrentPath] = useState<string>('.');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [viewingFile, setViewingFile] = useState<{ path: string; name: string } | null>(null);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createMode, setCreateMode] = useState<'text' | 'upload'>('text');
     const [newFileName, setNewFileName] = useState('');
     const [newFileContent, setNewFileContent] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
     const [dragOver, setDragOver] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [fileToRename, setFileToRename] = useState<FileInfo | null>(null);
     const [newRenameFileName, setNewRenameFileName] = useState('');
-    const [isRenaming, setIsRenaming] = useState(false);
     const [renameError, setRenameError] = useState<string | null>(null);
 
-    const fetchFiles = useCallback(
-        async (path: string = '.') => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const params = new URLSearchParams({ path });
-                const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/files?${params}`);
+    const { data: files, isLoading, error, refetch: refetchFiles } = useStackFiles(serverId, stackName, currentPath);
 
-                if (response.ok) {
-                    const filesData = await response.json();
-                    setFiles(filesData);
-                    setCurrentPath(path);
-                } else {
-                    const errorData = await response.json();
-                    setError(errorData.error || 'Failed to fetch files');
-                }
-            } catch (err) {
-                setError(`Failed to fetch files: ${err}`);
-            } finally {
-                setIsLoading(false);
-            }
-        },
-        [serverId, stackName],
-    );
-
-    useEffect(() => {
-        fetchFiles('.');
-    }, [serverId, stackName, fetchFiles]);
+    const createFileMutation = useCreateFile(serverId, stackName);
+    const renameFileMutation = useRenameFile(serverId, stackName);
+    const deleteFileMutation = useDeleteFile(serverId, stackName);
 
     const navigateToPath = (path: string) => {
-        fetchFiles(path);
+        setCurrentPath(path);
     };
 
     const navigateUp = () => {
@@ -166,35 +132,18 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
             return;
         }
 
-        setIsCreating(true);
         setCreateError(null);
         try {
             const filePath = currentPath === '.' ? newFileName : `${currentPath}/${newFileName}`;
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    path: filePath,
-                    content: newFileContent,
-                    isBinary: false,
-                    isBase64: false,
-                }),
+            await createFileMutation.mutateAsync({
+                path: filePath,
+                content: newFileContent,
+                isBinary: false,
+                isBase64: false,
             });
-
-            if (response.ok) {
-                resetCreateDialog();
-                await fetchFiles(currentPath);
-            } else {
-                const errorData = await response.json();
-                setCreateError(errorData.error || 'Failed to create file');
-            }
+            resetCreateDialog();
         } catch (err) {
-            setCreateError(`Failed to create file: ${err}`);
-        } finally {
-            setIsCreating(false);
+            setCreateError(err instanceof Error ? err.message : 'Failed to create file');
         }
     };
 
@@ -212,7 +161,6 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
 
         const fileName = newFileName.trim() || selectedFile.name;
 
-        setIsCreating(true);
         setCreateError(null);
         try {
             const filePath = currentPath === '.' ? fileName : `${currentPath}/${fileName}`;
@@ -241,31 +189,15 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                 isBase64 = false;
             }
 
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    path: filePath,
-                    content: content,
-                    isBinary: isBinary,
-                    isBase64: isBase64,
-                }),
+            await createFileMutation.mutateAsync({
+                path: filePath,
+                content: content,
+                isBinary: isBinary,
+                isBase64: isBase64,
             });
-
-            if (response.ok) {
-                resetCreateDialog();
-                await fetchFiles(currentPath);
-            } else {
-                const errorData = await response.json();
-                setCreateError(errorData.error || 'Failed to upload file');
-            }
+            resetCreateDialog();
         } catch (err) {
-            setCreateError(`Failed to upload file: ${err}`);
-        } finally {
-            setIsCreating(false);
+            setCreateError(err instanceof Error ? err.message : 'Failed to upload file');
         }
     };
 
@@ -326,74 +258,39 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
             return;
         }
 
-        setIsRenaming(true);
         setRenameError(null);
 
         try {
             const filePath = currentPath === '.' ? fileToRename.name : `${currentPath}/${fileToRename.name}`;
 
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?path=${encodeURIComponent(filePath)}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    newName: newRenameFileName.trim(),
-                }),
+            await renameFileMutation.mutateAsync({
+                path: filePath,
+                newName: newRenameFileName.trim(),
             });
 
-            if (response.ok) {
-                setRenameDialogOpen(false);
-                setFileToRename(null);
-                setNewRenameFileName('');
-                await fetchFiles(currentPath);
-            } else {
-                const errorData = await response.json();
-                setRenameError(errorData.error || 'Failed to rename file');
-            }
+            setRenameDialogOpen(false);
+            setFileToRename(null);
+            setNewRenameFileName('');
         } catch (err) {
-            setRenameError(`Failed to rename file: ${err}`);
-        } finally {
-            setIsRenaming(false);
+            setRenameError(err instanceof Error ? err.message : 'Failed to rename file');
         }
     };
 
     const deleteFileOrFolder = async () => {
         if (!fileToDelete) return;
 
-        setIsDeleting(true);
-        setError(null);
-
         try {
             const filePath = currentPath === '.' ? fileToDelete.name : `${currentPath}/${fileToDelete.name}`;
-            const params = new URLSearchParams({ path: filePath });
 
-            if (fileToDelete.isDir) {
-                params.append('recursive', 'true');
-            }
-
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
+            await deleteFileMutation.mutateAsync({
+                path: filePath,
+                isDir: fileToDelete.isDir,
             });
 
-            if (response.ok) {
-                setDeleteConfirmOpen(false);
-                setFileToDelete(null);
-                await fetchFiles(currentPath);
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to delete file');
-                setDeleteConfirmOpen(false);
-            }
-        } catch (err) {
-            setError(`Failed to delete file: ${err}`);
             setDeleteConfirmOpen(false);
-        } finally {
-            setIsDeleting(false);
+            setFileToDelete(null);
+        } catch {
+            setDeleteConfirmOpen(false);
         }
     };
 
@@ -403,7 +300,7 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
     };
 
     const handleFileDeleted = () => {
-        fetchFiles(currentPath);
+        refetchFiles();
     };
 
     const handleFileRenamed = (oldName: string, newName: string) => {
@@ -412,7 +309,7 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
             setViewingFile({ path: newPath, name: newName });
         }
 
-        fetchFiles(currentPath);
+        refetchFiles();
     };
 
     return (
@@ -450,7 +347,7 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button onClick={() => fetchFiles(currentPath)} disabled={isLoading} variant="outline" size="lg" className="gap-2">
+                        <Button onClick={() => refetchFiles()} disabled={isLoading} variant="outline" size="lg" className="gap-2">
                             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
@@ -627,10 +524,10 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                         </Button>
                                         <Button
                                             onClick={createFile}
-                                            disabled={isCreating || (createMode === 'text' ? !newFileName.trim() : !selectedFile)}
+                                            disabled={createFileMutation.isPending || (createMode === 'text' ? !newFileName.trim() : !selectedFile)}
                                             className="transition-all hover:scale-105"
                                         >
-                                            {isCreating
+                                            {createFileMutation.isPending
                                                 ? createMode === 'text'
                                                     ? 'Creating...'
                                                     : 'Uploading...'
@@ -643,7 +540,7 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                             </Dialog>
                         )}
                         <Button
-                            onClick={() => fetchFiles(currentPath)}
+                            onClick={() => refetchFiles()}
                             disabled={isLoading}
                             variant="outline"
                             size="sm"
@@ -680,8 +577,8 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                             <FileIcon className="h-10 w-10 text-destructive" />
                         </div>
                         <h3 className="mb-2 text-lg font-semibold">Error Loading Files</h3>
-                        <p className="mb-4 text-destructive">{error}</p>
-                        <Button onClick={() => fetchFiles(currentPath)} variant="outline" className="transition-all hover:scale-105">
+                        <p className="mb-4 text-destructive">{error?.message || 'Unknown error'}</p>
+                        <Button onClick={() => refetchFiles()} variant="outline" className="transition-all hover:scale-105">
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Retry
                         </Button>
@@ -868,12 +765,17 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                 setDeleteConfirmOpen(false);
                                 setFileToDelete(null);
                             }}
-                            disabled={isDeleting}
+                            disabled={deleteFileMutation.isPending}
                         >
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={deleteFileOrFolder} disabled={isDeleting} className="transition-all hover:scale-105">
-                            {isDeleting ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
+                        <Button
+                            variant="destructive"
+                            onClick={deleteFileOrFolder}
+                            disabled={deleteFileMutation.isPending}
+                            className="transition-all hover:scale-105"
+                        >
+                            {deleteFileMutation.isPending ? 'Deleting...' : `Delete ${fileToDelete?.isDir ? 'Directory' : 'File'}`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -922,7 +824,7 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                 }}
                                 placeholder="Enter new name..."
                                 className="font-mono"
-                                disabled={isRenaming}
+                                disabled={renameFileMutation.isPending}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         renameFile();
@@ -939,15 +841,15 @@ export default function FileManager({ serverId, stackName, title = 'Stack Files'
                                 setRenameDialogOpen(false);
                                 setRenameError(null);
                             }}
-                            disabled={isRenaming}
+                            disabled={renameFileMutation.isPending}
                         >
                             Cancel
                         </Button>
                         <Button
                             onClick={renameFile}
-                            disabled={isRenaming || !newRenameFileName.trim() || newRenameFileName.trim() === fileToRename?.name}
+                            disabled={renameFileMutation.isPending || !newRenameFileName.trim() || newRenameFileName.trim() === fileToRename?.name}
                         >
-                            {isRenaming ? 'Renaming...' : 'Rename'}
+                            {renameFileMutation.isPending ? 'Renaming...' : 'Rename'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

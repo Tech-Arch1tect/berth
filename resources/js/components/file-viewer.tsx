@@ -2,20 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useDeleteFile, useRenameFile, useStackFile, useUpdateFile } from '@/hooks/queries/use-file-manager';
 import { getFileTypeLabel, isEditable } from '@/utils/file-icons';
 import { AlertTriangle, Copy, Download, Edit, Edit3, Eye, File, Save, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-
-interface FileData {
-    stack: string;
-    path: string;
-    content: string;
-    size: number;
-    mimeType: string;
-    isBinary: boolean;
-    isBase64: boolean;
-    modTime: string;
-}
+import { useEffect, useState } from 'react';
 
 interface FileViewerProps {
     serverId: number;
@@ -40,47 +30,19 @@ export default function FileViewer({
     onFileDeleted,
     onFileRenamed,
 }: FileViewerProps) {
-    const [fileData, setFileData] = useState<FileData | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [showRenameDialog, setShowRenameDialog] = useState(false);
     const [newFileName, setNewFileName] = useState('');
-    const [isRenaming, setIsRenaming] = useState(false);
     const [currentFileName, setCurrentFileName] = useState(fileName);
+    const [error, setError] = useState<string | null>(null);
 
-    const fetchFile = useCallback(async () => {
-        if (!isOpen || !filePath) return;
+    const { data: fileData, isLoading, error: queryError, refetch: refetchFile } = useStackFile(serverId, stackName, filePath, isOpen && !!filePath);
 
-        setIsLoading(true);
-        setError(null);
-        setFileData(null);
-
-        try {
-            const params = new URLSearchParams({ path: filePath });
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`);
-
-            if (response.ok) {
-                const data = await response.json();
-                setFileData(data);
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to fetch file');
-            }
-        } catch (err) {
-            setError(`Failed to fetch file: ${err}`);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [isOpen, filePath, serverId, stackName]);
-
-    useEffect(() => {
-        fetchFile();
-    }, [isOpen, filePath, serverId, stackName, fetchFile]);
+    const updateFileMutation = useUpdateFile(serverId, stackName);
+    const renameFileMutation = useRenameFile(serverId, stackName);
+    const deleteFileMutation = useDeleteFile(serverId, stackName);
 
     useEffect(() => {
         setCurrentFileName(fileName);
@@ -148,73 +110,38 @@ export default function FileViewer({
     const saveFile = async () => {
         if (!fileData) return;
 
-        setIsSaving(true);
         setError(null);
 
         try {
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    path: filePath,
-                    content: editContent,
-                }),
+            await updateFileMutation.mutateAsync({
+                path: filePath,
+                content: editContent,
             });
-
-            if (response.ok) {
-                const updatedData = await response.json();
-                setFileData({
-                    ...fileData,
-                    content: editContent,
-                    size: updatedData.size || editContent.length,
-                });
-                setIsEditing(false);
-                setEditContent('');
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to save file');
-            }
+            setIsEditing(false);
+            setEditContent('');
         } catch (err) {
-            setError(`Failed to save file: ${err}`);
-        } finally {
-            setIsSaving(false);
+            setError(err instanceof Error ? err.message : 'Failed to save file');
         }
     };
 
     const deleteFile = async () => {
         if (!fileData) return;
 
-        setIsDeleting(true);
         setError(null);
 
         try {
-            const params = new URLSearchParams({ path: filePath });
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?${params}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
+            await deleteFileMutation.mutateAsync({
+                path: filePath,
+                isDir: false,
             });
-
-            if (response.ok) {
-                setShowDeleteConfirm(false);
-                onClose();
-                if (onFileDeleted) {
-                    onFileDeleted();
-                }
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to delete file');
-                setShowDeleteConfirm(false);
+            setShowDeleteConfirm(false);
+            onClose();
+            if (onFileDeleted) {
+                onFileDeleted();
             }
         } catch (err) {
-            setError(`Failed to delete file: ${err}`);
+            setError(err instanceof Error ? err.message : 'Failed to delete file');
             setShowDeleteConfirm(false);
-        } finally {
-            setIsDeleting(false);
         }
     };
 
@@ -236,37 +163,24 @@ export default function FileViewer({
             return;
         }
 
-        setIsRenaming(true);
         setError(null);
 
         try {
-            const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}/file?path=${encodeURIComponent(filePath)}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ newName: newFileName.trim() }),
+            await renameFileMutation.mutateAsync({
+                path: filePath,
+                newName: newFileName.trim(),
             });
 
-            if (response.ok) {
-                await response.json();
-                const oldName = currentFileName;
-                setCurrentFileName(newFileName.trim());
-                setShowRenameDialog(false);
-                setNewFileName('');
+            const oldName = currentFileName;
+            setCurrentFileName(newFileName.trim());
+            setShowRenameDialog(false);
+            setNewFileName('');
 
-                if (onFileRenamed) {
-                    onFileRenamed(oldName, newFileName.trim());
-                }
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to rename file');
+            if (onFileRenamed) {
+                onFileRenamed(oldName, newFileName.trim());
             }
         } catch (err) {
-            setError(`Failed to rename file: ${err}`);
-        } finally {
-            setIsRenaming(false);
+            setError(err instanceof Error ? err.message : 'Failed to rename file');
         }
     };
 
@@ -287,11 +201,11 @@ export default function FileViewer({
                         <div className="mt-2 flex items-center gap-2">
                             {isEditing ? (
                                 <>
-                                    <Button variant="default" size="sm" onClick={saveFile} disabled={isSaving}>
+                                    <Button variant="default" size="sm" onClick={saveFile} disabled={updateFileMutation.isPending}>
                                         <Save size={14} className="mr-1" />
-                                        {isSaving ? 'Saving...' : 'Save'}
+                                        {updateFileMutation.isPending ? 'Saving...' : 'Save'}
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSaving}>
+                                    <Button variant="outline" size="sm" onClick={cancelEditing} disabled={updateFileMutation.isPending}>
                                         <X size={14} className="mr-1" />
                                         Cancel
                                     </Button>
@@ -348,7 +262,7 @@ export default function FileViewer({
                             <div className="text-center text-red-500 dark:text-red-400">
                                 <File className="mx-auto mb-4 h-12 w-12 opacity-50" />
                                 <p>{error}</p>
-                                <Button onClick={fetchFile} variant="outline" size="sm" className="mt-2">
+                                <Button onClick={() => refetchFile()} variant="outline" size="sm" className="mt-2">
                                     Retry
                                 </Button>
                             </div>
@@ -436,7 +350,6 @@ export default function FileViewer({
                 </div>
             </DialogContent>
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                 <DialogContent>
                     <DialogHeader>
@@ -449,17 +362,16 @@ export default function FileViewer({
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>
+                        <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleteFileMutation.isPending}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={deleteFile} disabled={isDeleting}>
-                            {isDeleting ? 'Deleting...' : 'Delete File'}
+                        <Button variant="destructive" onClick={deleteFile} disabled={deleteFileMutation.isPending}>
+                            {deleteFileMutation.isPending ? 'Deleting...' : 'Delete File'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Rename Dialog */}
             <Dialog open={showRenameDialog} onOpenChange={closeRenameDialog}>
                 <DialogContent>
                     <DialogHeader>
@@ -483,17 +395,22 @@ export default function FileViewer({
                                         renameFile();
                                     }
                                 }}
-                                disabled={isRenaming}
+                                disabled={renameFileMutation.isPending}
                             />
                         </div>
-                        {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
+                        {(error || queryError) && (
+                            <div className="text-sm text-red-600 dark:text-red-400">{error || queryError?.message || 'Unknown error'}</div>
+                        )}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={closeRenameDialog} disabled={isRenaming}>
+                        <Button variant="outline" onClick={closeRenameDialog} disabled={renameFileMutation.isPending}>
                             Cancel
                         </Button>
-                        <Button onClick={renameFile} disabled={isRenaming || !newFileName.trim() || newFileName.trim() === currentFileName}>
-                            {isRenaming ? 'Renaming...' : 'Rename'}
+                        <Button
+                            onClick={renameFile}
+                            disabled={renameFileMutation.isPending || !newFileName.trim() || newFileName.trim() === currentFileName}
+                        >
+                            {renameFileMutation.isPending ? 'Renaming...' : 'Rename'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
