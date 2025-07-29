@@ -23,7 +23,7 @@ class StackController extends Controller
         }
 
         try {
-            $stacks = $this->fetchStacksFromServer($server);
+            $stacks = $this->fetchStacksWithStatusFromServer($server);
             
             AuditLogService::logStackAction('stack_viewed', $server, 'index', [
                 'action' => 'list_stacks',
@@ -32,14 +32,14 @@ class StackController extends Controller
             
             return Inertia::render('Stacks/Index', [
                 'server' => $server,
-                'stacks' => $stacks,
+                'initialStacks' => $stacks,
                 'userPermissions' => auth()->user()->getServerPermissions($server),
                 'isAdmin' => auth()->user()->isAdmin(),
             ]);
         } catch (\Exception $e) {
             return Inertia::render('Stacks/Index', [
                 'server' => $server,
-                'stacks' => [],
+                'initialStacks' => [],
                 'error' => 'Failed to fetch stacks: ' . $e->getMessage(),
                 'userPermissions' => auth()->user()->getServerPermissions($server),
                 'isAdmin' => auth()->user()->isAdmin(),
@@ -103,7 +103,7 @@ class StackController extends Controller
         }
 
         try {
-            $stacks = $this->fetchStacksFromServer($server);
+            $stacks = $this->fetchStacksWithStatusFromServer($server);
             return response()->json(['stacks' => $stacks]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to fetch stacks: ' . $e->getMessage()], 500);
@@ -167,11 +167,10 @@ class StackController extends Controller
             unset($stackData['service_status']);
             
             $stack = Stack::fromArray($stackData);
-            $stackArray = $stack->toArray();
             
-            if ($serviceStatus) {
-                $stackArray['service_status'] = $serviceStatus;
-            }
+            $stack->service_status = $serviceStatus;
+            
+            $stackArray = $stack->toArray();
             
             return $stackArray;
         }, $bulkData['stacks']);
