@@ -66,9 +66,9 @@ export const useTerminalConnection = ({ serverId, stackName, service, shell }: U
 
     const connectWebSocket = useCallback((connectionInfo: TerminalConnectionInfo, terminal: Terminal, fitAddon: FitAddon) => {
         const url = new URL(connectionInfo.websocket_url);
-        url.searchParams.set('token', connectionInfo.access_token);
+        const protocol = `bearer.${connectionInfo.access_token}`;
 
-        const ws = new WebSocket(url.toString());
+        const ws = new WebSocket(url.toString(), [protocol]);
 
         const sendMessage = (message: TerminalMessage) => {
             if (ws.readyState === WebSocket.OPEN) {
