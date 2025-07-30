@@ -117,6 +117,7 @@ class ServerController extends Controller
             $response = Http::timeout(config('app.agent_http_timeout', 120))->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])->get($url);
             
             if ($response->successful()) {

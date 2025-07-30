@@ -32,6 +32,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url);
 
@@ -80,6 +81,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url);
 
@@ -162,6 +164,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url);
 
@@ -224,6 +227,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->delete($url);
 
@@ -289,6 +293,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->post($url);
 
@@ -340,6 +345,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url);
 
@@ -400,6 +406,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->delete($url);
 
@@ -451,6 +458,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->post($url);
 
@@ -501,6 +509,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url);
 
@@ -551,6 +560,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->delete($url);
 
@@ -601,6 +611,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->post($url);
 
@@ -662,6 +673,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->post($url);
 
@@ -725,6 +737,7 @@ class DockerController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->post($url);
 

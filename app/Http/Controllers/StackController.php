@@ -81,6 +81,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url);
 
@@ -110,6 +111,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url);
 
@@ -147,6 +149,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url);
 
@@ -177,6 +180,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url, $queryParams);
 
@@ -419,6 +423,7 @@ class StackController extends Controller
                         CURLOPT_HTTPHEADER => [
                             'Authorization: Bearer ' . $server->access_secret,
                             'Accept: text/event-stream',
+                            'Accept-Encoding: gzip',
                         ],
                         CURLOPT_WRITEFUNCTION => function($ch, $data) {
                             echo $data;
@@ -609,6 +614,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url, $queryParams);
 
@@ -636,6 +642,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->get($url, $queryParams);
 
@@ -665,6 +672,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
                 'Content-Type' => 'application/json',
             ])
             ->post($url, $params);
@@ -698,6 +706,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
                 'Content-Type' => 'application/json',
             ])
             ->post($url . '?' . http_build_query($queryParams), $bodyData);
@@ -731,6 +740,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
                 'Content-Type' => 'application/json',
             ])
             ->put($url . '?' . http_build_query($queryParams), $bodyData);
@@ -766,6 +776,7 @@ class StackController extends Controller
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $server->access_secret,
                 'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip',
             ])
             ->delete($url . '?' . http_build_query($queryParams));
 
@@ -843,6 +854,7 @@ class StackController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url, ['path' => $path]);
 
@@ -876,6 +888,7 @@ class StackController extends Controller
             $response = Http::timeout(config('app.agent_http_timeout', 120))
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
+                    'Accept-Encoding' => 'gzip',
                 ])
                 ->get($url, ['path' => $path]);
 
@@ -922,6 +935,7 @@ class StackController extends Controller
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $server->access_secret,
                     'Accept' => 'application/json',
+                    'Accept-Encoding' => 'gzip',
                     'Content-Type' => 'application/json',
                 ])
                 ->patch($url . '?' . http_build_query(['path' => $path]), [
