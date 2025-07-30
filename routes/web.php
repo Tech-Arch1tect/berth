@@ -31,7 +31,8 @@ Route::middleware(['auth', 'verified', TwoFactorMiddleware::class])->group(funct
         $servers = $user->getAccessibleServers();
         $serverStats = [];
         
-        $stackController = new \App\Http\Controllers\StackController();
+        $agentClient = app(\App\Services\AgentHttpClient::class);
+        $stackController = new \App\Http\Controllers\StackController($agentClient);
         foreach ($servers as $server) {
             $serverStats[$server->id] = $stackController->getServerStatistics($server);
         }

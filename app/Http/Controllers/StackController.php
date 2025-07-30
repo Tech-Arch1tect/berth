@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Server;
 use App\Models\Stack;
+use App\Services\AgentHttpClient;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +12,12 @@ use Inertia\Inertia;
 
 class StackController extends Controller
 {
+    protected AgentHttpClient $agentClient;
+
+    public function __construct(AgentHttpClient $agentClient)
+    {
+        $this->agentClient = $agentClient;
+    }
     public function index(Request $request, Server $server)
     {
         // Check if user has access permission for this server
@@ -74,26 +81,8 @@ class StackController extends Controller
 
     public function fetchStacksFromServer(Server $server): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/stacks";
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url);
-
-        if (!$response->successful()) {
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $stacksData = $response->json();
-        
-        if (!is_array($stacksData)) {
-            throw new \Exception("Invalid response format from server");
-        }
+        $response = $this->agentClient->get($server, 'api/v1/stacks/stacks');
+        $stacksData = $this->agentClient->getJsonData($response);
 
         // Convert raw stack data to Stack models
         return array_map(function ($stackData) {
@@ -104,22 +93,8 @@ class StackController extends Controller
 
     public function fetchStacksWithStatusFromServer(Server $server): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/bulk/stacks-with-status";
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url);
-
-        if (!$response->successful()) {
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $bulkData = $response->json();
+        $response = $this->agentClient->get($server, 'api/v1/bulk/stacks-with-status');
+        $bulkData = $this->agentClient->getJsonData($response);
         
         if (!isset($bulkData['stacks']) || !is_array($bulkData['stacks'])) {
             throw new \Exception("Invalid bulk response format from server");
@@ -142,57 +117,20 @@ class StackController extends Controller
 
     public function fetchServiceStatusFromServer(Server $server, string $stackName): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/ps";
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url);
-
-        if (!$response->successful()) {
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $statusData = $response->json();
-        
-        if (!is_array($statusData)) {
-            throw new \Exception("Invalid response format from server");
-        }
-
-        return $statusData;
+        $response = $this->agentClient->get($server, "api/v1/stacks/{$stackName}/compose/ps");
+        return $this->agentClient->getJsonData($response);
     }
 
     protected function fetchLogsFromServer(Server $server, string $stackName, ?string $service = null, string $tail = '100'): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/logs";
         
         $queryParams = ['tail' => $tail];
         if ($service) {
             $queryParams['service'] = $service;
         }
         
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url, $queryParams);
-
-        if (!$response->successful()) {
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $logsData = $response->json();
-        
-        if (!is_array($logsData)) {
-            throw new \Exception("Invalid response format from server");
-        }
+        $response = $this->agentClient->get($server, "api/v1/stacks/{$stackName}/compose/logs", $queryParams);
+        $logsData = $this->agentClient->getJsonData($response);
 
         if (!isset($logsData['logs']) || !is_string($logsData['logs'])) {
             throw new \Exception("Invalid logs response format: missing or invalid 'logs' field");
@@ -374,8 +312,6 @@ class StackController extends Controller
     protected function streamComposeOperation(Request $request, Server $server, string $stackName, string $operation)
     {
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/compose/{$operation}/stream";
             
             $params = [];
             if ($operation === 'up') {
@@ -411,40 +347,7 @@ class StackController extends Controller
                     }
                     $queryParams['timeout'] = $timeout;
                     
-                    $finalUrl = $url;
-                    if (!empty($queryParams)) {
-                        $finalUrl .= '?' . http_build_query($queryParams);
-                    }
-
-                    $ch = curl_init();
-                    curl_setopt_array($ch, [
-                        CURLOPT_URL => $finalUrl,
-                        CURLOPT_HTTPGET => true,
-                        CURLOPT_HTTPHEADER => [
-                            'Authorization: Bearer ' . $server->access_secret,
-                            'Accept: text/event-stream',
-                            'Accept-Encoding: gzip',
-                        ],
-                        CURLOPT_WRITEFUNCTION => function($ch, $data) {
-                            echo $data;
-                            flush();
-                            return strlen($data);
-                        },
-                        CURLOPT_TIMEOUT => $timeout,
-                        CURLOPT_FOLLOWLOCATION => true,
-                        CURLOPT_SSL_VERIFYPEER => false,
-                    ]);
-
-                    $result = curl_exec($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    
-                    if ($result === false || $httpCode !== 200) {
-                        $error = curl_error($ch);
-                        echo "data: {\"type\":\"error\",\"timestamp\":\"" . date('c') . "\",\"message\":\"" . ($error ?: "HTTP {$httpCode}") . "\"}\n\n";
-                        flush();
-                    }
-                    
-                    curl_close($ch);
+                    $this->agentClient->stream($server, "api/v1/stacks/{$stackName}/compose/{$operation}/stream", $queryParams);
                 } catch (\Exception $e) {
                     echo "data: {\"type\":\"error\",\"timestamp\":\"" . date('c') . "\",\"message\":\"" . addslashes($e->getMessage()) . "\"}\n\n";
                     flush();
@@ -605,24 +508,8 @@ class StackController extends Controller
 
     protected function fetchFilesFromServer(Server $server, string $stackName, string $path = '.'): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/files";
-        
-        $queryParams = ['path' => $path];
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url, $queryParams);
-
-        if (!$response->successful()) {
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $filesData = $response->json();
+        $response = $this->agentClient->get($server, "api/v1/stacks/{$stackName}/files", ['path' => $path]);
+        $filesData = $this->agentClient->getJsonData($response);
         
         if (!is_array($filesData) && !isset($filesData['files'])) {
             throw new \Exception("Invalid response format from server");
@@ -633,34 +520,8 @@ class StackController extends Controller
 
     protected function fetchFileFromServer(Server $server, string $stackName, string $path): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
-        
-        $queryParams = ['path' => $path];
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->get($url, $queryParams);
-
-        if (!$response->successful()) {
-            $errorData = $response->json();
-            if (isset($errorData['error'])) {
-                throw new \Exception($errorData['error']);
-            }
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $fileData = $response->json();
-        
-        if (!is_array($fileData)) {
-            throw new \Exception("Invalid response format from server");
-        }
-
-        return $fileData;
+        $response = $this->agentClient->get($server, "api/v1/stacks/{$stackName}/file", ['path' => $path]);
+        return $this->agentClient->getJsonData($response);
     }
 
     protected function sendComposeCommand(Server $server, string $stackName, string $action, array $params = []): array
@@ -696,105 +557,25 @@ class StackController extends Controller
 
     protected function sendFileCreateRequest(Server $server, string $stackName, string $path, string $content): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
-        
-        $queryParams = ['path' => $path];
-        $bodyData = ['content' => $content];
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-                'Content-Type' => 'application/json',
-            ])
-            ->post($url . '?' . http_build_query($queryParams), $bodyData);
-
-        if (!$response->successful()) {
-            $errorData = $response->json();
-            if (isset($errorData['error'])) {
-                throw new \Exception($errorData['error']);
-            }
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $responseData = $response->json();
-        
-        if (!is_array($responseData)) {
-            throw new \Exception("Invalid response format from server");
-        }
-
-        return $responseData;
+        $response = $this->agentClient->post($server, "api/v1/stacks/{$stackName}/file", ['content' => $content], ['path' => $path]);
+        return $this->agentClient->getJsonData($response);
     }
 
     protected function sendFileUpdateRequest(Server $server, string $stackName, string $path, string $content): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
-        
-        $queryParams = ['path' => $path];
-        $bodyData = ['content' => $content];
-        
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-                'Content-Type' => 'application/json',
-            ])
-            ->put($url . '?' . http_build_query($queryParams), $bodyData);
-
-        if (!$response->successful()) {
-            $errorData = $response->json();
-            if (isset($errorData['error'])) {
-                throw new \Exception($errorData['error']);
-            }
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $responseData = $response->json();
-        
-        if (!is_array($responseData)) {
-            throw new \Exception("Invalid response format from server");
-        }
-
-        return $responseData;
+        $response = $this->agentClient->put($server, "api/v1/stacks/{$stackName}/file", ['content' => $content], ['path' => $path]);
+        return $this->agentClient->getJsonData($response);
     }
 
     protected function sendFileDeleteRequest(Server $server, string $stackName, string $path, bool $recursive = false): array
     {
-        $protocol = $server->https ? 'https' : 'http';
-        $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/stacks/{$stackName}/file";
-        
         $queryParams = ['path' => $path];
         if ($recursive) {
             $queryParams['recursive'] = 'true';
         }
         
-        $response = Http::timeout(config('app.agent_http_timeout', 120))
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])
-            ->delete($url . '?' . http_build_query($queryParams));
-
-        if (!$response->successful()) {
-            $errorData = $response->json();
-            if (isset($errorData['error'])) {
-                throw new \Exception($errorData['error']);
-            }
-            throw new \Exception("Server returned status: {$response->status()}");
-        }
-
-        $responseData = $response->json();
-        
-        if (!is_array($responseData)) {
-            throw new \Exception("Invalid response format from server");
-        }
-
-        return $responseData;
+        $response = $this->agentClient->delete($server, "api/v1/stacks/{$stackName}/file", $queryParams);
+        return $this->agentClient->getJsonData($response);
     }
 
     public function terminalSession(Server $server, string $stackName, string $service)

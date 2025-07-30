@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Server;
+use App\Services\AgentHttpClient;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +12,12 @@ use Inertia\Inertia;
 
 class ServerController extends Controller
 {
+    protected AgentHttpClient $agentClient;
+
+    public function __construct(AgentHttpClient $agentClient)
+    {
+        $this->agentClient = $agentClient;
+    }
     public function index()
     {
         $servers = Server::all();
@@ -111,14 +118,7 @@ class ServerController extends Controller
     public function healthCheck(Server $server)
     {
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/health";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))->withHeaders([
-                'Authorization' => 'Bearer ' . $server->access_secret,
-                'Accept' => 'application/json',
-                'Accept-Encoding' => 'gzip',
-            ])->get($url);
+            $response = $this->agentClient->get($server, 'health');
             
             if ($response->successful()) {
                 $healthData = $response->json();

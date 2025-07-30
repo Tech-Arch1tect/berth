@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Server;
+use App\Services\AgentHttpClient;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -10,6 +11,12 @@ use Inertia\Inertia;
 
 class DockerController extends Controller
 {
+    protected AgentHttpClient $agentClient;
+
+    public function __construct(AgentHttpClient $agentClient)
+    {
+        $this->agentClient = $agentClient;
+    }
     /**
      * Get Docker system information for a server
      */
@@ -25,22 +32,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/system/info";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->get($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $systemInfo = $response->json();
+            $response = $this->agentClient->get($server, 'api/v1/docker/system/info');
+            $systemInfo = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_system_info_viewed', $server, [
                 'action' => 'get_system_info',
@@ -74,22 +67,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/system/df";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->get($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $diskUsage = $response->json();
+            $response = $this->agentClient->get($server, 'api/v1/docker/system/df');
+            $diskUsage = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_disk_usage_viewed', $server, [
                 'action' => 'get_disk_usage',
@@ -148,31 +127,13 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/images";
-            
             $queryParams = [];
             if ($request->has('all')) {
                 $queryParams['all'] = $request->boolean('all') ? 'true' : 'false';
             }
             
-            if (!empty($queryParams)) {
-                $url .= '?' . http_build_query($queryParams);
-            }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->get($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $images = $response->json();
+            $response = $this->agentClient->get($server, 'api/v1/docker/images', $queryParams);
+            $images = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_images_viewed', $server, [
                 'action' => 'list_images',
@@ -208,8 +169,7 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/images/" . urlencode($imageId);
+            $response = $this->agentClient->delete($server, 'api/v1/docker/images/' . urlencode($imageId));
             
             $queryParams = [];
             if ($request->has('force')) {
@@ -222,20 +182,7 @@ class DockerController extends Controller
             if (!empty($queryParams)) {
                 $url .= '?' . http_build_query($queryParams);
             }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->delete($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_image_deleted', $server, [
                 'action' => 'delete_image',
@@ -274,8 +221,7 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/images/prune";
+            $response = $this->agentClient->post($server, 'api/v1/docker/images/prune');
             
             $queryParams = [];
             if ($request->has('dangling')) {
@@ -288,20 +234,7 @@ class DockerController extends Controller
             if (!empty($queryParams)) {
                 $url .= '?' . http_build_query($queryParams);
             }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->post($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_images_pruned', $server, [
                 'action' => 'prune_images',
@@ -338,22 +271,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->get($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $volumes = $response->json();
+            $response = $this->agentClient->get($server, 'api/v1/docker/volumes');
+            $volumes = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_volumes_viewed', $server, [
                 'action' => 'list_volumes',
@@ -389,8 +308,7 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes/" . urlencode($volumeName);
+            $response = $this->agentClient->delete($server, 'api/v1/docker/volumes/' . urlencode($volumeName));
             
             // Add query parameters
             $queryParams = [];
@@ -401,20 +319,7 @@ class DockerController extends Controller
             if (!empty($queryParams)) {
                 $url .= '?' . http_build_query($queryParams);
             }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->delete($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_volume_deleted', $server, [
                 'action' => 'delete_volume',
@@ -451,22 +356,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/volumes/prune";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->post($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $response = $this->agentClient->post($server, 'api/v1/docker/volumes/prune');
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_volumes_pruned', $server, [
                 'action' => 'prune_volumes',
@@ -502,22 +393,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->get($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $networks = $response->json();
+            $response = $this->agentClient->get($server, 'api/v1/docker/networks');
+            $networks = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_networks_viewed', $server, [
                 'action' => 'list_networks',
@@ -553,22 +430,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks/" . urlencode($networkId);
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->delete($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $response = $this->agentClient->delete($server, 'api/v1/docker/networks/' . urlencode($networkId));
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_network_deleted', $server, [
                 'action' => 'delete_network',
@@ -604,22 +467,8 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/networks/prune";
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->post($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $response = $this->agentClient->post($server, 'api/v1/docker/networks/prune');
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_networks_pruned', $server, [
                 'action' => 'prune_networks',
@@ -654,8 +503,7 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/buildcache/prune";
+            $response = $this->agentClient->post($server, 'api/v1/docker/buildcache/prune');
             
             $queryParams = [];
             if ($request->has('all')) {
@@ -668,20 +516,7 @@ class DockerController extends Controller
             if (!empty($queryParams)) {
                 $url .= '?' . http_build_query($queryParams);
             }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->post($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_buildcache_pruned', $server, [
                 'action' => 'prune_buildcache',
@@ -718,8 +553,7 @@ class DockerController extends Controller
         }
 
         try {
-            $protocol = $server->https ? 'https' : 'http';
-            $url = "{$protocol}://{$server->hostname}:{$server->port}/api/v1/docker/system/prune";
+            $response = $this->agentClient->post($server, 'api/v1/docker/system/prune');
             
             $queryParams = [];
             if ($request->has('all')) {
@@ -732,20 +566,7 @@ class DockerController extends Controller
             if (!empty($queryParams)) {
                 $url .= '?' . http_build_query($queryParams);
             }
-            
-            $response = Http::timeout(config('app.agent_http_timeout', 120))
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $server->access_secret,
-                    'Accept' => 'application/json',
-                    'Accept-Encoding' => 'gzip',
-                ])
-                ->post($url);
-
-            if (!$response->successful()) {
-                throw new \Exception("Server returned status: {$response->status()}");
-            }
-
-            $result = $response->json();
+            $result = $this->agentClient->getJsonData($response);
             
             AuditLogService::logServerAction('docker_system_pruned', $server, [
                 'action' => 'system_prune',
