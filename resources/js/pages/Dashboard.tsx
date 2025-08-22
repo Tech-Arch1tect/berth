@@ -1,10 +1,12 @@
 import Layout from '../components/Layout';
 import FlashMessages from '../components/FlashMessages';
+import ServerList from '../components/ServerList';
 import { Head } from '@inertiajs/react';
+import { Server } from '../types/server';
 
 interface DashboardProps {
   title: string;
-  userCount: number;
+  servers: Server[];
   currentUser: {
     id: number;
     username: string;
@@ -12,7 +14,7 @@ interface DashboardProps {
   };
 }
 
-export default function Dashboard({ title, userCount, currentUser }: DashboardProps) {
+export default function Dashboard({ title, servers, currentUser }: DashboardProps) {
   return (
     <Layout>
       <Head title={title} />
@@ -28,77 +30,7 @@ export default function Dashboard({ title, userCount, currentUser }: DashboardPr
           <FlashMessages className="mb-6" />
 
           <div className="grid gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                Welcome to brx Starter Kit
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                This is your dashboard. Start building your application from here.
-              </p>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 dark:text-blue-400 mb-1">
-                  Database Connection
-                </h3>
-                <p className="text-blue-700 dark:text-blue-300 text-sm">
-                  Successfully connected! Current user count:{' '}
-                  <span className="font-bold">{userCount}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                  Features
-                </h3>
-                <ul className="space-y-2 text-gray-600 dark:text-gray-300">
-                  <li className="flex items-center">
-                    <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
-                    React 19 with TypeScript
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
-                    Database integration (SQLite/PostgreSQL/MySQL)
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
-                    Database session store
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
-                    Inertia.js for SPA experience
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
-                    TailwindCSS for styling
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                  Next Steps
-                </h3>
-                <ul className="space-y-2 text-gray-600 dark:text-gray-300">
-                  <li className="flex items-start">
-                    <span className="text-blue-500 dark:text-blue-400 mr-2 mt-0.5">→</span>
-                    Add authentication
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-500 dark:text-blue-400 mr-2 mt-0.5">→</span>
-                    Create user management
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-500 dark:text-blue-400 mr-2 mt-0.5">→</span>
-                    Build your API endpoints
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-500 dark:text-blue-400 mr-2 mt-0.5">→</span>
-                    Add more pages & components
-                  </li>
-                </ul>
-              </div>
-            </div>
+            <ServerList servers={servers} />
           </div>
         </div>
       </div>

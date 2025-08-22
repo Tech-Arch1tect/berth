@@ -30,15 +30,21 @@ func (h *DashboardHandler) Dashboard(c echo.Context) error {
 		zap.String("remote_ip", c.RealIP()),
 	)
 
-	var userCount int64
-	h.db.Model(&models.User{}).Count(&userCount)
+	var servers []models.ServerResponse
+	result := h.db.Model(&models.Server{}).Find(&servers)
+	if result.Error != nil {
+		h.logger.Error("failed to fetch servers",
+			zap.Error(result.Error),
+		)
+		return result.Error
+	}
 
 	h.logger.Info("dashboard data retrieved",
-		zap.Int64("user_count", userCount),
+		zap.Int("server_count", len(servers)),
 	)
 
 	return h.inertiaSvc.Render(c, "Dashboard", gonertia.Props{
-		"title":     "Dashboard",
-		"userCount": userCount,
+		"title":   "Dashboard",
+		"servers": servers,
 	})
 }
