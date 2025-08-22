@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/romsar/gonertia/v2 v2.0.6
-	github.com/tech-arch1tect/brx v0.0.0
+	github.com/tech-arch1tect/brx v0.0.3
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
 	gorm.io/gorm v1.30.1
@@ -48,5 +48,3 @@ require (
 	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.6.0 // indirect
 )
-
-replace github.com/tech-arch1tect/brx => ../brx
