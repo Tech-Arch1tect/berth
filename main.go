@@ -3,6 +3,7 @@ package main
 import (
 	"brx-starter-kit/handlers"
 	"brx-starter-kit/internal/rbac"
+	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
 	"brx-starter-kit/models"
 	"brx-starter-kit/providers"
@@ -32,7 +33,7 @@ func main() {
 	brx.New(
 		brx.WithConfig(&cfg.Config),
 		brx.WithMail(),
-		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
+		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
 		brx.WithSessions(),
 		brx.WithInertia(),
 		brx.WithAuth(),
@@ -47,6 +48,8 @@ func main() {
 			fx.Provide(rbac.NewAPIHandler),
 			fx.Provide(setup.NewService),
 			fx.Provide(setup.NewHandler),
+			fx.Provide(server.NewService),
+			fx.Provide(server.NewHandler),
 			fx.Provide(handlers.NewDashboardHandler),
 			fx.Provide(handlers.NewAuthHandler),
 			fx.Provide(handlers.NewMobileAuthHandler),

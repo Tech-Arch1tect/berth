@@ -6,6 +6,7 @@ import (
 
 	"brx-starter-kit/handlers"
 	"brx-starter-kit/internal/rbac"
+	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
 
 	"github.com/labstack/echo/v4"
@@ -15,13 +16,13 @@ import (
 	"github.com/tech-arch1tect/brx/middleware/jwt"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/middleware/ratelimit"
-	"github.com/tech-arch1tect/brx/server"
+	brxserver "github.com/tech-arch1tect/brx/server"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	jwtservice "github.com/tech-arch1tect/brx/services/jwt"
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *server.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(session.Middleware(sessionManager))
 
@@ -125,6 +126,16 @@ func RegisterRoutes(srv *server.Server, dashboardHandler *handlers.DashboardHand
 
 		// Role management
 		admin.GET("/roles", rbacHandler.ListRoles)
+
+		// Server management
+		if serverHandler != nil {
+			admin.GET("/servers", serverHandler.Index)
+			admin.GET("/servers/:id", serverHandler.Show)
+			admin.POST("/servers", serverHandler.Store)
+			admin.PUT("/servers/:id", serverHandler.Update)
+			admin.DELETE("/servers/:id", serverHandler.Delete)
+			admin.POST("/servers/:id/test", serverHandler.TestConnection)
+		}
 	}
 
 	// JWT authentication api routes - for non-web clients (flutter)
