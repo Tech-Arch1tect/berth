@@ -50,6 +50,7 @@ func main() {
 			fx.Provide(setup.NewHandler),
 			fx.Provide(server.NewService),
 			fx.Provide(server.NewHandler),
+			fx.Provide(server.NewAPIHandler),
 			fx.Provide(handlers.NewDashboardHandler),
 			fx.Provide(handlers.NewAuthHandler),
 			fx.Provide(handlers.NewMobileAuthHandler),

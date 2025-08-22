@@ -22,7 +22,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(session.Middleware(sessionManager))
 
@@ -196,6 +196,16 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 			// Role management
 			apiAdmin.GET("/roles", rbacAPIHandler.ListRoles)
+
+			// Server management
+			if serverAPIHandler != nil {
+				apiAdmin.GET("/servers", serverAPIHandler.ListServers)
+				apiAdmin.GET("/servers/:id", serverAPIHandler.GetServer)
+				apiAdmin.POST("/servers", serverAPIHandler.CreateServer)
+				apiAdmin.PUT("/servers/:id", serverAPIHandler.UpdateServer)
+				apiAdmin.DELETE("/servers/:id", serverAPIHandler.DeleteServer)
+				apiAdmin.POST("/servers/:id/test", serverAPIHandler.TestConnection)
+			}
 		}
 	}
 }
