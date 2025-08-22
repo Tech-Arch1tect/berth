@@ -21,6 +21,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'Dashboard', href: '/' },
     ...(isAdmin
       ? [
+          { name: 'Servers', href: '/admin/servers' },
           { name: 'Users', href: '/admin/users' },
           { name: 'Roles', href: '/admin/roles' },
         ]
