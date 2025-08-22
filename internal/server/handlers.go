@@ -39,7 +39,7 @@ func (h *Handler) Show(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid server ID"})
 	}
 
-	server, err := h.service.GetServer(uint(id))
+	server, err := h.service.GetServerResponse(uint(id))
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Server not found"})
 	}

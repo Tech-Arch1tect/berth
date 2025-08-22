@@ -39,7 +39,7 @@ func (h *APIHandler) GetServer(c echo.Context) error {
 		})
 	}
 
-	server, err := h.service.GetServer(uint(id))
+	server, err := h.service.GetServerResponse(uint(id))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
 			"error": "Server not found",
@@ -65,8 +65,9 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 		})
 	}
 
+	response := server.ToResponse()
 	return c.JSON(http.StatusCreated, map[string]any{
-		"server": server,
+		"server": response,
 	})
 }
 
@@ -103,8 +104,9 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		})
 	}
 
+	response := server.ToResponse()
 	return c.JSON(http.StatusOK, map[string]any{
-		"server": server,
+		"server": response,
 	})
 }
 

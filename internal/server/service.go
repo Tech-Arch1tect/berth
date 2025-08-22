@@ -2,6 +2,7 @@ package server
 
 import (
 	"brx-starter-kit/models"
+	"brx-starter-kit/utils"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,19 +11,29 @@ import (
 )
 
 type Service struct {
-	db *gorm.DB
+	db     *gorm.DB
+	crypto *utils.Crypto
 }
 
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+func NewService(db *gorm.DB, crypto *utils.Crypto) *Service {
+	return &Service{
+		db:     db,
+		crypto: crypto,
+	}
 }
 
-func (s *Service) ListServers() ([]models.Server, error) {
+func (s *Service) ListServers() ([]models.ServerResponse, error) {
 	var servers []models.Server
 	if err := s.db.Find(&servers).Error; err != nil {
 		return nil, err
 	}
-	return servers, nil
+
+	responses := make([]models.ServerResponse, len(servers))
+	for i, server := range servers {
+		responses[i] = server.ToResponse()
+	}
+
+	return responses, nil
 }
 
 func (s *Service) GetServer(id uint) (*models.Server, error) {
@@ -30,10 +41,35 @@ func (s *Service) GetServer(id uint) (*models.Server, error) {
 	if err := s.db.First(&server, id).Error; err != nil {
 		return nil, err
 	}
+
+	decryptedToken, err := s.crypto.Decrypt(server.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+	}
+	server.AccessToken = decryptedToken
+
 	return &server, nil
 }
 
+func (s *Service) GetServerResponse(id uint) (*models.ServerResponse, error) {
+	var server models.Server
+	if err := s.db.First(&server, id).Error; err != nil {
+		return nil, err
+	}
+
+	response := server.ToResponse()
+	return &response, nil
+}
+
 func (s *Service) CreateServer(server *models.Server) error {
+	if server.AccessToken != "" {
+		encryptedToken, err := s.crypto.Encrypt(server.AccessToken)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt access token: %w", err)
+		}
+		server.AccessToken = encryptedToken
+	}
+
 	return s.db.Create(server).Error
 }
 
@@ -43,9 +79,23 @@ func (s *Service) UpdateServer(id uint, updates *models.Server) (*models.Server,
 		return nil, err
 	}
 
+	if updates.AccessToken != "" {
+		encryptedToken, err := s.crypto.Encrypt(updates.AccessToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encrypt access token: %w", err)
+		}
+		updates.AccessToken = encryptedToken
+	}
+
 	if err := s.db.Model(&server).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+
+	decryptedToken, err := s.crypto.Decrypt(server.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+	}
+	server.AccessToken = decryptedToken
 
 	return &server, nil
 }

@@ -9,6 +9,7 @@ import (
 	"brx-starter-kit/providers"
 	"brx-starter-kit/routes"
 	"brx-starter-kit/seeds"
+	"brx-starter-kit/utils"
 
 	"github.com/tech-arch1tect/brx"
 	"github.com/tech-arch1tect/brx/config"
@@ -30,6 +31,14 @@ func main() {
 		panic(err)
 	}
 
+	if cfg.Custom.EncryptionSecret == "" {
+		panic("CUSTOM_ENCRYPTION_SECRET is required but not set. Please set this environment variable with a secure secret key (minimum 32 characters). You can generate one with: openssl rand -base64 32")
+	}
+
+	if len(cfg.Custom.EncryptionSecret) < 16 {
+		panic("CUSTOM_ENCRYPTION_SECRET must be at least 16 characters long for security. Please use a longer secret key. You can generate one with: openssl rand -base64 32")
+	}
+
 	brx.New(
 		brx.WithConfig(&cfg.Config),
 		brx.WithMail(),
@@ -42,6 +51,12 @@ func main() {
 		brx.WithJWTRevocation(),
 		brx.WithFxOptions(
 			jwt.Options,
+			fx.Provide(func() *StarterKitConfig {
+				return &cfg
+			}),
+			fx.Provide(func(cfg *StarterKitConfig) *utils.Crypto {
+				return utils.NewCrypto(cfg.Custom.EncryptionSecret)
+			}),
 			fx.Provide(rbac.NewService),
 			fx.Provide(rbac.NewMiddleware),
 			fx.Provide(rbac.NewRBACHandler),

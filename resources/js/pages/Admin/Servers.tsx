@@ -10,7 +10,6 @@ interface Server {
   host: string;
   port: number;
   use_https: boolean;
-  access_token: string;
   is_active: boolean;
   CreatedAt: string;
   UpdatedAt: string;

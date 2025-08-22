@@ -10,5 +10,5 @@ type StarterKitConfig struct {
 }
 
 type AppCustomConfig struct {
-	ExampleSetting string `env:"EXAMPLE_SETTING" envDefault:"hello world"`
+	EncryptionSecret string `env:"ENCRYPTION_SECRET"`
 }
