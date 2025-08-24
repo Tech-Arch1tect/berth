@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"brx-starter-kit/models"
+	"brx-starter-kit/internal/server"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/logging"
+	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -14,13 +15,15 @@ type DashboardHandler struct {
 	inertiaSvc *inertia.Service
 	db         *gorm.DB
 	logger     *logging.Service
+	serverSvc  *server.Service
 }
 
-func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *logging.Service) *DashboardHandler {
+func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *logging.Service, serverSvc *server.Service) *DashboardHandler {
 	return &DashboardHandler{
 		inertiaSvc: inertiaSvc,
 		db:         db,
 		logger:     logger,
+		serverSvc:  serverSvc,
 	}
 }
 
@@ -30,13 +33,13 @@ func (h *DashboardHandler) Dashboard(c echo.Context) error {
 		zap.String("remote_ip", c.RealIP()),
 	)
 
-	var servers []models.ServerResponse
-	result := h.db.Model(&models.Server{}).Find(&servers)
-	if result.Error != nil {
+	userID := session.GetUserIDAsUint(c)
+	servers, err := h.serverSvc.ListServersForUser(userID)
+	if err != nil {
 		h.logger.Error("failed to fetch servers",
-			zap.Error(result.Error),
+			zap.Error(err),
 		)
-		return result.Error
+		return err
 	}
 
 	h.logger.Info("dashboard data retrieved",

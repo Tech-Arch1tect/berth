@@ -221,3 +221,79 @@ func (s *Service) DeleteRole(roleID uint) error {
 
 	return nil
 }
+
+func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uint{}, nil
+		}
+		return nil, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			var allServerIDs []uint
+			err := s.db.Model(&models.Server{}).Pluck("id", &allServerIDs).Error
+			return allServerIDs, err
+		}
+	}
+
+	var serverRolePermissions []models.ServerRolePermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
+		Where("user_roles.user_id = ?", userID).
+		Find(&serverRolePermissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var serverIDs []uint
+	serverIDMap := make(map[uint]bool)
+
+	for _, srp := range serverRolePermissions {
+		if srp.Permission.Name == "stacks.read" {
+			if !serverIDMap[srp.ServerID] {
+				serverIDs = append(serverIDs, srp.ServerID)
+				serverIDMap[srp.ServerID] = true
+			}
+		}
+	}
+
+	return serverIDs, nil
+}
+
+func (s *Service) UserHasServerPermission(userID uint, serverID uint, permissionName string) (bool, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return true, nil
+		}
+	}
+
+	var serverRolePermissions []models.ServerRolePermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_permissions.server_id = ?", userID, serverID).
+		Find(&serverRolePermissions).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	for _, srp := range serverRolePermissions {
+		if srp.Permission.Name == permissionName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}

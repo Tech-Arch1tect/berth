@@ -1,6 +1,7 @@
 package server
 
 import (
+	"brx-starter-kit/internal/rbac"
 	"brx-starter-kit/models"
 	"brx-starter-kit/utils"
 	"fmt"
@@ -11,14 +12,16 @@ import (
 )
 
 type Service struct {
-	db     *gorm.DB
-	crypto *utils.Crypto
+	db      *gorm.DB
+	crypto  *utils.Crypto
+	rbacSvc *rbac.Service
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto) *Service {
+func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service) *Service {
 	return &Service{
-		db:     db,
-		crypto: crypto,
+		db:      db,
+		crypto:  crypto,
+		rbacSvc: rbacSvc,
 	}
 }
 
@@ -131,22 +134,7 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 }
 
 func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, error) {
-	var user models.User
-	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
-		return nil, err
-	}
-
-	if user.IsAdmin() {
-		return s.ListServers()
-	}
-
-	var serverIDs []uint
-	err := s.db.Table("server_role_permissions").
-		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
-		Joins("JOIN permissions ON permissions.id = server_role_permissions.permission_id").
-		Where("user_roles.user_id = ? AND permissions.name = ?", userID, "stacks.read").
-		Pluck("DISTINCT server_role_permissions.server_id", &serverIDs).Error
-
+	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -166,4 +154,8 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 	}
 
 	return responses, nil
+}
+
+func (s *Service) UserHasServerAccess(userID uint, serverID uint, permission string) (bool, error) {
+	return s.rbacSvc.UserHasServerPermission(userID, serverID, permission)
 }
