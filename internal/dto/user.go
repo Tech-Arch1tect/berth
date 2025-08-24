@@ -4,6 +4,7 @@ type RoleInfo struct {
 	ID          uint   `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	IsAdmin     bool   `json:"is_admin"`
 }
 
 type PermissionInfo struct {
@@ -18,6 +19,7 @@ type RoleWithPermissions struct {
 	ID          uint             `json:"id"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
+	IsAdmin     bool             `json:"is_admin"`
 	Permissions []PermissionInfo `json:"permissions"`
 }
 

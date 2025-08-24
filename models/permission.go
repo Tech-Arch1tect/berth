@@ -10,5 +10,4 @@ type Permission struct {
 	Resource    string `json:"resource" gorm:"not null"`
 	Action      string `json:"action" gorm:"not null"`
 	Description string `json:"description"`
-	Roles       []Role `json:"roles" gorm:"many2many:role_permissions;"`
 }

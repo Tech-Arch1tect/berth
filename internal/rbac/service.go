@@ -31,7 +31,7 @@ func (s *Service) HasRole(userID uint, roleName string) (bool, error) {
 
 func (s *Service) HasPermission(userID uint, resource, action string) (bool, error) {
 	var user models.User
-	err := s.db.Preload("Roles.Permissions", "resource = ? AND action = ?", resource, action).First(&user, userID).Error
+	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -40,7 +40,7 @@ func (s *Service) HasPermission(userID uint, resource, action string) (bool, err
 	}
 
 	for _, role := range user.Roles {
-		if len(role.Permissions) > 0 {
+		if role.IsAdmin {
 			return true, nil
 		}
 	}
@@ -49,7 +49,7 @@ func (s *Service) HasPermission(userID uint, resource, action string) (bool, err
 
 func (s *Service) HasPermissionByName(userID uint, permissionName string) (bool, error) {
 	var user models.User
-	err := s.db.Preload("Roles.Permissions", "name = ?", permissionName).First(&user, userID).Error
+	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -58,7 +58,7 @@ func (s *Service) HasPermissionByName(userID uint, permissionName string) (bool,
 	}
 
 	for _, role := range user.Roles {
-		if len(role.Permissions) > 0 {
+		if role.IsAdmin {
 			return true, nil
 		}
 	}
@@ -112,28 +112,7 @@ func (s *Service) GetUserRoles(userID uint) ([]models.Role, error) {
 }
 
 func (s *Service) GetUserPermissions(userID uint) ([]models.Permission, error) {
-	var user models.User
-	err := s.db.Preload("Roles.Permissions").First(&user, userID).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Permission{}, nil
-		}
-		return nil, err
-	}
-
-	permissionMap := make(map[uint]models.Permission)
-	for _, role := range user.Roles {
-		for _, permission := range role.Permissions {
-			permissionMap[permission.ID] = permission
-		}
-	}
-
-	permissions := make([]models.Permission, 0, len(permissionMap))
-	for _, permission := range permissionMap {
-		permissions = append(permissions, permission)
-	}
-
-	return permissions, nil
+	return []models.Permission{}, nil
 }
 
 func (s *Service) GetRoleByName(roleName string) (*models.Role, error) {
