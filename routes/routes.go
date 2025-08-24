@@ -126,6 +126,8 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		// Role management
 		admin.GET("/roles", rbacHandler.ListRoles)
+		admin.GET("/roles/:id/server-permissions", rbacHandler.RoleServerPermissions)
+		admin.POST("/roles/:id/server-permissions", rbacHandler.UpdateRoleServerPermissions)
 
 		// Server management
 		if serverHandler != nil {
@@ -201,6 +203,8 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 			// Role management
 			apiAdmin.GET("/roles", rbacAPIHandler.ListRoles)
+			apiAdmin.GET("/roles/:roleId/server-permissions", rbacAPIHandler.ListRoleServerPermissions)
+			apiAdmin.POST("/roles/:roleId/server-permissions", rbacAPIHandler.UpdateRoleServerPermissions)
 
 			// Server management
 			if serverAPIHandler != nil {
