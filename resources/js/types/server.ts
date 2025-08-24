@@ -1,6 +1,7 @@
 export interface Server {
-  ID: number;
+  id: number;
   name: string;
+  description: string;
   host: string;
   port: number;
   use_https: boolean;

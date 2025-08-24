@@ -4,15 +4,15 @@ import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 
 interface Server {
-  ID: number;
+  id: number;
   name: string;
   description: string;
   host: string;
   port: number;
   use_https: boolean;
   is_active: boolean;
-  CreatedAt: string;
-  UpdatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Props {
@@ -49,7 +49,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingServer) {
-      put(`/admin/servers/${editingServer.ID}`, {
+      put(`/admin/servers/${editingServer.id}`, {
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
@@ -313,7 +313,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {servers.map((server) => (
-                      <tr key={server.ID}>
+                      <tr key={server.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div>
@@ -335,7 +335,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
-                            onClick={() => toggleServerStatus(server.ID, server.is_active)}
+                            onClick={() => toggleServerStatus(server.id, server.is_active)}
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               server.is_active
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
@@ -346,7 +346,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                           </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(server.CreatedAt)}
+                          {formatDate(server.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                           <button
@@ -356,14 +356,14 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                             Edit
                           </button>
                           <button
-                            onClick={() => handleTestConnection(server.ID)}
-                            disabled={testingConnection === server.ID}
+                            onClick={() => handleTestConnection(server.id)}
+                            disabled={testingConnection === server.id}
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
                           >
-                            {testingConnection === server.ID ? 'Testing...' : 'Test'}
+                            {testingConnection === server.id ? 'Testing...' : 'Test'}
                           </button>
                           <button
-                            onClick={() => handleDelete(server.ID)}
+                            onClick={() => handleDelete(server.id)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           >
                             Delete

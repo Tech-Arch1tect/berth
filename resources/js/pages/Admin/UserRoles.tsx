@@ -4,14 +4,14 @@ import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 
 interface User {
-  ID: number;
+  id: number;
   username: string;
   email: string;
   roles: Role[];
 }
 
 interface Role {
-  ID: number;
+  id: number;
   name: string;
   description: string;
 }
@@ -33,7 +33,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
     router.post(
       '/admin/users/assign-role',
       {
-        user_id: user.ID,
+        user_id: user.id,
         role_id: roleId,
       },
       {
@@ -52,7 +52,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
     router.post(
       '/admin/users/revoke-role',
       {
-        user_id: user.ID,
+        user_id: user.id,
         role_id: roleId,
       },
       {
@@ -64,8 +64,8 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
     );
   };
 
-  const userRoleIds = user.roles.map((role) => role.ID);
-  const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.ID));
+  const userRoleIds = user.roles.map((role) => role.id);
+  const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.id));
 
   return (
     <Layout>
@@ -104,7 +104,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
               {user.roles.length > 0 ? (
                 <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                   {user.roles.map((role) => (
-                    <li key={role.ID} className="px-6 py-4">
+                    <li key={role.id} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -115,7 +115,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
                           </p>
                         </div>
                         <button
-                          onClick={() => revokeRole(role.ID)}
+                          onClick={() => revokeRole(role.id)}
                           disabled={processing}
                           className="ml-4 bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-red-800 dark:text-red-200 text-xs font-medium px-2.5 py-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                         >
@@ -142,7 +142,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
               {availableRoles.length > 0 ? (
                 <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                   {availableRoles.map((role) => (
-                    <li key={role.ID} className="px-6 py-4">
+                    <li key={role.id} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -153,7 +153,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
                           </p>
                         </div>
                         <button
-                          onClick={() => assignRole(role.ID)}
+                          onClick={() => assignRole(role.id)}
                           disabled={processing}
                           className="ml-4 bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-800 dark:text-green-200 text-xs font-medium px-2.5 py-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                         >

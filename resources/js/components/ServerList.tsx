@@ -21,7 +21,7 @@ export default function ServerList({ servers }: ServerListProps) {
       ) : (
         <div className="space-y-4">
           {servers.map((server) => (
-            <ServerCard key={server.ID} server={server} />
+            <ServerCard key={server.id} server={server} />
           ))}
         </div>
       )}

@@ -89,7 +89,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                     </label>
                     <div className="mt-1 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
                       <span className="text-gray-900 dark:text-white">
-                        {new Date(user.CreatedAt).toLocaleDateString('en-GB', {
+                        {new Date(user.created_at).toLocaleDateString('en-GB', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -104,7 +104,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                     </label>
                     <div className="mt-1 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
                       <span className="text-gray-900 dark:text-white">
-                        {new Date(user.UpdatedAt).toLocaleDateString('en-GB', {
+                        {new Date(user.updated_at).toLocaleDateString('en-GB', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',

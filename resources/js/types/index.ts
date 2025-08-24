@@ -10,10 +10,10 @@ export interface Role {
 }
 
 export interface User {
-  ID: number;
+  id: number;
   username: string;
   email: string;
-  CreatedAt: string;
-  UpdatedAt: string;
+  created_at: string;
+  updated_at: string;
   roles?: Role[];
 }
