@@ -2,9 +2,11 @@ package main
 
 import (
 	"brx-starter-kit/handlers"
+	"brx-starter-kit/internal/agent"
 	"brx-starter-kit/internal/rbac"
 	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
+	"brx-starter-kit/internal/stack"
 	"brx-starter-kit/models"
 	"brx-starter-kit/providers"
 	"brx-starter-kit/routes"
@@ -57,6 +59,7 @@ func main() {
 			fx.Provide(func(cfg *StarterKitConfig) *utils.Crypto {
 				return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 			}),
+			fx.Provide(agent.NewService),
 			fx.Provide(rbac.NewService),
 			fx.Provide(rbac.NewMiddleware),
 			fx.Provide(rbac.NewRBACHandler),
@@ -67,6 +70,9 @@ func main() {
 			fx.Provide(server.NewHandler),
 			fx.Provide(server.NewAPIHandler),
 			fx.Provide(server.NewUserAPIHandler),
+			fx.Provide(stack.NewService),
+			fx.Provide(stack.NewHandler),
+			fx.Provide(stack.NewAPIHandler),
 			fx.Provide(handlers.NewDashboardHandler),
 			fx.Provide(handlers.NewAuthHandler),
 			fx.Provide(handlers.NewMobileAuthHandler),
