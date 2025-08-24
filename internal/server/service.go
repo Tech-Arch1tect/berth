@@ -129,3 +129,41 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 
 	return nil
 }
+
+func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+
+	if user.IsAdmin() {
+		return s.ListServers()
+	}
+
+	var serverIDs []uint
+	err := s.db.Table("server_role_permissions").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
+		Joins("JOIN permissions ON permissions.id = server_role_permissions.permission_id").
+		Where("user_roles.user_id = ? AND permissions.name = ?", userID, "stacks.read").
+		Pluck("DISTINCT server_role_permissions.server_id", &serverIDs).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(serverIDs) == 0 {
+		return []models.ServerResponse{}, nil
+	}
+
+	var servers []models.Server
+	if err := s.db.Where("id IN ?", serverIDs).Find(&servers).Error; err != nil {
+		return nil, err
+	}
+
+	responses := make([]models.ServerResponse, len(servers))
+	for i, server := range servers {
+		responses[i] = server.ToResponse()
+	}
+
+	return responses, nil
+}
