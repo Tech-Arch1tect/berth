@@ -14,3 +14,19 @@ type User struct {
 	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:""`
 	Roles           []Role     `json:"roles" gorm:"many2many:user_roles;"`
 }
+
+func (u *User) IsAdmin() bool {
+	for _, role := range u.Roles {
+		if role.IsAdmin {
+			return true
+		}
+	}
+	return false
+}
+
+func (u *User) HasServerPermission(serverID uint, permissionName string) bool {
+	if u.IsAdmin() {
+		return true
+	}
+	return false
+}
