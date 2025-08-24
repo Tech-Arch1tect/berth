@@ -3,8 +3,20 @@ import '../css/app.css';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const appName = 'brx Starter Kit';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,
@@ -21,7 +33,12 @@ createInertiaApp({
   },
   setup({ el, App, props }) {
     const root = createRoot(el);
-    root.render(<App {...props} />);
+    root.render(
+      <QueryClientProvider client={queryClient}>
+        <App {...props} />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    );
   },
   progress: {
     color: '#4B5563',
