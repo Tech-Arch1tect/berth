@@ -1,11 +1,7 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type ServerRolePermission struct {
-	gorm.Model
+	BaseModel
 	ServerID     uint       `json:"server_id" gorm:"not null"`
 	RoleID       uint       `json:"role_id" gorm:"not null"`
 	PermissionID uint       `json:"permission_id" gorm:"not null"`

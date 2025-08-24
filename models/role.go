@@ -1,11 +1,7 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type Role struct {
-	gorm.Model
+	BaseModel
 	Name        string `json:"name" gorm:"uniqueIndex;not null"`
 	Description string `json:"description"`
 	IsAdmin     bool   `json:"is_admin" gorm:"default:false"`

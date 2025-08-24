@@ -2,12 +2,10 @@ package models
 
 import (
 	"fmt"
-
-	"gorm.io/gorm"
 )
 
 type Server struct {
-	gorm.Model
+	BaseModel
 	Name        string `json:"name" gorm:"not null"`
 	Description string `json:"description"`
 	Host        string `json:"host" gorm:"not null"`
@@ -18,9 +16,9 @@ type Server struct {
 }
 
 type ServerResponse struct {
-	ID          uint   `json:"ID"`
-	CreatedAt   string `json:"CreatedAt"`
-	UpdatedAt   string `json:"UpdatedAt"`
+	ID          uint   `json:"id"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Host        string `json:"host"`
