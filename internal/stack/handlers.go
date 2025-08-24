@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {
@@ -23,17 +22,11 @@ func NewHandler(inertiaSvc *inertia.Service, service *Service) *Handler {
 }
 
 func (h *Handler) ShowServerStacks(c echo.Context) error {
-	userID := session.GetUserIDAsUint(c)
 
 	serverIDStr := c.Param("id")
 	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid server ID")
-	}
-
-	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userID, uint(serverID))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
@@ -42,8 +35,8 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Stacks", gonertia.Props{
-		"title":  serverInfo.Name + " - Stacks",
-		"server": serverInfo,
-		"stacks": stacks,
+		"title":    serverInfo.Name + " - Stacks",
+		"server":   serverInfo,
+		"serverId": uint(serverID),
 	})
 }
