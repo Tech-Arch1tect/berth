@@ -126,6 +126,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		// Role management
 		admin.GET("/roles", rbacHandler.ListRoles)
+		admin.POST("/roles", rbacHandler.CreateRole)
+		admin.PUT("/roles/:id", rbacHandler.UpdateRole)
+		admin.DELETE("/roles/:id", rbacHandler.DeleteRole)
 		admin.GET("/roles/:id/server-permissions", rbacHandler.RoleServerPermissions)
 		admin.POST("/roles/:id/server-permissions", rbacHandler.UpdateRoleServerPermissions)
 
@@ -203,6 +206,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 			// Role management
 			apiAdmin.GET("/roles", rbacAPIHandler.ListRoles)
+			apiAdmin.POST("/roles", rbacAPIHandler.CreateRole)
+			apiAdmin.PUT("/roles/:id", rbacAPIHandler.UpdateRole)
+			apiAdmin.DELETE("/roles/:id", rbacAPIHandler.DeleteRole)
 			apiAdmin.GET("/roles/:roleId/server-permissions", rbacAPIHandler.ListRoleServerPermissions)
 			apiAdmin.POST("/roles/:roleId/server-permissions", rbacAPIHandler.UpdateRoleServerPermissions)
 

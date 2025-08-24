@@ -68,16 +68,16 @@ func (h *Handler) AssignRole(c echo.Context) error {
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/admin/users")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
 	if err := h.rbac.AssignRole(req.UserID, req.RoleID); err != nil {
 		session.AddFlashError(c, "Failed to assign role")
-		return c.Redirect(http.StatusFound, "/admin/users")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
 	session.AddFlashSuccess(c, "Role assigned successfully")
-	return c.Redirect(http.StatusFound, "/admin/users/"+strconv.Itoa(int(req.UserID))+"/roles")
+	return h.inertiaSvc.Redirect(c, "/admin/users/"+strconv.Itoa(int(req.UserID))+"/roles")
 }
 
 func (h *Handler) RevokeRole(c echo.Context) error {
@@ -88,21 +88,21 @@ func (h *Handler) RevokeRole(c echo.Context) error {
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/admin/users")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
 	if err := h.rbac.RevokeRole(req.UserID, req.RoleID); err != nil {
 		session.AddFlashError(c, "Failed to revoke role")
-		return c.Redirect(http.StatusFound, "/admin/users")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
 	session.AddFlashSuccess(c, "Role revoked successfully")
-	return c.Redirect(http.StatusFound, "/admin/users/"+strconv.Itoa(int(req.UserID))+"/roles")
+	return h.inertiaSvc.Redirect(c, "/admin/users/"+strconv.Itoa(int(req.UserID))+"/roles")
 }
 
 func (h *Handler) ListRoles(c echo.Context) error {
-	var roles []models.Role
-	if err := h.db.Find(&roles).Error; err != nil {
+	roles, err := h.rbac.GetAllRoles()
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
 	}
 
@@ -200,6 +200,71 @@ func (h *Handler) UpdateRoleServerPermissions(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Permission updated successfully",
 	})
+}
+
+func (h *Handler) CreateRole(c echo.Context) error {
+	var req struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		session.AddFlashError(c, "Invalid request")
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	_, err := h.rbac.CreateRole(req.Name, req.Description)
+	if err != nil {
+		session.AddFlashError(c, err.Error())
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	session.AddFlashSuccess(c, "Role created successfully")
+	return h.inertiaSvc.Redirect(c, "/admin/roles")
+}
+
+func (h *Handler) UpdateRole(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		session.AddFlashError(c, "Invalid role ID")
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	var req struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		session.AddFlashError(c, "Invalid request")
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	_, err = h.rbac.UpdateRole(uint(roleID), req.Name, req.Description)
+	if err != nil {
+		session.AddFlashError(c, err.Error())
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	session.AddFlashSuccess(c, "Role updated successfully")
+	return h.inertiaSvc.Redirect(c, "/admin/roles")
+}
+
+func (h *Handler) DeleteRole(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		session.AddFlashError(c, "Invalid role ID")
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	err = h.rbac.DeleteRole(uint(roleID))
+	if err != nil {
+		session.AddFlashError(c, err.Error())
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	session.AddFlashSuccess(c, "Role deleted successfully")
+	return h.inertiaSvc.Redirect(c, "/admin/roles")
 }
 
 func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service) *Handler {

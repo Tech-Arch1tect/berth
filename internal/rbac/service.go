@@ -131,3 +131,93 @@ func (s *Service) AssignUserRole(userID uint, roleName string) error {
 	}
 	return s.AssignRole(userID, role.ID)
 }
+
+func (s *Service) GetAllRoles() ([]models.Role, error) {
+	var roles []models.Role
+	err := s.db.Find(&roles).Error
+	return roles, err
+}
+
+func (s *Service) CreateRole(name, description string) (*models.Role, error) {
+	if name == "" {
+		return nil, errors.New("role name is required")
+	}
+
+	var existingRole models.Role
+	if err := s.db.Where("name = ?", name).First(&existingRole).Error; err == nil {
+		return nil, errors.New("role with this name already exists")
+	}
+
+	role := models.Role{
+		Name:        name,
+		Description: description,
+		IsAdmin:     false,
+	}
+
+	if err := s.db.Create(&role).Error; err != nil {
+		return nil, err
+	}
+
+	return &role, nil
+}
+
+func (s *Service) UpdateRole(roleID uint, name, description string) (*models.Role, error) {
+	if name == "" {
+		return nil, errors.New("role name is required")
+	}
+
+	var role models.Role
+	if err := s.db.First(&role, roleID).Error; err != nil {
+		return nil, err
+	}
+
+	if role.IsAdmin {
+		return nil, errors.New("cannot modify admin role")
+	}
+
+	if role.Name != name {
+		var existingRole models.Role
+		if err := s.db.Where("name = ? AND id != ?", name, roleID).First(&existingRole).Error; err == nil {
+			return nil, errors.New("role with this name already exists")
+		}
+	}
+
+	role.Name = name
+	role.Description = description
+
+	if err := s.db.Save(&role).Error; err != nil {
+		return nil, err
+	}
+
+	return &role, nil
+}
+
+func (s *Service) DeleteRole(roleID uint) error {
+	var role models.Role
+	if err := s.db.First(&role, roleID).Error; err != nil {
+		return err
+	}
+
+	if role.IsAdmin {
+		return errors.New("cannot delete admin role")
+	}
+
+	var userCount int64
+	if err := s.db.Model(&models.User{}).Joins("JOIN user_roles ON users.id = user_roles.user_id").Where("user_roles.role_id = ?", roleID).Count(&userCount).Error; err != nil {
+		return errors.New("failed to check role usage")
+	}
+
+	if userCount > 0 {
+		return errors.New("cannot delete role that is assigned to users")
+	}
+
+	if err := s.db.Where("role_id = ?", roleID).Delete(&models.ServerRolePermission{}).Error; err != nil {
+		return errors.New("failed to clean up role permissions")
+	}
+
+	if err := s.db.Delete(&role).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

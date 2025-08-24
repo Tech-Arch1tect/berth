@@ -42,7 +42,7 @@ func main() {
 	brx.New(
 		brx.WithConfig(&cfg.Config),
 		brx.WithMail(),
-		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &models.ServerRolePermission{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
+		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &models.ServerRolePermission{}, &models.SeedTracker{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
 		brx.WithSessions(),
 		brx.WithInertia(),
 		brx.WithAuth(),

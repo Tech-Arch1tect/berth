@@ -127,8 +127,8 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 }
 
 func (h *APIHandler) ListRoles(c echo.Context) error {
-	var roles []models.Role
-	if err := h.db.Find(&roles).Error; err != nil {
+	roles, err := h.rbacSvc.GetAllRoles()
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch roles",
 		})
@@ -326,5 +326,111 @@ func (h *APIHandler) UpdateRoleServerPermissions(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Permission updated successfully",
+	})
+}
+
+func (h *APIHandler) CreateRole(c echo.Context) error {
+	var req struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request body",
+		})
+	}
+
+	role, err := h.rbacSvc.CreateRole(req.Name, req.Description)
+	if err != nil {
+		if err.Error() == "role with this name already exists" {
+			return echo.NewHTTPError(http.StatusConflict, map[string]string{
+				"error": err.Error(),
+			})
+		}
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, role)
+}
+
+func (h *APIHandler) UpdateRole(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid role ID",
+		})
+	}
+
+	var req struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request body",
+		})
+	}
+
+	role, err := h.rbacSvc.UpdateRole(uint(roleID), req.Name, req.Description)
+	if err != nil {
+		switch err.Error() {
+		case "cannot modify admin role":
+			return echo.NewHTTPError(http.StatusForbidden, map[string]string{
+				"error": err.Error(),
+			})
+		case "role with this name already exists":
+			return echo.NewHTTPError(http.StatusConflict, map[string]string{
+				"error": err.Error(),
+			})
+		case "record not found":
+			return echo.NewHTTPError(http.StatusNotFound, map[string]string{
+				"error": "Role not found",
+			})
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, role)
+}
+
+func (h *APIHandler) DeleteRole(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid role ID",
+		})
+	}
+
+	err = h.rbacSvc.DeleteRole(uint(roleID))
+	if err != nil {
+		switch err.Error() {
+		case "cannot delete admin role":
+			return echo.NewHTTPError(http.StatusForbidden, map[string]string{
+				"error": err.Error(),
+			})
+		case "cannot delete role that is assigned to users":
+			return echo.NewHTTPError(http.StatusConflict, map[string]string{
+				"error": err.Error(),
+			})
+		case "record not found":
+			return echo.NewHTTPError(http.StatusNotFound, map[string]string{
+				"error": "Role not found",
+			})
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Role deleted successfully",
 	})
 }

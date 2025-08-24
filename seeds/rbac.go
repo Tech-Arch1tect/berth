@@ -21,15 +21,27 @@ func SeedRBACData(db *gorm.DB) error {
 		}
 	}
 
-	roles := []models.Role{
-		{Name: "admin", Description: "System administrator with full access", IsAdmin: true},
-		{Name: "user", Description: "Standard user with basic permissions", IsAdmin: false},
-		{Name: "developer", Description: "Developer with full server access", IsAdmin: false},
-		{Name: "viewer", Description: "Read-only access to servers", IsAdmin: false},
+	var seedTracker models.SeedTracker
+	result := db.Where("name = ?", "roles_seeded").First(&seedTracker)
+	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+		return result.Error
 	}
 
-	for _, role := range roles {
-		if err := db.Where("name = ?", role.Name).FirstOrCreate(&role).Error; err != nil {
+	if result.Error == gorm.ErrRecordNotFound {
+		roles := []models.Role{
+			{Name: "admin", Description: "System administrator with full access", IsAdmin: true},
+			{Name: "user", Description: "Standard user with basic permissions", IsAdmin: false},
+			{Name: "developer", Description: "Developer with full server access", IsAdmin: false},
+			{Name: "viewer", Description: "Read-only access to servers", IsAdmin: false},
+		}
+
+		for _, role := range roles {
+			if err := db.Create(&role).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := db.Create(&models.SeedTracker{Name: "roles_seeded"}).Error; err != nil {
 			return err
 		}
 	}
