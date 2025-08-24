@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Server } from '../types/server';
 
 interface ServerCardProps {
@@ -6,7 +7,10 @@ interface ServerCardProps {
 
 export default function ServerCard({ server }: ServerCardProps) {
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <Link
+      href={`/servers/${server.id}/stacks`}
+      className="block border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
@@ -34,6 +38,22 @@ export default function ServerCard({ server }: ServerCardProps) {
           </span>
         </div>
       </div>
-    </div>
+
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Click to view Docker stacks
+          </span>
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </Link>
   );
 }
