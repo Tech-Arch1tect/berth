@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 import { Stack } from '../types/stack';
 
 interface StackCardProps {
@@ -7,7 +8,10 @@ interface StackCardProps {
 
 export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+    <Link
+      href={`/servers/${stack.server_id}/stacks/${stack.name}`}
+      className="block bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg hover:shadow-md transition-shadow duration-200"
+    >
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
@@ -26,6 +30,6 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
