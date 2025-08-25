@@ -1,12 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { StackDetails } from '../types/stack';
-
-interface UseStackDetailsParams {
-  serverId: number;
-  stackName: string;
-}
-
-interface StackDetailsResponse extends StackDetails {}
+import type { UseStackDetailsParams, StackDetailsResponse } from '../types/hooks';
 
 const fetchStackDetails = async (
   serverId: number,
@@ -38,7 +31,7 @@ export const useStackDetails = ({ serverId, stackName }: UseStackDetailsParams) 
     queryKey: ['stackDetails', serverId, stackName],
     queryFn: () => fetchStackDetails(serverId, stackName),
     staleTime: 1 * 1000,
-    refetchInterval: 10 * 1000,
+    refetchInterval: 120 * 1000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     retry: 1,

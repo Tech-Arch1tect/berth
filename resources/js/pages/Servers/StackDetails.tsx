@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { Server } from '../../types/server';
 import { useStackDetails } from '../../hooks/useStackDetails';
+import { useStackWebSocket } from '../../hooks/useStackWebSocket';
 
 interface StackDetailsProps {
   title: string;
@@ -16,10 +17,15 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     data: stackDetails,
     isLoading: loading,
     error,
-    isStale,
     isFetching,
     refetch,
   } = useStackDetails({ serverId, stackName });
+
+  const { isConnected, connectionStatus } = useStackWebSocket({
+    serverId,
+    stackName,
+    enabled: true,
+  });
 
   const getContainerStatusColor = (state: string) => {
     switch (state.toLowerCase()) {
@@ -127,6 +133,25 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                         Updating...
                       </div>
                     )}
+                    {/* WebSocket Connection Status */}
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          connectionStatus === 'connected'
+                            ? 'bg-green-500'
+                            : connectionStatus === 'connecting'
+                              ? 'bg-yellow-500 animate-pulse'
+                              : 'bg-red-500'
+                        }`}
+                      ></div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {connectionStatus === 'connected'
+                          ? 'Live updates active'
+                          : connectionStatus === 'connecting'
+                            ? 'Connecting to live updates...'
+                            : 'Live updates disconnected'}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">
                     Stack details for {server.name}
@@ -206,6 +231,35 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
             </div>
           ) : stackDetails ? (
             <div className="space-y-6">
+              {/* Real-time Status Bar */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div
+                      className={`flex-shrink-0 w-3 h-3 rounded-full mr-3 ${
+                        isConnected ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    ></div>
+                    <div className="flex-1">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        {isConnected
+                          ? 'Connected to real-time updates'
+                          : 'Real-time updates disconnected'}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        Status: {connectionStatus} • Container and stack changes will update
+                        automatically
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-300">
+                      Live
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Stack Overview */}
               <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div className="p-6">
