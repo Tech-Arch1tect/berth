@@ -7,6 +7,7 @@ import (
 	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
 	"brx-starter-kit/internal/stack"
+	"brx-starter-kit/internal/websocket"
 	"brx-starter-kit/models"
 	"brx-starter-kit/providers"
 	"brx-starter-kit/routes"
@@ -52,6 +53,7 @@ func main() {
 		brx.WithJWT(),
 		brx.WithJWTRevocation(),
 		brx.WithFxOptions(
+			websocket.Module,
 			jwt.Options,
 			fx.Provide(func() *StarterKitConfig {
 				return &cfg
@@ -88,6 +90,7 @@ func main() {
 				fx.As(new(jwtshared.UserProvider)),
 			)),
 			fx.Invoke(routes.RegisterRoutes),
+			fx.Invoke(StartWebSocketHub),
 			fx.Invoke(func(db *gorm.DB) {
 				if err := seeds.SeedRBACData(db); err != nil {
 					panic(err)
@@ -95,4 +98,8 @@ func main() {
 			}),
 		),
 	).Run()
+}
+
+func StartWebSocketHub(hub *websocket.Hub) {
+	go hub.Run()
 }

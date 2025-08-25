@@ -1,0 +1,40 @@
+package websocket
+
+import "brx-starter-kit/internal/rbac"
+
+type RBACPermissionChecker struct {
+	rbacService *rbac.Service
+}
+
+func NewRBACPermissionChecker(rbacService *rbac.Service) *RBACPermissionChecker {
+	return &RBACPermissionChecker{
+		rbacService: rbacService,
+	}
+}
+
+func (r *RBACPermissionChecker) CanUserAccessServer(userID int, serverID int) bool {
+	hasPermission, err := r.rbacService.UserHasServerPermission(uint(userID), uint(serverID), "stacks.read")
+	if err != nil {
+		return false
+	}
+	return hasPermission
+}
+
+func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, permission string) bool {
+	var permissionName string
+
+	switch permission {
+	case "view":
+		permissionName = "stacks.read"
+	case "manage":
+		permissionName = "stacks.manage"
+	default:
+		return false
+	}
+
+	hasPermission, err := r.rbacService.UserHasServerPermission(uint(userID), uint(serverID), permissionName)
+	if err != nil {
+		return false
+	}
+	return hasPermission
+}

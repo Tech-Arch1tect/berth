@@ -3,6 +3,7 @@ module brx-starter-kit
 go 1.25.0
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/romsar/gonertia/v2 v2.0.6
 	github.com/tech-arch1tect/brx v0.0.3

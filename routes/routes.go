@@ -9,6 +9,7 @@ import (
 	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
 	"brx-starter-kit/internal/stack"
+	"brx-starter-kit/internal/websocket"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/config"
@@ -23,7 +24,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(session.Middleware(sessionManager))
 
@@ -124,6 +125,12 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.POST("/sessions/revoke-all-others", sessionHandler.RevokeAllOtherSessions)
 	}
 
+	// WebSocket routes for web UI (session authenticated)
+	if wsHandler != nil {
+		protected.GET("/ws/ui/stack-status/:server_id", wsHandler.HandleWebUIWebSocket)
+		protected.GET("/ws/ui/operations", wsHandler.HandleOperationsWebSocket)
+	}
+
 	// Admin routes - require admin role
 	if rbacHandler != nil && rbacMiddleware != nil {
 		admin := protected.Group("/admin")
@@ -203,6 +210,12 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if stackAPIHandler != nil {
 			apiProtected.GET("/servers/:id/stacks", stackAPIHandler.ListServerStacks)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
+		}
+
+		// WebSocket routes for Flutter/API clients (JWT authenticated)
+		if wsHandler != nil {
+			apiProtected.GET("/ws/api/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
+			apiProtected.GET("/ws/api/operations", wsHandler.HandleFlutterOperationsWebSocket)
 		}
 
 		// RBAC routes for JWT users
