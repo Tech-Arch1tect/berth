@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -9,14 +10,16 @@ import (
 )
 
 type Handler struct {
-	hub        *Hub
-	jwtService *jwt.Service
+	hub         *Hub
+	jwtService  *jwt.Service
+	permChecker PermissionChecker
 }
 
-func NewHandler(hub *Hub, jwtService *jwt.Service) *Handler {
+func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker) *Handler {
 	return &Handler{
-		hub:        hub,
-		jwtService: jwtService,
+		hub:         hub,
+		jwtService:  jwtService,
+		permChecker: permChecker,
 	}
 }
 
@@ -25,6 +28,20 @@ func (h *Handler) HandleWebUIWebSocket(c echo.Context) error {
 	if userID == 0 {
 		return c.JSON(401, map[string]string{
 			"error": "Not authenticated",
+		})
+	}
+
+	serverIDStr := c.Param("server_id")
+	serverID, err := strconv.Atoi(serverIDStr)
+	if err != nil {
+		return c.JSON(400, map[string]string{
+			"error": "Invalid server ID",
+		})
+	}
+
+	if !h.permChecker.CanUserAccessServer(int(userID), serverID) {
+		return c.JSON(403, map[string]string{
+			"error": "Insufficient permissions to access this server",
 		})
 	}
 
@@ -60,6 +77,20 @@ func (h *Handler) HandleFlutterWebSocket(c echo.Context) error {
 	}
 
 	userID := int(claims.UserID)
+
+	serverIDStr := c.Param("server_id")
+	serverID, err := strconv.Atoi(serverIDStr)
+	if err != nil {
+		return c.JSON(400, map[string]string{
+			"error": "Invalid server ID",
+		})
+	}
+
+	if !h.permChecker.CanUserAccessServer(userID, serverID) {
+		return c.JSON(403, map[string]string{
+			"error": "Insufficient permissions to access this server",
+		})
+	}
 
 	wsUser := &User{
 		ID:   userID,
