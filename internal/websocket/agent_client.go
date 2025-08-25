@@ -39,7 +39,6 @@ func (am *AgentManager) ConnectToAgent(server *models.Server) error {
 	defer am.mutex.Unlock()
 
 	if _, exists := am.clients[server.ID]; exists {
-		log.Printf("Agent client already exists for server %d", server.ID)
 		return nil
 	}
 
@@ -54,7 +53,6 @@ func (am *AgentManager) ConnectToAgent(server *models.Server) error {
 	am.clients[server.ID] = client
 	go client.connect()
 
-	log.Printf("Started WebSocket client for agent: %s (ID: %d)", server.Name, server.ID)
 	return nil
 }
 
@@ -65,7 +63,6 @@ func (am *AgentManager) DisconnectAgent(serverID uint) {
 	if client, exists := am.clients[serverID]; exists {
 		client.stop <- true
 		delete(am.clients, serverID)
-		log.Printf("Disconnected WebSocket client for server ID: %d", serverID)
 	}
 }
 
@@ -101,7 +98,6 @@ func (ac *AgentClient) connect() {
 
 			select {
 			case <-ac.reconnect:
-				log.Printf("Reconnecting to agent %s", ac.server.Name)
 				if ac.conn != nil {
 					ac.conn.Close()
 				}
@@ -133,7 +129,6 @@ func (ac *AgentClient) attemptConnection() error {
 
 	ac.conn = conn
 	ac.setConnected(true)
-	log.Printf("Connected to agent %s via WebSocket", ac.server.Name)
 	return nil
 }
 

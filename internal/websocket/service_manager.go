@@ -38,8 +38,6 @@ func (sm *ServiceManager) Start() error {
 			continue
 		}
 	}
-
-	log.Printf("Connected to %d agents", len(servers))
 	return nil
 }
 

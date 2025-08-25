@@ -125,10 +125,34 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.POST("/sessions/revoke-all-others", sessionHandler.RevokeAllOtherSessions)
 	}
 
-	// WebSocket routes for web UI (session authenticated)
+	// WebSocket routes for web UI (completely separate Echo instance - this is to ensure no middleware interferes with WebSocket connections like setting headers etc)
 	if wsHandler != nil {
-		protected.GET("/ws/ui/stack-status/:server_id", wsHandler.HandleWebUIWebSocket)
-		protected.GET("/ws/ui/operations", wsHandler.HandleOperationsWebSocket)
+		wsEcho := echo.New()
+		wsEcho.HideBanner = true
+
+		wsEcho.Use(session.Middleware(sessionManager))
+
+		wsEcho.GET("/ui/stack-status/:server_id", func(c echo.Context) error {
+			if !session.IsAuthenticated(c) {
+				return c.JSON(401, map[string]string{"error": "Not authenticated"})
+			}
+			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+			}
+			return wsHandler.HandleWebUIWebSocket(c)
+		})
+
+		wsEcho.GET("/ui/operations", func(c echo.Context) error {
+			if !session.IsAuthenticated(c) {
+				return c.JSON(401, map[string]string{"error": "Not authenticated"})
+			}
+			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+			}
+			return wsHandler.HandleOperationsWebSocket(c)
+		})
+
+		srv.Echo().Any("/ws/*", echo.WrapHandler(http.StripPrefix("/ws", wsEcho)))
 	}
 
 	// Admin routes - require admin role

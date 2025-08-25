@@ -1,10 +1,11 @@
 package websocket
 
 import (
+	"strings"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/jwt"
 	"github.com/tech-arch1tect/brx/session"
-	"strings"
 )
 
 type Handler struct {
@@ -29,7 +30,7 @@ func (h *Handler) HandleWebUIWebSocket(c echo.Context) error {
 
 	wsUser := &User{
 		ID:   int(userID),
-		Name: "", // We'll get name from database if needed later
+		Name: "",
 	}
 
 	return h.hub.ServeWebSocket(c, wsUser)

@@ -63,7 +63,6 @@ func (h *Hub) Run() {
 			h.mutex.Lock()
 			h.clients[client] = true
 			h.mutex.Unlock()
-			log.Printf("WebSocket client connected (User ID: %d). Total clients: %d", client.user.ID, len(h.clients))
 
 		case client := <-h.unregister:
 			h.mutex.Lock()
@@ -73,7 +72,6 @@ func (h *Hub) Run() {
 				close(client.send)
 			}
 			h.mutex.Unlock()
-			log.Printf("WebSocket client disconnected (User ID: %d). Total clients: %d", client.user.ID, len(h.clients))
 		}
 	}
 }
