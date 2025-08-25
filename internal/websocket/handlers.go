@@ -59,13 +59,11 @@ func (h *Handler) HandleFlutterWebSocket(c echo.Context) error {
 	auth := c.Request().Header.Get("Authorization")
 	if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
 		token = after
-	} else {
-		token = c.QueryParam("token")
 	}
 
 	if token == "" {
 		return c.JSON(401, map[string]string{
-			"error": "Authorization token required",
+			"error": "Authorization header with Bearer token required",
 		})
 	}
 
@@ -122,13 +120,11 @@ func (h *Handler) HandleFlutterOperationsWebSocket(c echo.Context) error {
 	auth := c.Request().Header.Get("Authorization")
 	if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
 		token = after
-	} else {
-		token = c.QueryParam("token")
 	}
 
 	if token == "" {
 		return c.JSON(401, map[string]string{
-			"error": "Authorization token required",
+			"error": "Authorization header with Bearer token required",
 		})
 	}
 
