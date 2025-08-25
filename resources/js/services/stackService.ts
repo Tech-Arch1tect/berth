@@ -17,7 +17,9 @@ export class StackService {
       }
 
       const response = await api.get(`/api/servers/${serverId}/stacks`, { headers });
-      return response.data.stacks;
+      const stacks: Stack[] = response.data.stacks || [];
+
+      return stacks.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {

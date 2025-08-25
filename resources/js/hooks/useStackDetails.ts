@@ -18,7 +18,19 @@ const fetchStackDetails = async (
     throw new Error(`Failed to fetch stack details: ${response.status}`);
   }
 
-  return response.json();
+  const data: StackDetailsResponse = await response.json();
+
+  if (data.services) {
+    data.services.sort((a, b) => a.name.localeCompare(b.name));
+
+    data.services.forEach((service) => {
+      if (service.containers) {
+        service.containers.sort((a, b) => a.name.localeCompare(b.name));
+      }
+    });
+  }
+
+  return data;
 };
 
 export const useStackDetails = ({ serverId, stackName }: UseStackDetailsParams) => {
