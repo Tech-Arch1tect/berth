@@ -132,6 +132,60 @@ func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 	}
 }
 
+func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
+	event.BaseMessage = BaseMessage{
+		Type:      MessageTypeStackStatus,
+		Timestamp: time.Now(),
+	}
+
+	subscribers := h.subscriptionMgr.GetSubscribers("stack_status", event.ServerID, event.StackName)
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("Error marshalling stack status event: %v", err)
+		return
+	}
+
+	for _, client := range subscribers {
+		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
+			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "view") {
+				select {
+				case client.send <- data:
+				default:
+					h.unregister <- client
+				}
+			}
+		}
+	}
+}
+
+func (h *Hub) BroadcastLogStream(event LogStreamEvent) {
+	event.BaseMessage = BaseMessage{
+		Type:      MessageTypeLogStream,
+		Timestamp: time.Now(),
+	}
+
+	subscribers := h.subscriptionMgr.GetSubscribers("logs", event.ServerID, event.StackName)
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("Error marshalling log stream event: %v", err)
+		return
+	}
+
+	for _, client := range subscribers {
+		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
+			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "view") {
+				select {
+				case client.send <- data:
+				default:
+					h.unregister <- client
+				}
+			}
+		}
+	}
+}
+
 func (h *Hub) ServeWebSocket(c echo.Context, user *User) error {
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

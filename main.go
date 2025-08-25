@@ -91,6 +91,7 @@ func main() {
 			)),
 			fx.Invoke(routes.RegisterRoutes),
 			fx.Invoke(StartWebSocketHub),
+			fx.Invoke(websocket.StartWebSocketServiceManager),
 			fx.Invoke(func(db *gorm.DB) {
 				if err := seeds.SeedRBACData(db); err != nil {
 					panic(err)

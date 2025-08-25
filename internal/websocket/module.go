@@ -11,4 +11,6 @@ var Module = fx.Options(
 	}),
 	fx.Provide(NewHub),
 	fx.Provide(NewHandler),
+	fx.Provide(NewAgentManager),
+	fx.Provide(NewServiceManager),
 )
