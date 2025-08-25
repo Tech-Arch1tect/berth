@@ -39,3 +39,30 @@ func (h *WebAPIHandler) ListServerStacks(c echo.Context) error {
 		"stacks": stacks,
 	})
 }
+
+func (h *WebAPIHandler) GetStackDetails(c echo.Context) error {
+	userID := session.GetUserIDAsUint(c)
+
+	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid server ID",
+		})
+	}
+
+	stackName := c.Param("stackname")
+	if stackName == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Stack name is required",
+		})
+	}
+
+	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userID, uint(serverID), stackName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, stackDetails)
+}

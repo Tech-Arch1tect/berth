@@ -104,9 +104,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	// Server-specific stack routes
 	if stackHandler != nil {
 		protected.GET("/servers/:id/stacks", stackHandler.ShowServerStacks)
+		protected.GET("/servers/:serverid/stacks/:stackname", stackHandler.ShowStackDetails)
 	}
 	if stackWebAPIHandler != nil {
 		protected.GET("/api/servers/:id/stacks", stackWebAPIHandler.ListServerStacks)
+		protected.GET("/api/servers/:serverid/stacks/:stackname", stackWebAPIHandler.GetStackDetails)
 	}
 
 	// TOTP management routes
@@ -200,6 +202,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		// Stack routes
 		if stackAPIHandler != nil {
 			apiProtected.GET("/servers/:id/stacks", stackAPIHandler.ListServerStacks)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
 		}
 
 		// RBAC routes for JWT users
