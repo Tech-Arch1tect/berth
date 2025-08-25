@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
-import { StackDetails as StackDetailsType } from '../../types/stack';
 import { Server } from '../../types/server';
+import { useStackDetails } from '../../hooks/useStackDetails';
 
 interface StackDetailsProps {
   title: string;
@@ -12,31 +12,14 @@ interface StackDetailsProps {
 }
 
 const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, stackName }) => {
-  const [stackDetails, setStackDetails] = useState<StackDetailsType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchStackDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch stack details');
-        }
-
-        const data = await response.json();
-        setStackDetails(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load stack details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStackDetails();
-  }, [serverId, stackName]);
+  const {
+    data: stackDetails,
+    isLoading: loading,
+    error,
+    isStale,
+    isFetching,
+    refetch,
+  } = useStackDetails({ serverId, stackName });
 
   const getContainerStatusColor = (state: string) => {
     switch (state.toLowerCase()) {
@@ -113,10 +96,66 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
             </nav>
 
             <div className="mt-4">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{stackName}</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Stack details for {server.name}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {stackName}
+                    </h1>
+                    {isFetching && !loading && (
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Updating...
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Stack details for {server.name}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -161,7 +200,9 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Error loading stack details
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                {error?.message || 'An unknown error occurred'}
+              </p>
             </div>
           ) : stackDetails ? (
             <div className="space-y-6">
