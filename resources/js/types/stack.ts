@@ -106,3 +106,20 @@ export interface Volume {
 export interface StackVolumesResponse {
   volumes: Volume[];
 }
+
+export interface EnvironmentVariable {
+  key: string;
+  value: string;
+  is_sensitive: boolean;
+  source: 'compose' | 'runtime';
+  is_from_container: boolean;
+}
+
+export interface ServiceEnvironment {
+  service_name?: string;
+  variables: EnvironmentVariable[];
+}
+
+export interface StackEnvironmentResponse {
+  [serviceName: string]: ServiceEnvironment[];
+}

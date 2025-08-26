@@ -6,8 +6,10 @@ import { useStackDetails } from '../../hooks/useStackDetails';
 import { useStackWebSocket } from '../../hooks/useStackWebSocket';
 import { useStackNetworks } from '../../hooks/useStackNetworks';
 import { useStackVolumes } from '../../hooks/useStackVolumes';
+import { useStackEnvironmentVariables } from '../../hooks/useStackEnvironmentVariables';
 import NetworkList from '../../components/stack/NetworkList';
 import VolumeList from '../../components/stack/VolumeList';
+import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
 
 interface StackDetailsProps {
   title: string;
@@ -17,7 +19,9 @@ interface StackDetailsProps {
 }
 
 const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, stackName }) => {
-  const [activeTab, setActiveTab] = useState<'services' | 'networks' | 'volumes'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'networks' | 'volumes' | 'environment'>(
+    'services'
+  );
 
   const {
     data: stackDetails,
@@ -42,6 +46,14 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     isFetching: volumesFetching,
     refetch: refetchVolumes,
   } = useStackVolumes({ serverId, stackName });
+
+  const {
+    data: environmentVariables,
+    isLoading: environmentLoading,
+    error: environmentError,
+    isFetching: environmentFetching,
+    refetch: refetchEnvironment,
+  } = useStackEnvironmentVariables({ serverId, stackName });
 
   const { isConnected, connectionStatus } = useStackWebSocket({
     serverId,
@@ -185,12 +197,15 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                       refetch();
                       refetchNetworks();
                       refetchVolumes();
+                      refetchEnvironment();
                     }}
-                    disabled={isFetching || networksFetching || volumesFetching}
+                    disabled={
+                      isFetching || networksFetching || volumesFetching || environmentFetching
+                    }
                     className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg
-                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching || networksFetching || volumesFetching ? 'animate-spin' : ''}`}
+                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching || networksFetching || volumesFetching || environmentFetching ? 'animate-spin' : ''}`}
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -424,6 +439,44 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                         )}
                       </div>
                     </button>
+                    <button
+                      onClick={() => setActiveTab('environment')}
+                      className={`${
+                        activeTab === 'environment'
+                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                          />
+                        </svg>
+                        <span>Environment</span>
+                        {environmentVariables && (
+                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
+                            {Object.values(environmentVariables).reduce(
+                              (total, serviceEnvs) =>
+                                total +
+                                serviceEnvs.reduce(
+                                  (envTotal, env) => envTotal + env.variables.length,
+                                  0
+                                ),
+                              0
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </button>
                   </nav>
                 </div>
               </div>
@@ -554,6 +607,24 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                       volumes={volumes || []}
                       isLoading={volumesLoading}
                       error={volumesError}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Environment Variables Tab */}
+              {activeTab === 'environment' && (
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      Environment Variables
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    <EnvironmentVariableList
+                      environmentData={environmentVariables || {}}
+                      isLoading={environmentLoading}
+                      error={environmentError}
                     />
                   </div>
                 </div>
