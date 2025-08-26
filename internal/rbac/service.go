@@ -265,40 +265,6 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 	return serverIDs, nil
 }
 
-func (s *Service) UserHasServerPermission(userID uint, serverID uint, permissionName string) (bool, error) {
-	var user models.User
-	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, role := range user.Roles {
-		if role.IsAdmin {
-			return true, nil
-		}
-	}
-
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
-	err := s.db.Preload("Permission").
-		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
-		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
-		Find(&serverRoleStackPermissions).Error
-
-	if err != nil {
-		return false, err
-	}
-
-	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == permissionName {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackName string, permissionName string) (bool, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
@@ -371,4 +337,61 @@ func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackName 
 	}
 
 	return permissions, nil
+}
+
+func (s *Service) UserHasServerAccess(userID uint, serverID uint) (bool, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return true, nil
+		}
+	}
+
+	var count int64
+	err := s.db.Model(&models.ServerRoleStackPermission{}).
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (s *Service) UserHasAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return true, nil
+		}
+	}
+
+	var count int64
+	err := s.db.Model(&models.ServerRoleStackPermission{}).
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Joins("JOIN permissions ON permissions.id = server_role_stack_permissions.permission_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ? AND permissions.name = ?", userID, serverID, permissionName).
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

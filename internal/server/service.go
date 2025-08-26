@@ -155,7 +155,3 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 
 	return responses, nil
 }
-
-func (s *Service) UserHasServerAccess(userID uint, serverID uint, permission string) (bool, error) {
-	return s.rbacSvc.UserHasServerPermission(userID, serverID, permission)
-}

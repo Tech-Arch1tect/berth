@@ -30,31 +30,31 @@ func (s *Service) GetServerInfo(serverID uint) (*models.ServerResponse, error) {
 }
 
 func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID uint) ([]Stack, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
-	if err != nil {
-		return nil, fmt.Errorf("failed to check permissions: %w", err)
-	}
-
-	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
-	}
-
 	server, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	stacks, err := s.fetchStacksFromAgent(ctx, server)
+	allStacks, err := s.fetchStacksFromAgent(ctx, server)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range stacks {
-		stacks[i].ServerID = server.ID
-		stacks[i].ServerName = server.Name
+	var accessibleStacks []Stack
+	for _, stack := range allStacks {
+		hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stack.Name, "stacks.read")
+		if err != nil {
+			continue
+		}
+
+		if hasPermission {
+			stack.ServerID = server.ID
+			stack.ServerName = server.Name
+			accessibleStacks = append(accessibleStacks, stack)
+		}
 	}
 
-	return stacks, nil
+	return accessibleStacks, nil
 }
 
 func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackName string) (*StackDetails, error) {

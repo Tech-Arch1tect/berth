@@ -43,7 +43,8 @@ type UserConnection struct {
 
 type PermissionChecker interface {
 	CanUserAccessServer(userID int, serverID int) bool
-	HasStackPermission(userID int, serverID int, permission string) bool
+	CanUserAccessAnyStackWithPermission(userID int, serverID int, permission string) bool
+	HasStackPermission(userID int, serverID int, stackName string, permission string) bool
 }
 
 func NewHub(permissionChecker PermissionChecker) *Hub {
@@ -92,7 +93,7 @@ func (h *Hub) BroadcastContainerStatus(event ContainerStatusEvent) {
 
 	for _, client := range subscribers {
 		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "view") {
+			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, event.StackName, "view") {
 				select {
 				case client.send <- data:
 				default:
@@ -119,7 +120,7 @@ func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 
 	for _, client := range subscribers {
 		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "manage") {
+			if h.permissionChecker.CanUserAccessAnyStackWithPermission(client.user.ID, event.ServerID, "manage") {
 				select {
 				case client.send <- data:
 				default:
@@ -146,7 +147,7 @@ func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 
 	for _, client := range subscribers {
 		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "view") {
+			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, event.StackName, "view") {
 				select {
 				case client.send <- data:
 				default:
@@ -173,7 +174,7 @@ func (h *Hub) BroadcastLogStream(event LogStreamEvent) {
 
 	for _, client := range subscribers {
 		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, "view") {
+			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, event.StackName, "view") {
 				select {
 				case client.send <- data:
 				default:
@@ -294,13 +295,28 @@ func (c *UserConnection) handleSubscribe(msg SubscribeMessage) {
 		return
 	}
 
-	if msg.Resource == "stack_status" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, "view") {
+	if msg.Resource == "stack_status" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, msg.StackName, "view") {
 		c.sendError("Permission denied for stack viewing")
 		return
 	}
 
-	if msg.Resource == "operations" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, "manage") {
+	if msg.Resource == "stack_status" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "view") {
+		c.sendError("Permission denied for stack viewing")
+		return
+	}
+
+	if msg.Resource == "operations" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "manage") {
 		c.sendError("Permission denied for stack operations")
+		return
+	}
+
+	if msg.Resource == "logs" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, msg.StackName, "view") {
+		c.sendError("Permission denied for log viewing")
+		return
+	}
+
+	if msg.Resource == "logs" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "view") {
+		c.sendError("Permission denied for log viewing")
 		return
 	}
 

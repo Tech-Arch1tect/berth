@@ -22,7 +22,8 @@ func NewService(db *gorm.DB, rbacSvc *rbac.Service) *Service {
 
 func (s *Service) AdminExists() (bool, error) {
 	var count int64
-	err := s.db.Table("user_roles").
+	err := s.db.Model(&models.User{}).
+		Joins("JOIN user_roles ON users.id = user_roles.user_id").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("roles.name = ?", "admin").
 		Count(&count).Error
