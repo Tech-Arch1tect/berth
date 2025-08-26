@@ -208,3 +208,42 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, environmentVariables)
 }
+
+func (h *APIHandler) GetStackStats(c echo.Context) error {
+	currentUser := jwtshared.GetCurrentUser(c)
+	if currentUser == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
+			"error": "User not authenticated",
+		})
+	}
+
+	userModel, ok := currentUser.(models.User)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Invalid user type",
+		})
+	}
+
+	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid server ID",
+		})
+	}
+
+	stackName := c.Param("stackname")
+	if stackName == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Stack name is required",
+		})
+	}
+
+	stackStats, err := h.service.GetStackStats(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, stackStats)
+}

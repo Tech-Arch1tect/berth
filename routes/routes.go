@@ -125,6 +125,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/networks", stackWebAPIHandler.GetStackNetworks)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/volumes", stackWebAPIHandler.GetStackVolumes)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackWebAPIHandler.GetStackEnvironmentVariables)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackWebAPIHandler.GetStackStats)
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
@@ -244,6 +245,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
 		}
 
 		if rbacAPIHandler != nil && rbacMiddleware != nil {

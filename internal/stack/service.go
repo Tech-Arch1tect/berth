@@ -246,3 +246,36 @@ func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, s
 
 	return environmentVariables, nil
 }
+
+func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint, stackName string) (*StackStats, error) {
+	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		return nil, fmt.Errorf("user does not have permission to access this server")
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/stats", stackName), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request to agent: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("agent returned error: %s", resp.Status)
+	}
+
+	var stackStats StackStats
+	if err := json.NewDecoder(resp.Body).Decode(&stackStats); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	return &stackStats, nil
+}
