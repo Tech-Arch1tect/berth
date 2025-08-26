@@ -187,8 +187,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		admin.POST("/roles", rbacHandler.CreateRole)
 		admin.PUT("/roles/:id", rbacHandler.UpdateRole)
 		admin.DELETE("/roles/:id", rbacHandler.DeleteRole)
-		admin.GET("/roles/:id/server-permissions", rbacHandler.RoleServerPermissions)
-		admin.POST("/roles/:id/server-permissions", rbacHandler.UpdateRoleServerPermissions)
+		admin.GET("/roles/:id/stack-permissions", rbacHandler.RoleServerStackPermissions)
+		admin.POST("/roles/:id/stack-permissions", rbacHandler.CreateRoleStackPermission)
+		admin.DELETE("/roles/:id/stack-permissions/:permissionId", rbacHandler.DeleteRoleStackPermission)
 
 		if serverHandler != nil {
 			admin.GET("/servers", serverHandler.Index)
@@ -265,8 +266,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiAdmin.POST("/roles", rbacAPIHandler.CreateRole)
 			apiAdmin.PUT("/roles/:id", rbacAPIHandler.UpdateRole)
 			apiAdmin.DELETE("/roles/:id", rbacAPIHandler.DeleteRole)
-			apiAdmin.GET("/roles/:roleId/server-permissions", rbacAPIHandler.ListRoleServerPermissions)
-			apiAdmin.POST("/roles/:roleId/server-permissions", rbacAPIHandler.UpdateRoleServerPermissions)
+			apiAdmin.GET("/roles/:roleId/stack-permissions", rbacAPIHandler.ListRoleServerStackPermissions)
+			apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission)
+			apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission)
 
 			if serverAPIHandler != nil {
 				apiAdmin.GET("/servers", serverAPIHandler.ListServers)

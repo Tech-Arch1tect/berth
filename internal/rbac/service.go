@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"brx-starter-kit/models"
+	"brx-starter-kit/utils"
 	"errors"
 
 	"gorm.io/gorm"
@@ -211,7 +212,7 @@ func (s *Service) DeleteRole(roleID uint) error {
 		return errors.New("cannot delete role that is assigned to users")
 	}
 
-	if err := s.db.Where("role_id = ?", roleID).Delete(&models.ServerRolePermission{}).Error; err != nil {
+	if err := s.db.Where("role_id = ?", roleID).Delete(&models.ServerRoleStackPermission{}).Error; err != nil {
 		return errors.New("failed to clean up role permissions")
 	}
 
@@ -239,11 +240,11 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 		}
 	}
 
-	var serverRolePermissions []models.ServerRolePermission
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
-		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Find(&serverRolePermissions).Error
+		Find(&serverRoleStackPermissions).Error
 
 	if err != nil {
 		return nil, err
@@ -252,11 +253,11 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 	var serverIDs []uint
 	serverIDMap := make(map[uint]bool)
 
-	for _, srp := range serverRolePermissions {
-		if srp.Permission.Name == "stacks.read" {
-			if !serverIDMap[srp.ServerID] {
-				serverIDs = append(serverIDs, srp.ServerID)
-				serverIDMap[srp.ServerID] = true
+	for _, srsp := range serverRoleStackPermissions {
+		if srsp.Permission.Name == "stacks.read" {
+			if !serverIDMap[srsp.ServerID] {
+				serverIDs = append(serverIDs, srsp.ServerID)
+				serverIDMap[srsp.ServerID] = true
 			}
 		}
 	}
@@ -279,21 +280,95 @@ func (s *Service) UserHasServerPermission(userID uint, serverID uint, permission
 		}
 	}
 
-	var serverRolePermissions []models.ServerRolePermission
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
-		Joins("JOIN user_roles ON user_roles.role_id = server_role_permissions.role_id").
-		Where("user_roles.user_id = ? AND server_role_permissions.server_id = ?", userID, serverID).
-		Find(&serverRolePermissions).Error
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
+		Find(&serverRoleStackPermissions).Error
 
 	if err != nil {
 		return false, err
 	}
 
-	for _, srp := range serverRolePermissions {
-		if srp.Permission.Name == permissionName {
+	for _, srsp := range serverRoleStackPermissions {
+		if srsp.Permission.Name == permissionName {
 			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackName string, permissionName string) (bool, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return true, nil
+		}
+	}
+
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
+		Find(&serverRoleStackPermissions).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	for _, srsp := range serverRoleStackPermissions {
+		if srsp.Permission.Name == permissionName && utils.MatchesPattern(stackName, srsp.StackPattern) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackName string) ([]string, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return []string{"stacks.read", "stacks.manage", "files.read", "files.write", "logs.read"}, nil
+		}
+	}
+
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
+		Find(&serverRoleStackPermissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	permissionSet := make(map[string]bool)
+	for _, srsp := range serverRoleStackPermissions {
+		if utils.MatchesPattern(stackName, srsp.StackPattern) {
+			permissionSet[srsp.Permission.Name] = true
+		}
+	}
+
+	permissions := make([]string, 0, len(permissionSet))
+	for permission := range permissionSet {
+		permissions = append(permissions, permission)
+	}
+
+	return permissions, nil
 }

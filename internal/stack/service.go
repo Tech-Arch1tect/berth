@@ -58,13 +58,13 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 }
 
 func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackName string) (*StackDetails, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
+		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
@@ -122,13 +122,13 @@ func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models
 }
 
 func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID uint, stackName string) ([]Network, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
+		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
@@ -164,13 +164,13 @@ func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *model
 }
 
 func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uint, stackName string) ([]Volume, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
+		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
@@ -206,13 +206,13 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 }
 
 func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackName string) (map[string][]ServiceEnvironment, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
+		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
@@ -248,13 +248,13 @@ func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, s
 }
 
 func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint, stackName string) (*StackStats, error) {
-	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this server")
+		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)

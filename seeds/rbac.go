@@ -90,7 +90,7 @@ func seedServerPermissions(db *gorm.DB) error {
 
 	for _, server := range servers {
 		var existingCount int64
-		if err := db.Model(&models.ServerRolePermission{}).Where("server_id = ?", server.ID).Count(&existingCount).Error; err != nil {
+		if err := db.Model(&models.ServerRoleStackPermission{}).Where("server_id = ?", server.ID).Count(&existingCount).Error; err != nil {
 			return err
 		}
 
@@ -98,17 +98,17 @@ func seedServerPermissions(db *gorm.DB) error {
 			continue
 		}
 
-		developerPermissions := []models.ServerRolePermission{
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.read"]},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.manage"]},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.read"]},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.write"]},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["logs.read"]},
+		developerPermissions := []models.ServerRoleStackPermission{
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.read"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.manage"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.read"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.write"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["logs.read"], StackPattern: "*"},
 		}
 
-		viewerPermissions := []models.ServerRolePermission{
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["stacks.read"]},
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["logs.read"]},
+		viewerPermissions := []models.ServerRoleStackPermission{
+			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["stacks.read"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["logs.read"], StackPattern: "*"},
 		}
 
 		allPermissions := append(developerPermissions, viewerPermissions...)

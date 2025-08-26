@@ -5,6 +5,7 @@ import (
 	"brx-starter-kit/models"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
@@ -220,115 +221,6 @@ func (h *APIHandler) CheckPermission(c echo.Context) error {
 	})
 }
 
-func (h *APIHandler) ListRoleServerPermissions(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("roleId"), 10, 32)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid role ID",
-		})
-	}
-
-	var role models.Role
-	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
-			"error": "Role not found",
-		})
-	}
-
-	if role.IsAdmin {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Cannot manage server permissions for admin role",
-		})
-	}
-
-	var servers []models.Server
-	if err := h.db.Find(&servers).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch servers",
-		})
-	}
-
-	var permissions []models.Permission
-	if err := h.db.Find(&permissions).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch permissions",
-		})
-	}
-
-	var serverRolePermissions []models.ServerRolePermission
-	if err := h.db.Where("role_id = ?", roleID).Find(&serverRolePermissions).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch role permissions",
-		})
-	}
-
-	permissionMap := make(map[uint]map[uint]bool)
-	for _, srp := range serverRolePermissions {
-		if permissionMap[srp.ServerID] == nil {
-			permissionMap[srp.ServerID] = make(map[uint]bool)
-		}
-		permissionMap[srp.ServerID][srp.PermissionID] = true
-	}
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"role":             role,
-		"servers":          servers,
-		"permissions":      permissions,
-		"permissionMatrix": permissionMap,
-	})
-}
-
-func (h *APIHandler) UpdateRoleServerPermissions(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("roleId"), 10, 32)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid role ID",
-		})
-	}
-
-	var req struct {
-		ServerID     uint `json:"server_id"`
-		PermissionID uint `json:"permission_id"`
-		Granted      bool `json:"granted"`
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request body",
-		})
-	}
-
-	if req.Granted {
-		var existing models.ServerRolePermission
-		result := h.db.Where("server_id = ? AND role_id = ? AND permission_id = ?",
-			req.ServerID, roleID, req.PermissionID).First(&existing)
-
-		if result.Error == gorm.ErrRecordNotFound {
-			newPermission := models.ServerRolePermission{
-				ServerID:     req.ServerID,
-				RoleID:       uint(roleID),
-				PermissionID: req.PermissionID,
-			}
-			if err := h.db.Create(&newPermission).Error; err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-					"error": "Failed to grant permission",
-				})
-			}
-		}
-	} else {
-		if err := h.db.Where("server_id = ? AND role_id = ? AND permission_id = ?",
-			req.ServerID, roleID, req.PermissionID).Delete(&models.ServerRolePermission{}).Error; err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-				"error": "Failed to revoke permission",
-			})
-		}
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Permission updated successfully",
-	})
-}
-
 func (h *APIHandler) CreateRole(c echo.Context) error {
 	var req struct {
 		Name        string `json:"name"`
@@ -432,5 +324,153 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Role deleted successfully",
+	})
+}
+
+func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("roleId"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid role ID",
+		})
+	}
+
+	var role models.Role
+	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
+			"error": "Role not found",
+		})
+	}
+
+	if role.IsAdmin {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Cannot manage server permissions for admin role",
+		})
+	}
+
+	var servers []models.Server
+	if err := h.db.Find(&servers).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to fetch servers",
+		})
+	}
+
+	var permissions []models.Permission
+	if err := h.db.Find(&permissions).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to fetch permissions",
+		})
+	}
+
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to fetch role stack permissions",
+		})
+	}
+
+	type PermissionRule struct {
+		ID           uint   `json:"id"`
+		ServerID     uint   `json:"server_id"`
+		PermissionID uint   `json:"permission_id"`
+		StackPattern string `json:"stack_pattern"`
+		IsStackBased bool   `json:"is_stack_based"`
+	}
+
+	var permissionRules []PermissionRule
+
+	for _, srsp := range serverRoleStackPermissions {
+		permissionRules = append(permissionRules, PermissionRule{
+			ID:           srsp.ID,
+			ServerID:     srsp.ServerID,
+			PermissionID: srsp.PermissionID,
+			StackPattern: srsp.StackPattern,
+			IsStackBased: true,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"role":            role,
+		"servers":         servers,
+		"permissions":     permissions,
+		"permissionRules": permissionRules,
+	})
+}
+
+func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
+	roleID, err := strconv.ParseUint(c.Param("roleId"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid role ID",
+		})
+	}
+
+	var req struct {
+		ServerID     uint   `json:"server_id"`
+		PermissionID uint   `json:"permission_id"`
+		StackPattern string `json:"stack_pattern"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request body",
+		})
+	}
+
+	if strings.TrimSpace(req.StackPattern) == "" {
+		req.StackPattern = "*"
+	}
+
+	var existing models.ServerRoleStackPermission
+	result := h.db.Where("server_id = ? AND role_id = ? AND permission_id = ? AND stack_pattern = ?",
+		req.ServerID, roleID, req.PermissionID, req.StackPattern).First(&existing)
+
+	if result.Error != gorm.ErrRecordNotFound {
+		return echo.NewHTTPError(http.StatusConflict, map[string]string{
+			"error": "Permission rule already exists",
+		})
+	}
+
+	newPermission := models.ServerRoleStackPermission{
+		ServerID:     req.ServerID,
+		RoleID:       uint(roleID),
+		PermissionID: req.PermissionID,
+		StackPattern: req.StackPattern,
+	}
+
+	if err := h.db.Create(&newPermission).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to create permission rule",
+		})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]string{
+		"message": "Permission rule created successfully",
+	})
+}
+
+func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
+	permissionID, err := strconv.ParseUint(c.Param("permissionId"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "Invalid permission ID",
+		})
+	}
+
+	var permission models.ServerRoleStackPermission
+	if err := h.db.First(&permission, uint(permissionID)).Error; err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
+			"error": "Permission rule not found",
+		})
+	}
+
+	if err := h.db.Delete(&permission).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to delete permission rule",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Permission rule deleted successfully",
 	})
 }
