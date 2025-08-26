@@ -93,3 +93,16 @@ type Volume struct {
 	Scope      string            `json:"scope,omitempty"`
 	UsedBy     []VolumeUsage     `json:"used_by,omitempty"`
 }
+
+type EnvironmentVariable struct {
+	Key             string `json:"key"`
+	Value           string `json:"value"`
+	IsSensitive     bool   `json:"is_sensitive"`
+	Source          string `json:"source"`
+	IsFromContainer bool   `json:"is_from_container"`
+}
+
+type ServiceEnvironment struct {
+	ServiceName string                `json:"service_name,omitempty"`
+	Variables   []EnvironmentVariable `json:"variables"`
+}

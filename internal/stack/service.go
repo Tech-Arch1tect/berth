@@ -204,3 +204,45 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 
 	return volumes, nil
 }
+
+func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackName string) (map[string][]ServiceEnvironment, error) {
+	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		return nil, fmt.Errorf("user does not have permission to access this server")
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	environmentVariables, err := s.fetchStackEnvironmentVariablesFromAgent(ctx, server, stackName)
+	if err != nil {
+		return nil, err
+	}
+
+	return environmentVariables, nil
+}
+
+func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackName string) (map[string][]ServiceEnvironment, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/environment", stackName), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	var environmentVariables map[string][]ServiceEnvironment
+	if err := json.NewDecoder(resp.Body).Decode(&environmentVariables); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	return environmentVariables, nil
+}
