@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { Server } from '../../types/server';
 import { useStackDetails } from '../../hooks/useStackDetails';
 import { useStackWebSocket } from '../../hooks/useStackWebSocket';
+import { useStackNetworks } from '../../hooks/useStackNetworks';
+import NetworkList from '../../components/stack/NetworkList';
 
 interface StackDetailsProps {
   title: string;
@@ -13,6 +15,8 @@ interface StackDetailsProps {
 }
 
 const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, stackName }) => {
+  const [activeTab, setActiveTab] = useState<'services' | 'networks'>('services');
+
   const {
     data: stackDetails,
     isLoading: loading,
@@ -20,6 +24,14 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     isFetching,
     refetch,
   } = useStackDetails({ serverId, stackName });
+
+  const {
+    data: networks,
+    isLoading: networksLoading,
+    error: networksError,
+    isFetching: networksFetching,
+    refetch: refetchNetworks,
+  } = useStackNetworks({ serverId, stackName });
 
   const { isConnected, connectionStatus } = useStackWebSocket({
     serverId,
@@ -159,12 +171,15 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => refetch()}
-                    disabled={isFetching}
+                    onClick={() => {
+                      refetch();
+                      refetchNetworks();
+                    }}
+                    disabled={isFetching || networksFetching}
                     className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg
-                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`}
+                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching || networksFetching ? 'animate-spin' : ''}`}
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -304,97 +319,185 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                 </div>
               </div>
 
-              {/* Services */}
-              {stackDetails.services && stackDetails.services.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Services & Containers
-                    </h2>
-                  </div>
-                  <div className="p-6 space-y-6">
-                    {stackDetails.services.map((service) => (
-                      <div
-                        key={service.name}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg"
-                      >
-                        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                              {service.name}
-                            </h3>
-                            {service.image && (
-                              <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                {service.image}
-                              </span>
+              {/* Tab Navigation */}
+              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div className="border-b border-gray-200 dark:border-gray-700">
+                  <nav className="-mb-px flex">
+                    <button
+                      onClick={() => setActiveTab('services')}
+                      className={`${
+                        activeTab === 'services'
+                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                          />
+                        </svg>
+                        <span>Services & Containers</span>
+                        {stackDetails?.services && (
+                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
+                            {stackDetails.services.length}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('networks')}
+                      className={`${
+                        activeTab === 'networks'
+                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span>Networks</span>
+                        {networks && (
+                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
+                            {networks.length}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  </nav>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === 'services' &&
+                stackDetails.services &&
+                stackDetails.services.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        Services & Containers
+                      </h2>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      {stackDetails.services.map((service) => (
+                        <div
+                          key={service.name}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg"
+                        >
+                          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                {service.name}
+                              </h3>
+                              {service.image && (
+                                <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                                  {service.image}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            {service.containers && service.containers.length > 0 ? (
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                  <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Container
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Status
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Image
+                                      </th>
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Ports
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+                                    {service.containers.map((container, index) => (
+                                      <tr key={container.name || index}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                          {container.name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                          <span
+                                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getContainerStatusColor(container.state)}`}
+                                          >
+                                            {container.state}
+                                          </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                                          {container.image}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                          {container.ports && container.ports.length > 0 ? (
+                                            <div className="space-y-1">
+                                              {container.ports.map((port, portIndex) => (
+                                                <div key={portIndex} className="text-xs">
+                                                  {port.public
+                                                    ? `${port.public}:${port.private}`
+                                                    : port.private}
+                                                  /{port.type}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <span className="text-gray-400">—</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                No containers found for this service.
+                              </p>
                             )}
                           </div>
                         </div>
-                        <div className="p-4">
-                          {service.containers && service.containers.length > 0 ? (
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                  <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                      Container
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                      Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                      Image
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                      Ports
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                                  {service.containers.map((container, index) => (
-                                    <tr key={container.name || index}>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                        {container.name}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getContainerStatusColor(container.state)}`}
-                                        >
-                                          {container.state}
-                                        </span>
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                        {container.image}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {container.ports && container.ports.length > 0 ? (
-                                          <div className="space-y-1">
-                                            {container.ports.map((port, portIndex) => (
-                                              <div key={portIndex} className="text-xs">
-                                                {port.public
-                                                  ? `${port.public}:${port.private}`
-                                                  : port.private}
-                                                /{port.type}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <span className="text-gray-400">—</span>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">
-                              No containers found for this service.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Networks Tab */}
+              {activeTab === 'networks' && (
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      Networks
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    <NetworkList
+                      networks={networks || []}
+                      isLoading={networksLoading}
+                      error={networksError}
+                    />
                   </div>
                 </div>
               )}

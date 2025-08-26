@@ -40,3 +40,37 @@ export interface Port {
   public?: number;
   type: string;
 }
+
+export interface NetworkIPAMConfig {
+  subnet?: string;
+  gateway?: string;
+}
+
+export interface NetworkIPAM {
+  driver?: string;
+  config?: NetworkIPAMConfig[];
+}
+
+export interface NetworkEndpoint {
+  name: string;
+  endpoint_id?: string;
+  mac_address?: string;
+  ipv4_address?: string;
+  ipv6_address?: string;
+}
+
+export interface Network {
+  name: string;
+  driver?: string;
+  external?: boolean;
+  labels?: Record<string, string>;
+  options?: Record<string, string>;
+  ipam?: NetworkIPAM;
+  containers?: Record<string, NetworkEndpoint>;
+  exists: boolean;
+  created?: string;
+}
+
+export interface StackNetworksResponse {
+  networks: Network[];
+}
