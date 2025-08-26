@@ -180,7 +180,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                       <span
                         className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200`}
                       >
-                        {role.is_admin ? 'Full Access' : 'Server Permissions'}
+                        {role.is_admin ? 'Full Access' : 'Stack Permissions'}
                       </span>
                     </h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -206,10 +206,10 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                     )}
                     {!role.is_admin && (
                       <button
-                        onClick={() => router.visit(`/admin/roles/${role.id}/server-permissions`)}
+                        onClick={() => router.visit(`/admin/roles/${role.id}/stack-permissions`)}
                         className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        Server Permissions
+                        Stack Permissions
                       </button>
                     )}
                   </div>
@@ -223,8 +223,8 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Server permissions are managed individually. Click "Server Permissions" to
-                    configure access.
+                    Stack permissions are managed using patterns. Click "Stack Permissions" to
+                    configure access to specific stacks using patterns like *dev* or *prod*.
                   </div>
                 )}
               </div>
