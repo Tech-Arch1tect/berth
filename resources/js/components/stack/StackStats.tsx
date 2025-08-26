@@ -8,10 +8,14 @@ interface StackStatsProps {
 }
 
 const formatBytes = (bytes: number): string => {
-  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
   if (bytes === 0) return '0 B';
+
+  if (bytes >= 9223372036854775807) return 'Unlimited';
+
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  const size = Math.min(i, sizes.length - 1);
+  return `${(bytes / Math.pow(1024, size)).toFixed(1)} ${sizes[size]}`;
 };
 
 const formatPercent = (percent: number): string => {
@@ -173,41 +177,156 @@ const StackStats: React.FC<StackStatsProps> = ({ containers, isLoading, error })
 
           {/* Content */}
           <div className="px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    CPU Usage
-                  </span>
-                  <span className="text-sm font-mono text-gray-900 dark:text-white">
-                    {formatPercent(container.cpu_percent)}
-                  </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* CPU Stats */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                  CPU Statistics
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">CPU Usage</span>
+                    <span className="text-sm font-mono text-gray-900 dark:text-white">
+                      {formatPercent(container.cpu_percent)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(container.cpu_percent, 100)}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                  <div
-                    className="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(container.cpu_percent, 100)}%` }}
-                  ></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">User Time</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.cpu_user_time}ms
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">System Time</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.cpu_system_time}ms
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Memory Usage
-                  </span>
-                  <span className="text-sm font-mono text-gray-900 dark:text-white">
-                    {formatBytes(container.memory_usage)} / {formatBytes(container.memory_limit)}
-                  </span>
+              {/* Memory Stats */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                  Memory Statistics
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Memory Usage</span>
+                    <span className="text-sm font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.memory_usage)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(container.memory_percent, 100)}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatPercent(container.memory_percent)} used (
+                    {formatBytes(container.memory_limit)} limit)
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                  <div
-                    className="bg-green-600 dark:bg-green-500 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(container.memory_percent, 100)}%` }}
-                  ></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">RSS</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.memory_rss)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Cache</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.memory_cache)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Swap</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.memory_swap)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Page Faults</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.page_faults.toLocaleString()}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatPercent(container.memory_percent)} used
+              </div>
+
+              {/* Network Stats */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                  Network Statistics
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">RX Bytes</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.network_rx_bytes)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">TX Bytes</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.network_tx_bytes)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">RX Packets</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.network_rx_packets.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">TX Packets</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.network_tx_packets.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Block I/O Stats */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                  Block I/O Statistics
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Read Bytes</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.block_read_bytes)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Write Bytes</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {formatBytes(container.block_write_bytes)}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Read Ops</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.block_read_ops.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="text-gray-500 dark:text-gray-400">Write Ops</div>
+                    <div className="font-mono text-gray-900 dark:text-white">
+                      {container.block_write_ops.toLocaleString()}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
