@@ -65,3 +65,31 @@ type Network struct {
 	Exists     bool                       `json:"exists"`
 	Created    string                     `json:"created,omitempty"`
 }
+
+type VolumeMount struct {
+	Type         string            `json:"type"`
+	Source       string            `json:"source"`
+	Target       string            `json:"target"`
+	ReadOnly     bool              `json:"read_only,omitempty"`
+	BindOptions  map[string]string `json:"bind_options,omitempty"`
+	TmpfsOptions map[string]string `json:"tmpfs_options,omitempty"`
+}
+
+type VolumeUsage struct {
+	ContainerName string        `json:"container_name"`
+	ServiceName   string        `json:"service_name"`
+	Mounts        []VolumeMount `json:"mounts"`
+}
+
+type Volume struct {
+	Name       string            `json:"name"`
+	Driver     string            `json:"driver,omitempty"`
+	External   bool              `json:"external,omitempty"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	DriverOpts map[string]string `json:"driver_opts,omitempty"`
+	Exists     bool              `json:"exists"`
+	Created    string            `json:"created,omitempty"`
+	Mountpoint string            `json:"mountpoint,omitempty"`
+	Scope      string            `json:"scope,omitempty"`
+	UsedBy     []VolumeUsage     `json:"used_by,omitempty"`
+}
