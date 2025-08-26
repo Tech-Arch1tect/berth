@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Stack, Network } from '../types/stack';
+import { Stack, Network, Volume } from '../types/stack';
 
 const api = axios.create({
   headers: {
@@ -58,6 +58,35 @@ export class StackService {
           throw new Error('Stack or networks not found');
         }
         throw new Error(error.response?.data?.error || 'Failed to fetch networks');
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
+  static async getStackVolumes(
+    serverId: number,
+    stackName: string,
+    csrfToken?: string
+  ): Promise<Volume[]> {
+    try {
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await api.get(`/api/servers/${serverId}/stacks/${stackName}/volumes`, {
+        headers,
+      });
+      return response.data || [];
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error('You do not have permission to access this server');
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Stack or volumes not found');
+        }
+        throw new Error(error.response?.data?.error || 'Failed to fetch volumes');
       }
       throw new Error('Network error occurred');
     }

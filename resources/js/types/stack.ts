@@ -74,3 +74,35 @@ export interface Network {
 export interface StackNetworksResponse {
   networks: Network[];
 }
+
+export interface VolumeMount {
+  type: string;
+  source: string;
+  target: string;
+  read_only?: boolean;
+  bind_options?: Record<string, string>;
+  tmpfs_options?: Record<string, string>;
+}
+
+export interface VolumeUsage {
+  container_name: string;
+  service_name: string;
+  mounts: VolumeMount[];
+}
+
+export interface Volume {
+  name: string;
+  driver?: string;
+  external?: boolean;
+  labels?: Record<string, string>;
+  driver_opts?: Record<string, string>;
+  exists: boolean;
+  created?: string;
+  mountpoint?: string;
+  scope?: string;
+  used_by?: VolumeUsage[];
+}
+
+export interface StackVolumesResponse {
+  volumes: Volume[];
+}
