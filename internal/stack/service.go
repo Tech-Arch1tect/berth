@@ -120,3 +120,45 @@ func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models
 
 	return &stackDetails, nil
 }
+
+func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID uint, stackName string) ([]Network, error) {
+	hasPermission, err := s.rbacSvc.UserHasServerPermission(userID, serverID, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		return nil, fmt.Errorf("user does not have permission to access this server")
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	networks, err := s.fetchStackNetworksFromAgent(ctx, server, stackName)
+	if err != nil {
+		return nil, err
+	}
+
+	return networks, nil
+}
+
+func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *models.Server, stackName string) ([]Network, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/networks", stackName), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	var networks []Network
+	if err := json.NewDecoder(resp.Body).Decode(&networks); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	return networks, nil
+}

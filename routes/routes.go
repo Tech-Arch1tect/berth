@@ -122,6 +122,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	if stackWebAPIHandler != nil {
 		protected.GET("/api/servers/:id/stacks", stackWebAPIHandler.ListServerStacks)
 		protected.GET("/api/servers/:serverid/stacks/:stackname", stackWebAPIHandler.GetStackDetails)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/networks", stackWebAPIHandler.GetStackNetworks)
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
@@ -238,6 +239,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if stackAPIHandler != nil {
 			apiProtected.GET("/servers/:id/stacks", stackAPIHandler.ListServerStacks)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
 		}
 
 		if rbacAPIHandler != nil && rbacMiddleware != nil {
