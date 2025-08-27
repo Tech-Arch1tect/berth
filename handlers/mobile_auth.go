@@ -236,8 +236,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 		zap.String("remote_ip", c.RealIP()),
 	)
 
-	userInfo := dto.ConvertUserToUserInfo(user)
-	userInfo.TOTPEnabled = h.totpSvc.IsUserTOTPEnabled(user.ID)
+	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
 	return c.JSON(http.StatusOK, LoginResponse{
 		AccessToken:      accessToken,
@@ -368,11 +367,7 @@ func (h *MobileAuthHandler) Register(c echo.Context) error {
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
 		RefreshExpiresIn: int(refreshTokenData.ExpiresAt.Sub(time.Now()).Seconds()),
-		User: func() dto.UserInfo {
-			userInfo := dto.ConvertUserToUserInfo(user)
-			userInfo.TOTPEnabled = h.totpSvc.IsUserTOTPEnabled(user.ID)
-			return userInfo
-		}(),
+		User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
 	})
 }
 
@@ -462,8 +457,7 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 		})
 	}
 
-	userInfo := dto.ConvertUserToUserInfo(fullUser)
-	userInfo.TOTPEnabled = h.totpSvc.IsUserTOTPEnabled(fullUser.ID)
+	userInfo := dto.ConvertUserToUserInfo(fullUser, h.totpSvc)
 
 	return c.JSON(http.StatusOK, userInfo)
 }
@@ -655,11 +649,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
 		RefreshExpiresIn: int(refreshTokenData.ExpiresAt.Sub(time.Now()).Seconds()),
-		User: func() dto.UserInfo {
-			userInfo := dto.ConvertUserToUserInfo(user)
-			userInfo.TOTPEnabled = h.totpSvc.IsUserTOTPEnabled(user.ID)
-			return userInfo
-		}(),
+		User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
 	})
 }
 

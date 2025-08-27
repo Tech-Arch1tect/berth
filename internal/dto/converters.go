@@ -3,6 +3,8 @@ package dto
 import (
 	"brx-starter-kit/models"
 	"time"
+
+	"github.com/tech-arch1tect/brx/services/totp"
 )
 
 func FormatTimePtr(t *time.Time) *string {
@@ -13,7 +15,7 @@ func FormatTimePtr(t *time.Time) *string {
 	return &formatted
 }
 
-func ConvertUserToUserInfo(user models.User) UserInfo {
+func ConvertUserToUserInfo(user models.User, totpSvc *totp.Service) UserInfo {
 	roleInfos := make([]RoleInfo, len(user.Roles))
 	for i, role := range user.Roles {
 		roleInfos[i] = RoleInfo{
@@ -29,7 +31,7 @@ func ConvertUserToUserInfo(user models.User) UserInfo {
 		Username:        user.Username,
 		Email:           user.Email,
 		EmailVerifiedAt: FormatTimePtr(user.EmailVerifiedAt),
-		TOTPEnabled:     false, // TODO: Check TOTP status from service
+		TOTPEnabled:     totpSvc.IsUserTOTPEnabled(user.ID),
 		CreatedAt:       user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       user.UpdatedAt.Format(time.RFC3339),
 		Roles:           roleInfos,

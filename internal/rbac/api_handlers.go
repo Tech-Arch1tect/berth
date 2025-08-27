@@ -9,18 +9,21 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
+	"github.com/tech-arch1tect/brx/services/totp"
 	"gorm.io/gorm"
 )
 
 type APIHandler struct {
 	db      *gorm.DB
 	rbacSvc *Service
+	totpSvc *totp.Service
 }
 
-func NewAPIHandler(db *gorm.DB, rbacSvc *Service) *APIHandler {
+func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service) *APIHandler {
 	return &APIHandler{
 		db:      db,
 		rbacSvc: rbacSvc,
+		totpSvc: totpSvc,
 	}
 }
 
@@ -34,7 +37,7 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 
 	userInfos := make([]dto.UserInfo, len(users))
 	for i, user := range users {
-		userInfos[i] = dto.ConvertUserToUserInfo(user)
+		userInfos[i] = dto.ConvertUserToUserInfo(user, h.totpSvc)
 	}
 
 	return c.JSON(http.StatusOK, map[string]any{
@@ -64,7 +67,7 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 		})
 	}
 
-	userInfo := dto.ConvertUserToUserInfo(user)
+	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
 	roleInfos := make([]dto.RoleInfo, len(allRoles))
 	for i, role := range allRoles {
