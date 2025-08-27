@@ -13,6 +13,7 @@ import VolumeList from '../../components/stack/VolumeList';
 import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
 import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
+import { OperationsModal } from '../../components/operations/OperationsModal';
 
 interface StackDetailsProps {
   title: string;
@@ -23,8 +24,9 @@ interface StackDetailsProps {
 
 const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, stackName }) => {
   const [activeTab, setActiveTab] = useState<
-    'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs'
+    'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs' | 'operations'
   >('services');
+  const [operationsModalOpen, setOperationsModalOpen] = useState(false);
 
   const {
     data: stackDetails,
@@ -549,6 +551,27 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                         <span>Logs</span>
                       </div>
                     </button>
+                    <button
+                      onClick={() => setOperationsModalOpen(true)}
+                      className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
+                          />
+                        </svg>
+                        <span>Operations</span>
+                      </div>
+                    </button>
                   </nav>
                 </div>
               </div>
@@ -763,6 +786,28 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
           )}
         </div>
       </div>
+
+      {/* Operations Modal */}
+      <OperationsModal
+        isOpen={operationsModalOpen}
+        onClose={() => setOperationsModalOpen(false)}
+        serverId={String(serverId)}
+        stackName={stackName}
+        services={
+          stackStats?.containers?.map((container) => ({
+            name: container.name,
+            service_name: container.service_name,
+          })) || []
+        }
+        onOperationComplete={(success, exitCode) => {
+          console.log('Operation completed:', { success, exitCode });
+
+          if (success) {
+            refetch();
+            refetchStats();
+          }
+        }}
+      />
     </Layout>
   );
 };
