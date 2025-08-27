@@ -57,15 +57,6 @@ export interface OperationProgressEvent extends BaseWebSocketMessage {
   message: string;
 }
 
-export interface LogStreamEvent extends BaseWebSocketMessage {
-  type: 'log_stream';
-  server_id: number;
-  stack_name: string;
-  service_name: string;
-  container_name: string;
-  log_line: string;
-}
-
 export interface SuccessEvent extends BaseWebSocketMessage {
   type: 'success';
   message: string;
