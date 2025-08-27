@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { Toaster } from '../utils/toast';
 
 interface LayoutProps {
   children: ReactNode;
@@ -128,6 +129,18 @@ export default function Layout({ children }: LayoutProps) {
           </p>
         </div>
       </footer>
+
+      {/* Toast notifications */}
+      <Toaster
+        position="bottom-right"
+        gutter={8}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            marginBottom: '8px',
+          },
+        }}
+      />
     </div>
   );
 }

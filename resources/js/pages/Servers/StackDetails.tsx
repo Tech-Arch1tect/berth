@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { Server } from '../../types/server';
@@ -8,12 +8,17 @@ import { useStackNetworks } from '../../hooks/useStackNetworks';
 import { useStackVolumes } from '../../hooks/useStackVolumes';
 import { useStackEnvironmentVariables } from '../../hooks/useStackEnvironmentVariables';
 import { useStackStats } from '../../hooks/useStackStats';
+import { useOperations } from '../../hooks/useOperations';
 import NetworkList from '../../components/stack/NetworkList';
 import VolumeList from '../../components/stack/VolumeList';
 import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
 import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { OperationsModal } from '../../components/operations/OperationsModal';
+import { ServiceQuickActions } from '../../components/stack/ServiceQuickActions';
+import { StackQuickActions } from '../../components/stack/StackQuickActions';
+import { OperationRequest } from '../../types/operations';
+import { showToast } from '../../utils/toast';
 
 interface StackDetailsProps {
   title: string;
@@ -27,6 +32,12 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs' | 'operations'
   >('services');
   const [operationsModalOpen, setOperationsModalOpen] = useState(false);
+  const [quickOperationState, setQuickOperationState] = useState<{
+    isRunning: boolean;
+    operation?: string;
+  }>({ isRunning: false });
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data: stackDetails,
@@ -73,6 +84,103 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     stackName,
     enabled: true,
   });
+
+  const { startOperation } = useOperations({
+    serverId: String(serverId),
+    stackName,
+    onOperationComplete: (success, exitCode) => {
+      console.log('Quick operation completed:', { success, exitCode });
+      const currentOp = quickOperationState.operation;
+      setQuickOperationState({ isRunning: false });
+
+      if (currentOp) {
+        const [commandOrStack, serviceName] = currentOp.split(':');
+        const isStackOperation = commandOrStack === 'stack';
+        const command = isStackOperation ? serviceName : commandOrStack;
+        const targetName = isStackOperation ? `stack ${stackName}` : serviceName;
+        const action = command.charAt(0).toUpperCase() + command.slice(1);
+
+        if (success) {
+          showToast.operation.completed(`${action} completed successfully for ${targetName}`);
+        } else {
+          showToast.error(`${action} failed for ${targetName}`);
+        }
+      } else {
+        if (success) {
+          showToast.operation.completed('Operation completed successfully');
+        } else {
+          showToast.error('Operation failed');
+        }
+      }
+
+      showToast.info('Refreshing stack data...');
+      setIsRefreshing(true);
+      refetch();
+      refetchNetworks();
+      refetchVolumes();
+      refetchEnvironment();
+      refetchStats();
+    },
+    onError: (error) => {
+      console.error('Quick operation error:', error);
+      setQuickOperationState({ isRunning: false });
+      showToast.error('Operation failed to start');
+    },
+  });
+
+  useEffect(() => {
+    if (
+      isRefreshing &&
+      !isFetching &&
+      !networksFetching &&
+      !volumesFetching &&
+      !environmentFetching &&
+      !statsFetching
+    ) {
+      const hasErrors = error || networksError || volumesError || environmentError || statsError;
+
+      if (hasErrors) {
+        showToast.error('Some data failed to refresh');
+      } else {
+        showToast.success('Stack data refreshed successfully');
+      }
+
+      setIsRefreshing(false);
+      setIsManualRefresh(false);
+    }
+  }, [
+    isRefreshing,
+    isFetching,
+    networksFetching,
+    volumesFetching,
+    environmentFetching,
+    statsFetching,
+    error,
+    networksError,
+    volumesError,
+    environmentError,
+    statsError,
+  ]);
+
+  const handleQuickOperation = async (operation: OperationRequest) => {
+    try {
+      const isStackOperation = operation.services.length === 0;
+      const operationKey = isStackOperation
+        ? `stack:${operation.command}`
+        : `${operation.command}:${operation.services[0]}`;
+      setQuickOperationState({ isRunning: true, operation: operationKey });
+
+      const targetName = isStackOperation ? `stack ${stackName}` : operation.services[0];
+      const action = operation.command.charAt(0).toUpperCase() + operation.command.slice(1);
+      showToast.operation.starting(`${action}ing ${targetName}...`);
+
+      await startOperation(operation);
+    } catch (error) {
+      console.error('Failed to start quick operation:', error);
+      setQuickOperationState({ isRunning: false });
+      showToast.error('Failed to start operation');
+    }
+  };
 
   const getContainerStatusColor = (state: string) => {
     switch (state.toLowerCase()) {
@@ -207,6 +315,9 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => {
+                      showToast.info('Refreshing stack data...');
+                      setIsManualRefresh(true);
+                      setIsRefreshing(true);
                       refetch();
                       refetchNetworks();
                       refetchVolumes();
@@ -582,9 +693,22 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                 stackDetails.services.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        Services & Containers
-                      </h2>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          Services & Containers
+                        </h2>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Stack Actions:
+                          </span>
+                          <StackQuickActions
+                            services={stackDetails.services}
+                            onQuickOperation={handleQuickOperation}
+                            isOperationRunning={quickOperationState.isRunning}
+                            runningOperation={quickOperationState.operation}
+                          />
+                        </div>
+                      </div>
                     </div>
                     <div className="p-6 space-y-6">
                       {stackDetails.services.map((service) => (
@@ -594,14 +718,22 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                         >
                           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                {service.name}
-                              </h3>
-                              {service.image && (
-                                <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                  {service.image}
-                                </span>
-                              )}
+                              <div>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                  {service.name}
+                                </h3>
+                                {service.image && (
+                                  <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                                    {service.image}
+                                  </span>
+                                )}
+                              </div>
+                              <ServiceQuickActions
+                                service={service}
+                                onQuickOperation={handleQuickOperation}
+                                isOperationRunning={quickOperationState.isRunning}
+                                runningOperation={quickOperationState.operation}
+                              />
                             </div>
                           </div>
                           <div className="p-4">
