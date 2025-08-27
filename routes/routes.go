@@ -6,6 +6,7 @@ import (
 
 	"brx-starter-kit/handlers"
 	"brx-starter-kit/internal/logs"
+	"brx-starter-kit/internal/operations"
 	"brx-starter-kit/internal/rbac"
 	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
@@ -27,7 +28,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, logsHandler *logs.Handler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -132,6 +133,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
 		protected.GET("/api/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
 	}
+	if operationsHandler != nil {
+		protected.POST("/api/servers/:serverId/stacks/:stackName/operations", operationsHandler.StartOperation)
+	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
 	protected.POST("/auth/totp/enable", totpHandler.EnableTOTP)
@@ -162,20 +166,40 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			return wsHandler.HandleWebUIWebSocket(c)
 		})
 
-		wsUIGroup.GET("/operations", func(c echo.Context) error {
-			if !session.IsAuthenticated(c) {
-				return c.JSON(401, map[string]string{"error": "Not authenticated"})
-			}
-			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
-			}
-			return wsHandler.HandleOperationsWebSocket(c)
-		})
+		if operationsWSHandler != nil {
+			wsUIGroup.GET("/servers/:serverId/stacks/:stackName/operations", func(c echo.Context) error {
+				if !session.IsAuthenticated(c) {
+					return c.JSON(401, map[string]string{"error": "Not authenticated"})
+				}
+				if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+					return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+				}
+				return operationsWSHandler.HandleOperationWebSocket(c)
+			})
+
+			wsUIGroup.GET("/servers/:serverId/stacks/:stackName/operations/:operationId", func(c echo.Context) error {
+				if !session.IsAuthenticated(c) {
+					return c.JSON(401, map[string]string{"error": "Not authenticated"})
+				}
+				if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+					return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+				}
+				return operationsWSHandler.HandleOperationWebSocket(c)
+			})
+		}
 
 		// API routes
 		wsAPIGroup := wsGroup.Group("/api")
+		wsAPIGroup.Use(jwt.RequireJWT(jwtSvc))
+		wsAPIGroup.Use(jwtshared.MiddlewareWithConfig(jwtshared.Config{
+			UserProvider: userProvider,
+		}))
 		wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
-		wsAPIGroup.GET("/operations", wsHandler.HandleFlutterOperationsWebSocket)
+
+		if operationsWSHandler != nil {
+			wsAPIGroup.GET("/servers/:serverId/stacks/:stackName/operations", operationsWSHandler.HandleOperationWebSocket)
+			wsAPIGroup.GET("/servers/:serverId/stacks/:stackName/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
+		}
 	}
 
 	// Admin routes - require admin role
@@ -256,6 +280,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if logsHandler != nil {
 			apiProtected.GET("/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
 			apiProtected.GET("/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
+		}
+		if operationsHandler != nil {
+			apiProtected.POST("/servers/:serverId/stacks/:stackName/operations", operationsHandler.StartOperation)
 		}
 
 		if rbacAPIHandler != nil && rbacMiddleware != nil {
