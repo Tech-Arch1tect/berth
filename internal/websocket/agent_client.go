@@ -217,16 +217,6 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 		event.ServerID = int(ac.server.ID)
 		ac.hub.BroadcastOperationProgress(event)
 
-	case MessageTypeLogStream:
-		var event LogStreamEvent
-		if err := json.Unmarshal(message, &event); err != nil {
-			log.Printf("Invalid log stream event from agent %s: %v", ac.server.Name, err)
-			return
-		}
-
-		event.ServerID = int(ac.server.ID)
-		ac.hub.BroadcastLogStream(event)
-
 	default:
 		log.Printf("Unknown message type from agent %s: %s", ac.server.Name, baseMsg.Type)
 	}

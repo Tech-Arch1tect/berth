@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"brx-starter-kit/handlers"
+	"brx-starter-kit/internal/logs"
 	"brx-starter-kit/internal/rbac"
 	"brx-starter-kit/internal/server"
 	"brx-starter-kit/internal/setup"
@@ -26,7 +27,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, logsHandler *logs.Handler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -126,6 +127,10 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/volumes", stackWebAPIHandler.GetStackVolumes)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackWebAPIHandler.GetStackEnvironmentVariables)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackWebAPIHandler.GetStackStats)
+	}
+	if logsHandler != nil {
+		protected.GET("/api/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
+		protected.GET("/api/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
@@ -247,6 +252,10 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
+		}
+		if logsHandler != nil {
+			apiProtected.GET("/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
+			apiProtected.GET("/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
 		}
 
 		if rbacAPIHandler != nil && rbacMiddleware != nil {
