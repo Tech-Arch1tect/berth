@@ -46,7 +46,7 @@ export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
 
   const serviceState = getServiceState();
 
-  const handleAction = (command: 'start' | 'stop' | 'restart' | 'up' | 'down') => {
+  const handleAction = (command: 'start' | 'stop' | 'restart' | 'up' | 'down' | 'pull') => {
     onQuickOperation({
       command,
       options: [],
@@ -247,6 +247,43 @@ export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
             {isThisOperationRunning('down') ? 'Removing...' : 'Down'}
           </button>
         )}
+
+      {/* Pull button - always available for updating images */}
+      <button
+        onClick={() => handleAction('pull')}
+        disabled={isButtonDisabled}
+        className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-900/20 dark:text-gray-400 dark:hover:bg-gray-900/30"
+        title={`Pull latest images for ${service.name}`}
+      >
+        {isThisOperationRunning('pull') ? (
+          <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+        ) : (
+          <svg
+            className="w-3 h-3 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+          </svg>
+        )}
+        {isThisOperationRunning('pull') ? 'Pulling...' : 'Pull'}
+      </button>
     </div>
   );
 };
