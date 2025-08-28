@@ -17,6 +17,7 @@ import LogViewer from '../../components/logs/LogViewer';
 import { OperationsModal } from '../../components/operations/OperationsModal';
 import { ServiceQuickActions } from '../../components/stack/ServiceQuickActions';
 import { StackQuickActions } from '../../components/stack/StackQuickActions';
+import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
 
@@ -25,11 +26,18 @@ interface StackDetailsProps {
   server: Server;
   serverId: number;
   stackName: string;
+  permissions: string[];
 }
 
-const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, stackName }) => {
+const StackDetails: React.FC<StackDetailsProps> = ({
+  title,
+  server,
+  serverId,
+  stackName,
+  permissions = [],
+}) => {
   const [activeTab, setActiveTab] = useState<
-    'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs' | 'operations'
+    'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs' | 'files'
   >('services');
   const [operationsModalOpen, setOperationsModalOpen] = useState(false);
   const [quickOperationState, setQuickOperationState] = useState<{
@@ -659,6 +667,37 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                       </div>
                     </button>
                     <button
+                      onClick={() => setActiveTab('files')}
+                      className={`${
+                        activeTab === 'files'
+                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 1v4M16 1v4"
+                          />
+                        </svg>
+                        <span>Files</span>
+                      </div>
+                    </button>
+                    <button
                       onClick={() => setOperationsModalOpen(true)}
                       className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
@@ -887,6 +926,16 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                     }
                   />
                 </div>
+              )}
+
+              {/* Files Tab */}
+              {activeTab === 'files' && (
+                <FileManager
+                  serverId={serverId}
+                  stackName={stackName}
+                  canRead={permissions.includes('files.read')}
+                  canWrite={permissions.includes('files.write')}
+                />
               )}
             </div>
           ) : (
