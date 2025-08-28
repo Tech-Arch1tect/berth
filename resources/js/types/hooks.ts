@@ -5,4 +5,4 @@ export interface UseStackDetailsParams {
   stackName: string;
 }
 
-export interface StackDetailsResponse extends StackDetails {}
+export type StackDetailsResponse = StackDetails;

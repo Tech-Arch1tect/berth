@@ -17,7 +17,6 @@ export default function ServerStacks({ title, server, serverId }: ServerStacksPr
     isLoading: loading,
     error,
     refetch,
-    isStale,
     isFetching,
   } = useServerStacks({ serverId });
   return (

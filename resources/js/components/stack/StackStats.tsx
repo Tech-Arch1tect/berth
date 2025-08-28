@@ -11,7 +11,7 @@ const formatBytes = (bytes: number): string => {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
   if (bytes === 0) return '0 B';
 
-  if (bytes >= 9223372036854775807) return 'Unlimited';
+  if (bytes >= Number.MAX_SAFE_INTEGER) return 'Unlimited';
 
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   const size = Math.min(i, sizes.length - 1);

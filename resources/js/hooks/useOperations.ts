@@ -79,7 +79,7 @@ export const useOperations = ({
       }
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = (_event) => {
       setIsConnecting(false);
 
       if (operationStatus.isRunning && reconnectAttempts.current < maxReconnectAttempts) {
@@ -95,7 +95,7 @@ export const useOperations = ({
       }
     };
 
-    ws.onerror = (event) => {
+    ws.onerror = (_event) => {
       const errorMsg = 'WebSocket connection failed';
       setError(errorMsg);
       setIsConnecting(false);

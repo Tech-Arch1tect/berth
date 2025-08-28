@@ -36,7 +36,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
     isRunning: boolean;
     operation?: string;
   }>({ isRunning: false });
-  const [isManualRefresh, setIsManualRefresh] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
@@ -145,7 +144,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
       }
 
       setIsRefreshing(false);
-      setIsManualRefresh(false);
     }
   }, [
     isRefreshing,
@@ -315,7 +313,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                   <button
                     onClick={() => {
                       showToast.info('Refreshing stack data...');
-                      setIsManualRefresh(true);
                       setIsRefreshing(true);
                       refetch();
                       refetchNetworks();
@@ -933,7 +930,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
           })) || []
         }
         onOperationComplete={(success, _exitCode) => {
-
           if (success) {
             refetch();
             refetchStats();

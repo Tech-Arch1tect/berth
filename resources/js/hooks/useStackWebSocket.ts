@@ -35,7 +35,7 @@ export const useStackWebSocket = ({
   }, [queryClient, serverId, stackName]);
 
   const handleMessage = useCallback(
-    (message: any) => {
+    (message: ContainerStatusEvent | StackEvent) => {
       switch (message.type) {
         case 'container_status': {
           const event = message as ContainerStatusEvent;
@@ -93,17 +93,18 @@ export const useStackWebSocket = ({
     }
 
     const subscriptionKey = `stack_status:${serverId}:${stackName}`;
+    const subscriptions = subscriptionsRef.current;
 
-    if (!subscriptionsRef.current.has(subscriptionKey)) {
+    if (!subscriptions.has(subscriptionKey)) {
       if (subscribe('stack_status', serverId, stackName)) {
-        subscriptionsRef.current.add(subscriptionKey);
+        subscriptions.add(subscriptionKey);
       }
     }
 
     return () => {
-      if (subscriptionsRef.current.has(subscriptionKey)) {
+      if (subscriptions.has(subscriptionKey)) {
         unsubscribe('stack_status', serverId, stackName);
-        subscriptionsRef.current.delete(subscriptionKey);
+        subscriptions.delete(subscriptionKey);
       }
     };
   }, [isConnected, enabled, serverId, stackName, subscribe, unsubscribe]);

@@ -75,20 +75,12 @@ export default function RoleStackPermissions({
     stack_pattern: '',
   });
 
-  const formatServerUrl = (server: Server) => {
-    return `${server.use_https ? 'https' : 'http'}://${server.host}:${server.port}`;
-  };
-
   const getServerName = (serverId: number) => {
     return servers.find((s) => s.id === serverId)?.name || 'Unknown Server';
   };
 
   const getPermissionName = (permissionId: number) => {
     return permissions.find((p) => p.id === permissionId)?.name || 'Unknown Permission';
-  };
-
-  const getPermissionDescription = (permissionId: number) => {
-    return permissions.find((p) => p.id === permissionId)?.description || '';
   };
 
   const handlePermissionToggle = (permissionId: number) => {
@@ -101,21 +93,6 @@ export default function RoleStackPermissions({
     } else {
       setNewRule({
         ...newRule,
-        permission_ids: [...currentIds, permissionId],
-      });
-    }
-  };
-
-  const handleAddToPatternPermissionToggle = (permissionId: number) => {
-    const currentIds = addToPatternRule.permission_ids;
-    if (currentIds.includes(permissionId)) {
-      setAddToPatternRule({
-        ...addToPatternRule,
-        permission_ids: currentIds.filter((id) => id !== permissionId),
-      });
-    } else {
-      setAddToPatternRule({
-        ...addToPatternRule,
         permission_ids: [...currentIds, permissionId],
       });
     }

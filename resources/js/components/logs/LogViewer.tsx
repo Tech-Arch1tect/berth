@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { LogViewerProps, LogFilterOptions } from '../../types/logs';
+import { LogViewerProps } from '../../types/logs';
 import { useLogs } from '../../hooks/useLogs';
 
 const LogViewer: React.FC<LogViewerProps> = ({

@@ -120,7 +120,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json(); // Consume the response body
         alert('Connection successful!');
       } else {
         const errorData = await response.json();

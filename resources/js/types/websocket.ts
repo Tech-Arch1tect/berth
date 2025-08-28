@@ -4,7 +4,7 @@ export interface BaseWebSocketMessage {
 }
 
 export interface WebSocketMessage extends BaseWebSocketMessage {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SubscribeMessage {

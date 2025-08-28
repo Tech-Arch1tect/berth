@@ -96,7 +96,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         if (dims) {
           resizeTerminalRef.current?.(dims.cols, dims.rows);
         }
-      } catch {}
+      } catch {
+        // Ignore errors
+      }
     }
   }, []);
 
@@ -146,7 +148,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         if (xtermRef.current && fitAddonRef.current) {
           try {
             fitAddonRef.current.fit();
-          } catch {}
+          } catch {
+            // Ignore errors
+          }
         }
       }, 100);
 
@@ -163,7 +167,7 @@ export const Terminal: React.FC<TerminalProps> = ({
       fitAddonRef.current = null;
       setIsInitialised(false);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleWindowResize = () => {
