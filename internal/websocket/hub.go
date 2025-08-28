@@ -78,7 +78,7 @@ func (h *Hub) Run() {
 func (h *Hub) BroadcastContainerStatus(event ContainerStatusEvent) {
 	event.BaseMessage = BaseMessage{
 		Type:      MessageTypeContainerStatus,
-		Timestamp: time.Now(),
+		Timestamp: time.Now().Format(time.RFC3339),
 	}
 
 	subscribers := h.subscriptionMgr.GetSubscribers("stack_status", event.ServerID, event.StackName)
@@ -105,7 +105,7 @@ func (h *Hub) BroadcastContainerStatus(event ContainerStatusEvent) {
 func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 	event.BaseMessage = BaseMessage{
 		Type:      MessageTypeOperationProgress,
-		Timestamp: time.Now(),
+		Timestamp: time.Now().Format(time.RFC3339),
 	}
 
 	subscribers := h.subscriptionMgr.GetSubscribers("operations", event.ServerID, "")
@@ -132,7 +132,7 @@ func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 	event.BaseMessage = BaseMessage{
 		Type:      MessageTypeStackStatus,
-		Timestamp: time.Now(),
+		Timestamp: time.Now().Format(time.RFC3339),
 	}
 
 	subscribers := h.subscriptionMgr.GetSubscribers("stack_status", event.ServerID, event.StackName)
@@ -304,7 +304,7 @@ func (c *UserConnection) sendError(errorMsg string) {
 	event := ErrorEvent{
 		BaseMessage: BaseMessage{
 			Type:      MessageTypeError,
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Format(time.RFC3339),
 		},
 		Error: errorMsg,
 	}
@@ -321,7 +321,7 @@ func (c *UserConnection) sendSuccess(message string) {
 	event := SuccessEvent{
 		BaseMessage: BaseMessage{
 			Type:      MessageTypeSuccess,
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Format(time.RFC3339),
 		},
 		Message: message,
 	}

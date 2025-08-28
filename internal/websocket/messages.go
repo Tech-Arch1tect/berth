@@ -1,7 +1,5 @@
 package websocket
 
-import "time"
-
 type MessageType string
 
 const (
@@ -16,7 +14,7 @@ const (
 
 type BaseMessage struct {
 	Type      MessageType `json:"type"`
-	Timestamp time.Time   `json:"timestamp"`
+	Timestamp string      `json:"timestamp"`
 }
 
 type SubscribeMessage struct {
