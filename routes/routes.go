@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -166,6 +167,18 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			return wsHandler.HandleWebUIWebSocket(c)
 		})
 
+		wsUIGroup.GET("/servers/:serverId/terminal", func(c echo.Context) error {
+			if !session.IsAuthenticated(c) {
+				log.Printf("WebSocket Route: User not authenticated")
+				return c.JSON(401, map[string]string{"error": "Not authenticated"})
+			}
+			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+				log.Printf("WebSocket Route: TOTP verification required")
+				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+			}
+			return wsHandler.HandleWebUITerminalWebSocket(c)
+		})
+
 		if operationsWSHandler != nil {
 			wsUIGroup.GET("/servers/:serverId/stacks/:stackName/operations", func(c echo.Context) error {
 				if !session.IsAuthenticated(c) {
@@ -195,6 +208,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			UserProvider: userProvider,
 		}))
 		wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
+		wsAPIGroup.GET("/servers/:serverId/terminal", wsHandler.HandleFlutterTerminalWebSocket)
 
 		if operationsWSHandler != nil {
 			wsAPIGroup.GET("/servers/:serverId/stacks/:stackName/operations", operationsWSHandler.HandleOperationWebSocket)

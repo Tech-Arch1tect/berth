@@ -168,13 +168,10 @@ func (ac *AgentClient) writePump() {
 		ac.conn.Close()
 	}()
 
-	for {
-		select {
-		case <-ticker.C:
-			ac.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := ac.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
+	for range ticker.C {
+		ac.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		if err := ac.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			return
 		}
 	}
 }

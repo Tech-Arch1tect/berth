@@ -37,8 +37,6 @@ type UserConnection struct {
 	send          chan []byte
 	user          *User
 	subscriptions map[SubscriptionKey]bool
-	closed        bool
-	mutex         sync.RWMutex
 }
 
 type PermissionChecker interface {
