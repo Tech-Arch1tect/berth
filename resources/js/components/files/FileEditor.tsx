@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileContent, WriteFileRequest } from '../../types/files';
+import { FileViewer } from './FileViewer';
 
 interface FileEditorProps {
   file: FileContent | null;
@@ -19,11 +20,13 @@ export const FileEditor: React.FC<FileEditorProps> = ({
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
 
   useEffect(() => {
     if (file) {
       setContent(file.content);
       setIsDirty(false);
+      setViewMode(file.encoding === 'base64' ? 'view' : 'view');
     }
   }, [file]);
 
@@ -58,13 +61,21 @@ export const FileEditor: React.FC<FileEditorProps> = ({
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
   const isTextFile = file?.encoding === 'utf-8';
-  const isBinaryFile = file?.encoding === 'base64';
 
   if (!isOpen || !file) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div
+      className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-600">
           <div>
@@ -77,7 +88,33 @@ export const FileEditor: React.FC<FileEditorProps> = ({
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            {canWrite && isTextFile && (
+            {isTextFile && (
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
+                <button
+                  onClick={() => setViewMode('view')}
+                  className={`px-3 py-1 text-sm font-medium rounded-l-md ${
+                    viewMode === 'view'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => setViewMode('edit')}
+                  disabled={!canWrite}
+                  className={`px-3 py-1 text-sm font-medium rounded-r-md disabled:opacity-50 ${
+                    viewMode === 'edit'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+
+            {canWrite && isTextFile && viewMode === 'edit' && (
               <button
                 onClick={handleSave}
                 disabled={saving || !isDirty}
@@ -136,52 +173,8 @@ export const FileEditor: React.FC<FileEditorProps> = ({
         </div>
 
         <div className="mt-4">
-          {isBinaryFile ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                <svg
-                  className="w-8 h-8 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Binary File
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                This file contains binary data and cannot be displayed as text.
-              </p>
-              <button
-                onClick={() => {
-                  const blob = new Blob([atob(content)], { type: 'application/octet-stream' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = file.path.split('/').pop() || 'download';
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Download File
-              </button>
-            </div>
+          {viewMode === 'view' ? (
+            <FileViewer file={file} />
           ) : (
             <div className="border border-gray-200 dark:border-gray-600 rounded-md">
               <textarea

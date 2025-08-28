@@ -44,4 +44,4 @@ export interface CopyRequest {
   target_path: string;
 }
 
-export type FileOperation = 'create' | 'edit' | 'delete' | 'rename' | 'copy' | 'mkdir';
+export type FileOperation = 'create' | 'edit' | 'delete' | 'rename' | 'copy' | 'mkdir' | 'upload';

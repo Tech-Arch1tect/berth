@@ -155,6 +155,34 @@ export const useFiles = ({ serverId, stackName, onError }: UseFilesOptions) => {
     [baseUrl, handleError, getHeaders]
   );
 
+  const uploadFile = useCallback(
+    async (file: File, path: string): Promise<void> => {
+      try {
+        setLoading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', path);
+
+        const headers = {
+          'X-Requested-With': 'XMLHttpRequest',
+        } as Record<string, string>;
+
+        if (csrfToken) {
+          headers['X-CSRF-Token'] = csrfToken;
+        }
+
+        await axios.post(`${baseUrl}/upload`, formData, {
+          headers,
+        });
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [baseUrl, handleError, csrfToken]
+  );
+
   const downloadFile = useCallback(
     async (path: string, filename?: string): Promise<void> => {
       try {
@@ -188,6 +216,7 @@ export const useFiles = ({ serverId, stackName, onError }: UseFilesOptions) => {
     listDirectory,
     readFile,
     writeFile,
+    uploadFile,
     createDirectory,
     deleteFile,
     renameFile,

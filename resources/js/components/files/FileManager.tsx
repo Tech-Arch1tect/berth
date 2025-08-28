@@ -13,6 +13,7 @@ import {
 import { FileList } from './FileList';
 import { FileEditor } from './FileEditor';
 import { FileOperationModal } from './FileOperationModal';
+import { FileUploadModal } from './FileUploadModal';
 import { useFiles } from '../../hooks/useFiles';
 import { showToast } from '../../utils/toast';
 
@@ -36,6 +37,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [fileContent, setFileContent] = useState<FileContent | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<FileOperation | null>(null);
 
   const handleError = useCallback((error: string) => {
@@ -46,6 +48,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
     listDirectory,
     readFile,
     writeFile,
+    uploadFile,
     createDirectory,
     deleteFile,
     renameFile,
@@ -113,7 +116,10 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
   const handleFileOperation = useCallback(
     (operation: FileOperation, entry?: FileEntry) => {
-      if (!canWrite && ['create', 'mkdir', 'rename', 'copy', 'delete'].includes(operation)) {
+      if (
+        !canWrite &&
+        ['create', 'mkdir', 'rename', 'copy', 'delete', 'upload'].includes(operation)
+      ) {
         showToast.error('You do not have permission to modify files in this stack');
         return;
       }
@@ -123,6 +129,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
       if (operation === 'edit' && entry) {
         handleFileSelect(entry);
+      } else if (operation === 'upload') {
+        setIsUploadModalOpen(true);
       } else {
         setIsOperationModalOpen(true);
       }
@@ -212,6 +220,21 @@ export const FileManager: React.FC<FileManagerProps> = ({
       }
     },
     [downloadFile, canRead]
+  );
+
+  const handleFileUpload = useCallback(
+    async (file: File, path: string) => {
+      try {
+        await uploadFile(file, path);
+        showToast.success(`Uploaded ${file.name} successfully`);
+        await loadDirectory(currentPath);
+      } catch (error) {
+        console.error('Failed to upload file:', error);
+        showToast.error(`Failed to upload ${file.name}`);
+        throw error;
+      }
+    },
+    [uploadFile, loadDirectory, currentPath]
   );
 
   if (!canRead) {
@@ -357,6 +380,17 @@ export const FileManager: React.FC<FileManagerProps> = ({
           setSelectedFile(null);
         }}
         onConfirm={handleOperationConfirm}
+      />
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        isOpen={isUploadModalOpen}
+        currentPath={currentPath}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setCurrentOperation(null);
+        }}
+        onUpload={handleFileUpload}
       />
     </div>
   );
