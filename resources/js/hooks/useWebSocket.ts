@@ -21,6 +21,13 @@ export const useWebSocket = ({
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
+  const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+
+  onMessageRef.current = onMessage;
+  onConnectRef.current = onConnect;
+  onDisconnectRef.current = onDisconnect;
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
@@ -37,7 +44,7 @@ export const useWebSocket = ({
 
         setIsConnected(true);
         setConnectionStatus('connected');
-        onConnect?.();
+        onConnectRef.current?.();
       };
 
       ws.current.onmessage = (event) => {
@@ -45,7 +52,7 @@ export const useWebSocket = ({
 
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
-          onMessage?.(message);
+          onMessageRef.current?.(message);
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }
@@ -56,7 +63,7 @@ export const useWebSocket = ({
 
         setIsConnected(false);
         setConnectionStatus('disconnected');
-        onDisconnect?.();
+        onDisconnectRef.current?.();
 
         if (autoReconnect && mountedRef.current) {
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -77,7 +84,7 @@ export const useWebSocket = ({
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [url, onMessage, onConnect, onDisconnect, autoReconnect, reconnectInterval]);
+  }, [url, autoReconnect, reconnectInterval]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

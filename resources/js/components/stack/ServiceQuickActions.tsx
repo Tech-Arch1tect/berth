@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ComposeService } from '../../types/stack';
 import { OperationRequest } from '../../types/operations';
+import { TerminalModal } from '../terminal/TerminalModal';
 
 interface ServiceQuickActionsProps {
   service: ComposeService;
   onQuickOperation: (operation: OperationRequest) => void;
+  serverId?: number;
+  stackName?: string;
   disabled?: boolean;
   isOperationRunning?: boolean;
   runningOperation?: string;
@@ -13,10 +16,13 @@ interface ServiceQuickActionsProps {
 export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
   service,
   onQuickOperation,
+  serverId,
+  stackName,
   disabled = false,
   isOperationRunning = false,
   runningOperation,
 }) => {
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const getServiceState = () => {
     if (!service.containers || service.containers.length === 0) {
       return 'no-containers';
@@ -279,11 +285,44 @@ export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
             viewBox="0 0 24 24"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+            />
           </svg>
         )}
         {isThisOperationRunning('pull') ? 'Pulling...' : 'Pull'}
       </button>
+
+      {/* Terminal button - only for running containers */}
+      {serverId &&
+        stackName &&
+        (serviceState === 'all-running' || serviceState === 'mixed-running') && (
+          <button
+            onClick={() => setIsTerminalOpen(true)}
+            disabled={isButtonDisabled}
+            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+            title={`Open terminal for ${service.name}`}
+          >
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM4 18V8h16v10H4zm2-8h2v2H6v-2zm0 4h8v2H6v-2z" />
+            </svg>
+            Terminal
+          </button>
+        )}
+
+      {/* Terminal Modal */}
+      {isTerminalOpen && serverId && stackName && (
+        <TerminalModal
+          isOpen={isTerminalOpen}
+          onClose={() => setIsTerminalOpen(false)}
+          serverId={serverId}
+          stackName={stackName}
+          serviceName={service.name}
+          containerName={service.containers?.[0]?.name}
+        />
+      )}
     </div>
   );
 };

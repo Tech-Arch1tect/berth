@@ -88,8 +88,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
   const { startOperation } = useOperations({
     serverId: String(serverId),
     stackName,
-    onOperationComplete: (success, exitCode) => {
-      console.log('Quick operation completed:', { success, exitCode });
+    onOperationComplete: (success, _exitCode) => {
       const currentOp = quickOperationState.operation;
       setQuickOperationState({ isRunning: false });
 
@@ -731,6 +730,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
                               <ServiceQuickActions
                                 service={service}
                                 onQuickOperation={handleQuickOperation}
+                                serverId={serverId}
+                                stackName={stackName}
                                 isOperationRunning={quickOperationState.isRunning}
                                 runningOperation={quickOperationState.operation}
                               />
@@ -931,8 +932,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({ title, server, serverId, st
             service_name: container.service_name,
           })) || []
         }
-        onOperationComplete={(success, exitCode) => {
-          console.log('Operation completed:', { success, exitCode });
+        onOperationComplete={(success, _exitCode) => {
 
           if (success) {
             refetch();

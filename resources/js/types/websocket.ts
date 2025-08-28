@@ -85,3 +85,28 @@ export interface UseStackWebSocketOptions {
 }
 
 export type WebSocketConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+
+export interface TerminalInputEvent extends BaseWebSocketMessage {
+  type: 'terminal_input';
+  session_id: string;
+  input: Uint8Array;
+}
+
+export interface TerminalOutputEvent extends BaseWebSocketMessage {
+  type: 'terminal_output';
+  session_id: string;
+  output: Uint8Array;
+}
+
+export interface TerminalResizeEvent extends BaseWebSocketMessage {
+  type: 'terminal_resize';
+  session_id: string;
+  cols: number;
+  rows: number;
+}
+
+export interface TerminalCloseEvent extends BaseWebSocketMessage {
+  type: 'terminal_close';
+  session_id: string;
+  exit_code: number;
+}
