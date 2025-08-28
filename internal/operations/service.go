@@ -54,7 +54,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	if err != nil {
 		return nil, fmt.Errorf("failed to start operation on agent: %w", err)
 	}
-	defer agentResp.Body.Close()
+	defer func() { _ = agentResp.Body.Close() }()
 
 	if agentResp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned error: %s", agentResp.Status)
@@ -89,7 +89,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 	if err != nil {
 		return fmt.Errorf("failed to connect to agent stream: %w", err)
 	}
-	defer agentResp.Body.Close()
+	defer func() { _ = agentResp.Body.Close() }()
 
 	if agentResp.StatusCode != http.StatusOK {
 		return fmt.Errorf("agent returned error: %s", agentResp.Status)

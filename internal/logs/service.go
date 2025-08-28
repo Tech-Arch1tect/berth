@@ -119,7 +119,7 @@ func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logs from agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)

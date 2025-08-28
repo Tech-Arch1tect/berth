@@ -243,7 +243,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 		RefreshToken:     refreshTokenData.Token,
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
-		RefreshExpiresIn: int(refreshTokenData.ExpiresAt.Sub(time.Now()).Seconds()),
+		RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
 		User:             userInfo,
 	})
 }
@@ -366,7 +366,7 @@ func (h *MobileAuthHandler) Register(c echo.Context) error {
 		RefreshToken:     refreshTokenData.Token,
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
-		RefreshExpiresIn: int(refreshTokenData.ExpiresAt.Sub(time.Now()).Seconds()),
+		RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
 		User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
 	})
 }
@@ -427,7 +427,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		RefreshToken:     result.RefreshToken,
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
-		RefreshExpiresIn: int(result.ExpiresAt.Sub(time.Now()).Seconds()),
+		RefreshExpiresIn: int(time.Until(result.ExpiresAt).Seconds()),
 	})
 }
 
@@ -648,7 +648,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		RefreshToken:     refreshTokenData.Token,
 		TokenType:        "Bearer",
 		ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
-		RefreshExpiresIn: int(refreshTokenData.ExpiresAt.Sub(time.Now()).Seconds()),
+		RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
 		User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
 	})
 }

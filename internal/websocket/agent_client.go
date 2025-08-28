@@ -83,7 +83,7 @@ func (ac *AgentClient) connect() {
 		select {
 		case <-ac.stop:
 			if ac.conn != nil {
-				ac.conn.Close()
+				_ = ac.conn.Close()
 			}
 			return
 		default:
@@ -99,13 +99,13 @@ func (ac *AgentClient) connect() {
 			select {
 			case <-ac.reconnect:
 				if ac.conn != nil {
-					ac.conn.Close()
+					_ = ac.conn.Close()
 				}
 				ac.setConnected(false)
 				time.Sleep(1 * time.Second)
 			case <-ac.stop:
 				if ac.conn != nil {
-					ac.conn.Close()
+					_ = ac.conn.Close()
 				}
 				return
 			}
@@ -134,7 +134,7 @@ func (ac *AgentClient) attemptConnection() error {
 
 func (ac *AgentClient) readPump() {
 	defer func() {
-		ac.conn.Close()
+		_ = ac.conn.Close()
 		ac.setConnected(false)
 		select {
 		case ac.reconnect <- true:
@@ -142,9 +142,9 @@ func (ac *AgentClient) readPump() {
 		}
 	}()
 
-	ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	ac.conn.SetPongHandler(func(string) error {
-		ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -165,11 +165,11 @@ func (ac *AgentClient) writePump() {
 	ticker := time.NewTicker(54 * time.Second)
 	defer func() {
 		ticker.Stop()
-		ac.conn.Close()
+		_ = ac.conn.Close()
 	}()
 
 	for range ticker.C {
-		ac.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		_ = ac.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		if err := ac.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 			return
 		}

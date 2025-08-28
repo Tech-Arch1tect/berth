@@ -124,7 +124,7 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to server: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server health check failed with status: %d", resp.StatusCode)

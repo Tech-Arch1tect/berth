@@ -209,7 +209,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 		})
 	}
 
-	defer agentConn.Close()
+	defer func() { _ = agentConn.Close() }()
 
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
@@ -221,7 +221,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	if err != nil {
 		return err
 	}
-	defer clientConn.Close()
+	defer func() { _ = clientConn.Close() }()
 
 	done := make(chan bool, 2)
 	sessionStackName := ""
@@ -352,7 +352,5 @@ func (h *Handler) sendTerminalError(conn *websocket.Conn, message string, client
 		"timestamp": time.Now(),
 	}
 
-	if err := conn.WriteJSON(errorResponse); err != nil {
-
-	}
+	_ = conn.WriteJSON(errorResponse)
 }

@@ -63,11 +63,11 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -88,7 +88,7 @@ func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *we
 	pipeReader, pipeWriter := streamPipe()
 
 	go func() {
-		defer pipeWriter.Close()
+		defer func() { _ = pipeWriter.Close() }()
 		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackName, operationID, pipeWriter); err != nil {
 
 			errorMsg := WebSocketMessage{
@@ -96,7 +96,7 @@ func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *we
 				Error: err.Error(),
 			}
 			if jsonData, marshalErr := json.Marshal(errorMsg); marshalErr == nil {
-				conn.WriteMessage(websocket.TextMessage, jsonData)
+				_ = conn.WriteMessage(websocket.TextMessage, jsonData)
 			}
 		}
 	}()
@@ -165,7 +165,7 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 	pipeReader, pipeWriter := streamPipe()
 
 	go func() {
-		defer pipeWriter.Close()
+		defer func() { _ = pipeWriter.Close() }()
 
 		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackName, response.OperationID, pipeWriter); err != nil {
 
@@ -174,7 +174,7 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 				Error: err.Error(),
 			}
 			if jsonData, marshalErr := json.Marshal(errorMsg); marshalErr == nil {
-				conn.WriteMessage(websocket.TextMessage, jsonData)
+				_ = conn.WriteMessage(websocket.TextMessage, jsonData)
 			}
 		}
 	}()
@@ -209,7 +209,7 @@ func (h *WebSocketHandler) sendError(conn *websocket.Conn, message string) {
 		Error: message,
 	}
 	if data, err := json.Marshal(errorMsg); err == nil {
-		conn.WriteMessage(websocket.TextMessage, data)
+		_ = conn.WriteMessage(websocket.TextMessage, data)
 	}
 }
 

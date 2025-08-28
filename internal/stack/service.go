@@ -88,7 +88,7 @@ func (s *Service) fetchStacksFromAgent(ctx context.Context, server *models.Serve
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -107,7 +107,7 @@ func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -149,7 +149,7 @@ func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *model
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -191,7 +191,7 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -233,7 +233,7 @@ func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, s
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -266,7 +266,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to agent: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("agent returned error: %s", resp.Status)

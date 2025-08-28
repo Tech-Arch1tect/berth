@@ -24,7 +24,7 @@ func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
 		// For web requests (browsers), render error page
 		accept := c.Request().Header.Get("Accept")
 		if strings.Contains(accept, "text/html") || c.Request().Header.Get("X-Inertia") == "true" {
-			inertiaSvc.Render(c, "Errors/Generic", map[string]any{
+			_ = inertiaSvc.Render(c, "Errors/Generic", map[string]any{
 				"code":    code,
 				"message": fmt.Sprintf("%v", msg),
 			})
@@ -32,7 +32,7 @@ func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
 		}
 
 		// For API/JSON requests, return JSON
-		c.JSON(code, map[string]any{
+		_ = c.JSON(code, map[string]any{
 			"error": fmt.Sprintf("%v", msg),
 			"code":  code,
 		})
