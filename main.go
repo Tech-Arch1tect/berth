@@ -3,6 +3,7 @@ package main
 import (
 	"brx-starter-kit/handlers"
 	"brx-starter-kit/internal/agent"
+	"brx-starter-kit/internal/files"
 	"brx-starter-kit/internal/logs"
 	"brx-starter-kit/internal/operations"
 	"brx-starter-kit/internal/rbac"
@@ -78,6 +79,7 @@ func main() {
 			fx.Provide(stack.NewHandler),
 			fx.Provide(stack.NewAPIHandler),
 			fx.Provide(stack.NewWebAPIHandler),
+			files.Module,
 			logs.Module,
 			operations.Module,
 			fx.Provide(handlers.NewDashboardHandler),

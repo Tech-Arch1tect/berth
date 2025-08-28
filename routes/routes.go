@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"brx-starter-kit/handlers"
+	"brx-starter-kit/internal/files"
 	"brx-starter-kit/internal/logs"
 	"brx-starter-kit/internal/operations"
 	"brx-starter-kit/internal/rbac"
@@ -29,7 +30,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, stackWebAPIHandler *stack.WebAPIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, filesWebAPIHandler *files.WebAPIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -122,6 +123,9 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/servers/:id/stacks", stackHandler.ShowServerStacks)
 		protected.GET("/servers/:serverid/stacks/:stackname", stackHandler.ShowStackDetails)
 	}
+	if filesHandler != nil {
+		protected.GET("/servers/:serverid/stacks/:stackname/files", filesHandler.ShowFileManager)
+	}
 	if stackWebAPIHandler != nil {
 		protected.GET("/api/servers/:id/stacks", stackWebAPIHandler.ListServerStacks)
 		protected.GET("/api/servers/:serverid/stacks/:stackname", stackWebAPIHandler.GetStackDetails)
@@ -129,6 +133,18 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/volumes", stackWebAPIHandler.GetStackVolumes)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackWebAPIHandler.GetStackEnvironmentVariables)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackWebAPIHandler.GetStackStats)
+	}
+	if filesWebAPIHandler != nil {
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files", filesWebAPIHandler.ListDirectory)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files/read", filesWebAPIHandler.ReadFile)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/files/write", filesWebAPIHandler.WriteFile)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/files/mkdir", filesWebAPIHandler.CreateDirectory)
+		protected.DELETE("/api/servers/:serverid/stacks/:stackname/files/delete", filesWebAPIHandler.Delete)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/files/rename", filesWebAPIHandler.Rename)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/files/copy", filesWebAPIHandler.Copy)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files/info", filesWebAPIHandler.GetFileInfo)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files/checksum", filesWebAPIHandler.GetChecksum)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesWebAPIHandler.DownloadFile)
 	}
 	if logsHandler != nil {
 		protected.GET("/api/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
@@ -290,6 +306,18 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
+		}
+		if filesAPIHandler != nil {
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files", filesAPIHandler.ListDirectory)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/read", filesAPIHandler.ReadFile)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/write", filesAPIHandler.WriteFile)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/mkdir", filesAPIHandler.CreateDirectory)
+			apiProtected.DELETE("/servers/:serverid/stacks/:stackname/files/delete", filesAPIHandler.Delete)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/rename", filesAPIHandler.Rename)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/copy", filesAPIHandler.Copy)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/info", filesAPIHandler.GetFileInfo)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/checksum", filesAPIHandler.GetChecksum)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
 		}
 		if logsHandler != nil {
 			apiProtected.GET("/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)

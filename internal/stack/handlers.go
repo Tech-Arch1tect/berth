@@ -4,20 +4,25 @@ import (
 	"net/http"
 	"strconv"
 
+	"brx-starter-kit/internal/rbac"
+
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
+	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {
 	inertiaSvc *inertia.Service
 	service    *Service
+	rbacSvc    *rbac.Service
 }
 
-func NewHandler(inertiaSvc *inertia.Service, service *Service) *Handler {
+func NewHandler(inertiaSvc *inertia.Service, service *Service, rbacSvc *rbac.Service) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
 		service:    service,
+		rbacSvc:    rbacSvc,
 	}
 }
 
@@ -58,10 +63,18 @@ func (h *Handler) ShowStackDetails(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Server not found")
 	}
 
+	userID := session.GetUserIDAsUint(c)
+
+	permissions, err := h.rbacSvc.GetUserStackPermissions(userID, uint(serverID), stackName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user permissions")
+	}
+
 	return h.inertiaSvc.Render(c, "Servers/StackDetails", gonertia.Props{
-		"title":     serverInfo.Name + " - " + stackName,
-		"server":    serverInfo,
-		"serverId":  uint(serverID),
-		"stackName": stackName,
+		"title":       serverInfo.Name + " - " + stackName,
+		"server":      serverInfo,
+		"serverId":    uint(serverID),
+		"stackName":   stackName,
+		"permissions": permissions,
 	})
 }
