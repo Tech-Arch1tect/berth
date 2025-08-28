@@ -5,6 +5,7 @@ import type {
   ContainerStatusEvent,
   StackStatusEvent,
   UseStackWebSocketOptions,
+  WebSocketMessage,
 } from '../types/websocket';
 
 export const useStackWebSocket = ({
@@ -35,10 +36,10 @@ export const useStackWebSocket = ({
   }, [queryClient, serverId, stackName]);
 
   const handleMessage = useCallback(
-    (message: ContainerStatusEvent | StackEvent) => {
+    (message: WebSocketMessage) => {
       switch (message.type) {
         case 'container_status': {
-          const event = message as ContainerStatusEvent;
+          const event = message as unknown as ContainerStatusEvent;
 
           if (event.server_id === serverId && event.stack_name === stackName) {
             debouncedInvalidateQueries();
@@ -47,7 +48,7 @@ export const useStackWebSocket = ({
         }
 
         case 'stack_status': {
-          const event = message as StackStatusEvent;
+          const event = message as unknown as StackStatusEvent;
 
           if (event.server_id === serverId && event.stack_name === stackName) {
             debouncedInvalidateQueries();

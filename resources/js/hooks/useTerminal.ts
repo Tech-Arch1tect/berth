@@ -44,7 +44,7 @@ export const useTerminal = ({
     (message: WebSocketMessage) => {
       switch (message.type) {
         case 'success': {
-          const successEvent = message as TerminalSuccessEvent;
+          const successEvent = message as unknown as TerminalSuccessEvent;
           if (successEvent.session_id) {
             setSession((prev) => ({
               ...prev,
@@ -59,7 +59,7 @@ export const useTerminal = ({
         }
 
         case 'terminal_output': {
-          const outputEvent = message as TerminalOutputEvent;
+          const outputEvent = message as unknown as TerminalOutputEvent;
           if (outputEvent.session_id === session.id) {
             let outputData: Uint8Array;
             if (typeof outputEvent.output === 'string') {
@@ -80,7 +80,7 @@ export const useTerminal = ({
         }
 
         case 'terminal_close': {
-          const closeEvent = message as TerminalCloseEvent;
+          const closeEvent = message as unknown as TerminalCloseEvent;
           if (closeEvent.session_id === session.id) {
             setSession((prev) => ({
               ...prev,
@@ -93,14 +93,19 @@ export const useTerminal = ({
         }
 
         case 'error': {
-          const errorMessage = message.error || 'Unknown terminal error';
-          setSession((prev) => ({
-            ...prev,
-            isConnected: false,
-            isConnecting: false,
-            error: errorMessage,
-          }));
-          onError?.(errorMessage);
+          const errorMessage: string = (message.error as string) || 'Unknown terminal error';
+          setSession(
+            (prev) =>
+              ({
+                ...prev,
+                isConnected: false,
+                isConnecting: false,
+                error: errorMessage,
+              }) as TerminalSession
+          );
+          if (onError) {
+            onError(errorMessage);
+          }
           break;
         }
       }

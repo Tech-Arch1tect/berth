@@ -18,7 +18,7 @@ export interface StreamMessage {
 
 export interface WebSocketMessage {
   type: 'operation_request' | 'stream_data' | 'error' | 'complete';
-  data?: Record<string, unknown>;
+  data?: unknown;
   error?: string;
   message?: string;
 }
