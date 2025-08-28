@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 )
@@ -208,66 +209,6 @@ func (s *Service) Copy(ctx context.Context, userID uint, serverID uint, stackNam
 	return nil
 }
 
-func (s *Service) GetFileInfo(ctx context.Context, userID uint, serverID uint, stackName, path string) (*FileInfo, error) {
-	if err := s.checkFileReadPermission(userID, serverID, stackName); err != nil {
-		return nil, err
-	}
-
-	server, err := s.serverSvc.GetServer(serverID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get server: %w", err)
-	}
-
-	endpoint := fmt.Sprintf("/stacks/%s/files/info?path=%s", stackName, url.QueryEscape(path))
-
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, s.handleAgentError(resp)
-	}
-
-	var fileInfo FileInfo
-	if err := json.NewDecoder(resp.Body).Decode(&fileInfo); err != nil {
-		return nil, fmt.Errorf("failed to decode agent response: %w", err)
-	}
-
-	return &fileInfo, nil
-}
-
-func (s *Service) GetChecksum(ctx context.Context, userID uint, serverID uint, stackName, path string) (*FileChecksum, error) {
-	if err := s.checkFileReadPermission(userID, serverID, stackName); err != nil {
-		return nil, err
-	}
-
-	server, err := s.serverSvc.GetServer(serverID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get server: %w", err)
-	}
-
-	endpoint := fmt.Sprintf("/stacks/%s/files/checksum?path=%s", stackName, url.QueryEscape(path))
-
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, s.handleAgentError(resp)
-	}
-
-	var checksum FileChecksum
-	if err := json.NewDecoder(resp.Body).Decode(&checksum); err != nil {
-		return nil, fmt.Errorf("failed to decode agent response: %w", err)
-	}
-
-	return &checksum, nil
-}
-
 func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, stackName, path, filename string) (*http.Response, error) {
 	if err := s.checkFileReadPermission(userID, serverID, stackName); err != nil {
 		return nil, err
@@ -294,6 +235,30 @@ func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, 
 	}
 
 	return resp, nil
+}
+
+func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, stackName, path string, fileHeader *multipart.FileHeader) error {
+	if err := s.checkFileWritePermission(userID, serverID, stackName); err != nil {
+		return err
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return fmt.Errorf("failed to get server: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/files/upload", stackName)
+	resp, err := s.agentSvc.MakeMultipartRequest(ctx, server, "POST", endpoint, path, fileHeader)
+	if err != nil {
+		return fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return s.handleAgentError(resp)
+	}
+
+	return nil
 }
 
 func (s *Service) checkFileReadPermission(userID uint, serverID uint, stackName string) error {

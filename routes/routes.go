@@ -138,12 +138,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files", filesWebAPIHandler.ListDirectory)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/read", filesWebAPIHandler.ReadFile)
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/write", filesWebAPIHandler.WriteFile)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/files/upload", filesWebAPIHandler.UploadFile)
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/mkdir", filesWebAPIHandler.CreateDirectory)
 		protected.DELETE("/api/servers/:serverid/stacks/:stackname/files/delete", filesWebAPIHandler.Delete)
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/rename", filesWebAPIHandler.Rename)
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/copy", filesWebAPIHandler.Copy)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files/info", filesWebAPIHandler.GetFileInfo)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files/checksum", filesWebAPIHandler.GetChecksum)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesWebAPIHandler.DownloadFile)
 	}
 	if logsHandler != nil {
@@ -311,12 +310,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/files", filesAPIHandler.ListDirectory)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/read", filesAPIHandler.ReadFile)
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/write", filesAPIHandler.WriteFile)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/upload", filesAPIHandler.UploadFile)
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/mkdir", filesAPIHandler.CreateDirectory)
 			apiProtected.DELETE("/servers/:serverid/stacks/:stackname/files/delete", filesAPIHandler.Delete)
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/rename", filesAPIHandler.Rename)
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/copy", filesAPIHandler.Copy)
-			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/info", filesAPIHandler.GetFileInfo)
-			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/checksum", filesAPIHandler.GetChecksum)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
 		}
 		if logsHandler != nil {

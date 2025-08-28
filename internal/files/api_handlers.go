@@ -306,7 +306,7 @@ func (h *APIHandler) Copy(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
 
-func (h *APIHandler) GetFileInfo(c echo.Context) error {
+func (h *APIHandler) UploadFile(c echo.Context) error {
 	user, err := h.getCurrentUser(c)
 	if err != nil {
 		return err
@@ -322,58 +322,27 @@ func (h *APIHandler) GetFileInfo(c echo.Context) error {
 		return err
 	}
 
-	path := c.QueryParam("path")
+	path := c.FormValue("path")
 	if path == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
 			"error": "path parameter is required",
 		})
 	}
 
-	result, err := h.service.GetFileInfo(c.Request().Context(), user.ID, serverID, stackName, path)
+	file, err := c.FormFile("file")
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "file parameter is required",
+		})
+	}
+
+	if err := h.service.UploadFile(c.Request().Context(), user.ID, serverID, stackName, path, file); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusOK, result)
-}
-
-func (h *APIHandler) GetChecksum(c echo.Context) error {
-	user, err := h.getCurrentUser(c)
-	if err != nil {
-		return err
-	}
-
-	serverID, err := h.getServerID(c)
-	if err != nil {
-		return err
-	}
-
-	stackName, err := h.getStackName(c)
-	if err != nil {
-		return err
-	}
-
-	path := c.QueryParam("path")
-	if path == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "path parameter is required",
-		})
-	}
-
-	checksum, err := h.service.GetChecksum(c.Request().Context(), user.ID, serverID, stackName, path)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{
-		"path":     path,
-		"checksum": checksum.Checksum,
-		"type":     "md5",
-	})
+	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
 
 func (h *APIHandler) DownloadFile(c echo.Context) error {

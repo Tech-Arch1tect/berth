@@ -155,6 +155,45 @@ func (h *WebAPIHandler) WriteFile(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
 
+func (h *WebAPIHandler) UploadFile(c echo.Context) error {
+	userID, err := h.getCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, err := h.getServerID(c)
+	if err != nil {
+		return err
+	}
+
+	stackName, err := h.getStackName(c)
+	if err != nil {
+		return err
+	}
+
+	path := c.FormValue("path")
+	if path == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "path parameter is required",
+		})
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
+			"error": "file parameter is required",
+		})
+	}
+
+	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackName, path, file); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
+}
+
 func (h *WebAPIHandler) CreateDirectory(c echo.Context) error {
 	userID, err := h.getCurrentUserID(c)
 	if err != nil {
@@ -305,72 +344,6 @@ func (h *WebAPIHandler) Copy(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
-}
-
-func (h *WebAPIHandler) GetFileInfo(c echo.Context) error {
-	userID, err := h.getCurrentUserID(c)
-	if err != nil {
-		return err
-	}
-
-	serverID, err := h.getServerID(c)
-	if err != nil {
-		return err
-	}
-
-	stackName, err := h.getStackName(c)
-	if err != nil {
-		return err
-	}
-
-	path := c.QueryParam("path")
-	if path == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "path parameter is required",
-		})
-	}
-
-	result, err := h.service.GetFileInfo(c.Request().Context(), userID, serverID, stackName, path)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusOK, result)
-}
-
-func (h *WebAPIHandler) GetChecksum(c echo.Context) error {
-	userID, err := h.getCurrentUserID(c)
-	if err != nil {
-		return err
-	}
-
-	serverID, err := h.getServerID(c)
-	if err != nil {
-		return err
-	}
-
-	stackName, err := h.getStackName(c)
-	if err != nil {
-		return err
-	}
-
-	path := c.QueryParam("path")
-	if path == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "path parameter is required",
-		})
-	}
-
-	result, err := h.service.GetChecksum(c.Request().Context(), userID, serverID, stackName, path)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusOK, result)
 }
 
 func (h *WebAPIHandler) DownloadFile(c echo.Context) error {

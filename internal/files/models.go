@@ -1,7 +1,6 @@
 package files
 
 import (
-	"os"
 	"time"
 )
 
@@ -49,23 +48,6 @@ type RenameRequest struct {
 type CopyRequest struct {
 	SourcePath string `json:"source_path" validate:"required"`
 	TargetPath string `json:"target_path" validate:"required"`
-}
-
-type FileInfo struct {
-	Name        string      `json:"name"`
-	Path        string      `json:"path"`
-	Size        int64       `json:"size"`
-	IsDirectory bool        `json:"is_directory"`
-	ModTime     time.Time   `json:"mod_time"`
-	Mode        os.FileMode `json:"mode"`
-	Extension   string      `json:"extension,omitempty"`
-	MimeType    string      `json:"mime_type,omitempty"`
-}
-
-type FileChecksum struct {
-	Path     string `json:"path"`
-	Checksum string `json:"checksum"`
-	Type     string `json:"type"`
 }
 
 type ErrorResponse struct {
