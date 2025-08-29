@@ -31,7 +31,7 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 
 	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, path)
 	if err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendSuccess(c, result)
@@ -55,7 +55,7 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 
 	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, path)
 	if err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendSuccess(c, result)
@@ -82,7 +82,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 	}
 
 	if err := h.service.WriteFile(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "success")
@@ -109,7 +109,7 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 	}
 
 	if err := h.service.CreateDirectory(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "success")
@@ -136,7 +136,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 	}
 
 	if err := h.service.Delete(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "success")
@@ -163,7 +163,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 	}
 
 	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "success")
@@ -190,7 +190,7 @@ func (h *APIHandler) Copy(c echo.Context) error {
 	}
 
 	if err := h.service.Copy(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "success")
@@ -215,7 +215,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 	}
 
 	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, path, file); err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 
 	return common.SendMessage(c, "File uploaded successfully")
@@ -241,7 +241,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, path, filename)
 	if err != nil {
-		return common.SendBadRequest(c, err.Error())
+		return common.SendInternalError(c, err.Error())
 	}
 	defer result.Body.Close()
 

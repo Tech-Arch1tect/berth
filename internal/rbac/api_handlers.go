@@ -187,50 +187,113 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 }
 
 func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
-	roleID, err := common.ParseUintParam(c, "id")
+	roleID, err := common.ParseUintParam(c, "roleId")
 	if err != nil {
 		return err
 	}
 
-	permissions, err := h.rbacSvc.GetRoleServerStackPermissions(roleID)
-	if err != nil {
-		return common.SendInternalError(c, "Failed to fetch role permissions")
+	var role models.Role
+	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
+		return common.SendNotFound(c, "role not found")
+	}
+
+	if role.IsAdmin {
+		return common.SendBadRequest(c, "cannot manage server permissions for admin role")
+	}
+
+	var servers []models.Server
+	if err := h.db.Find(&servers).Error; err != nil {
+		return common.SendInternalError(c, "failed to fetch servers")
+	}
+
+	var permissions []models.Permission
+	if err := h.db.Find(&permissions).Error; err != nil {
+		return common.SendInternalError(c, "failed to fetch permissions")
+	}
+
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
+		return common.SendInternalError(c, "failed to fetch role stack permissions")
+	}
+
+	type PermissionRule struct {
+		ID           uint   `json:"id"`
+		ServerID     uint   `json:"server_id"`
+		PermissionID uint   `json:"permission_id"`
+		StackPattern string `json:"stack_pattern"`
+		IsStackBased bool   `json:"is_stack_based"`
+	}
+
+	var permissionRules []PermissionRule
+
+	for _, srsp := range serverRoleStackPermissions {
+		permissionRules = append(permissionRules, PermissionRule{
+			ID:           srsp.ID,
+			ServerID:     srsp.ServerID,
+			PermissionID: srsp.PermissionID,
+			StackPattern: srsp.StackPattern,
+			IsStackBased: true,
+		})
 	}
 
 	return common.SendSuccess(c, map[string]any{
-		"permissions": permissions,
+		"role":            role,
+		"servers":         servers,
+		"permissions":     permissions,
+		"permissionRules": permissionRules,
 	})
 }
 
 func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
+	roleID, err := common.ParseUintParam(c, "roleId")
+	if err != nil {
+		return err
+	}
+
 	var req struct {
-		RoleID     uint   `json:"role_id"`
-		ServerID   uint   `json:"server_id"`
-		StackName  string `json:"stack_name"`
-		Permission string `json:"permission"`
+		ServerID     uint   `json:"server_id"`
+		PermissionID uint   `json:"permission_id"`
+		StackPattern string `json:"stack_pattern"`
 	}
 
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
 
-	if req.RoleID == 0 || req.ServerID == 0 || req.Permission == "" {
-		return common.SendBadRequest(c, "role_id, server_id, and permission are required")
+	if req.ServerID == 0 || req.PermissionID == 0 {
+		return common.SendBadRequest(c, "server_id and permission_id are required")
 	}
 
-	if !isValidPermission(req.Permission) {
-		return common.SendBadRequest(c, "invalid permission type")
+	if req.StackPattern == "" {
+		req.StackPattern = "*"
 	}
 
-	if err := h.rbacSvc.CreateRoleStackPermission(req.RoleID, req.ServerID, req.StackName, req.Permission); err != nil {
+	var existing models.ServerRoleStackPermission
+	result := h.db.Where("server_id = ? AND role_id = ? AND permission_id = ? AND stack_pattern = ?",
+		req.ServerID, roleID, req.PermissionID, req.StackPattern).First(&existing)
+
+	if result.Error == nil {
+		return common.SendBadRequest(c, "Permission already exists for this server and stack pattern")
+	}
+
+	permission := models.ServerRoleStackPermission{
+		ServerID:     req.ServerID,
+		RoleID:       roleID,
+		PermissionID: req.PermissionID,
+		StackPattern: req.StackPattern,
+	}
+
+	if err := h.db.Create(&permission).Error; err != nil {
 		return common.SendInternalError(c, "Failed to create role stack permission")
 	}
 
-	return common.SendMessage(c, "Role stack permission created successfully")
+	return common.SendCreated(c, map[string]string{
+		"message": "Role stack permission created successfully",
+	})
 }
 
 func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
-	permissionID, err := common.ParseUintParam(c, "id")
+	permissionID, err := common.ParseUintParam(c, "permissionId")
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,8 @@
 package common
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -10,11 +12,11 @@ type RequestValidator interface {
 
 func BindAndValidate[T RequestValidator](c echo.Context, req T) error {
 	if err := c.Bind(&req); err != nil {
-		return SendBadRequest(c, "Invalid request format")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
 
 	if err := req.Validate(); err != nil {
-		return SendBadRequest(c, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return nil
@@ -22,7 +24,7 @@ func BindAndValidate[T RequestValidator](c echo.Context, req T) error {
 
 func BindRequest[T any](c echo.Context, req *T) error {
 	if err := c.Bind(req); err != nil {
-		return SendBadRequest(c, "Invalid request format")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
 
 	return nil

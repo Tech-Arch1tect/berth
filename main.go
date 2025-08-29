@@ -78,7 +78,6 @@ func main() {
 			fx.Provide(stack.NewService),
 			fx.Provide(stack.NewHandler),
 			fx.Provide(stack.NewAPIHandler),
-			fx.Provide(stack.NewWebAPIHandler),
 			files.Module,
 			logs.Module,
 			operations.Module,

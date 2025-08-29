@@ -7,6 +7,5 @@ var Module = fx.Options(
 		NewService,
 		NewHandler,
 		NewAPIHandler,
-		NewWebAPIHandler,
 	),
 )

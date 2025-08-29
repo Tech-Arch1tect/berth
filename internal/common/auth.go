@@ -2,6 +2,7 @@ package common
 
 import (
 	"brx-starter-kit/models"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
@@ -19,5 +20,5 @@ func GetCurrentUserID(c echo.Context) (uint, error) {
 		return userID, nil
 	}
 
-	return 0, SendUnauthorized(c, "User not authenticated")
+	return 0, echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
 }
