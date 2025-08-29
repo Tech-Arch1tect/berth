@@ -4,7 +4,7 @@ export const showToast = {
   success: (message: string) =>
     toast.success(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       style: {
         background: '#10b981',
         color: '#ffffff',
@@ -24,7 +24,7 @@ export const showToast = {
   error: (message: string) =>
     toast.error(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       style: {
         background: '#ef4444',
         color: '#ffffff',
@@ -44,7 +44,7 @@ export const showToast = {
   info: (message: string) =>
     toast(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       icon: 'ℹ️',
       style: {
         background: '#3b82f6',
@@ -60,7 +60,7 @@ export const showToast = {
 
   loading: (message: string) =>
     toast.loading(message, {
-      position: 'bottom-right',
+      position: 'top-right',
       style: {
         background: '#6b7280',
         color: '#ffffff',
@@ -77,7 +77,7 @@ export const showToast = {
     starting: (message: string) =>
       toast(message, {
         duration: 4000,
-        position: 'bottom-right',
+        position: 'top-right',
         icon: '🚀',
         style: {
           background: '#8b5cf6',
@@ -94,7 +94,7 @@ export const showToast = {
     completed: (message: string) =>
       toast.success(message, {
         duration: 4000,
-        position: 'bottom-right',
+        position: 'top-right',
         icon: '✅',
         style: {
           background: '#059669',
@@ -118,7 +118,7 @@ export const showToastDark = {
   success: (message: string) =>
     toast.success(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       style: {
         background: '#065f46',
         color: '#d1fae5',
@@ -138,7 +138,7 @@ export const showToastDark = {
   error: (message: string) =>
     toast.error(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       style: {
         background: '#7f1d1d',
         color: '#fecaca',
@@ -158,7 +158,7 @@ export const showToastDark = {
   info: (message: string) =>
     toast(message, {
       duration: 4000,
-      position: 'bottom-right',
+      position: 'top-right',
       icon: 'ℹ️',
       style: {
         background: '#1e40af',

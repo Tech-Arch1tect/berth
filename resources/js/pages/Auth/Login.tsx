@@ -49,62 +49,66 @@ export default function Login({
               <div>
                 <label
                   htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
                 >
                   Username
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    required
-                    value={data.username}
-                    onChange={(e) => setData('username', e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                  {errors.username && (
-                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.username}</p>
-                  )}
-                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={data.username}
+                  onChange={(e) => setData('username', e.target.value)}
+                  className="block w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-600/50 rounded-xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 backdrop-blur-sm"
+                  placeholder="Enter your username"
+                />
+                {errors.username && (
+                  <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center space-x-1">
+                    <span>⚠️</span>
+                    <span>{errors.username}</span>
+                  </p>
+                )}
               </div>
 
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
                 >
                   Password
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                  {errors.password && (
-                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
-                  )}
-                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={data.password}
+                  onChange={(e) => setData('password', e.target.value)}
+                  className="block w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-600/50 rounded-xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 backdrop-blur-sm"
+                  placeholder="Enter your password"
+                />
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center space-x-1">
+                    <span>⚠️</span>
+                    <span>{errors.password}</span>
+                  </p>
+                )}
               </div>
 
               {rememberMeEnabled && (
-                <div className="flex items-center">
+                <div className="flex items-center space-x-3 p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
                   <input
                     id="remember_me"
                     name="remember_me"
                     type="checkbox"
                     checked={data.remember_me}
                     onChange={(e) => setData('remember_me', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-0 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded transition-colors"
                   />
                   <label
                     htmlFor="remember_me"
-                    className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+                    className="text-sm text-slate-700 dark:text-slate-300"
                   >
                     Remember me for {rememberMeDays || 30} days
                   </label>
@@ -115,50 +119,57 @@ export default function Login({
                 <button
                   type="submit"
                   disabled={processing}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
-                  {processing ? 'Signing in...' : 'Sign in'}
+                  {processing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
                 </button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-4 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
                 <div className="text-center">
                   <Link
                     href="/auth/password-reset"
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                    className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     Forgot your password?
                   </Link>
                 </div>
 
                 {emailVerificationEnabled && (
-                  <div className="text-center">
-                    <form method="POST" action="/auth/resend-verification" className="inline">
+                  <div className="text-center p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-200/30 dark:border-blue-800/30">
+                    <form method="POST" action="/auth/resend-verification" className="space-y-3">
                       <input type="hidden" name="_token" value={csrfToken} />
                       <input
                         type="email"
                         name="email"
                         placeholder="Enter email to resend verification"
-                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded mr-2 w-48"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       />
                       <button
                         type="submit"
-                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline"
+                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors"
                       >
-                        Resend verification
+                        Resend verification email
                       </button>
                     </form>
                   </div>
                 )}
 
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Don't have an account?{' '}
                     <Link
                       href="/auth/register"
-                      className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                      className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     >
-                      Register here
+                      Create account
                     </Link>
                   </p>
                 </div>
