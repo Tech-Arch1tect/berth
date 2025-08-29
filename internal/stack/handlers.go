@@ -42,7 +42,7 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 	return h.inertiaSvc.Render(c, "Servers/Stacks", gonertia.Props{
 		"title":    serverInfo.Name + " - Stacks",
 		"server":   serverInfo,
-		"serverId": uint(serverID),
+		"serverid": uint(serverID),
 	})
 }
 
