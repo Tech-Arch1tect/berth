@@ -15,7 +15,7 @@ import EnvironmentVariableList from '../../components/stack/EnvironmentVariableL
 import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { OperationsModal } from '../../components/operations/OperationsModal';
-import { ServiceQuickActions } from '../../components/stack/ServiceQuickActions';
+import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
 import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
@@ -196,25 +196,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       console.error('Failed to start quick operation:', error);
       setQuickOperationState({ isRunning: false });
       showToast.error('Failed to start operation');
-    }
-  };
-
-  const getContainerStatusColor = (state: string) => {
-    switch (state.toLowerCase()) {
-      case 'running':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'stopped':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'paused':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'restarting':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'not created':
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-500';
-      case 'exited':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
@@ -550,63 +531,17 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               {activeTab === 'services' &&
                 stackDetails.services &&
                 stackDetails.services.length > 0 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {stackDetails.services.map((service) => (
-                      <div
+                      <CompactServiceCard
                         key={service.name}
-                        className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-6"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                              {service.name}
-                            </h3>
-                            {service.image && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400 font-mono">
-                                {service.image}
-                              </p>
-                            )}
-                          </div>
-                          <ServiceQuickActions
-                            service={service}
-                            onQuickOperation={handleQuickOperation}
-                            serverid={serverid}
-                            stackname={stackname}
-                            isOperationRunning={quickOperationState.isRunning}
-                            runningOperation={quickOperationState.operation}
-                          />
-                        </div>
-
-                        {service.containers && service.containers.length > 0 && (
-                          <div className="space-y-3">
-                            {service.containers.map((container, index) => (
-                              <div
-                                key={container.name || index}
-                                className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg"
-                              >
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                                  <div>
-                                    <p className="font-medium text-slate-900 dark:text-white">
-                                      {container.name}
-                                    </p>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400 font-mono">
-                                      {container.image}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <span
-                                    className={`px-3 py-1 text-xs font-medium rounded-full ${getContainerStatusColor(container.state)}`}
-                                  >
-                                    {container.state}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                        service={service}
+                        onQuickOperation={handleQuickOperation}
+                        serverid={serverid}
+                        stackname={stackname}
+                        isOperationRunning={quickOperationState.isRunning}
+                        runningOperation={quickOperationState.operation}
+                      />
                     ))}
                   </div>
                 )}

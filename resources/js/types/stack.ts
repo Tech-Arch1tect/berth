@@ -26,6 +26,42 @@ export interface ComposeService {
   name: string;
   image?: string;
   containers: Container[];
+  depends_on?: string[];
+  profiles?: string[];
+  deploy?: DeployConfig;
+  networks?: Record<string, ServiceNetwork>;
+  environment?: Record<string, string>;
+  labels?: Record<string, string>;
+  command?: string[];
+  entrypoint?: string[];
+  working_dir?: string;
+  user?: string;
+  restart?: string;
+  scale?: number;
+}
+
+export interface DeployConfig {
+  replicas?: number;
+  placement?: PlacementConfig;
+  resources?: DeployResources;
+  restart_policy?: RestartPolicy;
+}
+
+export interface PlacementConfig {
+  constraints?: string[];
+  preferences?: string[];
+}
+
+export interface DeployResources {
+  limits?: ResourceLimits;
+  reservations?: ResourceLimits;
+}
+
+export interface ServiceNetwork {
+  aliases?: string[];
+  ipv4_address?: string;
+  ipv6_address?: string;
+  priority?: number;
 }
 
 export interface Container {
@@ -33,6 +69,64 @@ export interface Container {
   image: string;
   state: string;
   ports?: Port[];
+  created?: string;
+  started?: string;
+  finished?: string;
+  exit_code?: number;
+  restart_policy?: RestartPolicy;
+  resource_limits?: ResourceLimits;
+  health?: HealthStatus;
+  command?: string[];
+  working_dir?: string;
+  user?: string;
+  labels?: Record<string, string>;
+  networks?: ContainerNetwork[];
+  mounts?: ContainerMount[];
+}
+
+export interface ContainerNetwork {
+  name: string;
+  network_id?: string;
+  ip_address?: string;
+  gateway?: string;
+  mac_address?: string;
+  aliases?: string[];
+}
+
+export interface ContainerMount {
+  type: string;
+  source: string;
+  destination: string;
+  driver?: string;
+  mode?: string;
+  rw: boolean;
+  propagation?: string;
+}
+
+export interface RestartPolicy {
+  name: string;
+  maximum_retry_count?: number;
+}
+
+export interface ResourceLimits {
+  cpu_shares?: number;
+  memory?: number;
+  memory_swap?: number;
+  cpu_quota?: number;
+  cpu_period?: number;
+}
+
+export interface HealthStatus {
+  status: string;
+  failing_streak?: number;
+  log?: HealthLog[];
+}
+
+export interface HealthLog {
+  start: string;
+  end?: string;
+  exit_code: number;
+  output: string;
 }
 
 export interface Port {
