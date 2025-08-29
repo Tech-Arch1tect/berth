@@ -207,7 +207,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		return err
 	}
 
-	path := common.GetQueryParam(c, "path")
+	path := c.FormValue("path")
 
 	file, err := c.FormFile("file")
 	if err != nil {
