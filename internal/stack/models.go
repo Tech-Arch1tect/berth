@@ -53,10 +53,68 @@ type ComposeService struct {
 }
 
 type Container struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
-	State string `json:"state"`
-	Ports []Port `json:"ports,omitempty"`
+	Name           string             `json:"name"`
+	Image          string             `json:"image"`
+	State          string             `json:"state"`
+	Ports          []Port             `json:"ports,omitempty"`
+	Created        string             `json:"created,omitempty"`
+	Started        string             `json:"started,omitempty"`
+	Finished       string             `json:"finished,omitempty"`
+	ExitCode       int                `json:"exit_code,omitempty"`
+	RestartPolicy  *RestartPolicy     `json:"restart_policy,omitempty"`
+	ResourceLimits *ResourceLimits    `json:"resource_limits,omitempty"`
+	Health         *HealthStatus      `json:"health,omitempty"`
+	Command        []string           `json:"command,omitempty"`
+	WorkingDir     string             `json:"working_dir,omitempty"`
+	User           string             `json:"user,omitempty"`
+	Labels         map[string]string  `json:"labels,omitempty"`
+	Networks       []ContainerNetwork `json:"networks,omitempty"`
+	Mounts         []ContainerMount   `json:"mounts,omitempty"`
+}
+
+type ContainerNetwork struct {
+	Name       string   `json:"name"`
+	NetworkID  string   `json:"network_id,omitempty"`
+	IPAddress  string   `json:"ip_address,omitempty"`
+	Gateway    string   `json:"gateway,omitempty"`
+	MacAddress string   `json:"mac_address,omitempty"`
+	Aliases    []string `json:"aliases,omitempty"`
+}
+
+type ContainerMount struct {
+	Type        string `json:"type"`
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+	Driver      string `json:"driver,omitempty"`
+	Mode        string `json:"mode,omitempty"`
+	RW          bool   `json:"rw"`
+	Propagation string `json:"propagation,omitempty"`
+}
+
+type RestartPolicy struct {
+	Name              string `json:"name"`
+	MaximumRetryCount int    `json:"maximum_retry_count,omitempty"`
+}
+
+type ResourceLimits struct {
+	CPUShares  int64 `json:"cpu_shares,omitempty"`
+	Memory     int64 `json:"memory,omitempty"`
+	MemorySwap int64 `json:"memory_swap,omitempty"`
+	CPUQuota   int64 `json:"cpu_quota,omitempty"`
+	CPUPeriod  int64 `json:"cpu_period,omitempty"`
+}
+
+type HealthStatus struct {
+	Status        string      `json:"status"`
+	FailingStreak int         `json:"failing_streak,omitempty"`
+	Log           []HealthLog `json:"log,omitempty"`
+}
+
+type HealthLog struct {
+	Start    string `json:"start"`
+	End      string `json:"end,omitempty"`
+	ExitCode int    `json:"exit_code"`
+	Output   string `json:"output"`
 }
 
 type Port struct {
