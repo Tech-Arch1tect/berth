@@ -51,16 +51,14 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverId")
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	stackname := c.Param("stackname")
 	containerName := c.Param("containerName")
-
-	if stackname == "" || containerName == "" {
-		return common.SendBadRequest(c, "Stack name and container name are required")
+	if containerName == "" {
+		return common.SendBadRequest(c, "Container name is required")
 	}
 
 	req := LogRequest{
