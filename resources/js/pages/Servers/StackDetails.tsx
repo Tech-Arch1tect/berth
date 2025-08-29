@@ -16,12 +16,15 @@ import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { OperationsModal } from '../../components/operations/OperationsModal';
 import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
+import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
 import {
   HomeIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   ServerIcon,
   CpuChipIcon,
   CircleStackIcon,
@@ -57,6 +60,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     operation?: string;
   }>({ isRunning: false });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
   const {
     data: stackDetails,
@@ -199,6 +203,28 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     }
   };
 
+  const handleExpandAll = () => {
+    if (stackDetails?.services) {
+      setExpandedServices(new Set(stackDetails.services.map(service => service.name)));
+    }
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedServices(new Set());
+  };
+
+  const toggleServiceExpanded = (serviceName: string) => {
+    setExpandedServices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(serviceName)) {
+        newSet.delete(serviceName);
+      } else {
+        newSet.add(serviceName);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <Layout>
       <Head title={title} />
@@ -291,6 +317,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* Stack Quick Actions */}
+            {stackDetails && stackDetails.services && (
+              <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl px-3 py-2">
+                <StackQuickActions
+                  services={stackDetails.services}
+                  onQuickOperation={handleQuickOperation}
+                  disabled={quickOperationState.isRunning}
+                  isOperationRunning={quickOperationState.isRunning}
+                  runningOperation={quickOperationState.operation}
+                />
+              </div>
+            )}
+            
             {/* Refresh Button */}
             <button
               onClick={() => {
@@ -532,6 +571,31 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 stackDetails.services &&
                 stackDetails.services.length > 0 && (
                   <div className="space-y-4">
+                    {/* Expand All / Collapse All Controls */}
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-slate-700/50">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                          Services ({stackDetails.services.length})
+                        </h3>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleExpandAll}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 transition-colors"
+                        >
+                          <ChevronDownIcon className="w-3 h-3 mr-1" />
+                          Expand All
+                        </button>
+                        <button
+                          onClick={handleCollapseAll}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 transition-colors"
+                        >
+                          <ChevronUpIcon className="w-3 h-3 mr-1" />
+                          Collapse All
+                        </button>
+                      </div>
+                    </div>
+
                     {stackDetails.services.map((service) => (
                       <CompactServiceCard
                         key={service.name}
@@ -541,6 +605,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                         stackname={stackname}
                         isOperationRunning={quickOperationState.isRunning}
                         runningOperation={quickOperationState.operation}
+                        isExpanded={expandedServices.has(service.name)}
+                        onToggleExpand={() => toggleServiceExpanded(service.name)}
                       />
                     ))}
                   </div>

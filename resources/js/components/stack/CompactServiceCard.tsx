@@ -30,6 +30,8 @@ interface CompactServiceCardProps {
   stackname: string;
   isOperationRunning: boolean;
   runningOperation?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
@@ -39,8 +41,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
   stackname,
   isOperationRunning,
   runningOperation,
+  isExpanded: externalIsExpanded,
+  onToggleExpand,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
 
   const getContainerStatusInfo = (container: Container) => {
     const state = container.state?.toLowerCase() || 'unknown';
@@ -159,7 +164,13 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
           <div className="flex items-center space-x-2 flex-shrink-0">
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => {
+                if (onToggleExpand) {
+                  onToggleExpand();
+                } else {
+                  setInternalIsExpanded(!internalIsExpanded);
+                }
+              }}
               className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               {isExpanded ? (
