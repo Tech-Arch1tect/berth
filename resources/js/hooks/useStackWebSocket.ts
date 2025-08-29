@@ -9,8 +9,8 @@ import type {
 } from '../types/websocket';
 
 export const useStackWebSocket = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   enabled = true,
 }: UseStackWebSocketOptions) => {
   const queryClient = useQueryClient();
@@ -24,16 +24,16 @@ export const useStackWebSocket = ({
 
     invalidationTimeoutRef.current = setTimeout(() => {
       queryClient.invalidateQueries({
-        queryKey: ['stackDetails', serverId, stackName],
+        queryKey: ['stackDetails', serverid, stackname],
       });
 
       queryClient.invalidateQueries({
-        queryKey: ['serverStacks', serverId],
+        queryKey: ['serverStacks', serverid],
       });
 
       invalidationTimeoutRef.current = null;
     }, 300);
-  }, [queryClient, serverId, stackName]);
+  }, [queryClient, serverid, stackname]);
 
   const handleMessage = useCallback(
     (message: WebSocketMessage) => {
@@ -41,7 +41,7 @@ export const useStackWebSocket = ({
         case 'container_status': {
           const event = message as unknown as ContainerStatusEvent;
 
-          if (event.server_id === serverId && event.stack_name === stackName) {
+          if (event.server_id === serverid && event.stack_name === stackname) {
             debouncedInvalidateQueries();
           }
           break;
@@ -50,7 +50,7 @@ export const useStackWebSocket = ({
         case 'stack_status': {
           const event = message as unknown as StackStatusEvent;
 
-          if (event.server_id === serverId && event.stack_name === stackName) {
+          if (event.server_id === serverid && event.stack_name === stackname) {
             debouncedInvalidateQueries();
           }
           break;
@@ -72,7 +72,7 @@ export const useStackWebSocket = ({
         }
       }
     },
-    [serverId, stackName, debouncedInvalidateQueries]
+    [serverid, stackname, debouncedInvalidateQueries]
   );
 
   const handleConnect = useCallback(() => {}, []);
@@ -80,7 +80,7 @@ export const useStackWebSocket = ({
   const handleDisconnect = useCallback(() => {}, []);
 
   const { isConnected, connectionStatus, subscribe, unsubscribe } = useWebSocket({
-    url: `/ws/ui/stack-status/${serverId}`,
+    url: `/ws/ui/stack-status/${serverid}`,
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
@@ -93,22 +93,22 @@ export const useStackWebSocket = ({
       return;
     }
 
-    const subscriptionKey = `stack_status:${serverId}:${stackName}`;
+    const subscriptionKey = `stack_status:${serverid}:${stackname}`;
     const subscriptions = subscriptionsRef.current;
 
     if (!subscriptions.has(subscriptionKey)) {
-      if (subscribe('stack_status', serverId, stackName)) {
+      if (subscribe('stack_status', serverid, stackname)) {
         subscriptions.add(subscriptionKey);
       }
     }
 
     return () => {
       if (subscriptions.has(subscriptionKey)) {
-        unsubscribe('stack_status', serverId, stackName);
+        unsubscribe('stack_status', serverid, stackname);
         subscriptions.delete(subscriptionKey);
       }
     };
-  }, [isConnected, enabled, serverId, stackName, subscribe, unsubscribe]);
+  }, [isConnected, enabled, serverid, stackname, subscribe, unsubscribe]);
 
   useEffect(() => {
     return () => {

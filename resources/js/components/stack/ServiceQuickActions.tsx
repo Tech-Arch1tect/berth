@@ -6,8 +6,8 @@ import { TerminalModal } from '../terminal/TerminalModal';
 interface ServiceQuickActionsProps {
   service: ComposeService;
   onQuickOperation: (operation: OperationRequest) => void;
-  serverId?: number;
-  stackName?: string;
+  serverid?: number;
+  stackname?: string;
   disabled?: boolean;
   isOperationRunning?: boolean;
   runningOperation?: string;
@@ -16,8 +16,8 @@ interface ServiceQuickActionsProps {
 export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
   service,
   onQuickOperation,
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   disabled = false,
   isOperationRunning = false,
   runningOperation,
@@ -296,8 +296,8 @@ export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
       </button>
 
       {/* Terminal button - only for running containers */}
-      {serverId &&
-        stackName &&
+      {serverid &&
+        stackname &&
         (serviceState === 'all-running' || serviceState === 'mixed-running') && (
           <button
             onClick={() => setIsTerminalOpen(true)}
@@ -313,12 +313,12 @@ export const ServiceQuickActions: React.FC<ServiceQuickActionsProps> = ({
         )}
 
       {/* Terminal Modal */}
-      {isTerminalOpen && serverId && stackName && (
+      {isTerminalOpen && serverid && stackname && (
         <TerminalModal
           isOpen={isTerminalOpen}
           onClose={() => setIsTerminalOpen(false)}
-          serverId={serverId}
-          stackName={stackName}
+          serverid={serverid}
+          stackname={stackname}
           serviceName={service.name}
           containerName={service.containers?.[0]?.name}
         />

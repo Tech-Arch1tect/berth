@@ -7,16 +7,16 @@ import toast from 'react-hot-toast';
 import '@xterm/xterm/css/xterm.css';
 
 interface TerminalProps {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName: string;
   containerName?: string;
   className?: string;
 }
 
 export const Terminal: React.FC<TerminalProps> = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   serviceName,
   containerName,
   className = '',
@@ -70,8 +70,8 @@ export const Terminal: React.FC<TerminalProps> = ({
   }, []);
 
   const { session, sendInput, resizeTerminal, closeTerminal, connectionStatus } = useTerminal({
-    serverId,
-    stackName,
+    serverid,
+    stackname,
     serviceName,
     containerName,
     enabled: true,

@@ -93,9 +93,9 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     reset();
   };
 
-  const handleDelete = (serverId: number) => {
+  const handleDelete = (serverid: number) => {
     if (confirm('Are you sure you want to delete this server?')) {
-      router.delete(`/admin/servers/${serverId}`, {
+      router.delete(`/admin/servers/${serverid}`, {
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
@@ -108,10 +108,10 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     }
   };
 
-  const handleTestConnection = async (serverId: number) => {
-    setTestingConnection(serverId);
+  const handleTestConnection = async (serverid: number) => {
+    setTestingConnection(serverid);
     try {
-      const response = await fetch(`/admin/servers/${serverId}/test`, {
+      const response = await fetch(`/admin/servers/${serverid}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,9 +133,9 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     }
   };
 
-  const toggleServerStatus = (serverId: number, currentStatus: boolean) => {
+  const toggleServerStatus = (serverid: number, currentStatus: boolean) => {
     router.put(
-      `/admin/servers/${serverId}`,
+      `/admin/servers/${serverid}`,
       { is_active: !currentStatus },
       {
         headers: {

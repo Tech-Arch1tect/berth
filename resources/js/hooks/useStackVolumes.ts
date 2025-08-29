@@ -3,20 +3,20 @@ import { StackService } from '../services/stackService';
 import { Volume } from '../types/stack';
 
 interface UseStackVolumesOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   enabled?: boolean;
 }
 
 export const useStackVolumes = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   enabled = true,
 }: UseStackVolumesOptions) => {
   return useQuery<Volume[], Error>({
-    queryKey: ['stackVolumes', serverId, stackName],
-    queryFn: () => StackService.getStackVolumes(serverId, stackName),
-    enabled: enabled && !!serverId && !!stackName,
+    queryKey: ['stackVolumes', serverid, stackname],
+    queryFn: () => StackService.getStackVolumes(serverid, stackname),
+    enabled: enabled && !!serverid && !!stackname,
     staleTime: 30000,
     gcTime: 300000,
   });

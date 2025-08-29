@@ -7,16 +7,16 @@ import { Server } from '../../types/server';
 interface FileManagerProps {
   title: string;
   server: Server;
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   permissions: string[];
 }
 
 const FileManagerPage: React.FC<FileManagerProps> = ({
   title,
   server,
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   permissions = [],
 }) => {
   const canRead = permissions.includes('files.read');
@@ -53,7 +53,7 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
                       ></path>
                     </svg>
                     <Link
-                      href={`/servers/${serverId}/stacks`}
+                      href={`/servers/${serverid}/stacks`}
                       className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white"
                     >
                       {server.name} Stacks
@@ -70,10 +70,10 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
                       ></path>
                     </svg>
                     <Link
-                      href={`/servers/${serverId}/stacks/${stackName}`}
+                      href={`/servers/${serverid}/stacks/${stackname}`}
                       className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white"
                     >
-                      {stackName}
+                      {stackname}
                     </Link>
                   </div>
                 </li>
@@ -122,12 +122,12 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
                     </h1>
                   </div>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Manage files and directories for <strong>{stackName}</strong> on {server.name}
+                    Manage files and directories for <strong>{stackname}</strong> on {server.name}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Link
-                    href={`/servers/${serverId}/stacks/${stackName}`}
+                    href={`/servers/${serverid}/stacks/${stackname}`}
                     className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <svg
@@ -152,8 +152,8 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
 
           {/* File Manager Component */}
           <FileManager
-            serverId={serverId}
-            stackName={stackName}
+            serverid={serverid}
+            stackname={stackname}
             canRead={canRead}
             canWrite={canWrite}
           />

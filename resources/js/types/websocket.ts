@@ -79,8 +79,8 @@ export interface UseWebSocketOptions {
 }
 
 export interface UseStackWebSocketOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   enabled?: boolean;
 }
 

@@ -30,18 +30,18 @@ export interface StackStats {
   containers: ContainerStats[];
 }
 
-const fetchStackStats = async (serverId: number, stackName: string): Promise<StackStats> => {
+const fetchStackStats = async (serverid: number, stackname: string): Promise<StackStats> => {
   const response = await axios.get<StackStats>(
-    `/api/servers/${serverId}/stacks/${stackName}/stats`
+    `/api/servers/${serverid}/stacks/${stackname}/stats`
   );
   return response.data;
 };
 
-export const useStackStats = (serverId: number, stackName: string, enabled: boolean = false) => {
+export const useStackStats = (serverid: number, stackname: string, enabled: boolean = false) => {
   return useQuery({
-    queryKey: ['stack-stats', serverId, stackName],
-    queryFn: () => fetchStackStats(serverId, stackName),
-    enabled: enabled && serverId > 0 && stackName.length > 0,
+    queryKey: ['stack-stats', serverid, stackname],
+    queryFn: () => fetchStackStats(serverid, stackname),
+    enabled: enabled && serverid > 0 && stackname.length > 0,
     refetchInterval: enabled ? 5000 : false,
     staleTime: 1000,
   });

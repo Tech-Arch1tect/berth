@@ -3,8 +3,8 @@ import { LogViewerProps } from '../../types/logs';
 import { useLogs } from '../../hooks/useLogs';
 
 const LogViewer: React.FC<LogViewerProps> = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   serviceName,
   containerName,
   containers = [],
@@ -26,8 +26,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
     levelFilter,
     setLevelFilter,
   } = useLogs({
-    serverId,
-    stackName,
+    serverid,
+    stackname,
     serviceName: serviceName,
     containerName: selectedContainer || containerName,
   });
@@ -89,7 +89,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
     ? `Logs for ${containerName}`
     : serviceName
       ? `Logs for ${serviceName}`
-      : `Logs for ${stackName}`;
+      : `Logs for ${stackname}`;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">

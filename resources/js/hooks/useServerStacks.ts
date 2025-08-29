@@ -4,17 +4,17 @@ import { StackService } from '../services/stackService';
 import { Stack } from '../types/stack';
 
 interface UseServerStacksOptions {
-  serverId: number;
+  serverid: number;
   enabled?: boolean;
 }
 
-export function useServerStacks({ serverId, enabled = true }: UseServerStacksOptions) {
+export function useServerStacks({ serverid, enabled = true }: UseServerStacksOptions) {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
   return useQuery<Stack[], Error>({
-    queryKey: ['server-stacks', serverId],
-    queryFn: () => StackService.getServerStacks(serverId, csrfToken),
+    queryKey: ['server-stacks', serverid],
+    queryFn: () => StackService.getServerStacks(serverid, csrfToken),
     enabled,
     staleTime: 1 * 1000,
     gcTime: 15 * 60 * 1000,

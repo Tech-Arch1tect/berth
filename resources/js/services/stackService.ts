@@ -9,14 +9,14 @@ const api = axios.create({
 });
 
 export class StackService {
-  static async getServerStacks(serverId: number, csrfToken?: string): Promise<Stack[]> {
+  static async getServerStacks(serverid: number, csrfToken?: string): Promise<Stack[]> {
     try {
       const headers: Record<string, string> = {};
       if (csrfToken) {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      const response = await api.get(`/api/servers/${serverId}/stacks`, { headers });
+      const response = await api.get(`/api/servers/${serverid}/stacks`, { headers });
       const stacks: Stack[] = response.data.stacks || [];
 
       return stacks.sort((a, b) => a.name.localeCompare(b.name));
@@ -35,8 +35,8 @@ export class StackService {
   }
 
   static async getStackNetworks(
-    serverId: number,
-    stackName: string,
+    serverid: number,
+    stackname: string,
     csrfToken?: string
   ): Promise<Network[]> {
     try {
@@ -45,7 +45,7 @@ export class StackService {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      const response = await api.get(`/api/servers/${serverId}/stacks/${stackName}/networks`, {
+      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/networks`, {
         headers,
       });
       return response.data || [];
@@ -64,8 +64,8 @@ export class StackService {
   }
 
   static async getStackVolumes(
-    serverId: number,
-    stackName: string,
+    serverid: number,
+    stackname: string,
     csrfToken?: string
   ): Promise<Volume[]> {
     try {
@@ -74,7 +74,7 @@ export class StackService {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      const response = await api.get(`/api/servers/${serverId}/stacks/${stackName}/volumes`, {
+      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/volumes`, {
         headers,
       });
       return response.data || [];
@@ -93,8 +93,8 @@ export class StackService {
   }
 
   static async getStackEnvironmentVariables(
-    serverId: number,
-    stackName: string,
+    serverid: number,
+    stackname: string,
     csrfToken?: string
   ): Promise<StackEnvironmentResponse> {
     try {
@@ -103,7 +103,7 @@ export class StackService {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      const response = await api.get(`/api/servers/${serverId}/stacks/${stackName}/environment`, {
+      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/environment`, {
         headers,
       });
       return response.data || {};

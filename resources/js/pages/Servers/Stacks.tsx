@@ -8,17 +8,17 @@ import { useServerStacks } from '../../hooks/useServerStacks';
 interface ServerStacksProps {
   title: string;
   server: Server;
-  serverId: number;
+  serverid: number;
 }
 
-export default function ServerStacks({ title, server, serverId }: ServerStacksProps) {
+export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
   const {
     data: stacks = [],
     isLoading: loading,
     error,
     refetch,
     isFetching,
-  } = useServerStacks({ serverId });
+  } = useServerStacks({ serverid });
   return (
     <Layout>
       <Head title={title} />

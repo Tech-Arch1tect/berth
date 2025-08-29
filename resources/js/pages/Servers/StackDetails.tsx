@@ -24,16 +24,16 @@ import { showToast } from '../../utils/toast';
 interface StackDetailsProps {
   title: string;
   server: Server;
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   permissions: string[];
 }
 
 const StackDetails: React.FC<StackDetailsProps> = ({
   title,
   server,
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   permissions = [],
 }) => {
   const [activeTab, setActiveTab] = useState<
@@ -52,7 +52,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error,
     isFetching,
     refetch,
-  } = useStackDetails({ serverId, stackName });
+  } = useStackDetails({ serverid, stackname });
 
   const {
     data: networks,
@@ -60,7 +60,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error: networksError,
     isFetching: networksFetching,
     refetch: refetchNetworks,
-  } = useStackNetworks({ serverId, stackName });
+  } = useStackNetworks({ serverid, stackname });
 
   const {
     data: volumes,
@@ -68,7 +68,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error: volumesError,
     isFetching: volumesFetching,
     refetch: refetchVolumes,
-  } = useStackVolumes({ serverId, stackName });
+  } = useStackVolumes({ serverid, stackname });
 
   const {
     data: environmentVariables,
@@ -76,7 +76,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error: environmentError,
     isFetching: environmentFetching,
     refetch: refetchEnvironment,
-  } = useStackEnvironmentVariables({ serverId, stackName });
+  } = useStackEnvironmentVariables({ serverid, stackname });
 
   const {
     data: stackStats,
@@ -84,17 +84,17 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error: statsError,
     isFetching: statsFetching,
     refetch: refetchStats,
-  } = useStackStats(serverId, stackName, activeTab === 'stats' || activeTab === 'logs');
+  } = useStackStats(serverid, stackname, activeTab === 'stats' || activeTab === 'logs');
 
   const { isConnected, connectionStatus } = useStackWebSocket({
-    serverId,
-    stackName,
+    serverid,
+    stackname,
     enabled: true,
   });
 
   const { startOperation } = useOperations({
-    serverId: String(serverId),
-    stackName,
+    serverid: String(serverid),
+    stackname,
     onOperationComplete: (success, _exitCode) => {
       const currentOp = quickOperationState.operation;
       setQuickOperationState({ isRunning: false });
@@ -103,7 +103,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         const [commandOrStack, serviceName] = currentOp.split(':');
         const isStackOperation = commandOrStack === 'stack';
         const command = isStackOperation ? serviceName : commandOrStack;
-        const targetName = isStackOperation ? `stack ${stackName}` : serviceName;
+        const targetName = isStackOperation ? `stack ${stackname}` : serviceName;
         const action = command.charAt(0).toUpperCase() + command.slice(1);
 
         if (success) {
@@ -175,7 +175,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         : `${operation.command}:${operation.services[0]}`;
       setQuickOperationState({ isRunning: true, operation: operationKey });
 
-      const targetName = isStackOperation ? `stack ${stackName}` : operation.services[0];
+      const targetName = isStackOperation ? `stack ${stackname}` : operation.services[0];
       const action = operation.command.charAt(0).toUpperCase() + operation.command.slice(1);
       showToast.operation.starting(`${action}ing ${targetName}...`);
 
@@ -237,7 +237,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                       ></path>
                     </svg>
                     <Link
-                      href={`/servers/${serverId}/stacks`}
+                      href={`/servers/${serverid}/stacks`}
                       className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white"
                     >
                       {server.name} Stacks
@@ -254,7 +254,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                       ></path>
                     </svg>
                     <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">
-                      {stackName}
+                      {stackname}
                     </span>
                   </div>
                 </li>
@@ -266,7 +266,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 <div>
                   <div className="flex items-center space-x-3">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {stackName}
+                      {stackname}
                     </h1>
                     {isFetching && !loading && (
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -766,8 +766,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                               <ServiceQuickActions
                                 service={service}
                                 onQuickOperation={handleQuickOperation}
-                                serverId={serverId}
-                                stackName={stackName}
+                                serverid={serverid}
+                                stackname={stackname}
                                 isOperationRunning={quickOperationState.isRunning}
                                 runningOperation={quickOperationState.operation}
                               />
@@ -916,8 +916,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               {activeTab === 'logs' && (
                 <div className="space-y-6">
                   <LogViewer
-                    serverId={serverId}
-                    stackName={stackName}
+                    serverid={serverid}
+                    stackname={stackname}
                     containers={
                       stackStats?.containers?.map((container) => ({
                         name: container.name,
@@ -931,8 +931,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               {/* Files Tab */}
               {activeTab === 'files' && (
                 <FileManager
-                  serverId={serverId}
-                  stackName={stackName}
+                  serverid={serverid}
+                  stackname={stackname}
                   canRead={permissions.includes('files.read')}
                   canWrite={permissions.includes('files.write')}
                 />
@@ -970,8 +970,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       <OperationsModal
         isOpen={operationsModalOpen}
         onClose={() => setOperationsModalOpen(false)}
-        serverId={String(serverId)}
-        stackName={stackName}
+        serverid={String(serverid)}
+        stackname={stackname}
         services={
           stackStats?.containers?.map((container) => ({
             name: container.name,

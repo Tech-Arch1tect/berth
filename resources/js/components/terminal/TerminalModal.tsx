@@ -5,8 +5,8 @@ import { Terminal } from './Terminal';
 interface TerminalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName: string;
   containerName?: string;
 }
@@ -14,8 +14,8 @@ interface TerminalModalProps {
 export const TerminalModal: React.FC<TerminalModalProps> = ({
   isOpen,
   onClose,
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   serviceName,
   containerName,
 }) => {
@@ -71,7 +71,7 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
               <div className="w-3 h-3 bg-yellow-500 rounded-full" />
               <div className="w-3 h-3 bg-green-500 rounded-full" />
               <span className="ml-4 text-sm font-medium text-gray-200">
-                Terminal - {stackName}/{serviceName}
+                Terminal - {stackname}/{serviceName}
                 {containerName && <span className="text-gray-400">:{containerName}</span>}
               </span>
             </div>
@@ -86,8 +86,8 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
 
           <div className="h-[calc(100%-4rem)]">
             <Terminal
-              serverId={serverId}
-              stackName={stackName}
+              serverid={serverid}
+              stackname={stackname}
               serviceName={serviceName}
               containerName={containerName}
               className="h-full rounded-none rounded-b-lg"

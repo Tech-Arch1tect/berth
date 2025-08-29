@@ -7,15 +7,15 @@ import {
 } from '../types/operations';
 
 interface UseOperationsOptions {
-  serverId: string;
-  stackName: string;
+  serverid: string;
+  stackname: string;
   onOperationComplete?: (success: boolean, exitCode?: number) => void;
   onError?: (error: string) => void;
 }
 
 export const useOperations = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   onOperationComplete,
   onError,
 }: UseOperationsOptions) => {
@@ -44,7 +44,7 @@ export const useOperations = ({
     setError(null);
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/operations`;
+    const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/operations`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -104,7 +104,7 @@ export const useOperations = ({
         onError(errorMsg);
       }
     };
-  }, [serverId, stackName, operationStatus.isRunning, onOperationComplete, onError]);
+  }, [serverid, stackname, operationStatus.isRunning, onOperationComplete, onError]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {

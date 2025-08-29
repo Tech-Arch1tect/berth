@@ -1,8 +1,8 @@
 import type { StackDetails } from './stack';
 
 export interface UseStackDetailsParams {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
 }
 
 export type StackDetailsResponse = StackDetails;

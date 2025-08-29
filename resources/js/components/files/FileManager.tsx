@@ -18,15 +18,15 @@ import { useFiles } from '../../hooks/useFiles';
 import { showToast } from '../../utils/toast';
 
 interface FileManagerProps {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   canRead: boolean;
   canWrite: boolean;
 }
 
 export const FileManager: React.FC<FileManagerProps> = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   canRead,
   canWrite,
 }) => {
@@ -55,8 +55,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
     copyFile,
     downloadFile,
   } = useFiles({
-    serverId,
-    stackName,
+    serverid,
+    stackname,
     onError: handleError,
   });
 

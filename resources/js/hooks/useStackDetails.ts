@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import type { UseStackDetailsParams, StackDetailsResponse } from '../types/hooks';
 
 const fetchStackDetails = async (
-  serverId: number,
-  stackName: string
+  serverid: number,
+  stackname: string
 ): Promise<StackDetailsResponse> => {
-  const response = await fetch(`/api/servers/${serverId}/stacks/${stackName}`);
+  const response = await fetch(`/api/servers/${serverid}/stacks/${stackname}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch stack details: ${response.status}`);
@@ -26,10 +26,10 @@ const fetchStackDetails = async (
   return data;
 };
 
-export const useStackDetails = ({ serverId, stackName }: UseStackDetailsParams) => {
+export const useStackDetails = ({ serverid, stackname }: UseStackDetailsParams) => {
   return useQuery({
-    queryKey: ['stackDetails', serverId, stackName],
-    queryFn: () => fetchStackDetails(serverId, stackName),
+    queryKey: ['stackDetails', serverid, stackname],
+    queryFn: () => fetchStackDetails(serverid, stackname),
     staleTime: 1 * 1000,
     refetchInterval: 120 * 1000,
     refetchIntervalInBackground: true,

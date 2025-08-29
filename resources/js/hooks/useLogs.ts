@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { LogEntry, LogsResponse, LogFilterOptions } from '../types/logs';
 
 interface UseLogsOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName?: string;
   containerName?: string;
 }
@@ -21,8 +21,8 @@ interface UseLogsReturn {
 }
 
 export const useLogs = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   serviceName,
   containerName,
 }: UseLogsOptions): UseLogsReturn => {
@@ -34,13 +34,13 @@ export const useLogs = ({
 
   const buildEndpoint = useCallback(() => {
     if (containerName) {
-      return `/api/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/containers/${encodeURIComponent(containerName)}/logs`;
+      return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/containers/${encodeURIComponent(containerName)}/logs`;
     }
     if (serviceName) {
-      return `/api/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/services/${encodeURIComponent(serviceName)}/logs`;
+      return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/services/${encodeURIComponent(serviceName)}/logs`;
     }
-    return `/api/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/logs`;
-  }, [serverId, stackName, serviceName, containerName]);
+    return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/logs`;
+  }, [serverid, stackname, serviceName, containerName]);
 
   const fetchLogs = useCallback(
     async (options: Partial<LogFilterOptions>) => {

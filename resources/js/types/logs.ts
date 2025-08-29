@@ -10,8 +10,8 @@ export interface LogsResponse {
 }
 
 export interface LogViewerProps {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName?: string;
   containerName?: string;
   containers?: Container[];

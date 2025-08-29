@@ -57,7 +57,7 @@ export default function RoleStackPermissions({
 }: Props) {
   const [showAddRule, setShowAddRule] = useState(false);
   const [showAddToPattern, setShowAddToPattern] = useState<{
-    serverId: number;
+    serverid: number;
     stackPattern: string;
   } | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -75,8 +75,8 @@ export default function RoleStackPermissions({
     stack_pattern: '',
   });
 
-  const getServerName = (serverId: number) => {
-    return servers.find((s) => s.id === serverId)?.name || 'Unknown Server';
+  const getServerName = (serverid: number) => {
+    return servers.find((s) => s.id === serverid)?.name || 'Unknown Server';
   };
 
   const getPermissionName = (permissionId: number) => {
@@ -98,18 +98,18 @@ export default function RoleStackPermissions({
     }
   };
 
-  const handleShowAddToPattern = (serverId: number, stackPattern: string) => {
-    setShowAddToPattern({ serverId, stackPattern });
+  const handleShowAddToPattern = (serverid: number, stackPattern: string) => {
+    setShowAddToPattern({ serverid, stackPattern });
     setAddToPatternRule({
-      server_id: serverId,
+      server_id: serverid,
       permission_ids: [],
       stack_pattern: stackPattern,
     });
   };
 
-  const getAvailablePermissionsForPattern = (serverId: number, stackPattern: string) => {
+  const getAvailablePermissionsForPattern = (serverid: number, stackPattern: string) => {
     const existingRules = (permissionRules || []).filter(
-      (rule) => rule.server_id === serverId && rule.stack_pattern === stackPattern
+      (rule) => rule.server_id === serverid && rule.stack_pattern === stackPattern
     );
     const existingPermissionIds = existingRules.map((rule) => rule.permission_id);
     return permissions.filter((permission) => !existingPermissionIds.includes(permission.id));
@@ -230,7 +230,7 @@ export default function RoleStackPermissions({
       if (!acc[key]) {
         acc[key] = {
           serverName,
-          serverId: rule.server_id,
+          serverid: rule.server_id,
           stackPattern: rule.stack_pattern,
           rules: [],
         };
@@ -240,7 +240,7 @@ export default function RoleStackPermissions({
     },
     {} as Record<
       string,
-      { serverName: string; serverId: number; stackPattern: string; rules: PermissionRule[] }
+      { serverName: string; serverid: number; stackPattern: string; rules: PermissionRule[] }
     >
   );
 
@@ -410,7 +410,7 @@ export default function RoleStackPermissions({
                 </h3>
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Server:</strong> {getServerName(showAddToPattern.serverId)}
+                    <strong>Server:</strong> {getServerName(showAddToPattern.serverid)}
                     <br />
                     <strong>Pattern:</strong>{' '}
                     <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
@@ -425,7 +425,7 @@ export default function RoleStackPermissions({
                     </label>
                     <div className="space-y-3">
                       {getAvailablePermissionsForPattern(
-                        showAddToPattern.serverId,
+                        showAddToPattern.serverid,
                         showAddToPattern.stackPattern
                       ).map((permission) => (
                         <div key={permission.id} className="flex items-start">
@@ -542,11 +542,11 @@ export default function RoleStackPermissions({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {getAvailablePermissionsForPattern(group.serverId, group.stackPattern)
+                        {getAvailablePermissionsForPattern(group.serverid, group.stackPattern)
                           .length > 0 && (
                           <button
                             onClick={() =>
-                              handleShowAddToPattern(group.serverId, group.stackPattern)
+                              handleShowAddToPattern(group.serverid, group.stackPattern)
                             }
                             className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >

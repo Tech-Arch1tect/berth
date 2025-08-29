@@ -46,8 +46,8 @@ export interface TerminalSuccessEvent extends BaseWebSocketMessage {
 }
 
 export interface UseTerminalOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName: string;
   containerName?: string;
   enabled?: boolean;
@@ -62,8 +62,8 @@ export interface TerminalSession {
   isConnected: boolean;
   isConnecting: boolean;
   error?: string;
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   serviceName: string;
   containerName?: string;
 }

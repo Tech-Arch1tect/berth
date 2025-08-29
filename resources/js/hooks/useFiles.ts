@@ -12,17 +12,17 @@ import {
 } from '../types/files';
 
 interface UseFilesOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   onError?: (error: string) => void;
 }
 
-export const useFiles = ({ serverId, stackName, onError }: UseFilesOptions) => {
+export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   const [loading, setLoading] = useState(false);
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
-  const baseUrl = `/api/servers/${serverId}/stacks/${stackName}/files`;
+  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
 
   const getHeaders = useCallback(() => {
     const headers: Record<string, string> = {

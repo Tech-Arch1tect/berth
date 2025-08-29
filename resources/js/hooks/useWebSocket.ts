@@ -108,15 +108,15 @@ export const useWebSocket = ({
   }, []);
 
   const subscribe = useCallback(
-    (resource: string, serverId: number, stackName?: string) => {
+    (resource: string, serverid: number, stackname?: string) => {
       const subscribeMessage: SubscribeMessage = {
         type: 'subscribe',
         resource,
-        server_id: serverId,
+        server_id: serverid,
       };
 
-      if (stackName) {
-        subscribeMessage.stack_name = stackName;
+      if (stackname) {
+        subscribeMessage.stack_name = stackname;
       }
 
       return sendMessage(subscribeMessage);
@@ -125,15 +125,15 @@ export const useWebSocket = ({
   );
 
   const unsubscribe = useCallback(
-    (resource: string, serverId: number, stackName?: string) => {
+    (resource: string, serverid: number, stackname?: string) => {
       const unsubscribeMessage: UnsubscribeMessage = {
         type: 'unsubscribe',
         resource,
-        server_id: serverId,
+        server_id: serverid,
       };
 
-      if (stackName) {
-        unsubscribeMessage.stack_name = stackName;
+      if (stackname) {
+        unsubscribeMessage.stack_name = stackname;
       }
 
       return sendMessage(unsubscribeMessage);

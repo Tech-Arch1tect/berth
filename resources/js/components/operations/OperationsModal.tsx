@@ -8,8 +8,8 @@ import { OperationRequest } from '../../types/operations';
 interface OperationsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  serverId: string;
-  stackName: string;
+  serverid: string;
+  stackname: string;
   services?: Array<{ name: string; service_name?: string }>;
   onOperationComplete?: (success: boolean, exitCode?: number) => void;
 }
@@ -19,8 +19,8 @@ type TabType = 'presets' | 'builder' | 'logs';
 export const OperationsModal: React.FC<OperationsModalProps> = ({
   isOpen,
   onClose,
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   services,
   onOperationComplete,
 }) => {
@@ -28,8 +28,8 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
 
   const { operationStatus, isConnecting, error, startOperation, clearLogs, connect, isConnected } =
     useOperations({
-      serverId,
-      stackName,
+      serverid,
+      stackname,
       onOperationComplete: (success, exitCode) => {
         setActiveTab('logs');
         onOperationComplete?.(success, exitCode);
@@ -81,7 +81,7 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
               Stack Operations
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {stackName} on Server {serverId}
+              {stackname} on Server {serverid}
             </p>
           </div>
 

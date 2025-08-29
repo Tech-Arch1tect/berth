@@ -3,20 +3,20 @@ import { StackService } from '../services/stackService';
 import { Network } from '../types/stack';
 
 interface UseStackNetworksOptions {
-  serverId: number;
-  stackName: string;
+  serverid: number;
+  stackname: string;
   enabled?: boolean;
 }
 
 export const useStackNetworks = ({
-  serverId,
-  stackName,
+  serverid,
+  stackname,
   enabled = true,
 }: UseStackNetworksOptions) => {
   return useQuery<Network[], Error>({
-    queryKey: ['stackNetworks', serverId, stackName],
-    queryFn: () => StackService.getStackNetworks(serverId, stackName),
-    enabled: enabled && !!serverId && !!stackName,
+    queryKey: ['stackNetworks', serverid, stackname],
+    queryFn: () => StackService.getStackNetworks(serverid, stackname),
+    enabled: enabled && !!serverid && !!stackname,
     staleTime: 30000,
     gcTime: 300000,
   });
