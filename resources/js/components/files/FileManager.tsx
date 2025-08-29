@@ -266,94 +266,190 @@ export const FileManager: React.FC<FileManagerProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Permission indicator */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>File Permissions:</strong> {canRead && 'Read'}
-              {canRead && canWrite && ' • '}
-              {canWrite && 'Write'}
-              {!canWrite && (
-                <span className="ml-2 text-blue-600 dark:text-blue-400">(Read-only access)</span>
+    <div className="h-full flex flex-col bg-slate-50/30 dark:bg-slate-900/30">
+      {/* Modern Toolbar */}
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <div className="flex items-center space-x-1 text-sm text-slate-600 dark:text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 1v4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 1v4" />
+              </svg>
+              <span className="font-medium">Stack Files</span>
+              {currentPath && (
+                <>
+                  <span className="text-slate-400">/</span>
+                  <span className="truncate max-w-xs">{currentPath}</span>
+                </>
               )}
-            </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            {/* Permissions Badge */}
+            <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/70 dark:bg-slate-800/70 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>
+                {canRead && 'Read'}
+                {canRead && canWrite && ' + Write'}
+                {!canRead && 'No Access'}
+              </span>
+            </div>
+
+            {canWrite && (
+              <div className="flex items-center space-x-1">
+                <div className="flex items-center bg-slate-100/70 dark:bg-slate-800/70 rounded-lg p-1 space-x-1">
+                  <button
+                    onClick={() => {
+                      setCurrentOperation('mkdir');
+                      setIsOperationModalOpen(true);
+                    }}
+                    className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-md transition-all duration-200 flex items-center space-x-1.5"
+                    title="New Folder"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    <span>Folder</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCurrentOperation('create');
+                      setIsOperationModalOpen(true);
+                    }}
+                    className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-md transition-all duration-200 flex items-center space-x-1.5"
+                    title="New File"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span>File</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <span>Upload</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {loading && !directoryListing ? (
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4 animate-spin">
-            <svg
-              className="w-8 h-8 text-gray-400 dark:text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden">
+        {loading && !directoryListing ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
+                </div>
+                <div className="relative">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6 animate-spin">
+                    <svg
+                      className="w-8 h-8 text-slate-400 dark:text-slate-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                Loading files...
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                Please wait while we fetch the directory contents.
+              </p>
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Loading files...
-          </h3>
-        </div>
-      ) : directoryListing ? (
-        <FileList
-          entries={directoryListing.entries || []}
-          onNavigate={handleNavigate}
-          onFileSelect={handleFileSelect}
-          onFileOperation={handleFileOperation}
-          onDownload={handleDownload}
-          currentPath={currentPath}
-          canWrite={canWrite}
-        />
-      ) : (
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
-            <svg
-              className="w-8 h-8 text-red-600 dark:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+        ) : directoryListing ? (
+          <div className="h-full overflow-hidden">
+            <FileList
+              entries={directoryListing.entries || []}
+              onNavigate={handleNavigate}
+              onFileSelect={handleFileSelect}
+              onFileOperation={handleFileOperation}
+              onDownload={handleDownload}
+              currentPath={currentPath}
+              canWrite={canWrite}
+            />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Failed to load directory
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            There was an error loading the file listing.
-          </p>
-          <button
-            onClick={() => loadDirectory(currentPath)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+              <svg
+                className="w-8 h-8 text-red-600 dark:text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Failed to load directory
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              There was an error loading the file listing.
+            </p>
+            <button
+              onClick={() => loadDirectory(currentPath)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* File Editor Modal */}
       <FileEditor

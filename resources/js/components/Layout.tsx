@@ -9,7 +9,6 @@ import {
   ShieldCheckIcon,
   UserCircleIcon,
   ComputerDesktopIcon,
-  Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,

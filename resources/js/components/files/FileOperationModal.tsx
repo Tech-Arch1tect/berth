@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   FileEntry,
   FileOperation,
@@ -30,7 +31,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [_selectedFiles, _setSelectedFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -153,133 +154,147 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
   if (!isOpen || !operation) return null;
 
-  return (
-    <div
-      className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-      onClick={handleBackdropClick}
-    >
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">{getModalTitle()}</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+  const modalContent = (
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
+        onClick={handleBackdropClick}
+      />
 
-          <div className="space-y-4">
-            {operation === 'delete' ? (
-              <div>
-                <p className="text-gray-700 dark:text-gray-300 mb-4">
-                  Are you sure you want to delete <strong>{selectedFile?.name}</strong>?
-                  {selectedFile?.is_directory && (
-                    <span className="block text-sm text-red-600 dark:text-red-400 mt-2">
-                      This will permanently delete the directory and all its contents.
-                    </span>
-                  )}
-                </p>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {operation === 'mkdir'
-                      ? 'Directory Name'
-                      : operation === 'create'
-                        ? 'File Name'
-                        : operation === 'rename'
-                          ? 'New Name'
-                          : 'Source'}
-                  </label>
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder={
-                      operation === 'mkdir'
-                        ? 'my-directory'
-                        : operation === 'create'
-                          ? 'my-file.txt'
-                          : 'New name'
-                    }
-                    disabled={operation === 'copy'}
+      {/* Modal Content */}
+      <div className="relative w-full h-full flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl max-w-md w-full">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {getModalTitle()}
+              </h3>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
                   />
-                </div>
+                </svg>
+              </button>
+            </div>
 
-                {operation === 'copy' && (
+            <div className="space-y-4">
+              {operation === 'delete' ? (
+                <div>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                    Are you sure you want to delete <strong>{selectedFile?.name}</strong>?
+                    {selectedFile?.is_directory && (
+                      <span className="block text-sm text-red-600 dark:text-red-400 mt-2">
+                        This will permanently delete the directory and all its contents.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Target Name
+                      {operation === 'mkdir'
+                        ? 'Directory Name'
+                        : operation === 'create'
+                          ? 'File Name'
+                          : operation === 'rename'
+                            ? 'New Name'
+                            : 'Source'}
                     </label>
                     <input
                       type="text"
-                      value={targetValue}
-                      onChange={(e) => setTargetValue(e.target.value)}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                      placeholder={selectedFile ? `${selectedFile.name}_copy` : 'copy-name'}
+                      placeholder={
+                        operation === 'mkdir'
+                          ? 'my-directory'
+                          : operation === 'create'
+                            ? 'my-file.txt'
+                            : 'New name'
+                      }
+                      disabled={operation === 'copy'}
                     />
                   </div>
-                )}
 
-                {currentPath && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <strong>Location:</strong> /{currentPath}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                  {operation === 'copy' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Target Name
+                      </label>
+                      <input
+                        type="text"
+                        value={targetValue}
+                        onChange={(e) => setTargetValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder={selectedFile ? `${selectedFile.name}_copy` : 'copy-name'}
+                      />
+                    </div>
+                  )}
 
-          <div className="flex items-center justify-end space-x-3 mt-6">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={loading || (operation !== 'delete' && !inputValue.trim())}
-              className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${getConfirmButtonColor()} focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Processing...
+                  {currentPath && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Location:</strong> /{currentPath}
+                    </div>
+                  )}
                 </>
-              ) : (
-                getConfirmButtonText()
               )}
-            </button>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 mt-6">
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={loading || (operation !== 'delete' && !inputValue.trim())}
+                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${getConfirmButtonColor()} focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {loading ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  getConfirmButtonText()
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

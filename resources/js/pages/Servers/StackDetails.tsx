@@ -16,10 +16,22 @@ import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { OperationsModal } from '../../components/operations/OperationsModal';
 import { ServiceQuickActions } from '../../components/stack/ServiceQuickActions';
-import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
+import {
+  HomeIcon,
+  ChevronRightIcon,
+  ServerIcon,
+  CpuChipIcon,
+  CircleStackIcon,
+  GlobeAltIcon,
+  FolderIcon,
+  Cog6ToothIcon,
+  DocumentTextIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 
 interface StackDetailsProps {
   title: string;
@@ -86,7 +98,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     refetch: refetchStats,
   } = useStackStats(serverid, stackname, activeTab === 'stats' || activeTab === 'logs');
 
-  const { isConnected, connectionStatus } = useStackWebSocket({
+  const { connectionStatus } = useStackWebSocket({
     serverid,
     stackname,
     enabled: true,
@@ -210,725 +222,440 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     <Layout>
       <Head title={title} />
 
-      <div className="py-12">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <nav className="flex" aria-label="Breadcrumb">
-              <ol className="inline-flex items-center space-x-1 md:space-x-3">
-                <li className="inline-flex items-center">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white"
-                  >
-                    <svg className="w-3 h-3 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                    </svg>
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <div className="flex items-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <Link
-                      href={`/servers/${serverid}/stacks`}
-                      className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white"
-                    >
-                      {server.name} Stacks
-                    </Link>
-                  </div>
-                </li>
-                <li aria-current="page">
-                  <div className="flex items-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">
-                      {stackname}
-                    </span>
-                  </div>
-                </li>
-              </ol>
-            </nav>
+      {/* Breadcrumb Navigation */}
+      <div className="mb-6">
+        <nav className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+          <Link
+            href="/"
+            className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            <HomeIcon className="w-4 h-4" />
+            <span>Dashboard</span>
+          </Link>
+          <ChevronRightIcon className="w-4 h-4 text-slate-400" />
+          <Link
+            href={`/servers/${serverid}/stacks`}
+            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            {server.name} Stacks
+          </Link>
+          <ChevronRightIcon className="w-4 h-4 text-slate-400" />
+          <span className="text-slate-900 dark:text-white font-medium">{stackname}</span>
+        </nav>
+      </div>
 
-            <div className="mt-4">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <CircleStackIcon className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-3">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                  {stackname}
+                </h1>
+                {/* Connection Status */}
+                <div
+                  className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${
+                    connectionStatus === 'connected'
+                      ? 'bg-emerald-100/70 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : connectionStatus === 'connecting'
+                        ? 'bg-yellow-100/70 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                        : 'bg-red-100/70 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      connectionStatus === 'connected'
+                        ? 'bg-emerald-500 animate-pulse'
+                        : connectionStatus === 'connecting'
+                          ? 'bg-yellow-500 animate-pulse'
+                          : 'bg-red-500'
+                    }`}
+                  />
+                  <span>
+                    {connectionStatus === 'connected'
+                      ? 'Live'
+                      : connectionStatus === 'connecting'
+                        ? 'Connecting'
+                        : 'Offline'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 mt-2">
+                <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                  <ServerIcon className="w-4 h-4" />
+                  <span>{server.name}</span>
+                </div>
+                {stackDetails && (
+                  <>
+                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {stackDetails.services?.length || 0} services
+                    </div>
+                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {stackDetails.services?.reduce(
+                        (total, service) => total + (service.containers?.length || 0),
+                        0
+                      ) || 0}{' '}
+                      containers
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {/* Refresh Button */}
+            <button
+              onClick={() => {
+                showToast.info('Refreshing stack data...');
+                setIsRefreshing(true);
+                refetch();
+                refetchNetworks();
+                refetchVolumes();
+                refetchEnvironment();
+                refetchStats();
+              }}
+              disabled={
+                isFetching ||
+                networksFetching ||
+                volumesFetching ||
+                environmentFetching ||
+                statsFetching
+              }
+              className="inline-flex items-center px-4 py-2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowPathIcon
+                className={`w-4 h-4 mr-2 ${isFetching || networksFetching || volumesFetching || environmentFetching || statsFetching ? 'animate-spin' : ''}`}
+              />
+              Refresh All
+            </button>
+
+            {/* Operations Button */}
+            <button
+              onClick={() => setOperationsModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Cog6ToothIcon className="w-4 h-4 mr-2" />
+              Operations
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      {loading ? (
+        <div className="text-center py-16">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
+            </div>
+            <div className="relative">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6 animate-spin">
+                <ArrowPathIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+              </div>
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+            Loading stack details...
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400">
+            Please wait while we fetch your Docker stack information.
+          </p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-16">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/20 dark:to-orange-900/20 rounded-full opacity-50" />
+            </div>
+            <div className="relative">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-800 dark:to-red-700 rounded-2xl flex items-center justify-center mb-6">
+                <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+            Error loading stack details
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            {error?.message || 'Unable to connect to the Docker stack.'}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <ArrowPathIcon className="w-4 h-4 mr-2" />
+            Try Again
+          </button>
+        </div>
+      ) : stackDetails ? (
+        <div className="space-y-8">
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="flex items-center space-x-3">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {stackname}
-                    </h1>
-                    {isFetching && !loading && (
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Updating...
-                      </div>
-                    )}
-                    {/* WebSocket Connection Status */}
-                    <div className="flex items-center space-x-2 mt-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          connectionStatus === 'connected'
-                            ? 'bg-green-500'
-                            : connectionStatus === 'connecting'
-                              ? 'bg-yellow-500 animate-pulse'
-                              : 'bg-red-500'
-                        }`}
-                      ></div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {connectionStatus === 'connected'
-                          ? 'Live updates active'
-                          : connectionStatus === 'connecting'
-                            ? 'Connecting to live updates...'
-                            : 'Live updates disconnected'}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Stack details for {server.name}
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Services</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {stackDetails.services?.length || 0}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      showToast.info('Refreshing stack data...');
-                      setIsRefreshing(true);
-                      refetch();
-                      refetchNetworks();
-                      refetchVolumes();
-                      refetchEnvironment();
-                      refetchStats();
-                    }}
-                    disabled={
-                      isFetching ||
-                      networksFetching ||
-                      volumesFetching ||
-                      environmentFetching ||
-                      statsFetching
-                    }
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg
-                      className={`-ml-0.5 mr-2 h-4 w-4 ${isFetching || networksFetching || volumesFetching || environmentFetching || statsFetching ? 'animate-spin' : ''}`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    Refresh
-                  </button>
+                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/20 dark:border-blue-800/20">
+                  <CircleStackIcon className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Containers
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {stackDetails.services?.reduce(
+                      (total, service) => total + (service.containers?.length || 0),
+                      0
+                    ) || 0}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200/20 dark:border-green-800/20">
+                  <ServerIcon className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Networks</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {networks?.length || 0}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/20 dark:border-purple-800/20">
+                  <GlobeAltIcon className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Volumes</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {volumes?.length || 0}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 dark:border-emerald-800/20">
+                  <FolderIcon className="w-6 h-6" />
                 </div>
               </div>
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4 animate-spin">
-                <svg
-                  className="w-8 h-8 text-gray-400 dark:text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Loading stack details...
-              </h3>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
-                <svg
-                  className="w-8 h-8 text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Error loading stack details
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {error?.message || 'An unknown error occurred'}
-              </p>
-            </div>
-          ) : stackDetails ? (
-            <div className="space-y-6">
-              {/* Real-time Status Bar */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div
-                      className={`flex-shrink-0 w-3 h-3 rounded-full mr-3 ${
-                        isConnected ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                    ></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        {isConnected
-                          ? 'Connected to real-time updates'
-                          : 'Real-time updates disconnected'}
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        Status: {connectionStatus} • Container and stack changes will update
-                        automatically
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-300">
-                      Live
-                    </span>
-                  </div>
+          {/* Stack Info Card */}
+          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200/50 dark:border-slate-700/50">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <DocumentTextIcon className="w-5 h-5 text-white" />
                 </div>
-              </div>
-
-              {/* Stack Overview */}
-              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                    Stack Overview
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Stack Information
                   </h2>
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Compose File
-                      </dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {stackDetails.compose_file}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Path</dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {stackDetails.path}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Services Count
-                      </dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {stackDetails.services?.length || 0}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Total Containers
-                      </dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {stackDetails.services?.reduce(
-                          (total, service) => total + (service.containers?.length || 0),
-                          0
-                        ) || 0}
-                      </dd>
-                    </div>
-                  </dl>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Configuration and metadata
+                  </p>
                 </div>
               </div>
-
-              {/* Tab Navigation */}
-              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div className="border-b border-gray-200 dark:border-gray-700">
-                  <nav className="-mb-px flex">
-                    <button
-                      onClick={() => setActiveTab('services')}
-                      className={`${
-                        activeTab === 'services'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                          />
-                        </svg>
-                        <span>Services & Containers</span>
-                        {stackDetails?.services && (
-                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
-                            {stackDetails.services.length}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('networks')}
-                      className={`${
-                        activeTab === 'networks'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <span>Networks</span>
-                        {networks && (
-                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
-                            {networks.length}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('volumes')}
-                      className={`${
-                        activeTab === 'volumes'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <span>Volumes</span>
-                        {volumes && (
-                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
-                            {volumes.length}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('environment')}
-                      className={`${
-                        activeTab === 'environment'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                          />
-                        </svg>
-                        <span>Environment</span>
-                        {environmentVariables && (
-                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
-                            {Object.values(environmentVariables).reduce(
-                              (total, serviceEnvs) =>
-                                total +
-                                serviceEnvs.reduce(
-                                  (envTotal, env) => envTotal + env.variables.length,
-                                  0
-                                ),
-                              0
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('stats')}
-                      className={`${
-                        activeTab === 'stats'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                          />
-                        </svg>
-                        <span>Stats</span>
-                        {stackStats && (
-                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs">
-                            {stackStats.containers.length}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('logs')}
-                      className={`${
-                        activeTab === 'logs'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <span>Logs</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('files')}
-                      className={`${
-                        activeTab === 'files'
-                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                      } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 1v4M16 1v4"
-                          />
-                        </svg>
-                        <span>Files</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setOperationsModalOpen(true)}
-                      className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
-                          />
-                        </svg>
-                        <span>Operations</span>
-                      </div>
-                    </button>
-                  </nav>
+            </div>
+            <div className="p-6">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex flex-col space-y-1">
+                  <dt className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Compose File
+                  </dt>
+                  <dd className="text-sm font-mono bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-slate-900 dark:text-white">
+                    {stackDetails.compose_file}
+                  </dd>
                 </div>
-              </div>
+                <div className="flex flex-col space-y-1">
+                  <dt className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Stack Path
+                  </dt>
+                  <dd className="text-sm font-mono bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-slate-900 dark:text-white">
+                    {stackDetails.path}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
 
-              {/* Tab Content */}
+          {/* Modern Tab Navigation */}
+          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+            <div className="border-b border-slate-200/50 dark:border-slate-700/50">
+              <nav className="flex space-x-1 p-2">
+                {[
+                  { id: 'services', name: 'Services', icon: CircleStackIcon },
+                  { id: 'networks', name: 'Networks', icon: GlobeAltIcon },
+                  { id: 'volumes', name: 'Volumes', icon: FolderIcon },
+                  { id: 'environment', name: 'Environment', icon: Cog6ToothIcon },
+                  { id: 'stats', name: 'Stats', icon: CpuChipIcon },
+                  { id: 'logs', name: 'Logs', icon: DocumentTextIcon },
+                  { id: 'files', name: 'Files', icon: FolderIcon },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() =>
+                        setActiveTab(
+                          tab.id as
+                            | 'services'
+                            | 'networks'
+                            | 'volumes'
+                            | 'environment'
+                            | 'stats'
+                            | 'logs'
+                            | 'files'
+                        )
+                      }
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        activeTab === tab.id
+                          ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{tab.name}</span>
+                      {activeTab === tab.id && (
+                        <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
               {activeTab === 'services' &&
                 stackDetails.services &&
                 stackDetails.services.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                          Services & Containers
-                        </h2>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            Stack Actions:
-                          </span>
-                          <StackQuickActions
-                            services={stackDetails.services}
+                  <div className="space-y-6">
+                    {stackDetails.services.map((service) => (
+                      <div
+                        key={service.name}
+                        className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-6"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                              {service.name}
+                            </h3>
+                            {service.image && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400 font-mono">
+                                {service.image}
+                              </p>
+                            )}
+                          </div>
+                          <ServiceQuickActions
+                            service={service}
                             onQuickOperation={handleQuickOperation}
+                            serverid={serverid}
+                            stackname={stackname}
                             isOperationRunning={quickOperationState.isRunning}
                             runningOperation={quickOperationState.operation}
                           />
                         </div>
-                      </div>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      {stackDetails.services.map((service) => (
-                        <div
-                          key={service.name}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg"
-                        >
-                          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                  {service.name}
-                                </h3>
-                                {service.image && (
-                                  <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                    {service.image}
+
+                        {service.containers && service.containers.length > 0 && (
+                          <div className="space-y-3">
+                            {service.containers.map((container, index) => (
+                              <div
+                                key={container.name || index}
+                                className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg"
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                                  <div>
+                                    <p className="font-medium text-slate-900 dark:text-white">
+                                      {container.name}
+                                    </p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 font-mono">
+                                      {container.image}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span
+                                    className={`px-3 py-1 text-xs font-medium rounded-full ${getContainerStatusColor(container.state)}`}
+                                  >
+                                    {container.state}
                                   </span>
-                                )}
+                                </div>
                               </div>
-                              <ServiceQuickActions
-                                service={service}
-                                onQuickOperation={handleQuickOperation}
-                                serverid={serverid}
-                                stackname={stackname}
-                                isOperationRunning={quickOperationState.isRunning}
-                                runningOperation={quickOperationState.operation}
-                              />
-                            </div>
+                            ))}
                           </div>
-                          <div className="p-4">
-                            {service.containers && service.containers.length > 0 ? (
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                  <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Container
-                                      </th>
-                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Status
-                                      </th>
-                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Image
-                                      </th>
-                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Ports
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                                    {service.containers.map((container, index) => (
-                                      <tr key={container.name || index}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                          {container.name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                          <span
-                                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getContainerStatusColor(container.state)}`}
-                                          >
-                                            {container.state}
-                                          </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                          {container.image}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                          {container.ports && container.ports.length > 0 ? (
-                                            <div className="space-y-1">
-                                              {container.ports.map((port, portIndex) => (
-                                                <div key={portIndex} className="text-xs">
-                                                  {port.public
-                                                    ? `${port.public}:${port.private}`
-                                                    : port.private}
-                                                  /{port.type}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          ) : (
-                                            <span className="text-gray-400">—</span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                No containers found for this service.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
-              {/* Networks Tab */}
               {activeTab === 'networks' && (
-                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Networks
-                    </h2>
-                  </div>
-                  <div className="p-6">
-                    <NetworkList
-                      networks={networks || []}
-                      isLoading={networksLoading}
-                      error={networksError}
-                    />
-                  </div>
-                </div>
+                <NetworkList
+                  networks={networks || []}
+                  isLoading={networksLoading}
+                  error={networksError}
+                />
               )}
 
-              {/* Volumes Tab */}
               {activeTab === 'volumes' && (
-                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Volumes</h2>
-                  </div>
-                  <div className="p-6">
-                    <VolumeList
-                      volumes={volumes || []}
-                      isLoading={volumesLoading}
-                      error={volumesError}
-                    />
-                  </div>
-                </div>
+                <VolumeList
+                  volumes={volumes || []}
+                  isLoading={volumesLoading}
+                  error={volumesError}
+                />
               )}
 
-              {/* Environment Variables Tab */}
               {activeTab === 'environment' && (
-                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Environment Variables
-                    </h2>
-                  </div>
-                  <div className="p-6">
-                    <EnvironmentVariableList
-                      environmentData={environmentVariables || {}}
-                      isLoading={environmentLoading}
-                      error={environmentError}
-                    />
-                  </div>
-                </div>
+                <EnvironmentVariableList
+                  environmentData={environmentVariables || {}}
+                  isLoading={environmentLoading}
+                  error={environmentError}
+                />
               )}
 
-              {/* Stats Tab */}
               {activeTab === 'stats' && (
-                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Resource Statistics
-                    </h2>
-                  </div>
-                  <div className="p-6">
-                    <StackStats
-                      containers={stackStats?.containers || []}
-                      isLoading={statsLoading}
-                      error={statsError}
-                    />
-                  </div>
-                </div>
+                <StackStats
+                  containers={stackStats?.containers || []}
+                  isLoading={statsLoading}
+                  error={statsError}
+                />
               )}
 
-              {/* Logs Tab */}
               {activeTab === 'logs' && (
-                <div className="space-y-6">
-                  <LogViewer
-                    serverid={serverid}
-                    stackname={stackname}
-                    containers={
-                      stackStats?.containers?.map((container) => ({
-                        name: container.name,
-                        service_name: container.service_name,
-                      })) || []
-                    }
-                  />
-                </div>
+                <LogViewer
+                  serverid={serverid}
+                  stackname={stackname}
+                  containers={
+                    stackStats?.containers?.map((container) => ({
+                      name: container.name,
+                      service_name: container.service_name,
+                    })) || []
+                  }
+                />
               )}
 
-              {/* Files Tab */}
               {activeTab === 'files' && (
                 <FileManager
                   serverid={serverid}
@@ -938,33 +665,28 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 />
               )}
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-                <svg
-                  className="w-8 h-8 text-gray-400 dark:text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No stack details available
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Unable to load information for this stack.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-16">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-full opacity-50" />
+            </div>
+            <div className="relative">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6">
+                <ExclamationTriangleIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+              </div>
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+            No stack details available
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400">
+            Unable to load information for this stack.
+          </p>
+        </div>
+      )}
 
       {/* Operations Modal */}
       <OperationsModal
