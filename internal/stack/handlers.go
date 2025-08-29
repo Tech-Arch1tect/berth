@@ -1,9 +1,9 @@
 package stack
 
 import (
-	"net/http"
 	"strconv"
 
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/internal/rbac"
 
 	"github.com/labstack/echo/v4"
@@ -31,12 +31,12 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 	serverIDStr := c.Param("id")
 	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid server ID")
+		return common.SendBadRequest(c, "Invalid server ID")
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "Server not found")
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Stacks", gonertia.Props{
@@ -47,34 +47,32 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 }
 
 func (h *Handler) ShowStackDetails(c echo.Context) error {
-	serverIDStr := c.Param("serverid")
-	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid server ID")
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Stack name is required")
+	if serverID == 0 || stackname == "" {
+		return common.SendBadRequest(c, "Invalid server ID or stack name")
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "Server not found")
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	userID := session.GetUserIDAsUint(c)
 
-	permissions, err := h.rbacSvc.GetUserStackPermissions(userID, uint(serverID), stackName)
+	permissions, err := h.rbacSvc.GetUserStackPermissions(userID, uint(serverID), stackname)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user permissions")
+		return common.SendInternalError(c, "Failed to get user permissions")
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/StackDetails", gonertia.Props{
-		"title":       serverInfo.Name + " - " + stackName,
+		"title":       serverInfo.Name + " - " + stackname,
 		"server":      serverInfo,
-		"serverId":    uint(serverID),
-		"stackName":   stackName,
+		"serverid":    uint(serverID),
+		"stackname":   stackname,
 		"permissions": permissions,
 	})
 }

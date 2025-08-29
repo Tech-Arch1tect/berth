@@ -1,14 +1,10 @@
 package logs
 
 import (
-	"net/http"
+	"brx-starter-kit/internal/common"
 	"strconv"
 
-	"brx-starter-kit/models"
-
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {
@@ -21,104 +17,69 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-func (h *Handler) getUserID(c echo.Context) (uint, error) {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser != nil {
-		if userModel, ok := currentUser.(models.User); ok {
-			return userModel.ID, nil
-		}
-	}
-
-	userID := session.GetUserIDAsUint(c)
-	if userID == 0 {
-		return 0, echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	return userID, nil
-}
-
 func (h *Handler) GetStackLogs(c echo.Context) error {
-	userID, err := h.getUserID(c)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID := h.parseUintParam(c, "serverId", 0)
-	if serverID == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
-	}
-
-	stackName := c.Param("stackName")
-	if stackName == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
 	}
 
 	req := LogRequest{
 		UserID:     userID,
 		ServerID:   serverID,
-		StackName:  stackName,
+		StackName:  stackname,
 		Tail:       h.parseIntParam(c, "tail", 100),
-		Since:      c.QueryParam("since"),
+		Since:      common.GetQueryParam(c, "since"),
 		Timestamps: h.parseBoolParam(c, "timestamps", true),
 	}
 
 	logs, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, logs)
+	return common.SendSuccess(c, logs)
 }
 
 func (h *Handler) GetContainerLogs(c echo.Context) error {
-	userID, err := h.getUserID(c)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID := h.parseUintParam(c, "serverId", 0)
-	if serverID == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+	serverID, err := common.ParseUintParam(c, "serverId")
+	if err != nil {
+		return err
 	}
 
-	stackName := c.Param("stackName")
+	stackname := c.Param("stackname")
 	containerName := c.Param("containerName")
 
-	if stackName == "" || containerName == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Stack name and container name are required",
-		})
+	if stackname == "" || containerName == "" {
+		return common.SendBadRequest(c, "Stack name and container name are required")
 	}
 
 	req := LogRequest{
 		UserID:        userID,
 		ServerID:      serverID,
-		StackName:     stackName,
+		StackName:     stackname,
 		ContainerName: containerName,
 		Tail:          h.parseIntParam(c, "tail", 100),
-		Since:         c.QueryParam("since"),
+		Since:         common.GetQueryParam(c, "since"),
 		Timestamps:    h.parseBoolParam(c, "timestamps", true),
 	}
 
 	logs, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
 		c.Logger().Error("Container logs error: ", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, logs)
+	return common.SendSuccess(c, logs)
 }
 
 func (h *Handler) parseIntParam(c echo.Context, param string, defaultValue int) int {
@@ -134,15 +95,6 @@ func (h *Handler) parseBoolParam(c echo.Context, param string, defaultValue bool
 	if value := c.QueryParam(param); value != "" {
 		if parsed, err := strconv.ParseBool(value); err == nil {
 			return parsed
-		}
-	}
-	return defaultValue
-}
-
-func (h *Handler) parseUintParam(c echo.Context, param string, defaultValue uint) uint {
-	if value := c.Param(param); value != "" {
-		if parsed, err := strconv.ParseUint(value, 10, 32); err == nil {
-			return uint(parsed)
 		}
 	}
 	return defaultValue

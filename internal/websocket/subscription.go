@@ -18,11 +18,11 @@ func NewSubscriptionManager() *SubscriptionManager {
 	}
 }
 
-func (sm *SubscriptionManager) Subscribe(conn *UserConnection, resource string, serverID int, stackName string) {
+func (sm *SubscriptionManager) Subscribe(conn *UserConnection, resource string, serverID int, stackname string) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 
-	key := sm.createKey(resource, serverID, stackName)
+	key := sm.createKey(resource, serverID, stackname)
 
 	if sm.subscriptions[key] == nil {
 		sm.subscriptions[key] = make(map[*UserConnection]bool)
@@ -32,11 +32,11 @@ func (sm *SubscriptionManager) Subscribe(conn *UserConnection, resource string, 
 	conn.subscriptions[key] = true
 }
 
-func (sm *SubscriptionManager) Unsubscribe(conn *UserConnection, resource string, serverID int, stackName string) {
+func (sm *SubscriptionManager) Unsubscribe(conn *UserConnection, resource string, serverID int, stackname string) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 
-	key := sm.createKey(resource, serverID, stackName)
+	key := sm.createKey(resource, serverID, stackname)
 
 	if sm.subscriptions[key] != nil {
 		delete(sm.subscriptions[key], conn)
@@ -66,11 +66,11 @@ func (sm *SubscriptionManager) UnsubscribeAll(conn *UserConnection) {
 	conn.subscriptions = make(map[SubscriptionKey]bool)
 }
 
-func (sm *SubscriptionManager) GetSubscribers(resource string, serverID int, stackName string) []*UserConnection {
+func (sm *SubscriptionManager) GetSubscribers(resource string, serverID int, stackname string) []*UserConnection {
 	sm.mutex.RLock()
 	defer sm.mutex.RUnlock()
 
-	key := sm.createKey(resource, serverID, stackName)
+	key := sm.createKey(resource, serverID, stackname)
 
 	var subscribers []*UserConnection
 	if sm.subscriptions[key] != nil {
@@ -82,9 +82,9 @@ func (sm *SubscriptionManager) GetSubscribers(resource string, serverID int, sta
 	return subscribers
 }
 
-func (sm *SubscriptionManager) createKey(resource string, serverID int, stackName string) SubscriptionKey {
-	if stackName != "" {
-		return SubscriptionKey(fmt.Sprintf("%s:%d:%s", resource, serverID, stackName))
+func (sm *SubscriptionManager) createKey(resource string, serverID int, stackname string) SubscriptionKey {
+	if stackname != "" {
+		return SubscriptionKey(fmt.Sprintf("%s:%d:%s", resource, serverID, stackname))
 	}
 	return SubscriptionKey(fmt.Sprintf("%s:%d", resource, serverID))
 }

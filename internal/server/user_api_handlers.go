@@ -1,11 +1,8 @@
 package server
 
 import (
-	"brx-starter-kit/models"
-	"net/http"
-
+	"brx-starter-kit/internal/common"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"gorm.io/gorm"
 )
 
@@ -22,28 +19,17 @@ func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {
 }
 
 func (h *UserAPIHandler) ListServers(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	servers, err := h.service.ListServersForUser(userModel.ID)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch servers",
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	servers, err := h.service.ListServersForUser(userID)
+	if err != nil {
+		return common.SendInternalError(c, "Failed to fetch servers")
+	}
+
+	return common.SendSuccess(c, map[string]any{
 		"servers": servers,
 	})
 }

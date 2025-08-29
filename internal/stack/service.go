@@ -57,8 +57,8 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 	return accessibleStacks, nil
 }
 
-func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackName string) (*StackDetails, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
+func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackname string) (*StackDetails, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -72,7 +72,7 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	stackDetails, err := s.fetchStackDetailsFromAgent(ctx, server, stackName)
+	stackDetails, err := s.fetchStackDetailsFromAgent(ctx, server, stackname)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,8 @@ func (s *Service) fetchStacksFromAgent(ctx context.Context, server *models.Serve
 	return stacks, nil
 }
 
-func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models.Server, stackName string) (*StackDetails, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s", stackName), nil)
+func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models.Server, stackname string) (*StackDetails, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -121,8 +121,8 @@ func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models
 	return &stackDetails, nil
 }
 
-func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID uint, stackName string) ([]Network, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
+func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID uint, stackname string) ([]Network, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -136,7 +136,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	networks, err := s.fetchStackNetworksFromAgent(ctx, server, stackName)
+	networks, err := s.fetchStackNetworksFromAgent(ctx, server, stackname)
 	if err != nil {
 		return nil, err
 	}
@@ -144,8 +144,8 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 	return networks, nil
 }
 
-func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *models.Server, stackName string) ([]Network, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/networks", stackName), nil)
+func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *models.Server, stackname string) ([]Network, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/networks", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -163,8 +163,8 @@ func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *model
 	return networks, nil
 }
 
-func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uint, stackName string) ([]Volume, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
+func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uint, stackname string) ([]Volume, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -178,7 +178,7 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	volumes, err := s.fetchStackVolumesFromAgent(ctx, server, stackName)
+	volumes, err := s.fetchStackVolumesFromAgent(ctx, server, stackname)
 	if err != nil {
 		return nil, err
 	}
@@ -186,8 +186,8 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 	return volumes, nil
 }
 
-func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models.Server, stackName string) ([]Volume, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/volumes", stackName), nil)
+func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models.Server, stackname string) ([]Volume, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/volumes", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -205,8 +205,8 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 	return volumes, nil
 }
 
-func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackName string) (map[string][]ServiceEnvironment, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
+func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackname string) (map[string][]ServiceEnvironment, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -220,7 +220,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	environmentVariables, err := s.fetchStackEnvironmentVariablesFromAgent(ctx, server, stackName)
+	environmentVariables, err := s.fetchStackEnvironmentVariablesFromAgent(ctx, server, stackname)
 	if err != nil {
 		return nil, err
 	}
@@ -228,8 +228,8 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 	return environmentVariables, nil
 }
 
-func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackName string) (map[string][]ServiceEnvironment, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/environment", stackName), nil)
+func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackname string) (map[string][]ServiceEnvironment, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/environment", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -247,8 +247,8 @@ func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, s
 	return environmentVariables, nil
 }
 
-func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint, stackName string) (*StackStats, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.read")
+func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint, stackname string) (*StackStats, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -262,7 +262,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/stats", stackName), nil)
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/stats", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to agent: %w", err)
 	}

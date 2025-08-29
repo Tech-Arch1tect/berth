@@ -39,7 +39,7 @@ func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(userID int, 
 	return hasPermission
 }
 
-func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, stackName string, permission string) bool {
+func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, stackname string, permission string) bool {
 	var permissionName string
 
 	switch permission {
@@ -51,7 +51,7 @@ func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, sta
 		return false
 	}
 
-	hasPermission, err := r.rbacService.UserHasStackPermission(uint(userID), uint(serverID), stackName, permissionName)
+	hasPermission, err := r.rbacService.UserHasStackPermission(uint(userID), uint(serverID), stackname, permissionName)
 	if err != nil {
 		return false
 	}

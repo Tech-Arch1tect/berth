@@ -1,12 +1,9 @@
 package stack
 
 import (
-	"net/http"
-	"strconv"
+	"brx-starter-kit/internal/common"
 
-	"brx-starter-kit/models"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 )
 
 type APIHandler struct {
@@ -20,230 +17,117 @@ func NewAPIHandler(service *Service) *APIHandler {
 }
 
 func (h *APIHandler) ListServerStacks(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userModel.ID, uint(serverID))
+	serverID, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userID, serverID)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, map[string]any{
 		"stacks": stacks,
 	})
 }
 
 func (h *APIHandler) GetStackDetails(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
-	}
-
-	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, stackDetails)
+	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, stackDetails)
 }
 
 func (h *APIHandler) GetStackNetworks(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
-	}
-
-	networks, err := h.service.GetStackNetworks(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, networks)
+	networks, err := h.service.GetStackNetworks(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, networks)
 }
 
 func (h *APIHandler) GetStackVolumes(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
-	}
-
-	volumes, err := h.service.GetStackVolumes(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, volumes)
+	volumes, err := h.service.GetStackVolumes(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, volumes)
 }
 
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
-	}
-
-	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, environmentVariables)
+	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, environmentVariables)
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
-	}
-
-	userModel, ok := currentUser.(models.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Invalid user type",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(c.Param("serverid"), 10, 32)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	stackName := c.Param("stackname")
-	if stackName == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Stack name is required",
-		})
-	}
-
-	stackStats, err := h.service.GetStackStats(c.Request().Context(), userModel.ID, uint(serverID), stackName)
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, stackStats)
+	stackStats, err := h.service.GetStackStats(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, stackStats)
 }

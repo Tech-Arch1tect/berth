@@ -28,22 +28,22 @@ func NewService(serverSvc *server.Service, rbacSvc *rbac.Service) *Service {
 	}
 }
 
-func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackName string, req OperationRequest) (*OperationResponse, error) {
+func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest) (*OperationResponse, error) {
 
 	serverModel, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 	if !hasPermission {
-		return nil, fmt.Errorf("insufficient permissions to manage stack '%s' on server %d", stackName, serverID)
+		return nil, fmt.Errorf("insufficient permissions to manage stack '%s' on server %d", stackname, serverID)
 	}
 
-	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackName))
+	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackname))
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -68,19 +68,19 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	return &response, nil
 }
 
-func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serverID uint, stackName string, operationID string, writer io.Writer) error {
+func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serverID uint, stackname string, operationID string, writer io.Writer) error {
 
 	serverModel, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
 	if err != nil {
 		return fmt.Errorf("failed to check permissions: %w", err)
 	}
 	if !hasPermission {
-		return fmt.Errorf("insufficient permissions to access stack '%s' on server %d", stackName, serverID)
+		return fmt.Errorf("insufficient permissions to access stack '%s' on server %d", stackname, serverID)
 	}
 
 	endpoint := fmt.Sprintf("/api/operations/%s/stream", url.PathEscape(operationID))

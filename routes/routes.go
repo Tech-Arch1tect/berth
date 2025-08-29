@@ -146,11 +146,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesWebAPIHandler.DownloadFile)
 	}
 	if logsHandler != nil {
-		protected.GET("/api/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
-		protected.GET("/api/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/containers/:containerName/logs", logsHandler.GetContainerLogs)
 	}
 	if operationsHandler != nil {
-		protected.POST("/api/servers/:serverId/stacks/:stackName/operations", operationsHandler.StartOperation)
+		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
@@ -182,7 +182,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			return wsHandler.HandleWebUIWebSocket(c)
 		})
 
-		wsUIGroup.GET("/servers/:serverId/terminal", func(c echo.Context) error {
+		wsUIGroup.GET("/servers/:serverid/terminal", func(c echo.Context) error {
 			if !session.IsAuthenticated(c) {
 				log.Printf("WebSocket Route: User not authenticated")
 				return c.JSON(401, map[string]string{"error": "Not authenticated"})
@@ -195,7 +195,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		})
 
 		if operationsWSHandler != nil {
-			wsUIGroup.GET("/servers/:serverId/stacks/:stackName/operations", func(c echo.Context) error {
+			wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations", func(c echo.Context) error {
 				if !session.IsAuthenticated(c) {
 					return c.JSON(401, map[string]string{"error": "Not authenticated"})
 				}
@@ -205,7 +205,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 				return operationsWSHandler.HandleOperationWebSocket(c)
 			})
 
-			wsUIGroup.GET("/servers/:serverId/stacks/:stackName/operations/:operationId", func(c echo.Context) error {
+			wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", func(c echo.Context) error {
 				if !session.IsAuthenticated(c) {
 					return c.JSON(401, map[string]string{"error": "Not authenticated"})
 				}
@@ -223,11 +223,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			UserProvider: userProvider,
 		}))
 		wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
-		wsAPIGroup.GET("/servers/:serverId/terminal", wsHandler.HandleFlutterTerminalWebSocket)
+		wsAPIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleFlutterTerminalWebSocket)
 
 		if operationsWSHandler != nil {
-			wsAPIGroup.GET("/servers/:serverId/stacks/:stackName/operations", operationsWSHandler.HandleOperationWebSocket)
-			wsAPIGroup.GET("/servers/:serverId/stacks/:stackName/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
+			wsAPIGroup.GET("/servers/:serverid/stacks/:stackname/operations", operationsWSHandler.HandleOperationWebSocket)
+			wsAPIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
 		}
 	}
 
@@ -318,16 +318,14 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
 		}
 		if logsHandler != nil {
-			apiProtected.GET("/servers/:serverId/stacks/:stackName/logs", logsHandler.GetStackLogs)
-			apiProtected.GET("/servers/:serverId/stacks/:stackName/containers/:containerName/logs", logsHandler.GetContainerLogs)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/containers/:containerName/logs", logsHandler.GetContainerLogs)
 		}
 		if operationsHandler != nil {
-			apiProtected.POST("/servers/:serverId/stacks/:stackName/operations", operationsHandler.StartOperation)
+			apiProtected.POST("/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 		}
 
 		if rbacAPIHandler != nil && rbacMiddleware != nil {
-			apiProtected.GET("/rbac/permissions", rbacAPIHandler.GetCurrentUserPermissions)
-			apiProtected.POST("/rbac/check-permission", rbacAPIHandler.CheckPermission)
 
 			// Admin routes
 			apiAdmin := apiProtected.Group("/admin")

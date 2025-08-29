@@ -1,8 +1,8 @@
 package rbac
 
 import (
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/models"
-	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -28,7 +28,7 @@ func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service) *Handle
 func (h *Handler) ListUsers(c echo.Context) error {
 	var users []models.User
 	if err := h.db.Preload("Roles").Find(&users).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch users")
+		return common.SendInternalError(c, "failed to fetch users")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/Users", map[string]any{
@@ -40,17 +40,17 @@ func (h *Handler) ListUsers(c echo.Context) error {
 func (h *Handler) ShowUserRoles(c echo.Context) error {
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid user ID")
+		return common.SendBadRequest(c, "invalid user ID")
 	}
 
 	var user models.User
 	if err := h.db.Preload("Roles").First(&user, uint(userID)).Error; err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		return common.SendNotFound(c, "user not found")
 	}
 
 	var allRoles []models.Role
 	if err := h.db.Find(&allRoles).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+		return common.SendInternalError(c, "failed to fetch roles")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/UserRoles", map[string]any{
@@ -103,7 +103,7 @@ func (h *Handler) RevokeRole(c echo.Context) error {
 func (h *Handler) ListRoles(c echo.Context) error {
 	roles, err := h.rbac.GetAllRoles()
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+		return common.SendInternalError(c, "failed to fetch roles")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/Roles", map[string]any{
@@ -180,31 +180,31 @@ func (h *Handler) DeleteRole(c echo.Context) error {
 func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid role ID")
+		return common.SendBadRequest(c, "invalid role ID")
 	}
 
 	var role models.Role
 	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "role not found")
+		return common.SendNotFound(c, "role not found")
 	}
 
 	if role.IsAdmin {
-		return echo.NewHTTPError(http.StatusBadRequest, "cannot manage server permissions for admin role")
+		return common.SendBadRequest(c, "cannot manage server permissions for admin role")
 	}
 
 	var servers []models.Server
 	if err := h.db.Find(&servers).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch servers")
+		return common.SendInternalError(c, "failed to fetch servers")
 	}
 
 	var permissions []models.Permission
 	if err := h.db.Find(&permissions).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch permissions")
+		return common.SendInternalError(c, "failed to fetch permissions")
 	}
 
 	var serverRoleStackPermissions []models.ServerRoleStackPermission
 	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch role stack permissions")
+		return common.SendInternalError(c, "failed to fetch role stack permissions")
 	}
 
 	type PermissionRule struct {

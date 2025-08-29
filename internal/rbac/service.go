@@ -112,8 +112,30 @@ func (s *Service) GetUserRoles(userID uint) ([]models.Role, error) {
 	return user.Roles, nil
 }
 
-func (s *Service) GetUserPermissions(userID uint) ([]models.Permission, error) {
-	return []models.Permission{}, nil
+func (s *Service) GetUserPermissions(userID uint) ([]models.ServerRoleStackPermission, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []models.ServerRoleStackPermission{}, nil
+		}
+		return nil, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			var allPermissions []models.ServerRoleStackPermission
+			err := s.db.Preload("Permission").Find(&allPermissions).Error
+			return allPermissions, err
+		}
+	}
+
+	var permissions []models.ServerRoleStackPermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ?", userID).
+		Find(&permissions).Error
+
+	return permissions, err
 }
 
 func (s *Service) GetRoleByName(roleName string) (*models.Role, error) {
@@ -265,7 +287,7 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 	return serverIDs, nil
 }
 
-func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackName string, permissionName string) (bool, error) {
+func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -291,7 +313,7 @@ func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackName s
 	}
 
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == permissionName && utils.MatchesPattern(stackName, srsp.StackPattern) {
+		if srsp.Permission.Name == permissionName && utils.MatchesPattern(stackname, srsp.StackPattern) {
 			return true, nil
 		}
 	}
@@ -299,7 +321,7 @@ func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackName s
 	return false, nil
 }
 
-func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackName string) ([]string, error) {
+func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackname string) ([]string, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -326,7 +348,7 @@ func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackName 
 
 	permissionSet := make(map[string]bool)
 	for _, srsp := range serverRoleStackPermissions {
-		if utils.MatchesPattern(stackName, srsp.StackPattern) {
+		if utils.MatchesPattern(stackname, srsp.StackPattern) {
 			permissionSet[srsp.Permission.Name] = true
 		}
 	}
@@ -394,4 +416,40 @@ func (s *Service) UserHasAnyStackPermission(userID uint, serverID uint, permissi
 	}
 
 	return count > 0, nil
+}
+
+func (s *Service) CheckUserStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
+	return s.UserHasStackPermission(userID, serverID, stackname, permissionName)
+}
+
+func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]models.ServerRoleStackPermission, error) {
+	var permissions []models.ServerRoleStackPermission
+	err := s.db.Preload("Permission").Where("role_id = ?", roleID).Find(&permissions).Error
+	return permissions, err
+}
+
+func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stackname string, permissionName string) error {
+	var permission models.Permission
+	if err := s.db.Where("name = ?", permissionName).First(&permission).Error; err != nil {
+		return errors.New("permission not found")
+	}
+
+	var existing models.ServerRoleStackPermission
+	if err := s.db.Where("role_id = ? AND server_id = ? AND stack_pattern = ? AND permission_id = ?",
+		roleID, serverID, stackname, permission.ID).First(&existing).Error; err == nil {
+		return errors.New("permission already exists")
+	}
+
+	srsp := models.ServerRoleStackPermission{
+		RoleID:       roleID,
+		ServerID:     serverID,
+		StackPattern: stackname,
+		PermissionID: permission.ID,
+	}
+
+	return s.db.Create(&srsp).Error
+}
+
+func (s *Service) DeleteRoleStackPermission(permissionID uint) error {
+	return s.db.Delete(&models.ServerRoleStackPermission{}, permissionID).Error
 }

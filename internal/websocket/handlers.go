@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/internal/server"
 
 	"github.com/gorilla/websocket"
@@ -87,24 +88,18 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 		auth := c.Request().Header.Get("Authorization")
 		token, ok := strings.CutPrefix(auth, "Bearer ")
 		if !ok || token == "" {
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Authorization header with Bearer token required",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
 		}
 
 		claims, err := h.jwtService.ValidateToken(token)
 		if err != nil {
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Invalid token",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Invalid token")
 		}
 		userID = int(claims.UserID)
 	} else {
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Not authenticated",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Not authenticated")
 		}
 		userID = int(sessionUserID)
 	}
@@ -112,15 +107,11 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 	serverIDStr := c.Param("server_id")
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
-		return 0, 0, c.JSON(400, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return 0, 0, common.SendBadRequest(c, "Invalid server ID")
 	}
 
 	if !h.permChecker.CanUserAccessServer(userID, serverID) {
-		return 0, 0, c.JSON(403, map[string]string{
-			"error": "Insufficient permissions to access this server",
-		})
+		return 0, 0, common.SendForbidden(c, "Insufficient permissions to access this server")
 	}
 
 	return userID, serverID, nil
@@ -134,44 +125,34 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 		token, ok := strings.CutPrefix(auth, "Bearer ")
 		if !ok || token == "" {
 
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Authorization header with Bearer token required",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
 		}
 
 		claims, err := h.jwtService.ValidateToken(token)
 		if err != nil {
 
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Invalid token",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Invalid token")
 		}
 		userID = int(claims.UserID)
 	} else {
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
 
-			return 0, 0, c.JSON(401, map[string]string{
-				"error": "Not authenticated",
-			})
+			return 0, 0, common.SendUnauthorized(c, "Not authenticated")
 		}
 		userID = int(sessionUserID)
 	}
 
-	serverIDStr := c.Param("serverId")
+	serverIDStr := c.Param("serverid")
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
 
-		return 0, 0, c.JSON(400, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return 0, 0, common.SendBadRequest(c, "Invalid server ID")
 	}
 
 	if !h.permChecker.CanUserAccessServer(userID, serverID) {
 
-		return 0, 0, c.JSON(403, map[string]string{
-			"error": "Insufficient permissions to access this server",
-		})
+		return 0, 0, common.SendForbidden(c, "Insufficient permissions to access this server")
 	}
 
 	return userID, serverID, nil
@@ -182,9 +163,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	server, err := h.serverService.GetServer(uint(serverID))
 	if err != nil {
 
-		return c.JSON(404, map[string]string{
-			"error": "Server not found",
-		})
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	scheme := "ws"
@@ -204,9 +183,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	agentConn, _, err := dialer.Dial(agentWSURL, headers)
 	if err != nil {
 
-		return c.JSON(502, map[string]string{
-			"error": "Failed to connect to agent terminal",
-		})
+		return common.SendError(c, 502, "Failed to connect to agent terminal")
 	}
 
 	defer func() { _ = agentConn.Close() }()

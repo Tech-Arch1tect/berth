@@ -1,6 +1,7 @@
 package server
 
 import (
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/models"
 	"net/http"
 	"strconv"
@@ -25,7 +26,7 @@ func NewHandler(service *Service, inertiaSvc *inertia.Service) *Handler {
 func (h *Handler) Index(c echo.Context) error {
 	servers, err := h.service.ListServers()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch servers"})
+		return common.SendInternalError(c, "Failed to fetch servers")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/Servers", map[string]any{
@@ -36,15 +37,15 @@ func (h *Handler) Index(c echo.Context) error {
 func (h *Handler) Show(c echo.Context) error {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid server ID"})
+		return common.SendBadRequest(c, "Invalid server ID")
 	}
 
 	server, err := h.service.GetServerResponse(uint(id))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "Server not found"})
+		return common.SendNotFound(c, "Server not found")
 	}
 
-	return c.JSON(http.StatusOK, server)
+	return common.SendSuccess(c, server)
 }
 
 func (h *Handler) Store(c echo.Context) error {
@@ -115,20 +116,17 @@ func (h *Handler) Delete(c echo.Context) error {
 func (h *Handler) TestConnection(c echo.Context) error {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid server ID"})
+		return common.SendBadRequest(c, "Invalid server ID")
 	}
 
 	server, err := h.service.GetServer(uint(id))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "Server not found"})
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	if err := h.service.TestServerConnection(server); err != nil {
-		return c.JSON(http.StatusServiceUnavailable, map[string]string{
-			"error":   "Connection test failed",
-			"details": err.Error(),
-		})
+		return common.SendError(c, http.StatusServiceUnavailable, "Connection test failed: "+err.Error())
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"status": "Connection successful"})
+	return common.SendMessage(c, "Connection successful")
 }

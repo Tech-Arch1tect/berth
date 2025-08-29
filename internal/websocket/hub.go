@@ -42,7 +42,7 @@ type UserConnection struct {
 type PermissionChecker interface {
 	CanUserAccessServer(userID int, serverID int) bool
 	CanUserAccessAnyStackWithPermission(userID int, serverID int, permission string) bool
-	HasStackPermission(userID int, serverID int, stackName string, permission string) bool
+	HasStackPermission(userID int, serverID int, stackname string, permission string) bool
 }
 
 func NewHub(permissionChecker PermissionChecker) *Hub {

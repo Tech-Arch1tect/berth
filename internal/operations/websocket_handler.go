@@ -3,11 +3,12 @@ package operations
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/models"
 
 	"github.com/gorilla/websocket"
@@ -35,28 +36,19 @@ func NewWebSocketHandler(service *Service) *WebSocketHandler {
 }
 
 func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
-	serverIDStr := c.Param("serverId")
-	stackName := c.Param("stackName")
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
 	operationIDStr := c.Param("operationId")
 
-	if serverIDStr == "" || stackName == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Server ID and stack name are required",
-		})
-	}
-
-	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+	if serverID == 0 || stackname == "" {
+		return common.SendBadRequest(c, "Server ID and stack name are required")
 	}
 
 	userID, err := h.getUserID(c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"error": "Authentication required",
-		})
+		return common.SendUnauthorized(c, "Authentication required")
 	}
 
 	conn, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
@@ -76,20 +68,20 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 
 	if operationIDStr != "" {
 
-		return h.streamExistingOperation(ctx, conn, userID, uint(serverID), stackName, operationIDStr)
+		return h.streamExistingOperation(ctx, conn, userID, uint(serverID), stackname, operationIDStr)
 	} else {
 
-		return h.handleOperationRequests(ctx, conn, userID, uint(serverID), stackName)
+		return h.handleOperationRequests(ctx, conn, userID, uint(serverID), stackname)
 	}
 }
 
-func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackName string, operationID string) error {
+func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string, operationID string) error {
 
 	pipeReader, pipeWriter := streamPipe()
 
 	go func() {
 		defer func() { _ = pipeWriter.Close() }()
-		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackName, operationID, pipeWriter); err != nil {
+		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackname, operationID, pipeWriter); err != nil {
 
 			errorMsg := WebSocketMessage{
 				Type:  WSMessageTypeError,
@@ -104,7 +96,7 @@ func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *we
 	return h.relayToWebSocket(ctx, conn, pipeReader)
 }
 
-func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackName string) error {
+func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string) error {
 
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -136,7 +128,7 @@ func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *we
 			if wsMsg.Type == WSMessageTypeOperationRequest {
 
 				go func(data any) {
-					if err := h.processOperationRequest(ctx, conn, userID, serverID, stackName, data); err != nil {
+					if err := h.processOperationRequest(ctx, conn, userID, serverID, stackname, data); err != nil {
 						h.sendError(conn, err.Error())
 					}
 				}(wsMsg.Data)
@@ -145,7 +137,7 @@ func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *we
 	}
 }
 
-func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackName string, data any) error {
+func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string, data any) error {
 
 	reqBytes, err := json.Marshal(data)
 	if err != nil {
@@ -157,7 +149,7 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 		return err
 	}
 
-	response, err := h.service.StartOperation(ctx, userID, serverID, stackName, opReq)
+	response, err := h.service.StartOperation(ctx, userID, serverID, stackname, opReq)
 	if err != nil {
 		return err
 	}
@@ -167,7 +159,7 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 	go func() {
 		defer func() { _ = pipeWriter.Close() }()
 
-		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackName, response.OperationID, pipeWriter); err != nil {
+		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackname, response.OperationID, pipeWriter); err != nil {
 
 			errorMsg := WebSocketMessage{
 				Type:  WSMessageTypeError,
@@ -224,9 +216,7 @@ func (h *WebSocketHandler) getUserID(c echo.Context) (uint, error) {
 
 	userID := session.GetUserIDAsUint(c)
 	if userID == 0 {
-		return 0, echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
-			"error": "User not authenticated",
-		})
+		return 0, common.SendUnauthorized(c, "User not authenticated")
 	}
 
 	return userID, nil
@@ -264,7 +254,7 @@ type StreamWriter struct {
 func (sw *StreamWriter) Write(p []byte) (n int, err error) {
 	select {
 	case <-sw.done:
-		return 0, echo.NewHTTPError(http.StatusInternalServerError, "stream closed")
+		return 0, fmt.Errorf("stream closed")
 	default:
 	}
 

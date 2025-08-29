@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"brx-starter-kit/internal/common"
 	"net/http"
 	"strings"
 
@@ -32,11 +33,11 @@ func (h *Handler) ShowSetup(c echo.Context) error {
 	adminExists, err := h.setupSvc.AdminExists()
 	if err != nil {
 		h.logger.Error("failed to check admin existence", zap.Error(err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to check setup status")
+		return common.SendInternalError(c, "Failed to check setup status")
 	}
 
 	if adminExists {
-		return echo.NewHTTPError(http.StatusNotFound, "Setup already completed")
+		return common.SendNotFound(c, "Setup already completed")
 	}
 
 	return h.inertiaSvc.Render(c, "Setup/Admin", map[string]any{
@@ -53,7 +54,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	}
 
 	if adminExists {
-		return echo.NewHTTPError(http.StatusNotFound, "Setup already completed")
+		return common.SendNotFound(c, "Setup already completed")
 	}
 
 	var req struct {
@@ -93,7 +94,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	user, err := h.setupSvc.CreateAdmin(req.Username, req.Email, hashedPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return echo.NewHTTPError(http.StatusConflict, "Setup already completed")
+			return common.SendError(c, http.StatusConflict, "Setup already completed")
 		}
 		h.logger.Error("failed to create admin user", zap.Error(err))
 		session.AddFlashError(c, "Failed to create admin user")

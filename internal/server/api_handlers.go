@@ -1,9 +1,8 @@
 package server
 
 import (
+	"brx-starter-kit/internal/common"
 	"brx-starter-kit/models"
-	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -21,137 +20,103 @@ func NewAPIHandler(service *Service) *APIHandler {
 func (h *APIHandler) ListServers(c echo.Context) error {
 	servers, err := h.service.ListServers()
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch servers",
-		})
+		return common.SendInternalError(c, "Failed to fetch servers")
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	return common.SendSuccess(c, map[string]any{
 		"servers": servers,
 	})
 }
 
 func (h *APIHandler) GetServer(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	server, err := h.service.GetServerResponse(uint(id))
+	server, err := h.service.GetServerResponse(id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
-			"error": "Server not found",
-		})
+		return common.SendNotFound(c, "Server not found")
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	return common.SendSuccess(c, map[string]any{
 		"server": server,
 	})
 }
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
 	var server models.Server
-	if err := c.Bind(&server); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request data",
-		})
+	if err := common.BindRequest(c, &server); err != nil {
+		return err
 	}
 
 	if err := h.service.CreateServer(&server); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create server",
-		})
+		return common.SendInternalError(c, "Failed to create server")
 	}
 
 	response := server.ToResponse()
-	return c.JSON(http.StatusCreated, map[string]any{
+	return common.SendCreated(c, map[string]any{
 		"server": response,
 	})
 }
 
 func (h *APIHandler) UpdateServer(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
 	var updates models.Server
-	if err := c.Bind(&updates); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request data",
-		})
+	if err := common.BindRequest(c, &updates); err != nil {
+		return err
 	}
 
-	// If access_token is empty, don't update it (keep existing)
 	if updates.AccessToken == "" {
-		existing, err := h.service.GetServer(uint(id))
+		existing, err := h.service.GetServer(id)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusNotFound, map[string]string{
-				"error": "Server not found",
-			})
+			return common.SendNotFound(c, "Server not found")
 		}
 		updates.AccessToken = existing.AccessToken
 	}
 
-	server, err := h.service.UpdateServer(uint(id), &updates)
+	server, err := h.service.UpdateServer(id, &updates)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to update server",
-		})
+		return common.SendInternalError(c, "Failed to update server")
 	}
 
 	response := server.ToResponse()
-	return c.JSON(http.StatusOK, map[string]any{
+	return common.SendSuccess(c, map[string]any{
 		"server": response,
 	})
 }
 
 func (h *APIHandler) DeleteServer(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	if err := h.service.DeleteServer(uint(id)); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to delete server",
-		})
+	if err := h.service.DeleteServer(id); err != nil {
+		return common.SendInternalError(c, "Failed to delete server")
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Server deleted successfully",
-	})
+	return common.SendMessage(c, "Server deleted successfully")
 }
 
 func (h *APIHandler) TestConnection(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
-			"error": "Invalid server ID",
-		})
+		return err
 	}
 
-	server, err := h.service.GetServer(uint(id))
+	server, err := h.service.GetServer(id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, map[string]string{
-			"error": "Server not found",
-		})
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	if err := h.service.TestServerConnection(server); err != nil {
-		return c.JSON(http.StatusServiceUnavailable, map[string]string{
-			"error":   "Connection test failed",
-			"details": err.Error(),
-		})
+		return common.SendError(c, 503, "Connection test failed: "+err.Error())
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"status": "Connection successful",
-	})
+	return common.SendMessage(c, "Connection successful")
 }

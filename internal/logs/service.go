@@ -84,14 +84,14 @@ func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsRe
 	return s.makeLogRequest(ctx, server, endpoint, req)
 }
 
-func (s *Service) validateAccess(userID, serverID uint, stackName string) error {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "logs.read")
+func (s *Service) validateAccess(userID, serverID uint, stackname string) error {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "logs.read")
 	if err != nil {
 		return fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return fmt.Errorf("insufficient permissions to view logs for stack '%s'", stackName)
+		return fmt.Errorf("insufficient permissions to view logs for stack '%s'", stackname)
 	}
 
 	return nil
