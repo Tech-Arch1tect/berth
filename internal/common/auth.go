@@ -1,8 +1,6 @@
 package common
 
 import (
-	"net/http"
-
 	"brx-starter-kit/models"
 
 	"github.com/labstack/echo/v4"
@@ -21,5 +19,5 @@ func GetCurrentUserID(c echo.Context) (uint, error) {
 		return userID, nil
 	}
 
-	return 0, echo.NewHTTPError(http.StatusUnauthorized, SendError(c, http.StatusUnauthorized, "User not authenticated"))
+	return 0, SendUnauthorized(c, "User not authenticated")
 }

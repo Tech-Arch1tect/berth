@@ -64,9 +64,8 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 		PasswordConfirm string `form:"password_confirm" json:"password_confirm"`
 	}
 
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/setup/admin")
+	if err := common.BindRequest(c, &req); err != nil {
+		return err
 	}
 
 	if req.Username == "" || req.Email == "" || req.Password == "" {

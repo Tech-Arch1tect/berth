@@ -38,9 +38,9 @@ func (h *Handler) ListUsers(c echo.Context) error {
 }
 
 func (h *Handler) ShowUserRoles(c echo.Context) error {
-	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	userID, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return common.SendBadRequest(c, "invalid user ID")
+		return err
 	}
 
 	var user models.User
@@ -66,7 +66,7 @@ func (h *Handler) AssignRole(c echo.Context) error {
 		RoleID uint `json:"role_id"`
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request")
 		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
@@ -86,7 +86,7 @@ func (h *Handler) RevokeRole(c echo.Context) error {
 		RoleID uint `json:"role_id"`
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request")
 		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
@@ -118,7 +118,7 @@ func (h *Handler) CreateRole(c echo.Context) error {
 		Description string `json:"description"`
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
@@ -134,7 +134,7 @@ func (h *Handler) CreateRole(c echo.Context) error {
 }
 
 func (h *Handler) UpdateRole(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	roleID, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid role ID")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
@@ -145,7 +145,7 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 		Description string `json:"description"`
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
@@ -161,7 +161,7 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 }
 
 func (h *Handler) DeleteRole(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	roleID, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid role ID")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
@@ -178,9 +178,9 @@ func (h *Handler) DeleteRole(c echo.Context) error {
 }
 
 func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	roleID, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return common.SendBadRequest(c, "invalid role ID")
+		return err
 	}
 
 	var role models.Role
@@ -237,7 +237,7 @@ func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 }
 
 func (h *Handler) CreateRoleStackPermission(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	roleID, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid role ID")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
@@ -249,7 +249,7 @@ func (h *Handler) CreateRoleStackPermission(c echo.Context) error {
 		StackPattern string `json:"stack_pattern"`
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request")
 		return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 	}
@@ -284,13 +284,13 @@ func (h *Handler) CreateRoleStackPermission(c echo.Context) error {
 }
 
 func (h *Handler) DeleteRoleStackPermission(c echo.Context) error {
-	roleID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	roleID, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid role ID")
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
 
-	permissionID, err := strconv.ParseUint(c.Param("permissionId"), 10, 32)
+	permissionID, err := common.ParseUintParam(c, "permissionId")
 	if err != nil {
 		session.AddFlashError(c, "Invalid permission ID")
 		return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")

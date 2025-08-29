@@ -4,7 +4,6 @@ import (
 	"brx-starter-kit/internal/common"
 	"brx-starter-kit/models"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/inertia"
@@ -35,9 +34,9 @@ func (h *Handler) Index(c echo.Context) error {
 }
 
 func (h *Handler) Show(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return common.SendBadRequest(c, "Invalid server ID")
+		return err
 	}
 
 	server, err := h.service.GetServerResponse(uint(id))
@@ -50,7 +49,7 @@ func (h *Handler) Show(c echo.Context) error {
 
 func (h *Handler) Store(c echo.Context) error {
 	var server models.Server
-	if err := c.Bind(&server); err != nil {
+	if err := common.BindRequest(c, &server); err != nil {
 		session.AddFlashError(c, "Invalid request data")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
@@ -65,14 +64,14 @@ func (h *Handler) Store(c echo.Context) error {
 }
 
 func (h *Handler) Update(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid server ID")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
 
 	var updates models.Server
-	if err := c.Bind(&updates); err != nil {
+	if err := common.BindRequest(c, &updates); err != nil {
 		session.AddFlashError(c, "Invalid request data")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
@@ -98,7 +97,7 @@ func (h *Handler) Update(c echo.Context) error {
 }
 
 func (h *Handler) Delete(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		session.AddFlashError(c, "Invalid server ID")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
@@ -114,9 +113,9 @@ func (h *Handler) Delete(c echo.Context) error {
 }
 
 func (h *Handler) TestConnection(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := common.ParseUintParam(c, "id")
 	if err != nil {
-		return common.SendBadRequest(c, "Invalid server ID")
+		return err
 	}
 
 	server, err := h.service.GetServer(uint(id))
