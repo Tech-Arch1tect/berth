@@ -1,21 +1,21 @@
 package main
 
 import (
-	"brx-starter-kit/handlers"
-	"brx-starter-kit/internal/agent"
-	"brx-starter-kit/internal/files"
-	"brx-starter-kit/internal/logs"
-	"brx-starter-kit/internal/operations"
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/server"
-	"brx-starter-kit/internal/setup"
-	"brx-starter-kit/internal/stack"
-	"brx-starter-kit/internal/websocket"
-	"brx-starter-kit/models"
-	"brx-starter-kit/providers"
-	"brx-starter-kit/routes"
-	"brx-starter-kit/seeds"
-	"brx-starter-kit/utils"
+	"berth/handlers"
+	"berth/internal/agent"
+	"berth/internal/files"
+	"berth/internal/logs"
+	"berth/internal/operations"
+	"berth/internal/rbac"
+	"berth/internal/server"
+	"berth/internal/setup"
+	"berth/internal/stack"
+	"berth/internal/websocket"
+	"berth/models"
+	"berth/providers"
+	"berth/routes"
+	"berth/seeds"
+	"berth/utils"
 
 	"github.com/tech-arch1tect/brx"
 	"github.com/tech-arch1tect/brx/config"
@@ -32,7 +32,7 @@ import (
 )
 
 func main() {
-	var cfg StarterKitConfig
+	var cfg BerthConfig
 	if err := config.LoadConfig(&cfg); err != nil {
 		panic(err)
 	}
@@ -58,10 +58,10 @@ func main() {
 		brx.WithFxOptions(
 			websocket.Module,
 			jwt.Options,
-			fx.Provide(func() *StarterKitConfig {
+			fx.Provide(func() *BerthConfig {
 				return &cfg
 			}),
-			fx.Provide(func(cfg *StarterKitConfig) *utils.Crypto {
+			fx.Provide(func(cfg *BerthConfig) *utils.Crypto {
 				return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 			}),
 			fx.Provide(agent.NewService),

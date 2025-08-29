@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"brx-starter-kit/models"
+	"berth/models"
 	"github.com/gorilla/websocket"
 )
 

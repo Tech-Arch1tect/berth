@@ -1,9 +1,9 @@
 package files
 
 import (
-	"brx-starter-kit/internal/agent"
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/server"
+	"berth/internal/agent"
+	"berth/internal/rbac"
+	"berth/internal/server"
 	"context"
 	"encoding/json"
 	"fmt"

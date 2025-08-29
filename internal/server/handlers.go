@@ -1,8 +1,8 @@
 package server
 
 import (
-	"brx-starter-kit/internal/common"
-	"brx-starter-kit/models"
+	"berth/internal/common"
+	"berth/models"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

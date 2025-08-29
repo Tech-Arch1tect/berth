@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"brx-starter-kit/internal/dto"
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/models"
+	"berth/internal/dto"
+	"berth/internal/rbac"
+	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"

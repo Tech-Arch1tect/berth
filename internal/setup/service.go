@@ -1,8 +1,8 @@
 package setup
 
 import (
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/models"
+	"berth/internal/rbac"
+	"berth/models"
 	"errors"
 
 	"gorm.io/gorm"

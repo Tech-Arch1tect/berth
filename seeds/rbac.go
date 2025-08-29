@@ -1,7 +1,7 @@
 package seeds
 
 import (
-	"brx-starter-kit/models"
+	"berth/models"
 
 	"gorm.io/gorm"
 )

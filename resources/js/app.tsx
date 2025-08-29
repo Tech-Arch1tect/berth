@@ -6,7 +6,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
-const appName = 'brx Starter Kit';
+const appName = 'Berth';
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"brx-starter-kit/internal/server"
+	"berth/internal/server"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"

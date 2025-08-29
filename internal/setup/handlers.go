@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"brx-starter-kit/internal/common"
+	"berth/internal/common"
 	"net/http"
 	"strings"
 

@@ -1,9 +1,9 @@
 package rbac
 
 import (
-	"brx-starter-kit/internal/common"
-	"brx-starter-kit/internal/dto"
-	"brx-starter-kit/models"
+	"berth/internal/common"
+	"berth/internal/dto"
+	"berth/models"
 	"strings"
 
 	"github.com/labstack/echo/v4"

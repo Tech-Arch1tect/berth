@@ -1,7 +1,7 @@
 package server
 
 import (
-	"brx-starter-kit/internal/common"
+	"berth/internal/common"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )

@@ -1,6 +1,6 @@
 package websocket
 
-import "brx-starter-kit/internal/rbac"
+import "berth/internal/rbac"
 
 type RBACPermissionChecker struct {
 	rbacService *rbac.Service

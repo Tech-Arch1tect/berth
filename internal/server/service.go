@@ -1,9 +1,9 @@
 package server
 
 import (
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/models"
-	"brx-starter-kit/utils"
+	"berth/internal/rbac"
+	"berth/models"
+	"berth/utils"
 	"fmt"
 	"net/http"
 	"time"

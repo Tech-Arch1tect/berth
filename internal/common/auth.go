@@ -1,7 +1,7 @@
 package common
 
 import (
-	"brx-starter-kit/models"
+	"berth/models"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

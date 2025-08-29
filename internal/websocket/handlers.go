@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"brx-starter-kit/internal/common"
-	"brx-starter-kit/internal/server"
+	"berth/internal/common"
+	"berth/internal/server"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"

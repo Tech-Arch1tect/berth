@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/models"
+	"berth/internal/rbac"
+	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/auth"

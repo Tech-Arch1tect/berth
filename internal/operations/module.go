@@ -1,8 +1,8 @@
 package operations
 
 import (
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/server"
+	"berth/internal/rbac"
+	"berth/internal/server"
 
 	"go.uber.org/fx"
 )

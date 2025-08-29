@@ -3,8 +3,8 @@ package stack
 import (
 	"strconv"
 
-	"brx-starter-kit/internal/common"
-	"brx-starter-kit/internal/rbac"
+	"berth/internal/common"
+	"berth/internal/rbac"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"

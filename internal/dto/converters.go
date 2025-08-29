@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"brx-starter-kit/models"
+	"berth/models"
 	"time"
 
 	"github.com/tech-arch1tect/brx/services/totp"

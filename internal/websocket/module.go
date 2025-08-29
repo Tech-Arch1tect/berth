@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"brx-starter-kit/internal/rbac"
+	"berth/internal/rbac"
 	"go.uber.org/fx"
 )
 

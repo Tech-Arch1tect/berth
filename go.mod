@@ -1,4 +1,4 @@
-module brx-starter-kit
+module berth
 
 go 1.25.0
 

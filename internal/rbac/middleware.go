@@ -3,7 +3,7 @@ package rbac
 import (
 	"net/http"
 
-	"brx-starter-kit/models"
+	"berth/models"
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/session"

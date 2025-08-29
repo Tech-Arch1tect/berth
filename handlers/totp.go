@@ -10,7 +10,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 
-	"brx-starter-kit/models"
+	"berth/models"
 )
 
 type TOTPHandler struct {

@@ -1,9 +1,9 @@
 package operations
 
 import (
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/server"
-	"brx-starter-kit/models"
+	"berth/internal/rbac"
+	"berth/internal/server"
+	"berth/models"
 	"bufio"
 	"context"
 	"crypto/tls"

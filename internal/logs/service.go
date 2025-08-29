@@ -1,10 +1,10 @@
 package logs
 
 import (
-	"brx-starter-kit/internal/agent"
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/server"
-	"brx-starter-kit/models"
+	"berth/internal/agent"
+	"berth/internal/rbac"
+	"berth/internal/server"
+	"berth/models"
 	"context"
 	"encoding/json"
 	"fmt"

@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"brx-starter-kit/models"
+	"berth/models"
 	"bytes"
 	"context"
 	"encoding/json"

@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"brx-starter-kit/internal/server"
+	"berth/internal/server"
 	"context"
 	"log"
 

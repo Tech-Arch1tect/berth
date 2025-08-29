@@ -4,7 +4,7 @@ import (
 	"github.com/tech-arch1tect/brx/config"
 )
 
-type StarterKitConfig struct {
+type BerthConfig struct {
 	config.Config
 	Custom AppCustomConfig `envPrefix:"CUSTOM_"`
 }

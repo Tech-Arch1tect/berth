@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"brx-starter-kit/internal/common"
+	"berth/internal/common"
 	"strconv"
 
 	"github.com/labstack/echo/v4"

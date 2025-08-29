@@ -1,7 +1,7 @@
 package operations
 
 import (
-	"brx-starter-kit/internal/common"
+	"berth/internal/common"
 
 	"github.com/labstack/echo/v4"
 )
