@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Terminal } from './Terminal';
 
@@ -57,7 +58,7 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-hidden">
       <div className="absolute inset-0 bg-black bg-opacity-75" />
       <div className="relative flex items-center justify-center min-h-screen p-4">
@@ -95,6 +96,7 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

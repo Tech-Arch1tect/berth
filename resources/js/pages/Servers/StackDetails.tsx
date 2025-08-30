@@ -205,7 +205,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
   const handleExpandAll = () => {
     if (stackDetails?.services) {
-      setExpandedServices(new Set(stackDetails.services.map(service => service.name)));
+      setExpandedServices(new Set(stackDetails.services.map((service) => service.name)));
     }
   };
 
@@ -214,7 +214,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   };
 
   const toggleServiceExpanded = (serviceName: string) => {
-    setExpandedServices(prev => {
+    setExpandedServices((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(serviceName)) {
         newSet.delete(serviceName);
@@ -329,7 +329,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 />
               </div>
             )}
-            
+
             {/* Refresh Button */}
             <button
               onClick={() => {
