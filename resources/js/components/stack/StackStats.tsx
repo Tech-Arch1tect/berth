@@ -35,6 +35,7 @@ const formatBytes = (bytes: number): string => {
 };
 
 const formatPercent = (percent: number): string => {
+  if (percent < 0) return 'Calculating...';
   return `${percent.toFixed(1)}%`;
 };
 
@@ -43,6 +44,7 @@ const formatNumber = (num: number): string => {
 };
 
 const getUsageColor = (percent: number) => {
+  if (percent < 0) return 'from-slate-400 to-slate-500';
   if (percent >= 90) return 'from-red-500 to-pink-500';
   if (percent >= 70) return 'from-yellow-500 to-orange-500';
   if (percent >= 50) return 'from-blue-500 to-cyan-500';
@@ -50,6 +52,8 @@ const getUsageColor = (percent: number) => {
 };
 
 const getUsageBadgeStyle = (percent: number) => {
+  if (percent < 0)
+    return 'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800';
   if (percent >= 90)
     return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
   if (percent >= 70)
@@ -108,6 +112,14 @@ const MetricCard: React.FC<{
 };
 
 const ProgressBar: React.FC<{ percent: number; gradient: string }> = ({ percent, gradient }) => {
+  if (percent < 0) {
+    return (
+      <div className="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-3 overflow-hidden">
+        <div className="h-full bg-slate-400/50 rounded-full animate-pulse"></div>
+      </div>
+    );
+  }
+  
   return (
     <div className="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-3 overflow-hidden">
       <div
@@ -229,7 +241,7 @@ const StackStats: React.FC<StackStatsProps> = ({ containers, isLoading, error })
               Container Statistics
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Real-time metrics • Updates every 5 seconds • {containers.length} container
+              Real-time metrics • Updates every 1 second • {containers.length} container
               {containers.length !== 1 ? 's' : ''}
             </p>
           </div>
