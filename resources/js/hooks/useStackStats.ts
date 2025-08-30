@@ -42,7 +42,7 @@ export const useStackStats = (serverid: number, stackname: string, enabled: bool
     queryKey: ['stack-stats', serverid, stackname],
     queryFn: () => fetchStackStats(serverid, stackname),
     enabled: enabled && serverid > 0 && stackname.length > 0,
-    refetchInterval: enabled ? 5000 : false,
+    refetchInterval: enabled ? 1000 : false,
     staleTime: 1000,
   });
 };
