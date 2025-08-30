@@ -306,7 +306,7 @@ const StackStats: React.FC<StackStatsProps> = ({ containers, isLoading, error })
                 {/* Memory Usage */}
                 <MetricCard
                   title="Memory Usage"
-                  value={formatBytes(container.memory_usage)}
+                  value={formatBytes(container.memory_rss)}
                   subValue={`${formatPercent(container.memory_percent)} of ${formatBytes(container.memory_limit)}`}
                   percent={container.memory_percent}
                   icon={CircleStackIcon}
