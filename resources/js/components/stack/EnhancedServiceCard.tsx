@@ -370,7 +370,7 @@ export const EnhancedServiceCard: React.FC<EnhancedServiceCardProps> = ({
                               </div>
                               <span className="font-medium text-slate-900 dark:text-white">
                                 {container.restart_policy.name}
-                                {container.restart_policy.maximum_retry_count > 0 &&
+                                {(container.restart_policy.maximum_retry_count ?? 0) > 0 &&
                                   ` (max: ${container.restart_policy.maximum_retry_count})`}
                               </span>
                             </div>
