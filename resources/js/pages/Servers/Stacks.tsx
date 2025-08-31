@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { StackCard } from '../../components/StackCard';
+import { ServerNavigation } from '../../components/ServerNavigation';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 
@@ -55,6 +56,11 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
               </li>
             </ol>
           </nav>
+
+          {/* Server Navigation */}
+          <div className="mb-8">
+            <ServerNavigation serverId={serverid} serverName={server.name} />
+          </div>
 
           {/* Header */}
           <div className="mb-8">
