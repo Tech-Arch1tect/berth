@@ -5,6 +5,7 @@ import (
 	"berth/internal/agent"
 	"berth/internal/files"
 	"berth/internal/logs"
+	"berth/internal/maintenance"
 	"berth/internal/operations"
 	"berth/internal/rbac"
 	"berth/internal/server"
@@ -78,6 +79,9 @@ func main() {
 			fx.Provide(stack.NewService),
 			fx.Provide(stack.NewHandler),
 			fx.Provide(stack.NewAPIHandler),
+			fx.Provide(maintenance.NewService),
+			fx.Provide(maintenance.NewHandler),
+			fx.Provide(maintenance.NewAPIHandler),
 			files.Module,
 			logs.Module,
 			operations.Module,
