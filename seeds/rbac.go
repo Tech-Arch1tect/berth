@@ -13,6 +13,8 @@ func SeedRBACData(db *gorm.DB) error {
 		{Name: "files.read", Resource: "files", Action: "read", Description: "Read files within stacks"},
 		{Name: "files.write", Resource: "files", Action: "write", Description: "Modify files within stacks"},
 		{Name: "logs.read", Resource: "logs", Action: "read", Description: "View container logs"},
+		{Name: "docker.maintenance.read", Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)"},
+		{Name: "docker.maintenance.write", Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)"},
 	}
 
 	for _, permission := range permissions {
