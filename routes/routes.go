@@ -235,6 +235,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		admin.Use(rbacMiddleware.RequireRole("admin"))
 
 		admin.GET("/users", rbacHandler.ListUsers)
+		admin.POST("/users", rbacHandler.CreateUser)
 		admin.GET("/users/:id/roles", rbacHandler.ShowUserRoles)
 		admin.POST("/users/assign-role", rbacHandler.AssignRole)
 		admin.POST("/users/revoke-role", rbacHandler.RevokeRole)
@@ -329,6 +330,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiAdmin.Use(rbacMiddleware.RequireRoleJWT("admin"))
 
 			apiAdmin.GET("/users", rbacAPIHandler.ListUsers)
+			apiAdmin.POST("/users", rbacAPIHandler.CreateUser)
 			apiAdmin.GET("/users/:id/roles", rbacAPIHandler.GetUserRoles)
 			apiAdmin.POST("/users/assign-role", rbacAPIHandler.AssignRole)
 			apiAdmin.POST("/users/revoke-role", rbacAPIHandler.RevokeRole)

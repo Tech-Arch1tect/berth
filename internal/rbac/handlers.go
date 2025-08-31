@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/tech-arch1tect/brx/services/auth"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
@@ -15,13 +16,15 @@ type Handler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
 	rbac       *Service
+	authSvc    *auth.Service
 }
 
-func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service) *Handler {
+func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc *auth.Service) *Handler {
 	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		rbac:       rbac,
+		authSvc:    authSvc,
 	}
 }
 
@@ -35,6 +38,70 @@ func (h *Handler) ListUsers(c echo.Context) error {
 		"title": "User Management",
 		"users": users,
 	})
+}
+
+func (h *Handler) CreateUser(c echo.Context) error {
+	var req struct {
+		Username        string `form:"username" json:"username"`
+		Email           string `form:"email" json:"email"`
+		Password        string `form:"password" json:"password"`
+		PasswordConfirm string `form:"password_confirm" json:"password_confirm"`
+	}
+
+	if err := common.BindRequest(c, &req); err != nil {
+		session.AddFlashError(c, "Invalid request")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		session.AddFlashError(c, "All fields are required")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	if req.Password != req.PasswordConfirm {
+		session.AddFlashError(c, "Passwords do not match")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	if err := h.authSvc.ValidatePassword(req.Password); err != nil {
+		session.AddFlashError(c, err.Error())
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	var existingUser models.User
+	if err := h.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error; err == nil {
+		session.AddFlashError(c, "User with this username or email already exists")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	hashedPassword, err := h.authSvc.HashPassword(req.Password)
+	if err != nil {
+		session.AddFlashError(c, "Failed to process password")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	user := models.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: hashedPassword,
+	}
+
+	if err := h.db.Create(&user).Error; err != nil {
+		session.AddFlashError(c, "Failed to create user")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	if h.authSvc.IsEmailVerificationRequired() {
+		if err := h.authSvc.RequestEmailVerification(user.Email); err != nil {
+			session.AddFlashError(c, "User created but failed to send verification email")
+		} else {
+			session.AddFlashInfo(c, "User created successfully! A verification email has been sent.")
+		}
+	} else {
+		session.AddFlashSuccess(c, "User created successfully!")
+	}
+
+	return h.inertiaSvc.Redirect(c, "/admin/users")
 }
 
 func (h *Handler) ShowUserRoles(c echo.Context) error {
@@ -311,6 +378,6 @@ func (h *Handler) DeleteRoleStackPermission(c echo.Context) error {
 	return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 }
 
-func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service) *Handler {
-	return NewHandler(db, inertiaSvc, rbacSvc)
+func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service, authSvc *auth.Service) *Handler {
+	return NewHandler(db, inertiaSvc, rbacSvc, authSvc)
 }

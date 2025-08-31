@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/tech-arch1tect/brx/services/auth"
 	"github.com/tech-arch1tect/brx/services/totp"
 	"gorm.io/gorm"
 )
@@ -15,13 +16,15 @@ type APIHandler struct {
 	db      *gorm.DB
 	rbacSvc *Service
 	totpSvc *totp.Service
+	authSvc *auth.Service
 }
 
-func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service) *APIHandler {
+func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service) *APIHandler {
 	return &APIHandler{
 		db:      db,
 		rbacSvc: rbacSvc,
 		totpSvc: totpSvc,
+		authSvc: authSvc,
 	}
 }
 
@@ -39,6 +42,65 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 	return common.SendSuccess(c, map[string]any{
 		"users": userInfos,
 	})
+}
+
+func (h *APIHandler) CreateUser(c echo.Context) error {
+	var req struct {
+		Username        string `json:"username"`
+		Email           string `json:"email"`
+		Password        string `json:"password"`
+		PasswordConfirm string `json:"password_confirm"`
+	}
+
+	if err := common.BindRequest(c, &req); err != nil {
+		return err
+	}
+
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		return common.SendBadRequest(c, "username, email and password are required")
+	}
+
+	if req.Password != req.PasswordConfirm {
+		return common.SendBadRequest(c, "passwords do not match")
+	}
+
+	if err := h.authSvc.ValidatePassword(req.Password); err != nil {
+		return common.SendBadRequest(c, err.Error())
+	}
+
+	var existingUser models.User
+	if err := h.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error; err == nil {
+		return common.SendBadRequest(c, "user with this username or email already exists")
+	}
+
+	hashedPassword, err := h.authSvc.HashPassword(req.Password)
+	if err != nil {
+		return common.SendInternalError(c, "failed to process password")
+	}
+
+	user := models.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: hashedPassword,
+	}
+
+	if err := h.db.Create(&user).Error; err != nil {
+		return common.SendInternalError(c, "failed to create user")
+	}
+
+	if h.authSvc.IsEmailVerificationRequired() {
+		if err := h.authSvc.RequestEmailVerification(user.Email); err != nil {
+			return common.SendInternalError(c, "user created but failed to send verification email")
+		}
+	}
+
+	if err := h.db.Preload("Roles").First(&user, user.ID).Error; err != nil {
+		return common.SendInternalError(c, "failed to load created user")
+	}
+
+	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
+
+	return common.SendCreated(c, userInfo)
 }
 
 func (h *APIHandler) GetUserRoles(c echo.Context) error {
