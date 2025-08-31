@@ -4,7 +4,7 @@ Please verify your email address
 
 Hello {{.Email}},
 
-Thank you for registering with {{.AppName}}! To complete your registration and start using your account, please verify your email address by clicking the link below:
+Please verify your email address by clicking the link below to ensure account security:
 
 {{.VerificationURL}}
 

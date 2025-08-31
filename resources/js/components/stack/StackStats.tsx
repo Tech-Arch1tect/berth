@@ -119,7 +119,7 @@ const ProgressBar: React.FC<{ percent: number; gradient: string }> = ({ percent,
       </div>
     );
   }
-  
+
   return (
     <div className="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-3 overflow-hidden">
       <div

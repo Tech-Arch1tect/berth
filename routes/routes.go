@@ -86,8 +86,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 	auth.GET("/login", authHandler.ShowLogin)
 	auth.POST("/login", authHandler.Login)
-	auth.GET("/register", authHandler.ShowRegister)
-	auth.POST("/register", authHandler.Register)
 	auth.POST("/logout", authHandler.Logout)
 
 	auth.GET("/password-reset", authHandler.ShowPasswordReset)
@@ -273,7 +271,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		api.Use(apiRateLimit)
 
 		api.POST("/auth/login", mobileAuthHandler.Login)
-		api.POST("/auth/register", mobileAuthHandler.Register)
 		api.POST("/auth/refresh", mobileAuthHandler.RefreshToken)
 		api.POST("/auth/totp/verify", mobileAuthHandler.VerifyTOTP)
 

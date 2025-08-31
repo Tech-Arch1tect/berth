@@ -161,18 +161,6 @@ export default function Login({
                     </form>
                   </div>
                 )}
-
-                <div className="text-center">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Don't have an account?{' '}
-                    <Link
-                      href="/auth/register"
-                      className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                    >
-                      Create account
-                    </Link>
-                  </p>
-                </div>
               </div>
             </form>
           </div>

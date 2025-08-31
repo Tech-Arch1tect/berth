@@ -4,7 +4,7 @@ A brx starter application with authentication, database, and sessions.
 
 ## What's included
 
-- User registration and login
+- User login
 - Session management
 - Database with GORM (SQLite by default)
 - Structured logging
