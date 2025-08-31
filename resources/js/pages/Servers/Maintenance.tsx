@@ -406,57 +406,174 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           {activeTab === 'overview' && (
             <>
               {/* System Information */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                    <ServerIcon className="h-5 w-5 text-blue-600 mr-2" />
+                    System Information
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Docker Version
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.version}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          API Version
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.api_version}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Server Version
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.server_version}
+                        </dd>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Architecture
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.architecture}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Operating System
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.os}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Kernel Version
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.kernel_version}
+                        </dd>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          CPU Cores
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.ncpu}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Total Memory
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {formatBytes(maintenanceInfo.system_info.total_memory)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Storage Driver
+                        </dt>
+                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                          {maintenanceInfo.system_info.storage_driver}
+                        </dd>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Docker Root Directory
+                      </dt>
+                      <dd className="text-sm text-gray-900 dark:text-white font-mono break-all">
+                        {maintenanceInfo.system_info.docker_root_dir}
+                      </dd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resource Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center">
-                    <ServerIcon className="h-8 w-8 text-blue-600" />
+                    <DocumentDuplicateIcon className="h-8 w-8 text-blue-600" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Images</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {maintenanceInfo.image_summary.total_count}
+                      </p>
+                      {maintenanceInfo.image_summary.unused_count > 0 && (
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          {maintenanceInfo.image_summary.unused_count} unused
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center">
+                    <CircleStackIcon className="h-8 w-8 text-green-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Docker Version
+                        Containers
                       </p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {maintenanceInfo.system_info.version}
+                        {maintenanceInfo.container_summary.total_count}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        {maintenanceInfo.container_summary.running_count} running
                       </p>
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center">
-                    <CpuChipIcon className="h-8 w-8 text-green-600" />
+                    <FolderIcon className="h-8 w-8 text-purple-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        CPU Cores
+                        Volumes
                       </p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {maintenanceInfo.system_info.ncpu}
+                        {maintenanceInfo.volume_summary.total_count}
                       </p>
+                      {maintenanceInfo.volume_summary.unused_count > 0 && (
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          {maintenanceInfo.volume_summary.unused_count} unused
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center">
-                    <ChartBarIcon className="h-8 w-8 text-purple-600" />
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Memory</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatBytes(maintenanceInfo.system_info.total_memory)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center">
-                    <FolderIcon className="h-8 w-8 text-orange-600" />
+                    <GlobeAltIcon className="h-8 w-8 text-indigo-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Total Disk Usage
+                        Networks
                       </p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatBytes(maintenanceInfo.disk_usage.total_size)}
+                        {maintenanceInfo.network_summary.total_count}
                       </p>
+                      {maintenanceInfo.network_summary.unused_count > 0 && (
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          {maintenanceInfo.network_summary.unused_count} unused
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -583,6 +700,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         Tag
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Image ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Size
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -604,6 +724,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {image.tag || '<none>'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                          {image.id.substring(0, 12)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {formatBytes(image.size)}
@@ -654,6 +777,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Container ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Image
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -675,6 +801,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                       <tr key={container.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                           {container.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                          {container.id.substring(0, 12)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {container.image}
@@ -737,6 +866,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         Size
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -758,6 +890,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {formatBytes(volume.size)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          {formatDate(volume.created)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge('active', volume.unused)}
@@ -802,6 +937,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Network ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Driver
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -828,6 +966,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                               Internal
                             </span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                          {network.id.substring(0, 12)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {network.driver}
