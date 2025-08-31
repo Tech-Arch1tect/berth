@@ -1,5 +1,5 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 
@@ -20,9 +20,34 @@ interface Role {
 interface Props {
   title: string;
   users: User[];
+  csrfToken?: string;
 }
 
-export default function AdminUsers({ title, users }: Props) {
+export default function AdminUsers({ title, users, csrfToken }: Props) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { props } = usePage();
+  const actualCsrfToken = csrfToken || (props.csrfToken as string | undefined);
+
+  const { data, setData, post, processing, errors, reset } = useForm({
+    username: '',
+    email: '',
+    password: '',
+    password_confirm: '',
+  });
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    post('/admin/users', {
+      headers: {
+        'X-CSRF-Token': actualCsrfToken || '',
+      },
+      onSuccess: () => {
+        reset();
+        setShowCreateForm(false);
+      },
+    });
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       year: 'numeric',
@@ -42,9 +67,147 @@ export default function AdminUsers({ title, users }: Props) {
               {title}
             </h2>
           </div>
+          <div className="mt-4 flex md:mt-0 md:ml-4">
+            <button
+              type="button"
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {showCreateForm ? 'Cancel' : 'Create User'}
+            </button>
+          </div>
         </div>
 
         <FlashMessages />
+
+        {showCreateForm && (
+          <div className="mt-8 max-w-md">
+            <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                  Create New User
+                </h3>
+                <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+                  <p>
+                    Add a new user to the system. They will be able to log in with the credentials
+                    you provide.
+                  </p>
+                </div>
+                <form onSubmit={handleCreateUser} className="mt-5">
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="username"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Username
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          id="username"
+                          value={data.username}
+                          onChange={(e) => setData('username', e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter username"
+                        />
+                        {errors.username && (
+                          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Email
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="email"
+                          id="email"
+                          value={data.email}
+                          onChange={(e) => setData('email', e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter email address"
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Password
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="password"
+                          id="password"
+                          value={data.password}
+                          onChange={(e) => setData('password', e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter password"
+                        />
+                        {errors.password && (
+                          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="password_confirm"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Confirm Password
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="password"
+                          id="password_confirm"
+                          value={data.password_confirm}
+                          onChange={(e) => setData('password_confirm', e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                          placeholder="Confirm password"
+                        />
+                        {errors.password_confirm && (
+                          <p className="mt-1 text-sm text-red-600">{errors.password_confirm}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        reset();
+                      }}
+                      className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={processing}
+                      className="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processing ? 'Creating...' : 'Create User'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 flex flex-col">
           <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
