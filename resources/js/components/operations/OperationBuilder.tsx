@@ -52,7 +52,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [timeoutValue, setTimeoutValue] = useState('30');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
 
   useEffect(() => {
     setSelectedOptions([]);
@@ -193,41 +193,52 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Services (optional)
+              Services (leave empty for all)
             </label>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              {showAdvanced ? 'Hide' : 'Show'} Service Selection
-            </button>
+            {selectedServices.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedServices([])}
+                disabled={disabled}
+                className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+              >
+                Clear all
+              </button>
+            )}
           </div>
 
-          {showAdvanced && (
-            <div className="space-y-2 p-3 border border-gray-200 rounded-lg dark:border-gray-600">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Leave empty to run on all services
-              </div>
-              {services.map((service) => (
-                <label key={service.name} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedServices.includes(service.service_name || service.name)}
-                    onChange={() => handleServiceToggle(service.service_name || service.name)}
-                    disabled={disabled}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {services.map((service) => {
+              const serviceName = service.service_name || service.name;
+              const isSelected = selectedServices.includes(serviceName);
+
+              return (
+                <button
+                  key={service.name}
+                  onClick={() => handleServiceToggle(serviceName)}
+                  disabled={disabled}
+                  className={`
+                    p-2 text-left rounded-lg border transition-all duration-200 text-sm
+                    ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-200'
+                        : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300'
+                    }
+                    ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  <div className="font-medium truncate" title={service.name}>
                     {service.name}
-                    {service.service_name && service.service_name !== service.name && (
-                      <span className="text-gray-500 ml-1">({service.service_name})</span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
+                  </div>
+                  {service.service_name && service.service_name !== service.name && (
+                    <div className="text-xs opacity-70 truncate" title={service.service_name}>
+                      ({service.service_name})
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -696,9 +696,9 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         serverid={String(serverid)}
         stackname={stackname}
         services={
-          stackStats?.containers?.map((container) => ({
-            name: container.name,
-            service_name: container.service_name,
+          stackDetails?.services?.map((service) => ({
+            name: service.name,
+            service_name: service.name,
           })) || []
         }
         onOperationComplete={(success, _exitCode) => {
