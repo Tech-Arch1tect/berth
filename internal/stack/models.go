@@ -193,3 +193,9 @@ type ServiceEnvironment struct {
 	ServiceName string                `json:"service_name,omitempty"`
 	Variables   []EnvironmentVariable `json:"variables"`
 }
+
+type StackSummary struct {
+	TotalStacks     int `json:"total_stacks"`
+	HealthyStacks   int `json:"healthy_stacks"`
+	UnhealthyStacks int `json:"unhealthy_stacks"`
+}

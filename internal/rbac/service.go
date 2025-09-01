@@ -453,3 +453,43 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 func (s *Service) DeleteRoleStackPermission(permissionID uint) error {
 	return s.db.Delete(&models.ServerRoleStackPermission{}, permissionID).Error
 }
+
+func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]string, error) {
+	var user models.User
+	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	for _, role := range user.Roles {
+		if role.IsAdmin {
+			return []string{"*"}, nil
+		}
+	}
+
+	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	err := s.db.Preload("Permission").
+		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
+		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
+		Find(&serverRoleStackPermissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	patternSet := make(map[string]bool)
+	for _, srsp := range serverRoleStackPermissions {
+		if srsp.Permission.Name == "stacks.read" {
+			patternSet[srsp.StackPattern] = true
+		}
+	}
+
+	patterns := make([]string, 0, len(patternSet))
+	for pattern := range patternSet {
+		patterns = append(patterns, pattern)
+	}
+
+	return patterns, nil
+}

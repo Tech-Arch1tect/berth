@@ -160,6 +160,10 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 	}
 
+	if serverUserAPIHandler != nil {
+		protected.GET("/api/servers/statistics", serverUserAPIHandler.ListServersWithStatistics)
+	}
+
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
 	protected.POST("/auth/totp/enable", totpHandler.EnableTOTP)
 	protected.POST("/auth/totp/disable", totpHandler.DisableTOTP)

@@ -4,6 +4,7 @@ import (
 	"berth/internal/rbac"
 	"berth/models"
 	"berth/utils"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -11,6 +12,16 @@ import (
 
 	"gorm.io/gorm"
 )
+
+type StackSummary struct {
+	TotalStacks     int `json:"total_stacks"`
+	HealthyStacks   int `json:"healthy_stacks"`
+	UnhealthyStacks int `json:"unhealthy_stacks"`
+}
+
+type StackService interface {
+	GetServerStackSummary(ctx context.Context, userID uint, serverID uint) (*StackSummary, error)
+}
 
 type Service struct {
 	db      *gorm.DB
@@ -158,6 +169,40 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 	responses := make([]models.ServerResponse, len(servers))
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
+	}
+
+	return responses, nil
+}
+
+func (s *Service) ListServersForUserWithStatistics(userID uint, stackService StackService) ([]models.ServerWithStatistics, error) {
+	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(serverIDs) == 0 {
+		return []models.ServerWithStatistics{}, nil
+	}
+
+	var servers []models.Server
+	if err := s.db.Where("id IN ?", serverIDs).Find(&servers).Error; err != nil {
+		return nil, err
+	}
+
+	responses := make([]models.ServerWithStatistics, len(servers))
+	for i, server := range servers {
+		var statistics *models.StackStatistics
+
+		summary, err := stackService.GetServerStackSummary(context.Background(), userID, server.ID)
+		if err == nil && summary != nil {
+			statistics = &models.StackStatistics{
+				TotalStacks:     summary.TotalStacks,
+				HealthyStacks:   summary.HealthyStacks,
+				UnhealthyStacks: summary.UnhealthyStacks,
+			}
+		}
+
+		responses[i] = server.ToResponseWithStatistics(statistics)
 	}
 
 	return responses, nil
