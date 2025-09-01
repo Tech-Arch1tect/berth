@@ -10,6 +10,7 @@ import (
 	"berth/internal/rbac"
 	"berth/internal/server"
 	"berth/internal/setup"
+	"berth/internal/ssl"
 	"berth/internal/stack"
 	"berth/internal/websocket"
 	"berth/models"
@@ -46,6 +47,12 @@ func main() {
 		panic("CUSTOM_ENCRYPTION_SECRET must be at least 16 characters long for security. Please use a longer secret key. You can generate one with: openssl rand -base64 32")
 	}
 
+	certManager := ssl.NewCertificateManager()
+	certFile, keyFile, err := certManager.EnsureCertificates()
+	if err != nil {
+		panic(err)
+	}
+
 	brx.New(
 		brx.WithConfig(&cfg.Config),
 		brx.WithMail(),
@@ -56,6 +63,7 @@ func main() {
 		brx.WithTOTP(),
 		brx.WithJWT(),
 		brx.WithJWTRevocation(),
+		brx.WithSSL(certFile, keyFile),
 		brx.WithFxOptions(
 			websocket.Module,
 			jwt.Options,

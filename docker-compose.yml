@@ -11,6 +11,7 @@ services:
     volumes:
       - ./app.db:/app/app.db # if using sqlite
       - ./.env:/app/.env
+      - ./ssl:/app/ssl
     networks:
       - berth-network
 
