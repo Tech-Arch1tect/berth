@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Server } from '../types/server';
+import { useServerStatistics } from '../hooks/useServerStatistics';
 import {
   ServerIcon,
   ChevronRightIcon,
@@ -10,15 +11,14 @@ import {
 
 interface ServerCardProps {
   server: Server;
-  statisticsLoading?: boolean;
-  statisticsError?: Error | null;
 }
 
-export default function ServerCard({
-  server,
-  statisticsLoading,
-  statisticsError,
-}: ServerCardProps) {
+export default function ServerCard({ server }: ServerCardProps) {
+  const {
+    data: statistics,
+    isLoading: statisticsLoading,
+    error: statisticsError,
+  } = useServerStatistics(server.id);
   const statusConfig = {
     online: {
       color: 'emerald',
@@ -96,23 +96,23 @@ export default function ServerCard({
                     <span className="text-sm">Failed to load statistics</span>
                   </div>
                 </div>
-              ) : server.statistics ? (
+              ) : statistics ? (
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-center p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                     <div className="text-lg font-semibold text-slate-900 dark:text-white">
-                      {server.statistics.total_stacks}
+                      {statistics.total_stacks}
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
                   </div>
                   <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                     <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
-                      {server.statistics.healthy_stacks}
+                      {statistics.healthy_stacks}
                     </div>
                     <div className="text-xs text-emerald-600 dark:text-emerald-400">Healthy</div>
                   </div>
                   <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                     <div className="text-lg font-semibold text-red-700 dark:text-red-300">
-                      {server.statistics.unhealthy_stacks}
+                      {statistics.unhealthy_stacks}
                     </div>
                     <div className="text-xs text-red-600 dark:text-red-400">Unhealthy</div>
                   </div>

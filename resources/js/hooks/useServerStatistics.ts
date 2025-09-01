@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Server } from '../types/server';
+import { StackStatistics } from '../types/server';
 
 interface ServerStatisticsResponse {
-  servers: Server[];
+  statistics: StackStatistics;
 }
 
-const fetchServerStatistics = async (): Promise<Server[]> => {
-  const response = await fetch('/api/servers/statistics', {
+const fetchServerStatistics = async (serverId: number): Promise<StackStatistics> => {
+  const response = await fetch(`/api/servers/${serverId}/statistics`, {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
@@ -18,14 +18,14 @@ const fetchServerStatistics = async (): Promise<Server[]> => {
   }
 
   const data: ServerStatisticsResponse = await response.json();
-  return data.servers;
+  return data.statistics;
 };
 
-export const useServerStatistics = () => {
+export const useServerStatistics = (serverId: number) => {
   return useQuery({
-    queryKey: ['server-statistics'],
-    queryFn: fetchServerStatistics,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['server-statistics', serverId],
+    queryFn: () => fetchServerStatistics(serverId),
+    staleTime: 1 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
