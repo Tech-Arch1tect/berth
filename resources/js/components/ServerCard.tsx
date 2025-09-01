@@ -1,12 +1,24 @@
 import { Link } from '@inertiajs/react';
 import { Server } from '../types/server';
-import { ServerIcon, ChevronRightIcon, WifiIcon, NoSymbolIcon } from '@heroicons/react/24/outline';
+import {
+  ServerIcon,
+  ChevronRightIcon,
+  WifiIcon,
+  NoSymbolIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 
 interface ServerCardProps {
   server: Server;
+  statisticsLoading?: boolean;
+  statisticsError?: Error | null;
 }
 
-export default function ServerCard({ server }: ServerCardProps) {
+export default function ServerCard({
+  server,
+  statisticsLoading,
+  statisticsError,
+}: ServerCardProps) {
   const statusConfig = {
     online: {
       color: 'emerald',
@@ -76,11 +88,55 @@ export default function ServerCard({ server }: ServerCardProps) {
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                Docker Stack Management
-              </span>
-              <ChevronRightIcon className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" />
+            <div className="space-y-2">
+              {statisticsError ? (
+                <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="flex items-center justify-center space-x-2 text-red-600 dark:text-red-400">
+                    <ExclamationTriangleIcon className="w-4 h-4" />
+                    <span className="text-sm">Failed to load statistics</span>
+                  </div>
+                </div>
+              ) : server.statistics ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <div className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {server.statistics.total_stacks}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
+                  </div>
+                  <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                    <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                      {server.statistics.healthy_stacks}
+                    </div>
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400">Healthy</div>
+                  </div>
+                  <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <div className="text-lg font-semibold text-red-700 dark:text-red-300">
+                      {server.statistics.unhealthy_stacks}
+                    </div>
+                    <div className="text-xs text-red-600 dark:text-red-400">Unhealthy</div>
+                  </div>
+                </div>
+              ) : statisticsLoading ? (
+                <div className="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    Loading stack statistics...
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    No statistics available
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  Docker Stack Management
+                </span>
+                <ChevronRightIcon className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" />
+              </div>
             </div>
           </div>
         </div>
