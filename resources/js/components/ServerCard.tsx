@@ -72,8 +72,7 @@ export default function ServerCard({ server }: ServerCardProps) {
           <div className="space-y-2">
             <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
               <span className="font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
-                {server.use_https ? 'https://' : 'http://'}
-                {server.host}:{server.port}
+                https://{server.host}:{server.port}
               </span>
             </div>
 

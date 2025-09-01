@@ -9,7 +9,7 @@ interface Server {
   description: string;
   host: string;
   port: number;
-  use_https: boolean;
+  skip_ssl_verification: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -31,7 +31,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     description: '',
     host: '',
     port: 8080,
-    use_https: false,
+    skip_ssl_verification: true,
     access_token: '',
     is_active: true,
   });
@@ -82,7 +82,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
       description: server.description,
       host: server.host,
       port: server.port,
-      use_https: server.use_https,
+      skip_ssl_verification: server.skip_ssl_verification,
       access_token: '',
       is_active: server.is_active,
     });
@@ -224,12 +224,12 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                   <div className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={data.use_https}
-                      onChange={(e) => setData('use_https', e.target.checked)}
+                      checked={data.skip_ssl_verification}
+                      onChange={(e) => setData('skip_ssl_verification', e.target.checked)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                      Use HTTPS
+                      Skip SSL Verification
                     </label>
                   </div>
                   <div className="sm:col-span-2">
@@ -330,7 +330,12 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-white">
-                            {server.use_https ? 'https' : 'http'}://{server.host}:{server.port}
+                            https://{server.host}:{server.port}
+                            {server.skip_ssl_verification && (
+                              <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">
+                                (No SSL Verification)
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

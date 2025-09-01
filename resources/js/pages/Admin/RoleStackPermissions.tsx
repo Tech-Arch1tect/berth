@@ -17,7 +17,7 @@ interface Server {
   description: string;
   host: string;
   port: number;
-  use_https: boolean;
+  skip_ssl_verification: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
