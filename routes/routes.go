@@ -275,20 +275,30 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	if mobileAuthHandler != nil && jwtSvc != nil {
 		api := srv.Group("/api/v1")
 
-		apiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
+		authApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
 			Store:        rateLimitStore,
-			Rate:         50,
-			Period:       time.Minute * 3,
+			Rate:         25,
+			Period:       time.Minute,
+			CountMode:    config.CountFailures,
+			KeyGenerator: ratelimit.SecureKeyGenerator,
+		})
+
+		generalApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
+			Store:        rateLimitStore,
+			Rate:         1000,
+			Period:       time.Minute * 10,
 			CountMode:    config.CountAll,
 			KeyGenerator: ratelimit.DefaultKeyGenerator,
 		})
-		api.Use(apiRateLimit)
 
-		api.POST("/auth/login", mobileAuthHandler.Login)
-		api.POST("/auth/refresh", mobileAuthHandler.RefreshToken)
-		api.POST("/auth/totp/verify", mobileAuthHandler.VerifyTOTP)
+		authApi := api.Group("/auth")
+		authApi.Use(authApiRateLimit)
+		authApi.POST("/login", mobileAuthHandler.Login)
+		authApi.POST("/refresh", mobileAuthHandler.RefreshToken)
+		authApi.POST("/totp/verify", mobileAuthHandler.VerifyTOTP)
 
 		apiProtected := api.Group("")
+		apiProtected.Use(generalApiRateLimit)
 		apiProtected.Use(jwt.RequireJWT(jwtSvc))
 		apiProtected.Use(jwtshared.MiddlewareWithConfig(jwtshared.Config{
 			UserProvider: userProvider,
