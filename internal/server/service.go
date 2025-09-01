@@ -1,39 +1,36 @@
 package server
 
 import (
+	"berth/internal/agent"
 	"berth/internal/rbac"
 	"berth/models"
 	"berth/utils"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"slices"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 )
 
-type StackSummary struct {
-	TotalStacks     int `json:"total_stacks"`
-	HealthyStacks   int `json:"healthy_stacks"`
-	UnhealthyStacks int `json:"unhealthy_stacks"`
-}
-
-type StackService interface {
-	GetServerStackSummary(ctx context.Context, userID uint, serverID uint) (*StackSummary, error)
-}
-
 type Service struct {
-	db      *gorm.DB
-	crypto  *utils.Crypto
-	rbacSvc *rbac.Service
+	db       *gorm.DB
+	crypto   *utils.Crypto
+	rbacSvc  *rbac.Service
+	agentSvc *agent.Service
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service) *Service {
+func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service) *Service {
 	return &Service{
-		db:      db,
-		crypto:  crypto,
-		rbacSvc: rbacSvc,
+		db:       db,
+		crypto:   crypto,
+		rbacSvc:  rbacSvc,
+		agentSvc: agentSvc,
 	}
 }
 
@@ -174,36 +171,54 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 	return responses, nil
 }
 
-func (s *Service) ListServersForUserWithStatistics(userID uint, stackService StackService) ([]models.ServerWithStatistics, error) {
-	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+func (s *Service) GetServerStatistics(userID uint, serverID uint) (*models.StackStatistics, error) {
+
+	accessibleServerIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(serverIDs) == 0 {
-		return []models.ServerWithStatistics{}, nil
+	hasAccess := slices.Contains(accessibleServerIDs, serverID)
+
+	if !hasAccess {
+		return nil, fmt.Errorf("user does not have access to server")
 	}
 
-	var servers []models.Server
-	if err := s.db.Where("id IN ?", serverIDs).Find(&servers).Error; err != nil {
-		return nil, err
+	patterns, err := s.rbacSvc.GetUserAccessibleStackPatterns(userID, serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user accessible patterns: %w", err)
 	}
 
-	responses := make([]models.ServerWithStatistics, len(servers))
-	for i, server := range servers {
-		var statistics *models.StackStatistics
-
-		summary, err := stackService.GetServerStackSummary(context.Background(), userID, server.ID)
-		if err == nil && summary != nil {
-			statistics = &models.StackStatistics{
-				TotalStacks:     summary.TotalStacks,
-				HealthyStacks:   summary.HealthyStacks,
-				UnhealthyStacks: summary.UnhealthyStacks,
-			}
-		}
-
-		responses[i] = server.ToResponseWithStatistics(statistics)
+	if len(patterns) == 0 {
+		return &models.StackStatistics{
+			TotalStacks:     0,
+			HealthyStacks:   0,
+			UnhealthyStacks: 0,
+		}, nil
 	}
 
-	return responses, nil
+	server, err := s.GetServer(serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	patternsParam := strings.Join(patterns, ",")
+	endpoint := fmt.Sprintf("/stacks/summary?patterns=%s", url.QueryEscape(patternsParam))
+
+	resp, err := s.agentSvc.MakeRequest(context.Background(), server, "GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request to agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("agent returned error: %s", resp.Status)
+	}
+
+	var stackSummary models.StackStatistics
+	if err := json.NewDecoder(resp.Body).Decode(&stackSummary); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	return &stackSummary, nil
 }

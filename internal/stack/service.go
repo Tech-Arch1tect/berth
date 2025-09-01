@@ -9,8 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
 type Service struct {
@@ -280,44 +278,4 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 	}
 
 	return &stackStats, nil
-}
-
-func (s *Service) GetServerStackSummary(ctx context.Context, userID uint, serverID uint) (*StackSummary, error) {
-	patterns, err := s.rbacSvc.GetUserAccessibleStackPatterns(userID, serverID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user accessible patterns: %w", err)
-	}
-
-	if len(patterns) == 0 {
-		return &StackSummary{
-			TotalStacks:     0,
-			HealthyStacks:   0,
-			UnhealthyStacks: 0,
-		}, nil
-	}
-
-	server, err := s.serverSvc.GetServer(serverID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get server: %w", err)
-	}
-
-	patternsParam := strings.Join(patterns, ",")
-	endpoint := fmt.Sprintf("/stacks/summary?patterns=%s", url.QueryEscape(patternsParam))
-
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request to agent: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("agent returned error: %s", resp.Status)
-	}
-
-	var stackSummary StackSummary
-	if err := json.NewDecoder(resp.Body).Decode(&stackSummary); err != nil {
-		return nil, fmt.Errorf("failed to decode agent response: %w", err)
-	}
-
-	return &stackSummary, nil
 }

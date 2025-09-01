@@ -18,7 +18,6 @@ import (
 	"berth/routes"
 	"berth/seeds"
 	"berth/utils"
-	"context"
 
 	"github.com/tech-arch1tect/brx"
 	"github.com/tech-arch1tect/brx/config"
@@ -84,7 +83,6 @@ func main() {
 			fx.Provide(server.NewService),
 			fx.Provide(server.NewHandler),
 			fx.Provide(server.NewAPIHandler),
-			fx.Provide(NewStackServiceAdapter),
 			fx.Provide(server.NewUserAPIHandler),
 			fx.Provide(stack.NewService),
 			fx.Provide(stack.NewHandler),
@@ -122,27 +120,4 @@ func main() {
 
 func StartWebSocketHub(hub *websocket.Hub) {
 	go hub.Run()
-}
-
-// Dependency injection adapters required due to import cycle issues
-// TODO work out better architecture to resolve import cycle issues without requiring these adapters
-type StackServiceAdapter struct {
-	stackService *stack.Service
-}
-
-func NewStackServiceAdapter(stackService *stack.Service) server.StackService {
-	return &StackServiceAdapter{stackService: stackService}
-}
-
-func (s *StackServiceAdapter) GetServerStackSummary(ctx context.Context, userID uint, serverID uint) (*server.StackSummary, error) {
-	summary, err := s.stackService.GetServerStackSummary(ctx, userID, serverID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &server.StackSummary{
-		TotalStacks:     summary.TotalStacks,
-		HealthyStacks:   summary.HealthyStacks,
-		UnhealthyStacks: summary.UnhealthyStacks,
-	}, nil
 }

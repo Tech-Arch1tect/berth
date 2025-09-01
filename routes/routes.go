@@ -161,7 +161,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	}
 
 	if serverUserAPIHandler != nil {
-		protected.GET("/api/servers/statistics", serverUserAPIHandler.ListServersWithStatistics)
+		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
