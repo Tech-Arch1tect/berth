@@ -307,6 +307,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		if serverUserAPIHandler != nil {
 			apiProtected.GET("/servers", serverUserAPIHandler.ListServers)
+			apiProtected.GET("/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 		}
 
 		if stackAPIHandler != nil {
