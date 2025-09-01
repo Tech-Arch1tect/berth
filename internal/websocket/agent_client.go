@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -114,13 +115,17 @@ func (ac *AgentClient) connect() {
 }
 
 func (ac *AgentClient) attemptConnection() error {
-	wsURL := fmt.Sprintf("ws://%s:%d/ws/agent/status", ac.server.Host, ac.server.Port)
+	wsURL := fmt.Sprintf("wss://%s:%d/ws/agent/status", ac.server.Host, ac.server.Port)
 
 	headers := make(map[string][]string)
 	headers["Authorization"] = []string{fmt.Sprintf("Bearer %s", ac.server.AccessToken)}
 
 	dialer := websocket.DefaultDialer
 	dialer.HandshakeTimeout = 10 * time.Second
+
+	if ac.server.SkipSSLVerification != nil && *ac.server.SkipSSLVerification {
+		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	conn, _, err := dialer.Dial(wsURL, headers)
 	if err != nil {

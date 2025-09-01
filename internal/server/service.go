@@ -4,6 +4,7 @@ import (
 	"berth/internal/rbac"
 	"berth/models"
 	"berth/utils"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -90,7 +91,7 @@ func (s *Service) UpdateServer(id uint, updates *models.Server) (*models.Server,
 		updates.AccessToken = encryptedToken
 	}
 
-	if err := s.db.Model(&server).Updates(updates).Error; err != nil {
+	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active").Updates(updates).Error; err != nil {
 		return nil, err
 	}
 
@@ -110,6 +111,12 @@ func (s *Service) DeleteServer(id uint) error {
 func (s *Service) TestServerConnection(server *models.Server) error {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
+	}
+
+	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
 	}
 
 	url := server.GetAPIURL() + "/health"

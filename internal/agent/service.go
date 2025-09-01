@@ -4,6 +4,7 @@ import (
 	"berth/models"
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,16 +13,24 @@ import (
 	"time"
 )
 
-type Service struct {
-	client *http.Client
-}
+type Service struct{}
 
 func NewService() *Service {
-	return &Service{
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+	return &Service{}
+}
+
+func (s *Service) getClient(server *models.Server) *http.Client {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
 	}
+
+	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	return client
 }
 
 func (s *Service) MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error) {
@@ -46,7 +55,8 @@ func (s *Service) MakeRequest(ctx context.Context, server *models.Server, method
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := s.client.Do(req)
+	client := s.getClient(server)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to %s: %w", url, err)
 	}
@@ -94,7 +104,8 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *models.Serve
 	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	resp, err := s.client.Do(req)
+	client := s.getClient(server)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to %s: %w", url, err)
 	}

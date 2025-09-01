@@ -142,32 +142,22 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *models.Serv
 
 	var client *http.Client
 	if strings.Contains(endpoint, "/stream") {
-
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-			},
-		}
+		client = &http.Client{}
 	} else {
-
 		client = &http.Client{
 			Timeout: 30 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+		}
+	}
+
+	if serverModel.SkipSSLVerification != nil && *serverModel.SkipSSLVerification {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
 			},
 		}
 	}
 
-	scheme := "http"
-	if serverModel.UseHTTPS {
-		scheme = "https"
-	}
-
-	agentURL := fmt.Sprintf("%s://%s:%d%s", scheme, serverModel.Host, serverModel.Port, endpoint)
+	agentURL := fmt.Sprintf("https://%s:%d%s", serverModel.Host, serverModel.Port, endpoint)
 
 	var bodyReader io.Reader
 	if body != nil {

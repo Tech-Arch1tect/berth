@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -166,15 +167,14 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 		return common.SendNotFound(c, "Server not found")
 	}
 
-	scheme := "ws"
-	if server.UseHTTPS {
-		scheme = "wss"
-	}
-
-	agentWSURL := fmt.Sprintf("%s://%s:%d/ws/terminal", scheme, server.Host, server.Port)
+	agentWSURL := fmt.Sprintf("wss://%s:%d/ws/terminal", server.Host, server.Port)
 
 	dialer := websocket.Dialer{
 		HandshakeTimeout: 10 * time.Second,
+	}
+
+	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
+		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	headers := make(http.Header)

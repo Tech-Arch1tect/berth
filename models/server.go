@@ -6,33 +6,29 @@ import (
 
 type Server struct {
 	BaseModel
-	Name        string `json:"name" gorm:"not null"`
-	Description string `json:"description"`
-	Host        string `json:"host" gorm:"not null"`
-	Port        int    `json:"port" gorm:"not null;default:8080"`
-	UseHTTPS    bool   `json:"use_https" gorm:"default:false"`
-	AccessToken string `json:"access_token" gorm:"not null"`
-	IsActive    bool   `json:"is_active" gorm:"default:true"`
+	Name                string `json:"name" gorm:"not null"`
+	Description         string `json:"description"`
+	Host                string `json:"host" gorm:"not null"`
+	Port                int    `json:"port" gorm:"not null;default:8080"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification" gorm:"default:true"`
+	AccessToken         string `json:"access_token" gorm:"not null"`
+	IsActive            bool   `json:"is_active" gorm:"default:true"`
 }
 
 type ServerResponse struct {
-	ID          uint   `json:"id"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Host        string `json:"host"`
-	Port        int    `json:"port"`
-	UseHTTPS    bool   `json:"use_https"`
-	IsActive    bool   `json:"is_active"`
+	ID                  uint   `json:"id"`
+	CreatedAt           string `json:"created_at"`
+	UpdatedAt           string `json:"updated_at"`
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	Host                string `json:"host"`
+	Port                int    `json:"port"`
+	SkipSSLVerification bool   `json:"skip_ssl_verification"`
+	IsActive            bool   `json:"is_active"`
 }
 
 func (s *Server) GetBaseURL() string {
-	protocol := "http"
-	if s.UseHTTPS {
-		protocol = "https"
-	}
-	return fmt.Sprintf("%s://%s:%d", protocol, s.Host, s.Port)
+	return fmt.Sprintf("https://%s:%d", s.Host, s.Port)
 }
 
 func (s *Server) GetAPIURL() string {
@@ -40,15 +36,20 @@ func (s *Server) GetAPIURL() string {
 }
 
 func (s *Server) ToResponse() ServerResponse {
+	skipSSL := true
+	if s.SkipSSLVerification != nil {
+		skipSSL = *s.SkipSSLVerification
+	}
+
 	return ServerResponse{
-		ID:          s.ID,
-		CreatedAt:   s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:   s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Name:        s.Name,
-		Description: s.Description,
-		Host:        s.Host,
-		Port:        s.Port,
-		UseHTTPS:    s.UseHTTPS,
-		IsActive:    s.IsActive,
+		ID:                  s.ID,
+		CreatedAt:           s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:           s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Name:                s.Name,
+		Description:         s.Description,
+		Host:                s.Host,
+		Port:                s.Port,
+		SkipSSLVerification: skipSSL,
+		IsActive:            s.IsActive,
 	}
 }
