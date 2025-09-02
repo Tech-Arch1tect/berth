@@ -30,7 +30,7 @@ func NewService(serverSvc *server.Service, rbacSvc *rbac.Service) *Service {
 
 func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest) (*OperationResponse, error) {
 
-	serverModel, err := s.serverSvc.GetServer(serverID)
+	serverModel, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

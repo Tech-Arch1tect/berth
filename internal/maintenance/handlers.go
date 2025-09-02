@@ -31,7 +31,7 @@ func (h *Handler) ShowMaintenance(c echo.Context) error {
 		return err
 	}
 
-	server, err := h.service.serverSvc.GetServer(serverID)
+	server, err := h.service.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}

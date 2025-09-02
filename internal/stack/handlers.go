@@ -27,11 +27,20 @@ func NewHandler(inertiaSvc *inertia.Service, service *Service, rbacSvc *rbac.Ser
 }
 
 func (h *Handler) ShowServerStacks(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	serverIDStr := c.Param("id")
 	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
 	if err != nil {
 		return common.SendBadRequest(c, "Invalid server ID")
+	}
+
+	_, err = h.service.serverSvc.GetActiveServerForUser(uint(serverID), userID)
+	if err != nil {
+		return common.SendNotFound(c, "Server not found")
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
@@ -56,12 +65,17 @@ func (h *Handler) ShowStackDetails(c echo.Context) error {
 		return common.SendBadRequest(c, "Invalid server ID or stack name")
 	}
 
-	serverInfo, err := h.service.GetServerInfo(uint(serverID))
+	userID := session.GetUserIDAsUint(c)
+
+	_, err = h.service.serverSvc.GetActiveServerForUser(uint(serverID), userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	serverInfo, err := h.service.GetServerInfo(uint(serverID))
+	if err != nil {
+		return common.SendNotFound(c, "Server not found")
+	}
 
 	permissions, err := h.rbacSvc.GetUserStackPermissions(userID, uint(serverID), stackname)
 	if err != nil {

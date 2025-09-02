@@ -35,7 +35,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 		return nil, fmt.Errorf("insufficient permissions to view Docker system information")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -69,7 +69,7 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 		return nil, fmt.Errorf("insufficient permissions to perform Docker maintenance operations")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -102,7 +102,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 		return nil, fmt.Errorf("insufficient permissions to delete Docker resources")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

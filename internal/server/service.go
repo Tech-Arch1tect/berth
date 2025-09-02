@@ -63,6 +63,36 @@ func (s *Service) GetServer(id uint) (*models.Server, error) {
 	return &server, nil
 }
 
+func (s *Service) GetActiveServerForUser(id uint, userID uint) (*models.Server, error) {
+	var server models.Server
+	if err := s.db.First(&server, id).Error; err != nil {
+		return nil, err
+	}
+
+	if !server.IsActive {
+		return nil, fmt.Errorf("server is not active")
+	}
+
+	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user accessible servers: %w", err)
+	}
+
+	hasAccess := slices.Contains(serverIDs, id)
+
+	if !hasAccess {
+		return nil, fmt.Errorf("user does not have access to this server")
+	}
+
+	decryptedToken, err := s.crypto.Decrypt(server.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+	}
+	server.AccessToken = decryptedToken
+
+	return &server, nil
+}
+
 func (s *Service) GetServerResponse(id uint) (*models.ServerResponse, error) {
 	var server models.Server
 	if err := s.db.First(&server, id).Error; err != nil {
@@ -159,7 +189,7 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 	}
 
 	var servers []models.Server
-	if err := s.db.Where("id IN ?", serverIDs).Find(&servers).Error; err != nil {
+	if err := s.db.Where("id IN ? AND is_active = ?", serverIDs, true).Find(&servers).Error; err != nil {
 		return nil, err
 	}
 

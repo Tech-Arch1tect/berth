@@ -31,7 +31,7 @@ func (s *Service) ListDirectory(ctx context.Context, userID uint, serverID uint,
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -64,7 +64,7 @@ func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stac
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -214,7 +214,7 @@ func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, 
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

@@ -55,7 +55,7 @@ func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsRespon
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetServer(req.ServerID)
+	server, err := s.serverSvc.GetActiveServerForUser(req.ServerID, req.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -73,7 +73,7 @@ func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsRe
 		return nil, fmt.Errorf("container name is required")
 	}
 
-	server, err := s.serverSvc.GetServer(req.ServerID)
+	server, err := s.serverSvc.GetActiveServerForUser(req.ServerID, req.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

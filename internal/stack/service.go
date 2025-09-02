@@ -30,7 +30,7 @@ func (s *Service) GetServerInfo(serverID uint) (*models.ServerResponse, error) {
 }
 
 func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID uint) ([]Stack, error) {
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -67,7 +67,7 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -131,7 +131,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -173,7 +173,7 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -215,7 +215,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -257,7 +257,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetServer(serverID)
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

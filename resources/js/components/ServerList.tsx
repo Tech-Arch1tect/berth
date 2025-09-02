@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import ServerCard from './ServerCard';
 import EmptyServerState from './EmptyServerState';
 import { Server } from '../types/server';
@@ -10,7 +10,6 @@ interface ServerListProps {
 
 export default function ServerList({ servers }: ServerListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   const filteredServers = useMemo(() => {
     return servers.filter((server) => {
@@ -19,14 +18,9 @@ export default function ServerList({ servers }: ServerListProps) {
         server.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         server.host.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && server.is_active) ||
-        (statusFilter === 'inactive' && !server.is_active);
-
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     });
-  }, [servers, searchTerm, statusFilter]);
+  }, [servers, searchTerm]);
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
@@ -49,18 +43,6 @@ export default function ServerList({ servers }: ServerListProps) {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div className="relative">
-            <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-          </div>
         </div>
       )}
 
@@ -73,7 +55,7 @@ export default function ServerList({ servers }: ServerListProps) {
             No servers found
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Try adjusting your search or filter criteria.
+            Try adjusting your search criteria.
           </p>
         </div>
       ) : (
