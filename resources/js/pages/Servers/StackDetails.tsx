@@ -18,6 +18,7 @@ import { OperationsModal } from '../../components/operations/OperationsModal';
 import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
 import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
+import { QuickActionFeedback } from '../../components/operations/QuickActionFeedback';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
 import {
@@ -59,6 +60,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     isRunning: boolean;
     operation?: string;
   }>({ isRunning: false });
+  const [showQuickFeedback, setShowQuickFeedback] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
@@ -108,44 +110,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     enabled: true,
   });
 
-  const { startOperation } = useOperations({
+  const {
+    startOperation,
+    operationStatus,
+    error: operationError,
+  } = useOperations({
     serverid: String(serverid),
     stackname,
-    onOperationComplete: (success, _exitCode) => {
-      const currentOp = quickOperationState.operation;
-      setQuickOperationState({ isRunning: false });
-
-      if (currentOp) {
-        const [commandOrStack, serviceName] = currentOp.split(':');
-        const isStackOperation = commandOrStack === 'stack';
-        const command = isStackOperation ? serviceName : commandOrStack;
-        const targetName = isStackOperation ? `stack ${stackname}` : serviceName;
-        const action = command.charAt(0).toUpperCase() + command.slice(1);
-
-        if (success) {
-          showToast.operation.completed(`${action} completed successfully for ${targetName}`);
-        } else {
-          showToast.error(`${action} failed for ${targetName}`);
-        }
-      } else {
-        if (success) {
-          showToast.operation.completed('Operation completed successfully');
-        } else {
-          showToast.error('Operation failed');
-        }
-      }
-
-      showToast.info('Refreshing stack data...');
-      setIsRefreshing(true);
-      refetch();
-      refetchNetworks();
-      refetchVolumes();
-      refetchEnvironment();
-      refetchStats();
-    },
+    onOperationComplete: () => {},
     onError: (error) => {
       console.error('Quick operation error:', error);
       setQuickOperationState({ isRunning: false });
+      setShowQuickFeedback(false);
       showToast.error('Operation failed to start');
     },
   });
@@ -189,7 +165,9 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       const operationKey = isStackOperation
         ? `stack:${operation.command}`
         : `${operation.command}:${operation.services[0]}`;
+
       setQuickOperationState({ isRunning: true, operation: operationKey });
+      setShowQuickFeedback(true);
 
       const targetName = isStackOperation ? `stack ${stackname}` : operation.services[0];
       const action = operation.command.charAt(0).toUpperCase() + operation.command.slice(1);
@@ -706,6 +684,34 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             refetch();
             refetchStats();
           }
+        }}
+      />
+
+      {/* Quick Action Feedback */}
+      <QuickActionFeedback
+        isVisible={showQuickFeedback}
+        operationType={quickOperationState.operation}
+        operationStatus={operationStatus}
+        connectionError={operationError || undefined}
+        onComplete={(success, _exitCode) => {
+          setQuickOperationState({ isRunning: false });
+
+          if (success) {
+            showToast.operation.completed('Operation completed successfully');
+          } else {
+            showToast.error('Operation failed');
+          }
+
+          showToast.info('Refreshing stack data...');
+          setIsRefreshing(true);
+          refetch();
+          refetchNetworks();
+          refetchVolumes();
+          refetchEnvironment();
+          refetchStats();
+        }}
+        onDismiss={() => {
+          setShowQuickFeedback(false);
         }}
       />
     </Layout>
