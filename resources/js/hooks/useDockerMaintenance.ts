@@ -90,6 +90,7 @@ export interface NetworkInfo {
   internal: boolean;
   labels: { [key: string]: string };
   unused: boolean;
+  subnet: string;
 }
 
 export interface NetworkSummary {

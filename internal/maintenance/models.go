@@ -90,6 +90,7 @@ type NetworkInfo struct {
 	Internal bool              `json:"internal"`
 	Labels   map[string]string `json:"labels"`
 	Unused   bool              `json:"unused"`
+	Subnet   string            `json:"subnet"`
 }
 
 type NetworkSummary struct {
