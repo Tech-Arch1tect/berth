@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, Link } from '@inertiajs/react';
+import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import Layout from '../../components/Layout';
 import { StackCard } from '../../components/StackCard';
 import { ServerNavigation } from '../../components/ServerNavigation';
@@ -13,6 +14,9 @@ interface ServerStacksProps {
 }
 
 export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
+
   const {
     data: stacks = [],
     isLoading: loading,
@@ -20,6 +24,22 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     refetch,
     isFetching,
   } = useServerStacks({ serverid });
+
+  const filteredStacks = useMemo(() => {
+    return stacks.filter((stack) => {
+      const matchesSearch =
+        stack.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        stack.compose_file.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        stack.path.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesHealth =
+        healthFilter === 'all' ||
+        (healthFilter === 'healthy' && stack.is_healthy) ||
+        (healthFilter === 'unhealthy' && !stack.is_healthy);
+
+      return matchesSearch && matchesHealth;
+    });
+  }, [stacks, searchTerm, healthFilter]);
   return (
     <Layout>
       <Head title={title} />
@@ -210,11 +230,58 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {stacks.map((stack, index) => (
-                <StackCard key={`${stack.name}-${index}`} stack={stack} />
-              ))}
-            </div>
+            <>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="relative flex-1">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search stacks..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <select
+                      value={healthFilter}
+                      onChange={(e) =>
+                        setHealthFilter(e.target.value as 'all' | 'healthy' | 'unhealthy')
+                      }
+                      className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">All Health</option>
+                      <option value="healthy">Healthy Only</option>
+                      <option value="unhealthy">Unhealthy Only</option>
+                    </select>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {filteredStacks.length} of {stacks.length}
+                  </span>
+                </div>
+              </div>
+
+              {filteredStacks.length === 0 ? (
+                <div className="text-center py-12">
+                  <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                    No stacks found
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Try adjusting your search or filter criteria.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredStacks.map((stack, index) => (
+                    <StackCard key={`${stack.name}-${index}`} stack={stack} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
