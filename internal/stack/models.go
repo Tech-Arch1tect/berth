@@ -35,6 +35,7 @@ type Stack struct {
 	ComposeFile string `json:"compose_file"`
 	ServerID    uint   `json:"server_id"`
 	ServerName  string `json:"server_name"`
+	IsHealthy   bool   `json:"is_healthy"`
 }
 
 type StackDetails struct {

@@ -4,6 +4,7 @@ export interface Stack {
   compose_file: string;
   server_id: number;
   server_name: string;
+  is_healthy: boolean;
 }
 
 export interface ServerStacksResponse {

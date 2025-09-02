@@ -24,8 +24,14 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
             </p>
           </div>
           <div className="ml-4 flex-shrink-0">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              Available
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                stack.is_healthy
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+              }`}
+            >
+              {stack.is_healthy ? 'Healthy' : 'Unhealthy'}
             </span>
           </div>
         </div>
