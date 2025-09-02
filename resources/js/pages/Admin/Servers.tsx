@@ -134,9 +134,22 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
   };
 
   const toggleServerStatus = (serverid: number, currentStatus: boolean) => {
+    const server = servers.find((s) => s.id === serverid);
+    if (!server) {
+      console.error('Server not found');
+      return;
+    }
+
     router.put(
       `/admin/servers/${serverid}`,
-      { is_active: !currentStatus },
+      {
+        name: server.name,
+        description: server.description,
+        host: server.host,
+        port: server.port,
+        skip_ssl_verification: server.skip_ssl_verification,
+        is_active: !currentStatus,
+      },
       {
         headers: {
           'X-CSRF-Token': csrfToken || '',
