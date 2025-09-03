@@ -10,19 +10,24 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 )
 
 type Service struct {
 	agentSvc  *agent.Service
 	serverSvc *server.Service
 	rbacSvc   *rbac.Service
+	logger    *logging.Service
 }
 
-func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service) *Service {
+func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
 		rbacSvc:   rbacSvc,
+		logger:    logger,
 	}
 }
 
@@ -60,12 +65,29 @@ func (s *Service) ListDirectory(ctx context.Context, userID uint, serverID uint,
 }
 
 func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stackname, path string) (*FileContent, error) {
+	s.logger.Debug("file read operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("file_path", path),
+	)
+
 	if err := s.checkFileReadPermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("file read permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("file_path", path),
+		)
 		return nil, err
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
+		s.logger.Error("failed to get server for file read",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
@@ -73,42 +95,96 @@ func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stac
 
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
 	if err != nil {
+		s.logger.Error("failed to read file via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("file_path", path),
+		)
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for file read",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("file_path", path),
+		)
 		return nil, s.handleAgentError(resp)
 	}
 
 	var fileContent FileContent
 	if err := json.NewDecoder(resp.Body).Decode(&fileContent); err != nil {
+		s.logger.Error("failed to decode file content response",
+			zap.Error(err),
+			zap.String("file_path", path),
+		)
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
+
+	s.logger.Debug("file read successfully",
+		zap.Uint("user_id", userID),
+		zap.String("stack_name", stackname),
+		zap.String("file_path", path),
+	)
 
 	return &fileContent, nil
 }
 
 func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, stackname string, req WriteFileRequest) error {
+	s.logger.Info("file write operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("file_path", req.Path),
+	)
+
 	if err := s.checkFileWritePermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("file write permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("file_path", req.Path),
+		)
 		return err
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
+		s.logger.Error("failed to get server for file write",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/stacks/%s/files/write", stackname)
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "POST", endpoint, req)
 	if err != nil {
+		s.logger.Error("failed to write file via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("file_path", req.Path),
+		)
 		return fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for file write",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("file_path", req.Path),
+		)
 		return s.handleAgentError(resp)
 	}
+
+	s.logger.Info("file written successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("file_path", req.Path),
+	)
 
 	return nil
 }
@@ -138,25 +214,59 @@ func (s *Service) CreateDirectory(ctx context.Context, userID uint, serverID uin
 }
 
 func (s *Service) Delete(ctx context.Context, userID uint, serverID uint, stackname string, req DeleteRequest) error {
+	s.logger.Info("file deletion operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+	)
+
 	if err := s.checkFileWritePermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("file deletion permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+		)
 		return err
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
+		s.logger.Error("failed to get server for file deletion",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/stacks/%s/files/delete", stackname)
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "DELETE", endpoint, req)
 	if err != nil {
+		s.logger.Error("failed to delete file via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+		)
 		return fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for file deletion",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("target_path", req.Path),
+		)
 		return s.handleAgentError(resp)
 	}
+
+	s.logger.Info("file deleted successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+	)
 
 	return nil
 }
@@ -238,36 +348,91 @@ func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, 
 }
 
 func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, stackname, path string, fileHeader *multipart.FileHeader) error {
+	s.logger.Info("file upload operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("upload_path", path),
+		zap.String("filename", fileHeader.Filename),
+		zap.Int64("file_size", fileHeader.Size),
+	)
+
 	if err := s.checkFileWritePermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("file upload permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("filename", fileHeader.Filename),
+		)
 		return err
 	}
 
 	server, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
+		s.logger.Error("failed to get server for file upload",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/stacks/%s/files/upload", stackname)
 	resp, err := s.agentSvc.MakeMultipartRequest(ctx, server, "POST", endpoint, path, fileHeader)
 	if err != nil {
+		s.logger.Error("failed to upload file via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("filename", fileHeader.Filename),
+			zap.Int64("file_size", fileHeader.Size),
+		)
 		return fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for file upload",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("filename", fileHeader.Filename),
+		)
 		return s.handleAgentError(resp)
 	}
+
+	s.logger.Info("file uploaded successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("upload_path", path),
+		zap.String("filename", fileHeader.Filename),
+		zap.Int64("file_size", fileHeader.Size),
+	)
 
 	return nil
 }
 
 func (s *Service) checkFileReadPermission(userID uint, serverID uint, stackname string) error {
+	s.logger.Debug("checking file read permission",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+	)
+
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "files.read")
 	if err != nil {
+		s.logger.Error("failed to check file read permission",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+		)
 		return fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
+		s.logger.Warn("user lacks file read permission",
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+		)
 		return fmt.Errorf("user does not have file read permission for this stack")
 	}
 
@@ -275,12 +440,28 @@ func (s *Service) checkFileReadPermission(userID uint, serverID uint, stackname 
 }
 
 func (s *Service) checkFileWritePermission(userID uint, serverID uint, stackname string) error {
+	s.logger.Debug("checking file write permission",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+	)
+
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "files.write")
 	if err != nil {
+		s.logger.Error("failed to check file write permission",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+		)
 		return fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
+		s.logger.Warn("user lacks file write permission",
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+		)
 		return fmt.Errorf("user does not have file write permission for this stack")
 	}
 
