@@ -12,10 +12,20 @@ interface DashboardProps {
     id: number;
     username: string;
     email: string;
+    roles?: Array<{ name: string }>;
   };
 }
 
 export default function Dashboard({ title, servers, currentUser }: DashboardProps) {
+  const isAdmin = currentUser?.roles?.some((role) => role.name === 'admin') || false;
+  const userRoles = currentUser?.roles?.map((role) => role.name) || [];
+
+  const getAccessLevel = () => {
+    if (isAdmin) return 'Full';
+    if (userRoles.length === 0) return 'Limited';
+    return userRoles.join(', ');
+  };
+
   const stats = [
     {
       name: 'Total Servers',
@@ -37,7 +47,7 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
     },
     {
       name: 'Your Access',
-      value: 'Full',
+      value: getAccessLevel(),
       icon: ShieldCheckIcon,
       color: 'emerald',
     },
