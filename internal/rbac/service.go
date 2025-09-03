@@ -5,29 +5,55 @@ import (
 	"berth/utils"
 	"errors"
 
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type Service struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *logging.Service
 }
 
-func NewService(db *gorm.DB) *Service {
+func NewService(db *gorm.DB, logger *logging.Service) *Service {
 	return &Service{
-		db: db,
+		db:     db,
+		logger: logger,
 	}
 }
 
 func (s *Service) HasRole(userID uint, roleName string) (bool, error) {
+	s.logger.Debug("checking user role",
+		zap.Uint("user_id", userID),
+		zap.String("role_name", roleName),
+	)
+
 	var user models.User
 	err := s.db.Preload("Roles", "name = ?", roleName).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Debug("user not found for role check",
+				zap.Uint("user_id", userID),
+				zap.String("role_name", roleName),
+			)
 			return false, nil
 		}
+		s.logger.Error("failed to check user role",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("role_name", roleName),
+		)
 		return false, err
 	}
-	return len(user.Roles) > 0, nil
+
+	hasRole := len(user.Roles) > 0
+	s.logger.Debug("user role check completed",
+		zap.Uint("user_id", userID),
+		zap.String("role_name", roleName),
+		zap.Bool("has_role", hasRole),
+	)
+
+	return hasRole, nil
 }
 
 func (s *Service) HasPermission(userID uint, resource, action string) (bool, error) {
@@ -67,37 +93,100 @@ func (s *Service) HasPermissionByName(userID uint, permissionName string) (bool,
 }
 
 func (s *Service) AssignRole(userID uint, roleID uint) error {
+	s.logger.Info("assigning role to user",
+		zap.Uint("user_id", userID),
+		zap.Uint("role_id", roleID),
+	)
+
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
+		s.logger.Error("failed to find user for role assignment",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("role_id", roleID),
+		)
 		return err
 	}
 
 	for _, role := range user.Roles {
 		if role.ID == roleID {
+			s.logger.Debug("user already has role",
+				zap.Uint("user_id", userID),
+				zap.Uint("role_id", roleID),
+			)
 			return nil
 		}
 	}
 
 	var role models.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
+		s.logger.Error("failed to find role for assignment",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+		)
 		return err
 	}
 
-	return s.db.Model(&user).Association("Roles").Append(&role)
+	if err := s.db.Model(&user).Association("Roles").Append(&role); err != nil {
+		s.logger.Error("failed to assign role to user",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("role_id", roleID),
+			zap.String("role_name", role.Name),
+		)
+		return err
+	}
+
+	s.logger.Info("role assigned successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("role_id", roleID),
+		zap.String("role_name", role.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) RevokeRole(userID uint, roleID uint) error {
+	s.logger.Info("revoking role from user",
+		zap.Uint("user_id", userID),
+		zap.Uint("role_id", roleID),
+	)
+
 	var user models.User
 	if err := s.db.First(&user, userID).Error; err != nil {
+		s.logger.Error("failed to find user for role revocation",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+		)
 		return err
 	}
 
 	var role models.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
+		s.logger.Error("failed to find role for revocation",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+		)
 		return err
 	}
 
-	return s.db.Model(&user).Association("Roles").Delete(&role)
+	if err := s.db.Model(&user).Association("Roles").Delete(&role); err != nil {
+		s.logger.Error("failed to revoke role from user",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("role_id", roleID),
+			zap.String("role_name", role.Name),
+		)
+		return err
+	}
+
+	s.logger.Info("role revoked successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("role_id", roleID),
+		zap.String("role_name", role.Name),
+	)
+
+	return nil
 }
 
 func (s *Service) GetUserRoles(userID uint) ([]models.Role, error) {
@@ -162,12 +251,22 @@ func (s *Service) GetAllRoles() ([]models.Role, error) {
 }
 
 func (s *Service) CreateRole(name, description string) (*models.Role, error) {
+	s.logger.Info("creating new role",
+		zap.String("name", name),
+		zap.String("description", description),
+	)
+
 	if name == "" {
+		s.logger.Warn("role creation failed: name is required")
 		return nil, errors.New("role name is required")
 	}
 
 	var existingRole models.Role
 	if err := s.db.Where("name = ?", name).First(&existingRole).Error; err == nil {
+		s.logger.Warn("role creation failed: name already exists",
+			zap.String("name", name),
+			zap.Uint("existing_role_id", existingRole.ID),
+		)
 		return nil, errors.New("role with this name already exists")
 	}
 
@@ -178,8 +277,17 @@ func (s *Service) CreateRole(name, description string) (*models.Role, error) {
 	}
 
 	if err := s.db.Create(&role).Error; err != nil {
+		s.logger.Error("failed to create role in database",
+			zap.Error(err),
+			zap.String("name", name),
+		)
 		return nil, err
 	}
+
+	s.logger.Info("role created successfully",
+		zap.Uint("role_id", role.ID),
+		zap.String("name", name),
+	)
 
 	return &role, nil
 }
@@ -216,41 +324,87 @@ func (s *Service) UpdateRole(roleID uint, name, description string) (*models.Rol
 }
 
 func (s *Service) DeleteRole(roleID uint) error {
+	s.logger.Info("deleting role",
+		zap.Uint("role_id", roleID),
+	)
+
 	var role models.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
+		s.logger.Error("failed to find role for deletion",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+		)
 		return err
 	}
 
 	if role.IsAdmin {
+		s.logger.Warn("attempted to delete admin role",
+			zap.Uint("role_id", roleID),
+			zap.String("role_name", role.Name),
+		)
 		return errors.New("cannot delete admin role")
 	}
 
 	var userCount int64
 	if err := s.db.Model(&models.User{}).Joins("JOIN user_roles ON users.id = user_roles.user_id").Where("user_roles.role_id = ?", roleID).Count(&userCount).Error; err != nil {
+		s.logger.Error("failed to check role usage before deletion",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+		)
 		return errors.New("failed to check role usage")
 	}
 
 	if userCount > 0 {
+		s.logger.Warn("cannot delete role that is assigned to users",
+			zap.Uint("role_id", roleID),
+			zap.String("role_name", role.Name),
+			zap.Int64("user_count", userCount),
+		)
 		return errors.New("cannot delete role that is assigned to users")
 	}
 
 	if err := s.db.Where("role_id = ?", roleID).Delete(&models.ServerRoleStackPermission{}).Error; err != nil {
+		s.logger.Error("failed to clean up role permissions",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+		)
 		return errors.New("failed to clean up role permissions")
 	}
 
 	if err := s.db.Delete(&role).Error; err != nil {
+		s.logger.Error("failed to delete role from database",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+			zap.String("role_name", role.Name),
+		)
 		return err
 	}
+
+	s.logger.Info("role deleted successfully",
+		zap.Uint("role_id", roleID),
+		zap.String("role_name", role.Name),
+	)
 
 	return nil
 }
 
 func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
+	s.logger.Debug("getting user accessible server IDs",
+		zap.Uint("user_id", userID),
+	)
+
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Debug("user not found for server access check",
+				zap.Uint("user_id", userID),
+			)
 			return []uint{}, nil
 		}
+		s.logger.Error("failed to load user for server access check",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+		)
 		return nil, err
 	}
 
@@ -258,7 +412,18 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 		if role.IsAdmin {
 			var allServerIDs []uint
 			err := s.db.Model(&models.Server{}).Pluck("id", &allServerIDs).Error
-			return allServerIDs, err
+			if err != nil {
+				s.logger.Error("failed to get all server IDs for admin user",
+					zap.Error(err),
+					zap.Uint("user_id", userID),
+				)
+				return nil, err
+			}
+			s.logger.Debug("admin user granted access to all servers",
+				zap.Uint("user_id", userID),
+				zap.Int("server_count", len(allServerIDs)),
+			)
+			return allServerIDs, nil
 		}
 	}
 
@@ -269,6 +434,10 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 		Find(&serverRoleStackPermissions).Error
 
 	if err != nil {
+		s.logger.Error("failed to query user server permissions",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+		)
 		return nil, err
 	}
 
@@ -284,20 +453,45 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 		}
 	}
 
+	s.logger.Debug("user accessible servers determined",
+		zap.Uint("user_id", userID),
+		zap.Int("accessible_server_count", len(serverIDs)),
+		zap.Uints("server_ids", serverIDs),
+	)
+
 	return serverIDs, nil
 }
 
 func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
+	s.logger.Debug("checking user stack permission",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("permission_name", permissionName),
+	)
+
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Debug("user not found for permission check",
+				zap.Uint("user_id", userID),
+			)
 			return false, nil
 		}
+		s.logger.Error("failed to load user for permission check",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+		)
 		return false, err
 	}
 
 	for _, role := range user.Roles {
 		if role.IsAdmin {
+			s.logger.Debug("admin user granted permission",
+				zap.Uint("user_id", userID),
+				zap.String("role_name", role.Name),
+				zap.String("permission_name", permissionName),
+			)
 			return true, nil
 		}
 	}
@@ -309,14 +503,33 @@ func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname s
 		Find(&serverRoleStackPermissions).Error
 
 	if err != nil {
+		s.logger.Error("failed to query user stack permissions",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+		)
 		return false, err
 	}
 
 	for _, srsp := range serverRoleStackPermissions {
 		if srsp.Permission.Name == permissionName && utils.MatchesPattern(stackname, srsp.StackPattern) {
+			s.logger.Debug("permission granted via role assignment",
+				zap.Uint("user_id", userID),
+				zap.Uint("server_id", serverID),
+				zap.String("stack_name", stackname),
+				zap.String("stack_pattern", srsp.StackPattern),
+				zap.String("permission_name", permissionName),
+			)
 			return true, nil
 		}
 	}
+
+	s.logger.Debug("permission denied",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("permission_name", permissionName),
+	)
 
 	return false, nil
 }
@@ -429,14 +642,31 @@ func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]models.ServerRol
 }
 
 func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stackname string, permissionName string) error {
+	s.logger.Info("creating role stack permission",
+		zap.Uint("role_id", roleID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_pattern", stackname),
+		zap.String("permission_name", permissionName),
+	)
+
 	var permission models.Permission
 	if err := s.db.Where("name = ?", permissionName).First(&permission).Error; err != nil {
+		s.logger.Error("permission not found for role assignment",
+			zap.Error(err),
+			zap.String("permission_name", permissionName),
+		)
 		return errors.New("permission not found")
 	}
 
 	var existing models.ServerRoleStackPermission
 	if err := s.db.Where("role_id = ? AND server_id = ? AND stack_pattern = ? AND permission_id = ?",
 		roleID, serverID, stackname, permission.ID).First(&existing).Error; err == nil {
+		s.logger.Warn("role stack permission already exists",
+			zap.Uint("role_id", roleID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_pattern", stackname),
+			zap.String("permission_name", permissionName),
+		)
 		return errors.New("permission already exists")
 	}
 
@@ -447,7 +677,26 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 		PermissionID: permission.ID,
 	}
 
-	return s.db.Create(&srsp).Error
+	if err := s.db.Create(&srsp).Error; err != nil {
+		s.logger.Error("failed to create role stack permission",
+			zap.Error(err),
+			zap.Uint("role_id", roleID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_pattern", stackname),
+			zap.String("permission_name", permissionName),
+		)
+		return err
+	}
+
+	s.logger.Info("role stack permission created successfully",
+		zap.Uint("permission_id", srsp.ID),
+		zap.Uint("role_id", roleID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_pattern", stackname),
+		zap.String("permission_name", permissionName),
+	)
+
+	return nil
 }
 
 func (s *Service) DeleteRoleStackPermission(permissionID uint) error {
