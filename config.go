@@ -6,7 +6,7 @@ import (
 
 type BerthConfig struct {
 	config.Config
-	Custom AppCustomConfig `envPrefix:"CUSTOM_"`
+	Custom AppCustomConfig `envPrefix:""`
 }
 
 type AppCustomConfig struct {
