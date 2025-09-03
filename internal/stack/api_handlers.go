@@ -131,3 +131,24 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 
 	return common.SendSuccess(c, stackStats)
 }
+
+func (h *APIHandler) CheckPermissions(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	permissions, err := h.service.rbacSvc.GetUserStackPermissions(userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, "Failed to get user permissions")
+	}
+
+	return common.SendSuccess(c, map[string]any{
+		"permissions": permissions,
+	})
+}
