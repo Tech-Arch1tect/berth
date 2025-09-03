@@ -133,6 +133,25 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   });
 
   useEffect(() => {
+    if (stackPermissions) {
+      const tabPermissionMap: Record<string, string | null> = {
+        services: null,
+        networks: null,
+        volumes: null,
+        environment: null,
+        stats: null,
+        logs: 'logs.read',
+        files: 'files.read',
+      };
+
+      const currentTabPermission = tabPermissionMap[activeTab];
+      if (currentTabPermission && !stackPermissions.permissions.includes(currentTabPermission)) {
+        setActiveTab('services');
+      }
+    }
+  }, [stackPermissions, activeTab]);
+
+  useEffect(() => {
     if (
       isRefreshing &&
       !isFetching &&
@@ -512,44 +531,49 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             <div className="border-b border-slate-200/50 dark:border-slate-700/50">
               <nav className="flex space-x-1 p-2">
                 {[
-                  { id: 'services', name: 'Services', icon: CircleStackIcon },
-                  { id: 'networks', name: 'Networks', icon: GlobeAltIcon },
-                  { id: 'volumes', name: 'Volumes', icon: FolderIcon },
-                  { id: 'environment', name: 'Environment', icon: Cog6ToothIcon },
-                  { id: 'stats', name: 'Stats', icon: CpuChipIcon },
-                  { id: 'logs', name: 'Logs', icon: DocumentTextIcon },
-                  { id: 'files', name: 'Files', icon: FolderIcon },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() =>
-                        setActiveTab(
-                          tab.id as
-                            | 'services'
-                            | 'networks'
-                            | 'volumes'
-                            | 'environment'
-                            | 'stats'
-                            | 'logs'
-                            | 'files'
-                        )
-                      }
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        activeTab === tab.id
-                          ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{tab.name}</span>
-                      {activeTab === tab.id && (
-                        <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
-                      )}
-                    </button>
-                  );
-                })}
+                  { id: 'services', name: 'Services', icon: CircleStackIcon, permission: null },
+                  { id: 'networks', name: 'Networks', icon: GlobeAltIcon, permission: null },
+                  { id: 'volumes', name: 'Volumes', icon: FolderIcon, permission: null },
+                  { id: 'environment', name: 'Environment', icon: Cog6ToothIcon, permission: null },
+                  { id: 'stats', name: 'Stats', icon: CpuChipIcon, permission: null },
+                  { id: 'logs', name: 'Logs', icon: DocumentTextIcon, permission: 'logs.read' },
+                  { id: 'files', name: 'Files', icon: FolderIcon, permission: 'files.read' },
+                ]
+                  .filter(
+                    (tab) =>
+                      !tab.permission || stackPermissions?.permissions?.includes(tab.permission)
+                  )
+                  .map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() =>
+                          setActiveTab(
+                            tab.id as
+                              | 'services'
+                              | 'networks'
+                              | 'volumes'
+                              | 'environment'
+                              | 'stats'
+                              | 'logs'
+                              | 'files'
+                          )
+                        }
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          activeTab === tab.id
+                            ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{tab.name}</span>
+                        {activeTab === tab.id && (
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                        )}
+                      </button>
+                    );
+                  })}
               </nav>
             </div>
 
@@ -632,7 +656,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 />
               )}
 
-              {activeTab === 'logs' && (
+              {activeTab === 'logs' && stackPermissions?.permissions?.includes('logs.read') && (
                 <LogViewer
                   serverid={serverid}
                   stackname={stackname}
@@ -645,12 +669,12 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 />
               )}
 
-              {activeTab === 'files' && (
+              {activeTab === 'files' && stackPermissions?.permissions?.includes('files.read') && (
                 <FileManager
                   serverid={serverid}
                   stackname={stackname}
-                  canRead={permissions.includes('files.read')}
-                  canWrite={permissions.includes('files.write')}
+                  canRead={stackPermissions.permissions.includes('files.read')}
+                  canWrite={stackPermissions.permissions.includes('files.write')}
                 />
               )}
             </div>
