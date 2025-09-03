@@ -14,8 +14,10 @@ type OperationResponse struct {
 
 type StreamMessage struct {
 	Type      string    `json:"type"`
-	Data      string    `json:"data"`
+	Data      string    `json:"data,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
+	Success   *bool     `json:"success,omitempty"`
+	ExitCode  *int      `json:"exitCode,omitempty"`
 }
 
 type StreamMessageType string
@@ -29,9 +31,10 @@ const (
 )
 
 type CompleteMessage struct {
-	Type     StreamMessageType `json:"type"`
-	Success  bool              `json:"success"`
-	ExitCode int               `json:"exitCode"`
+	Type      StreamMessageType `json:"type"`
+	Success   bool              `json:"success"`
+	ExitCode  int               `json:"exitCode"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
 type WebSocketMessage struct {

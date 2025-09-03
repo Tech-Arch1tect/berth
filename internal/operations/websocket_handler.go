@@ -9,12 +9,9 @@ import (
 	"time"
 
 	"berth/internal/common"
-	"berth/models"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type WebSocketHandler struct {
@@ -46,9 +43,9 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 		return common.SendBadRequest(c, "Server ID and stack name are required")
 	}
 
-	userID, err := h.getUserID(c)
+	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
-		return common.SendUnauthorized(c, "Authentication required")
+		return err
 	}
 
 	conn, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
@@ -149,9 +146,15 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 		return err
 	}
 
+	startTime := time.Now()
 	response, err := h.service.StartOperation(ctx, userID, serverID, stackname, opReq)
 	if err != nil {
 		return err
+	}
+
+	operationLog, auditErr := h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, opReq, startTime)
+	if auditErr != nil {
+
 	}
 
 	pipeReader, pipeWriter := streamPipe()
@@ -171,6 +174,9 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 		}
 	}()
 
+	if operationLog != nil {
+		return h.relayToWebSocketWithAudit(ctx, conn, pipeReader, operationLog.ID)
+	}
 	return h.relayToWebSocket(ctx, conn, pipeReader)
 }
 
@@ -195,6 +201,57 @@ func (h *WebSocketHandler) relayToWebSocket(ctx context.Context, conn *websocket
 	}
 }
 
+func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *websocket.Conn, reader *StreamReader, operationLogID uint) error {
+	sequenceNumber := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case line, ok := <-reader.Lines():
+			if !ok {
+				return nil
+			}
+
+			if len(line) > 6 && line[:6] == "data: " {
+				jsonData := line[6:]
+
+				var streamMsg StreamMessage
+				if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
+					sequenceNumber++
+
+					_ = h.service.auditSvc.LogOperationMessage(
+						operationLogID,
+						streamMsg.Type,
+						streamMsg.Data,
+						streamMsg.Timestamp,
+						sequenceNumber,
+					)
+
+					if streamMsg.Type == "complete" {
+						success := streamMsg.Success != nil && *streamMsg.Success
+						exitCode := 0
+						if streamMsg.ExitCode != nil {
+							exitCode = *streamMsg.ExitCode
+						}
+
+						_ = h.service.auditSvc.LogOperationEnd(
+							operationLogID,
+							streamMsg.Timestamp,
+							success,
+							exitCode,
+						)
+					}
+				}
+
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(jsonData)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+}
+
 func (h *WebSocketHandler) sendError(conn *websocket.Conn, message string) {
 	errorMsg := WebSocketMessage{
 		Type:  WSMessageTypeError,
@@ -203,23 +260,6 @@ func (h *WebSocketHandler) sendError(conn *websocket.Conn, message string) {
 	if data, err := json.Marshal(errorMsg); err == nil {
 		_ = conn.WriteMessage(websocket.TextMessage, data)
 	}
-}
-
-func (h *WebSocketHandler) getUserID(c echo.Context) (uint, error) {
-
-	currentUser := jwtshared.GetCurrentUser(c)
-	if currentUser != nil {
-		if userModel, ok := currentUser.(models.User); ok {
-			return userModel.ID, nil
-		}
-	}
-
-	userID := session.GetUserIDAsUint(c)
-	if userID == 0 {
-		return 0, common.SendUnauthorized(c, "User not authenticated")
-	}
-
-	return userID, nil
 }
 
 type StreamReader struct {

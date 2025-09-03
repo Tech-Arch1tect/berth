@@ -19,12 +19,14 @@ import (
 type Service struct {
 	serverSvc *server.Service
 	rbacSvc   *rbac.Service
+	auditSvc  *AuditService
 }
 
-func NewService(serverSvc *server.Service, rbacSvc *rbac.Service) *Service {
+func NewService(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService) *Service {
 	return &Service{
 		serverSvc: serverSvc,
 		rbacSvc:   rbacSvc,
+		auditSvc:  auditSvc,
 	}
 }
 
