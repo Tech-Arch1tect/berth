@@ -3,6 +3,7 @@ package main
 import (
 	"berth/handlers"
 	"berth/internal/agent"
+	configEnforcement "berth/internal/config"
 	"berth/internal/files"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
@@ -35,6 +36,8 @@ import (
 )
 
 func main() {
+	configEnforcement.EnforceRequiredSettings()
+
 	var cfg BerthConfig
 	if err := config.LoadConfig(&cfg); err != nil {
 		panic(err)
