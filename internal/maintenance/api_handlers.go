@@ -118,3 +118,32 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 
 	return common.SendSuccess(c, result)
 }
+
+func (h *APIHandler) CheckPermissions(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, err := common.ParseUintParam(c, "serverid")
+	if err != nil {
+		return err
+	}
+
+	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.read")
+	if err != nil {
+		return common.SendInternalError(c, "Failed to check read permissions")
+	}
+
+	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.write")
+	if err != nil {
+		return common.SendInternalError(c, "Failed to check write permissions")
+	}
+
+	return common.SendSuccess(c, map[string]any{
+		"maintenance": map[string]bool{
+			"read":  hasReadPermission,
+			"write": hasWritePermission,
+		},
+	})
+}
