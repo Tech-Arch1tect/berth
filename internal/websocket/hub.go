@@ -2,13 +2,14 @@ package websocket
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 )
 
 var upgrader = websocket.Upgrader{
@@ -29,6 +30,7 @@ type Hub struct {
 	subscriptionMgr   *SubscriptionManager
 	mutex             sync.RWMutex
 	permissionChecker PermissionChecker
+	logger            *logging.Service
 }
 
 type UserConnection struct {
@@ -45,13 +47,14 @@ type PermissionChecker interface {
 	HasStackPermission(userID int, serverID int, stackname string, permission string) bool
 }
 
-func NewHub(permissionChecker PermissionChecker) *Hub {
+func NewHub(permissionChecker PermissionChecker, logger *logging.Service) *Hub {
 	return &Hub{
 		register:          make(chan *UserConnection),
 		unregister:        make(chan *UserConnection),
 		clients:           make(map[*UserConnection]bool),
 		subscriptionMgr:   NewSubscriptionManager(),
 		permissionChecker: permissionChecker,
+		logger:            logger,
 	}
 }
 
@@ -85,7 +88,12 @@ func (h *Hub) BroadcastContainerStatus(event ContainerStatusEvent) {
 
 	data, err := json.Marshal(event)
 	if err != nil {
-		log.Printf("Error marshalling container status event: %v", err)
+		h.logger.Error("error marshalling container status event",
+			zap.Error(err),
+			zap.Int("server_id", event.ServerID),
+			zap.String("stack_name", event.StackName),
+			zap.String("container_name", event.ContainerName),
+		)
 		return
 	}
 
@@ -112,7 +120,12 @@ func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 
 	data, err := json.Marshal(event)
 	if err != nil {
-		log.Printf("Error marshalling operation progress event: %v", err)
+		h.logger.Error("error marshalling operation progress event",
+			zap.Error(err),
+			zap.Int("server_id", event.ServerID),
+			zap.String("stack_name", event.StackName),
+			zap.String("operation", event.Operation),
+		)
 		return
 	}
 
@@ -139,7 +152,12 @@ func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 
 	data, err := json.Marshal(event)
 	if err != nil {
-		log.Printf("Error marshalling stack status event: %v", err)
+		h.logger.Error("error marshalling stack status event",
+			zap.Error(err),
+			zap.Int("server_id", event.ServerID),
+			zap.String("stack_name", event.StackName),
+			zap.String("status", event.Status),
+		)
 		return
 	}
 
@@ -159,9 +177,19 @@ func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 func (h *Hub) ServeWebSocket(c echo.Context, user *User) error {
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		log.Printf("WebSocket upgrade error: %v", err)
+		h.logger.Error("WebSocket upgrade error",
+			zap.Error(err),
+			zap.Int("user_id", user.ID),
+			zap.String("user_name", user.Name),
+		)
 		return err
 	}
+
+	h.logger.Info("WebSocket connection established",
+		zap.Int("user_id", user.ID),
+		zap.String("user_name", user.Name),
+		zap.String("remote_addr", c.Request().RemoteAddr),
+	)
 
 	client := &UserConnection{
 		hub:           h,
@@ -195,7 +223,16 @@ func (c *UserConnection) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("WebSocket error: %v", err)
+				c.hub.logger.Error("WebSocket error",
+					zap.Error(err),
+					zap.Int("user_id", c.user.ID),
+					zap.String("user_name", c.user.Name),
+				)
+			} else {
+				c.hub.logger.Debug("WebSocket connection closed",
+					zap.Int("user_id", c.user.ID),
+					zap.String("user_name", c.user.Name),
+				)
 			}
 			break
 		}

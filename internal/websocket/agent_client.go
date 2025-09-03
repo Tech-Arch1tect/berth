@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"berth/models"
 	"github.com/gorilla/websocket"
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 )
 
 type AgentClient struct {
@@ -20,18 +21,21 @@ type AgentClient struct {
 	stop      chan bool
 	connected bool
 	mutex     sync.RWMutex
+	logger    *logging.Service
 }
 
 type AgentManager struct {
 	clients map[uint]*AgentClient
 	hub     *Hub
 	mutex   sync.RWMutex
+	logger  *logging.Service
 }
 
-func NewAgentManager(hub *Hub) *AgentManager {
+func NewAgentManager(hub *Hub, logger *logging.Service) *AgentManager {
 	return &AgentManager{
 		clients: make(map[uint]*AgentClient),
 		hub:     hub,
+		logger:  logger,
 	}
 }
 
@@ -40,8 +44,19 @@ func (am *AgentManager) ConnectToAgent(server *models.Server) error {
 	defer am.mutex.Unlock()
 
 	if _, exists := am.clients[server.ID]; exists {
+		am.logger.Debug("agent connection already exists",
+			zap.Uint("server_id", server.ID),
+			zap.String("server_name", server.Name),
+		)
 		return nil
 	}
+
+	am.logger.Debug("creating new agent connection",
+		zap.Uint("server_id", server.ID),
+		zap.String("server_name", server.Name),
+		zap.String("server_host", server.Host),
+		zap.Int("server_port", server.Port),
+	)
 
 	client := &AgentClient{
 		server:    server,
@@ -49,6 +64,7 @@ func (am *AgentManager) ConnectToAgent(server *models.Server) error {
 		reconnect: make(chan bool, 1),
 		stop:      make(chan bool, 1),
 		connected: false,
+		logger:    am.logger,
 	}
 
 	am.clients[server.ID] = client
@@ -62,6 +78,10 @@ func (am *AgentManager) DisconnectAgent(serverID uint) {
 	defer am.mutex.Unlock()
 
 	if client, exists := am.clients[serverID]; exists {
+		am.logger.Debug("disconnecting agent",
+			zap.Uint("server_id", serverID),
+			zap.String("server_name", client.server.Name),
+		)
 		client.stop <- true
 		delete(am.clients, serverID)
 	}
@@ -89,7 +109,13 @@ func (ac *AgentClient) connect() {
 			return
 		default:
 			if err := ac.attemptConnection(); err != nil {
-				log.Printf("Failed to connect to agent %s: %v", ac.server.Name, err)
+				ac.logger.Warn("failed to connect to agent",
+					zap.Error(err),
+					zap.Uint("server_id", ac.server.ID),
+					zap.String("server_name", ac.server.Name),
+					zap.String("server_host", ac.server.Host),
+					zap.Int("server_port", ac.server.Port),
+				)
 				time.Sleep(5 * time.Second)
 				continue
 			}
@@ -117,6 +143,12 @@ func (ac *AgentClient) connect() {
 func (ac *AgentClient) attemptConnection() error {
 	wsURL := fmt.Sprintf("wss://%s:%d/ws/agent/status", ac.server.Host, ac.server.Port)
 
+	ac.logger.Debug("attempting WebSocket connection to agent",
+		zap.String("url", wsURL),
+		zap.Uint("server_id", ac.server.ID),
+		zap.String("server_name", ac.server.Name),
+	)
+
 	headers := make(map[string][]string)
 	headers["Authorization"] = []string{fmt.Sprintf("Bearer %s", ac.server.AccessToken)}
 
@@ -124,6 +156,9 @@ func (ac *AgentClient) attemptConnection() error {
 	dialer.HandshakeTimeout = 10 * time.Second
 
 	if ac.server.SkipSSLVerification != nil && *ac.server.SkipSSLVerification {
+		ac.logger.Debug("SSL verification disabled for WebSocket connection",
+			zap.String("server_name", ac.server.Name),
+		)
 		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
@@ -134,6 +169,13 @@ func (ac *AgentClient) attemptConnection() error {
 
 	ac.conn = conn
 	ac.setConnected(true)
+
+	ac.logger.Info("WebSocket connection established",
+		zap.Uint("server_id", ac.server.ID),
+		zap.String("server_name", ac.server.Name),
+		zap.String("url", wsURL),
+	)
+
 	return nil
 }
 
@@ -157,7 +199,16 @@ func (ac *AgentClient) readPump() {
 		_, message, err := ac.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("WebSocket error from agent %s: %v", ac.server.Name, err)
+				ac.logger.Error("WebSocket error from agent",
+					zap.Error(err),
+					zap.Uint("server_id", ac.server.ID),
+					zap.String("server_name", ac.server.Name),
+				)
+			} else {
+				ac.logger.Debug("WebSocket connection closed",
+					zap.Uint("server_id", ac.server.ID),
+					zap.String("server_name", ac.server.Name),
+				)
 			}
 			break
 		}
@@ -184,15 +235,30 @@ func (ac *AgentClient) writePump() {
 func (ac *AgentClient) handleAgentMessage(message []byte) {
 	var baseMsg BaseMessage
 	if err := json.Unmarshal(message, &baseMsg); err != nil {
-		log.Printf("Invalid message from agent %s: %v", ac.server.Name, err)
+		ac.logger.Error("invalid message from agent",
+			zap.Error(err),
+			zap.Uint("server_id", ac.server.ID),
+			zap.String("server_name", ac.server.Name),
+			zap.Int("message_length", len(message)),
+		)
 		return
 	}
+
+	ac.logger.Debug("received message from agent",
+		zap.String("message_type", string(baseMsg.Type)),
+		zap.Uint("server_id", ac.server.ID),
+		zap.String("server_name", ac.server.Name),
+	)
 
 	switch baseMsg.Type {
 	case MessageTypeContainerStatus:
 		var event ContainerStatusEvent
 		if err := json.Unmarshal(message, &event); err != nil {
-			log.Printf("Invalid container status event from agent %s: %v", ac.server.Name, err)
+			ac.logger.Error("invalid container status event from agent",
+				zap.Error(err),
+				zap.Uint("server_id", ac.server.ID),
+				zap.String("server_name", ac.server.Name),
+			)
 			return
 		}
 
@@ -202,7 +268,11 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 	case MessageTypeStackStatus:
 		var event StackStatusEvent
 		if err := json.Unmarshal(message, &event); err != nil {
-			log.Printf("Invalid stack status event from agent %s: %v", ac.server.Name, err)
+			ac.logger.Error("invalid stack status event from agent",
+				zap.Error(err),
+				zap.Uint("server_id", ac.server.ID),
+				zap.String("server_name", ac.server.Name),
+			)
 			return
 		}
 
@@ -212,7 +282,11 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 	case MessageTypeOperationProgress:
 		var event OperationProgressEvent
 		if err := json.Unmarshal(message, &event); err != nil {
-			log.Printf("Invalid operation progress event from agent %s: %v", ac.server.Name, err)
+			ac.logger.Error("invalid operation progress event from agent",
+				zap.Error(err),
+				zap.Uint("server_id", ac.server.ID),
+				zap.String("server_name", ac.server.Name),
+			)
 			return
 		}
 
@@ -220,7 +294,11 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 		ac.hub.BroadcastOperationProgress(event)
 
 	default:
-		log.Printf("Unknown message type from agent %s: %s", ac.server.Name, baseMsg.Type)
+		ac.logger.Warn("unknown message type from agent",
+			zap.String("message_type", string(baseMsg.Type)),
+			zap.Uint("server_id", ac.server.ID),
+			zap.String("server_name", ac.server.Name),
+		)
 	}
 }
 

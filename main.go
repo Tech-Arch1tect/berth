@@ -25,6 +25,7 @@ import (
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/services/auth"
 	"github.com/tech-arch1tect/brx/services/jwt"
+	"github.com/tech-arch1tect/brx/services/logging"
 	"github.com/tech-arch1tect/brx/services/refreshtoken"
 	"github.com/tech-arch1tect/brx/services/revocation"
 	"github.com/tech-arch1tect/brx/services/totp"
@@ -78,7 +79,9 @@ func main() {
 			fx.Provide(rbac.NewMiddleware),
 			fx.Provide(rbac.NewRBACHandler),
 			fx.Provide(rbac.NewAPIHandler),
-			fx.Provide(setup.NewService),
+			fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
+				return setup.NewService(db, rbacSvc, logger)
+			}),
 			fx.Provide(setup.NewHandler),
 			fx.Provide(server.NewService),
 			fx.Provide(server.NewHandler),
