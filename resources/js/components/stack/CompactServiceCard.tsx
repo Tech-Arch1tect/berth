@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ComposeService, Container } from '../../types/stack';
 import { ServiceQuickActions } from './ServiceQuickActions';
 import { OperationRequest } from '../../types/operations';
+import { useStackPermissions } from '../../hooks/useStackPermissions';
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -46,6 +47,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 }) => {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+
+  const { data: stackPermissions } = useStackPermissions({
+    serverid,
+    stackname,
+  });
 
   const getContainerStatusInfo = (container: Container) => {
     const state = container.state?.toLowerCase() || 'unknown';
@@ -180,14 +186,16 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
               )}
             </button>
 
-            <ServiceQuickActions
-              service={service}
-              onQuickOperation={onQuickOperation}
-              serverid={serverid}
-              stackname={stackname}
-              isOperationRunning={isOperationRunning}
-              runningOperation={runningOperation}
-            />
+            {stackPermissions?.permissions?.includes('stacks.manage') && (
+              <ServiceQuickActions
+                service={service}
+                onQuickOperation={onQuickOperation}
+                serverid={serverid}
+                stackname={stackname}
+                isOperationRunning={isOperationRunning}
+                runningOperation={runningOperation}
+              />
+            )}
           </div>
         </div>
       </div>

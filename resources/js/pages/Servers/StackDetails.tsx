@@ -9,6 +9,7 @@ import { useStackVolumes } from '../../hooks/useStackVolumes';
 import { useStackEnvironmentVariables } from '../../hooks/useStackEnvironmentVariables';
 import { useStackStats } from '../../hooks/useStackStats';
 import { useOperations } from '../../hooks/useOperations';
+import { useStackPermissions } from '../../hooks/useStackPermissions';
 import NetworkList from '../../components/stack/NetworkList';
 import VolumeList from '../../components/stack/VolumeList';
 import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
@@ -124,6 +125,11 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       setShowQuickFeedback(false);
       showToast.error('Operation failed to start');
     },
+  });
+
+  const { data: stackPermissions, isLoading: permissionsLoading } = useStackPermissions({
+    serverid,
+    stackname,
   });
 
   useEffect(() => {
@@ -296,17 +302,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
           <div className="flex items-center space-x-3">
             {/* Stack Quick Actions */}
-            {stackDetails && stackDetails.services && (
-              <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl px-3 py-2">
-                <StackQuickActions
-                  services={stackDetails.services}
-                  onQuickOperation={handleQuickOperation}
-                  disabled={quickOperationState.isRunning}
-                  isOperationRunning={quickOperationState.isRunning}
-                  runningOperation={quickOperationState.operation}
-                />
-              </div>
-            )}
+            {stackDetails &&
+              stackDetails.services &&
+              stackPermissions?.permissions?.includes('stacks.manage') && (
+                <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl px-3 py-2">
+                  <StackQuickActions
+                    services={stackDetails.services}
+                    onQuickOperation={handleQuickOperation}
+                    disabled={quickOperationState.isRunning}
+                    isOperationRunning={quickOperationState.isRunning}
+                    runningOperation={quickOperationState.operation}
+                  />
+                </div>
+              )}
 
             {/* Refresh Button */}
             <button
@@ -335,13 +343,15 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             </button>
 
             {/* Operations Button */}
-            <button
-              onClick={() => setOperationsModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <Cog6ToothIcon className="w-4 h-4 mr-2" />
-              Operations
-            </button>
+            {stackPermissions?.permissions?.includes('stacks.manage') && (
+              <button
+                onClick={() => setOperationsModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                Operations
+              </button>
+            )}
           </div>
         </div>
       </div>
