@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { CircleStackIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { useMaintenancePermissions } from '../hooks/useMaintenancePermissions';
 
 interface ServerNavigationProps {
   serverId: number;
@@ -14,19 +15,24 @@ export const ServerNavigation: React.FC<ServerNavigationProps> = ({
   className = '',
 }) => {
   const { url } = usePage();
+  const { data: permissions, isLoading: permissionsLoading } = useMaintenancePermissions({
+    serverid: serverId,
+  });
 
   const navItems = [
     {
       name: 'Stacks',
       href: `/servers/${serverId}/stacks`,
       icon: CircleStackIcon,
+      show: true,
     },
     {
       name: 'Maintenance',
       href: `/servers/${serverId}/maintenance`,
       icon: WrenchScrewdriverIcon,
+      show: permissions?.maintenance?.read === true,
     },
-  ];
+  ].filter((item) => item.show);
 
   return (
     <nav className={`flex space-x-1 ${className}`}>
