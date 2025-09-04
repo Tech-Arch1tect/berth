@@ -6,7 +6,7 @@
    ```bash
    mkdir berth
    cd berth
-   wget https://raw.githubusercontent.com/Tech-Arch1tect/berth/refs/heads/main/docker compose.yml
+   wget https://raw.githubusercontent.com/Tech-Arch1tect/berth/refs/heads/main/docker-compose.yml
    wget https://raw.githubusercontent.com/Tech-Arch1tect/berth/refs/heads/main/.env.example
    ```
    
@@ -38,7 +38,7 @@
    ```bash
    mkdir berth-agent
    cd berth-agent
-   wget https://raw.githubusercontent.com/Tech-Arch1tect/berth-agent/refs/heads/main/docker compose.yml
+   wget https://raw.githubusercontent.com/Tech-Arch1tect/berth-agent/refs/heads/main/docker-compose.yml
    wget https://raw.githubusercontent.com/Tech-Arch1tect/berth-agent/refs/heads/main/.env.example
    ```
 
