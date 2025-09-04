@@ -35,7 +35,6 @@ const LogViewer: React.FC<LogViewerProps> = ({
   const [copied, setCopied] = useState(false);
   const [followMode, setFollowMode] = useState(true);
   const [silentLoading, setSilentLoading] = useState(false);
-  const [newLogCount, setNewLogCount] = useState(0);
 
   const {
     logs,
