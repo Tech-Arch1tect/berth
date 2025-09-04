@@ -8,6 +8,7 @@ interface User {
   username: string;
   email: string;
   created_at: string;
+  last_login_at: string | null;
   totp_enabled: boolean;
   roles: Role[];
 }
@@ -239,6 +240,12 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
+                        Last Login
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
                         Joined
                       </th>
                       <th scope="col" className="relative px-6 py-3">
@@ -295,6 +302,9 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                           >
                             {user.totp_enabled ? 'Enabled' : 'Disabled'}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.last_login_at ? formatDate(user.last_login_at) : 'Never'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(user.created_at)}

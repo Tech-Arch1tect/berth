@@ -180,6 +180,14 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	session.LoginWithTOTPService(c, user.ID, h.totpSvc)
 
+	now := time.Now()
+	if err := h.db.Model(&user).Update("last_login_at", now).Error; err != nil {
+		h.logger.Warn("failed to update last login time",
+			zap.Uint("user_id", user.ID),
+			zap.Error(err),
+		)
+	}
+
 	if h.authSvc.IsRememberMeEnabled() && req.RememberMe {
 		rememberToken, err := h.authSvc.CreateRememberMeToken(user.ID)
 		if err != nil {

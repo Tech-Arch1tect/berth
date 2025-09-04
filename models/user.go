@@ -10,6 +10,7 @@ type User struct {
 	Email           string     `json:"email" gorm:"uniqueIndex;not null"`
 	Password        string     `json:"-" gorm:"not null"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:""`
+	LastLoginAt     *time.Time `json:"last_login_at" gorm:""`
 	Roles           []Role     `json:"roles" gorm:"many2many:user_roles;"`
 }
 

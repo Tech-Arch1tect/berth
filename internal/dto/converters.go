@@ -31,6 +31,7 @@ func ConvertUserToUserInfo(user models.User, totpSvc *totp.Service) UserInfo {
 		Username:        user.Username,
 		Email:           user.Email,
 		EmailVerifiedAt: FormatTimePtr(user.EmailVerifiedAt),
+		LastLoginAt:     FormatTimePtr(user.LastLoginAt),
 		TOTPEnabled:     totpSvc.IsUserTOTPEnabled(user.ID),
 		CreatedAt:       user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       user.UpdatedAt.Format(time.RFC3339),

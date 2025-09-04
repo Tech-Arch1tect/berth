@@ -224,6 +224,14 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 
 	h.trackJWTSession(c, user.ID, accessToken, refreshTokenData)
 
+	now := time.Now()
+	if err := h.db.Model(&user).Update("last_login_at", now).Error; err != nil {
+		h.logger.Warn("failed to update last login time",
+			zap.Uint("user_id", user.ID),
+			zap.Error(err),
+		)
+	}
+
 	h.logger.Info("mobile login successful",
 		zap.String("username", req.Username),
 		zap.Uint("user_id", user.ID),
@@ -508,6 +516,14 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	h.trackJWTSession(c, claims.UserID, accessToken, refreshTokenData)
+
+	now := time.Now()
+	if err := h.db.Model(&user).Update("last_login_at", now).Error; err != nil {
+		h.logger.Warn("failed to update last login time",
+			zap.Uint("user_id", claims.UserID),
+			zap.Error(err),
+		)
+	}
 
 	h.logger.Info("TOTP verification successful",
 		zap.Uint("user_id", claims.UserID),

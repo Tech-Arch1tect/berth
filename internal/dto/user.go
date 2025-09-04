@@ -28,6 +28,7 @@ type UserInfo struct {
 	Username        string     `json:"username"`
 	Email           string     `json:"email"`
 	EmailVerifiedAt *string    `json:"email_verified_at"`
+	LastLoginAt     *string    `json:"last_login_at"`
 	TOTPEnabled     bool       `json:"totp_enabled"`
 	CreatedAt       string     `json:"created_at"`
 	UpdatedAt       string     `json:"updated_at"`
