@@ -9,11 +9,13 @@ import {
   RenameRequest,
   CopyRequest,
   DeleteRequest,
+  ChmodRequest,
 } from '../../types/files';
 import { FileList } from './FileList';
 import { FileEditor } from './FileEditor';
 import { FileOperationModal } from './FileOperationModal';
 import { FileUploadModal } from './FileUploadModal';
+import { ChmodModal } from './ChmodModal';
 import { useFiles } from '../../hooks/useFiles';
 import { showToast } from '../../utils/toast';
 
@@ -38,6 +40,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isChmodModalOpen, setIsChmodModalOpen] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<FileOperation | null>(null);
 
   const handleError = useCallback((error: string) => {
@@ -54,6 +57,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
     renameFile,
     copyFile,
     downloadFile,
+    chmodFile,
   } = useFiles({
     serverid,
     stackname,
@@ -118,7 +122,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
     (operation: FileOperation, entry?: FileEntry) => {
       if (
         !canWrite &&
-        ['create', 'mkdir', 'rename', 'copy', 'delete', 'upload'].includes(operation)
+        ['create', 'mkdir', 'rename', 'copy', 'delete', 'upload', 'chmod'].includes(operation)
       ) {
         showToast.error('You do not have permission to modify files in this stack');
         return;
@@ -131,6 +135,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
         handleFileSelect(entry);
       } else if (operation === 'upload') {
         setIsUploadModalOpen(true);
+      } else if (operation === 'chmod') {
+        setIsChmodModalOpen(true);
       } else {
         setIsOperationModalOpen(true);
       }
@@ -235,6 +241,23 @@ export const FileManager: React.FC<FileManagerProps> = ({
       }
     },
     [uploadFile, loadDirectory, currentPath]
+  );
+
+  const handleChmodConfirm = useCallback(
+    async (request: ChmodRequest) => {
+      try {
+        await chmodFile(request);
+        showToast.success('Permissions changed successfully');
+        await loadDirectory(currentPath);
+        setIsChmodModalOpen(false);
+        setCurrentOperation(null);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Failed to change permissions:', error);
+        throw error;
+      }
+    },
+    [chmodFile, loadDirectory, currentPath]
   );
 
   if (!canRead) {
@@ -487,6 +510,19 @@ export const FileManager: React.FC<FileManagerProps> = ({
           setCurrentOperation(null);
         }}
         onUpload={handleFileUpload}
+      />
+
+      {/* Chmod Modal */}
+      <ChmodModal
+        isOpen={isChmodModalOpen}
+        entry={selectedFile}
+        loading={loading}
+        onClose={() => {
+          setIsChmodModalOpen(false);
+          setCurrentOperation(null);
+          setSelectedFile(null);
+        }}
+        onConfirm={handleChmodConfirm}
       />
     </div>
   );

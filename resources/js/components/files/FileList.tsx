@@ -464,6 +464,29 @@ export const FileList: React.FC<FileListProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                onFileOperation('chmod', entry);
+                              }}
+                              className="p-2 text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50/80 dark:hover:bg-orange-900/30 rounded-md transition-all duration-200"
+                              title="Change Permissions"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                              </svg>
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 onFileOperation('delete', entry);
                               }}
                               className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/30 rounded-md transition-all duration-200"

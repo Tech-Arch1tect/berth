@@ -9,6 +9,7 @@ import {
   DeleteRequest,
   RenameRequest,
   CopyRequest,
+  ChmodRequest,
 } from '../types/files';
 
 interface UseFilesOptions {
@@ -211,6 +212,20 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     [baseUrl, handleError]
   );
 
+  const chmodFile = useCallback(
+    async (request: ChmodRequest): Promise<void> => {
+      try {
+        setLoading(true);
+        await axios.post(`${baseUrl}/chmod`, request, { headers: getHeaders() });
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [baseUrl, handleError, getHeaders]
+  );
+
   return {
     loading,
     listDirectory,
@@ -222,5 +237,6 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     renameFile,
     copyFile,
     downloadFile,
+    chmodFile,
   };
 };
