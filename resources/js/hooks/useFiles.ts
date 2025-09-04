@@ -10,6 +10,7 @@ import {
   RenameRequest,
   CopyRequest,
   ChmodRequest,
+  ChownRequest,
 } from '../types/files';
 
 interface UseFilesOptions {
@@ -226,6 +227,20 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     [baseUrl, handleError, getHeaders]
   );
 
+  const chownFile = useCallback(
+    async (request: ChownRequest): Promise<void> => {
+      try {
+        setLoading(true);
+        await axios.post(`${baseUrl}/chown`, request, { headers: getHeaders() });
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [baseUrl, handleError, getHeaders]
+  );
+
   return {
     loading,
     listDirectory,
@@ -238,5 +253,6 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     copyFile,
     downloadFile,
     chmodFile,
+    chownFile,
   };
 };

@@ -5,6 +5,10 @@ export interface FileEntry {
   is_directory: boolean;
   mod_time: string;
   mode: string;
+  owner?: string;
+  group?: string;
+  owner_id?: number;
+  group_id?: number;
   extension?: string;
 }
 
@@ -50,6 +54,13 @@ export interface ChmodRequest {
   recursive?: boolean;
 }
 
+export interface ChownRequest {
+  path: string;
+  owner_id?: number;
+  group_id?: number;
+  recursive?: boolean;
+}
+
 export type FileOperation =
   | 'create'
   | 'edit'
@@ -57,5 +68,6 @@ export type FileOperation =
   | 'rename'
   | 'copy'
   | 'chmod'
+  | 'chown'
   | 'mkdir'
   | 'upload';
