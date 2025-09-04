@@ -252,3 +252,34 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	return c.Stream(200, "application/octet-stream", result.Body)
 }
+
+func (h *APIHandler) Chmod(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	var req ChmodRequest
+	if err := common.BindRequest(c, &req); err != nil {
+		return err
+	}
+
+	if req.Path == "" {
+		return common.SendBadRequest(c, "path is required")
+	}
+
+	if req.Mode == "" {
+		return common.SendBadRequest(c, "mode is required")
+	}
+
+	if err := h.service.Chmod(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendMessage(c, "success")
+}

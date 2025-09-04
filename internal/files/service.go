@@ -410,6 +410,69 @@ func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, st
 	return nil
 }
 
+func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackname string, req ChmodRequest) error {
+	s.logger.Info("chmod operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+		zap.String("mode", req.Mode),
+	)
+
+	if err := s.checkFileWritePermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("chmod permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+			zap.String("mode", req.Mode),
+		)
+		return err
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		s.logger.Error("failed to get server for chmod",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
+		return fmt.Errorf("failed to get server: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/files/chmod", stackname)
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "POST", endpoint, req)
+	if err != nil {
+		s.logger.Error("failed to chmod via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+			zap.String("mode", req.Mode),
+		)
+		return fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for chmod",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("target_path", req.Path),
+			zap.String("mode", req.Mode),
+		)
+		return s.handleAgentError(resp)
+	}
+
+	s.logger.Info("chmod completed successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+		zap.String("mode", req.Mode),
+	)
+
+	return nil
+}
+
 func (s *Service) checkFileReadPermission(userID uint, serverID uint, stackname string) error {
 	s.logger.Debug("checking file read permission",
 		zap.Uint("user_id", userID),

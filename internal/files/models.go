@@ -50,6 +50,12 @@ type CopyRequest struct {
 	TargetPath string `json:"target_path" validate:"required"`
 }
 
+type ChmodRequest struct {
+	Path      string `json:"path" validate:"required"`
+	Mode      string `json:"mode" validate:"required"`
+	Recursive bool   `json:"recursive,omitempty"`
+}
+
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Code    string `json:"code,omitempty"`
