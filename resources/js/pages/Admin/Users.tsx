@@ -8,6 +8,7 @@ interface User {
   username: string;
   email: string;
   created_at: string;
+  totp_enabled: boolean;
   roles: Role[];
 }
 
@@ -232,6 +233,12 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
+                        2FA
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
                         Joined
                       </th>
                       <th scope="col" className="relative px-6 py-3">
@@ -277,6 +284,17 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user.totp_enabled
+                                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                            }`}
+                          >
+                            {user.totp_enabled ? 'Enabled' : 'Disabled'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(user.created_at)}

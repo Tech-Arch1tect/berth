@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/auth"
 	"github.com/tech-arch1tect/brx/services/inertia"
+	"github.com/tech-arch1tect/brx/services/totp"
 	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
@@ -17,14 +18,16 @@ type Handler struct {
 	inertiaSvc *inertia.Service
 	rbac       *Service
 	authSvc    *auth.Service
+	totpSvc    *totp.Service
 }
 
-func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc *auth.Service) *Handler {
+func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc *auth.Service, totpSvc *totp.Service) *Handler {
 	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		rbac:       rbac,
 		authSvc:    authSvc,
+		totpSvc:    totpSvc,
 	}
 }
 
@@ -34,9 +37,22 @@ func (h *Handler) ListUsers(c echo.Context) error {
 		return common.SendInternalError(c, "failed to fetch users")
 	}
 
+	type UserWithTOTP struct {
+		models.User
+		TOTPEnabled bool `json:"totp_enabled"`
+	}
+
+	var usersWithTOTP []UserWithTOTP
+	for _, user := range users {
+		usersWithTOTP = append(usersWithTOTP, UserWithTOTP{
+			User:        user,
+			TOTPEnabled: h.totpSvc.IsUserTOTPEnabled(user.ID),
+		})
+	}
+
 	return h.inertiaSvc.Render(c, "Admin/Users", map[string]any{
 		"title": "User Management",
-		"users": users,
+		"users": usersWithTOTP,
 	})
 }
 
@@ -378,6 +394,6 @@ func (h *Handler) DeleteRoleStackPermission(c echo.Context) error {
 	return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 }
 
-func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service, authSvc *auth.Service) *Handler {
-	return NewHandler(db, inertiaSvc, rbacSvc, authSvc)
+func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service, authSvc *auth.Service, totpSvc *totp.Service) *Handler {
+	return NewHandler(db, inertiaSvc, rbacSvc, authSvc, totpSvc)
 }
