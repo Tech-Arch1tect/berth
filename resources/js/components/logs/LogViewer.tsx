@@ -34,6 +34,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [followMode, setFollowMode] = useState(true);
+  const [silentLoading, setSilentLoading] = useState(false);
+  const [newLogCount, setNewLogCount] = useState(0);
 
   const {
     logs,
@@ -45,6 +47,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
     setSearchTerm,
     levelFilter,
     setLevelFilter,
+    resetLogs,
   } = useLogs({
     serverid,
     stackname,
@@ -55,13 +58,19 @@ const LogViewer: React.FC<LogViewerProps> = ({
   const intervalRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    resetLogs();
     fetchLogs({ tail, since, timestamps: showTimestamps });
-  }, [fetchLogs, tail, since, showTimestamps]);
+  }, [tail, since, showTimestamps, selectedContainer]);
 
   useEffect(() => {
     if (autoRefresh) {
-      intervalRef.current = window.setInterval(() => {
-        fetchLogs({ tail, since, timestamps: showTimestamps });
+      intervalRef.current = window.setInterval(async () => {
+        setSilentLoading(true);
+        try {
+          await fetchLogs({ tail, since, timestamps: showTimestamps }, true);
+        } finally {
+          setSilentLoading(false);
+        }
       }, 5000);
     } else if (intervalRef.current) {
       window.clearInterval(intervalRef.current);
@@ -72,7 +81,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
         window.clearInterval(intervalRef.current);
       }
     };
-  }, [autoRefresh, fetchLogs, tail, since, showTimestamps]);
+  }, [autoRefresh, tail, since, showTimestamps]); // Removed fetchLogs and logs.length from dependencies
 
   const handleRefresh = () => {
     fetchLogs({ tail, since, timestamps: showTimestamps });
@@ -492,8 +501,12 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
               {autoRefresh && (
                 <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium">Auto-refreshing</span>
+                  <div
+                    className={`w-2 h-2 bg-green-500 rounded-full ${silentLoading ? 'animate-spin' : 'animate-pulse'}`}
+                  ></div>
+                  <span className="text-xs font-medium">
+                    {silentLoading ? 'Checking for new logs...' : 'Auto-refreshing'}
+                  </span>
                 </div>
               )}
             </div>

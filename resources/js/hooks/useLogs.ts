@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { LogEntry, LogsResponse, LogFilterOptions } from '../types/logs';
 
 interface UseLogsOptions {
@@ -12,12 +12,13 @@ interface UseLogsReturn {
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
-  fetchLogs: (options: Partial<LogFilterOptions>) => Promise<void>;
+  fetchLogs: (options: Partial<LogFilterOptions>, silent?: boolean) => Promise<void>;
   filteredLogs: LogEntry[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   levelFilter: string;
   setLevelFilter: (level: string) => void;
+  resetLogs: () => void;
 }
 
 export const useLogs = ({
@@ -31,6 +32,7 @@ export const useLogs = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
+  const lastFetchTimeRef = useRef<string | null>(null);
 
   const buildEndpoint = useCallback(() => {
     if (containerName) {
@@ -43,8 +45,10 @@ export const useLogs = ({
   }, [serverid, stackname, serviceName, containerName]);
 
   const fetchLogs = useCallback(
-    async (options: Partial<LogFilterOptions>) => {
-      setLoading(true);
+    async (options: Partial<LogFilterOptions>, silent = false) => {
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -74,12 +78,48 @@ export const useLogs = ({
         }
 
         const data: LogsResponse = await response.json();
-        setLogs(data.logs || []);
+        const newLogs = data.logs || [];
+
+        setLogs((prevLogs) => {
+          if (silent && prevLogs.length > 0 && lastFetchTimeRef.current) {
+            const lastTimestamp = lastFetchTimeRef.current;
+            const uniqueNewLogs = newLogs.filter((log) => {
+              try {
+                const logTime = new Date(log.timestamp).getTime();
+                const lastTime = new Date(lastTimestamp).getTime();
+                return logTime > lastTime;
+              } catch {
+                return true;
+              }
+            });
+
+            if (uniqueNewLogs.length > 0) {
+              const combinedLogs = [...prevLogs, ...uniqueNewLogs];
+
+              return combinedLogs.slice(-2000);
+            }
+
+            return prevLogs;
+          } else {
+            return newLogs;
+          }
+        });
+
+        if (newLogs.length > 0) {
+          const mostRecentLog = newLogs[newLogs.length - 1];
+          lastFetchTimeRef.current = mostRecentLog.timestamp;
+        } else if (!silent) {
+          lastFetchTimeRef.current = new Date().toISOString();
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch logs');
-        setLogs([]);
+        if (!silent) {
+          setLogs([]);
+        }
       } finally {
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
       }
     },
     [buildEndpoint]
@@ -101,6 +141,11 @@ export const useLogs = ({
     });
   }, [logs, searchTerm, levelFilter]);
 
+  const resetLogs = useCallback(() => {
+    setLogs([]);
+    lastFetchTimeRef.current = null;
+  }, []);
+
   return {
     logs,
     loading,
@@ -111,5 +156,6 @@ export const useLogs = ({
     setSearchTerm,
     levelFilter,
     setLevelFilter,
+    resetLogs,
   };
 };
