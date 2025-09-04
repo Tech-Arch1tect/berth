@@ -1,11 +1,17 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { DirectoryStats } from '../../types/files';
 
 interface FileUploadModalProps {
   isOpen: boolean;
   currentPath: string;
   onClose: () => void;
-  onUpload: (file: File, path: string) => Promise<void>;
+  onUpload: (
+    file: File,
+    path: string,
+    options?: { mode?: string; owner_id?: number; group_id?: number }
+  ) => Promise<void>;
+  getDirectoryStats?: (path?: string) => Promise<DirectoryStats>;
 }
 
 export const FileUploadModal: React.FC<FileUploadModalProps> = ({
@@ -13,11 +19,49 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
   currentPath,
   onClose,
   onUpload,
+  getDirectoryStats,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [mode, setMode] = useState('644');
+  const [ownerId, setOwnerId] = useState('');
+  const [groupId, setGroupId] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const loadSmartDefaults = async () => {
+      if (!isOpen) return;
+
+      try {
+        if (getDirectoryStats) {
+          const stats = await getDirectoryStats(currentPath || '.');
+
+          const defaultMode =
+            stats.most_common_mode === '755' ? '644' : stats.most_common_mode || '644';
+
+          setMode(defaultMode);
+          setOwnerId(stats.most_common_owner?.toString() || '');
+          setGroupId(stats.most_common_group?.toString() || '');
+        } else {
+          setMode('644');
+          setOwnerId('');
+          setGroupId('');
+        }
+      } catch (error) {
+        console.warn('Failed to load directory stats, using basic defaults:', error);
+        setMode('644');
+        setOwnerId('');
+        setGroupId('');
+      }
+    };
+
+    if (isOpen) {
+      setShowAdvanced(false);
+      loadSmartDefaults();
+    }
+  }, [isOpen, currentPath, getDirectoryStats]);
 
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (files) {
@@ -50,9 +94,15 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
     try {
       setUploading(true);
+
+      const options: { mode?: string; owner_id?: number; group_id?: number } = {};
+      if (mode.trim()) options.mode = mode.trim();
+      if (ownerId.trim()) options.owner_id = parseInt(ownerId.trim());
+      if (groupId.trim()) options.group_id = parseInt(groupId.trim());
+
       for (const file of selectedFiles) {
         const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
-        await onUpload(file, filePath);
+        await onUpload(file, filePath, options);
       }
       setSelectedFiles([]);
       onClose();
@@ -259,6 +309,80 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                   <strong>Upload to:</strong> /{currentPath}
                 </div>
               )}
+
+              {/* Advanced Options */}
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <svg
+                    className={`w-4 h-4 transform transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                  <span>Permissions & Ownership</span>
+                </button>
+
+                {showAdvanced && (
+                  <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Permissions (octal)
+                      </label>
+                      <input
+                        type="text"
+                        value={mode}
+                        onChange={(e) => setMode(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="644"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Leave empty to use default permissions
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Owner ID
+                        </label>
+                        <input
+                          type="number"
+                          value={ownerId}
+                          onChange={(e) => setOwnerId(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="1000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Group ID
+                        </label>
+                        <input
+                          type="number"
+                          value={groupId}
+                          onChange={(e) => setGroupId(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="1000"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Leave empty to use server defaults
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-end space-x-3 mt-6">

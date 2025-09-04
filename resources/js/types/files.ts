@@ -28,10 +28,16 @@ export interface WriteFileRequest {
   path: string;
   content: string;
   encoding?: string;
+  mode?: string;
+  owner_id?: number;
+  group_id?: number;
 }
 
 export interface CreateDirectoryRequest {
   path: string;
+  mode?: string;
+  owner_id?: number;
+  group_id?: number;
 }
 
 export interface DeleteRequest {
@@ -59,6 +65,19 @@ export interface ChownRequest {
   owner_id?: number;
   group_id?: number;
   recursive?: boolean;
+}
+
+export interface DirectoryStatsRequest {
+  path: string;
+}
+
+export interface DirectoryStats {
+  path: string;
+  most_common_owner: number;
+  most_common_group: number;
+  most_common_mode: string;
+  owner_name?: string;
+  group_name?: string;
 }
 
 export type FileOperation =

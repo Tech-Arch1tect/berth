@@ -8,6 +8,7 @@ import {
   RenameRequest,
   CopyRequest,
   DeleteRequest,
+  DirectoryStats,
 } from '../../types/files';
 
 interface FileOperationModalProps {
@@ -19,6 +20,7 @@ interface FileOperationModalProps {
   onConfirm: (
     data: CreateDirectoryRequest | WriteFileRequest | RenameRequest | CopyRequest | DeleteRequest
   ) => Promise<void>;
+  getDirectoryStats?: (path?: string) => Promise<DirectoryStats>;
 }
 
 export const FileOperationModal: React.FC<FileOperationModalProps> = ({
@@ -28,37 +30,90 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
   currentPath,
   onClose,
   onConfirm,
+  getDirectoryStats,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [_selectedFiles, _setSelectedFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState('');
+  const [ownerId, setOwnerId] = useState('');
+  const [groupId, setGroupId] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
+    const loadSmartDefaults = async () => {
+      if (!isOpen || !operation || (operation !== 'mkdir' && operation !== 'create')) {
+        return;
+      }
+
+      try {
+        if (getDirectoryStats) {
+          const stats = await getDirectoryStats(currentPath || '.');
+
+          const defaultMode =
+            operation === 'mkdir'
+              ? stats.most_common_mode || '755'
+              : stats.most_common_mode === '755'
+                ? '644'
+                : stats.most_common_mode || '644';
+
+          setMode(defaultMode);
+          setOwnerId(stats.most_common_owner?.toString() || '');
+          setGroupId(stats.most_common_group?.toString() || '');
+        } else {
+          setMode(operation === 'mkdir' ? '755' : '644');
+          setOwnerId('');
+          setGroupId('');
+        }
+      } catch (error) {
+        console.warn('Failed to load directory stats, using basic defaults:', error);
+        setMode(operation === 'mkdir' ? '755' : '644');
+        setOwnerId('');
+        setGroupId('');
+      }
+    };
+
     if (isOpen && operation) {
       switch (operation) {
         case 'mkdir':
           setInputValue('');
           setTargetValue('');
+          setShowAdvanced(false);
+          loadSmartDefaults();
           break;
         case 'create':
           setInputValue('');
           setTargetValue('');
+          setShowAdvanced(false);
+          loadSmartDefaults();
           break;
         case 'rename':
           setInputValue(selectedFile?.name || '');
           setTargetValue('');
+          setMode('');
+          setOwnerId('');
+          setGroupId('');
+          setShowAdvanced(false);
           break;
         case 'copy':
           setInputValue(selectedFile?.path || '');
           setTargetValue('');
+          setMode('');
+          setOwnerId('');
+          setGroupId('');
+          setShowAdvanced(false);
           break;
         default:
           setInputValue('');
           setTargetValue('');
+          setMode('');
+          setOwnerId('');
+          setGroupId('');
+          setShowAdvanced(false);
       }
     }
-  }, [isOpen, operation, selectedFile]);
+  }, [isOpen, operation, selectedFile, currentPath, getDirectoryStats]);
 
   const handleConfirm = async () => {
     if (!operation) return;
@@ -69,13 +124,21 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
       switch (operation) {
         case 'mkdir': {
           const dirPath = currentPath ? `${currentPath}/${inputValue}` : inputValue;
-          await onConfirm({ path: dirPath } as CreateDirectoryRequest);
+          const request: CreateDirectoryRequest = { path: dirPath };
+          if (mode.trim()) request.mode = mode.trim();
+          if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
+          if (groupId.trim()) request.group_id = parseInt(groupId.trim());
+          await onConfirm(request);
           break;
         }
 
         case 'create': {
           const filePath = currentPath ? `${currentPath}/${inputValue}` : inputValue;
-          await onConfirm({ path: filePath, content: '', encoding: 'utf-8' });
+          const request: WriteFileRequest = { path: filePath, content: '', encoding: 'utf-8' };
+          if (mode.trim()) request.mode = mode.trim();
+          if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
+          if (groupId.trim()) request.group_id = parseInt(groupId.trim());
+          await onConfirm(request);
           break;
         }
 
@@ -243,6 +306,81 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
                   {currentPath && (
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       <strong>Location:</strong> /{currentPath}
+                    </div>
+                  )}
+
+                  {(operation === 'mkdir' || operation === 'create') && (
+                    <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        type="button"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <svg
+                          className={`w-4 h-4 transform transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                        <span>Permissions & Ownership</span>
+                      </button>
+
+                      {showAdvanced && (
+                        <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Permissions (octal)
+                            </label>
+                            <input
+                              type="text"
+                              value={mode}
+                              onChange={(e) => setMode(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                              placeholder={operation === 'mkdir' ? '755' : '644'}
+                            />
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Leave empty to use default permissions
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Owner ID
+                              </label>
+                              <input
+                                type="number"
+                                value={ownerId}
+                                onChange={(e) => setOwnerId(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="1000"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Group ID
+                              </label>
+                              <input
+                                type="number"
+                                value={groupId}
+                                onChange={(e) => setGroupId(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="1000"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Leave empty to use server defaults
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

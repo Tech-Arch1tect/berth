@@ -11,6 +11,7 @@ import {
   CopyRequest,
   ChmodRequest,
   ChownRequest,
+  DirectoryStats,
 } from '../types/files';
 
 interface UseFilesOptions {
@@ -241,6 +242,23 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     [baseUrl, handleError, getHeaders]
   );
 
+  const getDirectoryStats = useCallback(
+    async (path?: string): Promise<DirectoryStats> => {
+      try {
+        setLoading(true);
+        const params = path ? { path } : {};
+        const response = await axios.get<DirectoryStats>(`${baseUrl}/stats`, { params });
+        return response.data;
+      } catch (error) {
+        handleError(error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [baseUrl, handleError]
+  );
+
   return {
     loading,
     listDirectory,
@@ -254,5 +272,6 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     downloadFile,
     chmodFile,
     chownFile,
+    getDirectoryStats,
   };
 };

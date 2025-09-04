@@ -62,6 +62,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
     downloadFile,
     chmodFile,
     chownFile,
+    getDirectoryStats,
   } = useFiles({
     serverid,
     stackname,
@@ -237,9 +238,28 @@ export const FileManager: React.FC<FileManagerProps> = ({
   );
 
   const handleFileUpload = useCallback(
-    async (file: File, path: string) => {
+    async (
+      file: File,
+      path: string,
+      options?: { mode?: string; owner_id?: number; group_id?: number }
+    ) => {
       try {
-        await uploadFile(file, path);
+        if (options && (options.mode || options.owner_id || options.group_id)) {
+          await uploadFile(file, path);
+
+          if (options.mode) {
+            await chmodFile({ path, mode: options.mode, recursive: false });
+          }
+          if (options.owner_id || options.group_id) {
+            const chownRequest: any = { path, recursive: false };
+            if (options.owner_id) chownRequest.owner_id = options.owner_id;
+            if (options.group_id) chownRequest.group_id = options.group_id;
+            await chownFile(chownRequest);
+          }
+        } else {
+          await uploadFile(file, path);
+        }
+
         showToast.success(`Uploaded ${file.name} successfully`);
         await loadDirectory(currentPath);
       } catch (error) {
@@ -248,7 +268,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
         throw error;
       }
     },
-    [uploadFile, loadDirectory, currentPath]
+    [uploadFile, chmodFile, chownFile, loadDirectory, currentPath]
   );
 
   const handleChmodConfirm = useCallback(
@@ -524,6 +544,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
           setSelectedFile(null);
         }}
         onConfirm={handleOperationConfirm}
+        getDirectoryStats={getDirectoryStats}
       />
 
       {/* File Upload Modal */}
@@ -535,6 +556,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
           setCurrentOperation(null);
         }}
         onUpload={handleFileUpload}
+        getDirectoryStats={getDirectoryStats}
       />
 
       {/* Chmod Modal */}
