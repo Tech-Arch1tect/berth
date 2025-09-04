@@ -314,3 +314,27 @@ func (h *APIHandler) Chown(c echo.Context) error {
 
 	return common.SendMessage(c, "success")
 }
+
+func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	path := c.QueryParam("path")
+	if path == "" {
+		path = "."
+	}
+
+	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, path)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, stats)
+}

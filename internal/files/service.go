@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -211,6 +212,47 @@ func (s *Service) CreateDirectory(ctx context.Context, userID uint, serverID uin
 	}
 
 	return nil
+}
+
+func (s *Service) GetDirectoryStats(ctx context.Context, userID uint, serverID uint, stackname string, path string) (*DirectoryStats, error) {
+	if err := s.checkFileReadPermission(userID, serverID, stackname); err != nil {
+		return nil, err
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/files/stats?path=%s", stackname, url.QueryEscape(path))
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return nil, fmt.Errorf("agent error: %s", errResp.Error)
+		}
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var stats DirectoryStats
+	if err := json.NewDecoder(resp.Body).Decode(&stats); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	s.logger.Info("directory stats retrieved successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("path", path),
+	)
+
+	return &stats, nil
 }
 
 func (s *Service) Delete(ctx context.Context, userID uint, serverID uint, stackname string, req DeleteRequest) error {

@@ -155,6 +155,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/chmod", filesAPIHandler.Chmod)
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/chown", filesAPIHandler.Chown)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/files/stats", filesAPIHandler.GetDirectoryStats)
 	}
 	if logsHandler != nil {
 		protected.GET("/api/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)
@@ -345,6 +346,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/chmod", filesAPIHandler.Chmod)
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/files/chown", filesAPIHandler.Chown)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/files/stats", filesAPIHandler.GetDirectoryStats)
 		}
 		if logsHandler != nil {
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)

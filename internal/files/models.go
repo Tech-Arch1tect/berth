@@ -31,13 +31,19 @@ type FileContent struct {
 }
 
 type WriteFileRequest struct {
-	Path     string `json:"path" validate:"required"`
-	Content  string `json:"content"`
-	Encoding string `json:"encoding,omitempty"`
+	Path     string  `json:"path" validate:"required"`
+	Content  string  `json:"content"`
+	Encoding string  `json:"encoding,omitempty"`
+	Mode     *string `json:"mode,omitempty"`
+	OwnerID  *uint32 `json:"owner_id,omitempty"`
+	GroupID  *uint32 `json:"group_id,omitempty"`
 }
 
 type CreateDirectoryRequest struct {
-	Path string `json:"path" validate:"required"`
+	Path    string  `json:"path" validate:"required"`
+	Mode    *string `json:"mode,omitempty"`
+	OwnerID *uint32 `json:"owner_id,omitempty"`
+	GroupID *uint32 `json:"group_id,omitempty"`
 }
 
 type DeleteRequest struct {
@@ -65,6 +71,19 @@ type ChownRequest struct {
 	OwnerID   *uint32 `json:"owner_id,omitempty"`
 	GroupID   *uint32 `json:"group_id,omitempty"`
 	Recursive bool    `json:"recursive,omitempty"`
+}
+
+type DirectoryStatsRequest struct {
+	Path string `json:"path" validate:"required"`
+}
+
+type DirectoryStats struct {
+	Path            string `json:"path"`
+	MostCommonOwner uint32 `json:"most_common_owner"`
+	MostCommonGroup uint32 `json:"most_common_group"`
+	MostCommonMode  string `json:"most_common_mode"`
+	OwnerName       string `json:"owner_name,omitempty"`
+	GroupName       string `json:"group_name,omitempty"`
 }
 
 type ErrorResponse struct {
