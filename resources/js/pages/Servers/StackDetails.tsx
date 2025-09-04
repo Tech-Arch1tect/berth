@@ -103,7 +103,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     error: statsError,
     isFetching: statsFetching,
     refetch: refetchStats,
-  } = useStackStats(serverid, stackname, activeTab === 'stats' || activeTab === 'logs');
+  } = useStackStats(serverid, stackname, activeTab === 'stats');
 
   const { connectionStatus } = useStackWebSocket({
     serverid,
