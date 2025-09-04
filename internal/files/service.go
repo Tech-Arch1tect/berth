@@ -473,6 +473,71 @@ func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackna
 	return nil
 }
 
+func (s *Service) Chown(ctx context.Context, userID uint, serverID uint, stackname string, req ChownRequest) error {
+	s.logger.Info("chown operation initiated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+		zap.Any("owner_id", req.OwnerID),
+		zap.Any("group_id", req.GroupID),
+		zap.Bool("recursive", req.Recursive),
+	)
+
+	if err := s.checkFileWritePermission(userID, serverID, stackname); err != nil {
+		s.logger.Warn("chown permission denied",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+		)
+		return err
+	}
+
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		s.logger.Error("failed to get server for chown",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+		)
+		return fmt.Errorf("failed to get server: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/files/chown", stackname)
+	s.logger.Info("making request to agent",
+		zap.String("endpoint", endpoint),
+		zap.Any("request", req),
+	)
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "POST", endpoint, req)
+	if err != nil {
+		s.logger.Error("failed to chown via agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("target_path", req.Path),
+		)
+		return fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent returned error for chown",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("target_path", req.Path),
+		)
+		return s.handleAgentError(resp)
+	}
+
+	s.logger.Info("chown completed successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("target_path", req.Path),
+	)
+
+	return nil
+}
+
 func (s *Service) checkFileReadPermission(userID uint, serverID uint, stackname string) error {
 	s.logger.Debug("checking file read permission",
 		zap.Uint("user_id", userID),

@@ -11,6 +11,10 @@ type FileEntry struct {
 	IsDirectory bool      `json:"is_directory"`
 	ModTime     time.Time `json:"mod_time"`
 	Mode        string    `json:"mode"`
+	Owner       string    `json:"owner,omitempty"`
+	Group       string    `json:"group,omitempty"`
+	OwnerID     uint32    `json:"owner_id,omitempty"`
+	GroupID     uint32    `json:"group_id,omitempty"`
 	Extension   string    `json:"extension,omitempty"`
 }
 
@@ -54,6 +58,13 @@ type ChmodRequest struct {
 	Path      string `json:"path" validate:"required"`
 	Mode      string `json:"mode" validate:"required"`
 	Recursive bool   `json:"recursive,omitempty"`
+}
+
+type ChownRequest struct {
+	Path      string  `json:"path" validate:"required"`
+	OwnerID   *uint32 `json:"owner_id,omitempty"`
+	GroupID   *uint32 `json:"group_id,omitempty"`
+	Recursive bool    `json:"recursive,omitempty"`
 }
 
 type ErrorResponse struct {

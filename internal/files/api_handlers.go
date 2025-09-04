@@ -283,3 +283,34 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 
 	return common.SendMessage(c, "success")
 }
+
+func (h *APIHandler) Chown(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	var req ChownRequest
+	if err := common.BindRequest(c, &req); err != nil {
+		return err
+	}
+
+	if req.Path == "" {
+		return common.SendBadRequest(c, "path is required")
+	}
+
+	if req.OwnerID == nil && req.GroupID == nil {
+		return common.SendBadRequest(c, "owner_id or group_id is required")
+	}
+
+	if err := h.service.Chown(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendMessage(c, "success")
+}
