@@ -1,0 +1,85 @@
+package operationlogs
+
+import (
+	"berth/internal/common"
+
+	"github.com/labstack/echo/v4"
+	gonertia "github.com/romsar/gonertia/v2"
+	"github.com/tech-arch1tect/brx/services/inertia"
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+type Handler struct {
+	service    *Service
+	inertiaSvc *inertia.Service
+	logger     *logging.Service
+}
+
+func NewHandler(service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
+	return &Handler{
+		service:    service,
+		inertiaSvc: inertiaSvc,
+		logger:     logger,
+	}
+}
+
+func (h *Handler) ShowOperationLogs(c echo.Context) error {
+	h.logger.Info("operation logs page accessed",
+		zap.String("user_agent", c.Request().UserAgent()),
+		zap.String("remote_ip", c.RealIP()),
+	)
+
+	return h.inertiaSvc.Render(c, "Admin/OperationLogs", gonertia.Props{
+		"title": "Operation Logs",
+	})
+}
+
+func (h *Handler) ListOperationLogs(c echo.Context) error {
+	params := NewListOperationLogsParamsFromQuery(map[string]string{
+		"page":       c.QueryParam("page"),
+		"page_size":  c.QueryParam("page_size"),
+		"search":     c.QueryParam("search"),
+		"server_id":  c.QueryParam("server_id"),
+		"stack_name": c.QueryParam("stack_name"),
+		"command":    c.QueryParam("command"),
+		"status":     c.QueryParam("status"),
+	})
+
+	result, err := h.service.ListOperationLogs(params)
+	if err != nil {
+		h.logger.Error("failed to list operation logs", zap.Error(err))
+		return common.SendInternalError(c, "Failed to retrieve operation logs")
+	}
+
+	return common.SendSuccess(c, result)
+}
+
+func (h *Handler) GetOperationLogDetails(c echo.Context) error {
+	logID, err := common.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetOperationLogDetails(logID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return common.SendNotFound(c, "Operation log not found")
+		}
+		h.logger.Error("failed to get operation log details", zap.Error(err), zap.Uint("log_id", logID))
+		return common.SendInternalError(c, "Failed to retrieve operation log details")
+	}
+
+	return common.SendSuccess(c, result)
+}
+
+func (h *Handler) GetOperationLogsStats(c echo.Context) error {
+	stats, err := h.service.GetOperationLogsStats()
+	if err != nil {
+		h.logger.Error("failed to get operation logs stats", zap.Error(err))
+		return common.SendInternalError(c, "Failed to retrieve operation logs statistics")
+	}
+
+	return common.SendSuccess(c, stats)
+}

@@ -128,20 +128,44 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 		return err
 	}
 
-	duration := int(endTime.Sub(log.StartTime).Milliseconds())
+	var duration int
+
+	if endTime.IsZero() || endTime.Before(log.StartTime) {
+		s.logger.Warn("invalid end time for operation",
+			zap.Uint("operation_log_id", operationLogID),
+			zap.Time("end_time", endTime),
+			zap.Time("start_time", log.StartTime),
+			zap.Bool("end_time_is_zero", endTime.IsZero()),
+		)
+
+		duration = 0
+	} else {
+		duration = int(endTime.Sub(log.StartTime).Milliseconds())
+	}
 
 	s.logger.Debug("calculated operation duration",
 		zap.Uint("operation_log_id", operationLogID),
 		zap.Int("duration_ms", duration),
 		zap.Time("start_time", log.StartTime),
 		zap.Time("end_time", endTime),
+		zap.Bool("valid_end_time", !endTime.IsZero() && !endTime.Before(log.StartTime)),
 	)
 
 	updates := map[string]any{
-		"end_time":  endTime,
 		"success":   success,
 		"exit_code": exitCode,
-		"duration":  duration,
+	}
+
+	if !endTime.IsZero() && !endTime.Before(log.StartTime) {
+		updates["end_time"] = endTime
+		updates["duration"] = duration
+	} else {
+
+		updates["duration"] = nil
+		s.logger.Warn("skipping end_time update due to invalid time",
+			zap.Uint("operation_log_id", operationLogID),
+			zap.Time("invalid_end_time", endTime),
+		)
 	}
 
 	if err := s.db.Model(log).Updates(updates).Error; err != nil {

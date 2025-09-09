@@ -9,6 +9,7 @@ import (
 	"berth/internal/files"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
+	"berth/internal/operationlogs"
 	"berth/internal/operations"
 	"berth/internal/rbac"
 	"berth/internal/server"
@@ -31,7 +32,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -266,6 +267,14 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		admin.POST("/roles/:id/stack-permissions", rbacHandler.CreateRoleStackPermission)
 		admin.DELETE("/roles/:id/stack-permissions/:permissionId", rbacHandler.DeleteRoleStackPermission)
 
+		// Operation logs routes
+		if operationLogsHandler != nil {
+			admin.GET("/operation-logs", operationLogsHandler.ShowOperationLogs)
+			admin.GET("/api/operation-logs", operationLogsHandler.ListOperationLogs)
+			admin.GET("/api/operation-logs/stats", operationLogsHandler.GetOperationLogsStats)
+			admin.GET("/api/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
+		}
+
 		if serverHandler != nil {
 			admin.GET("/servers", serverHandler.Index)
 			admin.GET("/servers/:id", serverHandler.Show)
@@ -381,6 +390,13 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiAdmin.GET("/roles/:roleId/stack-permissions", rbacAPIHandler.ListRoleServerStackPermissions)
 			apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission)
 			apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission)
+
+			// Operation logs API routes
+			if operationLogsHandler != nil {
+				apiAdmin.GET("/operation-logs", operationLogsHandler.ListOperationLogs)
+				apiAdmin.GET("/operation-logs/stats", operationLogsHandler.GetOperationLogsStats)
+				apiAdmin.GET("/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
+			}
 
 			if serverAPIHandler != nil {
 				apiAdmin.GET("/servers", serverAPIHandler.ListServers)
