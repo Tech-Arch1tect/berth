@@ -623,7 +623,34 @@ export default function OperationLogs({ title }: Props) {
                     </label>
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
                       <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                        {JSON.stringify(JSON.parse(selectedLog.log.options), null, 2)}
+                        {(() => {
+                          try {
+                            const parsed = JSON.parse(selectedLog.log.options);
+                            return JSON.stringify(parsed, null, 2);
+                          } catch (e) {
+                            return selectedLog.log.options;
+                          }
+                        })()}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {selectedLog.log.services && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Services
+                    </label>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                      <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {(() => {
+                          try {
+                            const parsed = JSON.parse(selectedLog.log.services);
+                            return JSON.stringify(parsed, null, 2);
+                          } catch (e) {
+                            return selectedLog.log.services;
+                          }
+                        })()}
                       </pre>
                     </div>
                   </div>
