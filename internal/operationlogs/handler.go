@@ -36,6 +36,23 @@ func (h *Handler) ShowOperationLogs(c echo.Context) error {
 	})
 }
 
+func (h *Handler) ShowUserOperationLogs(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	h.logger.Info("user operation logs page accessed",
+		zap.String("user_agent", c.Request().UserAgent()),
+		zap.String("remote_ip", c.RealIP()),
+		zap.Uint("user_id", userID),
+	)
+
+	return h.inertiaSvc.Render(c, "OperationLogs", gonertia.Props{
+		"title": "My Operation Logs",
+	})
+}
+
 func (h *Handler) ListOperationLogs(c echo.Context) error {
 	params := NewListOperationLogsParamsFromQuery(map[string]string{
 		"page":       c.QueryParam("page"),
@@ -56,18 +73,67 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 	return common.SendSuccess(c, result)
 }
 
+func (h *Handler) ListUserOperationLogs(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	params := NewListOperationLogsParamsFromQuery(map[string]string{
+		"page":       c.QueryParam("page"),
+		"page_size":  c.QueryParam("page_size"),
+		"search":     c.QueryParam("search"),
+		"server_id":  c.QueryParam("server_id"),
+		"stack_name": c.QueryParam("stack_name"),
+		"command":    c.QueryParam("command"),
+		"status":     c.QueryParam("status"),
+	})
+	params.UserID = userID
+
+	result, err := h.service.ListOperationLogs(params)
+	if err != nil {
+		h.logger.Error("failed to list user operation logs", zap.Error(err), zap.Uint("user_id", userID))
+		return common.SendInternalError(c, "Failed to retrieve operation logs")
+	}
+
+	return common.SendSuccess(c, result)
+}
+
 func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 	logID, err := common.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
 
-	result, err := h.service.GetOperationLogDetails(logID)
+	result, err := h.service.GetOperationLogDetails(logID, nil)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return common.SendNotFound(c, "Operation log not found")
 		}
 		h.logger.Error("failed to get operation log details", zap.Error(err), zap.Uint("log_id", logID))
+		return common.SendInternalError(c, "Failed to retrieve operation log details")
+	}
+
+	return common.SendSuccess(c, result)
+}
+
+func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	logID, err := common.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetOperationLogDetails(logID, &userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return common.SendNotFound(c, "Operation log not found")
+		}
+		h.logger.Error("failed to get user operation log details", zap.Error(err), zap.Uint("log_id", logID), zap.Uint("user_id", userID))
 		return common.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 

@@ -166,6 +166,13 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 	}
 
+	// User operation logs routes
+	if operationLogsHandler != nil {
+		protected.GET("/operation-logs", operationLogsHandler.ShowUserOperationLogs)
+		protected.GET("/api/operation-logs", operationLogsHandler.ListUserOperationLogs)
+		protected.GET("/api/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
+	}
+
 	if serverUserAPIHandler != nil {
 		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}

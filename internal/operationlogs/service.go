@@ -34,13 +34,13 @@ func (s *Service) calculatePartialDuration(log models.OperationLog) *int {
 		First(&lastMessage).Error
 
 	if err != nil {
-		duration := int(time.Now().Sub(log.StartTime).Milliseconds())
+		duration := int(time.Since(log.StartTime).Milliseconds())
 		return &duration
 	}
 
 	duration := int(lastMessage.Timestamp.Sub(log.StartTime).Milliseconds())
 	if duration < 0 {
-		duration = int(time.Now().Sub(log.StartTime).Milliseconds())
+		duration = int(time.Since(log.StartTime).Milliseconds())
 	}
 	return &duration
 }
@@ -52,6 +52,10 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 		Preload("User").
 		Preload("Server").
 		Order("created_at DESC")
+
+	if params.UserID != 0 {
+		query = query.Where("user_id = ?", params.UserID)
+	}
 
 	if params.SearchTerm != "" {
 		query = query.Where("stack_name LIKE ? OR command LIKE ? OR operation_id LIKE ?",
@@ -138,9 +142,15 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 	}, nil
 }
 
-func (s *Service) GetOperationLogDetails(logID uint) (*dto.OperationLogDetail, error) {
+func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.OperationLogDetail, error) {
+	query := s.db.Preload("User").Preload("Server")
+
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+
 	var log models.OperationLog
-	if err := s.db.Preload("User").Preload("Server").First(&log, logID).Error; err != nil {
+	if err := query.First(&log, logID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, gorm.ErrRecordNotFound
 		}
@@ -224,6 +234,7 @@ type ListOperationLogsParams struct {
 	StackName  string
 	Command    string
 	Status     string
+	UserID     uint
 }
 
 func NewListOperationLogsParamsFromQuery(params map[string]string) ListOperationLogsParams {
