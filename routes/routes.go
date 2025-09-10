@@ -372,6 +372,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if operationsHandler != nil {
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 		}
+		if operationLogsHandler != nil {
+			apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs)
+			apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
+			apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
+		}
 		if maintenanceAPIHandler != nil {
 			apiProtected.GET("/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
 			apiProtected.GET("/servers/:serverid/maintenance/info", maintenanceAPIHandler.GetSystemInfo)
