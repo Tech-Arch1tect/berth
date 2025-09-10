@@ -33,13 +33,18 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
+    {
+      name: 'Operation Logs',
+      href: '/operation-logs',
+      icon: ClipboardDocumentListIcon,
+    },
     ...(isAdmin
       ? [
           { name: 'Servers', href: '/admin/servers', icon: ServerIcon },
           { name: 'Users', href: '/admin/users', icon: UsersIcon },
           { name: 'Roles', href: '/admin/roles', icon: ShieldCheckIcon },
           {
-            name: 'Operation Logs',
+            name: 'Admin Operation Logs',
             href: '/admin/operation-logs',
             icon: ClipboardDocumentListIcon,
           },

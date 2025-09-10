@@ -226,6 +226,38 @@ func (s *Service) GetOperationLogsStats() (*dto.OperationLogStats, error) {
 	return &stats, nil
 }
 
+func (s *Service) GetUserOperationLogsStats(userID uint) (*dto.OperationLogStats, error) {
+	var stats dto.OperationLogStats
+
+	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ?", userID).Count(&stats.TotalOperations).Error; err != nil {
+		s.logger.Error("failed to count user total operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ? AND end_time IS NULL", userID).Count(&stats.IncompleteOperations).Error; err != nil {
+		s.logger.Error("failed to count user incomplete operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ? AND success = ? AND end_time IS NOT NULL", userID, false).Count(&stats.FailedOperations).Error; err != nil {
+		s.logger.Error("failed to count user failed operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ? AND success = ? AND end_time IS NOT NULL", userID, true).Count(&stats.SuccessfulOperations).Error; err != nil {
+		s.logger.Error("failed to count user successful operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	yesterday := time.Now().Add(-24 * time.Hour)
+	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ? AND created_at > ?", userID, yesterday).Count(&stats.RecentOperations).Error; err != nil {
+		s.logger.Error("failed to count user recent operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
 type ListOperationLogsParams struct {
 	Page       int
 	PageSize   int

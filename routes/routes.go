@@ -170,6 +170,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	if operationLogsHandler != nil {
 		protected.GET("/operation-logs", operationLogsHandler.ShowUserOperationLogs)
 		protected.GET("/api/operation-logs", operationLogsHandler.ListUserOperationLogs)
+		protected.GET("/api/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
 		protected.GET("/api/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
 	}
 

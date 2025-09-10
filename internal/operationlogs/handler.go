@@ -149,3 +149,18 @@ func (h *Handler) GetOperationLogsStats(c echo.Context) error {
 
 	return common.SendSuccess(c, stats)
 }
+
+func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	stats, err := h.service.GetUserOperationLogsStats(userID)
+	if err != nil {
+		h.logger.Error("failed to get user operation logs stats", zap.Error(err), zap.Uint("user_id", userID))
+		return common.SendInternalError(c, "Failed to retrieve operation logs statistics")
+	}
+
+	return common.SendSuccess(c, stats)
+}
