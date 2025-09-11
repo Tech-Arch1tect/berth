@@ -80,6 +80,23 @@ export interface DirectoryStats {
   group_name?: string;
 }
 
+export interface CreateArchiveRequest {
+  format: ArchiveFormat;
+  output_path: string;
+  include_paths?: string[];
+  exclude_patterns?: string[];
+  compression?: string;
+}
+
+export interface ExtractArchiveRequest {
+  archive_path: string;
+  destination_path?: string;
+  overwrite?: boolean;
+  create_dirs?: boolean;
+}
+
+export type ArchiveFormat = 'zip' | 'tar' | 'tar.gz';
+
 export type FileOperation =
   | 'create'
   | 'edit'
@@ -89,4 +106,6 @@ export type FileOperation =
   | 'chmod'
   | 'chown'
   | 'mkdir'
-  | 'upload';
+  | 'upload'
+  | 'create_archive'
+  | 'extract_archive';

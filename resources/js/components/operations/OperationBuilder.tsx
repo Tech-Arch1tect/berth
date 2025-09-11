@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { OperationRequest } from '../../types/operations';
+import { DockerOperationRequest } from '../../types/operations';
 
 interface OperationBuilderProps {
-  onOperationBuild: (operation: OperationRequest) => void;
+  onOperationBuild: (operation: DockerOperationRequest) => void;
   disabled?: boolean;
   className?: string;
   services?: Array<{ name: string; service_name?: string }>;
 }
 
-const commandOptions: Record<OperationRequest['command'], string[]> = {
+const commandOptions: Record<DockerOperationRequest['command'], string[]> = {
   up: ['--build', '--force-recreate', '--no-recreate', '--remove-orphans', '--pull', '--wait'],
   down: ['--remove-orphans', '--volumes', '-t', '--timeout'],
   start: [],
@@ -17,7 +17,7 @@ const commandOptions: Record<OperationRequest['command'], string[]> = {
   pull: ['-q', '--quiet', '--ignore-pull-failures'],
 };
 
-const commandDescriptions: Record<OperationRequest['command'], string> = {
+const commandDescriptions: Record<DockerOperationRequest['command'], string> = {
   up: 'Create and start containers',
   down: 'Stop and remove containers, networks',
   start: 'Start existing stopped containers',
@@ -48,7 +48,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
   className = '',
   services = [],
 }) => {
-  const [command, setCommand] = useState<OperationRequest['command']>('up');
+  const [command, setCommand] = useState<DockerOperationRequest['command']>('up');
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [timeoutValue, setTimeoutValue] = useState('30');
@@ -81,7 +81,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
       finalOptions.push('--timeout', timeoutValue);
     }
 
-    const operation: OperationRequest = {
+    const operation: DockerOperationRequest = {
       command,
       options: finalOptions,
       services: selectedServices,
@@ -101,7 +101,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
           Command
         </label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {(Object.keys(commandDescriptions) as OperationRequest['command'][]).map((cmd) => (
+          {(Object.keys(commandDescriptions) as DockerOperationRequest['command'][]).map((cmd) => (
             <button
               key={cmd}
               onClick={() => setCommand(cmd)}

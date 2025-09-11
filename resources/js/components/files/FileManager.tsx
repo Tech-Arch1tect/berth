@@ -11,6 +11,8 @@ import {
   DeleteRequest,
   ChmodRequest,
   ChownRequest,
+  CreateArchiveRequest,
+  ExtractArchiveRequest,
 } from '../../types/files';
 import { FileList } from './FileList';
 import { FileEditor } from './FileEditor';
@@ -18,7 +20,10 @@ import { FileOperationModal } from './FileOperationModal';
 import { FileUploadModal } from './FileUploadModal';
 import { ChmodModal } from './ChmodModal';
 import { ChownModal } from './ChownModal';
+import { ArchiveOperationModal } from './ArchiveOperationModal';
 import { useFiles } from '../../hooks/useFiles';
+import { useOperations } from '../../hooks/useOperations';
+import { QuickActionFeedback } from '../operations/QuickActionFeedback';
 import { showToast } from '../../utils/toast';
 
 interface FileManagerProps {
@@ -44,7 +49,11 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isChmodModalOpen, setIsChmodModalOpen] = useState(false);
   const [isChownModalOpen, setIsChownModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [archiveOperation, setArchiveOperation] = useState<'create' | 'extract'>('create');
   const [currentOperation, setCurrentOperation] = useState<FileOperation | null>(null);
+  const [showArchiveFeedback, setShowArchiveFeedback] = useState(false);
+  const [archiveOperationType, setArchiveOperationType] = useState<string>('');
 
   const handleError = useCallback((error: string) => {
     showToast.error(error);
@@ -66,6 +75,25 @@ export const FileManager: React.FC<FileManagerProps> = ({
   } = useFiles({
     serverid,
     stackname,
+    onError: handleError,
+  });
+
+  const {
+    startOperation,
+    operationStatus,
+    error: operationError,
+    clearLogs,
+  } = useOperations({
+    serverid: String(serverid),
+    stackname,
+    onOperationComplete: (success, exitCode) => {
+      if (success) {
+        showToast.success('Archive operation completed successfully');
+        loadDirectory(currentPath);
+      } else {
+        showToast.error(`Archive operation failed with exit code: ${exitCode}`);
+      }
+    },
     onError: handleError,
   });
 
@@ -127,9 +155,18 @@ export const FileManager: React.FC<FileManagerProps> = ({
     (operation: FileOperation, entry?: FileEntry) => {
       if (
         !canWrite &&
-        ['create', 'mkdir', 'rename', 'copy', 'delete', 'upload', 'chmod', 'chown'].includes(
-          operation
-        )
+        [
+          'create',
+          'mkdir',
+          'rename',
+          'copy',
+          'delete',
+          'upload',
+          'chmod',
+          'chown',
+          'create_archive',
+          'extract_archive',
+        ].includes(operation)
       ) {
         showToast.error('You do not have permission to modify files in this stack');
         return;
@@ -146,6 +183,12 @@ export const FileManager: React.FC<FileManagerProps> = ({
         setIsChmodModalOpen(true);
       } else if (operation === 'chown') {
         setIsChownModalOpen(true);
+      } else if (operation === 'create_archive') {
+        setArchiveOperation('create');
+        setIsArchiveModalOpen(true);
+      } else if (operation === 'extract_archive') {
+        setArchiveOperation('extract');
+        setIsArchiveModalOpen(true);
       } else {
         setIsOperationModalOpen(true);
       }
@@ -303,6 +346,87 @@ export const FileManager: React.FC<FileManagerProps> = ({
       }
     },
     [chownFile, loadDirectory, currentPath]
+  );
+
+  const handleCreateArchive = useCallback(
+    async (request: CreateArchiveRequest) => {
+      try {
+        const options = ['--format', request.format, '--output', request.output_path];
+
+        if (request.include_paths && request.include_paths.length > 0) {
+          request.include_paths.forEach((path) => {
+            options.push('--include', path);
+          });
+        } else {
+          const includePath = currentPath || '.';
+          options.push('--include', includePath);
+        }
+
+        if (request.exclude_patterns && request.exclude_patterns.length > 0) {
+          request.exclude_patterns.forEach((pattern) => {
+            options.push('--exclude', pattern);
+          });
+        }
+
+        if (request.compression) {
+          options.push('--compression', request.compression);
+        }
+
+        setArchiveOperationType(`Create ${request.format.toUpperCase()} Archive`);
+        setShowArchiveFeedback(true);
+        clearLogs();
+
+        await startOperation({
+          command: 'create-archive',
+          options: options,
+          services: [],
+        });
+
+        setIsArchiveModalOpen(false);
+      } catch (error) {
+        console.error('Failed to start archive creation:', error);
+        showToast.error('Failed to start archive creation');
+        setShowArchiveFeedback(false);
+      }
+    },
+    [startOperation, currentPath, clearLogs]
+  );
+
+  const handleExtractArchive = useCallback(
+    async (request: ExtractArchiveRequest) => {
+      try {
+        const options = ['--archive', request.archive_path];
+
+        if (request.destination_path) {
+          options.push('--destination', request.destination_path);
+        }
+
+        if (request.overwrite) {
+          options.push('--overwrite');
+        }
+
+        if (request.create_dirs) {
+          options.push('--create-dirs');
+        }
+
+        setArchiveOperationType('Extract Archive');
+        setShowArchiveFeedback(true);
+        clearLogs();
+
+        await startOperation({
+          command: 'extract-archive',
+          options: options,
+          services: [],
+        });
+
+        setIsArchiveModalOpen(false);
+      } catch (error) {
+        console.error('Failed to start archive extraction:', error);
+        showToast.error('Failed to start archive extraction');
+        setShowArchiveFeedback(false);
+      }
+    },
+    [startOperation, clearLogs]
   );
 
   if (!canRead) {
@@ -583,6 +707,38 @@ export const FileManager: React.FC<FileManagerProps> = ({
           setSelectedFile(null);
         }}
         onConfirm={handleChownConfirm}
+      />
+
+      {/* Archive Operation Modal */}
+      <ArchiveOperationModal
+        isOpen={isArchiveModalOpen}
+        operation={archiveOperation}
+        currentPath={currentPath}
+        selectedFile={selectedFile || undefined}
+        onClose={() => {
+          setIsArchiveModalOpen(false);
+          setCurrentOperation(null);
+          setSelectedFile(null);
+        }}
+        onCreateArchive={handleCreateArchive}
+        onExtractArchive={handleExtractArchive}
+      />
+
+      {/* Archive Operation Feedback */}
+      <QuickActionFeedback
+        isVisible={showArchiveFeedback}
+        operationType={archiveOperationType}
+        operationStatus={operationStatus}
+        connectionError={operationError || undefined}
+        onComplete={(success, _exitCode) => {
+          setShowArchiveFeedback(false);
+          if (success) {
+            showToast.success('Archive operation completed successfully');
+          } else {
+            showToast.error('Archive operation failed');
+          }
+        }}
+        onDismiss={() => setShowArchiveFeedback(false)}
       />
     </div>
   );

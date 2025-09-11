@@ -45,7 +45,7 @@ interface OperationLogModalProps {
   showDetails: boolean;
   showUser?: boolean;
   onClose: () => void;
-  getStatusBadge: (log: OperationLog) => JSX.Element;
+  getStatusBadge: (log: OperationLog) => React.ReactElement;
   getOperationDuration: (log: OperationLog) => string;
 }
 

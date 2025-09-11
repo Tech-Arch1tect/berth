@@ -41,7 +41,7 @@ interface OperationLogTableProps {
   showUser?: boolean;
   onViewDetails: (logId: number) => void;
   onPageChange: (page: number) => void;
-  getStatusBadge: (log: OperationLog) => JSX.Element;
+  getStatusBadge: (log: OperationLog) => React.ReactElement;
   getOperationDuration: (log: OperationLog) => string;
 }
 

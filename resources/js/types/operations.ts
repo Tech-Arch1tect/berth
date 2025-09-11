@@ -1,4 +1,18 @@
 export interface OperationRequest {
+  command:
+    | 'up'
+    | 'down'
+    | 'start'
+    | 'stop'
+    | 'restart'
+    | 'pull'
+    | 'create-archive'
+    | 'extract-archive';
+  options: string[];
+  services: string[];
+}
+
+export interface DockerOperationRequest {
   command: 'up' | 'down' | 'start' | 'stop' | 'restart' | 'pull';
   options: string[];
   services: string[];
