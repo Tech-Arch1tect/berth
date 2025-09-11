@@ -53,13 +53,21 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
+	var requiredPermission string
+	if req.Command == "create-archive" || req.Command == "extract-archive" {
+		requiredPermission = "files.write"
+	} else {
+		requiredPermission = "stacks.manage"
+	}
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, requiredPermission)
 	if err != nil {
 		s.logger.Error("failed to check operation permission",
 			zap.Error(err),
 			zap.Uint("user_id", userID),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
+			zap.String("required_permission", requiredPermission),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -70,8 +78,9 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 			zap.String("operation_command", req.Command),
+			zap.String("required_permission", requiredPermission),
 		)
-		return nil, fmt.Errorf("insufficient permissions to manage stack '%s' on server %d", stackname, serverID)
+		return nil, fmt.Errorf("insufficient permissions for operation '%s' on stack '%s' (requires %s)", req.Command, stackname, requiredPermission)
 	}
 
 	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackname))
