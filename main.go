@@ -7,6 +7,7 @@ import (
 	"berth/internal/files"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
+	"berth/internal/migration"
 	"berth/internal/operationlogs"
 	"berth/internal/operations"
 	"berth/internal/rbac"
@@ -101,6 +102,7 @@ func main() {
 			logs.Module,
 			operations.Module,
 			operationlogs.Module,
+			migration.Module,
 			fx.Provide(handlers.NewDashboardHandler),
 			fx.Provide(handlers.NewAuthHandler),
 			fx.Provide(handlers.NewMobileAuthHandler),

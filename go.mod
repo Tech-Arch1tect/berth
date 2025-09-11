@@ -9,6 +9,7 @@ require (
 	github.com/tech-arch1tect/brx v0.0.9
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/crypto v0.41.0
 	gorm.io/gorm v1.30.1
 )
 
@@ -39,7 +40,6 @@ require (
 	github.com/wneessen/go-mail v0.6.2 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
