@@ -13,6 +13,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   ClipboardDocumentListIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -43,6 +44,7 @@ export default function Layout({ children }: LayoutProps) {
           { name: 'Servers', href: '/admin/servers', icon: ServerIcon },
           { name: 'Users', href: '/admin/users', icon: UsersIcon },
           { name: 'Roles', href: '/admin/roles', icon: ShieldCheckIcon },
+          { name: 'Migration', href: '/admin/migration', icon: ArrowUpTrayIcon },
           {
             name: 'Admin Operation Logs',
             href: '/admin/operation-logs',
