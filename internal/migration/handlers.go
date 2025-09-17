@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"berth/internal/common"
 	"berth/internal/rbac"
 	"fmt"
 	"io"
@@ -12,7 +13,6 @@ import (
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +33,10 @@ func NewHandler(inertiaSvc *inertia.Service, logger *logging.Service, service *S
 }
 
 func (h *Handler) Index(c echo.Context) error {
-	userID := session.GetUserIDAsUint(c)
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
 	if err != nil || !isAdmin {
@@ -53,7 +56,10 @@ func (h *Handler) Index(c echo.Context) error {
 }
 
 func (h *Handler) Export(c echo.Context) error {
-	userID := session.GetUserIDAsUint(c)
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
 	if err != nil || !isAdmin {
@@ -118,7 +124,10 @@ func (h *Handler) Export(c echo.Context) error {
 }
 
 func (h *Handler) Import(c echo.Context) error {
-	userID := session.GetUserIDAsUint(c)
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 
 	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
 	if err != nil || !isAdmin {
