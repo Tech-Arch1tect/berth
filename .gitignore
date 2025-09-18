@@ -113,3 +113,6 @@ tmp/
 temp/
 
 .env
+
+test/ssl/*
+ssl/*
