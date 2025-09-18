@@ -1,14 +1,8 @@
 package main
 
 import (
-	"github.com/tech-arch1tect/brx/config"
+	"berth/internal/app"
 )
 
-type BerthConfig struct {
-	config.Config
-	Custom AppCustomConfig `envPrefix:""`
-}
-
-type AppCustomConfig struct {
-	EncryptionSecret string `env:"ENCRYPTION_SECRET"`
-}
+type BerthConfig = app.BerthConfig
+type AppCustomConfig = app.AppCustomConfig
