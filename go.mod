@@ -7,7 +7,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/romsar/gonertia/v2 v2.0.6
 	github.com/stretchr/testify v1.10.0
-	github.com/tech-arch1tect/brx v0.0.9
+	github.com/tech-arch1tect/brx v0.0.10
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
