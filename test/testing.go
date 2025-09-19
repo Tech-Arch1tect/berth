@@ -2,6 +2,7 @@ package test
 
 import (
 	"berth/internal/app"
+	configEnforcement "berth/internal/config"
 	"berth/models"
 	"crypto/tls"
 	"fmt"
@@ -27,12 +28,13 @@ func getRandomPort() int {
 }
 
 type TestApp struct {
-	app     *brx.App
-	config  *app.BerthConfig
-	db      *gorm.DB
-	t       *testing.T
-	baseURL string
-	client  *http.Client
+	app              *brx.App
+	config           *app.BerthConfig
+	db               *gorm.DB
+	t                *testing.T
+	baseURL          string
+	client           *http.Client
+	noRedirectClient *http.Client
 }
 
 type TestOptions struct {
@@ -88,6 +90,7 @@ func NewTestApp(t *testing.T, opts *TestOptions) *TestApp {
 		"MAIL_TEMPLATES_DIR":       "templates/mail",
 		"SERVER_PORT":              fmt.Sprintf("%d", testPort),
 		"SESSION_ENABLED":          "true",
+		"CSRF_ENABLED":             "false",
 	}
 
 	if opts.EnvVars != nil {
@@ -109,6 +112,12 @@ func NewTestApp(t *testing.T, opts *TestOptions) *TestApp {
 			}
 		}
 	}
+
+	configEnforcement.EnforceRequiredSettings()
+
+	os.Setenv("CSRF_ENABLED", "false")
+	os.Setenv("SESSION_SECURE", "false")
+	os.Setenv("SESSION_SAME_SITE", "lax")
 
 	cfg, err := app.LoadConfig()
 	require.NoError(t, err, "Failed to load test configuration")
@@ -132,29 +141,37 @@ func NewTestApp(t *testing.T, opts *TestOptions) *TestApp {
 		Timeout: 30 * time.Second,
 	}
 
+	noRedirectClient := &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
 	testApp := &TestApp{
-		config:  cfg,
-		t:       t,
-		baseURL: fmt.Sprintf("https://localhost:%d", testPort),
-		client:  client,
+		config:           cfg,
+		t:                t,
+		baseURL:          fmt.Sprintf("https://localhost:%d", testPort),
+		client:           client,
+		noRedirectClient: noRedirectClient,
 	}
 
 	appOptions := &app.AppOptions{
-		Config:                cfg,
-		SkipConfigEnforcement: true,
-		ExtraFxOptions:        opts.ExtraFxOptions,
+		Config:         cfg,
+		ExtraFxOptions: opts.ExtraFxOptions,
 	}
 
 	testApp.app = app.NewApp(appOptions)
 
 	go func() {
 		defer cleanup()
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("Test app startup panicked: %v", r)
-			}
-		}()
-		testApp.app.Start()
+		if err := testApp.app.StartTest(); err != nil {
+			t.Errorf("Test app startup failed: %v", err)
+		}
 	}()
 
 	time.Sleep(1 * time.Second)
@@ -168,10 +185,7 @@ func NewTestApp(t *testing.T, opts *TestOptions) *TestApp {
 
 func (ta *TestApp) Cleanup() {
 	if ta.app != nil {
-		go func() {
-			ta.app.Stop()
-		}()
-		time.Sleep(50 * time.Millisecond)
+		ta.app.StopTest()
 	}
 
 	if strings.Contains(ta.config.Database.DSN, "test_db_") {
@@ -220,6 +234,15 @@ func (ta *TestApp) Post(path string, data url.Values) (*http.Response, error) {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return ta.client.Do(req)
+}
+
+func (ta *TestApp) PostNoRedirect(path string, data url.Values) (*http.Response, error) {
+	req, err := http.NewRequest("POST", ta.baseURL+path, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return ta.noRedirectClient.Do(req)
 }
 
 func (ta *TestApp) Get(path string) (*http.Response, error) {
