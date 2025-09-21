@@ -6,7 +6,9 @@ import {
   DashboardStats,
   DashboardStatusAlert,
   DashboardServerSection,
+  DashboardRecentActivity,
   useDashboardHealth,
+  useDashboardActivity,
 } from '../components/dashboard';
 
 interface DashboardProps {
@@ -23,6 +25,7 @@ interface DashboardProps {
 export default function Dashboard({ title, servers, currentUser }: DashboardProps) {
   const userRoles = currentUser?.roles?.map((role) => role.name) || [];
   const healthSummary = useDashboardHealth(servers);
+  const activitySummary = useDashboardActivity();
 
   return (
     <Layout>
@@ -57,6 +60,9 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
 
       {/* Stats Grid */}
       <DashboardStats healthSummary={healthSummary} userRoles={userRoles} />
+
+      {/* Recent Activity & Operations */}
+      <DashboardRecentActivity activitySummary={activitySummary} />
 
       {/* Servers Section */}
       <DashboardServerSection servers={servers} healthSummary={healthSummary} />

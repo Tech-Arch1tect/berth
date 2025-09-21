@@ -1,5 +1,8 @@
 export { DashboardStats } from './DashboardStats';
 export { DashboardStatusAlert } from './DashboardStatusAlert';
 export { DashboardServerSection } from './DashboardServerSection';
+export { DashboardRecentActivity } from './DashboardRecentActivity';
 export { useDashboardHealth } from './hooks/useDashboardHealth';
+export { useDashboardActivity } from './hooks/useDashboardActivity';
 export type { HealthSummary, DashboardStat } from './types/dashboard';
+export type { ActivitySummary, RecentActivity } from './hooks/useDashboardActivity';
