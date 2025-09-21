@@ -1,26 +1,9 @@
-# brx starter kit
+# Berth
 
-A brx starter application with authentication, database, and sessions.
+Docker stack management server and web UI.
 
-## What's included
+## Related Repositories
 
-- User login
-- Session management
-- Database with GORM (SQLite by default)
-- Structured logging
-- Email verification and password reset
-- React frontend with Inertia.js
-
-## Getting started
-
-1. Copy `.env.example` to `.env`
-2. Run `go run main.go`
-3. Visit http://localhost:8080
-
-## Configuration
-
-Edit `.env` to configure database, mail, and other services.
-
-## Documentation
-
-See [brx](https://github.com/Tech-Arch1tect/brx)
+- [berth-agent](https://github.com/Tech-Arch1tect/berth-agent) - Agent service for Docker operations
+- [berth-flutter](https://github.com/Tech-Arch1tect/berth-flutter) - Mobile application
+- [berth-code](https://github.com/Tech-Arch1tect/berth-code) - VS Code extension
