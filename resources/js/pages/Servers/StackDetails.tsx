@@ -23,6 +23,10 @@ import { QuickActionFeedback } from '../../components/operations/QuickActionFeed
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
 import {
+  generateStackDocumentation,
+  downloadMarkdown,
+} from '../../utils/generateStackDocumentation';
+import {
   HomeIcon,
   ChevronRightIcon,
   ChevronDownIcon,
@@ -228,6 +232,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     });
   };
 
+  const handleGenerateDocumentation = () => {
+    if (!stackDetails) return;
+
+    try {
+      const documentation = generateStackDocumentation(stackDetails);
+      downloadMarkdown(documentation, `${stackDetails.name}-documentation.md`);
+      showToast.success('Documentation downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate documentation:', error);
+      showToast.error('Failed to generate documentation');
+    }
+  };
+
   return (
     <Layout>
       <Head title={title} />
@@ -334,6 +351,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                   />
                 </div>
               )}
+
+            {/* Documentation Button */}
+            {stackDetails && (
+              <button
+                onClick={handleGenerateDocumentation}
+                className="flex items-center space-x-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700/50 rounded-xl transition-colors duration-200"
+                title="Generate stack documentation"
+              >
+                <DocumentTextIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Documentation</span>
+              </button>
+            )}
 
             {/* Refresh Button */}
             <button
