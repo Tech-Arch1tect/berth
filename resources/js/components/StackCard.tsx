@@ -19,20 +19,25 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
               {stack.name}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{stack.server_name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 truncate mt-1">
-              {stack.compose_file}
-            </p>
-          </div>
-          <div className="ml-4 flex-shrink-0">
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                stack.is_healthy
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-              }`}
-            >
-              {stack.is_healthy ? 'Healthy' : 'Unhealthy'}
-            </span>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
+                {stack.compose_file}
+              </p>
+              <div className="flex items-center space-x-2 ml-2">
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  {stack.running_containers}/{stack.total_containers} running
+                </span>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    stack.is_healthy
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                  }`}
+                >
+                  {stack.is_healthy ? 'Healthy' : 'Unhealthy'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -5,6 +5,8 @@ export interface Stack {
   server_id: number;
   server_name: string;
   is_healthy: boolean;
+  total_containers: number;
+  running_containers: number;
 }
 
 export interface ServerStacksResponse {

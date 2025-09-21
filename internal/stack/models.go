@@ -30,12 +30,14 @@ type StackStats struct {
 }
 
 type Stack struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	ComposeFile string `json:"compose_file"`
-	ServerID    uint   `json:"server_id"`
-	ServerName  string `json:"server_name"`
-	IsHealthy   bool   `json:"is_healthy"`
+	Name              string `json:"name"`
+	Path              string `json:"path"`
+	ComposeFile       string `json:"compose_file"`
+	ServerID          uint   `json:"server_id"`
+	ServerName        string `json:"server_name"`
+	IsHealthy         bool   `json:"is_healthy"`
+	TotalContainers   int    `json:"total_containers"`
+	RunningContainers int    `json:"running_containers"`
 }
 
 type StackDetails struct {
