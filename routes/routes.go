@@ -137,6 +137,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
+		protected.GET("/api/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
 	}
 	if maintenanceAPIHandler != nil {
@@ -356,6 +357,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
+			apiProtected.GET("/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
 			apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
 		}
 		if filesAPIHandler != nil {

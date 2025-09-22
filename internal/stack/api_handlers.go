@@ -94,6 +94,25 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 	return common.SendSuccess(c, volumes)
 }
 
+func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, imageDetails)
+}
+
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {

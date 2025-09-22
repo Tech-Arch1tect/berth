@@ -184,6 +184,50 @@ type Volume struct {
 	UsedBy     []VolumeUsage     `json:"used_by,omitempty"`
 }
 
+type ContainerImageDetails struct {
+	ContainerName string              `json:"container_name"`
+	ImageID       string              `json:"image_id"`
+	ImageName     string              `json:"image_name"`
+	ImageInfo     ImageInspectInfo    `json:"image_info"`
+	ImageHistory  []ImageHistoryLayer `json:"image_history"`
+}
+
+type ImageInspectInfo struct {
+	Architecture  string      `json:"architecture"`
+	OS            string      `json:"os"`
+	Size          int64       `json:"size"`
+	VirtualSize   int64       `json:"virtual_size"`
+	Author        string      `json:"author"`
+	Created       string      `json:"created"`
+	DockerVersion string      `json:"docker_version"`
+	Config        ImageConfig `json:"config"`
+	RootFS        RootFS      `json:"rootfs"`
+}
+
+type ImageConfig struct {
+	User         string              `json:"user,omitempty"`
+	Env          []string            `json:"env,omitempty"`
+	Cmd          []string            `json:"cmd,omitempty"`
+	Entrypoint   []string            `json:"entrypoint,omitempty"`
+	WorkingDir   string              `json:"working_dir,omitempty"`
+	ExposedPorts map[string]struct{} `json:"exposed_ports,omitempty"`
+	Labels       map[string]string   `json:"labels,omitempty"`
+}
+
+type RootFS struct {
+	Type   string   `json:"type"`
+	Layers []string `json:"layers,omitempty"`
+}
+
+type ImageHistoryLayer struct {
+	ID        string   `json:"id"`
+	Created   int64    `json:"created"`
+	CreatedBy string   `json:"created_by"`
+	Size      int64    `json:"size"`
+	Comment   string   `json:"comment,omitempty"`
+	Tags      []string `json:"tags,omitempty"`
+}
+
 type EnvironmentVariable struct {
 	Key             string `json:"key"`
 	Value           string `json:"value"`

@@ -310,6 +310,29 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 	return volumes, nil
 }
 
+func (s *Service) GetContainerImageDetails(ctx context.Context, userID uint, serverID uint, stackname string) ([]ContainerImageDetails, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		return nil, fmt.Errorf("user does not have permission to access this stack")
+	}
+
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	imageDetails, err := s.fetchContainerImageDetailsFromAgent(ctx, server, stackname)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageDetails, nil
+}
+
 func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models.Server, stackname string) ([]Volume, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/volumes", stackname), nil)
 	if err != nil {
@@ -445,4 +468,23 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 	)
 
 	return &stackStats, nil
+}
+
+func (s *Service) fetchContainerImageDetailsFromAgent(ctx context.Context, server *models.Server, stackname string) ([]ContainerImageDetails, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/images", stackname), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	var imageDetails []ContainerImageDetails
+	if err := json.NewDecoder(resp.Body).Decode(&imageDetails); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	return imageDetails, nil
 }
