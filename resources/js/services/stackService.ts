@@ -1,5 +1,11 @@
 import axios from 'axios';
-import { Stack, Network, Volume, StackEnvironmentResponse } from '../types/stack';
+import {
+  Stack,
+  Network,
+  Volume,
+  StackEnvironmentResponse,
+  ContainerImageDetails,
+} from '../types/stack';
 
 export interface StackPermissions {
   permissions: string[];
@@ -149,6 +155,35 @@ export class StackService {
           throw new Error('Stack not found');
         }
         throw new Error(error.response?.data?.error || 'Failed to fetch permissions');
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
+  static async getStackImages(
+    serverid: number,
+    stackname: string,
+    csrfToken?: string
+  ): Promise<ContainerImageDetails[]> {
+    try {
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/images`, {
+        headers,
+      });
+      return response.data || [];
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error('You do not have permission to access this server');
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Stack or images not found');
+        }
+        throw new Error(error.response?.data?.error || 'Failed to fetch image details');
       }
       throw new Error('Network error occurred');
     }

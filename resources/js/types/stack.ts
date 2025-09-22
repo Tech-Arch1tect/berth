@@ -220,3 +220,50 @@ export interface ServiceEnvironment {
 export interface StackEnvironmentResponse {
   [serviceName: string]: ServiceEnvironment[];
 }
+
+export interface ContainerImageDetails {
+  container_name: string;
+  image_id: string;
+  image_name: string;
+  image_info: ImageInspectInfo;
+  image_history: ImageHistoryLayer[];
+}
+
+export interface ImageInspectInfo {
+  architecture: string;
+  os: string;
+  size: number;
+  virtual_size: number;
+  author: string;
+  created: string;
+  docker_version: string;
+  parent?: string;
+  repo_tags?: string[];
+  repo_digests?: string[];
+  config: ImageConfig;
+  rootfs: RootFS;
+}
+
+export interface ImageConfig {
+  user?: string;
+  env?: string[];
+  cmd?: string[];
+  entrypoint?: string[];
+  working_dir?: string;
+  exposed_ports?: Record<string, any>;
+  labels?: Record<string, string>;
+}
+
+export interface RootFS {
+  type: string;
+  layers?: string[];
+}
+
+export interface ImageHistoryLayer {
+  id: string;
+  created: number;
+  created_by: string;
+  size: number;
+  comment?: string;
+  tags?: string[];
+}

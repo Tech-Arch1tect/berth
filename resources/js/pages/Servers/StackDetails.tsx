@@ -26,6 +26,7 @@ import {
   generateStackDocumentation,
   downloadMarkdown,
 } from '../../utils/generateStackDocumentation';
+import { StackImagesTab } from '../../components/stack-images';
 import {
   HomeIcon,
   ChevronRightIcon,
@@ -40,6 +41,7 @@ import {
   DocumentTextIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 
 interface StackDetailsProps {
@@ -58,7 +60,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   permissions = [],
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'services' | 'networks' | 'volumes' | 'environment' | 'stats' | 'logs' | 'files'
+    'services' | 'networks' | 'volumes' | 'environment' | 'images' | 'stats' | 'logs' | 'files'
   >('services');
   const [operationsModalOpen, setOperationsModalOpen] = useState(false);
   const [quickOperationState, setQuickOperationState] = useState<{
@@ -143,6 +145,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         networks: null,
         volumes: null,
         environment: null,
+        images: null,
         stats: null,
         logs: 'logs.read',
         files: 'files.read',
@@ -564,6 +567,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                   { id: 'networks', name: 'Networks', icon: GlobeAltIcon, permission: null },
                   { id: 'volumes', name: 'Volumes', icon: FolderIcon, permission: null },
                   { id: 'environment', name: 'Environment', icon: Cog6ToothIcon, permission: null },
+                  { id: 'images', name: 'Images', icon: PhotoIcon, permission: null },
                   { id: 'stats', name: 'Stats', icon: CpuChipIcon, permission: null },
                   { id: 'logs', name: 'Logs', icon: DocumentTextIcon, permission: 'logs.read' },
                   { id: 'files', name: 'Files', icon: FolderIcon, permission: 'files.read' },
@@ -584,6 +588,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                               | 'networks'
                               | 'volumes'
                               | 'environment'
+                              | 'images'
                               | 'stats'
                               | 'logs'
                               | 'files'
@@ -675,6 +680,10 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                   isLoading={environmentLoading}
                   error={environmentError}
                 />
+              )}
+
+              {activeTab === 'images' && (
+                <StackImagesTab serverid={serverid} stackname={stackname} />
               )}
 
               {activeTab === 'stats' && (
