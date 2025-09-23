@@ -166,7 +166,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
                         {truncateImageId(image_info.parent)}
                       </code>
                       <button
-                        onClick={() => copyToClipboard(image_info.parent)}
+                        onClick={() => image_info.parent && copyToClipboard(image_info.parent)}
                         className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
                         title="Copy parent image ID"
                       >
