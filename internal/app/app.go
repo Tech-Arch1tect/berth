@@ -10,11 +10,13 @@ import (
 	"berth/internal/migration"
 	"berth/internal/operationlogs"
 	"berth/internal/operations"
+	"berth/internal/queue"
 	"berth/internal/rbac"
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/ssl"
 	"berth/internal/stack"
+	"berth/internal/webhook"
 	"berth/internal/websocket"
 	"berth/models"
 	"berth/providers"
@@ -133,6 +135,8 @@ func NewApp(opts *AppOptions) *brx.App {
 		operations.Module,
 		operationlogs.Module,
 		migration.Module,
+		queue.Module(),
+		webhook.Module(),
 		fx.Provide(handlers.NewDashboardHandler),
 		fx.Provide(handlers.NewAuthHandler),
 		fx.Provide(handlers.NewMobileAuthHandler),
@@ -171,7 +175,7 @@ func NewApp(opts *AppOptions) *brx.App {
 	app := brx.New(
 		brx.WithConfig(&cfg.Config),
 		brx.WithMail(),
-		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &models.ServerRoleStackPermission{}, &models.OperationLog{}, &models.OperationLogMessage{}, &models.SeedTracker{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
+		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &models.ServerRoleStackPermission{}, &models.OperationLog{}, &models.OperationLogMessage{}, &models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{}, &models.QueuedOperation{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
 		brx.WithSessionsNoGlobalMiddleware(),
 		brx.WithInertiaNoGlobalMiddleware(),
 		brx.WithAuth(),

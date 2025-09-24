@@ -6,20 +6,27 @@ import (
 
 type OperationLog struct {
 	BaseModel
-	UserID      uint       `json:"user_id" gorm:"not null;index"`
-	User        User       `json:"user" gorm:"foreignKey:UserID"`
-	ServerID    uint       `json:"server_id" gorm:"not null;index"`
-	Server      Server     `json:"server" gorm:"foreignKey:ServerID"`
-	StackName   string     `json:"stack_name" gorm:"not null;index"`
-	OperationID string     `json:"operation_id" gorm:"not null;index"`
-	Command     string     `json:"command" gorm:"not null"`
-	Options     string     `json:"options" gorm:"type:text"`
-	Services    string     `json:"services" gorm:"type:text"`
-	StartTime   time.Time  `json:"start_time" gorm:"not null;index"`
-	EndTime     *time.Time `json:"end_time" gorm:"index"`
-	Success     *bool      `json:"success"`
-	ExitCode    *int       `json:"exit_code"`
-	Duration    *int       `json:"duration_ms"`
+	UserID      uint            `json:"user_id" gorm:"not null;index"`
+	User        User            `json:"user" gorm:"foreignKey:UserID"`
+	ServerID    uint            `json:"server_id" gorm:"not null;index"`
+	Server      Server          `json:"server" gorm:"foreignKey:ServerID"`
+	StackName   string          `json:"stack_name" gorm:"not null;index"`
+	OperationID string          `json:"operation_id" gorm:"not null;index"`
+	BatchID     *string         `json:"batch_id" gorm:"index"`
+	Command     string          `json:"command" gorm:"not null"`
+	Options     string          `json:"options" gorm:"type:text"`
+	Services    string          `json:"services" gorm:"type:text"`
+	Status      OperationStatus `json:"status" gorm:"not null;default:'completed'"`
+	Order       int             `json:"order" gorm:"default:1"`
+	DependsOn   *string         `json:"depends_on" gorm:"index"`
+	WebhookID   *uint           `json:"webhook_id" gorm:"index"`
+	Webhook     *Webhook        `json:"webhook,omitempty" gorm:"foreignKey:WebhookID"`
+	QueuedAt    *time.Time      `json:"queued_at" gorm:"index"`
+	StartTime   time.Time       `json:"start_time" gorm:"not null;index"`
+	EndTime     *time.Time      `json:"end_time" gorm:"index"`
+	Success     *bool           `json:"success"`
+	ExitCode    *int            `json:"exit_code"`
+	Duration    *int            `json:"duration_ms"`
 }
 
 type OperationLogMessage struct {

@@ -141,6 +141,40 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	return &response, nil
 }
 
+func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationResponse, error) {
+	s.logger.Debug("starting and executing Docker operation",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.String("operation_command", req.Command),
+		zap.Uint("operation_log_id", operationLogID),
+	)
+
+	response, err := s.StartOperation(ctx, userID, serverID, stackname, req)
+	if err != nil {
+		return nil, err
+	}
+
+	auditWriter := NewAuditWriter(s.auditSvc, operationLogID)
+	err = s.StreamOperationToWriter(ctx, userID, serverID, stackname, response.OperationID, auditWriter)
+	if err != nil {
+		s.logger.Error("failed to execute operation via streaming",
+			zap.Error(err),
+			zap.String("operation_id", response.OperationID),
+		)
+		return response, err
+	}
+
+	s.logger.Info("Docker operation executed successfully",
+		zap.Uint("user_id", userID),
+		zap.String("stack_name", stackname),
+		zap.String("operation_command", req.Command),
+		zap.String("operation_id", response.OperationID),
+	)
+
+	return response, nil
+}
+
 func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serverID uint, stackname string, operationID string, writer io.Writer) error {
 	s.logger.Debug("starting operation stream",
 		zap.Uint("user_id", userID),
@@ -357,4 +391,63 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *models.Serv
 	)
 
 	return resp, nil
+}
+
+type AuditWriter struct {
+	auditSvc       *AuditService
+	operationLogID uint
+	sequenceNumber int
+}
+
+func NewAuditWriter(auditSvc *AuditService, operationLogID uint) *AuditWriter {
+	return &AuditWriter{
+		auditSvc:       auditSvc,
+		operationLogID: operationLogID,
+		sequenceNumber: 0,
+	}
+}
+
+func (w *AuditWriter) Write(p []byte) (n int, err error) {
+	data := string(p)
+	lines := strings.Split(data, "\n")
+
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		if len(line) > 6 && line[:6] == "data: " {
+			jsonData := line[6:]
+
+			var streamMsg StreamMessage
+			if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
+				w.sequenceNumber++
+
+				_ = w.auditSvc.LogOperationMessage(
+					w.operationLogID,
+					streamMsg.Type,
+					streamMsg.Data,
+					streamMsg.Timestamp,
+					w.sequenceNumber,
+				)
+
+				if streamMsg.Type == "complete" {
+					success := streamMsg.Success != nil && *streamMsg.Success
+					exitCode := 0
+					if streamMsg.ExitCode != nil {
+						exitCode = *streamMsg.ExitCode
+					}
+
+					_ = w.auditSvc.LogOperationEnd(
+						w.operationLogID,
+						streamMsg.Timestamp,
+						success,
+						exitCode,
+					)
+				}
+			}
+		}
+	}
+
+	return len(p), nil
 }
