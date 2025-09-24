@@ -14,6 +14,7 @@ import {
   XMarkIcon,
   ClipboardDocumentListIcon,
   ArrowUpTrayIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -38,6 +39,11 @@ export default function Layout({ children }: LayoutProps) {
       name: 'Operation Logs',
       href: '/operation-logs',
       icon: ClipboardDocumentListIcon,
+    },
+    {
+      name: 'Webhooks',
+      href: '/webhooks',
+      icon: LinkIcon,
     },
     ...(isAdmin
       ? [
