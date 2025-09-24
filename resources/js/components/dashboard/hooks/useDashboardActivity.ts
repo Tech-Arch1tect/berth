@@ -36,11 +36,13 @@ export const useDashboardActivity = (): ActivitySummary => {
         setLoading(true);
         setError(null);
 
-        const recentResponse = await fetch('/api/operation-logs?page=1&page_size=10');
+        const recentResponse = await fetch('/api/operation-logs?page=1&page_size=10&days_back=7');
         const recentData = await recentResponse.json();
         setRecentOperations(recentData.data || []);
 
-        const failedResponse = await fetch('/api/operation-logs?page=1&page_size=5&status=failed');
+        const failedResponse = await fetch(
+          '/api/operation-logs?page=1&page_size=5&status=failed&days_back=7'
+        );
         const failedData = await failedResponse.json();
         setFailedOperations(failedData.data || []);
       } catch (err) {

@@ -86,6 +86,11 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 		query = query.Where("success = ? AND end_time IS NOT NULL", true)
 	}
 
+	if params.DaysBack != nil {
+		cutoffDate := time.Now().Add(-time.Duration(*params.DaysBack) * 24 * time.Hour)
+		query = query.Where("created_at > ?", cutoffDate)
+	}
+
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		s.logger.Error("failed to count operation logs", zap.Error(err))
@@ -286,6 +291,7 @@ type ListOperationLogsParams struct {
 	Command    string
 	Status     string
 	UserID     uint
+	DaysBack   *int
 }
 
 func NewListOperationLogsParamsFromQuery(params map[string]string) ListOperationLogsParams {
@@ -299,6 +305,13 @@ func NewListOperationLogsParamsFromQuery(params map[string]string) ListOperation
 		pageSize = 20
 	}
 
+	var daysBack *int
+	if daysBackStr := params["days_back"]; daysBackStr != "" {
+		if days, err := strconv.Atoi(daysBackStr); err == nil && days > 0 {
+			daysBack = &days
+		}
+	}
+
 	return ListOperationLogsParams{
 		Page:       page,
 		PageSize:   pageSize,
@@ -307,5 +320,6 @@ func NewListOperationLogsParamsFromQuery(params map[string]string) ListOperation
 		StackName:  params["stack_name"],
 		Command:    params["command"],
 		Status:     params["status"],
+		DaysBack:   daysBack,
 	}
 }
