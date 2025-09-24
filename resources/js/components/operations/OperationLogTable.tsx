@@ -18,6 +18,8 @@ interface OperationLog {
   updated_at: string;
   user_name: string;
   server_name: string;
+  webhook_name?: string;
+  trigger_source: string;
   is_incomplete: boolean;
   formatted_date: string;
   message_count: number;
@@ -72,6 +74,9 @@ export default function OperationLogTable({
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Stack
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Trigger
+                    </th>
                     {showUser && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         User/Server
@@ -99,13 +104,13 @@ export default function OperationLogTable({
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {loading ? (
                     <tr>
-                      <td colSpan={showUser ? 7 : 6} className="px-6 py-4 text-center">
+                      <td colSpan={showUser ? 8 : 7} className="px-6 py-4 text-center">
                         <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
                       </td>
                     </tr>
                   ) : logs.length === 0 ? (
                     <tr>
-                      <td colSpan={showUser ? 7 : 6} className="px-6 py-4 text-center">
+                      <td colSpan={showUser ? 8 : 7} className="px-6 py-4 text-center">
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           No operation logs found.
                         </div>
@@ -125,6 +130,26 @@ export default function OperationLogTable({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-white">
                             {log.stack_name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {log.trigger_source === 'webhook' ? (
+                              <>
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 mr-2">
+                                  🔗 Webhook
+                                </span>
+                                {log.webhook_name && (
+                                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                                    {log.webhook_name}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                👤 Manual
+                              </span>
+                            )}
                           </div>
                         </td>
                         {showUser ? (

@@ -4,12 +4,14 @@ import "berth/models"
 
 type OperationLogResponse struct {
 	models.OperationLog
-	UserName        string `json:"user_name"`
-	ServerName      string `json:"server_name"`
-	IsIncomplete    bool   `json:"is_incomplete"`
-	FormattedDate   string `json:"formatted_date"`
-	MessageCount    int64  `json:"message_count"`
-	PartialDuration *int   `json:"partial_duration_ms"`
+	UserName        string  `json:"user_name"`
+	ServerName      string  `json:"server_name"`
+	WebhookName     *string `json:"webhook_name,omitempty"`
+	TriggerSource   string  `json:"trigger_source"`
+	IsIncomplete    bool    `json:"is_incomplete"`
+	FormattedDate   string  `json:"formatted_date"`
+	MessageCount    int64   `json:"message_count"`
+	PartialDuration *int    `json:"partial_duration_ms"`
 }
 
 type OperationLogDetail struct {

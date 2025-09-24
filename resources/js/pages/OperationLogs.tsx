@@ -25,6 +25,8 @@ interface OperationLog {
   updated_at: string;
   user_name: string;
   server_name: string;
+  webhook_name?: string;
+  trigger_source: string;
   is_incomplete: boolean;
   formatted_date: string;
   message_count: number;

@@ -18,6 +18,8 @@ interface OperationLog {
   updated_at: string;
   user_name: string;
   server_name: string;
+  webhook_name?: string;
+  trigger_source: string;
   is_incomplete: boolean;
   formatted_date: string;
   message_count: number;
@@ -131,6 +133,29 @@ export default function OperationLogModal({
                 </label>
                 <div className="mt-1 text-sm text-gray-900 dark:text-white">
                   {selectedLog.log.server_name}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Trigger Source
+                </label>
+                <div className="mt-1">
+                  {selectedLog.log.trigger_source === 'webhook' ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        🔗 Webhook
+                      </span>
+                      {selectedLog.log.webhook_name && (
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {selectedLog.log.webhook_name}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                      👤 Manual
+                    </span>
+                  )}
                 </div>
               </div>
               <div>
