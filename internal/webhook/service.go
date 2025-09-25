@@ -453,3 +453,94 @@ func (s *Service) ValidateWebhookStackPattern(webhook *models.Webhook, stackName
 
 	return nil
 }
+
+// Admin methods
+
+func (s *Service) GetAllWebhooks() ([]models.WebhookResponse, error) {
+	s.logger.Debug("fetching all webhooks for admin view")
+
+	var webhooks []models.Webhook
+	result := s.db.Preload("User").Find(&webhooks)
+	if result.Error != nil {
+		s.logger.Error("failed to fetch all webhooks", zap.Error(result.Error))
+		return nil, result.Error
+	}
+
+	responses := make([]models.WebhookResponse, len(webhooks))
+	for i, webhook := range webhooks {
+
+		var scopes []models.WebhookServerScope
+		s.db.Where("webhook_id = ?", webhook.ID).Find(&scopes)
+
+		responses[i] = webhook.ToResponse()
+		responses[i].ServerScopes = make([]uint, 0, len(scopes))
+		for _, scope := range scopes {
+			responses[i].ServerScopes = append(responses[i].ServerScopes, scope.ServerID)
+		}
+
+		if webhook.User.ID != 0 {
+			responses[i].UserName = webhook.User.Username
+			if responses[i].UserName == "" {
+				responses[i].UserName = webhook.User.Email
+			}
+		}
+	}
+
+	s.logger.Debug("fetched all webhooks", zap.Int("count", len(responses)))
+
+	return responses, nil
+}
+
+func (s *Service) AdminGetWebhook(webhookID uint) (*models.WebhookResponse, error) {
+	s.logger.Debug("admin fetching webhook", zap.Uint("webhook_id", webhookID))
+
+	var webhook models.Webhook
+	result := s.db.Preload("User").First(&webhook, webhookID)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			s.logger.Debug("webhook not found", zap.Uint("webhook_id", webhookID))
+			return nil, gorm.ErrRecordNotFound
+		}
+		s.logger.Error("failed to fetch webhook", zap.Error(result.Error), zap.Uint("webhook_id", webhookID))
+		return nil, result.Error
+	}
+
+	var scopes []models.WebhookServerScope
+	s.db.Where("webhook_id = ?", webhook.ID).Find(&scopes)
+
+	response := webhook.ToResponse()
+	response.ServerScopes = make([]uint, 0, len(scopes))
+	for _, scope := range scopes {
+		response.ServerScopes = append(response.ServerScopes, scope.ServerID)
+	}
+
+	if webhook.User.ID != 0 {
+		response.UserName = webhook.User.Username
+		if response.UserName == "" {
+			response.UserName = webhook.User.Email
+		}
+	}
+
+	s.logger.Debug("admin fetched webhook", zap.Uint("webhook_id", webhookID))
+
+	return &response, nil
+}
+
+func (s *Service) AdminDeleteWebhook(webhookID uint) error {
+	s.logger.Info("admin deleting webhook", zap.Uint("webhook_id", webhookID))
+
+	result := s.db.Delete(&models.Webhook{}, webhookID)
+	if result.Error != nil {
+		s.logger.Error("failed to delete webhook", zap.Error(result.Error), zap.Uint("webhook_id", webhookID))
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		s.logger.Debug("webhook not found for deletion", zap.Uint("webhook_id", webhookID))
+		return gorm.ErrRecordNotFound
+	}
+
+	s.logger.Info("webhook deleted successfully", zap.Uint("webhook_id", webhookID))
+
+	return nil
+}

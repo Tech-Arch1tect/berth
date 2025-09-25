@@ -40,6 +40,7 @@ type WebhookResponse struct {
 	TriggerCount  int64      `json:"trigger_count"`
 	ExpiresAt     *time.Time `json:"expires_at"`
 	ServerScopes  []uint     `json:"server_scopes,omitempty"`
+	UserName      string     `json:"user_name,omitempty"`
 }
 
 type WebhookWithAPIKey struct {

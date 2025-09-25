@@ -300,6 +300,14 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			admin.GET("/api/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
 		}
 
+		// Admin webhooks routes
+		if webhookHandler != nil {
+			admin.GET("/webhooks", webhookHandler.ShowAdminWebhooks)
+			admin.GET("/api/webhooks", webhookHandler.AdminListWebhooks)
+			admin.GET("/api/webhooks/:id", webhookHandler.AdminGetWebhook)
+			admin.DELETE("/api/webhooks/:id", webhookHandler.AdminDeleteWebhook)
+		}
+
 		if serverHandler != nil {
 			admin.GET("/servers", serverHandler.Index)
 			admin.GET("/servers/:id", serverHandler.Show)

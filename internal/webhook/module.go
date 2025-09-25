@@ -36,6 +36,7 @@ type HandlerDeps struct {
 	ServerService  *server.Service
 	RBACService    *rbac.Service
 	StackService   *stack.Service
+	InertiaService *inertia.Service
 }
 
 type UIHandlerDeps struct {
@@ -50,7 +51,7 @@ func NewServiceWithDeps(deps ServiceDeps) *Service {
 }
 
 func NewHandlerWithDeps(deps HandlerDeps) *Handler {
-	return NewHandler(deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService)
+	return NewHandler(deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService, deps.InertiaService)
 }
 
 func NewUIHandlerWithDeps(deps UIHandlerDeps) *UIHandler {
