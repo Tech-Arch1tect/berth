@@ -56,6 +56,11 @@ export default function Layout({ children }: LayoutProps) {
             href: '/admin/operation-logs',
             icon: ClipboardDocumentListIcon,
           },
+          {
+            name: 'Admin Webhooks',
+            href: '/admin/webhooks',
+            icon: LinkIcon,
+          },
         ]
       : []),
   ];
