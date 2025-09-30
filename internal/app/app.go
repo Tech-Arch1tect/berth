@@ -24,7 +24,7 @@ import (
 	"berth/seeds"
 	"berth/utils"
 
-	"github.com/tech-arch1tect/brx"
+	"github.com/tech-arch1tect/brx/app"
 	"github.com/tech-arch1tect/brx/config"
 	"github.com/tech-arch1tect/brx/middleware/inertiashared"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
@@ -73,7 +73,7 @@ func LoadConfig() (*BerthConfig, error) {
 	return &cfg, nil
 }
 
-func NewApp(opts *AppOptions) *brx.App {
+func NewApp(opts *AppOptions) *app.App {
 	if opts == nil {
 		opts = &AppOptions{}
 	}
@@ -167,26 +167,35 @@ func NewApp(opts *AppOptions) *brx.App {
 	if len(opts.ExtraFxOptions) > 0 {
 		fxOptions = append(fxOptions, opts.ExtraFxOptions...)
 	}
-	fxOptsAsAny := make([]any, len(fxOptions))
-	for i, opt := range fxOptions {
-		fxOptsAsAny[i] = opt
+
+	berthApp, err := app.NewApp().
+		WithConfig(&cfg.Config).
+		WithMail().
+		WithDatabase(
+			&models.User{}, &models.Role{}, &models.Permission{},
+			&models.Server{}, &models.ServerRoleStackPermission{},
+			&models.OperationLog{}, &models.OperationLogMessage{},
+			&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
+			&models.QueuedOperation{}, &session.UserSession{},
+			&totp.TOTPSecret{}, &totp.UsedCode{},
+			&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
+			&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
+		).
+		WithSessionsNoMiddleware().
+		WithInertiaNoMiddleware().
+		WithAuth().
+		WithTOTP().
+		WithJWT().
+		WithJWTRevocation().
+		WithSSL(certFile, keyFile).
+		WithFxOptions(fxOptions...).
+		Build()
+
+	if err != nil {
+		panic(err)
 	}
 
-	app := brx.New(
-		brx.WithConfig(&cfg.Config),
-		brx.WithMail(),
-		brx.WithDatabase(&models.User{}, &models.Role{}, &models.Permission{}, &models.Server{}, &models.ServerRoleStackPermission{}, &models.OperationLog{}, &models.OperationLogMessage{}, &models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{}, &models.QueuedOperation{}, &session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{}, &auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{}, &revocation.RevokedToken{}, &refreshtoken.RefreshToken{}),
-		brx.WithSessionsNoGlobalMiddleware(),
-		brx.WithInertiaNoGlobalMiddleware(),
-		brx.WithAuth(),
-		brx.WithTOTP(),
-		brx.WithJWT(),
-		brx.WithJWTRevocation(),
-		brx.WithSSL(certFile, keyFile),
-		brx.WithFxOptions(fxOptsAsAny...),
-	)
-
-	return app
+	return berthApp
 }
 
 func StartWebSocketHub(hub *websocket.Hub) {
@@ -197,8 +206,8 @@ func Run() {
 	NewApp(nil).Run()
 }
 
-func Start() *brx.App {
-	app := NewApp(nil)
-	go app.Start()
-	return app
+func Start() *app.App {
+	berthApp := NewApp(nil)
+	go berthApp.Start()
+	return berthApp
 }
