@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"berth/internal/common"
+	"berth/internal/operations"
 	"berth/internal/server"
 
 	"github.com/gorilla/websocket"
@@ -23,14 +24,16 @@ type Handler struct {
 	jwtService    *jwt.Service
 	permChecker   PermissionChecker
 	serverService *server.Service
+	auditService  *operations.AuditService
 }
 
-func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker, serverService *server.Service) *Handler {
+func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService) *Handler {
 	return &Handler{
 		hub:           hub,
 		jwtService:    jwtService,
 		permChecker:   permChecker,
 		serverService: serverService,
+		auditService:  auditService,
 	}
 }
 
@@ -202,6 +205,8 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 
 	done := make(chan bool, 2)
 	sessionStackName := ""
+	var operationLogID *uint
+	sessionStartTime := time.Now()
 
 	go func() {
 		defer func() {
@@ -215,7 +220,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 			}
 
 			if messageType == websocket.TextMessage {
-				if !h.validateMessagePermissions(userID, serverID, message, &sessionStackName, clientType, clientConn) {
+				if !h.validateMessagePermissions(userID, serverID, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime) {
 					continue
 				}
 			}
@@ -242,6 +247,12 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	}()
 
 	<-done
+
+	if operationLogID != nil {
+		endTime := time.Now()
+		_ = h.auditService.LogOperationEnd(*operationLogID, endTime, true, 0)
+	}
+
 	return nil
 }
 
@@ -267,7 +278,7 @@ type TerminalCloseMessage struct {
 	SessionID string `json:"session_id"`
 }
 
-func (h *Handler) validateMessagePermissions(userID int, serverID int, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn) bool {
+func (h *Handler) validateMessagePermissions(userID int, serverID int, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) bool {
 	var baseMsg BaseMessage
 	if err := json.Unmarshal(message, &baseMsg); err != nil {
 
@@ -297,6 +308,30 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 		}
 
 		*sessionStackName = startMsg.StackName
+
+		operationID := fmt.Sprintf("terminal-%d-%d", time.Now().Unix(), userID)
+		containerInfo := startMsg.ServiceName
+		if startMsg.ContainerName != "" {
+			containerInfo = fmt.Sprintf("%s/%s", startMsg.ServiceName, startMsg.ContainerName)
+		}
+
+		opRequest := operations.OperationRequest{
+			Command:  "terminal",
+			Options:  []string{containerInfo},
+			Services: []string{},
+		}
+
+		log, err := h.auditService.LogOperationStart(
+			uint(userID),
+			uint(serverID),
+			startMsg.StackName,
+			operationID,
+			opRequest,
+			sessionStartTime,
+		)
+		if err == nil && log != nil {
+			*operationLogID = &log.ID
+		}
 
 		return true
 
