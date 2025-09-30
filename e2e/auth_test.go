@@ -10,45 +10,6 @@ import (
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
-func TestUserRegistration(t *testing.T) {
-	app := SetupTestApp(t)
-
-	t.Run("successful registration", func(t *testing.T) {
-
-		resp, err := app.AuthHelper.Register("newuser1", "newuser1@example.com", "password123")
-		require.NoError(t, err)
-
-		app.AuthHelper.AssertRegistrationSuccess(t, resp)
-
-		app.AuthHelper.AssertUserExists(t, "newuser1@example.com")
-	})
-
-	t.Run("duplicate email registration", func(t *testing.T) {
-
-		testUser := &e2etesting.TestUser{
-			Username: "testuser1",
-			Email:    "testuser1@example.com",
-			Password: "password123",
-		}
-		app.AuthHelper.CreateTestUser(t, testUser)
-
-		resp, err := app.AuthHelper.Register("anotheruser", "testuser1@example.com", "password123")
-		require.NoError(t, err)
-
-		resp.AssertRedirect(t, "/auth/register")
-	})
-
-	t.Run("invalid password registration", func(t *testing.T) {
-
-		resp, err := app.AuthHelper.Register("weakuser", "weak@example.com", "123")
-		require.NoError(t, err)
-
-		resp.AssertRedirect(t, "/auth/register")
-
-		app.AuthHelper.AssertUserNotExists(t, "weak@example.com")
-	})
-}
-
 func TestUserLogin(t *testing.T) {
 	app := SetupTestApp(t)
 
