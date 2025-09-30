@@ -11,11 +11,13 @@ import (
 
 	"berth/models"
 	"berth/providers"
+	"berth/utils"
 
 	mockpkg "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/tech-arch1tect/brx"
+	"github.com/tech-arch1tect/brx/app"
 	"github.com/tech-arch1tect/brx/config"
+	"github.com/tech-arch1tect/brx/services/logging"
 	"github.com/tech-arch1tect/brx/middleware/inertiashared"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/services/auth"
@@ -29,8 +31,20 @@ import (
 	"gorm.io/gorm"
 
 	"berth/handlers"
+	"berth/internal/agent"
+	"berth/internal/files"
+	"berth/internal/logs"
+	"berth/internal/maintenance"
+	"berth/internal/migration"
+	"berth/internal/operationlogs"
+	"berth/internal/operations"
+	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/server"
 	"berth/internal/setup"
+	"berth/internal/stack"
+	"berth/internal/webhook"
+	"berth/internal/websocket"
 	"berth/routes"
 	"berth/seeds"
 
@@ -72,11 +86,14 @@ func SetupTestApp(t *testing.T) *TestApp {
 	}
 
 	e2eApp, err := e2etesting.BuildTestApp(
-		brx.NewApp().
+		app.NewApp().
 			WithDatabase(
-
 				&models.User{}, &models.Role{}, &models.Permission{},
-				&session.UserSession{}, &totp.TOTPSecret{}, &totp.UsedCode{},
+				&models.Server{}, &models.ServerRoleStackPermission{},
+				&models.OperationLog{}, &models.OperationLogMessage{},
+				&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
+				&models.QueuedOperation{}, &session.UserSession{},
+				&totp.TOTPSecret{}, &totp.UsedCode{},
 				&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
 				&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
 			).
@@ -87,14 +104,36 @@ func SetupTestApp(t *testing.T) *TestApp {
 			WithJWT().
 			WithJWTRevocation().
 			WithFxOptions(
-
 				jwt.Options,
+				fx.Provide(func() *utils.Crypto {
+					return utils.NewCrypto("test-encryption-secret-key-32chars!!")
+				}),
+				fx.Provide(agent.NewService),
 				fx.Provide(rbac.NewService),
 				fx.Provide(rbac.NewMiddleware),
 				fx.Provide(rbac.NewRBACHandler),
 				fx.Provide(rbac.NewAPIHandler),
-				fx.Provide(setup.NewService),
+				fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
+					return setup.NewService(db, rbacSvc, logger)
+				}),
 				fx.Provide(setup.NewHandler),
+				fx.Provide(server.NewService),
+				fx.Provide(server.NewHandler),
+				fx.Provide(server.NewAPIHandler),
+				fx.Provide(server.NewUserAPIHandler),
+				fx.Provide(stack.NewService),
+				fx.Provide(stack.NewHandler),
+				fx.Provide(stack.NewAPIHandler),
+				fx.Provide(maintenance.NewService),
+				fx.Provide(maintenance.NewHandler),
+				fx.Provide(maintenance.NewAPIHandler),
+				files.Module,
+				logs.Module,
+				operations.Module,
+				operationlogs.Module,
+				migration.Module,
+				queue.Module(),
+				webhook.Module(),
 				fx.Provide(handlers.NewDashboardHandler),
 				fx.Provide(handlers.NewAuthHandler),
 				fx.Provide(handlers.NewMobileAuthHandler),
@@ -113,15 +152,16 @@ func SetupTestApp(t *testing.T) *TestApp {
 					providers.NewUserProvider,
 					fx.As(new(jwtshared.UserProvider)),
 				)),
-
 				fx.Invoke(routes.RegisterRoutes),
-
 				fx.Invoke(func(db *gorm.DB) {
 					if err := seeds.SeedRBACData(db); err != nil {
-
 					}
 				}),
-
+				websocket.Module,
+				fx.Invoke(func(hub *websocket.Hub) {
+					go hub.Run()
+				}),
+				fx.Invoke(websocket.StartWebSocketServiceManager),
 				e2etesting.Module,
 			),
 		testConfig,
