@@ -91,30 +91,6 @@ func (h *AuthHandler) ShowLogin(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/")
 	}
 
-	if h.authSvc.IsRememberMeEnabled() {
-		cookie, err := c.Cookie("remember_me")
-		if err == nil && cookie.Value != "" {
-			rememberToken, err := h.authSvc.ValidateRememberMeToken(cookie.Value)
-			if err == nil {
-				var user models.User
-				if err := h.db.First(&user, rememberToken.UserID).Error; err == nil {
-					session.LoginWithTOTPService(c, user.ID, h.totpSvc)
-
-					if h.authSvc.ShouldRotateRememberMeToken() {
-						newToken, err := h.authSvc.RotateRememberMeToken(cookie.Value)
-						if err != nil {
-							h.logger.Error("failed to rotate remember me token", zap.Error(err))
-						} else {
-							h.setRememberMeCookie(c, newToken.Token, newToken.ExpiresAt)
-						}
-					}
-
-					return c.Redirect(http.StatusFound, "/")
-				}
-			}
-		}
-	}
-
 	var rememberMeDays int
 	if h.authSvc.IsRememberMeEnabled() {
 		rememberMeDays = int(h.authSvc.GetRememberMeExpiry().Hours() / 24)
