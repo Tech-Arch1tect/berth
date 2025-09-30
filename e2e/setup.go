@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"brx-starter-kit/models"
-	"brx-starter-kit/providers"
+	"berth/models"
+	"berth/providers"
 
 	mockpkg "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,11 +28,11 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"brx-starter-kit/handlers"
-	"brx-starter-kit/internal/rbac"
-	"brx-starter-kit/internal/setup"
-	"brx-starter-kit/routes"
-	"brx-starter-kit/seeds"
+	"berth/handlers"
+	"berth/internal/rbac"
+	"berth/internal/setup"
+	"berth/routes"
+	"berth/seeds"
 
 	"github.com/tech-arch1tect/brx/testutils"
 )
