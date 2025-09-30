@@ -538,7 +538,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
 
   return (
     <div
-      className={`${className} h-full bg-slate-50/30 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden`}
+      className={`${className} h-full bg-slate-50/30 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-auto`}
     >
       {renderContent()}
     </div>
