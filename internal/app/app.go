@@ -193,6 +193,7 @@ func NewApp(opts *AppOptions) *app.App {
 			&models.User{}, &models.Role{}, &models.Permission{},
 			&models.Server{}, &models.ServerRoleStackPermission{},
 			&models.OperationLog{}, &models.OperationLogMessage{},
+			&models.SecurityAuditLog{},
 			&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
 			&models.QueuedOperation{}, &session.UserSession{},
 			&totp.TOTPSecret{}, &totp.UsedCode{},
