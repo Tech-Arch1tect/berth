@@ -33,6 +33,7 @@ import (
 	"github.com/tech-arch1tect/brx/middleware/inertiashared"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/services/auth"
+	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/jwt"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"github.com/tech-arch1tect/brx/services/refreshtoken"
@@ -140,7 +141,9 @@ func NewApp(opts *AppOptions) *app.App {
 		}),
 		fx.Provide(setup.NewHandler),
 		fx.Provide(server.NewService),
-		fx.Provide(server.NewHandler),
+		fx.Provide(func(db *gorm.DB, svc *server.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *server.Handler {
+			return server.NewHandler(db, svc, inertiaSvc, auditSvc)
+		}),
 		fx.Provide(server.NewAPIHandler),
 		fx.Provide(server.NewUserAPIHandler),
 		fx.Provide(stack.NewService),
@@ -156,6 +159,7 @@ func NewApp(opts *AppOptions) *app.App {
 		migration.Module,
 		queue.Module(),
 		webhook.Module(),
+		fx.Provide(security.NewHandler),
 		fx.Provide(handlers.NewDashboardHandler),
 		fx.Provide(handlers.NewAuthHandler),
 		fx.Provide(handlers.NewMobileAuthHandler),

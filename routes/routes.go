@@ -13,6 +13,7 @@ import (
 	"berth/internal/operationlogs"
 	"berth/internal/operations"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
@@ -38,7 +39,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, webhookHandler *webhook.Handler, webhookUIHandler *webhook.UIHandler, wsHandler *websocket.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, webhookHandler *webhook.Handler, webhookUIHandler *webhook.UIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -332,6 +333,17 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			admin.POST("/migration/export", migrationHandler.Export)
 			admin.POST("/migration/import", migrationHandler.Import)
 		}
+
+		if securityHandler != nil {
+			admin.GET("/security-audit-logs", func(c echo.Context) error {
+				return inertiaService.Render(c, "Admin/SecurityAuditLogs", map[string]any{
+					"title": "Security Audit Logs",
+				})
+			})
+			admin.GET("/api/security-audit-logs", securityHandler.ListLogs)
+			admin.GET("/api/security-audit-logs/stats", securityHandler.GetStats)
+			admin.GET("/api/security-audit-logs/:id", securityHandler.GetLog)
+		}
 	}
 
 	// API routes
@@ -487,6 +499,18 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			if migrationHandler != nil {
 				apiAdmin.POST("/migration/export", migrationHandler.Export)
 				apiAdmin.POST("/migration/import", migrationHandler.Import)
+			}
+
+			if securityHandler != nil {
+				apiAdmin.GET("/security-audit-logs", securityHandler.ListLogs)
+				apiAdmin.GET("/security-audit-logs/stats", securityHandler.GetStats)
+				apiAdmin.GET("/security-audit-logs/:id", securityHandler.GetLog)
+			}
+
+			if webhookHandler != nil {
+				apiAdmin.GET("/webhooks", webhookHandler.AdminListWebhooks)
+				apiAdmin.GET("/webhooks/:id", webhookHandler.AdminGetWebhook)
+				apiAdmin.DELETE("/webhooks/:id", webhookHandler.AdminDeleteWebhook)
 			}
 		}
 	}
