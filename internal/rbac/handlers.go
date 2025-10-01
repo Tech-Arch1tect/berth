@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"berth/internal/common"
+	"berth/internal/security"
 	"berth/models"
 	"strconv"
 
@@ -19,15 +20,17 @@ type Handler struct {
 	rbac       *Service
 	authSvc    *auth.Service
 	totpSvc    *totp.Service
+	auditSvc   *security.AuditService
 }
 
-func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc *auth.Service, totpSvc *totp.Service) *Handler {
+func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc *auth.Service, totpSvc *totp.Service, auditSvc *security.AuditService) *Handler {
 	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		rbac:       rbac,
 		authSvc:    authSvc,
 		totpSvc:    totpSvc,
+		auditSvc:   auditSvc,
 	}
 }
 
@@ -107,6 +110,22 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogUserManagementEvent(
+			security.EventUserCreated,
+			actorUser.ID,
+			actorUser.Username,
+			user.ID,
+			user.Username,
+			c.RealIP(),
+			map[string]any{
+				"email": user.Email,
+			},
+		)
+	}
+
 	if h.authSvc.IsEmailVerificationRequired() {
 		if err := h.authSvc.RequestEmailVerification(user.Email); err != nil {
 			session.AddFlashError(c, "User created but failed to send verification email")
@@ -154,9 +173,38 @@ func (h *Handler) AssignRole(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
+	var targetUser models.User
+	if err := h.db.First(&targetUser, req.UserID).Error; err != nil {
+		session.AddFlashError(c, "User not found")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	var role models.Role
+	if err := h.db.First(&role, req.RoleID).Error; err != nil {
+		session.AddFlashError(c, "Role not found")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
 	if err := h.rbac.AssignRole(req.UserID, req.RoleID); err != nil {
 		session.AddFlashError(c, "Failed to assign role")
 		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogUserManagementEvent(
+			security.EventUserRoleAssigned,
+			actorUser.ID,
+			actorUser.Username,
+			targetUser.ID,
+			targetUser.Username,
+			c.RealIP(),
+			map[string]any{
+				"role_id":   role.ID,
+				"role_name": role.Name,
+			},
+		)
 	}
 
 	session.AddFlashSuccess(c, "Role assigned successfully")
@@ -174,9 +222,38 @@ func (h *Handler) RevokeRole(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/users")
 	}
 
+	var targetUser models.User
+	if err := h.db.First(&targetUser, req.UserID).Error; err != nil {
+		session.AddFlashError(c, "User not found")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	var role models.Role
+	if err := h.db.First(&role, req.RoleID).Error; err != nil {
+		session.AddFlashError(c, "Role not found")
+		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
 	if err := h.rbac.RevokeRole(req.UserID, req.RoleID); err != nil {
 		session.AddFlashError(c, "Failed to revoke role")
 		return h.inertiaSvc.Redirect(c, "/admin/users")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogUserManagementEvent(
+			security.EventUserRoleRevoked,
+			actorUser.ID,
+			actorUser.Username,
+			targetUser.ID,
+			targetUser.Username,
+			c.RealIP(),
+			map[string]any{
+				"role_id":   role.ID,
+				"role_name": role.Name,
+			},
+		)
 	}
 
 	session.AddFlashSuccess(c, "Role revoked successfully")
@@ -206,10 +283,27 @@ func (h *Handler) CreateRole(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
 
-	_, err := h.rbac.CreateRole(req.Name, req.Description)
+	role, err := h.rbac.CreateRole(req.Name, req.Description)
 	if err != nil {
 		session.AddFlashError(c, err.Error())
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogRBACEvent(
+			security.EventRoleCreated,
+			actorUser.ID,
+			actorUser.Username,
+			models.TargetTypeRole,
+			role.ID,
+			role.Name,
+			c.RealIP(),
+			map[string]any{
+				"description": role.Description,
+			},
+		)
 	}
 
 	session.AddFlashSuccess(c, "Role created successfully")
@@ -233,10 +327,27 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
 
-	_, err = h.rbac.UpdateRole(uint(roleID), req.Name, req.Description)
+	role, err := h.rbac.UpdateRole(uint(roleID), req.Name, req.Description)
 	if err != nil {
 		session.AddFlashError(c, err.Error())
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogRBACEvent(
+			security.EventRoleUpdated,
+			actorUser.ID,
+			actorUser.Username,
+			models.TargetTypeRole,
+			role.ID,
+			role.Name,
+			c.RealIP(),
+			map[string]any{
+				"description": role.Description,
+			},
+		)
 	}
 
 	session.AddFlashSuccess(c, "Role updated successfully")
@@ -250,10 +361,31 @@ func (h *Handler) DeleteRole(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
 	}
 
+	var role models.Role
+	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
+		session.AddFlashError(c, "Role not found")
+		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
 	err = h.rbac.DeleteRole(uint(roleID))
 	if err != nil {
 		session.AddFlashError(c, err.Error())
 		return h.inertiaSvc.Redirect(c, "/admin/roles")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogRBACEvent(
+			security.EventRoleDeleted,
+			actorUser.ID,
+			actorUser.Username,
+			models.TargetTypeRole,
+			role.ID,
+			role.Name,
+			c.RealIP(),
+			nil,
+		)
 	}
 
 	session.AddFlashSuccess(c, "Role deleted successfully")
@@ -362,6 +494,33 @@ func (h *Handler) CreateRoleStackPermission(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		var role models.Role
+		var server models.Server
+		var permission models.Permission
+		h.db.First(&role, roleID)
+		h.db.First(&server, req.ServerID)
+		h.db.First(&permission, req.PermissionID)
+
+		_ = h.auditSvc.LogRBACEvent(
+			security.EventPermissionAdded,
+			actorUser.ID,
+			actorUser.Username,
+			models.TargetTypeRole,
+			role.ID,
+			role.Name,
+			c.RealIP(),
+			map[string]any{
+				"permission":    permission.Name,
+				"server_id":     server.ID,
+				"server_name":   server.Name,
+				"stack_pattern": req.StackPattern,
+			},
+		)
+	}
+
 	session.AddFlashSuccess(c, "Permission rule created successfully")
 	return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 }
@@ -385,15 +544,42 @@ func (h *Handler) DeleteRoleStackPermission(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 	}
 
+	var role models.Role
+	var server models.Server
+	var perm models.Permission
+	h.db.First(&role, roleID)
+	h.db.First(&server, permission.ServerID)
+	h.db.First(&perm, permission.PermissionID)
+
 	if err := h.db.Delete(&permission).Error; err != nil {
 		session.AddFlashError(c, "Failed to delete permission rule")
 		return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogRBACEvent(
+			security.EventPermissionRemoved,
+			actorUser.ID,
+			actorUser.Username,
+			models.TargetTypeRole,
+			role.ID,
+			role.Name,
+			c.RealIP(),
+			map[string]any{
+				"permission":    perm.Name,
+				"server_id":     server.ID,
+				"server_name":   server.Name,
+				"stack_pattern": permission.StackPattern,
+			},
+		)
 	}
 
 	session.AddFlashSuccess(c, "Permission rule deleted successfully")
 	return h.inertiaSvc.Redirect(c, "/admin/roles/"+strconv.Itoa(int(roleID))+"/stack-permissions")
 }
 
-func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service, authSvc *auth.Service, totpSvc *totp.Service) *Handler {
-	return NewHandler(db, inertiaSvc, rbacSvc, authSvc, totpSvc)
+func NewRBACHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbacSvc *Service, authSvc *auth.Service, totpSvc *totp.Service, auditSvc *security.AuditService) *Handler {
+	return NewHandler(db, inertiaSvc, rbacSvc, authSvc, totpSvc, auditSvc)
 }

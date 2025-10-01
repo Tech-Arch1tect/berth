@@ -4,34 +4,41 @@ import (
 	"berth/internal/common"
 	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/stack"
+	"berth/models"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
+	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
+	db         *gorm.DB
 	webhookSvc *Service
 	queueSvc   *queue.Service
 	serverSvc  *server.Service
 	rbacSvc    *rbac.Service
 	stackSvc   *stack.Service
 	inertiaSvc *inertia.Service
+	auditSvc   *security.AuditService
 }
 
-func NewHandler(webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service) *Handler {
+func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *Handler {
 	return &Handler{
+		db:         db,
 		webhookSvc: webhookSvc,
 		queueSvc:   queueSvc,
 		serverSvc:  serverSvc,
 		rbacSvc:    rbacSvc,
 		stackSvc:   stackSvc,
 		inertiaSvc: inertiaSvc,
+		auditSvc:   auditSvc,
 	}
 }
 
@@ -49,6 +56,24 @@ func (h *Handler) CreateWebhook(c echo.Context) error {
 	webhook, err := h.webhookSvc.CreateWebhook(userID, req)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookCreated,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			map[string]any{
+				"stack_pattern": webhook.StackPattern,
+			},
+		)
 	}
 
 	return common.SendSuccess(c, webhook)
@@ -114,6 +139,24 @@ func (h *Handler) UpdateWebhook(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookUpdated,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			map[string]any{
+				"stack_pattern": webhook.StackPattern,
+			},
+		)
+	}
+
 	return common.SendSuccess(c, webhook)
 }
 
@@ -128,12 +171,33 @@ func (h *Handler) DeleteWebhook(c echo.Context) error {
 		return err
 	}
 
-	err = h.webhookSvc.DeleteWebhook(webhookID, userID)
+	webhook, err := h.webhookSvc.GetWebhook(webhookID, userID)
 	if err != nil {
 		if err.Error() == "webhook not found" {
 			return common.SendNotFound(c, "Webhook not found")
 		}
 		return common.SendInternalError(c, err.Error())
+	}
+
+	err = h.webhookSvc.DeleteWebhook(webhookID, userID)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookDeleted,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			nil,
+		)
 	}
 
 	return common.SendSuccess(c, map[string]string{"message": "Webhook deleted successfully"})
@@ -150,12 +214,33 @@ func (h *Handler) RegenerateAPIKey(c echo.Context) error {
 		return err
 	}
 
-	apiKey, err := h.webhookSvc.RegenerateAPIKey(webhookID, userID)
+	webhook, err := h.webhookSvc.GetWebhook(webhookID, userID)
 	if err != nil {
 		if err.Error() == "webhook not found" {
 			return common.SendNotFound(c, "Webhook not found")
 		}
 		return common.SendInternalError(c, err.Error())
+	}
+
+	apiKey, err := h.webhookSvc.RegenerateAPIKey(webhookID, userID)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookAPIKeyRegenerated,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			nil,
+		)
 	}
 
 	return common.SendSuccess(c, map[string]string{
@@ -182,6 +267,17 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 
 	webhook, err := h.webhookSvc.ValidateAPIKey(uint(webhookID), req.APIKey)
 	if err != nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookAuthorizationFailed,
+			0,
+			"",
+			uint(webhookID),
+			"",
+			c.RealIP(),
+			false,
+			"Invalid API key",
+			nil,
+		)
 		return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 			"error": "Invalid webhook or API key",
 		})
@@ -219,6 +315,9 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 
 	go h.webhookSvc.UpdateWebhookUsage(uint(webhookID))
 
+	var actorUser models.User
+	h.db.First(&actorUser, webhook.UserID)
+
 	if req.Command != "" {
 
 		operationReq := req.ToOperationRequest()
@@ -231,7 +330,43 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 			&webhook.ID,
 		)
 		if err != nil {
+			if actorUser.ID > 0 {
+				_ = h.auditSvc.LogWebhookEvent(
+					security.EventWebhookTriggerFailed,
+					actorUser.ID,
+					actorUser.Username,
+					webhook.ID,
+					webhook.Name,
+					c.RealIP(),
+					false,
+					err.Error(),
+					map[string]any{
+						"command":    req.Command,
+						"stack_name": req.StackName,
+						"server_id":  req.ServerID,
+					},
+				)
+			}
 			return common.SendInternalError(c, err.Error())
+		}
+
+		if actorUser.ID > 0 {
+			_ = h.auditSvc.LogWebhookEvent(
+				security.EventWebhookTriggered,
+				actorUser.ID,
+				actorUser.Username,
+				webhook.ID,
+				webhook.Name,
+				c.RealIP(),
+				true,
+				"",
+				map[string]any{
+					"command":      req.Command,
+					"stack_name":   req.StackName,
+					"server_id":    req.ServerID,
+					"operation_id": response.OperationID,
+				},
+			)
 		}
 
 		return common.SendSuccess(c, TriggerWebhookResponse{
@@ -250,7 +385,43 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 			&webhook.ID,
 		)
 		if err != nil {
+			if actorUser.ID > 0 {
+				_ = h.auditSvc.LogWebhookEvent(
+					security.EventWebhookTriggerFailed,
+					actorUser.ID,
+					actorUser.Username,
+					webhook.ID,
+					webhook.Name,
+					c.RealIP(),
+					false,
+					err.Error(),
+					map[string]any{
+						"operations": req.Operations,
+						"stack_name": req.StackName,
+						"server_id":  req.ServerID,
+					},
+				)
+			}
 			return common.SendInternalError(c, err.Error())
+		}
+
+		if actorUser.ID > 0 {
+			_ = h.auditSvc.LogWebhookEvent(
+				security.EventWebhookTriggered,
+				actorUser.ID,
+				actorUser.Username,
+				webhook.ID,
+				webhook.Name,
+				c.RealIP(),
+				true,
+				"",
+				map[string]any{
+					"operations": req.Operations,
+					"stack_name": req.StackName,
+					"server_id":  req.ServerID,
+					"batch_id":   batchResponse.BatchID,
+				},
+			)
 		}
 
 		operations := make([]TriggerOperationResponse, len(batchResponse.Operations))
@@ -314,12 +485,36 @@ func (h *Handler) AdminDeleteWebhook(c echo.Context) error {
 		return err
 	}
 
-	err = h.webhookSvc.AdminDeleteWebhook(webhookID)
-	if err != nil {
+	var webhook models.Webhook
+	if err := h.db.First(&webhook, webhookID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return common.SendNotFound(c, "Webhook not found")
 		}
+		return common.SendInternalError(c, "Failed to retrieve webhook")
+	}
+
+	err = h.webhookSvc.AdminDeleteWebhook(webhookID)
+	if err != nil {
 		return common.SendInternalError(c, "Failed to delete webhook")
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookDeleted,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			map[string]any{
+				"admin_action": true,
+				"owner_id":     webhook.UserID,
+			},
+		)
 	}
 
 	return common.SendSuccess(c, map[string]string{

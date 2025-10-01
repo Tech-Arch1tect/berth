@@ -3,6 +3,7 @@ package webhook
 import (
 	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/stack"
 
@@ -31,12 +32,14 @@ type ServiceDeps struct {
 
 type HandlerDeps struct {
 	fx.In
+	DB             *gorm.DB
 	WebhookService *Service
 	QueueService   *queue.Service
 	ServerService  *server.Service
 	RBACService    *rbac.Service
 	StackService   *stack.Service
 	InertiaService *inertia.Service
+	AuditService   *security.AuditService
 }
 
 type UIHandlerDeps struct {
@@ -51,7 +54,7 @@ func NewServiceWithDeps(deps ServiceDeps) *Service {
 }
 
 func NewHandlerWithDeps(deps HandlerDeps) *Handler {
-	return NewHandler(deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService, deps.InertiaService)
+	return NewHandler(deps.DB, deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService, deps.InertiaService, deps.AuditService)
 }
 
 func NewUIHandlerWithDeps(deps UIHandlerDeps) *UIHandler {

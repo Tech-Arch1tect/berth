@@ -2,17 +2,25 @@ package files
 
 import (
 	"berth/internal/common"
+	"berth/internal/security"
+	"berth/models"
 
 	"github.com/labstack/echo/v4"
+	"github.com/tech-arch1tect/brx/session"
+	"gorm.io/gorm"
 )
 
 type APIHandler struct {
-	service *Service
+	db       *gorm.DB
+	service  *Service
+	auditSvc *security.AuditService
 }
 
-func NewAPIHandler(service *Service) *APIHandler {
+func NewAPIHandler(db *gorm.DB, service *Service, auditSvc *security.AuditService) *APIHandler {
 	return &APIHandler{
-		service: service,
+		db:       db,
+		service:  service,
+		auditSvc: auditSvc,
 	}
 }
 
@@ -85,6 +93,21 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogFileEvent(
+			security.EventFileUploaded,
+			actorUser.ID,
+			actorUser.Username,
+			serverID,
+			stackname,
+			req.Path,
+			c.RealIP(),
+			nil,
+		)
+	}
+
 	return common.SendMessage(c, "success")
 }
 
@@ -139,6 +162,21 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogFileEvent(
+			security.EventFileDeleted,
+			actorUser.ID,
+			actorUser.Username,
+			serverID,
+			stackname,
+			req.Path,
+			c.RealIP(),
+			nil,
+		)
+	}
+
 	return common.SendMessage(c, "success")
 }
 
@@ -164,6 +202,23 @@ func (h *APIHandler) Rename(c echo.Context) error {
 
 	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
 		return common.SendInternalError(c, err.Error())
+	}
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogFileEvent(
+			security.EventFileRenamed,
+			actorUser.ID,
+			actorUser.Username,
+			serverID,
+			stackname,
+			req.NewPath,
+			c.RealIP(),
+			map[string]any{
+				"old_path": req.OldPath,
+			},
+		)
 	}
 
 	return common.SendMessage(c, "success")
@@ -218,6 +273,24 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogFileEvent(
+			security.EventFileUploaded,
+			actorUser.ID,
+			actorUser.Username,
+			serverID,
+			stackname,
+			path,
+			c.RealIP(),
+			map[string]any{
+				"filename": file.Filename,
+				"size":     file.Size,
+			},
+		)
+	}
+
 	return common.SendMessage(c, "File uploaded successfully")
 }
 
@@ -244,6 +317,23 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 	defer result.Body.Close()
+
+	actorUserID := session.GetUserIDAsUint(c)
+	var actorUser models.User
+	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
+		_ = h.auditSvc.LogFileEvent(
+			security.EventFileDownloaded,
+			actorUser.ID,
+			actorUser.Username,
+			serverID,
+			stackname,
+			path,
+			c.RealIP(),
+			map[string]any{
+				"filename": filename,
+			},
+		)
+	}
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	if filename != "" {
