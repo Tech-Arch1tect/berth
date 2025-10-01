@@ -6,6 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
+var SecurityAuditLogAuditor SecurityAuditLogAuditorInterface
+
+type SecurityAuditLogAuditorInterface interface {
+	LogSecurityEvent(log *SecurityAuditLog)
+}
+
 type SecurityAuditLog struct {
 	BaseModel
 
@@ -65,9 +71,16 @@ const (
 )
 
 func (l *SecurityAuditLog) BeforeCreate(tx *gorm.DB) error {
-
 	if l.CreatedAt.IsZero() {
 		l.CreatedAt = time.Now()
+	}
+	return nil
+}
+
+func (l *SecurityAuditLog) AfterCreate(tx *gorm.DB) error {
+	if SecurityAuditLogAuditor != nil {
+		logCopy := *l
+		go SecurityAuditLogAuditor.LogSecurityEvent(&logCopy)
 	}
 	return nil
 }

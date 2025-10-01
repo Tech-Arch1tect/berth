@@ -51,9 +51,10 @@ type BerthConfig struct {
 }
 
 type AppCustomConfig struct {
-	EncryptionSecret      string `env:"ENCRYPTION_SECRET"`
-	LogDir                string `env:"LOG_DIR" envDefault:"./storage/logs"`
-	OperationLogLogToFile bool   `env:"OPERATION_LOG_LOG_TO_FILE" envDefault:"false"`
+	EncryptionSecret          string `env:"ENCRYPTION_SECRET"`
+	LogDir                    string `env:"LOG_DIR" envDefault:"./storage/logs"`
+	OperationLogLogToFile     bool   `env:"OPERATION_LOG_LOG_TO_FILE" envDefault:"false"`
+	SecurityAuditLogLogToFile bool   `env:"SECURITY_AUDIT_LOG_TO_FILE" envDefault:"false"`
 }
 
 type AppOptions struct {
@@ -130,6 +131,17 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Invoke(func(auditLogger *operations.AuditLogger) {
 			models.OperationLogAuditLogger = auditLogger
 		}),
+		fx.Provide(func(cfg *BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
+			securityLogDir := filepath.Join(cfg.Custom.LogDir, "security")
+			return security.NewAuditLogger(
+				cfg.Custom.SecurityAuditLogLogToFile,
+				securityLogDir,
+				logger,
+			)
+		}),
+		fx.Invoke(func(auditLogger *security.AuditLogger) {
+			models.SecurityAuditLogAuditor = auditLogger
+		}),
 		fx.Provide(security.NewAuditService),
 		fx.Provide(agent.NewService),
 		fx.Provide(rbac.NewService),
@@ -185,7 +197,8 @@ func NewApp(opts *AppOptions) *app.App {
 		websocket.Module,
 		fx.Invoke(StartWebSocketHub),
 		fx.Invoke(websocket.StartWebSocketServiceManager),
-		fx.Invoke(RegisterAuditLoggerShutdown),
+		fx.Invoke(RegisterOperationAuditLoggerShutdown),
+		fx.Invoke(RegisterSecurityAuditLoggerShutdown),
 	)
 
 	if len(opts.ExtraFxOptions) > 0 {
@@ -227,15 +240,29 @@ func StartWebSocketHub(hub *websocket.Hub) {
 	go hub.Run()
 }
 
-func RegisterAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *operations.AuditLogger, logger *logging.Service) {
+func RegisterOperationAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *operations.AuditLogger, logger *logging.Service) {
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			logger.Info("closing operation log audit logger")
 			if err := auditLogger.Close(); err != nil {
-				logger.Error("failed to close audit logger", zap.Error(err))
+				logger.Error("failed to close operation audit logger", zap.Error(err))
 				return err
 			}
 			logger.Info("operation log audit logger closed successfully")
+			return nil
+		},
+	})
+}
+
+func RegisterSecurityAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *security.AuditLogger, logger *logging.Service) {
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			logger.Info("closing security audit logger")
+			if err := auditLogger.Close(); err != nil {
+				logger.Error("failed to close security audit logger", zap.Error(err))
+				return err
+			}
+			logger.Info("security audit logger closed successfully")
 			return nil
 		},
 	})
