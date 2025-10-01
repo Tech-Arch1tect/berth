@@ -9,6 +9,7 @@ import (
 
 	"berth/internal/dto"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/models"
 
 	"github.com/labstack/echo/v4"
@@ -32,9 +33,10 @@ type MobileAuthHandler struct {
 	sessionSvc      session.SessionService
 	logger          *logging.Service
 	rbacSvc         *rbac.Service
+	auditSvc        *security.AuditService
 }
 
-func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, rbacSvc *rbac.Service) *MobileAuthHandler {
+func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, rbacSvc *rbac.Service, auditSvc *security.AuditService) *MobileAuthHandler {
 	return &MobileAuthHandler{
 		db:              db,
 		authSvc:         authSvc,
@@ -44,6 +46,7 @@ func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice
 		sessionSvc:      sessionSvc,
 		logger:          logger,
 		rbacSvc:         rbacSvc,
+		auditSvc:        auditSvc,
 	}
 }
 
@@ -141,6 +144,16 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			zap.String("username", req.Username),
 			zap.String("remote_ip", c.RealIP()),
 		)
+		_ = h.auditSvc.LogAPIEvent(
+			security.EventAPIAuthFailed,
+			nil,
+			req.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			false,
+			"user not found",
+			nil,
+		)
 		return c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Error:   "invalid_credentials",
 			Message: "Invalid username or password",
@@ -152,6 +165,16 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			zap.String("username", req.Username),
 			zap.Uint("user_id", user.ID),
 			zap.String("remote_ip", c.RealIP()),
+		)
+		_ = h.auditSvc.LogAPIEvent(
+			security.EventAPIAuthFailed,
+			&user.ID,
+			req.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			false,
+			"invalid password",
+			nil,
 		)
 		return c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Error:   "invalid_credentials",
@@ -238,6 +261,17 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 		zap.String("remote_ip", c.RealIP()),
 	)
 
+	_ = h.auditSvc.LogAPIEvent(
+		security.EventAPITokenIssued,
+		&user.ID,
+		req.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
+
 	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
 	return c.JSON(http.StatusOK, LoginResponse{
@@ -266,9 +300,9 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		})
 	}
 
-	result, err := h.refreshTokenSvc.ValidateAndRotateRefreshToken(req.RefreshToken, h.jwtSvc)
-	if err != nil {
-		switch err {
+	oldToken, validateErr := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+	if validateErr != nil {
+		switch validateErr {
 		case refreshtoken.ErrRefreshTokenExpired:
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{
 				Error:   "expired_token",
@@ -280,7 +314,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 				Message: "Invalid refresh token",
 			})
 		default:
-			h.logger.Error("failed to refresh token", zap.Error(err))
+			h.logger.Error("failed to validate refresh token", zap.Error(validateErr))
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{
 				Error:   "token_refresh_failed",
 				Message: "Failed to refresh token",
@@ -288,7 +322,15 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	// Update the session with new tokens
+	result, err := h.refreshTokenSvc.ValidateAndRotateRefreshToken(req.RefreshToken, h.jwtSvc)
+	if err != nil {
+		h.logger.Error("failed to rotate refresh token", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "token_refresh_failed",
+			Message: "Failed to refresh token",
+		})
+	}
+
 	if h.sessionSvc != nil {
 		accessJTI, _ := h.jwtSvc.ExtractJTI(result.AccessToken)
 		err = h.sessionSvc.UpdateJWTSessionWithRefreshToken(result.OldTokenID, accessJTI, result.RefreshTokenID, result.ExpiresAt)
@@ -299,6 +341,20 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 				zap.Error(err),
 			)
 		}
+	}
+
+	var user models.User
+	if err := h.db.First(&user, oldToken.UserID).Error; err == nil {
+		_ = h.auditSvc.LogAPIEvent(
+			security.EventAPITokenRefreshed,
+			&user.ID,
+			user.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			true,
+			"",
+			nil,
+		)
 	}
 
 	return c.JSON(http.StatusOK, RefreshResponse{
@@ -404,6 +460,22 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		})
 	}
 
+	user := jwtshared.GetCurrentUser(c)
+	if user != nil {
+		if userModel, ok := user.(models.User); ok {
+			_ = h.auditSvc.LogAPIEvent(
+				security.EventAPITokenRevoked,
+				&userModel.ID,
+				userModel.Username,
+				c.RealIP(),
+				c.Request().UserAgent(),
+				true,
+				"",
+				nil,
+			)
+		}
+	}
+
 	h.logger.Info("logout successful",
 		zap.Strings("revoked_tokens", revokedTokens),
 		zap.String("remote_ip", c.RealIP()))
@@ -455,6 +527,19 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	if err := h.totpSvc.VerifyUserCode(claims.UserID, req.Code); err != nil {
+		var user models.User
+		if dbErr := h.db.First(&user, claims.UserID).Error; dbErr == nil {
+			_ = h.auditSvc.LogAPIEvent(
+				security.EventAPIAuthFailed,
+				&user.ID,
+				user.Username,
+				c.RealIP(),
+				c.Request().UserAgent(),
+				false,
+				"TOTP verification failed",
+				nil,
+			)
+		}
 		switch err {
 		case totp.ErrInvalidCode:
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{
@@ -528,6 +613,19 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	h.logger.Info("TOTP verification successful",
 		zap.Uint("user_id", claims.UserID),
 		zap.String("remote_ip", c.RealIP()),
+	)
+
+	_ = h.auditSvc.LogAPIEvent(
+		security.EventAPITokenIssued,
+		&user.ID,
+		user.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		map[string]any{
+			"totp_verified": true,
+		},
 	)
 
 	return c.JSON(http.StatusOK, LoginResponse{

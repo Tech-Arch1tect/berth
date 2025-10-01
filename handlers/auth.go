@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/models"
 
 	"github.com/labstack/echo/v4"
@@ -73,9 +74,10 @@ type AuthHandler struct {
 	totpSvc    *totp.Service
 	logger     *logging.Service
 	rbacSvc    *rbac.Service
+	auditSvc   *security.AuditService
 }
 
-func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, rbacSvc *rbac.Service) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, rbacSvc *rbac.Service, auditSvc *security.AuditService) *AuthHandler {
 	return &AuthHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
@@ -83,6 +85,7 @@ func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Serv
 		totpSvc:    totpSvc,
 		logger:     logger,
 		rbacSvc:    rbacSvc,
+		auditSvc:   auditSvc,
 	}
 }
 
@@ -133,6 +136,16 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			zap.String("username", req.Username),
 			zap.String("remote_ip", c.RealIP()),
 		)
+		_ = h.auditSvc.LogAuthEvent(
+			security.EventAuthLoginFailure,
+			nil,
+			req.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			false,
+			"user not found",
+			nil,
+		)
 		session.AddFlashError(c, "Invalid credentials")
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
@@ -142,6 +155,16 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			zap.String("username", req.Username),
 			zap.Uint("user_id", user.ID),
 			zap.String("remote_ip", c.RealIP()),
+		)
+		_ = h.auditSvc.LogAuthEvent(
+			security.EventAuthLoginFailure,
+			&user.ID,
+			req.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			false,
+			"invalid password",
+			nil,
 		)
 		session.AddFlashError(c, "Invalid credentials")
 		return c.Redirect(http.StatusFound, "/auth/login")
@@ -177,6 +200,16 @@ func (h *AuthHandler) Login(c echo.Context) error {
 				zap.Uint("user_id", user.ID),
 				zap.Time("expires_at", rememberToken.ExpiresAt),
 			)
+			_ = h.auditSvc.LogAuthEvent(
+				security.EventAuthRememberMeCreated,
+				&user.ID,
+				req.Username,
+				c.RealIP(),
+				c.Request().UserAgent(),
+				true,
+				"",
+				nil,
+			)
 		}
 	}
 
@@ -187,6 +220,19 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		zap.Bool("remember_me", req.RememberMe),
 	)
 
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthLoginSuccess,
+		&user.ID,
+		req.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		map[string]any{
+			"remember_me": req.RememberMe,
+		},
+	)
+
 	session.AddFlashSuccess(c, "Login successful!")
 	session.AddFlashInfo(c, "Welcome back! Your last login was recorded.")
 
@@ -195,15 +241,50 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 func (h *AuthHandler) Logout(c echo.Context) error {
 	userID := session.GetUserID(c)
-	if h.authSvc.IsRememberMeEnabled() && userID != nil {
+
+	var userIDPtr *uint
+	var username string
+
+	if userID != nil {
 		if userIDUint, ok := userID.(uint); ok && userIDUint > 0 {
-			if err := h.authSvc.InvalidateRememberMeTokens(userIDUint); err != nil {
-				h.logger.Error("failed to invalidate remember me tokens", zap.Uint("user_id", userIDUint), zap.Error(err))
+			userIDPtr = &userIDUint
+
+			var user models.User
+			if err := h.db.First(&user, userIDUint).Error; err == nil {
+				username = user.Username
+			}
+
+			if h.authSvc.IsRememberMeEnabled() {
+				if err := h.authSvc.InvalidateRememberMeTokens(userIDUint); err != nil {
+					h.logger.Error("failed to invalidate remember me tokens", zap.Uint("user_id", userIDUint), zap.Error(err))
+				} else {
+					_ = h.auditSvc.LogAuthEvent(
+						security.EventAuthRememberMeInvalidated,
+						userIDPtr,
+						username,
+						c.RealIP(),
+						c.Request().UserAgent(),
+						true,
+						"",
+						nil,
+					)
+				}
 			}
 		}
 
 		h.clearRememberMeCookie(c)
 	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthLogout,
+		userIDPtr,
+		username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	session.Logout(c)
 	session.AddFlashSuccess(c, "Logged out successfully")
@@ -261,6 +342,17 @@ func (h *AuthHandler) RequestPasswordReset(c echo.Context) error {
 		}
 		return c.Redirect(http.StatusFound, "/auth/password-reset")
 	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthPasswordResetRequested,
+		&user.ID,
+		user.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	session.AddFlashInfo(c, "If an account with that email exists, you will receive a password reset email shortly.")
 	return c.Redirect(http.StatusFound, "/auth/login")
@@ -326,7 +418,8 @@ func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
 		return c.Redirect(http.StatusFound, fmt.Sprintf("/auth/password-reset/confirm?token=%s", req.Token))
 	}
 
-	if err := h.authSvc.CompletePasswordReset(req.Token, req.Password); err != nil {
+	tokenData, err := h.authSvc.ValidatePasswordResetToken(req.Token)
+	if err != nil {
 		var message string
 		switch err {
 		case auth.ErrPasswordResetTokenExpired:
@@ -336,21 +429,39 @@ func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
 		case auth.ErrPasswordResetTokenInvalid:
 			message = "Invalid password reset link."
 		default:
-			if strings.Contains(err.Error(), "password must") {
-				message = err.Error()
-			} else {
-				message = "Something went wrong. Please try again."
-			}
+			message = "Invalid password reset link."
 		}
-
-		if err == auth.ErrPasswordResetTokenExpired || err == auth.ErrPasswordResetTokenUsed || err == auth.ErrPasswordResetTokenInvalid {
-			session.AddFlashError(c, message)
-			return c.Redirect(http.StatusFound, "/auth/password-reset")
-		} else {
-			session.AddFlashError(c, message)
-			return c.Redirect(http.StatusFound, fmt.Sprintf("/auth/password-reset/confirm?token=%s", req.Token))
-		}
+		session.AddFlashError(c, message)
+		return c.Redirect(http.StatusFound, "/auth/password-reset")
 	}
+
+	var user models.User
+	if err := h.db.Where("email = ?", tokenData.Email).First(&user).Error; err != nil {
+		session.AddFlashError(c, "User not found")
+		return c.Redirect(http.StatusFound, "/auth/password-reset")
+	}
+
+	if err := h.authSvc.CompletePasswordReset(req.Token, req.Password); err != nil {
+		var message string
+		if strings.Contains(err.Error(), "password must") {
+			message = err.Error()
+		} else {
+			message = "Something went wrong. Please try again."
+		}
+		session.AddFlashError(c, message)
+		return c.Redirect(http.StatusFound, fmt.Sprintf("/auth/password-reset/confirm?token=%s", req.Token))
+	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthPasswordResetCompleted,
+		&user.ID,
+		user.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	session.AddFlashSuccess(c, "Your password has been reset successfully. Please log in with your new password.")
 	return c.Redirect(http.StatusFound, "/auth/login")
@@ -392,7 +503,8 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
-	if err := h.authSvc.VerifyEmail(token); err != nil {
+	tokenData, err := h.authSvc.ValidateEmailVerificationToken(token)
+	if err != nil {
 		var message string
 		switch err {
 		case auth.ErrEmailVerificationTokenExpired:
@@ -402,11 +514,39 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 		case auth.ErrEmailVerificationTokenInvalid:
 			message = "Invalid verification link."
 		default:
+			message = "Invalid verification link."
+		}
+		session.AddFlashError(c, message)
+		return c.Redirect(http.StatusFound, "/auth/login")
+	}
+
+	var user models.User
+	if err := h.db.Where("email = ?", tokenData.Email).First(&user).Error; err != nil {
+		session.AddFlashError(c, "User not found")
+		return c.Redirect(http.StatusFound, "/auth/login")
+	}
+
+	if err := h.authSvc.VerifyEmail(token); err != nil {
+		var message string
+		if err == auth.ErrEmailVerificationTokenExpired || err == auth.ErrEmailVerificationTokenUsed || err == auth.ErrEmailVerificationTokenInvalid {
+			message = "Invalid verification link."
+		} else {
 			message = "Something went wrong. Please try again."
 		}
 		session.AddFlashError(c, message)
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthEmailVerified,
+		&user.ID,
+		user.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	session.AddFlashSuccess(c, "Your email has been verified successfully! You can now sign in.")
 	return c.Redirect(http.StatusFound, "/auth/login")

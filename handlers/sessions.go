@@ -3,6 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"berth/internal/security"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/session"
@@ -13,13 +16,15 @@ type SessionHandler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
 	sessionSvc session.SessionService
+	auditSvc   *security.AuditService
 }
 
-func NewSessionHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc session.SessionService) *SessionHandler {
+func NewSessionHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc session.SessionService, auditSvc *security.AuditService) *SessionHandler {
 	return &SessionHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		sessionSvc: sessionSvc,
+		auditSvc:   auditSvc,
 	}
 }
 
@@ -100,6 +105,22 @@ func (h *SessionHandler) RevokeSession(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to revoke session")
 	}
 
+	var user models.User
+	if err := h.db.First(&user, userID).Error; err == nil {
+		_ = h.auditSvc.LogAuthEvent(
+			security.EventAuthSessionRevoked,
+			&userID,
+			user.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			true,
+			"",
+			map[string]any{
+				"session_id": req.SessionID,
+			},
+		)
+	}
+
 	session.AddFlashSuccess(c, "Session revoked successfully")
 
 	if c.Request().Header.Get("Accept") == "application/json" {
@@ -134,6 +155,20 @@ func (h *SessionHandler) RevokeAllOtherSessions(c echo.Context) error {
 	err := h.sessionSvc.RevokeAllOtherSessions(userID, currentToken)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to revoke sessions")
+	}
+
+	var user models.User
+	if err := h.db.First(&user, userID).Error; err == nil {
+		_ = h.auditSvc.LogAuthEvent(
+			security.EventAuthSessionsRevokedAll,
+			&userID,
+			user.Username,
+			c.RealIP(),
+			c.Request().UserAgent(),
+			true,
+			"",
+			nil,
+		)
 	}
 
 	session.AddFlashSuccess(c, "All other sessions revoked successfully")

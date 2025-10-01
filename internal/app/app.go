@@ -15,6 +15,7 @@ import (
 	"berth/internal/operations"
 	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/ssl"
@@ -128,6 +129,7 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Invoke(func(auditLogger *operations.AuditLogger) {
 			models.OperationLogAuditLogger = auditLogger
 		}),
+		fx.Provide(security.NewAuditService),
 		fx.Provide(agent.NewService),
 		fx.Provide(rbac.NewService),
 		fx.Provide(rbac.NewMiddleware),
