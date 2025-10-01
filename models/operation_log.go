@@ -2,7 +2,16 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
+
+var OperationLogAuditLogger OperationLogAuditor
+
+type OperationLogAuditor interface {
+	LogOperationCreate(log *OperationLog)
+	LogOperationUpdate(log *OperationLog)
+}
 
 type OperationLog struct {
 	BaseModel
@@ -27,6 +36,22 @@ type OperationLog struct {
 	Success     *bool           `json:"success"`
 	ExitCode    *int            `json:"exit_code"`
 	Duration    *int            `json:"duration_ms"`
+}
+
+func (o *OperationLog) AfterCreate(tx *gorm.DB) error {
+	if OperationLogAuditLogger != nil {
+		logCopy := *o
+		go OperationLogAuditLogger.LogOperationCreate(&logCopy)
+	}
+	return nil
+}
+
+func (o *OperationLog) AfterUpdate(tx *gorm.DB) error {
+	if OperationLogAuditLogger != nil {
+		logCopy := *o
+		go OperationLogAuditLogger.LogOperationUpdate(&logCopy)
+	}
+	return nil
 }
 
 type OperationLogMessage struct {

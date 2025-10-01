@@ -12,6 +12,7 @@ services:
       - ./app.db:/app/app.db # if using sqlite
       - ./.env:/app/.env
       - ./ssl:/app/ssl
+      - ./storage/logs:/app/storage/logs # log files
     networks:
       - berth-network
 

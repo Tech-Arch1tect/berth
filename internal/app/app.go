@@ -1,6 +1,9 @@
 package app
 
 import (
+	"context"
+	"path/filepath"
+
 	"berth/handlers"
 	"berth/internal/agent"
 	configEnforcement "berth/internal/config"
@@ -36,6 +39,7 @@ import (
 	"github.com/tech-arch1tect/brx/services/totp"
 	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -45,7 +49,9 @@ type BerthConfig struct {
 }
 
 type AppCustomConfig struct {
-	EncryptionSecret string `env:"ENCRYPTION_SECRET"`
+	EncryptionSecret      string `env:"ENCRYPTION_SECRET"`
+	LogDir                string `env:"LOG_DIR" envDefault:"./storage/logs"`
+	OperationLogLogToFile bool   `env:"OPERATION_LOG_LOG_TO_FILE" envDefault:"false"`
 }
 
 type AppOptions struct {
@@ -111,6 +117,17 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(func(cfg *BerthConfig) *utils.Crypto {
 			return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 		}),
+		fx.Provide(func(cfg *BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
+			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")
+			return operations.NewAuditLogger(
+				cfg.Custom.OperationLogLogToFile,
+				operationLogDir,
+				logger,
+			)
+		}),
+		fx.Invoke(func(auditLogger *operations.AuditLogger) {
+			models.OperationLogAuditLogger = auditLogger
+		}),
 		fx.Provide(agent.NewService),
 		fx.Provide(rbac.NewService),
 		fx.Provide(rbac.NewMiddleware),
@@ -162,6 +179,7 @@ func NewApp(opts *AppOptions) *app.App {
 		websocket.Module,
 		fx.Invoke(StartWebSocketHub),
 		fx.Invoke(websocket.StartWebSocketServiceManager),
+		fx.Invoke(RegisterAuditLoggerShutdown),
 	)
 
 	if len(opts.ExtraFxOptions) > 0 {
@@ -200,6 +218,20 @@ func NewApp(opts *AppOptions) *app.App {
 
 func StartWebSocketHub(hub *websocket.Hub) {
 	go hub.Run()
+}
+
+func RegisterAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *operations.AuditLogger, logger *logging.Service) {
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			logger.Info("closing operation log audit logger")
+			if err := auditLogger.Close(); err != nil {
+				logger.Error("failed to close audit logger", zap.Error(err))
+				return err
+			}
+			logger.Info("operation log audit logger closed successfully")
+			return nil
+		},
+	})
 }
 
 func Run() {
