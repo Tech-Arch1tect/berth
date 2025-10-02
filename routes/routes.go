@@ -186,6 +186,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/operation-logs", operationLogsHandler.ListUserOperationLogs)
 		protected.GET("/api/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
 		protected.GET("/api/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
+		protected.GET("/api/running-operations", operationLogsHandler.GetRunningOperations)
 	}
 
 	// Webhook UI routes
@@ -442,6 +443,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs)
 			apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
 			apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
+			apiProtected.GET("/running-operations", operationLogsHandler.GetRunningOperations)
 		}
 		if maintenanceAPIHandler != nil {
 			apiProtected.GET("/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)

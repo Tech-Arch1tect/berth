@@ -282,6 +282,59 @@ func (s *Service) GetUserOperationLogsStats(userID uint) (*dto.OperationLogStats
 	return &stats, nil
 }
 
+func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogResponse, error) {
+	heartbeatTimeout := time.Now().Add(-5 * time.Minute)
+
+	var logs []models.OperationLog
+	err := s.db.Model(&models.OperationLog{}).
+		Preload("User").
+		Preload("Server").
+		Where("user_id = ?", userID).
+		Where("end_time IS NULL").
+		Where("(last_message_at IS NOT NULL AND last_message_at > ?) OR (last_message_at IS NULL AND start_time > ?)", heartbeatTimeout, heartbeatTimeout).
+		Order("start_time DESC").
+		Find(&logs).Error
+
+	if err != nil {
+		s.logger.Error("failed to fetch running operations", zap.Error(err), zap.Uint("user_id", userID))
+		return nil, err
+	}
+
+	var response []dto.OperationLogResponse
+	for _, log := range logs {
+		var messageCount int64
+		s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
+
+		userName := "Unknown"
+		if log.User.Username != "" {
+			userName = log.User.Username
+		} else if log.User.Email != "" {
+			userName = log.User.Email
+		}
+
+		serverName := "Unknown"
+		if log.Server.Name != "" {
+			serverName = log.Server.Name
+		}
+
+		partialDuration := s.calculatePartialDuration(log)
+
+		response = append(response, dto.OperationLogResponse{
+			OperationLog:    log,
+			UserName:        userName,
+			ServerName:      serverName,
+			IsIncomplete:    true,
+			FormattedDate:   log.CreatedAt.Format("2006-01-02 15:04:05"),
+			MessageCount:    messageCount,
+			PartialDuration: partialDuration,
+		})
+	}
+
+	s.logger.Info("fetched running operations", zap.Uint("user_id", userID), zap.Int("count", len(response)))
+
+	return response, nil
+}
+
 type ListOperationLogsParams struct {
 	Page       int
 	PageSize   int

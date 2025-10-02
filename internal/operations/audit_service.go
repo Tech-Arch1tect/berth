@@ -108,6 +108,14 @@ func (s *AuditService) LogOperationMessage(operationLogID uint, messageType stri
 		return err
 	}
 
+	now := time.Now()
+	if err := s.db.Model(&models.OperationLog{}).Where("id = ?", operationLogID).Update("last_message_at", now).Error; err != nil {
+		s.logger.Error("failed to update last_message_at",
+			zap.Error(err),
+			zap.Uint("operation_log_id", operationLogID),
+		)
+	}
+
 	return nil
 }
 
