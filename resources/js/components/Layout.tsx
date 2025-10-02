@@ -20,6 +20,7 @@ import {
 import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { Toaster } from '../utils/toast';
+import { GlobalOperationsTracker } from './operations/GlobalOperationsTracker';
 
 interface LayoutProps {
   children: ReactNode;
@@ -299,6 +300,9 @@ export default function Layout({ children }: LayoutProps) {
           },
         }}
       />
+
+      {/* Global operations tracker */}
+      <GlobalOperationsTracker />
     </div>
   );
 }

@@ -157,6 +157,16 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 		return err
 	}
 
+	startedMsg := WebSocketMessage{
+		Type: WSMessageTypeOperationStarted,
+		Data: response,
+	}
+	if startedData, marshalErr := json.Marshal(startedMsg); marshalErr == nil {
+		if err := conn.WriteMessage(websocket.TextMessage, startedData); err != nil {
+			return err
+		}
+	}
+
 	operationLog, auditErr := h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, opReq, startTime)
 	if auditErr != nil {
 

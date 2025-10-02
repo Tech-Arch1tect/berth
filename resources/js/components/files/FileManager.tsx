@@ -23,7 +23,6 @@ import { ChownModal } from './ChownModal';
 import { ArchiveOperationModal } from './ArchiveOperationModal';
 import { useFiles } from '../../hooks/useFiles';
 import { useOperations } from '../../hooks/useOperations';
-import { QuickActionFeedback } from '../operations/QuickActionFeedback';
 import { showToast } from '../../utils/toast';
 
 interface FileManagerProps {
@@ -52,8 +51,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [archiveOperation, setArchiveOperation] = useState<'create' | 'extract'>('create');
   const [currentOperation, setCurrentOperation] = useState<FileOperation | null>(null);
-  const [showArchiveFeedback, setShowArchiveFeedback] = useState(false);
-  const [archiveOperationType, setArchiveOperationType] = useState<string>('');
 
   const handleError = useCallback((error: string) => {
     showToast.error(error);
@@ -372,8 +369,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
           options.push('--compression', request.compression);
         }
 
-        setArchiveOperationType(`Create ${request.format.toUpperCase()} Archive`);
-        setShowArchiveFeedback(true);
         clearLogs();
 
         await startOperation({
@@ -386,7 +381,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
       } catch (error) {
         console.error('Failed to start archive creation:', error);
         showToast.error('Failed to start archive creation');
-        setShowArchiveFeedback(false);
       }
     },
     [startOperation, currentPath, clearLogs]
@@ -409,8 +403,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
           options.push('--create-dirs');
         }
 
-        setArchiveOperationType('Extract Archive');
-        setShowArchiveFeedback(true);
         clearLogs();
 
         await startOperation({
@@ -423,7 +415,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
       } catch (error) {
         console.error('Failed to start archive extraction:', error);
         showToast.error('Failed to start archive extraction');
-        setShowArchiveFeedback(false);
       }
     },
     [startOperation, clearLogs]
@@ -722,23 +713,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
         }}
         onCreateArchive={handleCreateArchive}
         onExtractArchive={handleExtractArchive}
-      />
-
-      {/* Archive Operation Feedback */}
-      <QuickActionFeedback
-        isVisible={showArchiveFeedback}
-        operationType={archiveOperationType}
-        operationStatus={operationStatus}
-        connectionError={operationError || undefined}
-        onComplete={(success, _exitCode) => {
-          setShowArchiveFeedback(false);
-          if (success) {
-            showToast.success('Archive operation completed successfully');
-          } else {
-            showToast.error('Archive operation failed');
-          }
-        }}
-        onDismiss={() => setShowArchiveFeedback(false)}
       />
     </div>
   );

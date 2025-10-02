@@ -46,6 +46,7 @@ type WebSocketMessage struct {
 
 const (
 	WSMessageTypeOperationRequest = "operation_request"
+	WSMessageTypeOperationStarted = "operation_started"
 	WSMessageTypeStreamData       = "stream_data"
 	WSMessageTypeError            = "error"
 	WSMessageTypeComplete         = "complete"

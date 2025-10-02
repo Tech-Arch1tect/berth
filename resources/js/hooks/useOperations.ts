@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   OperationRequest,
+  OperationResponse,
   OperationStatus,
   StreamMessage,
   WebSocketMessage,
 } from '../types/operations';
+import { useOperationsContext } from '../contexts/OperationsContext';
+import { RunningOperation } from '../types/running-operation';
 
 interface UseOperationsOptions {
   serverid: string;
@@ -25,10 +28,12 @@ export const useOperations = ({
   });
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { addOperation } = useOperationsContext();
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
+  const pendingOperationRef = useRef<OperationRequest | null>(null);
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
@@ -57,7 +62,41 @@ export const useOperations = ({
 
     ws.onmessage = (event) => {
       try {
-        const message: StreamMessage = JSON.parse(event.data);
+        const parsedData = JSON.parse(event.data);
+
+        if (parsedData.type === 'operation_started') {
+          const wsMessage = parsedData as WebSocketMessage;
+          const opResponse = wsMessage.data as OperationResponse;
+
+          setOperationStatus((prev) => ({
+            ...prev,
+            operationId: opResponse.operationId,
+          }));
+
+          if (pendingOperationRef.current) {
+            const runningOp: RunningOperation = {
+              id: 0,
+              user_id: 0,
+              server_id: parseInt(serverid),
+              stack_name: stackname,
+              operation_id: opResponse.operationId,
+              command: pendingOperationRef.current.command,
+              start_time: new Date().toISOString(),
+              last_message_at: new Date().toISOString(),
+              user_name: '',
+              server_name: '',
+              is_incomplete: true,
+              partial_duration: null,
+              message_count: 0,
+            };
+
+            addOperation(runningOp);
+            pendingOperationRef.current = null;
+          }
+          return;
+        }
+
+        const message = parsedData as StreamMessage;
 
         setOperationStatus((prev) => ({
           ...prev,
@@ -125,6 +164,8 @@ export const useOperations = ({
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
         throw new Error('WebSocket connection not available');
       }
+
+      pendingOperationRef.current = operation;
 
       setOperationStatus({
         isRunning: true,

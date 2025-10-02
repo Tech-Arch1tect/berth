@@ -15,11 +15,10 @@ import VolumeList from '../../components/stack/VolumeList';
 import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
 import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
-import { OperationsModal } from '../../components/operations/OperationsModal';
+import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
 import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
 import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
-import { QuickActionFeedback } from '../../components/operations/QuickActionFeedback';
 import { OperationRequest } from '../../types/operations';
 import { showToast } from '../../utils/toast';
 import {
@@ -62,12 +61,11 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   const [activeTab, setActiveTab] = useState<
     'services' | 'networks' | 'volumes' | 'environment' | 'images' | 'stats' | 'logs' | 'files'
   >('services');
-  const [operationsModalOpen, setOperationsModalOpen] = useState(false);
+  const [advancedOperationsOpen, setAdvancedOperationsOpen] = useState(false);
   const [quickOperationState, setQuickOperationState] = useState<{
     isRunning: boolean;
     operation?: string;
   }>({ isRunning: false });
-  const [showQuickFeedback, setShowQuickFeedback] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
@@ -124,11 +122,26 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   } = useOperations({
     serverid: String(serverid),
     stackname,
-    onOperationComplete: () => {},
+    onOperationComplete: (success, _exitCode) => {
+      setQuickOperationState({ isRunning: false });
+
+      if (success) {
+        showToast.operation.completed('Operation completed successfully');
+      } else {
+        showToast.error('Operation failed');
+      }
+
+      showToast.info('Refreshing stack data...');
+      setIsRefreshing(true);
+      refetch();
+      refetchNetworks();
+      refetchVolumes();
+      refetchEnvironment();
+      refetchStats();
+    },
     onError: (error) => {
       console.error('Quick operation error:', error);
       setQuickOperationState({ isRunning: false });
-      setShowQuickFeedback(false);
       showToast.error('Operation failed to start');
     },
   });
@@ -199,7 +212,6 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         : `${operation.command}:${operation.services[0]}`;
 
       setQuickOperationState({ isRunning: true, operation: operationKey });
-      setShowQuickFeedback(true);
 
       const targetName = isStackOperation ? `stack ${stackname}` : operation.services[0];
       const action = operation.command.charAt(0).toUpperCase() + operation.command.slice(1);
@@ -396,11 +408,11 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             {/* Operations Button */}
             {stackPermissions?.permissions?.includes('stacks.manage') && (
               <button
-                onClick={() => setOperationsModalOpen(true)}
+                onClick={() => setAdvancedOperationsOpen(true)}
                 className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Cog6ToothIcon className="w-4 h-4 mr-2" />
-                Operations
+                Advanced Operations
               </button>
             )}
           </div>
@@ -739,53 +751,21 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         </div>
       )}
 
-      {/* Operations Modal */}
-      <OperationsModal
-        isOpen={operationsModalOpen}
-        onClose={() => setOperationsModalOpen(false)}
-        serverid={String(serverid)}
-        stackname={stackname}
-        services={
-          stackDetails?.services?.map((service) => ({
-            name: service.name,
-            service_name: service.name,
-          })) || []
-        }
-        onOperationComplete={(success, _exitCode) => {
-          if (success) {
-            refetch();
-            refetchStats();
-          }
-        }}
-      />
-
-      {/* Quick Action Feedback */}
-      <QuickActionFeedback
-        isVisible={showQuickFeedback}
-        operationType={quickOperationState.operation}
-        operationStatus={operationStatus}
-        connectionError={operationError || undefined}
-        onComplete={(success, _exitCode) => {
-          setQuickOperationState({ isRunning: false });
-
-          if (success) {
-            showToast.operation.completed('Operation completed successfully');
-          } else {
-            showToast.error('Operation failed');
-          }
-
-          showToast.info('Refreshing stack data...');
-          setIsRefreshing(true);
-          refetch();
-          refetchNetworks();
-          refetchVolumes();
-          refetchEnvironment();
-          refetchStats();
-        }}
-        onDismiss={() => {
-          setShowQuickFeedback(false);
-        }}
-      />
+      {/* Advanced Operations Modal */}
+      {advancedOperationsOpen && (
+        <GlobalOperationsTracker
+          advancedMode={{
+            serverid: String(serverid),
+            stackname,
+            services:
+              stackDetails?.services?.map((service) => ({
+                name: service.name,
+                service_name: service.name,
+              })) || [],
+            onClose: () => setAdvancedOperationsOpen(false),
+          }}
+        />
+      )}
     </Layout>
   );
 };
