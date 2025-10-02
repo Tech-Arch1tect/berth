@@ -25,7 +25,16 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
       const data = await response.json();
       if (Array.isArray(data)) {
-        setOperations(data);
+        setOperations((prev) => {
+          const completedOps = prev.filter((op) => !op.is_incomplete);
+
+          const runningOps = data.filter(
+            (newOp: RunningOperation) =>
+              !completedOps.some((existingOp) => existingOp.operation_id === newOp.operation_id)
+          );
+
+          return [...runningOps, ...completedOps];
+        });
       }
     } catch (err) {
       console.error('Failed to fetch running operations:', err);
