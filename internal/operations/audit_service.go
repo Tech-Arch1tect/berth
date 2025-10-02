@@ -119,6 +119,19 @@ func (s *AuditService) LogOperationMessage(operationLogID uint, messageType stri
 	return nil
 }
 
+func (s *AuditService) FindOperationLogByOperationID(operationID string) (*models.OperationLog, error) {
+	var log models.OperationLog
+	err := s.db.Where("operation_id = ?", operationID).First(&log).Error
+	if err != nil {
+		s.logger.Debug("operation log not found",
+			zap.String("operation_id", operationID),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	return &log, nil
+}
+
 func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error {
 	s.logger.Debug("logging operation end",
 		zap.Uint("operation_log_id", operationLogID),

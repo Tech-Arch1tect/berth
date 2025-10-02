@@ -90,6 +90,11 @@ func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *we
 		}
 	}()
 
+	operationLog, err := h.service.auditSvc.FindOperationLogByOperationID(operationID)
+	if err == nil && operationLog != nil {
+		return h.relayToWebSocketWithAudit(ctx, conn, pipeReader, operationLog.ID)
+	}
+
 	return h.relayToWebSocket(ctx, conn, pipeReader)
 }
 
