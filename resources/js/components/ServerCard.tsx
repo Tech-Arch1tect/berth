@@ -77,9 +77,14 @@ export default function ServerCard({ server }: ServerCardProps) {
         </div>
 
         <div className="flex-1 min-w-0 pr-8">
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {server.name}
-          </h3>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {server.name}
+            </h3>
+            <span className="text-sm font-mono text-slate-500 dark:text-slate-400">
+              #{server.id}
+            </span>
+          </div>
 
           <div className="space-y-2">
             <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">

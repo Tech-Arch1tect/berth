@@ -386,6 +386,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			api.POST("/webhooks/:id/trigger", webhookHandler.TriggerWebhook, webhookApiRateLimit)
 		}
 
+		// log streaming for CLI - requires webhook api key
+		if operationLogsHandler != nil {
+			api.GET("/operations/:operation_id/stream", operationLogsHandler.StreamOperationLogs)
+		}
+
 		apiProtected := api.Group("")
 		apiProtected.Use(generalApiRateLimit)
 		apiProtected.Use(jwt.RequireJWT(jwtSvc))

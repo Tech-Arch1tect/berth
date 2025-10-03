@@ -21,13 +21,10 @@ type OperationLog struct {
 	Server        Server          `json:"server" gorm:"foreignKey:ServerID"`
 	StackName     string          `json:"stack_name" gorm:"not null;index"`
 	OperationID   string          `json:"operation_id" gorm:"not null;index"`
-	BatchID       *string         `json:"batch_id" gorm:"index"`
 	Command       string          `json:"command" gorm:"not null"`
 	Options       string          `json:"options" gorm:"type:text"`
 	Services      string          `json:"services" gorm:"type:text"`
 	Status        OperationStatus `json:"status" gorm:"not null;default:'completed'"`
-	Order         int             `json:"order" gorm:"default:1"`
-	DependsOn     *string         `json:"depends_on" gorm:"index"`
 	WebhookID     *uint           `json:"webhook_id" gorm:"index"`
 	Webhook       *Webhook        `json:"webhook,omitempty" gorm:"foreignKey:WebhookID"`
 	QueuedAt      *time.Time      `json:"queued_at" gorm:"index"`

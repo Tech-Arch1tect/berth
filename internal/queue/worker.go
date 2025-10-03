@@ -49,17 +49,6 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		zap.String("command", queuedOp.Command),
 	)
 
-	if queuedOp.DependsOn != nil {
-		if !w.waitForDependency(ctx, *queuedOp.DependsOn) {
-			w.logger.Warn("dependency not satisfied, skipping operation",
-				zap.String("operation_id", queuedOp.OperationID),
-				zap.String("depends_on", *queuedOp.DependsOn),
-			)
-			w.markOperationStatus(queuedOp.OperationID, models.OperationStatusCancelled)
-			return
-		}
-	}
-
 	if !w.markOperationStatus(queuedOp.OperationID, models.OperationStatusRunning) {
 		w.logger.Warn("failed to mark operation as running",
 			zap.String("operation_id", queuedOp.OperationID),
@@ -73,13 +62,10 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		ServerID:    queuedOp.ServerID,
 		StackName:   queuedOp.StackName,
 		OperationID: queuedOp.OperationID,
-		BatchID:     queuedOp.BatchID,
 		Command:     queuedOp.Command,
 		Options:     queuedOp.Options,
 		Services:    queuedOp.Services,
 		Status:      models.OperationStatusRunning,
-		Order:       queuedOp.Order,
-		DependsOn:   queuedOp.DependsOn,
 		WebhookID:   queuedOp.WebhookID,
 		QueuedAt:    &queuedOp.QueuedAt,
 		StartTime:   startTime,
@@ -149,10 +135,6 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 
 	w.markOperationStatus(queuedOp.OperationID, finalStatus)
 
-	if success && queuedOp.BatchID != nil {
-		w.queueNextOperation(*queuedOp.BatchID, queuedOp.Order)
-	}
-
 	if success {
 		w.logger.Info("operation completed successfully",
 			zap.String("operation_id", queuedOp.OperationID),
@@ -176,64 +158,6 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 	}
 }
 
-func (w *StackWorker) waitForDependency(ctx context.Context, dependencyID string) bool {
-	w.logger.Debug("waiting for dependency",
-		zap.String("dependency_id", dependencyID),
-	)
-
-	timeout := time.NewTimer(30 * time.Minute)
-	defer timeout.Stop()
-
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return false
-
-		case <-timeout.C:
-			w.logger.Warn("dependency wait timeout",
-				zap.String("dependency_id", dependencyID),
-			)
-			return false
-
-		case <-ticker.C:
-			var dependency models.QueuedOperation
-			err := w.service.db.Where("operation_id = ?", dependencyID).First(&dependency).Error
-			if err != nil {
-				w.logger.Error("failed to check dependency status",
-					zap.Error(err),
-					zap.String("dependency_id", dependencyID),
-				)
-				return false
-			}
-
-			switch dependency.Status {
-			case models.OperationStatusCompleted:
-				w.logger.Debug("dependency completed",
-					zap.String("dependency_id", dependencyID),
-				)
-				return true
-
-			case models.OperationStatusFailed, models.OperationStatusCancelled:
-				w.logger.Warn("dependency failed or was cancelled",
-					zap.String("dependency_id", dependencyID),
-					zap.String("dependency_status", string(dependency.Status)),
-				)
-				return false
-
-			default:
-
-				w.logger.Debug("dependency still pending",
-					zap.String("dependency_id", dependencyID),
-					zap.String("dependency_status", string(dependency.Status)),
-				)
-			}
-		}
-	}
-}
-
 func (w *StackWorker) markOperationStatus(operationID string, status models.OperationStatus) bool {
 	err := w.service.db.Model(&models.QueuedOperation{}).
 		Where("operation_id = ?", operationID).
@@ -254,42 +178,4 @@ func (w *StackWorker) markOperationStatus(operationID string, status models.Oper
 	)
 
 	return true
-}
-
-func (w *StackWorker) queueNextOperation(batchID string, currentOrder int) {
-	w.logger.Debug("looking for next operation in batch",
-		zap.String("batch_id", batchID),
-		zap.Int("current_order", currentOrder),
-	)
-
-	var nextOperation models.QueuedOperation
-	err := w.service.db.Where("batch_id = ? AND order = ? AND status = ?",
-		batchID, currentOrder+1, models.OperationStatusQueued).
-		First(&nextOperation).Error
-
-	if err != nil {
-
-		w.logger.Debug("no next operation found in batch",
-			zap.String("batch_id", batchID),
-			zap.Int("next_order", currentOrder+1),
-		)
-		return
-	}
-
-	w.logger.Debug("queuing next operation in batch",
-		zap.String("batch_id", batchID),
-		zap.String("next_operation_id", nextOperation.OperationID),
-		zap.Int("next_order", nextOperation.Order),
-	)
-
-	select {
-	case w.queue <- &nextOperation:
-		w.logger.Debug("next operation queued successfully",
-			zap.String("operation_id", nextOperation.OperationID),
-		)
-	default:
-		w.logger.Error("failed to queue next operation - worker queue full",
-			zap.String("operation_id", nextOperation.OperationID),
-		)
-	}
 }

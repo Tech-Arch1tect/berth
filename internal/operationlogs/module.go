@@ -16,6 +16,6 @@ func NewServiceWithDeps(db *gorm.DB, logger *logging.Service) *Service {
 	return NewService(db, logger)
 }
 
-func NewHandlerWithDeps(service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
-	return NewHandler(service, inertiaSvc, logger)
+func NewHandlerWithDeps(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
+	return NewHandler(db, service, inertiaSvc, logger)
 }

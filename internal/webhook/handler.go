@@ -8,8 +8,12 @@ import (
 	"berth/internal/server"
 	"berth/internal/stack"
 	"berth/models"
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
@@ -318,130 +322,117 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 	var actorUser models.User
 	h.db.First(&actorUser, webhook.UserID)
 
-	if req.Command != "" {
+	operationReq := req.ToOperationRequest()
 
-		operationReq := req.ToOperationRequest()
-
-		response, err := h.queueSvc.EnqueueOperation(
-			webhook.UserID,
-			req.ServerID,
-			req.StackName,
-			operationReq,
-			&webhook.ID,
-		)
-		if err != nil {
-			if actorUser.ID > 0 {
-				_ = h.auditSvc.LogWebhookEvent(
-					security.EventWebhookTriggerFailed,
-					actorUser.ID,
-					actorUser.Username,
-					webhook.ID,
-					webhook.Name,
-					c.RealIP(),
-					false,
-					err.Error(),
-					map[string]any{
-						"command":    req.Command,
-						"stack_name": req.StackName,
-						"server_id":  req.ServerID,
-					},
-				)
-			}
-			return common.SendInternalError(c, err.Error())
-		}
-
+	response, err := h.queueSvc.EnqueueOperation(
+		webhook.UserID,
+		req.ServerID,
+		req.StackName,
+		operationReq,
+		&webhook.ID,
+	)
+	if err != nil {
 		if actorUser.ID > 0 {
 			_ = h.auditSvc.LogWebhookEvent(
-				security.EventWebhookTriggered,
+				security.EventWebhookTriggerFailed,
 				actorUser.ID,
 				actorUser.Username,
 				webhook.ID,
 				webhook.Name,
 				c.RealIP(),
-				true,
-				"",
+				false,
+				err.Error(),
 				map[string]any{
-					"command":      req.Command,
-					"stack_name":   req.StackName,
-					"server_id":    req.ServerID,
-					"operation_id": response.OperationID,
-				},
-			)
-		}
-
-		return common.SendSuccess(c, TriggerWebhookResponse{
-			OperationID:        response.OperationID,
-			EstimatedStartTime: response.EstimatedStartAt,
-		})
-	} else {
-
-		operationReqs := req.ToOperationRequests()
-
-		batchResponse, err := h.queueSvc.EnqueueOperations(
-			webhook.UserID,
-			req.ServerID,
-			req.StackName,
-			operationReqs,
-			&webhook.ID,
-		)
-		if err != nil {
-			if actorUser.ID > 0 {
-				_ = h.auditSvc.LogWebhookEvent(
-					security.EventWebhookTriggerFailed,
-					actorUser.ID,
-					actorUser.Username,
-					webhook.ID,
-					webhook.Name,
-					c.RealIP(),
-					false,
-					err.Error(),
-					map[string]any{
-						"operations": req.Operations,
-						"stack_name": req.StackName,
-						"server_id":  req.ServerID,
-					},
-				)
-			}
-			return common.SendInternalError(c, err.Error())
-		}
-
-		if actorUser.ID > 0 {
-			_ = h.auditSvc.LogWebhookEvent(
-				security.EventWebhookTriggered,
-				actorUser.ID,
-				actorUser.Username,
-				webhook.ID,
-				webhook.Name,
-				c.RealIP(),
-				true,
-				"",
-				map[string]any{
-					"operations": req.Operations,
+					"command":    req.Command,
 					"stack_name": req.StackName,
 					"server_id":  req.ServerID,
-					"batch_id":   batchResponse.BatchID,
 				},
 			)
 		}
+		return common.SendInternalError(c, err.Error())
+	}
 
-		operations := make([]TriggerOperationResponse, len(batchResponse.Operations))
-		for i, op := range batchResponse.Operations {
-			operations[i] = TriggerOperationResponse{
-				OperationID:     op.OperationID,
-				Command:         op.Command,
-				Status:          string(op.Status),
-				PositionInQueue: op.PositionInQueue,
-				Order:           op.Order,
-				DependsOn:       op.DependsOn,
-			}
+	if actorUser.ID > 0 {
+		_ = h.auditSvc.LogWebhookEvent(
+			security.EventWebhookTriggered,
+			actorUser.ID,
+			actorUser.Username,
+			webhook.ID,
+			webhook.Name,
+			c.RealIP(),
+			true,
+			"",
+			map[string]any{
+				"command":      req.Command,
+				"stack_name":   req.StackName,
+				"server_id":    req.ServerID,
+				"operation_id": response.OperationID,
+			},
+		)
+	}
+
+	waitParam := c.QueryParam("wait")
+	if waitParam == "true" {
+		operationLog, err := h.waitForOperationCompletion(c.Request().Context(), response.OperationID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusRequestTimeout, map[string]string{
+				"error": "Operation did not complete within timeout period",
+			})
 		}
 
-		return common.SendSuccess(c, TriggerWebhookResponse{
-			BatchID:               batchResponse.BatchID,
-			Operations:            operations,
-			EstimatedStartTime:    batchResponse.EstimatedStartTime,
-			EstimatedCompleteTime: batchResponse.EstimatedCompleteTime,
+		success := operationLog.Success != nil && *operationLog.Success
+		exitCode := 0
+		if operationLog.ExitCode != nil {
+			exitCode = *operationLog.ExitCode
+		}
+
+		return common.SendSuccess(c, map[string]any{
+			"operation_id": response.OperationID,
+			"status":       string(operationLog.Status),
+			"success":      success,
+			"exit_code":    exitCode,
+			"duration_ms":  operationLog.Duration,
 		})
+	}
+
+	return common.SendSuccess(c, TriggerWebhookResponse{
+		OperationID:        response.OperationID,
+		Status:             string(response.Status),
+		PositionInQueue:    response.PositionInQueue,
+		EstimatedStartTime: response.EstimatedStartAt,
+	})
+}
+
+func (h *Handler) waitForOperationCompletion(ctx context.Context, operationID string) (*models.OperationLog, error) {
+	timeout := time.NewTimer(30 * time.Minute)
+	defer timeout.Stop()
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+
+		case <-timeout.C:
+			return nil, fmt.Errorf("operation timeout after 30 minutes")
+
+		case <-ticker.C:
+			var opLog models.OperationLog
+			err := h.db.Where("operation_id = ?", operationID).First(&opLog).Error
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					continue
+				}
+				return nil, fmt.Errorf("failed to query operation log: %w", err)
+			}
+
+			switch opLog.Status {
+			case models.OperationStatusCompleted, models.OperationStatusFailed:
+				return &opLog, nil
+			}
+		}
 	}
 }
 

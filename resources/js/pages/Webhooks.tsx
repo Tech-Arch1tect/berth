@@ -759,58 +759,36 @@ export default function Webhooks({ title = 'Webhooks', webhooks, servers, csrfTo
           </div>
         </div>
 
-        {/* Curl Example Section */}
+        {/* CLI Usage Section */}
         <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
-              API Usage Example
+              CLI Usage
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Trigger webhook operations programmatically using curl. Replace the placeholder values
-              with your actual webhook details.
+              Trigger webhook operations using the Berth CLI. Replace the placeholder values with
+              your actual webhook details.
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Single Operation Example
+                Example Usage
               </h4>
               <pre className="text-xs font-mono text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap break-all">
-                {`curl -X POST "https://your-berth-instance.com/api/v1/webhooks/{WEBHOOK_ID}/trigger" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "api_key": "wh_your_webhook_api_key_here",
-    "server_id": 1,
-    "stack_name": "my_stack",
-    "command": "up",
-    "options": ["-d"],
-    "services": ["web", "db"]
-  }'`}
+                {`berth-webhook \\
+  --webhook-id {WEBHOOK_ID} \\
+  --api-key "wh_your_webhook_api_key_here" \\
+  --server-id {SERVER_ID} \\
+  --stack "my_stack" \\
+  --command "up" \\
+  --options "-d,--remove-orphans" \\
+  --services "web,db" \\
+  --berth-url "https://your-berth-instance.com"`}
               </pre>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4 mt-4">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Multiple Operations Example
-              </h4>
-              <pre className="text-xs font-mono text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap break-all">
-                {`curl -X POST "https://your-berth-instance.com/api/v1/webhooks/{WEBHOOK_ID}/trigger" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "api_key": "wh_your_webhook_api_key_here",
-    "server_id": 1,
-    "stack_name": "my_stack",
-    "operations": [
-      {
-        "command": "pull",
-        "options": []
-      },
-      {
-        "command": "up",
-        "options": ["-d", "--remove-orphans"]
-      }
-    ]
-  }'`}
-              </pre>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                The CLI streams operation output in real-time and exits with appropriate status
+                codes for CI/CD integration.
+              </p>
             </div>
 
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
@@ -819,28 +797,36 @@ export default function Webhooks({ title = 'Webhooks', webhooks, servers, csrfTo
               </h4>
               <ul className="text-xs text-blue-800 dark:text-blue-300 space-y-1">
                 <li>
-                  <strong>api_key:</strong> Your webhook's API key (starts with "wh_")
+                  <strong>--webhook-id:</strong> The webhook ID from the table above
                 </li>
                 <li>
-                  <strong>server_id:</strong> ID of the target server (number)
+                  <strong>--api-key:</strong> Your webhook's API key (starts with "wh_")
                 </li>
                 <li>
-                  <strong>stack_name:</strong> Name of the Docker stack to operate on
+                  <strong>--server-id:</strong> ID of the target server (visible on server cards)
                 </li>
                 <li>
-                  <strong>command:</strong> Docker Compose command (e.g., "up", "down", "pull",
+                  <strong>--stack:</strong> Name of the Docker stack to operate on
+                </li>
+                <li>
+                  <strong>--command:</strong> Docker Compose command (e.g., "up", "down", "pull",
                   "restart")
                 </li>
                 <li>
-                  <strong>options:</strong> Array of command line options (e.g., ["-d",
-                  "--remove-orphans"])
+                  <strong>--options:</strong> Comma-separated Docker Compose options (e.g.,
+                  "-d,--remove-orphans")
                 </li>
                 <li>
-                  <strong>services:</strong> Array of specific services to target (optional)
+                  <strong>--services:</strong> Comma-separated service names to target (optional)
                 </li>
                 <li>
-                  <strong>operations:</strong> Array of multiple operations (alternative to single
-                  command)
+                  <strong>--berth-url:</strong> URL of your Berth instance
+                </li>
+                <li>
+                  <strong>--insecure:</strong> Skip TLS verification (optional)
+                </li>
+                <li>
+                  <strong>--verbose:</strong> Enable verbose logging (optional)
                 </li>
               </ul>
             </div>

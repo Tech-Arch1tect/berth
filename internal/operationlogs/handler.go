@@ -2,23 +2,30 @@ package operationlogs
 
 import (
 	"berth/internal/common"
+	"berth/models"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
+	db         *gorm.DB
 	service    *Service
 	inertiaSvc *inertia.Service
 	logger     *logging.Service
 }
 
-func NewHandler(service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
+func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
 	return &Handler{
+		db:         db,
 		service:    service,
 		inertiaSvc: inertiaSvc,
 		logger:     logger,
@@ -178,4 +185,117 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 	}
 
 	return common.SendSuccess(c, operations)
+}
+
+func (h *Handler) StreamOperationLogs(c echo.Context) error {
+	operationID := c.Param("operation_id")
+	if operationID == "" {
+		return common.SendBadRequest(c, "operation_id is required")
+	}
+
+	apiKey := c.Request().Header.Get("X-API-Key")
+	if apiKey == "" {
+		apiKey = c.QueryParam("api_key")
+	}
+	if apiKey == "" {
+		return common.SendUnauthorized(c, "API key is required")
+	}
+
+	var opLog models.OperationLog
+	var err error
+	maxWaitTime := 30 * time.Second
+	pollInterval := 100 * time.Millisecond
+	deadline := time.Now().Add(maxWaitTime)
+
+	for time.Now().Before(deadline) {
+		err = h.db.Preload("Webhook").Where("operation_id = ?", operationID).First(&opLog).Error
+		if err == nil {
+			break
+		}
+		if err != gorm.ErrRecordNotFound {
+			return common.SendInternalError(c, "Failed to find operation")
+		}
+		time.Sleep(pollInterval)
+	}
+
+	if err != nil {
+		return common.SendNotFound(c, "Operation not found")
+	}
+
+	if opLog.WebhookID == nil {
+		return common.SendForbidden(c, "This operation was not triggered by a webhook")
+	}
+
+	if opLog.Webhook.ID == 0 {
+		return common.SendInternalError(c, "Failed to load webhook information")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(opLog.Webhook.APIKeyHash), []byte(apiKey)); err != nil {
+		return common.SendUnauthorized(c, "Invalid API key")
+	}
+
+	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+	c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
+	c.Response().Header().Set(echo.HeaderConnection, "keep-alive")
+	c.Response().WriteHeader(200)
+
+	var lastSeq int
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	timeout := time.NewTimer(35 * time.Minute)
+	defer timeout.Stop()
+
+	for {
+		select {
+		case <-c.Request().Context().Done():
+			return nil
+
+		case <-timeout.C:
+			return nil
+
+		case <-ticker.C:
+			var messages []models.OperationLogMessage
+			h.db.Where("operation_log_id = ? AND sequence_number > ?", opLog.ID, lastSeq).
+				Order("sequence_number ASC").
+				Find(&messages)
+
+			for _, msg := range messages {
+				data := map[string]any{
+					"type":      msg.MessageType,
+					"data":      msg.MessageData,
+					"timestamp": msg.Timestamp,
+				}
+
+				jsonData, _ := json.Marshal(data)
+				fmt.Fprintf(c.Response(), "data: %s\n\n", jsonData)
+				c.Response().Flush()
+
+				lastSeq = msg.SequenceNumber
+			}
+
+			h.db.First(&opLog, opLog.ID)
+
+			if opLog.Status == models.OperationStatusCompleted || opLog.Status == models.OperationStatusFailed {
+				success := opLog.Success != nil && *opLog.Success
+				exitCode := 0
+				if opLog.ExitCode != nil {
+					exitCode = *opLog.ExitCode
+				}
+
+				completeData := map[string]any{
+					"type":      "complete",
+					"success":   success,
+					"exitCode":  exitCode,
+					"timestamp": time.Now(),
+				}
+
+				jsonData, _ := json.Marshal(completeData)
+				fmt.Fprintf(c.Response(), "data: %s\n\n", jsonData)
+				c.Response().Flush()
+
+				return nil
+			}
+		}
+	}
 }
