@@ -1,0 +1,65 @@
+import { useQueries } from '@tanstack/react-query';
+import { usePage } from '@inertiajs/react';
+import { StackService } from '../services/stackService';
+import { Stack } from '../types/stack';
+import { Server } from '../types/server';
+
+export interface StackWithServer extends Stack {
+  server: Server;
+}
+
+interface UseAllStacksOptions {
+  servers: Server[];
+  enabled?: boolean;
+}
+
+export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+
+  const queries = useQueries({
+    queries: servers.map((server) => ({
+      queryKey: ['server-stacks', server.id],
+      queryFn: () => StackService.getServerStacks(server.id, csrfToken),
+      enabled: enabled && server.is_active,
+      staleTime: 1 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchInterval: 60 * 1000,
+      refetchOnWindowFocus: true,
+      retry: 1,
+      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    })),
+  });
+
+  const allStacks: StackWithServer[] = queries.flatMap((query, index) => {
+    const server = servers[index];
+    const stacks = query.data || [];
+    return stacks.map((stack) => ({
+      ...stack,
+      server,
+    }));
+  });
+
+  const isLoading = queries.some((query) => query.isLoading);
+  const isFetching = queries.some((query) => query.isFetching);
+  const hasError = queries.some((query) => query.error);
+  const errors = queries
+    .filter((query) => query.error)
+    .map((query, index) => ({
+      server: servers[index],
+      error: query.error as Error,
+    }));
+
+  const refetchAll = () => {
+    queries.forEach((query) => query.refetch());
+  };
+
+  return {
+    stacks: allStacks,
+    isLoading,
+    isFetching,
+    hasError,
+    errors,
+    refetchAll,
+  };
+}

@@ -16,6 +16,7 @@ import {
   ArrowUpTrayIcon,
   LinkIcon,
   ShieldExclamationIcon,
+  CircleStackIcon,
 } from '@heroicons/react/24/outline';
 import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -37,6 +38,11 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
+    {
+      name: 'All Stacks',
+      href: '/stacks',
+      icon: CircleStackIcon,
+    },
     {
       name: 'Operation Logs',
       href: '/operation-logs',

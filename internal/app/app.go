@@ -173,6 +173,7 @@ func NewApp(opts *AppOptions) *app.App {
 		webhook.Module(),
 		fx.Provide(security.NewHandler),
 		fx.Provide(handlers.NewDashboardHandler),
+		fx.Provide(handlers.NewStacksHandler),
 		fx.Provide(handlers.NewAuthHandler),
 		fx.Provide(handlers.NewMobileAuthHandler),
 		fx.Provide(handlers.NewSessionHandler),
