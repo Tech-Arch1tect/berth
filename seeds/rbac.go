@@ -15,6 +15,7 @@ func SeedRBACData(db *gorm.DB) error {
 		{Name: "logs.read", Resource: "logs", Action: "read", Description: "View container logs"},
 		{Name: "docker.maintenance.read", Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)"},
 		{Name: "docker.maintenance.write", Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)"},
+		{Name: "registries.manage", Resource: "registries", Action: "manage", Description: "Create, update, and delete registry credentials"},
 	}
 
 	for _, permission := range permissions {

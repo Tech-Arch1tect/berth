@@ -201,7 +201,7 @@ func NewApp(opts *AppOptions) *app.App {
 		WithMail().
 		WithDatabase(
 			&models.User{}, &models.Role{}, &models.Permission{},
-			&models.Server{}, &models.ServerRoleStackPermission{},
+			&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
 			&models.OperationLog{}, &models.OperationLogMessage{},
 			&models.SecurityAuditLog{},
 			&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
