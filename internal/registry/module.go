@@ -15,8 +15,8 @@ var Module = fx.Module("registry",
 		func(db *gorm.DB, crypto *utils.Crypto, logger *logging.Service) *Service {
 			return NewService(db, crypto, logger)
 		},
-		func(svc *Service, rbacSvc *rbac.Service) *APIHandler {
-			return NewAPIHandler(svc, rbacSvc)
+		func(svc *Service, rbacSvc *rbac.Service, db *gorm.DB) *APIHandler {
+			return NewAPIHandler(svc, rbacSvc, db)
 		},
 		func(svc *Service, rbacSvc *rbac.Service, inertiaSvc *inertia.Service) *Handler {
 			return NewHandler(svc, rbacSvc, inertiaSvc)

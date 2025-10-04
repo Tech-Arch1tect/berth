@@ -50,6 +50,7 @@ const (
 	CategoryWebhook  = "webhook"
 	CategoryFile     = "file"
 	CategoryAPI      = "api"
+	CategoryRegistry = "registry"
 )
 
 const (
@@ -60,14 +61,15 @@ const (
 )
 
 const (
-	TargetTypeUser       = "user"
-	TargetTypeRole       = "role"
-	TargetTypePermission = "permission"
-	TargetTypeServer     = "server"
-	TargetTypeWebhook    = "webhook"
-	TargetTypeFile       = "file"
-	TargetTypeSession    = "session"
-	TargetTypeStack      = "stack"
+	TargetTypeUser               = "user"
+	TargetTypeRole               = "role"
+	TargetTypePermission         = "permission"
+	TargetTypeServer             = "server"
+	TargetTypeWebhook            = "webhook"
+	TargetTypeFile               = "file"
+	TargetTypeSession            = "session"
+	TargetTypeStack              = "stack"
+	TargetTypeRegistryCredential = "registry_credential"
 )
 
 func (l *SecurityAuditLog) BeforeCreate(tx *gorm.DB) error {

@@ -31,6 +31,10 @@ func NewService(db *gorm.DB, crypto *utils.Crypto, logger *logging.Service) *Ser
 	}
 }
 
+func (s *Service) Logger() *logging.Service {
+	return s.logger
+}
+
 // CreateCredential creates a new registry credential with encrypted password
 func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, imagePattern, username, password string) (*models.ServerRegistryCredential, error) {
 	s.logger.Info("creating registry credential",

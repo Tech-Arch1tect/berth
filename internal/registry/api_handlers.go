@@ -3,22 +3,27 @@ package registry
 import (
 	"berth/internal/common"
 	"berth/internal/rbac"
+	"berth/models"
+	"encoding/json"
 	"errors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/session"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type APIHandler struct {
 	service *Service
 	rbacSvc *rbac.Service
+	db      *gorm.DB
 }
 
-func NewAPIHandler(service *Service, rbacSvc *rbac.Service) *APIHandler {
+func NewAPIHandler(service *Service, rbacSvc *rbac.Service, db *gorm.DB) *APIHandler {
 	return &APIHandler{
 		service: service,
 		rbacSvc: rbacSvc,
+		db:      db,
 	}
 }
 
@@ -136,6 +141,38 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		return common.SendBadRequest(c, err.Error())
 	}
 
+	h.service.Logger().Info("registry credential created",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.Uint("credential_id", credential.ID),
+		zap.String("registry_url", credential.RegistryURL),
+		zap.String("stack_pattern", credential.StackPattern),
+		zap.String("username", credential.Username),
+	)
+
+	metadataJSON, _ := json.Marshal(map[string]any{
+		"registry_url":  credential.RegistryURL,
+		"stack_pattern": credential.StackPattern,
+		"username":      credential.Username,
+		"image_pattern": credential.ImagePattern,
+	})
+
+	auditLog := &models.SecurityAuditLog{
+		EventType:      "registry_credential_created",
+		EventCategory:  models.CategoryRegistry,
+		Severity:       models.SeverityMedium,
+		ActorUserID:    &userID,
+		ActorIP:        c.RealIP(),
+		ActorUserAgent: c.Request().UserAgent(),
+		TargetType:     models.TargetTypeRegistryCredential,
+		TargetID:       &credential.ID,
+		TargetName:     credential.RegistryURL,
+		Success:        true,
+		Metadata:       string(metadataJSON),
+		ServerID:       &serverID,
+	}
+	h.db.Create(auditLog)
+
 	return common.SendCreated(c, map[string]any{
 		"credential": credential,
 	})
@@ -184,6 +221,38 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		return common.SendBadRequest(c, err.Error())
 	}
 
+	h.service.Logger().Info("registry credential updated",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.Uint("credential_id", credID),
+		zap.String("registry_url", credential.RegistryURL),
+		zap.String("stack_pattern", credential.StackPattern),
+		zap.String("username", credential.Username),
+	)
+
+	metadataJSON, _ := json.Marshal(map[string]any{
+		"registry_url":  credential.RegistryURL,
+		"stack_pattern": credential.StackPattern,
+		"username":      credential.Username,
+		"image_pattern": credential.ImagePattern,
+	})
+
+	auditLog := &models.SecurityAuditLog{
+		EventType:      "registry_credential_updated",
+		EventCategory:  models.CategoryRegistry,
+		Severity:       models.SeverityMedium,
+		ActorUserID:    &userID,
+		ActorIP:        c.RealIP(),
+		ActorUserAgent: c.Request().UserAgent(),
+		TargetType:     models.TargetTypeRegistryCredential,
+		TargetID:       &credID,
+		TargetName:     credential.RegistryURL,
+		Success:        true,
+		Metadata:       string(metadataJSON),
+		ServerID:       &serverID,
+	}
+	h.db.Create(auditLog)
+
 	return common.SendSuccess(c, map[string]any{
 		"credential": credential,
 	})
@@ -222,9 +291,64 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		return common.SendNotFound(c, "Registry credential not found")
 	}
 
+	h.service.Logger().Info("registry credential deleted",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.Uint("credential_id", credID),
+		zap.String("registry_url", existing.RegistryURL),
+		zap.String("stack_pattern", existing.StackPattern),
+		zap.String("username", existing.Username),
+	)
+
 	if err := h.service.DeleteCredential(credID); err != nil {
+		metadataJSON, _ := json.Marshal(map[string]any{
+			"registry_url":  existing.RegistryURL,
+			"stack_pattern": existing.StackPattern,
+			"username":      existing.Username,
+			"error":         err.Error(),
+		})
+
+		auditLog := &models.SecurityAuditLog{
+			EventType:      "registry_credential_deleted",
+			EventCategory:  models.CategoryRegistry,
+			Severity:       models.SeverityMedium,
+			ActorUserID:    &userID,
+			ActorIP:        c.RealIP(),
+			ActorUserAgent: c.Request().UserAgent(),
+			TargetType:     models.TargetTypeRegistryCredential,
+			TargetID:       &credID,
+			TargetName:     existing.RegistryURL,
+			Success:        false,
+			FailureReason:  err.Error(),
+			Metadata:       string(metadataJSON),
+			ServerID:       &serverID,
+		}
+		h.db.Create(auditLog)
+
 		return common.SendInternalError(c, "Failed to delete registry credential")
 	}
+
+	metadataJSON, _ := json.Marshal(map[string]any{
+		"registry_url":  existing.RegistryURL,
+		"stack_pattern": existing.StackPattern,
+		"username":      existing.Username,
+	})
+
+	auditLog := &models.SecurityAuditLog{
+		EventType:      "registry_credential_deleted",
+		EventCategory:  models.CategoryRegistry,
+		Severity:       models.SeverityMedium,
+		ActorUserID:    &userID,
+		ActorIP:        c.RealIP(),
+		ActorUserAgent: c.Request().UserAgent(),
+		TargetType:     models.TargetTypeRegistryCredential,
+		TargetID:       &credID,
+		TargetName:     existing.RegistryURL,
+		Success:        true,
+		Metadata:       string(metadataJSON),
+		ServerID:       &serverID,
+	}
+	h.db.Create(auditLog)
 
 	return common.SendSuccess(c, map[string]any{
 		"message": "Registry credential deleted successfully",
