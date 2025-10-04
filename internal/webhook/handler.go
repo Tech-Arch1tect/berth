@@ -23,26 +23,28 @@ import (
 )
 
 type Handler struct {
-	db         *gorm.DB
-	webhookSvc *Service
-	queueSvc   *queue.Service
-	serverSvc  *server.Service
-	rbacSvc    *rbac.Service
-	stackSvc   *stack.Service
-	inertiaSvc *inertia.Service
-	auditSvc   *security.AuditService
+	db                      *gorm.DB
+	webhookSvc              *Service
+	queueSvc                *queue.Service
+	serverSvc               *server.Service
+	rbacSvc                 *rbac.Service
+	stackSvc                *stack.Service
+	inertiaSvc              *inertia.Service
+	auditSvc                *security.AuditService
+	operationTimeoutSeconds int
 }
 
-func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *Handler {
+func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService, operationTimeoutSeconds int) *Handler {
 	return &Handler{
-		db:         db,
-		webhookSvc: webhookSvc,
-		queueSvc:   queueSvc,
-		serverSvc:  serverSvc,
-		rbacSvc:    rbacSvc,
-		stackSvc:   stackSvc,
-		inertiaSvc: inertiaSvc,
-		auditSvc:   auditSvc,
+		db:                      db,
+		webhookSvc:              webhookSvc,
+		queueSvc:                queueSvc,
+		serverSvc:               serverSvc,
+		rbacSvc:                 rbacSvc,
+		stackSvc:                stackSvc,
+		inertiaSvc:              inertiaSvc,
+		auditSvc:                auditSvc,
+		operationTimeoutSeconds: operationTimeoutSeconds,
 	}
 }
 
@@ -404,7 +406,7 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 }
 
 func (h *Handler) waitForOperationCompletion(ctx context.Context, operationID string) (*models.OperationLog, error) {
-	timeout := time.NewTimer(30 * time.Minute)
+	timeout := time.NewTimer(time.Duration(h.operationTimeoutSeconds) * time.Second)
 	defer timeout.Stop()
 
 	ticker := time.NewTicker(2 * time.Second)
@@ -416,7 +418,7 @@ func (h *Handler) waitForOperationCompletion(ctx context.Context, operationID st
 			return nil, ctx.Err()
 
 		case <-timeout.C:
-			return nil, fmt.Errorf("operation timeout after 30 minutes")
+			return nil, fmt.Errorf("operation timeout after %d seconds", h.operationTimeoutSeconds)
 
 		case <-ticker.C:
 			var opLog models.OperationLog

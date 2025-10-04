@@ -85,8 +85,11 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		Services: w.service.deserializeStringArray(queuedOp.Services),
 	}
 
+	operationCtx, cancel := context.WithTimeout(ctx, time.Duration(w.service.operationTimeoutSeconds)*time.Second)
+	defer cancel()
+
 	response, err := w.service.operationSvc.StartAndExecuteOperation(
-		ctx,
+		operationCtx,
 		queuedOp.UserID,
 		queuedOp.ServerID,
 		queuedOp.StackName,

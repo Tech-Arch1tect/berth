@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"berth/internal/config"
 	"berth/internal/operations"
 	"berth/internal/rbac"
 
@@ -12,7 +13,7 @@ import (
 func Module() fx.Option {
 	return fx.Module("queue",
 		fx.Provide(
-			NewService,
+			NewServiceWithDeps,
 		),
 	)
 }
@@ -23,8 +24,9 @@ type ServiceDeps struct {
 	OperationSvc *operations.Service
 	RBACService  *rbac.Service
 	Logger       *logging.Service
+	Config       *config.BerthConfig
 }
 
 func NewServiceWithDeps(deps ServiceDeps) *Service {
-	return NewService(deps.DB, deps.OperationSvc, deps.RBACService, deps.Logger)
+	return NewService(deps.DB, deps.OperationSvc, deps.RBACService, deps.Logger, deps.Config.Custom.OperationTimeoutSeconds)
 }

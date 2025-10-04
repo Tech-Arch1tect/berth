@@ -22,6 +22,8 @@ type Service struct {
 	rbacSvc      *rbac.Service
 	logger       *logging.Service
 
+	operationTimeoutSeconds int
+
 	stackWorkers map[string]*StackWorker
 	workerMutex  sync.RWMutex
 
@@ -38,17 +40,18 @@ type StackWorker struct {
 	service  *Service
 }
 
-func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service, operationTimeoutSeconds int) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &Service{
-		db:           db,
-		operationSvc: operationSvc,
-		rbacSvc:      rbacSvc,
-		logger:       logger,
-		stackWorkers: make(map[string]*StackWorker),
-		ctx:          ctx,
-		cancel:       cancel,
+		db:                      db,
+		operationSvc:            operationSvc,
+		rbacSvc:                 rbacSvc,
+		logger:                  logger,
+		operationTimeoutSeconds: operationTimeoutSeconds,
+		stackWorkers:            make(map[string]*StackWorker),
+		ctx:                     ctx,
+		cancel:                  cancel,
 	}
 
 	go service.processExistingQueue()

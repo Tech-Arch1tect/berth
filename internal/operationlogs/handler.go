@@ -17,18 +17,20 @@ import (
 )
 
 type Handler struct {
-	db         *gorm.DB
-	service    *Service
-	inertiaSvc *inertia.Service
-	logger     *logging.Service
+	db                      *gorm.DB
+	service                 *Service
+	inertiaSvc              *inertia.Service
+	logger                  *logging.Service
+	operationTimeoutSeconds int
 }
 
-func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
+func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service, operationTimeoutSeconds int) *Handler {
 	return &Handler{
-		db:         db,
-		service:    service,
-		inertiaSvc: inertiaSvc,
-		logger:     logger,
+		db:                      db,
+		service:                 service,
+		inertiaSvc:              inertiaSvc,
+		logger:                  logger,
+		operationTimeoutSeconds: operationTimeoutSeconds,
 	}
 }
 
@@ -243,7 +245,7 @@ func (h *Handler) StreamOperationLogs(c echo.Context) error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
-	timeout := time.NewTimer(35 * time.Minute)
+	timeout := time.NewTimer(time.Duration(h.operationTimeoutSeconds) * time.Second)
 	defer timeout.Stop()
 
 	for {

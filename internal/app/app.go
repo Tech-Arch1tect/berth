@@ -6,7 +6,7 @@ import (
 
 	"berth/handlers"
 	"berth/internal/agent"
-	configEnforcement "berth/internal/config"
+	berthconfig "berth/internal/config"
 	"berth/internal/files"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
@@ -45,28 +45,16 @@ import (
 	"gorm.io/gorm"
 )
 
-type BerthConfig struct {
-	config.Config
-	Custom AppCustomConfig `envPrefix:""`
-}
-
-type AppCustomConfig struct {
-	EncryptionSecret          string `env:"ENCRYPTION_SECRET"`
-	LogDir                    string `env:"LOG_DIR" envDefault:"./storage/logs"`
-	OperationLogLogToFile     bool   `env:"OPERATION_LOG_LOG_TO_FILE" envDefault:"false"`
-	SecurityAuditLogLogToFile bool   `env:"SECURITY_AUDIT_LOG_TO_FILE" envDefault:"false"`
-}
-
 type AppOptions struct {
-	Config                *BerthConfig
+	Config                *berthconfig.BerthConfig
 	SkipConfigEnforcement bool
 	CertFile              string
 	KeyFile               string
 	ExtraFxOptions        []fx.Option
 }
 
-func LoadConfig() (*BerthConfig, error) {
-	var cfg BerthConfig
+func LoadConfig() (*berthconfig.BerthConfig, error) {
+	var cfg berthconfig.BerthConfig
 	if err := config.LoadConfig(&cfg); err != nil {
 		return nil, err
 	}
@@ -87,13 +75,13 @@ func NewApp(opts *AppOptions) *app.App {
 		opts = &AppOptions{}
 	}
 
-	var cfg *BerthConfig
+	var cfg *berthconfig.BerthConfig
 	var err error
 	if opts.Config != nil {
 		cfg = opts.Config
 	} else {
 		if !opts.SkipConfigEnforcement {
-			configEnforcement.EnforceRequiredSettings()
+			berthconfig.EnforceRequiredSettings()
 		}
 		cfg, err = LoadConfig()
 		if err != nil {
@@ -114,13 +102,13 @@ func NewApp(opts *AppOptions) *app.App {
 
 	fxOptions := []fx.Option{
 		jwt.Options,
-		fx.Provide(func() *BerthConfig {
+		fx.Provide(func() *berthconfig.BerthConfig {
 			return cfg
 		}),
-		fx.Provide(func(cfg *BerthConfig) *utils.Crypto {
+		fx.Provide(func(cfg *berthconfig.BerthConfig) *utils.Crypto {
 			return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 		}),
-		fx.Provide(func(cfg *BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
+		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
 			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")
 			return operations.NewAuditLogger(
 				cfg.Custom.OperationLogLogToFile,
@@ -131,7 +119,7 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Invoke(func(auditLogger *operations.AuditLogger) {
 			models.OperationLogAuditLogger = auditLogger
 		}),
-		fx.Provide(func(cfg *BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
+		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
 			securityLogDir := filepath.Join(cfg.Custom.LogDir, "security")
 			return security.NewAuditLogger(
 				cfg.Custom.SecurityAuditLogLogToFile,
@@ -143,7 +131,9 @@ func NewApp(opts *AppOptions) *app.App {
 			models.SecurityAuditLogAuditor = auditLogger
 		}),
 		fx.Provide(security.NewAuditService),
-		fx.Provide(agent.NewService),
+		fx.Provide(func(logger *logging.Service, cfg *berthconfig.BerthConfig) *agent.Service {
+			return agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
+		}),
 		fx.Provide(rbac.NewService),
 		fx.Provide(rbac.NewMiddleware),
 		fx.Provide(rbac.NewRBACHandler),

@@ -6,16 +6,17 @@ import (
 )
 
 type Config struct {
-	WebhookID uint
-	APIKey    string
-	ServerID  uint
-	StackName string
-	Command   string
-	Options   []string
-	Services  []string
-	BerthURL  string
-	Insecure  bool
-	Verbose   bool
+	WebhookID      uint
+	APIKey         string
+	ServerID       uint
+	StackName      string
+	Command        string
+	Options        []string
+	Services       []string
+	BerthURL       string
+	Insecure       bool
+	Verbose        bool
+	TimeoutMinutes int
 }
 
 const (
@@ -45,7 +46,7 @@ func Run(config *Config) int {
 		fmt.Fprintf(os.Stderr, "---\n")
 	}
 
-	client := NewClient(config.BerthURL, config.Insecure, config.Verbose)
+	client := NewClient(config.BerthURL, config.Insecure, config.Verbose, config.TimeoutMinutes)
 
 	req := TriggerRequest{
 		APIKey:    config.APIKey,

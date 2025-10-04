@@ -18,7 +18,7 @@ type Client struct {
 	verbose    bool
 }
 
-func NewClient(baseURL string, insecure bool, verbose bool) *Client {
+func NewClient(baseURL string, insecure bool, verbose bool, timeoutMinutes int) *Client {
 	transport := &http.Transport{}
 	if insecure {
 		transport.TLSClientConfig = &tls.Config{
@@ -26,10 +26,14 @@ func NewClient(baseURL string, insecure bool, verbose bool) *Client {
 		}
 	}
 
+	if timeoutMinutes <= 0 {
+		timeoutMinutes = 35
+	}
+
 	return &Client{
 		httpClient: &http.Client{
 			Transport: transport,
-			Timeout:   35 * time.Minute,
+			Timeout:   time.Duration(timeoutMinutes) * time.Minute,
 		},
 		baseURL: baseURL,
 		verbose: verbose,

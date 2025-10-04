@@ -108,7 +108,9 @@ func SetupTestApp(t *testing.T) *TestApp {
 				fx.Provide(func() *utils.Crypto {
 					return utils.NewCrypto("test-encryption-secret-key-32chars!!")
 				}),
-				fx.Provide(agent.NewService),
+				fx.Provide(func(logger *logging.Service) *agent.Service {
+					return agent.NewService(logger, 600)
+				}),
 				fx.Provide(rbac.NewService),
 				fx.Provide(rbac.NewMiddleware),
 				fx.Provide(rbac.NewRBACHandler),

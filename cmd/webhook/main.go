@@ -19,6 +19,7 @@ func main() {
 	berthURL := flag.String("berth-url", "", "Berth server URL (required)")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification")
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
+	timeoutMinutes := flag.Int("timeout", 35, "HTTP client timeout in minutes (default: 35)")
 
 	flag.Parse()
 
@@ -69,16 +70,17 @@ func main() {
 	}
 
 	config := &cli.Config{
-		WebhookID: uint(*webhookID),
-		APIKey:    *apiKey,
-		ServerID:  uint(*serverID),
-		StackName: *stackName,
-		Command:   *command,
-		Options:   options,
-		Services:  services,
-		BerthURL:  *berthURL,
-		Insecure:  *insecure,
-		Verbose:   *verbose,
+		WebhookID:      uint(*webhookID),
+		APIKey:         *apiKey,
+		ServerID:       uint(*serverID),
+		StackName:      *stackName,
+		Command:        *command,
+		Options:        options,
+		Services:       services,
+		BerthURL:       *berthURL,
+		Insecure:       *insecure,
+		Verbose:        *verbose,
+		TimeoutMinutes: *timeoutMinutes,
 	}
 
 	exitCode := cli.Run(config)

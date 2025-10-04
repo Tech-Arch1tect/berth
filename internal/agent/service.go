@@ -17,18 +17,20 @@ import (
 )
 
 type Service struct {
-	logger *logging.Service
+	logger                  *logging.Service
+	operationTimeoutSeconds int
 }
 
-func NewService(logger *logging.Service) *Service {
+func NewService(logger *logging.Service, operationTimeoutSeconds int) *Service {
 	return &Service{
-		logger: logger,
+		logger:                  logger,
+		operationTimeoutSeconds: operationTimeoutSeconds,
 	}
 }
 
 func (s *Service) getClient(server *models.Server) *http.Client {
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: time.Duration(s.operationTimeoutSeconds) * time.Second,
 	}
 
 	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {

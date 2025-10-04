@@ -1,8 +1,8 @@
 package main
 
 import (
-	"berth/internal/app"
+	"berth/internal/config"
 )
 
-type BerthConfig = app.BerthConfig
-type AppCustomConfig = app.AppCustomConfig
+type BerthConfig = config.BerthConfig
+type AppCustomConfig = config.AppCustomConfig
