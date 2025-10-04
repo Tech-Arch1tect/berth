@@ -17,7 +17,7 @@ type Server struct {
 	Host                string `json:"host" gorm:"not null"`
 	Port                int    `json:"port" gorm:"not null;default:8080"`
 	SkipSSLVerification *bool  `json:"skip_ssl_verification" gorm:"default:true"`
-	AccessToken         string `json:"access_token" gorm:"not null"`
+	AccessToken         string `json:"-" gorm:"not null"`
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
 }
 
