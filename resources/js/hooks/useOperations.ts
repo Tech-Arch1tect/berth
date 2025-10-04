@@ -143,7 +143,7 @@ export const useOperations = ({
         onError(errorMsg);
       }
     };
-  }, [serverid, stackname, operationStatus.isRunning, onOperationComplete, onError]);
+  }, [serverid, stackname, operationStatus.isRunning, onOperationComplete, onError, addOperation]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {

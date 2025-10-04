@@ -30,50 +30,10 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   onDismiss,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [logs, setLogs] = useState<StreamMessage[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const { markOperationComplete } = useOperationsContext();
+  const { getOperationLogs } = useOperationsContext();
 
-  useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/operations/${operationId}`;
-
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsConnected(true);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message: StreamMessage = JSON.parse(event.data);
-        setLogs((prev) => [...prev, message]);
-
-        if (message.type === 'complete') {
-          markOperationComplete(operationId);
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
-      }
-    };
-
-    ws.onerror = () => {
-      setIsConnected(false);
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-    };
-
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [serverid, stackname, operationId, markOperationComplete]);
+  const logs = getOperationLogs(operationId);
 
   useEffect(() => {
     if (expanded && logsEndRef.current) {
@@ -93,6 +53,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
 
   const isComplete = logs.some((log) => log.type === 'complete');
   const isFailed = isComplete && logs.some((log) => log.type === 'complete' && !log.success);
+  const isConnected = logs.length > 0 || !isComplete;
 
   return (
     <div className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
