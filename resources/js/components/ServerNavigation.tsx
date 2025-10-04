@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { CircleStackIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { CircleStackIcon, WrenchScrewdriverIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useMaintenancePermissions } from '../hooks/useMaintenancePermissions';
+import { useRegistryPermissions } from '../hooks/useRegistryPermissions';
 
 interface ServerNavigationProps {
   serverId: number;
@@ -15,8 +16,11 @@ export const ServerNavigation: React.FC<ServerNavigationProps> = ({
   className = '',
 }) => {
   const { url } = usePage();
-  const { data: permissions, isLoading: permissionsLoading } = useMaintenancePermissions({
+  const { data: maintenancePerms } = useMaintenancePermissions({
     serverid: serverId,
+  });
+  const { data: registryPerms } = useRegistryPermissions({
+    serverId: serverId,
   });
 
   const navItems = [
@@ -27,10 +31,16 @@ export const ServerNavigation: React.FC<ServerNavigationProps> = ({
       show: true,
     },
     {
+      name: 'Registries',
+      href: `/servers/${serverId}/registries`,
+      icon: KeyIcon,
+      show: registryPerms?.canManage === true,
+    },
+    {
       name: 'Maintenance',
       href: `/servers/${serverId}/maintenance`,
       icon: WrenchScrewdriverIcon,
-      show: permissions?.maintenance?.read === true,
+      show: maintenancePerms?.maintenance?.read === true,
     },
   ].filter((item) => item.show);
 

@@ -15,6 +15,7 @@ import (
 	"berth/internal/operations"
 	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/registry"
 	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/setup"
@@ -157,6 +158,7 @@ func NewApp(opts *AppOptions) *app.App {
 		files.Module,
 		logs.Module,
 		operations.Module,
+		registry.Module,
 		operationlogs.Module,
 		migration.Module,
 		queue.Module(),
