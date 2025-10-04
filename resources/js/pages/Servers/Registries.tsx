@@ -63,15 +63,18 @@ export default function Registries({
 
     try {
       if (editingCredential) {
-        const response = await fetch(`/api/servers/${server_id}/registries/${editingCredential.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || '',
-          },
-          credentials: 'include',
-          body: JSON.stringify(data),
-        });
+        const response = await fetch(
+          `/api/servers/${server_id}/registries/${editingCredential.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': csrfToken || '',
+            },
+            credentials: 'include',
+            body: JSON.stringify(data),
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();

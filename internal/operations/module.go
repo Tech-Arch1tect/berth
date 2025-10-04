@@ -1,7 +1,9 @@
 package operations
 
 import (
+	"berth/internal/files"
 	"berth/internal/rbac"
+	"berth/internal/registry"
 	"berth/internal/server"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -20,6 +22,6 @@ func NewAuditServiceWithDeps(db *gorm.DB, logger *logging.Service) *AuditService
 	return NewAuditService(db, logger)
 }
 
-func NewServiceWithDeps(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, logger *logging.Service) *Service {
-	return NewService(serverSvc, rbacSvc, auditSvc, logger)
+func NewServiceWithDeps(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, registrySvc *registry.Service, filesSvc *files.Service, logger *logging.Service) *Service {
+	return NewService(serverSvc, rbacSvc, auditSvc, registrySvc, filesSvc, logger)
 }

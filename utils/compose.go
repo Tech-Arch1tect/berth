@@ -42,11 +42,17 @@ func ExtractRegistries(composeContent string) ([]string, error) {
 }
 
 func ExtractRegistryFromImage(imageRef string) string {
+
 	imageParts := strings.Split(imageRef, "@")
 	imageWithoutDigest := imageParts[0]
 
-	parts := strings.Split(imageWithoutDigest, ":")
-	imageWithoutTag := parts[0]
+	imageWithoutTag := imageWithoutDigest
+	lastSlashIdx := strings.LastIndex(imageWithoutDigest, "/")
+	lastColonIdx := strings.LastIndex(imageWithoutDigest, ":")
+
+	if lastColonIdx > lastSlashIdx && lastSlashIdx >= 0 {
+		imageWithoutTag = imageWithoutDigest[:lastColonIdx]
+	}
 
 	slashParts := strings.Split(imageWithoutTag, "/")
 

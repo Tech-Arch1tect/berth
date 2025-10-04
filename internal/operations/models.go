@@ -2,10 +2,17 @@ package operations
 
 import "time"
 
+type RegistryCredential struct {
+	Registry string `json:"registry"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type OperationRequest struct {
-	Command  string   `json:"command"`
-	Options  []string `json:"options"`
-	Services []string `json:"services"`
+	Command             string               `json:"command"`
+	Options             []string             `json:"options"`
+	Services            []string             `json:"services"`
+	RegistryCredentials []RegistryCredential `json:"registry_credentials,omitempty"`
 }
 
 type OperationResponse struct {

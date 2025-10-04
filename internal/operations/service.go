@@ -1,13 +1,17 @@
 package operations
 
 import (
+	"berth/internal/files"
 	"berth/internal/rbac"
+	"berth/internal/registry"
 	"berth/internal/server"
 	"berth/models"
+	"berth/utils"
 	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,21 +21,26 @@ import (
 
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type Service struct {
-	serverSvc *server.Service
-	rbacSvc   *rbac.Service
-	auditSvc  *AuditService
-	logger    *logging.Service
+	serverSvc   *server.Service
+	rbacSvc     *rbac.Service
+	auditSvc    *AuditService
+	registrySvc *registry.Service
+	filesSvc    *files.Service
+	logger      *logging.Service
 }
 
-func NewService(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, logger *logging.Service) *Service {
+func NewService(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, registrySvc *registry.Service, filesSvc *files.Service, logger *logging.Service) *Service {
 	return &Service{
-		serverSvc: serverSvc,
-		rbacSvc:   rbacSvc,
-		auditSvc:  auditSvc,
-		logger:    logger,
+		serverSvc:   serverSvc,
+		rbacSvc:     rbacSvc,
+		auditSvc:    auditSvc,
+		registrySvc: registrySvc,
+		filesSvc:    filesSvc,
+		logger:      logger,
 	}
 }
 
@@ -81,6 +90,23 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 			zap.String("required_permission", requiredPermission),
 		)
 		return nil, fmt.Errorf("insufficient permissions for operation '%s' on stack '%s' (requires %s)", req.Command, stackname, requiredPermission)
+	}
+
+	if req.Command == "up" || req.Command == "pull" {
+		credentials, err := s.fetchRegistryCredentials(ctx, userID, serverID, stackname)
+		if err != nil {
+			s.logger.Warn("failed to fetch registry credentials, proceeding without them",
+				zap.Error(err),
+				zap.Uint("server_id", serverID),
+				zap.String("stack_name", stackname),
+			)
+		} else if len(credentials) > 0 {
+			req.RegistryCredentials = credentials
+			s.logger.Info("added registry credentials to operation",
+				zap.Int("credential_count", len(credentials)),
+				zap.String("stack_name", stackname),
+			)
+		}
 	}
 
 	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackname))
@@ -450,4 +476,69 @@ func (w *AuditWriter) Write(p []byte) (n int, err error) {
 	}
 
 	return len(p), nil
+}
+
+func (s *Service) fetchRegistryCredentials(ctx context.Context, userID uint, serverID uint, stackname string) ([]RegistryCredential, error) {
+
+	fileContent, err := s.filesSvc.ReadFile(ctx, userID, serverID, stackname, "docker-compose.yml")
+	if err != nil {
+
+		fileContent, err = s.filesSvc.ReadFile(ctx, userID, serverID, stackname, "docker-compose.yaml")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read compose file: %w", err)
+		}
+	}
+
+	registries, err := utils.ExtractRegistries(fileContent.Content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract registries: %w", err)
+	}
+
+	if len(registries) == 0 {
+		s.logger.Debug("no registries found in compose file",
+			zap.String("stack_name", stackname),
+		)
+		return nil, nil
+	}
+
+	s.logger.Debug("extracted registries from compose file",
+		zap.String("stack_name", stackname),
+		zap.Strings("registries", registries),
+	)
+
+	var credentials []RegistryCredential
+	for _, registry := range registries {
+		normalizedRegistry := utils.NormalizeRegistryURL(registry)
+
+		cred, err := s.registrySvc.GetCredentialForStack(serverID, stackname, normalizedRegistry)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				s.logger.Debug("no credential found for registry",
+					zap.String("stack_name", stackname),
+					zap.String("registry", normalizedRegistry),
+				)
+				continue
+			}
+			s.logger.Warn("failed to get credential for registry",
+				zap.Error(err),
+				zap.String("stack_name", stackname),
+				zap.String("registry", normalizedRegistry),
+			)
+			continue
+		}
+
+		s.logger.Debug("found credential for registry",
+			zap.String("stack_name", stackname),
+			zap.String("registry", normalizedRegistry),
+			zap.String("username", cred.Username),
+		)
+
+		credentials = append(credentials, RegistryCredential{
+			Registry: cred.Registry,
+			Username: cred.Username,
+			Password: cred.Password,
+		})
+	}
+
+	return credentials, nil
 }
