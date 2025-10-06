@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"berth/internal/agent"
 	"berth/internal/common"
 	"berth/internal/queue"
 	"berth/internal/rbac"
@@ -9,6 +10,7 @@ import (
 	"berth/internal/stack"
 	"berth/models"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,10 +33,11 @@ type Handler struct {
 	stackSvc                *stack.Service
 	inertiaSvc              *inertia.Service
 	auditSvc                *security.AuditService
+	agentSvc                *agent.Service
 	operationTimeoutSeconds int
 }
 
-func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService, operationTimeoutSeconds int) *Handler {
+func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serverSvc *server.Service, rbacSvc *rbac.Service, stackSvc *stack.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService, agentSvc *agent.Service, operationTimeoutSeconds int) *Handler {
 	return &Handler{
 		db:                      db,
 		webhookSvc:              webhookSvc,
@@ -44,6 +47,7 @@ func NewHandler(db *gorm.DB, webhookSvc *Service, queueSvc *queue.Service, serve
 		stackSvc:                stackSvc,
 		inertiaSvc:              inertiaSvc,
 		auditSvc:                auditSvc,
+		agentSvc:                agentSvc,
 		operationTimeoutSeconds: operationTimeoutSeconds,
 	}
 }
@@ -324,6 +328,27 @@ func (h *Handler) TriggerWebhook(c echo.Context) error {
 	var actorUser models.User
 	h.db.First(&actorUser, webhook.UserID)
 
+	if req.ComposeChanges != nil {
+		if err := h.applyComposeChanges(c.Request().Context(), webhook.UserID, req.ServerID, req.StackName, req.ComposeChanges); err != nil {
+			_ = h.auditSvc.LogWebhookEvent(
+				security.EventWebhookTriggerFailed,
+				actorUser.ID,
+				actorUser.Username,
+				webhook.ID,
+				webhook.Name,
+				c.RealIP(),
+				false,
+				fmt.Sprintf("Failed to apply compose changes: %v", err),
+				map[string]any{
+					"command":    req.Command,
+					"stack_name": req.StackName,
+					"server_id":  req.ServerID,
+				},
+			)
+			return common.SendInternalError(c, "Failed to apply compose changes: "+err.Error())
+		}
+	}
+
 	operationReq := req.ToOperationRequest()
 
 	response, err := h.queueSvc.EnqueueOperation(
@@ -513,4 +538,34 @@ func (h *Handler) AdminDeleteWebhook(c echo.Context) error {
 	return common.SendSuccess(c, map[string]string{
 		"message": "Webhook deleted successfully",
 	})
+}
+
+func (h *Handler) applyComposeChanges(ctx context.Context, userID uint, serverID uint, stackName string, changes *ComposeChanges) error {
+	server, err := h.serverSvc.GetActiveServerForUser(serverID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get server: %w", err)
+	}
+
+	payload := map[string]any{
+		"stack_name": stackName,
+		"changes":    changes,
+	}
+
+	resp, err := h.agentSvc.MakeRequest(ctx, server, "PATCH", "/compose", payload)
+	if err != nil {
+		return fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]any
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err == nil {
+			if msg, ok := errResp["error"].(string); ok {
+				return fmt.Errorf("agent returned error: %s", msg)
+			}
+		}
+		return fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	return nil
 }

@@ -26,6 +26,8 @@ import {
   downloadMarkdown,
 } from '../../utils/generateStackDocumentation';
 import { StackImagesTab } from '../../components/stack-images';
+import { ComposeEditor, ComposeChanges } from '../../components/compose';
+import { useComposeUpdate } from '../../hooks/useComposeUpdate';
 import {
   HomeIcon,
   ChevronRightIcon,
@@ -41,6 +43,7 @@ import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
   PhotoIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 
 interface StackDetailsProps {
@@ -68,6 +71,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   }>({ isRunning: false });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+  const [showComposeEditor, setShowComposeEditor] = useState(false);
 
   const {
     data: stackDetails,
@@ -150,6 +154,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     serverid,
     stackname,
   });
+
+  const composeUpdateMutation = useComposeUpdate({ serverid, stackname });
 
   useEffect(() => {
     if (stackPermissions) {
@@ -258,6 +264,10 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       console.error('Failed to generate documentation:', error);
       showToast.error('Failed to generate documentation');
     }
+  };
+
+  const handleComposeUpdate = async (changes: ComposeChanges) => {
+    await composeUpdateMutation.mutateAsync(changes);
   };
 
   return (
@@ -637,6 +647,16 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                         </h3>
                       </div>
                       <div className="flex items-center space-x-2">
+                        {stackPermissions?.permissions?.includes('stacks.manage') && (
+                          <button
+                            onClick={() => setShowComposeEditor(true)}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-700/50 transition-colors"
+                            title="Edit compose configuration"
+                          >
+                            <PencilSquareIcon className="w-3 h-3 mr-1" />
+                            Edit Compose
+                          </button>
+                        )}
                         <button
                           onClick={handleExpandAll}
                           className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 transition-colors"
@@ -764,6 +784,17 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               })) || [],
             onClose: () => setAdvancedOperationsOpen(false),
           }}
+        />
+      )}
+
+      {/* Compose Editor Modal */}
+      {showComposeEditor && stackDetails && stackDetails.services && (
+        <ComposeEditor
+          services={stackDetails.services}
+          serverid={serverid}
+          stackname={stackname}
+          onUpdate={handleComposeUpdate}
+          onClose={() => setShowComposeEditor(false)}
         />
       )}
     </Layout>

@@ -23,13 +23,24 @@ type UpdateWebhookRequest struct {
 	ExpiresAt    *time.Time `json:"expires_at"`
 }
 
+type ComposeChanges struct {
+	ServiceImageUpdates []ServiceImageUpdate `json:"service_image_updates,omitempty"`
+}
+
+type ServiceImageUpdate struct {
+	ServiceName string `json:"service_name"`
+	NewImage    string `json:"new_image,omitempty"`
+	NewTag      string `json:"new_tag,omitempty"`
+}
+
 type TriggerWebhookRequest struct {
-	APIKey    string   `json:"api_key" binding:"required"`
-	ServerID  uint     `json:"server_id" binding:"required"`
-	StackName string   `json:"stack_name" binding:"required"`
-	Command   string   `json:"command" binding:"required"`
-	Options   []string `json:"options"`
-	Services  []string `json:"services"`
+	APIKey         string          `json:"api_key" binding:"required"`
+	ServerID       uint            `json:"server_id" binding:"required"`
+	StackName      string          `json:"stack_name" binding:"required"`
+	Command        string          `json:"command" binding:"required"`
+	Options        []string        `json:"options"`
+	Services       []string        `json:"services"`
+	ComposeChanges *ComposeChanges `json:"compose_changes,omitempty"`
 }
 
 type TriggerWebhookResponse struct {

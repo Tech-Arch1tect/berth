@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"berth/internal/agent"
 	"berth/internal/config"
 	"berth/internal/queue"
 	"berth/internal/rbac"
@@ -41,6 +42,7 @@ type HandlerDeps struct {
 	StackService   *stack.Service
 	InertiaService *inertia.Service
 	AuditService   *security.AuditService
+	AgentService   *agent.Service
 	Config         *config.BerthConfig
 }
 
@@ -56,7 +58,7 @@ func NewServiceWithDeps(deps ServiceDeps) *Service {
 }
 
 func NewHandlerWithDeps(deps HandlerDeps) *Handler {
-	return NewHandler(deps.DB, deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService, deps.InertiaService, deps.AuditService, deps.Config.Custom.OperationTimeoutSeconds)
+	return NewHandler(deps.DB, deps.WebhookService, deps.QueueService, deps.ServerService, deps.RBACService, deps.StackService, deps.InertiaService, deps.AuditService, deps.AgentService, deps.Config.Custom.OperationTimeoutSeconds)
 }
 
 func NewUIHandlerWithDeps(deps UIHandlerDeps) *UIHandler {
