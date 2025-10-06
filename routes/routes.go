@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"berth/handlers"
+	"berth/internal/apikey"
+	berthauth "berth/internal/auth"
 	"berth/internal/files"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
@@ -26,7 +28,6 @@ import (
 	"github.com/tech-arch1tect/brx/middleware/csrf"
 	"github.com/tech-arch1tect/brx/middleware/inertiacsrf"
 	"github.com/tech-arch1tect/brx/middleware/inertiashared"
-	"github.com/tech-arch1tect/brx/middleware/jwt"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	"github.com/tech-arch1tect/brx/middleware/ratelimit"
 	"github.com/tech-arch1tect/brx/middleware/rememberme"
@@ -39,7 +40,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -202,6 +203,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	}
 
 	if serverUserAPIHandler != nil {
+		protected.GET("/api/servers", serverUserAPIHandler.ListServers)
 		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}
 
@@ -214,6 +216,19 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/sessions", sessionHandler.Sessions)
 		protected.POST("/sessions/revoke", sessionHandler.RevokeSession)
 		protected.POST("/sessions/revoke-all-others", sessionHandler.RevokeAllOtherSessions)
+	}
+
+	// API Key management routes
+	if apiKeyHandler != nil {
+		protected.GET("/api-keys", apiKeyHandler.ShowAPIKeys)
+		protected.GET("/api-keys/:id/scopes", apiKeyHandler.ShowAPIKeyScopes)
+		protected.GET("/api/api-keys", apiKeyHandler.ListAPIKeys)
+		protected.GET("/api/api-keys/:id", apiKeyHandler.GetAPIKey)
+		protected.POST("/api/api-keys", apiKeyHandler.CreateAPIKey)
+		protected.DELETE("/api/api-keys/:id", apiKeyHandler.RevokeAPIKey)
+		protected.GET("/api/api-keys/:id/scopes", apiKeyHandler.ListScopes)
+		protected.POST("/api/api-keys/:id/scopes", apiKeyHandler.AddScope)
+		protected.DELETE("/api/api-keys/:id/scopes/:scopeId", apiKeyHandler.RemoveScope)
 	}
 
 	// WebSocket routes
@@ -270,10 +285,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		// API routes
 		wsAPIGroup := wsGroup.Group("/api")
-		wsAPIGroup.Use(jwt.RequireJWT(jwtSvc))
-		wsAPIGroup.Use(jwtshared.MiddlewareWithConfig(jwtshared.Config{
-			UserProvider: userProvider,
-		}))
+		wsAPIGroup.Use(berthauth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 		wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
 		wsAPIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleFlutterTerminalWebSocket)
 
@@ -365,10 +377,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		apiProtected := api.Group("")
 		apiProtected.Use(generalApiRateLimit)
-		apiProtected.Use(jwt.RequireJWT(jwtSvc))
-		apiProtected.Use(jwtshared.MiddlewareWithConfig(jwtshared.Config{
-			UserProvider: userProvider,
-		}))
+		apiProtected.Use(berthauth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 		apiProtected.GET("/profile", mobileAuthHandler.Profile)
 		apiProtected.POST("/auth/logout", mobileAuthHandler.Logout)
 

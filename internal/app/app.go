@@ -6,6 +6,7 @@ import (
 
 	"berth/handlers"
 	"berth/internal/agent"
+	"berth/internal/apikey"
 	berthconfig "berth/internal/config"
 	"berth/internal/files"
 	"berth/internal/logs"
@@ -138,6 +139,8 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(rbac.NewMiddleware),
 		fx.Provide(rbac.NewRBACHandler),
 		fx.Provide(rbac.NewAPIHandler),
+		fx.Provide(apikey.NewService),
+		fx.Provide(apikey.NewHandler),
 		fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
 			return setup.NewService(db, rbacSvc, logger)
 		}),
@@ -202,6 +205,7 @@ func NewApp(opts *AppOptions) *app.App {
 		WithDatabase(
 			&models.User{}, &models.Role{}, &models.Permission{},
 			&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
+			&models.APIKey{}, &models.APIKeyScope{},
 			&models.OperationLog{}, &models.OperationLogMessage{},
 			&models.SecurityAuditLog{},
 			&models.SeedTracker{},
