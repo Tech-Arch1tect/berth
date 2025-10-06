@@ -165,8 +165,6 @@ export default function SecurityAuditLogs({ title }: Props) {
         return 'text-pink-800 bg-pink-100 dark:text-pink-200 dark:bg-pink-900';
       case 'server':
         return 'text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900';
-      case 'webhook':
-        return 'text-cyan-800 bg-cyan-100 dark:text-cyan-200 dark:bg-cyan-900';
       case 'file':
         return 'text-amber-800 bg-amber-100 dark:text-amber-200 dark:bg-amber-900';
       default:
@@ -256,7 +254,6 @@ export default function SecurityAuditLogs({ title }: Props) {
                   <option value="user_mgmt">User Management</option>
                   <option value="rbac">RBAC</option>
                   <option value="server">Server</option>
-                  <option value="webhook">Webhook</option>
                   <option value="file">File Operations</option>
                 </select>
               </div>

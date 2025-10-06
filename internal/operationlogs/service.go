@@ -51,7 +51,6 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 	query := s.db.Model(&models.OperationLog{}).
 		Preload("User").
 		Preload("Server").
-		Preload("Webhook").
 		Order("created_at DESC")
 
 	if params.UserID != 0 {
@@ -120,12 +119,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 			serverName = log.Server.Name
 		}
 
-		var webhookName *string
 		triggerSource := "manual"
-		if log.WebhookID != nil && log.Webhook != nil {
-			webhookName = &log.Webhook.Name
-			triggerSource = "webhook"
-		}
 
 		partialDuration := s.calculatePartialDuration(log)
 
@@ -133,7 +127,6 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,
-			WebhookName:     webhookName,
 			TriggerSource:   triggerSource,
 			IsIncomplete:    log.EndTime == nil,
 			FormattedDate:   log.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -158,7 +151,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 }
 
 func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.OperationLogDetail, error) {
-	query := s.db.Preload("User").Preload("Server").Preload("Webhook")
+	query := s.db.Preload("User").Preload("Server")
 
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
@@ -193,12 +186,7 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.Operati
 		serverName = log.Server.Name
 	}
 
-	var webhookName *string
 	triggerSource := "manual"
-	if log.WebhookID != nil && log.Webhook != nil {
-		webhookName = &log.Webhook.Name
-		triggerSource = "webhook"
-	}
 
 	partialDuration := s.calculatePartialDuration(log)
 
@@ -207,7 +195,6 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.Operati
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,
-			WebhookName:     webhookName,
 			TriggerSource:   triggerSource,
 			IsIncomplete:    log.EndTime == nil,
 			FormattedDate:   log.CreatedAt.Format("2006-01-02 15:04:05"),

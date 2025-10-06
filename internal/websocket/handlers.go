@@ -328,7 +328,6 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 			operationID,
 			opRequest,
 			sessionStartTime,
-			nil,
 		)
 		if err == nil && log != nil {
 			*operationLogID = &log.ID

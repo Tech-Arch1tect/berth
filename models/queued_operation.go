@@ -27,8 +27,6 @@ type QueuedOperation struct {
 	Options     string          `json:"options" gorm:"type:text"`
 	Services    string          `json:"services" gorm:"type:text"`
 	Status      OperationStatus `json:"status" gorm:"not null;default:'queued'"`
-	WebhookID   *uint           `json:"webhook_id" gorm:"index"`
-	Webhook     *Webhook        `json:"webhook,omitempty" gorm:"foreignKey:WebhookID"`
 	QueuedAt    time.Time       `json:"queued_at" gorm:"not null"`
 	Priority    int             `json:"priority" gorm:"default:0"`
 }
@@ -43,7 +41,6 @@ type QueuedOperationResponse struct {
 	Options          []string        `json:"options"`
 	Services         []string        `json:"services"`
 	Status           OperationStatus `json:"status"`
-	WebhookName      *string         `json:"webhook_name,omitempty"`
 	QueuedAt         string          `json:"queued_at"`
 	Priority         int             `json:"priority"`
 	PositionInQueue  int             `json:"position_in_queue"`
@@ -53,7 +50,6 @@ type QueuedOperationResponse struct {
 func (qo *QueuedOperation) ToResponse() QueuedOperationResponse {
 	var options []string
 	var services []string
-	var webhookName *string
 
 	if qo.Options != "" {
 
@@ -63,10 +59,6 @@ func (qo *QueuedOperation) ToResponse() QueuedOperationResponse {
 	if qo.Services != "" {
 
 		services = parseJSONStringArray(qo.Services)
-	}
-
-	if qo.Webhook != nil {
-		webhookName = &qo.Webhook.Name
 	}
 
 	return QueuedOperationResponse{
@@ -79,7 +71,6 @@ func (qo *QueuedOperation) ToResponse() QueuedOperationResponse {
 		Options:     options,
 		Services:    services,
 		Status:      qo.Status,
-		WebhookName: webhookName,
 		QueuedAt:    qo.QueuedAt.Format("2006-01-02T15:04:05Z07:00"),
 		Priority:    qo.Priority,
 	}

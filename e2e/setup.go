@@ -43,7 +43,6 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
-	"berth/internal/webhook"
 	"berth/internal/websocket"
 	"berth/routes"
 	"berth/seeds"
@@ -91,7 +90,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 				&models.User{}, &models.Role{}, &models.Permission{},
 				&models.Server{}, &models.ServerRoleStackPermission{},
 				&models.OperationLog{}, &models.OperationLogMessage{},
-				&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
+				&models.SeedTracker{},
 				&models.QueuedOperation{}, &session.UserSession{},
 				&totp.TOTPSecret{}, &totp.UsedCode{},
 				&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
@@ -135,7 +134,6 @@ func SetupTestApp(t *testing.T) *TestApp {
 				operationlogs.Module,
 				migration.Module,
 				queue.Module(),
-				webhook.Module(),
 				fx.Provide(handlers.NewDashboardHandler),
 				fx.Provide(handlers.NewAuthHandler),
 				fx.Provide(handlers.NewMobileAuthHandler),

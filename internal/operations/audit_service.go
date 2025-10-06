@@ -22,7 +22,7 @@ func NewAuditService(db *gorm.DB, logger *logging.Service) *AuditService {
 	}
 }
 
-func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName string, operationID string, request OperationRequest, startTime time.Time, webhookID *uint) (*models.OperationLog, error) {
+func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName string, operationID string, request OperationRequest, startTime time.Time) (*models.OperationLog, error) {
 	s.logger.Debug("logging operation start",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -57,7 +57,6 @@ func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName s
 		Options:     string(options),
 		Services:    string(services),
 		StartTime:   startTime,
-		WebhookID:   webhookID,
 	}
 
 	if err := s.db.Create(log).Error; err != nil {

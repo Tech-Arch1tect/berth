@@ -26,7 +26,6 @@ type AuditLogEntry struct {
 	Status      string `json:"status"`
 	ExitCode    *int   `json:"exit_code,omitempty"`
 	Duration    *int   `json:"duration_ms,omitempty"`
-	WebhookID   *uint  `json:"webhook_id,omitempty"`
 }
 
 func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service) (*AuditLogger, error) {
@@ -52,7 +51,6 @@ func (a *AuditLogger) LogOperationCreate(log *models.OperationLog) {
 		Options:     log.Options,
 		Services:    log.Services,
 		Status:      "started",
-		WebhookID:   log.WebhookID,
 	}
 
 	a.fileLogger.Log(entry)
@@ -79,7 +77,6 @@ func (a *AuditLogger) LogOperationUpdate(log *models.OperationLog) {
 		Status:      status,
 		ExitCode:    log.ExitCode,
 		Duration:    log.Duration,
-		WebhookID:   log.WebhookID,
 	}
 
 	a.fileLogger.Log(entry)

@@ -21,5 +21,4 @@ export interface User {
 export * from './server';
 export * from './stack';
 export * from './websocket';
-export * from './webhook';
 export * from './hooks';

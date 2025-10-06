@@ -167,7 +167,7 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 		}
 	}
 
-	operationLog, auditErr := h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, opReq, startTime, nil)
+	operationLog, auditErr := h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, opReq, startTime)
 	if auditErr != nil {
 
 	}

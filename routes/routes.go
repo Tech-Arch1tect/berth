@@ -18,7 +18,6 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
-	"berth/internal/webhook"
 	"berth/internal/websocket"
 
 	"github.com/labstack/echo/v4"
@@ -40,7 +39,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, webhookHandler *webhook.Handler, webhookUIHandler *webhook.UIHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -202,20 +201,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		protected.GET("/api/running-operations", operationLogsHandler.GetRunningOperations)
 	}
 
-	// Webhook UI routes
-	if webhookUIHandler != nil {
-		protected.GET("/webhooks", webhookUIHandler.Index)
-	}
-
-	// Webhook management routes
-	if webhookHandler != nil {
-		protected.GET("/api/webhooks", webhookHandler.GetWebhooks)
-		protected.POST("/api/webhooks", webhookHandler.CreateWebhook)
-		protected.PUT("/api/webhooks/:id", webhookHandler.UpdateWebhook)
-		protected.DELETE("/api/webhooks/:id", webhookHandler.DeleteWebhook)
-		protected.POST("/api/webhooks/:id/regenerate", webhookHandler.RegenerateAPIKey)
-	}
-
 	if serverUserAPIHandler != nil {
 		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}
@@ -325,14 +310,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			admin.GET("/api/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
 		}
 
-		// Admin webhooks routes
-		if webhookHandler != nil {
-			admin.GET("/webhooks", webhookHandler.ShowAdminWebhooks)
-			admin.GET("/api/webhooks", webhookHandler.AdminListWebhooks)
-			admin.GET("/api/webhooks/:id", webhookHandler.AdminGetWebhook)
-			admin.DELETE("/api/webhooks/:id", webhookHandler.AdminDeleteWebhook)
-		}
-
 		if serverHandler != nil {
 			admin.GET("/servers", serverHandler.Index)
 			admin.GET("/servers/:id", serverHandler.Show)
@@ -385,23 +362,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		authApi.POST("/login", mobileAuthHandler.Login)
 		authApi.POST("/refresh", mobileAuthHandler.RefreshToken)
 		authApi.POST("/totp/verify", mobileAuthHandler.VerifyTOTP)
-
-		// Public webhook trigger routes (API key authenticated)
-		if webhookHandler != nil {
-			webhookApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-				Store:        rateLimitStore,
-				Rate:         100,
-				Period:       time.Minute,
-				CountMode:    config.CountAll,
-				KeyGenerator: ratelimit.DefaultKeyGenerator,
-			})
-			api.POST("/webhooks/:id/trigger", webhookHandler.TriggerWebhook, webhookApiRateLimit)
-		}
-
-		// log streaming for CLI - requires webhook api key
-		if operationLogsHandler != nil {
-			api.GET("/operations/:operation_id/stream", operationLogsHandler.StreamOperationLogs)
-		}
 
 		apiProtected := api.Group("")
 		apiProtected.Use(generalApiRateLimit)
@@ -471,16 +431,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiProtected.DELETE("/servers/:serverid/maintenance/resource", maintenanceAPIHandler.DeleteResource)
 		}
 
-		// Webhook management routes
-		if webhookHandler != nil {
-			apiProtected.GET("/webhooks", webhookHandler.GetWebhooks)
-			apiProtected.POST("/webhooks", webhookHandler.CreateWebhook)
-			apiProtected.GET("/webhooks/:id", webhookHandler.GetWebhook)
-			apiProtected.PUT("/webhooks/:id", webhookHandler.UpdateWebhook)
-			apiProtected.DELETE("/webhooks/:id", webhookHandler.DeleteWebhook)
-			apiProtected.POST("/webhooks/:id/regenerate", webhookHandler.RegenerateAPIKey)
-		}
-
 		if rbacAPIHandler != nil && rbacMiddleware != nil {
 
 			// Admin routes
@@ -526,12 +476,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 				apiAdmin.GET("/security-audit-logs", securityHandler.ListLogs)
 				apiAdmin.GET("/security-audit-logs/stats", securityHandler.GetStats)
 				apiAdmin.GET("/security-audit-logs/:id", securityHandler.GetLog)
-			}
-
-			if webhookHandler != nil {
-				apiAdmin.GET("/webhooks", webhookHandler.AdminListWebhooks)
-				apiAdmin.GET("/webhooks/:id", webhookHandler.AdminGetWebhook)
-				apiAdmin.DELETE("/webhooks/:id", webhookHandler.AdminDeleteWebhook)
 			}
 		}
 	}

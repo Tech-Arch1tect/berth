@@ -48,16 +48,6 @@ const (
 )
 
 const (
-	EventWebhookCreated             = "webhook.created"
-	EventWebhookUpdated             = "webhook.updated"
-	EventWebhookDeleted             = "webhook.deleted"
-	EventWebhookAPIKeyRegenerated   = "webhook.api_key.regenerated"
-	EventWebhookTriggered           = "webhook.triggered"
-	EventWebhookTriggerFailed       = "webhook.trigger.failed"
-	EventWebhookAuthorizationFailed = "webhook.authorization.failed"
-)
-
-const (
 	EventAPITokenIssued    = "api.token.issued"
 	EventAPITokenRefreshed = "api.token.refreshed"
 	EventAPITokenRevoked   = "api.token.revoked"
@@ -96,11 +86,6 @@ func GetEventCategory(eventType string) string {
 		EventServerConnectionTestFailure:
 		return "server"
 
-	case EventWebhookCreated, EventWebhookUpdated, EventWebhookDeleted,
-		EventWebhookAPIKeyRegenerated, EventWebhookTriggered,
-		EventWebhookTriggerFailed, EventWebhookAuthorizationFailed:
-		return "webhook"
-
 	case EventAPITokenIssued, EventAPITokenRefreshed, EventAPITokenRevoked,
 		EventAPIAuthFailed:
 		return "api"
@@ -117,19 +102,17 @@ func GetEventSeverity(eventType string) string {
 	switch eventType {
 
 	case EventUserDeleted, EventRoleDeleted, EventServerDeleted,
-		EventServerAccessTokenRegenerated, EventWebhookAPIKeyRegenerated:
+		EventServerAccessTokenRegenerated:
 		return "critical"
 
 	case EventAuthLoginFailure, EventTOTPVerificationFailure, EventAPIAuthFailed,
 		EventUserCreated, EventUserRoleAssigned, EventUserRoleRevoked,
 		EventRoleCreated, EventRoleUpdated, EventPermissionAdded, EventPermissionRemoved,
-		EventServerCreated, EventServerUpdated, EventTOTPEnabled, EventTOTPDisabled,
-		EventWebhookAuthorizationFailed, EventWebhookTriggerFailed:
+		EventServerCreated, EventServerUpdated, EventTOTPEnabled, EventTOTPDisabled:
 		return "high"
 
 	case EventAuthPasswordResetRequested, EventAuthPasswordResetCompleted,
 		EventUserPasswordChanged, EventUserEmailChanged,
-		EventWebhookCreated, EventWebhookUpdated, EventWebhookDeleted,
 		EventServerConnectionTestFailure, EventFileDeleted, EventFileRenamed:
 		return "medium"
 
@@ -138,7 +121,7 @@ func GetEventSeverity(eventType string) string {
 		EventAuthSessionRevoked, EventAuthSessionsRevokedAll,
 		EventTOTPVerificationSuccess, EventTOTPSetupInitiated,
 		EventAPITokenIssued, EventAPITokenRefreshed, EventAPITokenRevoked,
-		EventWebhookTriggered, EventServerConnectionTestSuccess,
+		EventServerConnectionTestSuccess,
 		EventFileUploaded, EventFileDownloaded:
 		return "low"
 

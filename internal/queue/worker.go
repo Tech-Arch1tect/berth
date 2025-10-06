@@ -66,7 +66,6 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		Options:     queuedOp.Options,
 		Services:    queuedOp.Services,
 		Status:      models.OperationStatusRunning,
-		WebhookID:   queuedOp.WebhookID,
 		QueuedAt:    &queuedOp.QueuedAt,
 		StartTime:   startTime,
 	}

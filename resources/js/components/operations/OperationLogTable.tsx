@@ -18,7 +18,6 @@ interface OperationLog {
   updated_at: string;
   user_name: string;
   server_name: string;
-  webhook_name?: string;
   trigger_source: string;
   is_incomplete: boolean;
   formatted_date: string;
@@ -134,22 +133,9 @@ export default function OperationLogTable({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            {log.trigger_source === 'webhook' ? (
-                              <>
-                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 mr-2">
-                                  🔗 Webhook
-                                </span>
-                                {log.webhook_name && (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {log.webhook_name}
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                                👤 Manual
-                              </span>
-                            )}
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                              👤 Manual
+                            </span>
                           </div>
                         </td>
                         {showUser ? (

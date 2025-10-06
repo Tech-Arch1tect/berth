@@ -21,7 +21,6 @@ import (
 	"berth/internal/setup"
 	"berth/internal/ssl"
 	"berth/internal/stack"
-	"berth/internal/webhook"
 	"berth/internal/websocket"
 	"berth/models"
 	"berth/providers"
@@ -162,7 +161,6 @@ func NewApp(opts *AppOptions) *app.App {
 		operationlogs.Module,
 		migration.Module,
 		queue.Module(),
-		webhook.Module(),
 		fx.Provide(security.NewHandler),
 		fx.Provide(handlers.NewDashboardHandler),
 		fx.Provide(handlers.NewStacksHandler),
@@ -206,7 +204,7 @@ func NewApp(opts *AppOptions) *app.App {
 			&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
 			&models.OperationLog{}, &models.OperationLogMessage{},
 			&models.SecurityAuditLog{},
-			&models.SeedTracker{}, &models.Webhook{}, &models.WebhookServerScope{},
+			&models.SeedTracker{},
 			&models.QueuedOperation{}, &session.UserSession{},
 			&totp.TOTPSecret{}, &totp.UsedCode{},
 			&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},

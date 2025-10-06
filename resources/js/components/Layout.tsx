@@ -14,7 +14,6 @@ import {
   XMarkIcon,
   ClipboardDocumentListIcon,
   ArrowUpTrayIcon,
-  LinkIcon,
   ShieldExclamationIcon,
   CircleStackIcon,
 } from '@heroicons/react/24/outline';
@@ -48,11 +47,6 @@ export default function Layout({ children }: LayoutProps) {
       href: '/operation-logs',
       icon: ClipboardDocumentListIcon,
     },
-    {
-      name: 'Webhooks',
-      href: '/webhooks',
-      icon: LinkIcon,
-    },
     ...(isAdmin
       ? [
           { name: 'Servers', href: '/admin/servers', icon: ServerIcon },
@@ -63,11 +57,6 @@ export default function Layout({ children }: LayoutProps) {
             name: 'Admin Operation Logs',
             href: '/admin/operation-logs',
             icon: ClipboardDocumentListIcon,
-          },
-          {
-            name: 'Admin Webhooks',
-            href: '/admin/webhooks',
-            icon: LinkIcon,
           },
           {
             name: 'Security Audit Logs',

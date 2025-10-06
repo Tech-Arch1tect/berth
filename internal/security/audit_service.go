@@ -165,21 +165,6 @@ func (s *AuditService) LogServerEvent(eventType string, actorUserID uint, actorU
 	})
 }
 
-func (s *AuditService) LogWebhookEvent(eventType string, actorUserID uint, actorUsername string, webhookID uint, webhookName string, ip string, success bool, failureReason string, metadata map[string]any) error {
-	return s.Log(LogEvent{
-		EventType:     eventType,
-		Success:       success,
-		ActorUserID:   &actorUserID,
-		ActorUsername: actorUsername,
-		ActorIP:       ip,
-		TargetType:    models.TargetTypeWebhook,
-		TargetID:      &webhookID,
-		TargetName:    webhookName,
-		FailureReason: failureReason,
-		Metadata:      metadata,
-	})
-}
-
 func (s *AuditService) LogAPIEvent(eventType string, userID *uint, username string, ip string, userAgent string, success bool, failureReason string, metadata map[string]any) error {
 	return s.Log(LogEvent{
 		EventType:      eventType,

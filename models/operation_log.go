@@ -25,8 +25,6 @@ type OperationLog struct {
 	Options       string          `json:"options" gorm:"type:text"`
 	Services      string          `json:"services" gorm:"type:text"`
 	Status        OperationStatus `json:"status" gorm:"not null;default:'completed'"`
-	WebhookID     *uint           `json:"webhook_id" gorm:"index"`
-	Webhook       *Webhook        `json:"webhook,omitempty" gorm:"foreignKey:WebhookID"`
 	QueuedAt      *time.Time      `json:"queued_at" gorm:"index"`
 	StartTime     time.Time       `json:"start_time" gorm:"not null;index"`
 	EndTime       *time.Time      `json:"end_time" gorm:"index"`

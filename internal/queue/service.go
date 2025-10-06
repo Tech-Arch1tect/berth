@@ -59,7 +59,7 @@ func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Ser
 	return service
 }
 
-func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string, req operations.OperationRequest, webhookID *uint) (*models.QueuedOperationResponse, error) {
+func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string, req operations.OperationRequest) (*models.QueuedOperationResponse, error) {
 	s.logger.Debug("enqueuing single operation",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -98,7 +98,6 @@ func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string,
 		Options:     s.serializeStringArray(req.Options),
 		Services:    s.serializeStringArray(req.Services),
 		Status:      models.OperationStatusQueued,
-		WebhookID:   webhookID,
 		QueuedAt:    time.Now(),
 	}
 
@@ -113,7 +112,7 @@ func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string,
 
 	s.submitToWorker(serverID, stackName, queuedOp)
 
-	s.db.Preload("User").Preload("Server").Preload("Webhook").First(queuedOp, queuedOp.ID)
+	s.db.Preload("User").Preload("Server").First(queuedOp, queuedOp.ID)
 
 	response := queuedOp.ToResponse()
 	response.PositionInQueue = s.getQueuePosition(serverID, stackName, operationID)
