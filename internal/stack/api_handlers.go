@@ -181,12 +181,18 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 
 type ComposeChanges struct {
 	ServiceImageUpdates []ServiceImageUpdate `json:"service_image_updates,omitempty"`
+	ServicePortUpdates  []ServicePortUpdate  `json:"service_port_updates,omitempty"`
 }
 
 type ServiceImageUpdate struct {
 	ServiceName string `json:"service_name"`
 	NewImage    string `json:"new_image,omitempty"`
 	NewTag      string `json:"new_tag,omitempty"`
+}
+
+type ServicePortUpdate struct {
+	ServiceName string   `json:"service_name"`
+	Ports       []string `json:"ports"`
 }
 
 type UpdateComposeRequest struct {

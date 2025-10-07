@@ -28,6 +28,7 @@ export interface StackDetails {
 export interface ComposeService {
   name: string;
   image?: string;
+  ports?: string[];
   containers: Container[];
   depends_on?: string[];
   profiles?: string[];

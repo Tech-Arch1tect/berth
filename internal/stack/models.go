@@ -52,6 +52,7 @@ type StackDetails struct {
 type ComposeService struct {
 	Name       string      `json:"name"`
 	Image      string      `json:"image,omitempty"`
+	Ports      []string    `json:"ports,omitempty"`
 	Containers []Container `json:"containers"`
 }
 
