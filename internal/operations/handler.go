@@ -2,6 +2,7 @@ package operations
 
 import (
 	"berth/internal/common"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -22,7 +23,7 @@ func (h *Handler) StartOperation(c echo.Context) error {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverId")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -41,6 +42,9 @@ func (h *Handler) StartOperation(c echo.Context) error {
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
+
+	startTime := time.Now()
+	h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, req, startTime)
 
 	return common.SendSuccess(c, response)
 }
