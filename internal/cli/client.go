@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,6 +28,10 @@ func NewClient(config *Config) *Client {
 }
 
 func (c *Client) Connect() error {
+	return c.ConnectToPath("/api/ws")
+}
+
+func (c *Client) ConnectToPath(path string) error {
 	u, err := url.Parse(c.config.ServerURL)
 	if err != nil {
 		return fmt.Errorf("invalid server URL: %w", err)
@@ -37,12 +42,19 @@ func (c *Client) Connect() error {
 	} else {
 		u.Scheme = "ws"
 	}
-	u.Path = "/api/ws"
+	u.Path = path
 
 	headers := http.Header{}
 	headers.Add("Authorization", "Bearer "+c.config.APIKey)
 
-	conn, _, err := ws.DefaultDialer.Dial(u.String(), headers)
+	dialer := ws.DefaultDialer
+	if c.config.Insecure {
+		dialer = &ws.Dialer{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	conn, _, err := dialer.Dial(u.String(), headers)
 	if err != nil {
 		return fmt.Errorf("failed to connect to WebSocket: %w", err)
 	}
@@ -67,15 +79,19 @@ func (c *Client) readMessages() {
 		}
 
 		var baseMsg websocket.BaseMessage
-		if err := json.Unmarshal(message, &baseMsg); err != nil {
-			continue
+		if err := json.Unmarshal(message, &baseMsg); err == nil && baseMsg.Type != "" {
+			c.mu.Lock()
+			if handler, ok := c.handlers[string(baseMsg.Type)]; ok {
+				go handler(message)
+			}
+			c.mu.Unlock()
+		} else {
+			c.mu.Lock()
+			if handler, ok := c.handlers[""]; ok {
+				go handler(message)
+			}
+			c.mu.Unlock()
 		}
-
-		c.mu.Lock()
-		if handler, ok := c.handlers[string(baseMsg.Type)]; ok {
-			go handler(message)
-		}
-		c.mu.Unlock()
 	}
 }
 

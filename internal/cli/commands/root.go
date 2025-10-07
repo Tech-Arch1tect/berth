@@ -7,6 +7,7 @@ import (
 var (
 	apiKey    string
 	serverURL string
+	insecure  bool
 )
 
 var rootCmd = &cobra.Command{
@@ -26,6 +27,7 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&apiKey, "api-key", "", "Berth API key (or set BERTH_API_KEY)")
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "Berth server URL (or set BERTH_SERVER_URL)")
+	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "Skip TLS certificate verification (for development)")
 }
 
 func GetAPIKey() string {
@@ -34,4 +36,8 @@ func GetAPIKey() string {
 
 func GetServerURL() string {
 	return serverURL
+}
+
+func GetInsecure() bool {
+	return insecure
 }

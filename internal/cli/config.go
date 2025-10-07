@@ -8,12 +8,14 @@ import (
 type Config struct {
 	APIKey    string
 	ServerURL string
+	Insecure  bool
 }
 
-func LoadConfig(apiKeyFlag, serverURLFlag string) (*Config, error) {
+func LoadConfig(apiKeyFlag, serverURLFlag string, insecureFlag bool) (*Config, error) {
 	config := &Config{
 		APIKey:    apiKeyFlag,
 		ServerURL: serverURLFlag,
+		Insecure:  insecureFlag,
 	}
 
 	if config.APIKey == "" {
