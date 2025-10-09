@@ -1,45 +1,8 @@
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import React from 'react';
-
-interface OperationLog {
-  id: number;
-  user_id: number;
-  server_id: number;
-  stack_name: string;
-  operation_id: string;
-  command: string;
-  options: string;
-  services: string;
-  start_time: string;
-  end_time: string | null;
-  success: boolean | null;
-  exit_code: number | null;
-  duration_ms: number | null;
-  created_at: string;
-  updated_at: string;
-  user_name: string;
-  server_name: string;
-  trigger_source: string;
-  is_incomplete: boolean;
-  formatted_date: string;
-  message_count: number;
-  partial_duration_ms: number | null;
-}
-
-interface OperationLogMessage {
-  id: number;
-  operation_log_id: number;
-  message_type: string;
-  message_data: string;
-  timestamp: string;
-  sequence_number: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface OperationLogDetail {
-  log: OperationLog;
-  messages: OperationLogMessage[];
-}
+import { OperationLog, OperationLogDetail, OperationLogMessage } from '../../types/operations';
+import { theme } from '../../theme';
+import { cn } from '../../utils/cn';
 
 interface OperationLogModalProps {
   selectedLog: OperationLogDetail | null;
@@ -50,6 +13,20 @@ interface OperationLogModalProps {
   getOperationDuration: (log: OperationLog) => string;
 }
 
+const toPrettyJson = (payload: string) => {
+  if (!payload) return '';
+  try {
+    const parsed = JSON.parse(payload);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return payload;
+  }
+};
+
+const renderMessage = (message: OperationLogMessage) => {
+  return message.message_data || message.message_type;
+};
+
 export default function OperationLogModal({
   selectedLog,
   showDetails,
@@ -58,199 +35,126 @@ export default function OperationLogModal({
   getStatusBadge,
   getOperationDuration,
 }: OperationLogModalProps) {
-  if (!showDetails || !selectedLog) return null;
+  if (!showDetails || !selectedLog) {
+    return null;
+  }
+
+  const { log, messages } = selectedLog;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={onClose}
-        />
-
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-              Operation Details
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              ✕
-            </button>
+    <div className={theme.modal.overlay} role="dialog" aria-modal="true" onClick={onClose}>
+      <div
+        className={cn(theme.modal.content, 'max-w-4xl overflow-hidden')}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className={theme.modal.header}>
+          <div>
+            <h2 className={theme.modal.title}>Operation Details</h2>
+            <p className={theme.modal.subtitle}>{log.operation_id}</p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={theme.buttons.icon}
+            aria-label="Close details"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-3">
+        <div className="max-h-[80vh] overflow-y-auto px-6 py-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Operation ID
-                </label>
-                <div className="mt-1 text-sm font-mono text-gray-900 dark:text-white">
-                  {selectedLog.log.operation_id}
-                </div>
+                <p className={theme.forms.label}>Command</p>
+                <p className={cn('mt-1 text-sm font-medium', theme.text.strong)}>{log.command}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Command
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedLog.log.command}
-                </div>
+                <p className={theme.forms.label}>Stack</p>
+                <p className={cn('mt-1 text-sm', theme.text.standard)}>{log.stack_name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Stack
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedLog.log.stack_name}
-                </div>
+                <p className={theme.forms.label}>Status</p>
+                <div className="mt-1">{getStatusBadge(log)}</div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Status
-                </label>
-                <div className="mt-1">{getStatusBadge(selectedLog.log)}</div>
+                <p className={theme.forms.label}>Duration</p>
+                <p className={cn('mt-1 text-sm', theme.text.standard)}>
+                  {getOperationDuration(log)}
+                </p>
+              </div>
+              <div>
+                <p className={theme.forms.label}>Exit Code</p>
+                <p className={cn('mt-1 text-sm', theme.text.standard)}>{log.exit_code ?? 'N/A'}</p>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {showUser && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                    User
-                  </label>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                    {selectedLog.log.user_name}
-                  </div>
+                  <p className={theme.forms.label}>User</p>
+                  <p className={cn('mt-1 text-sm', theme.text.standard)}>{log.user_name}</p>
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Server
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedLog.log.server_name}
-                </div>
+                <p className={theme.forms.label}>Server</p>
+                <p className={cn('mt-1 text-sm', theme.text.standard)}>{log.server_name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Trigger Source
-                </label>
+                <p className={theme.forms.label}>Trigger Source</p>
                 <div className="mt-1">
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                    👤 Manual
-                  </span>
+                  <span className={theme.selectable.pill}>👤 Manual</span>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Duration
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {getOperationDuration(selectedLog.log)}
-                </div>
+                <p className={theme.forms.label}>Started</p>
+                <p className={cn('mt-1 text-sm', theme.text.standard)}>{log.formatted_date}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Exit Code
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedLog.log.exit_code ?? 'N/A'}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Started
-                </label>
-                <div className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedLog.log.formatted_date}
-                </div>
+                <p className={theme.forms.label}>Messages</p>
+                <p className={cn('mt-1 text-sm', theme.text.subtle)}>
+                  {messages.length} recorded entries
+                </p>
               </div>
             </div>
           </div>
 
-          {selectedLog.log.options && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                Options
-              </label>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
-                <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(selectedLog.log.options);
-                      return JSON.stringify(parsed, null, 2);
-                    } catch (e) {
-                      return selectedLog.log.options;
-                    }
-                  })()}
+          {log.options && (
+            <section className="mt-6">
+              <h3 className={cn('mb-2 text-sm font-semibold', theme.text.strong)}>Options</h3>
+              <div className={cn('rounded-lg p-3', theme.surface.soft)}>
+                <pre className={cn('whitespace-pre-wrap text-xs', theme.text.standard)}>
+                  {toPrettyJson(log.options)}
                 </pre>
               </div>
-            </div>
+            </section>
           )}
 
-          {selectedLog.log.services && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                Services
-              </label>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
-                <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(selectedLog.log.services);
-                      return JSON.stringify(parsed, null, 2);
-                    } catch (e) {
-                      return selectedLog.log.services;
-                    }
-                  })()}
+          {log.services && (
+            <section className="mt-6">
+              <h3 className={cn('mb-2 text-sm font-semibold', theme.text.strong)}>Services</h3>
+              <div className={cn('rounded-lg p-3', theme.surface.soft)}>
+                <pre className={cn('whitespace-pre-wrap text-xs', theme.text.standard)}>
+                  {toPrettyJson(log.services)}
                 </pre>
               </div>
-            </div>
+            </section>
           )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Messages ({selectedLog.messages.length})
-            </label>
-            <div className="bg-black rounded-md p-4 max-h-96 overflow-y-auto">
-              {selectedLog.messages.length === 0 ? (
-                <div className="text-gray-400 text-sm">No messages recorded</div>
+          <section className="mt-6">
+            <h3 className={cn('mb-2 text-sm font-semibold', theme.text.strong)}>Log Output</h3>
+            <div className="max-h-64 overflow-y-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200">
+              {messages.length === 0 ? (
+                <p className={theme.text.subtle}>No log messages recorded.</p>
               ) : (
                 <div className="space-y-1">
-                  {selectedLog.messages.map((message) => (
-                    <div key={message.id} className="text-sm">
-                      <span className="text-gray-400 font-mono text-xs">
-                        [{new Date(message.timestamp).toLocaleTimeString()}]
-                      </span>
-                      <span
-                        className={`ml-2 ${
-                          message.message_type === 'error'
-                            ? 'text-red-400'
-                            : message.message_type === 'stdout'
-                              ? 'text-green-400'
-                              : 'text-white'
-                        }`}
-                      >
-                        {message.message_data}
-                      </span>
-                    </div>
+                  {messages.map((message) => (
+                    <div key={message.id}>{renderMessage(message)}</div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              onClick={onClose}
-              className="bg-gray-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            >
-              Close
-            </button>
-          </div>
+          </section>
         </div>
       </div>
     </div>

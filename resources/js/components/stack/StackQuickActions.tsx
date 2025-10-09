@@ -1,6 +1,16 @@
-import React from 'react';
+import {
+  ArrowDownCircleIcon,
+  ArrowPathIcon,
+  ArrowUpCircleIcon,
+  CloudArrowDownIcon,
+  PlayIcon,
+  StopCircleIcon,
+} from '@heroicons/react/24/outline';
+import type { ComponentType, SVGProps } from 'react';
+import { theme } from '../../theme';
 import { ComposeService } from '../../types/stack';
 import { OperationRequest } from '../../types/operations';
+import { cn } from '../../utils/cn';
 
 interface StackQuickActionsProps {
   services: ComposeService[];
@@ -10,294 +20,158 @@ interface StackQuickActionsProps {
   runningOperation?: string;
 }
 
-export const StackQuickActions: React.FC<StackQuickActionsProps> = ({
+type StackState =
+  | 'no-containers'
+  | 'all-running'
+  | 'all-stopped'
+  | 'all-not-created'
+  | 'mixed-running'
+  | 'mixed-not-created'
+  | 'other';
+
+type ActionKey = 'up' | 'start' | 'stop' | 'restart' | 'pull' | 'down';
+
+const spinner = <span className={theme.effects.spinnerSm} />;
+
+const iconMap: Record<ActionKey, ComponentType<SVGProps<SVGSVGElement>>> = {
+  up: ArrowUpCircleIcon,
+  start: PlayIcon,
+  stop: StopCircleIcon,
+  restart: ArrowPathIcon,
+  pull: CloudArrowDownIcon,
+  down: ArrowDownCircleIcon,
+};
+
+export const StackQuickActions = ({
   services,
   onQuickOperation,
   disabled = false,
   isOperationRunning = false,
   runningOperation,
-}) => {
-  const getStackState = () => {
-    if (!services || services.length === 0) {
-      return 'no-containers';
-    }
+}: StackQuickActionsProps) => {
+  const computeState = (): StackState => {
+    if (!services || services.length === 0) return 'no-containers';
 
-    const allContainers = services.flatMap((service) => service.containers || []);
-    if (allContainers.length === 0) {
-      return 'no-containers';
-    }
+    const allContainers = services.flatMap((service) => service.containers ?? []);
+    if (allContainers.length === 0) return 'no-containers';
 
-    const runningCount = allContainers.filter((c) => c.state === 'running').length;
-    const stoppedCount = allContainers.filter(
-      (c) => c.state === 'stopped' || c.state === 'exited'
+    const runningCount = allContainers.filter((container) => container.state === 'running').length;
+    const stoppedCount = allContainers.filter((container) =>
+      ['stopped', 'exited'].includes(container.state ?? '')
     ).length;
-    const notCreatedCount = allContainers.filter((c) => c.state === 'not created').length;
-    const totalCount = allContainers.length;
+    const notCreatedCount = allContainers.filter(
+      (container) => container.state === 'not created'
+    ).length;
+    const total = allContainers.length;
 
-    if (runningCount === totalCount) {
-      return 'all-running';
-    } else if (stoppedCount === totalCount) {
-      return 'all-stopped';
-    } else if (notCreatedCount === totalCount) {
-      return 'all-not-created';
-    } else if (runningCount > 0) {
-      return 'mixed-running';
-    } else if (notCreatedCount > 0) {
-      return 'mixed-not-created';
-    } else {
-      return 'other';
-    }
+    if (runningCount === total) return 'all-running';
+    if (stoppedCount === total) return 'all-stopped';
+    if (notCreatedCount === total) return 'all-not-created';
+    if (runningCount > 0) return 'mixed-running';
+    if (notCreatedCount > 0) return 'mixed-not-created';
+    return 'other';
   };
 
-  const stackState = getStackState();
-
-  const handleAction = (command: 'start' | 'stop' | 'restart' | 'up' | 'down' | 'pull') => {
-    onQuickOperation({
-      command,
-      options: [],
-      services: [],
-    });
-  };
-
-  const isButtonDisabled = disabled || isOperationRunning;
-  const isThisOperationRunning = (command: string) =>
+  const stackState = computeState();
+  const isBusy = (command: ActionKey) =>
     isOperationRunning && runningOperation === `stack:${command}`;
+  const isDisabled = disabled || isOperationRunning;
+
+  const handleAction = (command: ActionKey) => {
+    onQuickOperation({ command, options: [], services: [] });
+  };
 
   if (stackState === 'no-containers') {
-    return (
-      <div className="flex items-center justify-center text-xs text-gray-400">No containers</div>
-    );
+    return <div className={cn('text-xs', theme.text.subtle)}>No containers</div>;
   }
 
-  return (
-    <div className="flex items-center space-x-1">
-      {/* Up button - always available for applying configuration changes */}
-      <button
-        onClick={() => handleAction('up')}
-        disabled={isButtonDisabled}
-        className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30"
-        title="Deploy/Update stack (applies configuration changes)"
-      >
-        {isThisOperationRunning('up') ? (
-          <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-        ) : (
-          <svg
-            className="w-3 h-3 mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m-7 7l7-7 7 7" />
-          </svg>
-        )}
-        {isThisOperationRunning('up') ? 'Deploying...' : 'Up'}
-      </button>
-
-      {/* Start button - only for stopped containers (not 'not created') */}
-      {(stackState === 'all-stopped' ||
+  const actions: Array<{
+    command: ActionKey;
+    label: string;
+    title: string;
+    visible: boolean;
+    className: string;
+  }> = [
+    {
+      command: 'up' as const,
+      label: 'Up',
+      title: 'Deploy/Update stack (applies configuration changes)',
+      visible: true,
+      className: cn(theme.toolbar.button, theme.toolbar.buttonInfo),
+    },
+    {
+      command: 'start' as const,
+      label: 'Start',
+      title: 'Start stack',
+      visible:
+        stackState === 'all-stopped' ||
         (stackState === 'mixed-running' &&
-          services.some(
-            (s) =>
-              s.containers &&
-              s.containers.some((c) => c.state === 'stopped' || c.state === 'exited')
-          ))) && (
-        <button
-          onClick={() => handleAction('start')}
-          disabled={isButtonDisabled}
-          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30"
-          title="Start stack"
-        >
-          {isThisOperationRunning('start') ? (
-            <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          ) : (
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          )}
-          {isThisOperationRunning('start') ? 'Starting...' : 'Start'}
-        </button>
-      )}
+          services.some((service) =>
+            service.containers?.some((container) =>
+              ['stopped', 'exited'].includes(container.state ?? '')
+            )
+          )),
+      className: cn(theme.toolbar.button, theme.toolbar.buttonSuccess),
+    },
+    {
+      command: 'stop' as const,
+      label: 'Stop',
+      title: 'Stop stack',
+      visible: stackState === 'all-running' || stackState === 'mixed-running',
+      className: cn(theme.toolbar.button, theme.toolbar.buttonDanger),
+    },
+    {
+      command: 'restart' as const,
+      label: 'Restart',
+      title: 'Restart stack',
+      visible: stackState === 'all-running',
+      className: cn(theme.toolbar.button, theme.toolbar.buttonInfo),
+    },
+    {
+      command: 'pull' as const,
+      label: 'Pull',
+      title: 'Pull latest images',
+      visible: stackState !== 'all-not-created',
+      className: cn(theme.toolbar.button, theme.toolbar.buttonSecondary),
+    },
+    {
+      command: 'down' as const,
+      label: 'Down',
+      title: 'Stop and remove stack',
+      visible: stackState === 'all-running' || stackState === 'mixed-running',
+      className: cn(theme.toolbar.button, theme.toolbar.buttonWarning),
+    },
+  ];
 
-      {(stackState === 'all-running' || stackState === 'mixed-running') && (
-        <button
-          onClick={() => handleAction('stop')}
-          disabled={isButtonDisabled}
-          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
-          title="Stop stack"
-        >
-          {isThisOperationRunning('stop') ? (
-            <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          ) : (
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 6h12v12H6z" />
-            </svg>
-          )}
-          {isThisOperationRunning('stop') ? 'Stopping...' : 'Stop'}
-        </button>
-      )}
-
-      {stackState === 'all-running' && (
-        <button
-          onClick={() => handleAction('restart')}
-          disabled={isButtonDisabled}
-          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-          title="Restart stack"
-        >
-          {isThisOperationRunning('restart') ? (
-            <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          ) : (
-            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          )}
-          {isThisOperationRunning('restart') ? 'Restarting...' : 'Restart'}
-        </button>
-      )}
-
-      {/* Down button - available when containers exist (not all 'not created') */}
-      {stackState !== 'all-not-created' &&
-        services.some(
-          (s) => s.containers && s.containers.some((c) => c.state !== 'not created')
-        ) && (
+  return (
+    <div className={theme.toolbar.container}>
+      {actions
+        .filter((action) => action.visible)
+        .map((action) => (
           <button
-            onClick={() => handleAction('down')}
-            disabled={isButtonDisabled}
-            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-orange-700 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/30"
-            title="Stop and remove stack containers"
-          >
-            {isThisOperationRunning('down') ? (
-              <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-            ) : (
-              <svg
-                className="w-3 h-3 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7l-7 7-7-7" />
-              </svg>
+            key={action.command}
+            type="button"
+            onClick={() => handleAction(action.command)}
+            disabled={isDisabled}
+            className={cn(
+              action.className,
+              isDisabled && theme.toolbar.disabled,
+              'flex items-center gap-1'
             )}
-            {isThisOperationRunning('down') ? 'Removing...' : 'Down'}
-          </button>
-        )}
-
-      {/* Pull button - always available for updating images */}
-      <button
-        onClick={() => handleAction('pull')}
-        disabled={isButtonDisabled}
-        className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-900/20 dark:text-gray-400 dark:hover:bg-gray-900/30"
-        title="Pull latest images for stack"
-      >
-        {isThisOperationRunning('pull') ? (
-          <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-        ) : (
-          <svg
-            className="w-3 h-3 mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
+            title={action.title}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-            />
-          </svg>
-        )}
-        {isThisOperationRunning('pull') ? 'Pulling...' : 'Pull'}
-      </button>
+            {(() => {
+              if (isBusy(action.command)) {
+                return spinner;
+              }
+              const Icon = iconMap[action.command];
+              return <Icon className={theme.toolbar.icon} />;
+            })()}
+            <span>{isBusy(action.command) ? `${action.label}…` : action.label}</span>
+          </button>
+        ))}
     </div>
   );
 };
+
+export default StackQuickActions;

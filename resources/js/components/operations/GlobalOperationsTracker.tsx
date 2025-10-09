@@ -11,6 +11,8 @@ import { useOperationsContext } from '../../contexts/OperationsContext';
 import { StreamMessage } from '../../types/operations';
 import { OperationBuilder } from './OperationBuilder';
 import { useOperations } from '../../hooks/useOperations';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface OperationTrackerProps {
   serverid: number;
@@ -56,13 +58,14 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const isConnected = logs.length > 0 || !isComplete;
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+    <div className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                className={cn(
+                  'w-2 h-2 rounded-full flex-shrink-0',
                   isComplete
                     ? isFailed
                       ? 'bg-red-500'
@@ -70,27 +73,25 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
                     : isConnected
                       ? 'bg-blue-500 animate-pulse'
                       : 'bg-yellow-500'
-                }`}
+                )}
               />
-              <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
+              <span className={cn('font-medium text-sm truncate', theme.text.strong)}>
                 {stackname}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">•</span>
-              <code className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded">
+              <span className={cn('text-xs', theme.text.muted)}>•</span>
+              <code
+                className={cn('text-xs px-2 py-1 rounded', theme.surface.code, theme.text.strong)}
+              >
                 {command}
               </code>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <ClockIcon className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {formatDuration(startTime)}
-              </span>
+              <ClockIcon className={cn('w-3 h-3', theme.text.subtle)} />
+              <span className={cn('text-xs', theme.text.muted)}>{formatDuration(startTime)}</span>
               {logs.length > 0 && (
                 <>
-                  <span className="text-xs text-gray-400">•</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {logs.length} messages
-                  </span>
+                  <span className={cn('text-xs', theme.text.subtle)}>•</span>
+                  <span className={cn('text-xs', theme.text.muted)}>{logs.length} messages</span>
                 </>
               )}
             </div>
@@ -99,7 +100,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+              className={cn('p-1 rounded transition-colors', theme.buttons.ghost)}
               title={expanded ? 'Collapse' : 'Expand'}
             >
               {expanded ? (
@@ -111,7 +112,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
             {isComplete && (
               <button
                 onClick={onDismiss}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                className={cn('p-1 rounded transition-colors', theme.buttons.ghost)}
                 title="Dismiss"
               >
                 <XMarkIcon className="w-4 h-4" />
@@ -121,23 +122,25 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
         </div>
 
         {expanded && (
-          <div className="mt-3 bg-gray-900 rounded-lg p-3 max-h-64 overflow-y-auto">
+          <div className="mt-3 bg-slate-950 rounded-lg p-3 max-h-64 overflow-y-auto">
             <div className="font-mono text-xs space-y-1">
               {logs.length === 0 ? (
-                <div className="text-gray-500 text-center py-2">Waiting for output...</div>
+                <div className={cn('text-center py-2', theme.text.subtle)}>
+                  Waiting for output...
+                </div>
               ) : (
                 logs.map((log, idx) => (
                   <div
                     key={idx}
-                    className={`${
+                    className={
                       log.type === 'stderr' || log.type === 'error'
                         ? 'text-red-400'
                         : log.type === 'complete'
                           ? log.success
                             ? 'text-green-400'
                             : 'text-red-400'
-                          : 'text-gray-300'
-                    }`}
+                          : 'text-slate-300'
+                    }
                   >
                     {log.data ||
                       (log.type === 'complete' && (log.success ? '✓ Complete' : '✗ Failed'))}
@@ -251,13 +254,17 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={() => setIsMinimized(false)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-colors ${
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-colors',
             runningOps.length > 0
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : completedOps.length > 0
                 ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-          }`}
+                : cn(
+                    'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600',
+                    theme.text.standard
+                  )
+          )}
         >
           {runningOps.length > 0 ? (
             <>
@@ -285,15 +292,13 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   if (advancedMode) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl h-[80vh] flex flex-col">
+      <div className={theme.modal.overlay}>
+        <div className={cn('w-full max-w-6xl h-[80vh] flex flex-col', theme.modal.content)}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-lg">
+          <div className={theme.modal.header}>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Advanced Operations
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className={theme.modal.title}>Advanced Operations</h3>
+              <p className={theme.modal.subtitle}>
                 {advancedMode.stackname} on Server {advancedMode.serverid}
               </p>
             </div>
@@ -301,15 +306,16 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
               {advancedOps && (
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${
+                    className={cn(
+                      'w-2 h-2 rounded-full',
                       advancedOps.isConnected
                         ? 'bg-green-500'
                         : advancedOps.isConnecting
                           ? 'bg-yellow-500 animate-pulse'
                           : 'bg-red-500'
-                    }`}
+                    )}
                   />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className={cn('text-xs', theme.text.muted)}>
                     {advancedOps.isConnected
                       ? 'Connected'
                       : advancedOps.isConnecting
@@ -318,10 +324,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                   </span>
                 </div>
               )}
-              <button
-                onClick={handleClose}
-                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
-              >
+              <button onClick={handleClose} className={theme.buttons.ghost}>
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
@@ -330,8 +333,8 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           {/* Two column layout: Builder on left, Running ops on right */}
           <div className="flex-1 flex overflow-hidden">
             {/* Operation Builder */}
-            <div className="w-1/2 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 overflow-y-auto p-4">
+              <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
                 Build Custom Operation
               </h4>
               {advancedOps && (
@@ -347,14 +350,14 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
             {/* Running Operations */}
             <div className="w-1/2 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
                   Operations ({runningOps.length} running, {completedOps.length} completed)
                 </h4>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {operations.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                  <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
                     No operations running
                   </div>
                 ) : (
@@ -389,21 +392,30 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
       }}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col relative w-full h-full"
+        className={cn(
+          'rounded-lg shadow-2xl flex flex-col relative w-full h-full',
+          theme.containers.card
+        )}
         style={{
           cursor: isResizing ? 'nwse-resize' : 'default',
           userSelect: isResizing ? 'none' : 'auto',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-lg">
+        <div
+          className={cn(
+            'flex items-center justify-between p-4 border-b rounded-t-lg',
+            theme.surface.muted,
+            'border-slate-200 dark:border-slate-700'
+          )}
+        >
           <div className="flex items-center gap-2">
             {runningOps.length > 0 ? (
-              <ArrowPathIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+              <ArrowPathIcon className={cn('w-5 h-5 animate-spin', theme.text.info)} />
             ) : (
-              <Cog6ToothIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Cog6ToothIcon className={cn('w-5 h-5', theme.text.subtle)} />
             )}
-            <h3 className="font-semibold text-gray-900 dark:text-white">
+            <h3 className={cn('font-semibold', theme.text.strong)}>
               Operations
               {runningOps.length > 0 && ` (${runningOps.length} running)`}
               {completedOps.length > 0 &&
@@ -417,7 +429,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsMinimized(true)}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+              className={theme.buttons.ghost}
               title="Minimize"
             >
               <ChevronDownIcon className="w-4 h-4" />
@@ -428,7 +440,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
         {/* Operations List */}
         <div className="flex-1 overflow-y-auto">
           {operations.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className={cn('p-8 text-center', theme.text.muted)}>
               <Cog6ToothIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">No operations running</p>
             </div>

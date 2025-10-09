@@ -10,6 +10,8 @@ import {
   useDashboardHealth,
   useDashboardActivity,
 } from '../components/dashboard';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 interface DashboardProps {
   title: string;
@@ -35,18 +37,21 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+            <h1
+              className={cn(
+                'text-3xl font-bold bg-clip-text text-transparent',
+                theme.brand.titleGradient
+              )}
+            >
               {title}
             </h1>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
+            <p className={cn('mt-2', theme.text.muted)}>
               Welcome back,{' '}
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {currentUser.username}
-              </span>
+              <span className={cn('font-semibold', theme.text.strong)}>{currentUser.username}</span>
               ! Here's your infrastructure overview.
             </p>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span>Live data</span>
           </div>

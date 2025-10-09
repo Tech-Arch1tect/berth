@@ -1,5 +1,6 @@
-import React from 'react';
+import { theme } from '../../theme';
 import { Volume } from '../../types/stack';
+import { cn } from '../../utils/cn';
 import VolumeCard from './VolumeCard';
 
 interface VolumeListProps {
@@ -8,29 +9,32 @@ interface VolumeListProps {
   error?: Error | null;
 }
 
-const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) => {
+const SkeletonCard = () => (
+  <div className={cn(theme.containers.cardSoft, 'animate-pulse')}>
+    <div className={cn(theme.containers.sectionHeader, 'mb-4')}>
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700" />
+        <div>
+          <div className="mb-2 h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+          <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700" />
+        </div>
+      </div>
+      <div className="h-6 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
+    </div>
+    <div className="space-y-3">
+      <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="h-3 w-3/5 rounded bg-slate-200 dark:bg-slate-700" />
+    </div>
+  </div>
+);
+
+export const VolumeList = ({ volumes, isLoading, error }: VolumeListProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg animate-pulse"
-          >
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                <div>
-                  <div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-1"></div>
-                  <div className="w-16 h-3 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 space-y-3">
-              <div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
-              <div className="w-3/4 h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
-            </div>
-          </div>
+        {[0, 1, 2].map((index) => (
+          <SkeletonCard key={index} />
         ))}
       </div>
     );
@@ -38,10 +42,10 @@ const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) =>
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
           <svg
-            className="w-8 h-8 text-red-400"
+            className="h-8 w-8 text-red-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -54,11 +58,9 @@ const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) =>
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          Error loading volumes
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
-          {error.message || 'An unknown error occurred'}
+        <h3 className={cn('text-lg font-medium', theme.text.strong)}>Error loading volumes</h3>
+        <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+          {error?.message ?? 'An unknown error occurred'}
         </p>
       </div>
     );
@@ -66,10 +68,10 @@ const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) =>
 
   if (!volumes || volumes.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
           <svg
-            className="w-8 h-8 text-gray-400 dark:text-gray-600"
+            className="h-8 w-8 text-slate-400 dark:text-slate-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,9 +84,9 @@ const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) =>
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No volumes found</h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          This stack doesn't have any volumes configured.
+        <h3 className={cn('text-lg font-medium', theme.text.strong)}>No volumes found</h3>
+        <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+          This stack doesn’t have any volumes configured.
         </p>
       </div>
     );
@@ -95,32 +97,30 @@ const VolumeList: React.FC<VolumeListProps> = ({ volumes, isLoading, error }) =>
 
   return (
     <div className="space-y-6">
-      {/* Active Volumes */}
       {activeVolumes.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <section>
+          <h2 className={cn('text-lg font-semibold', theme.text.strong)}>
             Active Volumes ({activeVolumes.length})
-          </h3>
-          <div className="space-y-4">
+          </h2>
+          <div className="mt-4 space-y-4">
             {activeVolumes.map((volume) => (
               <VolumeCard key={volume.name} volume={volume} />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Declared but Not Created Volumes */}
       {declaredVolumes.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <section>
+          <h2 className={cn('text-lg font-semibold', theme.text.strong)}>
             Declared Volumes ({declaredVolumes.length})
-          </h3>
-          <div className="space-y-4">
+          </h2>
+          <div className="mt-4 space-y-4">
             {declaredVolumes.map((volume) => (
               <VolumeCard key={volume.name} volume={volume} />
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

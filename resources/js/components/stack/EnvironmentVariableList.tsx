@@ -1,5 +1,6 @@
-import React from 'react';
+import { theme } from '../../theme';
 import { StackEnvironmentResponse } from '../../types/stack';
+import { cn } from '../../utils/cn';
 import EnvironmentVariableCard from './EnvironmentVariableCard';
 
 interface EnvironmentVariableListProps {
@@ -8,33 +9,30 @@ interface EnvironmentVariableListProps {
   error?: Error | null;
 }
 
-const EnvironmentVariableList: React.FC<EnvironmentVariableListProps> = ({
+const LoadingSkeleton = () => (
+  <div className={cn(theme.containers.cardSoft, 'animate-pulse')}>
+    <div className={cn(theme.containers.sectionHeader, 'mb-4')}>
+      <div className="h-5 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="h-5 w-16 rounded bg-slate-200 dark:bg-slate-700" />
+    </div>
+    <div className="space-y-3">
+      <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="h-3 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+    </div>
+  </div>
+);
+
+export const EnvironmentVariableList = ({
   environmentData,
   isLoading,
   error,
-}) => {
+}: EnvironmentVariableListProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg animate-pulse"
-          >
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                <div>
-                  <div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-1"></div>
-                  <div className="w-16 h-3 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 space-y-3">
-              <div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
-              <div className="w-3/4 h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
-            </div>
-          </div>
+        {[0, 1, 2].map((index) => (
+          <LoadingSkeleton key={index} />
         ))}
       </div>
     );
@@ -42,10 +40,10 @@ const EnvironmentVariableList: React.FC<EnvironmentVariableListProps> = ({
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
           <svg
-            className="w-8 h-8 text-red-400"
+            className="h-8 w-8 text-red-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -58,24 +56,24 @@ const EnvironmentVariableList: React.FC<EnvironmentVariableListProps> = ({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className={cn('text-lg font-medium', theme.text.strong)}>
           Error loading environment variables
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
-          {error.message || 'An unknown error occurred'}
+        <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+          {error?.message ?? 'An unknown error occurred'}
         </p>
       </div>
     );
   }
 
-  const serviceNames = Object.keys(environmentData);
+  const serviceNames = Object.keys(environmentData ?? {});
 
   if (serviceNames.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
           <svg
-            className="w-8 h-8 text-gray-400 dark:text-gray-600"
+            className="h-8 w-8 text-slate-400 dark:text-slate-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,28 +86,26 @@ const EnvironmentVariableList: React.FC<EnvironmentVariableListProps> = ({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className={cn('text-lg font-medium', theme.text.strong)}>
           No environment variables found
         </h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          This stack doesn't have any environment variables configured.
+        <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+          This stack doesn’t have any environment variables configured.
         </p>
       </div>
     );
   }
 
-  const servicesWithVariables = serviceNames.filter(
-    (serviceName) =>
-      environmentData[serviceName] &&
-      environmentData[serviceName].some((env) => env.variables.length > 0)
+  const servicesWithVariables = serviceNames.filter((serviceName) =>
+    environmentData[serviceName]?.some((env) => env.variables.length > 0)
   );
 
   if (servicesWithVariables.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
           <svg
-            className="w-8 h-8 text-gray-400 dark:text-gray-600"
+            className="h-8 w-8 text-slate-400 dark:text-slate-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -122,11 +118,11 @@ const EnvironmentVariableList: React.FC<EnvironmentVariableListProps> = ({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className={cn('text-lg font-medium', theme.text.strong)}>
           No environment variables found
         </h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          This stack doesn't have any environment variables configured.
+        <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+          This stack doesn’t have any environment variables configured.
         </p>
       </div>
     );

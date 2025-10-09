@@ -1,6 +1,8 @@
 import React from 'react';
 import { Network } from '../../types/stack';
 import NetworkCard from './NetworkCard';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface NetworkListProps {
   networks: Network[];
@@ -13,22 +15,19 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg animate-pulse"
-          >
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
+          <div key={i} className={cn('rounded-lg animate-pulse', theme.cards.shell)}>
+            <div className={cn('px-6 py-4', theme.surface.muted)}>
               <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                <div className={cn('w-6 h-6 rounded', theme.surface.code)}></div>
                 <div>
-                  <div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-1"></div>
-                  <div className="w-16 h-3 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                  <div className={cn('w-24 h-4 rounded mb-1', theme.surface.code)}></div>
+                  <div className={cn('w-16 h-3 rounded', theme.surface.code)}></div>
                 </div>
               </div>
             </div>
             <div className="px-6 py-4 space-y-3">
-              <div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
-              <div className="w-3/4 h-4 bg-gray-200 dark:bg-gray-600 rounded"></div>
+              <div className={cn('w-full h-4 rounded', theme.surface.code)}></div>
+              <div className={cn('w-3/4 h-4 rounded', theme.surface.code)}></div>
             </div>
           </div>
         ))}
@@ -39,9 +38,14 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+        <div
+          className={cn(
+            'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
+            theme.intent.danger.surface
+          )}
+        >
           <svg
-            className="w-8 h-8 text-red-400"
+            className={cn('w-8 h-8', theme.intent.danger.icon)}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -54,10 +58,10 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>
           Error loading networks
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
+        <p className={cn('mb-4', theme.text.muted)}>
           {error.message || 'An unknown error occurred'}
         </p>
       </div>
@@ -67,9 +71,14 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
   if (!networks || networks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+        <div
+          className={cn(
+            'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
+            theme.surface.muted
+          )}
+        >
           <svg
-            className="w-8 h-8 text-gray-400 dark:text-gray-600"
+            className={cn('w-8 h-8', theme.text.subtle)}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,12 +91,8 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          No networks found
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          This stack doesn't have any networks configured.
-        </p>
+        <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>No networks found</h3>
+        <p className={theme.text.muted}>This stack doesn't have any networks configured.</p>
       </div>
     );
   }
@@ -100,7 +105,7 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
       {/* Active Networks */}
       {activeNetworks.length > 0 && (
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>
             Active Networks ({activeNetworks.length})
           </h3>
           <div className="space-y-4">
@@ -114,7 +119,7 @@ const NetworkList: React.FC<NetworkListProps> = ({ networks, isLoading, error })
       {/* Declared but Not Created Networks */}
       {declaredNetworks.length > 0 && (
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>
             Declared Networks ({declaredNetworks.length})
           </h3>
           <div className="space-y-4">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileEntry, ChownRequest } from '../../types/files';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ChownModalProps {
   isOpen: boolean;
@@ -46,31 +48,26 @@ export const ChownModal: React.FC<ChownModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose}></div>
+        <div className={theme.modal.overlay} onClick={onClose}></div>
 
-        <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl">
-          <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className={cn(theme.modal.content, 'relative w-full max-w-md')}>
+          <div className={theme.modal.header}>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Change Ownership
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{entry.name}</p>
+              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Change Ownership</h3>
+              <p className={cn('text-sm mt-1', theme.text.muted)}>{entry.name}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
+            <button onClick={onClose} className={theme.buttons.icon}>
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6">
             {/* Current Ownership Display */}
-            <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <div className={cn(theme.surface.muted, 'mb-6 p-4 rounded-lg')}>
+              <div className={cn('text-sm font-medium mb-2', theme.text.standard)}>
                 Current Ownership
               </div>
-              <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+              <div className={cn('space-y-1 text-sm', theme.text.muted)}>
                 <div className="flex items-center justify-between">
                   <span>Owner:</span>
                   <span className="font-mono">
@@ -92,53 +89,55 @@ export const ChownModal: React.FC<ChownModalProps> = ({
 
             {/* Owner Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                New Owner ID
-              </label>
+              <label className={cn(theme.forms.label, 'mb-2')}>New Owner ID</label>
               <input
                 type="number"
                 value={ownerID}
                 onChange={(e) => setOwnerID(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={cn(theme.forms.input, 'w-full')}
                 placeholder="User ID (leave empty to keep current)"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className={cn('text-xs mt-1', theme.text.subtle)}>
                 Enter numeric user ID or leave empty to keep current owner
               </p>
             </div>
 
             {/* Group Input */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                New Group ID
-              </label>
+              <label className={cn(theme.forms.label, 'mb-2')}>New Group ID</label>
               <input
                 type="number"
                 value={groupID}
                 onChange={(e) => setGroupID(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={cn(theme.forms.input, 'w-full')}
                 placeholder="Group ID (leave empty to keep current)"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className={cn('text-xs mt-1', theme.text.subtle)}>
                 Enter numeric group ID or leave empty to keep current group
               </p>
             </div>
 
             {/* Recursive Option for Directories */}
             {entry.is_directory && (
-              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div
+                className={cn(
+                  theme.intent.info.surface,
+                  theme.intent.info.border,
+                  'mb-6 p-4 rounded-lg border'
+                )}
+              >
                 <label className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     checked={recursive}
                     onChange={(e) => setRecursive(e.target.checked)}
-                    className="rounded border-blue-300 dark:border-blue-600 text-blue-600 focus:ring-blue-500"
+                    className={theme.forms.checkbox}
                   />
                   <div>
-                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    <span className={cn('text-sm font-medium', theme.intent.info.textStrong)}>
                       Apply recursively
                     </span>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    <p className={cn('text-xs mt-1', theme.intent.info.textMuted)}>
                       Change ownership for all files and subdirectories within this directory
                     </p>
                   </div>
@@ -146,19 +145,22 @@ export const ChownModal: React.FC<ChownModalProps> = ({
               </div>
             )}
 
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className={theme.modal.footer}>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                className={cn(theme.buttons.ghost, 'disabled:opacity-50')}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || (!ownerID.trim() && !groupID.trim())}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className={cn(
+                  theme.buttons.success,
+                  'disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2'
+                )}
               >
                 {loading && (
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>

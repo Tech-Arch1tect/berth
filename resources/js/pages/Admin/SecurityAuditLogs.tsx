@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface SecurityAuditLog {
   id: number;
@@ -179,75 +181,88 @@ export default function SecurityAuditLogs({ title }: Props) {
 
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Security Audit Logs</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Security Audit Logs</h1>
+          <p className={cn('mt-2', theme.text.muted)}>
             Monitor and review security-relevant events
           </p>
         </div>
 
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-gray-200 dark:border-slate-700">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Events
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+            <div
+              className={cn(
+                theme.surface.panel,
+                'p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700'
+              )}
+            >
+              <div className={cn('text-sm font-medium', theme.text.muted)}>Total Events</div>
+              <div className={cn('mt-1 text-2xl font-semibold', theme.text.strong)}>
                 {stats.total_events.toLocaleString()}
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-gray-200 dark:border-slate-700">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Failed Events
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">
+            <div
+              className={cn(
+                theme.surface.panel,
+                'p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700'
+              )}
+            >
+              <div className={cn('text-sm font-medium', theme.text.muted)}>Failed Events</div>
+              <div className={cn('mt-1 text-2xl font-semibold', theme.text.danger)}>
                 {stats.failed_events.toLocaleString()}
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-gray-200 dark:border-slate-700">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Last 24 Hours
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">
+            <div
+              className={cn(
+                theme.surface.panel,
+                'p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700'
+              )}
+            >
+              <div className={cn('text-sm font-medium', theme.text.muted)}>Last 24 Hours</div>
+              <div className={cn('mt-1 text-2xl font-semibold', theme.text.info)}>
                 {stats.events_last_24_hours.toLocaleString()}
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-gray-200 dark:border-slate-700">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Last 7 Days
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
+            <div
+              className={cn(
+                theme.surface.panel,
+                'p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700'
+              )}
+            >
+              <div className={cn('text-sm font-medium', theme.text.muted)}>Last 7 Days</div>
+              <div className={cn('mt-1 text-2xl font-semibold', theme.text.success)}>
                 {stats.events_last_7_days.toLocaleString()}
               </div>
             </div>
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-6 border border-gray-200 dark:border-slate-700">
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h2>
+        <div
+          className={cn(
+            theme.surface.panel,
+            'rounded-lg shadow mb-6 border border-slate-200 dark:border-slate-700'
+          )}
+        >
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className={cn('text-lg font-semibold', theme.text.strong)}>Filters</h2>
           </div>
           <div className="p-4">
             <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Search
-                </label>
+                <label className={theme.forms.label}>Search</label>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Username, event type..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.input)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Category
-                </label>
+                <label className={theme.forms.label}>Category</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.select)}
                 >
                   <option value="">All Categories</option>
                   <option value="auth">Authentication</option>
@@ -258,13 +273,11 @@ export default function SecurityAuditLogs({ title }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Severity
-                </label>
+                <label className={theme.forms.label}>Severity</label>
                 <select
                   value={selectedSeverity}
                   onChange={(e) => setSelectedSeverity(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.select)}
                 >
                   <option value="">All Severities</option>
                   <option value="critical">Critical</option>
@@ -274,13 +287,11 @@ export default function SecurityAuditLogs({ title }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Status
-                </label>
+                <label className={theme.forms.label}>Status</label>
                 <select
                   value={selectedSuccess}
                   onChange={(e) => setSelectedSuccess(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.select)}
                 >
                   <option value="">All</option>
                   <option value="true">Success</option>
@@ -288,99 +299,97 @@ export default function SecurityAuditLogs({ title }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Start Date
-                </label>
+                <label className={theme.forms.label}>Start Date</label>
                 <input
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.input)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  End Date
-                </label>
+                <label className={theme.forms.label}>End Date</label>
                 <input
                   type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn('w-full', theme.forms.input)}
                 />
               </div>
             </form>
             <div className="mt-4 flex gap-2">
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600"
-              >
+              <button onClick={handleReset} className={theme.buttons.secondary}>
                 Reset Filters
               </button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden border border-gray-200 dark:border-slate-700">
+        <div
+          className={cn(
+            theme.surface.panel,
+            'rounded-lg shadow overflow-hidden border border-slate-200 dark:border-slate-700'
+          )}
+        >
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-              <thead className="bg-gray-50 dark:bg-slate-900">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+              <thead className={theme.table.head}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Time
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Event
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Severity
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Actor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Target
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     IP
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+              <tbody
+                className={cn(theme.table.body, 'divide-y divide-slate-200 dark:divide-slate-700')}
+              >
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={9}
-                      className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
-                    >
+                    <td colSpan={9} className={cn('px-6 py-4 text-center', theme.text.subtle)}>
                       Loading...
                     </td>
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={9}
-                      className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
-                    >
+                    <td colSpan={9} className={cn('px-6 py-4 text-center', theme.text.subtle)}>
                       No logs found
                     </td>
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                      <td
+                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
+                      >
                         {new Date(log.created_at).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      <td
+                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
+                      >
                         {log.event_type}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -397,10 +406,14 @@ export default function SecurityAuditLogs({ title }: Props) {
                           {log.severity}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      <td
+                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
+                      >
                         {log.actor_username || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      <td
+                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
+                      >
                         {log.target_name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -414,13 +427,13 @@ export default function SecurityAuditLogs({ title }: Props) {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.subtle)}>
                         {log.actor_ip}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => fetchLogDetails(log.id)}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                          className={cn('hover:underline', theme.text.info)}
                         >
                           Details
                         </button>
@@ -433,8 +446,8 @@ export default function SecurityAuditLogs({ title }: Props) {
           </div>
 
           {totalPages > 1 && (
-            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <div className={cn('text-sm', theme.text.standard)}>
                 Showing {(currentPage - 1) * perPage + 1} to{' '}
                 {Math.min(currentPage * perPage, total)} of {total} results
               </div>
@@ -442,17 +455,23 @@ export default function SecurityAuditLogs({ title }: Props) {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600"
+                  className={cn(
+                    'px-3 py-1 text-sm rounded disabled:opacity-50 disabled:cursor-not-allowed',
+                    theme.buttons.secondary
+                  )}
                 >
                   Previous
                 </button>
-                <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+                <span className={cn('px-3 py-1 text-sm', theme.text.standard)}>
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600"
+                  className={cn(
+                    'px-3 py-1 text-sm rounded disabled:opacity-50 disabled:cursor-not-allowed',
+                    theme.buttons.secondary
+                  )}
                 >
                   Next
                 </button>
@@ -463,13 +482,13 @@ export default function SecurityAuditLogs({ title }: Props) {
       </div>
 
       {showDetails && selectedLog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
-            <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Event Details</h3>
+        <div className={theme.modal.overlay}>
+          <div className={cn(theme.modal.content, 'max-w-3xl w-full max-h-[90vh] overflow-y-auto')}>
+            <div className={cn(theme.modal.header, 'flex justify-between items-center')}>
+              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Event Details</h3>
               <button
                 onClick={() => setShowDetails(false)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                className={cn('hover:opacity-70', theme.text.subtle)}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -484,39 +503,39 @@ export default function SecurityAuditLogs({ title }: Props) {
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Event Type
-                  </div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Event Type</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {selectedLog.event_type}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Category
-                  </div>
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Category</div>
                   <div className="mt-1">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(selectedLog.event_category)}`}
+                      className={cn(
+                        'px-2 py-1 text-xs font-medium rounded',
+                        getCategoryColor(selectedLog.event_category)
+                      )}
                     >
                       {selectedLog.event_category}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Severity
-                  </div>
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Severity</div>
                   <div className="mt-1">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(selectedLog.severity)}`}
+                      className={cn(
+                        'px-2 py-1 text-xs font-medium rounded',
+                        getSeverityColor(selectedLog.severity)
+                      )}
                     >
                       {selectedLog.severity}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</div>
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Status</div>
                   <div className="mt-1">
                     {selectedLog.success ? (
                       <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
@@ -530,57 +549,55 @@ export default function SecurityAuditLogs({ title }: Props) {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Actor</div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {selectedLog.actor_username || '-'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Actor IP
-                  </div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor IP</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {selectedLog.actor_ip}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Target</div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Target</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {selectedLog.target_name || '-'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Target Type
-                  </div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Target Type</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {selectedLog.target_type || '-'}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Timestamp
-                  </div>
-                  <div className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Timestamp</div>
+                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
                     {new Date(selectedLog.created_at).toLocaleString()}
                   </div>
                 </div>
                 {selectedLog.failure_reason && (
                   <div className="col-span-2">
-                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <div className={cn('text-sm font-medium', theme.text.subtle)}>
                       Failure Reason
                     </div>
-                    <div className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    <div className={cn('mt-1 text-sm', theme.text.danger)}>
                       {selectedLog.failure_reason}
                     </div>
                   </div>
                 )}
                 {selectedLog.metadata && selectedLog.metadata !== '{}' && (
                   <div className="col-span-2">
-                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Metadata
-                    </div>
-                    <pre className="mt-1 text-xs text-gray-900 dark:text-gray-300 bg-gray-50 dark:bg-slate-900 p-3 rounded overflow-x-auto">
+                    <div className={cn('text-sm font-medium', theme.text.subtle)}>Metadata</div>
+                    <pre
+                      className={cn(
+                        'mt-1 text-xs p-3 rounded overflow-x-auto',
+                        theme.surface.code,
+                        theme.text.standard
+                      )}
+                    >
                       {JSON.stringify(JSON.parse(selectedLog.metadata), null, 2)}
                     </pre>
                   </div>

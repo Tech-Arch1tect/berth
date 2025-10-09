@@ -11,6 +11,8 @@ import {
   InformationCircleIcon,
   CodeBracketIcon,
 } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ContainerImageCardProps {
   imageDetails: ContainerImageDetails;
@@ -31,7 +33,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className={theme.cards.shell}>
       {/* Header */}
       <div className="p-6 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-start justify-between">
@@ -41,33 +43,26 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
             </div>
 
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                {container_name}
-              </h3>
+              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>{container_name}</h3>
               <div className="flex items-center space-x-2 mt-1">
-                <span className="text-sm text-slate-600 dark:text-slate-400">📦</span>
-                <code className="text-sm font-mono text-slate-700 dark:text-slate-300">
-                  {image_name}
-                </code>
+                <span className={cn('text-sm', theme.text.muted)}>📦</span>
+                <code className={cn('text-sm font-mono', theme.text.standard)}>{image_name}</code>
                 <button
                   onClick={() => copyToClipboard(image_name)}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                  className={theme.buttons.ghost}
                   title="Copy image name"
                 >
-                  <DocumentDuplicateIcon className="w-3 h-3 text-slate-400" />
+                  <DocumentDuplicateIcon className={cn('w-3 h-3', theme.text.subtle)} />
                 </button>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={() => setIsExpanded(!isExpanded)} className={theme.buttons.ghost}>
             {isExpanded ? (
-              <ChevronDownIcon className="w-5 h-5 text-slate-500" />
+              <ChevronDownIcon className={cn('w-5 h-5', theme.text.subtle)} />
             ) : (
-              <ChevronRightIcon className="w-5 h-5 text-slate-500" />
+              <ChevronRightIcon className={cn('w-5 h-5', theme.text.subtle)} />
             )}
           </button>
         </div>
@@ -75,27 +70,27 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
         {/* Basic Image Info - Always Visible */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Architecture</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">
+            <p className={cn('text-xs', theme.text.muted)}>Architecture</p>
+            <p className={cn('text-sm font-medium', theme.text.strong)}>
               {image_info.architecture}
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">OS</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">{image_info.os}</p>
+            <p className={cn('text-xs', theme.text.muted)}>OS</p>
+            <p className={cn('text-sm font-medium', theme.text.strong)}>{image_info.os}</p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Size</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">
+            <p className={cn('text-xs', theme.text.muted)}>Size</p>
+            <p className={cn('text-sm font-medium', theme.text.strong)}>
               {formatImageSize(image_info.size)}
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Created</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">
+            <p className={cn('text-xs', theme.text.muted)}>Created</p>
+            <p className={cn('text-sm font-medium', theme.text.strong)}>
               {formatCreatedTime(image_info.created)}
             </p>
           </div>
@@ -108,41 +103,39 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
           {/* Additional Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Image ID</p>
+              <p className={cn('text-xs', theme.text.muted)}>Image ID</p>
               <div className="flex items-center space-x-2">
-                <code className="text-sm font-mono text-slate-700 dark:text-slate-300">
+                <code className={cn('text-sm font-mono', theme.text.standard)}>
                   {truncateImageId(imageDetails.image_id)}
                 </code>
                 <button
                   onClick={() => copyToClipboard(imageDetails.image_id)}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                  className={theme.buttons.ghost}
                   title="Copy full image ID"
                 >
-                  <DocumentDuplicateIcon className="w-3 h-3 text-slate-400" />
+                  <DocumentDuplicateIcon className={cn('w-3 h-3', theme.text.subtle)} />
                 </button>
               </div>
             </div>
 
             {image_info.author && (
               <div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Author</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300">{image_info.author}</p>
+                <p className={cn('text-xs', theme.text.muted)}>Author</p>
+                <p className={cn('text-sm', theme.text.standard)}>{image_info.author}</p>
               </div>
             )}
 
             {image_info.docker_version && (
               <div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Docker Version</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  {image_info.docker_version}
-                </p>
+                <p className={cn('text-xs', theme.text.muted)}>Docker Version</p>
+                <p className={cn('text-sm', theme.text.standard)}>{image_info.docker_version}</p>
               </div>
             )}
 
             {image_info.rootfs.layers && (
               <div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Layers</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
+                <p className={cn('text-xs', theme.text.muted)}>Layers</p>
+                <p className={cn('text-sm', theme.text.standard)}>
                   {image_info.rootfs.layers.length} layers
                 </p>
               </div>
@@ -151,8 +144,13 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
 
           {/* Base Image Information */}
           {(image_info.parent || image_info.repo_tags || image_info.repo_digests) && (
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-              <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-3 flex items-center space-x-2">
+            <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h4
+                className={cn(
+                  'text-sm font-medium mb-3 flex items-center space-x-2',
+                  theme.text.strong
+                )}
+              >
                 <InformationCircleIcon className="w-4 h-4" />
                 <span>Base Image Information</span>
               </h4>
@@ -160,17 +158,17 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
               <div className="grid grid-cols-1 gap-4">
                 {image_info.parent && (
                   <div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Parent Image</p>
+                    <p className={cn('text-xs', theme.text.muted)}>Parent Image</p>
                     <div className="flex items-center space-x-2">
-                      <code className="text-sm font-mono text-slate-700 dark:text-slate-300">
+                      <code className={cn('text-sm font-mono', theme.text.standard)}>
                         {truncateImageId(image_info.parent)}
                       </code>
                       <button
                         onClick={() => image_info.parent && copyToClipboard(image_info.parent)}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                        className={theme.buttons.ghost}
                         title="Copy parent image ID"
                       >
-                        <DocumentDuplicateIcon className="w-3 h-3 text-slate-400" />
+                        <DocumentDuplicateIcon className={cn('w-3 h-3', theme.text.subtle)} />
                       </button>
                     </div>
                   </div>
@@ -178,7 +176,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
 
                 {image_info.repo_tags && image_info.repo_tags.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Repository Tags</p>
+                    <p className={cn('text-xs', theme.text.muted)}>Repository Tags</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {image_info.repo_tags.map((tag, index) => (
                         <span
@@ -194,19 +192,19 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
 
                 {image_info.repo_digests && image_info.repo_digests.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Repository Digests</p>
+                    <p className={cn('text-xs', theme.text.muted)}>Repository Digests</p>
                     <div className="space-y-1 mt-1">
                       {image_info.repo_digests.map((digest, index) => (
                         <div key={index} className="flex items-center space-x-2">
-                          <code className="text-xs font-mono text-slate-600 dark:text-slate-400 break-all">
+                          <code className={cn('text-xs font-mono break-all', theme.text.muted)}>
                             {digest}
                           </code>
                           <button
                             onClick={() => copyToClipboard(digest)}
-                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors flex-shrink-0"
+                            className={cn(theme.buttons.ghost, 'flex-shrink-0')}
                             title="Copy digest"
                           >
-                            <DocumentDuplicateIcon className="w-3 h-3 text-slate-400" />
+                            <DocumentDuplicateIcon className={cn('w-3 h-3', theme.text.subtle)} />
                           </button>
                         </div>
                       ))}
@@ -225,7 +223,11 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
             <div>
               <button
                 onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center space-x-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                className={cn(
+                  'flex items-center space-x-2 text-sm font-medium transition-colors',
+                  theme.text.standard,
+                  'hover:' + theme.text.strong
+                )}
               >
                 <CodeBracketIcon className="w-4 h-4" />
                 <span>Dockerfile History ({image_history.length} layers)</span>
@@ -237,7 +239,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
               </button>
 
               {showHistory && (
-                <div className="mt-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                <div className={cn('mt-4 rounded-lg p-4', theme.surface.muted)}>
                   <div className="space-y-1 max-h-96 overflow-y-auto">
                     {image_history.map((layer, index) => (
                       <ImageHistoryLayer key={layer.id || index} layer={layer} />

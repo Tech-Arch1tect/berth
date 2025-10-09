@@ -23,6 +23,8 @@ import {
   ClockIcon as ClockIconSolid,
   ExclamationTriangleIcon as ExclamationTriangleIconSolid,
 } from '@heroicons/react/24/solid';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface CompactServiceCardProps {
   service: ComposeService;
@@ -137,7 +139,7 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
   const totalContainers = service.containers?.length || 0;
 
   return (
-    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200">
+    <div className={theme.cards.translucent}>
       {/* Service Header - Compact */}
       <div className="px-4 py-3 border-b border-slate-100/50 dark:border-slate-700/30">
         <div className="flex items-center justify-between">
@@ -148,20 +150,18 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-slate-900 dark:text-white truncate">
-                  {service.name}
-                </h3>
+                <h3 className={cn('font-semibold truncate', theme.text.strong)}>{service.name}</h3>
                 <div className="flex items-center space-x-1 text-xs">
                   <div
                     className={`w-2 h-2 rounded-full ${runningContainers.length === totalContainers ? 'bg-emerald-500' : runningContainers.length > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
                   />
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">
+                  <span className={cn('font-medium', theme.text.muted)}>
                     {runningContainers.length}/{totalContainers}
                   </span>
                 </div>
               </div>
               {service.image && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate mt-0.5">
+                <div className={cn('text-xs font-mono truncate mt-0.5', theme.text.subtle)}>
                   {service.image}
                 </div>
               )}
@@ -177,12 +177,12 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                   setInternalIsExpanded(!internalIsExpanded);
                 }
               }}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className={theme.buttons.ghost}
             >
               {isExpanded ? (
-                <ChevronUpIcon className="w-4 h-4 text-slate-500" />
+                <ChevronUpIcon className={cn('w-4 h-4', theme.text.subtle)} />
               ) : (
-                <ChevronDownIcon className="w-4 h-4 text-slate-500" />
+                <ChevronDownIcon className={cn('w-4 h-4', theme.text.subtle)} />
               )}
             </button>
 
@@ -218,7 +218,7 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-slate-900 dark:text-white text-sm truncate">
+                      <span className={cn('font-medium text-sm truncate', theme.text.strong)}>
                         {container.name}
                       </span>
                       <span
@@ -227,9 +227,7 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                         {statusInfo.label}
                       </span>
                     </div>
-                    {uptime && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400">Up {uptime}</div>
-                    )}
+                    {uptime && <div className={cn('text-xs', theme.text.subtle)}>Up {uptime}</div>}
                   </div>
                 </div>
 
@@ -238,13 +236,13 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     {container.ports.slice(0, 2).map((port, portIndex) => (
                       <span
                         key={portIndex}
-                        className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-mono"
+                        className={cn('px-2 py-1 rounded text-xs font-mono', theme.surface.code)}
                       >
                         {port.public ? `${port.public}:${port.private}` : port.private}
                       </span>
                     ))}
                     {container.ports.length > 2 && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className={cn('text-xs', theme.text.subtle)}>
                         +{container.ports.length - 2}
                       </span>
                     )}
@@ -257,15 +255,18 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="border-t border-slate-100/50 dark:border-slate-700/30 p-4 space-y-4 bg-slate-50/30 dark:bg-slate-800/30">
+        <div
+          className={cn(
+            'p-4 space-y-4 border-t border-slate-100/50 dark:border-slate-700/30',
+            theme.surface.muted
+          )}
+        >
           {service.containers &&
             service.containers.map((container, index) => (
               <div key={`details-${container.name || index}`} className="space-y-3">
                 <div className="flex items-center space-x-2 pb-2 border-b border-slate-200/30 dark:border-slate-700/30">
-                  <ServerIcon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-white">
-                    {container.name}
-                  </span>
+                  <ServerIcon className={cn('w-4 h-4', theme.text.muted)} />
+                  <span className={cn('font-medium', theme.text.strong)}>{container.name}</span>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
@@ -275,11 +276,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     <div className="space-y-2">
                       {container.restart_policy && (
                         <div className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                             <ArrowPathIcon className="w-3 h-3" />
                             <span>Restart:</span>
                           </div>
-                          <span className="font-medium text-slate-900 dark:text-white">
+                          <span className={cn('font-medium', theme.text.strong)}>
                             {container.restart_policy.name}
                           </span>
                         </div>
@@ -287,11 +288,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
                       {container.user && (
                         <div className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                             <UserIcon className="w-3 h-3" />
                             <span>User:</span>
                           </div>
-                          <span className="font-mono text-slate-900 dark:text-white">
+                          <span className={cn('font-mono', theme.text.strong)}>
                             {container.user}
                           </span>
                         </div>
@@ -299,11 +300,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
                       {container.working_dir && (
                         <div className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                             <FolderIcon className="w-3 h-3" />
                             <span>WorkDir:</span>
                           </div>
-                          <span className="font-mono text-slate-900 dark:text-white truncate">
+                          <span className={cn('font-mono truncate', theme.text.strong)}>
                             {container.working_dir}
                           </span>
                         </div>
@@ -314,22 +315,22 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                         <>
                           {container.resource_limits.memory && (
                             <div className="flex items-center justify-between py-1">
-                              <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                              <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                                 <CpuChipIcon className="w-3 h-3" />
                                 <span>Memory:</span>
                               </div>
-                              <span className="font-medium text-slate-900 dark:text-white">
+                              <span className={cn('font-medium', theme.text.strong)}>
                                 {formatMemory(container.resource_limits.memory)}
                               </span>
                             </div>
                           )}
                           {container.resource_limits.cpu_shares && (
                             <div className="flex items-center justify-between py-1">
-                              <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                              <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                                 <CpuChipIcon className="w-3 h-3" />
                                 <span>CPU:</span>
                               </div>
-                              <span className="font-medium text-slate-900 dark:text-white">
+                              <span className={cn('font-medium', theme.text.strong)}>
                                 {container.resource_limits.cpu_shares} shares
                               </span>
                             </div>
@@ -341,24 +342,32 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     {/* Networks */}
                     {container.networks && container.networks.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 font-medium">
+                        <div
+                          className={cn(
+                            'flex items-center space-x-2 font-medium',
+                            theme.text.standard
+                          )}
+                        >
                           <GlobeAltIcon className="w-4 h-4" />
                           <span>Networks</span>
                         </div>
                         {container.networks.map((network, netIndex) => (
                           <div key={netIndex} className="pl-6 space-y-1">
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-600 dark:text-slate-400">
-                                {network.name}
-                              </span>
+                              <span className={theme.text.muted}>{network.name}</span>
                               {network.ip_address && (
-                                <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-900 dark:text-white">
+                                <span
+                                  className={cn(
+                                    'font-mono text-xs px-2 py-1 rounded',
+                                    theme.surface.code
+                                  )}
+                                >
                                   {network.ip_address}
                                 </span>
                               )}
                             </div>
                             {network.aliases && network.aliases.length > 0 && (
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                              <div className={cn('text-xs', theme.text.subtle)}>
                                 Aliases: {network.aliases.join(', ')}
                               </div>
                             )}
@@ -374,11 +383,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     <div className="space-y-2">
                       {container.created && (
                         <div className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                             <ClockIcon className="w-3 h-3" />
                             <span>Created:</span>
                           </div>
-                          <span className="font-mono text-xs text-slate-900 dark:text-white">
+                          <span className={cn('font-mono text-xs', theme.text.strong)}>
                             {new Date(container.created).toLocaleDateString()}{' '}
                             {new Date(container.created).toLocaleTimeString()}
                           </span>
@@ -387,11 +396,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
 
                       {container.started && (
                         <div className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
                             <ClockIcon className="w-3 h-3" />
                             <span>Started:</span>
                           </div>
-                          <span className="font-mono text-xs text-slate-900 dark:text-white">
+                          <span className={cn('font-mono text-xs', theme.text.strong)}>
                             {new Date(container.started).toLocaleDateString()}{' '}
                             {new Date(container.started).toLocaleTimeString()}
                           </span>
@@ -402,7 +411,12 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     {/* Mounts */}
                     {container.mounts && container.mounts.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 font-medium">
+                        <div
+                          className={cn(
+                            'flex items-center space-x-2 font-medium',
+                            theme.text.standard
+                          )}
+                        >
                           <CircleStackIcon className="w-4 h-4" />
                           <span>Mounts</span>
                         </div>
@@ -422,12 +436,12 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                                   {mount.type}
                                 </span>
                                 <span
-                                  className={`text-xs ${mount.rw ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                                  className={`text-xs ${mount.rw ? theme.text.success : theme.text.danger}`}
                                 >
                                   {mount.rw ? 'RW' : 'RO'}
                                 </span>
                               </div>
-                              <div className="text-xs font-mono text-slate-600 dark:text-slate-400 break-all">
+                              <div className={cn('text-xs font-mono break-all', theme.text.muted)}>
                                 {mount.source} → {mount.destination}
                               </div>
                             </div>
@@ -439,11 +453,21 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                     {/* Command */}
                     {container.command && container.command.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 font-medium">
+                        <div
+                          className={cn(
+                            'flex items-center space-x-2 font-medium',
+                            theme.text.standard
+                          )}
+                        >
                           <CommandLineIcon className="w-4 h-4" />
                           <span>Command</span>
                         </div>
-                        <div className="font-mono text-xs bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded break-all">
+                        <div
+                          className={cn(
+                            'font-mono text-xs p-2 rounded break-all',
+                            theme.surface.code
+                          )}
+                        >
                           {container.command.join(' ')}
                         </div>
                       </div>

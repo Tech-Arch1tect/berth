@@ -2,6 +2,8 @@ import { useForm, Head, Link } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface LoginProps {
   csrfToken?: string;
@@ -36,21 +38,18 @@ export default function Login({
       <Head title="Login" />
       <div className="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className={cn('mt-6 text-center text-3xl font-extrabold', theme.text.strong)}>
             Sign in to your account
           </h2>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className={theme.cards.auth}>
             <FlashMessages className="mb-4" />
 
             <form className="space-y-6" onSubmit={submit}>
               <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-                >
+                <label htmlFor="username" className={cn(theme.forms.label, 'mb-2')}>
                   Username
                 </label>
                 <input
@@ -60,11 +59,11 @@ export default function Login({
                   required
                   value={data.username}
                   onChange={(e) => setData('username', e.target.value)}
-                  className="block w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-600/50 rounded-xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 backdrop-blur-sm"
+                  className={theme.forms.input}
                   placeholder="Enter your username"
                 />
                 {errors.username && (
-                  <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center space-x-1">
+                  <p className={cn('mt-2 text-sm flex items-center space-x-1', theme.text.danger)}>
                     <span>⚠️</span>
                     <span>{errors.username}</span>
                   </p>
@@ -72,10 +71,7 @@ export default function Login({
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-                >
+                <label htmlFor="password" className={cn(theme.forms.label, 'mb-2')}>
                   Password
                 </label>
                 <input
@@ -85,11 +81,11 @@ export default function Login({
                   required
                   value={data.password}
                   onChange={(e) => setData('password', e.target.value)}
-                  className="block w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-600/50 rounded-xl placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 backdrop-blur-sm"
+                  className={theme.forms.input}
                   placeholder="Enter your password"
                 />
                 {errors.password && (
-                  <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center space-x-1">
+                  <p className={cn('mt-2 text-sm flex items-center space-x-1', theme.text.danger)}>
                     <span>⚠️</span>
                     <span>{errors.password}</span>
                   </p>
@@ -97,19 +93,18 @@ export default function Login({
               </div>
 
               {rememberMeEnabled && (
-                <div className="flex items-center space-x-3 p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                <div
+                  className={cn('flex items-center space-x-3 p-4 rounded-xl', theme.surface.muted)}
+                >
                   <input
                     id="remember_me"
                     name="remember_me"
                     type="checkbox"
                     checked={data.remember_me}
                     onChange={(e) => setData('remember_me', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-0 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded transition-colors"
+                    className={theme.forms.checkbox}
                   />
-                  <label
-                    htmlFor="remember_me"
-                    className="text-sm text-slate-700 dark:text-slate-300"
-                  >
+                  <label htmlFor="remember_me" className={cn('text-sm', theme.text.standard)}>
                     Remember me for {rememberMeDays || 30} days
                   </label>
                 </div>
@@ -119,7 +114,7 @@ export default function Login({
                 <button
                   type="submit"
                   disabled={processing}
-                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className={cn('w-full flex justify-center items-center', theme.buttons.primary)}
                 >
                   {processing ? (
                     <>
@@ -136,25 +131,31 @@ export default function Login({
                 <div className="text-center">
                   <Link
                     href="/auth/password-reset"
-                    className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className={cn(
+                      'text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors',
+                      theme.text.muted
+                    )}
                   >
                     Forgot your password?
                   </Link>
                 </div>
 
                 {emailVerificationEnabled && (
-                  <div className="text-center p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-200/30 dark:border-blue-800/30">
+                  <div className={cn('text-center p-4 rounded-xl', theme.intent.info.surface)}>
                     <form method="POST" action="/auth/resend-verification" className="space-y-3">
                       <input type="hidden" name="_token" value={csrfToken} />
                       <input
                         type="email"
                         name="email"
                         placeholder="Enter email to resend verification"
-                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className={cn('w-full text-sm', theme.forms.input)}
                       />
                       <button
                         type="submit"
-                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors"
+                        className={cn(
+                          'text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors',
+                          theme.text.info
+                        )}
                       >
                         Resend verification email
                       </button>

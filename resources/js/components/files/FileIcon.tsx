@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../utils/cn';
 
 interface FileIconProps {
   fileName: string;
@@ -13,7 +14,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
 }) => {
   if (isDirectory) {
     return (
-      <svg className={`${className} text-blue-500`} fill="currentColor" viewBox="0 0 20 20">
+      <svg className={cn(className, 'text-blue-500')} fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
       </svg>
     );
@@ -28,7 +29,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       case 'jsx':
       case 'tsx':
         return (
-          <svg className={`${className} text-yellow-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-yellow-500')} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm1 0v12h12V4H4z"
@@ -43,7 +44,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       case 'yaml':
       case 'xml':
         return (
-          <svg className={`${className} text-orange-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-orange-500')} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm1 0v12h12V4H4z"
@@ -57,7 +58,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       case 'txt':
       case 'log':
         return (
-          <svg className={`${className} text-gray-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-gray-500')} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2v8h12V6H4z"
@@ -74,7 +75,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       case 'svg':
       case 'webp':
         return (
-          <svg className={`${className} text-green-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-green-500')} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
@@ -88,7 +89,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       case 'gz':
       case '7z':
         return (
-          <svg className={`${className} text-purple-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-purple-500')} fill="currentColor" viewBox="0 0 20 20">
             <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" />
             <path
               fillRule="evenodd"
@@ -100,7 +101,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
 
       case 'pdf':
         return (
-          <svg className={`${className} text-red-500`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={cn(className, 'text-red-500')} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2v8h12V6H4z"
@@ -113,7 +114,7 @@ export const FileIcon: React.FC<FileIconProps> = ({
       default:
         return (
           <svg
-            className={`${className} text-gray-400`}
+            className={cn(className, 'text-gray-400')}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

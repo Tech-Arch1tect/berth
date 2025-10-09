@@ -1,6 +1,8 @@
 import { Head, useForm } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Props {
   title: string;
@@ -31,10 +33,8 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
 
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Two-Factor Authentication
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <h2 className={cn('text-2xl font-bold', theme.text.strong)}>Two-Factor Authentication</h2>
+          <p className={cn('mt-2 text-sm', theme.text.muted)}>
             Enter the 6-digit code from your authenticator app
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
               type="text"
               value={data.code}
               onChange={(e) => setData('code', e.target.value)}
-              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm text-center text-2xl tracking-widest"
+              className={cn('text-center text-2xl tracking-widest', theme.forms.input)}
               placeholder="123456"
               maxLength={6}
               pattern="[0-9]{6}"
@@ -60,7 +60,7 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
               required
             />
             {errors.code && (
-              <div className="mt-2 text-red-600 dark:text-red-400 text-sm">{errors.code}</div>
+              <div className={cn('mt-2 text-sm', theme.text.danger)}>{errors.code}</div>
             )}
           </div>
 
@@ -68,14 +68,14 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
             <button
               type="submit"
               disabled={processing}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 dark:bg-indigo-700 hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-indigo-500 disabled:opacity-50"
+              className={cn('w-full flex justify-center', theme.buttons.primary)}
             >
               {processing ? 'Verifying...' : 'Verify Code'}
             </button>
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={cn('text-sm', theme.text.muted)}>
               Having trouble? Contact support for assistance.
             </p>
           </div>

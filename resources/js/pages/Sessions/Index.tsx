@@ -14,6 +14,8 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
 } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Session {
   id: number;
@@ -88,7 +90,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   };
 
   const getDeviceIcon = (session: Session) => {
-    const iconClass = 'h-8 w-8 text-gray-600 dark:text-gray-400';
+    const iconClass = cn('h-8 w-8', theme.text.muted);
 
     // Return icon based on device type and browser
     if (session.bot) return <CpuChipIcon className={iconClass} />;
@@ -108,11 +110,13 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
 
   const getDeviceTypeColor = (session: Session) => {
     if (session.bot)
-      return 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/20';
-    if (session.mobile) return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20';
-    if (session.tablet)
-      return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20';
-    return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900/20';
+      return cn(
+        theme.badges.tag.base,
+        'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400'
+      );
+    if (session.mobile) return cn(theme.badges.tag.base, theme.badges.tag.info);
+    if (session.tablet) return cn(theme.badges.tag.base, theme.badges.tag.success);
+    return cn(theme.badges.tag.base, theme.badges.tag.neutral);
   };
 
   return (
@@ -121,12 +125,12 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Active Sessions</h1>
+            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
             {sessions.filter((s) => !s.current).length > 0 && (
               <button
                 onClick={revokeAllOthers}
                 disabled={processing}
-                className="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+                className={cn(theme.buttons.danger, processing && 'opacity-50')}
               >
                 Revoke All Others
               </button>
@@ -135,8 +139,8 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
 
           <FlashMessages className="mb-6" />
 
-          <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+          <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
+            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
               {sessions.map((session) => (
                 <li key={session.id} className="px-6 py-4">
                   <div className="flex items-center justify-between">
@@ -144,24 +148,20 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                       <div className="flex-shrink-0">{getDeviceIcon(session)}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className={cn('text-sm font-medium', theme.text.strong)}>
                             {session.browser}
                           </p>
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDeviceTypeColor(session)}`}
-                          >
-                            {session.device_type}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">
+                          <span className={getDeviceTypeColor(session)}>{session.device_type}</span>
+                          <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
                             {session.type.toUpperCase()}
                           </span>
                           {session.current && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
+                            <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
                               Current Session
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                        <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
                           <p>
                             <span className="font-medium">Operating System:</span> {session.os}
                           </p>
@@ -195,7 +195,11 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                         <button
                           onClick={() => revokeSession(session.id)}
                           disabled={processing}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30 disabled:opacity-50"
+                          className={cn(
+                            'inline-flex items-center text-sm leading-4',
+                            theme.buttons.danger,
+                            processing && 'opacity-50'
+                          )}
                         >
                           Revoke
                         </button>
@@ -209,7 +213,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
 
           {sessions.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-gray-500 dark:text-gray-400">
+              <div className={theme.text.muted}>
                 <p className="text-lg">No active sessions found.</p>
                 <p className="text-sm mt-2">
                   This might indicate a configuration issue with session tracking.
@@ -218,13 +222,13 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
             </div>
           )}
 
-          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
             <div className="flex">
               <div className="flex-shrink-0">
-                <InformationCircleIcon className="h-5 w-5 text-blue-400" />
+                <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
               </div>
               <div className="ml-3">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className={cn('text-sm', theme.intent.info.textStrong)}>
                   <strong>Security Note:</strong> If you see any sessions you don't recognise,
                   revoke them immediately. You can also revoke all other sessions if you suspect
                   unauthorised access.

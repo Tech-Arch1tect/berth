@@ -5,6 +5,8 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useTerminal } from '../../hooks/useTerminal';
 import toast from 'react-hot-toast';
 import '@xterm/xterm/css/xterm.css';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface TerminalProps {
   serverid: number;
@@ -189,13 +191,13 @@ export const Terminal: React.FC<TerminalProps> = ({
   const getStatusColor = () => {
     switch (connectionStatus) {
       case 'connected':
-        return session.isConnected ? 'text-green-500' : 'text-yellow-500';
+        return session.isConnected ? theme.text.success : theme.text.warning;
       case 'connecting':
-        return 'text-yellow-500';
+        return theme.text.warning;
       case 'error':
-        return 'text-red-500';
+        return theme.text.danger;
       default:
-        return 'text-gray-500';
+        return theme.text.muted;
     }
   };
 
@@ -216,23 +218,23 @@ export const Terminal: React.FC<TerminalProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+    <div className={`flex flex-col h-full bg-slate-900 rounded-lg overflow-hidden ${className}`}>
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-            <span className="text-sm font-medium text-gray-200">
+            <div className={cn('w-2 h-2 rounded-full', getStatusColor())} />
+            <span className={cn('text-sm font-medium', theme.text.standard)}>
               {serviceName}
-              {containerName && <span className="text-gray-400">:{containerName}</span>}
+              {containerName && <span className={theme.text.muted}>:{containerName}</span>}
             </span>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className={`text-xs ${getStatusColor()}`}>{getStatusText()}</span>
+          <span className={cn('text-xs', getStatusColor())}>{getStatusText()}</span>
           {session.isConnected && (
             <button
               onClick={closeTerminal}
-              className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors"
+              className={cn('text-xs px-2 py-1 rounded transition-colors', theme.buttons.danger)}
             >
               Disconnect
             </button>

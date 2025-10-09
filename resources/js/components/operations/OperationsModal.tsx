@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useState } from 'react';
 import { useOperations } from '../../hooks/useOperations';
-import { OperationPresets } from './OperationPresets';
+import { OperationRequest } from '../../types/operations';
+import { theme } from '../../theme';
+import { cn } from '../../utils/cn';
 import { OperationBuilder } from './OperationBuilder';
 import { OperationLogs } from './OperationLogs';
-import { OperationRequest } from '../../types/operations';
+import { OperationPresets } from './OperationPresets';
 
 interface OperationsModalProps {
   isOpen: boolean;
@@ -34,8 +37,8 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
         setActiveTab('logs');
         onOperationComplete?.(success, exitCode);
       },
-      onError: (error) => {
-        console.error('Operation error:', error);
+      onError: (err) => {
+        console.error('Operation error:', err);
       },
     });
 
@@ -48,7 +51,6 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
   const handleOperationStart = async (operation: OperationRequest) => {
     try {
       await startOperation(operation);
-
       setActiveTab('logs');
     } catch (err) {
       console.error('Failed to start operation:', err);
@@ -58,52 +60,58 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
 
   const handleClose = () => {
     if (operationStatus.isRunning) {
-      if (!confirm('An operation is currently running. Are you sure you want to close?')) {
+      const confirmed = confirm(
+        'An operation is currently running. Are you sure you want to close?'
+      );
+      if (!confirmed) {
         return;
       }
     }
     onClose();
   };
 
-  const handleConnect = () => {
-    connect();
-  };
+  if (!isOpen) {
+    return null;
+  }
 
-  if (!isOpen) return null;
+  const connectionStatus = isConnected ? 'connected' : isConnecting ? 'connecting' : 'disconnected';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className={theme.modal.overlay}>
+      <div className={theme.modal.content} role="dialog" aria-modal="true">
+        <header className={theme.modal.header}>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Stack Operations
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <h2 className={theme.modal.title}>Stack Operations</h2>
+            <p className={theme.modal.subtitle}>
               {stackname} on Server {serverid}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Connection Status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isConnected
-                    ? 'bg-green-500'
-                    : isConnecting
-                      ? 'bg-yellow-500 animate-pulse'
-                      : 'bg-red-500'
-                }`}
-              ></div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span
+                className={cn(
+                  theme.badges.dot.base,
+                  connectionStatus === 'connected'
+                    ? theme.badges.dot.success
+                    : connectionStatus === 'connecting'
+                      ? theme.badges.dot.warning
+                      : theme.badges.dot.danger,
+                  connectionStatus === 'connecting' && 'animate-pulse'
+                )}
+              />
+              <span className={theme.text.subtle}>
+                {connectionStatus === 'connected'
+                  ? 'Connected'
+                  : connectionStatus === 'connecting'
+                    ? 'Connecting…'
+                    : 'Disconnected'}
               </span>
               {!isConnected && !isConnecting && (
                 <button
-                  onClick={handleConnect}
-                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  type="button"
+                  onClick={connect}
+                  className={cn(theme.buttons.subtle, 'text-xs')}
                 >
                   Reconnect
                 </button>
@@ -111,74 +119,65 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               disabled={operationStatus.isRunning}
+              className={cn(theme.buttons.icon, operationStatus.isRunning && 'opacity-60')}
+              aria-label="Close operations modal"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Error Banner */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-3 dark:bg-red-900/20 dark:border-red-600">
-            <div className="text-sm text-red-700 dark:text-red-400">
-              <strong>Connection Error:</strong> {error}
-            </div>
+          <div className={cn(theme.alerts.base, theme.alerts.variants.error, 'mx-6 mt-4')}>
+            <strong>Connection Error:</strong> {error}
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <nav className={cn(theme.tabs.container, 'px-6 mt-4')}>
           <button
+            type="button"
             onClick={() => setActiveTab('presets')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 ${
-              activeTab === 'presets'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
+            className={cn(
+              theme.tabs.trigger,
+              activeTab === 'presets' ? theme.tabs.active : theme.tabs.inactive
+            )}
           >
             Quick Actions
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('builder')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 ${
-              activeTab === 'builder'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
+            className={cn(
+              theme.tabs.trigger,
+              activeTab === 'builder' ? theme.tabs.active : theme.tabs.inactive
+            )}
           >
             Custom Operation
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('logs')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 relative ${
-              activeTab === 'logs'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
+            className={cn(
+              theme.tabs.trigger,
+              'relative',
+              activeTab === 'logs' ? theme.tabs.active : theme.tabs.inactive
+            )}
           >
             Logs
             {operationStatus.logs.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className={theme.tabs.badge}>
                 {operationStatus.logs.length > 99 ? '99+' : operationStatus.logs.length}
               </span>
             )}
           </button>
-        </div>
+        </nav>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden">
           {activeTab === 'presets' && (
-            <div className="p-6 h-full overflow-auto">
+            <div className="h-full overflow-auto px-6 py-6">
               <OperationPresets
                 onOperationSelect={handleOperationStart}
                 disabled={operationStatus.isRunning || !isConnected}
@@ -187,7 +186,7 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
           )}
 
           {activeTab === 'builder' && (
-            <div className="p-6 h-full overflow-auto">
+            <div className="h-full overflow-auto px-6 py-6">
               <OperationBuilder
                 onOperationBuild={handleOperationStart}
                 disabled={operationStatus.isRunning || !isConnected}
@@ -197,24 +196,21 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
           )}
 
           {activeTab === 'logs' && (
-            <div className="h-full">
+            <div className="h-full px-6 py-6">
               <OperationLogs logs={operationStatus.logs} isRunning={operationStatus.isRunning} />
             </div>
           )}
-        </div>
+        </main>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <footer className={theme.modal.footer}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-sm">
               {operationStatus.isRunning && (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Running: {operationStatus.command}
-                  </span>
+                  <span className={theme.effects.spinner} />
+                  <span className={theme.text.subtle}>Running: {operationStatus.command}</span>
                   {operationStatus.startTime && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className={cn('text-xs', theme.text.subtle)}>
                       Started {operationStatus.startTime.toLocaleTimeString()}
                     </span>
                   )}
@@ -225,28 +221,33 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
             <div className="flex items-center gap-2">
               {operationStatus.logs.length > 0 && (
                 <button
+                  type="button"
                   onClick={clearLogs}
                   disabled={operationStatus.isRunning}
-                  className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 disabled:opacity-50"
+                  className={cn(
+                    theme.buttons.subtle,
+                    'text-sm',
+                    operationStatus.isRunning && 'opacity-60'
+                  )}
                 >
                   Clear Logs
                 </button>
               )}
 
               <button
+                type="button"
                 onClick={handleClose}
                 disabled={operationStatus.isRunning}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  operationStatus.isRunning
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
-                    : 'bg-gray-600 text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600'
-                }`}
+                className={cn(
+                  theme.buttons.secondary,
+                  operationStatus.isRunning ? 'opacity-60 cursor-not-allowed' : ''
+                )}
               >
-                {operationStatus.isRunning ? 'Operation Running...' : 'Close'}
+                {operationStatus.isRunning ? 'Operation Running…' : 'Close'}
               </button>
             </div>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   );

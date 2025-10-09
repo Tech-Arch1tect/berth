@@ -3,6 +3,8 @@ import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { ServerNavigation } from '../../components/ServerNavigation';
 import { Server } from '../../types/server';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 import {
   useMaintenanceInfo,
   useDockerPrune,
@@ -78,70 +80,51 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
   const getStatusBadge = (status: string, isUnused?: boolean, isDangling?: boolean) => {
     if (isDangling) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-          Dangling
-        </span>
-      );
+      return <span className={cn(theme.badges.tag.base, theme.badges.tag.warning)}>Dangling</span>;
     }
     if (isUnused) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-          Unused
-        </span>
-      );
+      return <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>Unused</span>;
     }
 
-    const statusMap: { [key: string]: { bg: string; text: string; label: string } } = {
+    const statusMap: { [key: string]: { className: string; label: string } } = {
       running: {
-        bg: 'bg-green-100 dark:bg-green-900',
-        text: 'text-green-800 dark:text-green-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.success),
         label: 'Running',
       },
       exited: {
-        bg: 'bg-red-100 dark:bg-red-900',
-        text: 'text-red-800 dark:text-red-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.danger),
         label: 'Exited',
       },
       created: {
-        bg: 'bg-blue-100 dark:bg-blue-900',
-        text: 'text-blue-800 dark:text-blue-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.info),
         label: 'Created',
       },
       paused: {
-        bg: 'bg-yellow-100 dark:bg-yellow-900',
-        text: 'text-yellow-800 dark:text-yellow-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.warning),
         label: 'Paused',
       },
       restarting: {
-        bg: 'bg-purple-100 dark:bg-purple-900',
-        text: 'text-purple-800 dark:text-purple-200',
+        className: cn(
+          theme.badges.tag.base,
+          'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+        ),
         label: 'Restarting',
       },
       removing: {
-        bg: 'bg-orange-100 dark:bg-orange-900',
-        text: 'text-orange-800 dark:text-orange-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.warning),
         label: 'Removing',
       },
       dead: {
-        bg: 'bg-gray-100 dark:bg-gray-900',
-        text: 'text-gray-800 dark:text-gray-200',
+        className: cn(theme.badges.tag.base, theme.badges.tag.neutral),
         label: 'Dead',
       },
     };
 
     const statusInfo = statusMap[status.toLowerCase()] || {
-      bg: 'bg-gray-100 dark:bg-gray-900',
-      text: 'text-gray-800 dark:text-gray-200',
+      className: cn(theme.badges.tag.base, theme.badges.tag.neutral),
       label: status,
     };
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.text}`}
-      >
-        {statusInfo.label}
-      </span>
-    );
+    return <span className={statusInfo.className}>{statusInfo.label}</span>;
   };
 
   const handleDelete = async () => {
@@ -289,7 +272,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       <Layout>
         <Head title={title} />
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <div className={theme.effects.spinner}></div>
         </div>
       </Layout>
     );
@@ -300,17 +283,14 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       <Layout>
         <Head title={title} />
         <div className="text-center py-12">
-          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <ExclamationTriangleIcon className={cn('h-12 w-12 mx-auto mb-4', theme.text.danger)} />
+          <h2 className={cn('text-lg font-semibold mb-2', theme.text.strong)}>
             Failed to load maintenance information
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className={cn('mb-4', theme.text.muted)}>
             Unable to connect to the Docker maintenance service.
           </p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-700"
-          >
+          <button onClick={() => refetch()} className={theme.buttons.primary}>
             Retry
           </button>
         </div>
@@ -328,17 +308,24 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           <li>
             <Link
               href="/"
-              className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+              className={cn(
+                theme.text.subtle,
+                'hover:text-slate-700 dark:hover:text-slate-300 transition-colors'
+              )}
             >
               <HomeIcon className="h-5 w-5" />
             </Link>
           </li>
           <li>
             <div className="flex items-center">
-              <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
               <Link
                 href={`/servers/${serverid}/stacks`}
-                className="ml-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                className={cn(
+                  'ml-4 text-sm font-medium transition-colors',
+                  theme.text.muted,
+                  'hover:text-slate-700 dark:hover:text-slate-300'
+                )}
               >
                 {server.name}
               </Link>
@@ -346,8 +333,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           </li>
           <li>
             <div className="flex items-center">
-              <ChevronRightIcon className="h-5 w-5 text-gray-400" />
-              <span className="ml-4 text-sm font-medium text-gray-900 dark:text-white">
+              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
+              <span className={cn('ml-4 text-sm font-medium', theme.text.strong)}>
                 Docker Maintenance
               </span>
             </div>
@@ -361,15 +348,13 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       </div>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Docker Maintenance</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Manage Docker resources on {server.name}
-        </p>
+        <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Docker Maintenance</h1>
+        <p className={cn('mt-2', theme.text.muted)}>Manage Docker resources on {server.name}</p>
       </div>
 
       {/* Tabs */}
       <div className="mb-8">
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className={cn('border-b', theme.cards.sectionDivider)}>
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Overview', icon: ChartBarIcon },
@@ -384,11 +369,16 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`${
+                  className={cn(
+                    'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center transition-colors',
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                      : cn(
+                          'border-transparent',
+                          theme.text.muted,
+                          'hover:text-slate-700 dark:hover:text-slate-300'
+                        )
+                  )}
                 >
                   <Icon className="h-5 w-5 mr-2" />
                   {tab.name}
@@ -406,10 +396,10 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           {activeTab === 'overview' && (
             <>
               {/* System Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                    <ServerIcon className="h-5 w-5 text-blue-600 mr-2" />
+              <div className={cn(theme.containers.panel, 'rounded-lg mb-8')}>
+                <div className={cn('px-6 py-4', theme.cards.sectionDivider)}>
+                  <h3 className={cn('text-lg font-medium flex items-center', theme.text.strong)}>
+                    <ServerIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
                     System Information
                   </h3>
                 </div>
@@ -417,89 +407,81 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-3">
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <dt className={cn('text-sm font-medium', theme.text.muted)}>
                           Docker Version
                         </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dd className={cn('text-sm font-mono', theme.text.strong)}>
                           {maintenanceInfo.system_info.version}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          API Version
-                        </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">API Version</dt>
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.api_version}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">
                           Server Version
                         </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.server_version}
                         </dd>
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Architecture
-                        </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">Architecture</dt>
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.architecture}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">
                           Operating System
                         </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.os}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">
                           Kernel Version
                         </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.kernel_version}
                         </dd>
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          CPU Cores
-                        </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">CPU Cores</dt>
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.ncpu}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Total Memory
-                        </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">Total Memory</dt>
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {formatBytes(maintenanceInfo.system_info.total_memory)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-sm font-medium {cn(theme.text.muted)}">
                           Storage Driver
                         </dt>
-                        <dd className="text-sm text-gray-900 dark:text-white font-mono">
+                        <dd className="text-sm {cn(theme.text.strong)} font-mono">
                           {maintenanceInfo.system_info.storage_driver}
                         </dd>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="mt-6 pt-6 border-t {cn(theme.cards.sectionDivider)}">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <dt className="text-sm font-medium {cn(theme.text.muted)}">
                         Docker Root Directory
                       </dt>
-                      <dd className="text-sm text-gray-900 dark:text-white font-mono break-all">
+                      <dd className="text-sm {cn(theme.text.strong)} font-mono break-all">
                         {maintenanceInfo.system_info.docker_root_dir}
                       </dd>
                     </div>
@@ -509,12 +491,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
               {/* Resource Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
                   <div className="flex items-center">
                     <DocumentDuplicateIcon className="h-8 w-8 text-blue-600" />
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Images</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium {cn(theme.text.muted)}">Images</p>
+                      <p className="text-2xl font-bold {cn(theme.text.strong)}">
                         {maintenanceInfo.image_summary.total_count}
                       </p>
                       {maintenanceInfo.image_summary.unused_count > 0 && (
@@ -525,14 +507,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
                   <div className="flex items-center">
                     <CircleStackIcon className="h-8 w-8 text-green-600" />
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Containers
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium {cn(theme.text.muted)}">Containers</p>
+                      <p className="text-2xl font-bold {cn(theme.text.strong)}">
                         {maintenanceInfo.container_summary.total_count}
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-400">
@@ -541,14 +521,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
                   <div className="flex items-center">
                     <FolderIcon className="h-8 w-8 text-purple-600" />
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Volumes
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium {cn(theme.text.muted)}">Volumes</p>
+                      <p className="text-2xl font-bold {cn(theme.text.strong)}">
                         {maintenanceInfo.volume_summary.total_count}
                       </p>
                       {maintenanceInfo.volume_summary.unused_count > 0 && (
@@ -559,14 +537,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
                   <div className="flex items-center">
                     <GlobeAltIcon className="h-8 w-8 text-indigo-600" />
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Networks
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium {cn(theme.text.muted)}">Networks</p>
+                      <p className="text-2xl font-bold {cn(theme.text.strong)}">
                         {maintenanceInfo.network_summary.total_count}
                       </p>
                       {maintenanceInfo.network_summary.unused_count > 0 && (
@@ -580,8 +556,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
               </div>
 
               {/* Disk Usage Breakdown */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+              <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)} mb-8">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} mb-4 flex items-center">
                   <ChartBarIcon className="h-5 w-5 text-purple-600 mr-2" />
                   Detailed Storage Usage
                 </h3>
@@ -590,58 +566,58 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                     <div className="text-2xl font-bold text-blue-600">
                       {formatBytes(maintenanceInfo.disk_usage.images_size)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Images</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Images</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
                       {formatBytes(maintenanceInfo.disk_usage.containers_size)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Containers</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Containers</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
                       {formatBytes(maintenanceInfo.disk_usage.volumes_size)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Volumes</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Volumes</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-600">
                       {formatBytes(maintenanceInfo.disk_usage.layers_size)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Layers</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Layers</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-indigo-600">
                       {formatBytes(maintenanceInfo.disk_usage.build_cache_size)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Build Cache</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Build Cache</div>
                   </div>
                 </div>
               </div>
 
               {/* Resource Summary */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
+                  <h3 className="text-lg font-medium {cn(theme.text.strong)} mb-4 flex items-center">
                     <DocumentDuplicateIcon className="h-5 w-5 text-blue-600 mr-2" />
                     Images Summary
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Total Images:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="{cn(theme.text.muted)}">Total Images:</span>
+                      <span className="font-medium {cn(theme.text.strong)}">
                         {formatNumber(maintenanceInfo.image_summary.total_count)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Dangling Images:</span>
+                      <span className="{cn(theme.text.muted)}">Dangling Images:</span>
                       <span className="font-medium text-orange-600">
                         {formatNumber(maintenanceInfo.image_summary.dangling_count)} (
                         {formatBytes(maintenanceInfo.image_summary.dangling_size)})
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Unused Images:</span>
+                      <span className="{cn(theme.text.muted)}">Unused Images:</span>
                       <span className="font-medium text-red-600">
                         {formatNumber(maintenanceInfo.image_summary.unused_count)} (
                         {formatBytes(maintenanceInfo.image_summary.unused_size)})
@@ -650,27 +626,27 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
+                  <h3 className="text-lg font-medium {cn(theme.text.strong)} mb-4 flex items-center">
                     <CircleStackIcon className="h-5 w-5 text-green-600 mr-2" />
                     Container Summary
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Running:</span>
+                      <span className="{cn(theme.text.muted)}">Running:</span>
                       <span className="font-medium text-green-600">
                         {formatNumber(maintenanceInfo.container_summary.running_count)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Stopped:</span>
+                      <span className="{cn(theme.text.muted)}">Stopped:</span>
                       <span className="font-medium text-orange-600">
                         {formatNumber(maintenanceInfo.container_summary.stopped_count)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="{cn(theme.text.muted)}">Total:</span>
+                      <span className="font-medium {cn(theme.text.strong)}">
                         {formatNumber(maintenanceInfo.container_summary.total_count)}
                       </span>
                     </div>
@@ -682,56 +658,56 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
           {/* Images Tab */}
           {activeTab === 'images' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+            <div className="{cn(theme.containers.panel)} rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)} overflow-hidden">
+              <div className="px-6 py-4 border-b {cn(theme.cards.sectionDivider)}">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} flex items-center">
                   <DocumentDuplicateIcon className="h-5 w-5 text-blue-600 mr-2" />
                   Docker Images ({maintenanceInfo.image_summary.images.length})
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="{cn(theme.table.head)}">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Repository
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Tag
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Image ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Size
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="{cn(theme.containers.panel)} divide-y divide-slate-200 dark:divide-slate-800">
                     {maintenanceInfo.image_summary.images.map((image) => (
-                      <tr key={image.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <tr key={image.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium {cn(theme.text.strong)}">
                           {image.repository || '<none>'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {image.tag || '<none>'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)} font-mono">
                           {image.id.substring(0, 12)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatBytes(image.size)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatDate(image.created)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -746,7 +722,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                                 name: `${image.repository}:${image.tag}`,
                               })
                             }
-                            className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+                            className="{cn(theme.text.danger, 'hover:opacity-75')}"
                             disabled={deleteMutation.isPending}
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -762,59 +738,59 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
           {/* Containers Tab */}
           {activeTab === 'containers' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+            <div className="{cn(theme.containers.panel)} rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)} overflow-hidden">
+              <div className="px-6 py-4 border-b {cn(theme.cards.sectionDivider)}">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} flex items-center">
                   <CircleStackIcon className="h-5 w-5 text-green-600 mr-2" />
                   Docker Containers ({maintenanceInfo.container_summary.containers.length})
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="{cn(theme.table.head)}">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Container ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Image
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         State
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Size
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="{cn(theme.containers.panel)} divide-y divide-slate-200 dark:divide-slate-800">
                     {maintenanceInfo.container_summary.containers.map((container) => (
-                      <tr key={container.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <tr key={container.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium {cn(theme.text.strong)}">
                           {container.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)} font-mono">
                           {container.id.substring(0, 12)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {container.image}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(container.state)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {container.status}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatBytes(container.size)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -826,7 +802,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                                 name: container.name,
                               })
                             }
-                            className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+                            className="{cn(theme.text.danger, 'hover:opacity-75')}"
                             disabled={deleteMutation.isPending}
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -842,56 +818,56 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
           {/* Volumes Tab */}
           {activeTab === 'volumes' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+            <div className="{cn(theme.containers.panel)} rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)} overflow-hidden">
+              <div className="px-6 py-4 border-b {cn(theme.cards.sectionDivider)}">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} flex items-center">
                   <FolderIcon className="h-5 w-5 text-purple-600 mr-2" />
                   Docker Volumes ({maintenanceInfo.volume_summary.volumes.length})
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="{cn(theme.table.head)}">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Driver
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Mountpoint
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Size
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="{cn(theme.containers.panel)} divide-y divide-slate-200 dark:divide-slate-800">
                     {maintenanceInfo.volume_summary.volumes.map((volume) => (
-                      <tr key={volume.name} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <tr key={volume.name} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium {cn(theme.text.strong)}">
                           {volume.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {volume.driver}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)} max-w-xs truncate">
                           {volume.mountpoint}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatBytes(volume.size)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatDate(volume.created)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -906,7 +882,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                                 name: volume.name,
                               })
                             }
-                            className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+                            className="{cn(theme.text.danger, 'hover:opacity-75')}"
                             disabled={deleteMutation.isPending}
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -922,47 +898,47 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
           {/* Networks Tab */}
           {activeTab === 'networks' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+            <div className="{cn(theme.containers.panel)} rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)} overflow-hidden">
+              <div className="px-6 py-4 border-b {cn(theme.cards.sectionDivider)}">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} flex items-center">
                   <GlobeAltIcon className="h-5 w-5 text-indigo-600 mr-2" />
                   Docker Networks ({maintenanceInfo.network_summary.networks.length})
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="{cn(theme.table.head)}">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Network ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Driver
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Scope
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Subnet
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="{cn(theme.containers.panel)} divide-y divide-slate-200 dark:divide-slate-800">
                     {maintenanceInfo.network_summary.networks.map((network) => (
-                      <tr key={network.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <tr key={network.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium {cn(theme.text.strong)}">
                           {network.name}
                           {network.internal && (
                             <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -970,19 +946,19 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)} font-mono">
                           {network.id.substring(0, 12)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {network.driver}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {network.scope}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)} font-mono">
                           {network.subnet || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm {cn(theme.text.muted)}">
                           {formatDate(network.created)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -997,7 +973,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                                 name: network.name,
                               })
                             }
-                            className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+                            className="{cn(theme.text.danger, 'hover:opacity-75')}"
                             disabled={
                               deleteMutation.isPending ||
                               ['bridge', 'host', 'none'].includes(network.name)
@@ -1018,8 +994,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           {activeTab === 'actions' && (
             <div className="space-y-6">
               {/* Cleanup Type Selection */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6 flex items-center">
+              <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
+                <h3 className="text-lg font-medium {cn(theme.text.strong)} mb-6 flex items-center">
                   <TrashIcon className="h-5 w-5 text-red-600 mr-2" />
                   Docker Cleanup Actions
                 </h3>
@@ -1065,7 +1041,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                           isSelected
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                            : '{cn(theme.cards.sectionDivider)} hover:border-gray-300 dark:hover:border-gray-600 {cn(theme.containers.panel)}'
                         }`}
                       >
                         <div className="flex items-start space-x-3">
@@ -1073,7 +1049,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                             className={`h-6 w-6 mt-1 ${
                               isSelected
                                 ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-gray-600 dark:text-gray-400'
+                                : '{cn(theme.text.muted)}'
                             }`}
                           />
                           <div className="flex-1 min-w-0">
@@ -1081,19 +1057,17 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                               className={`font-medium ${
                                 isSelected
                                   ? 'text-blue-900 dark:text-blue-100'
-                                  : 'text-gray-900 dark:text-white'
+                                  : '{cn(theme.text.strong)}'
                               }`}
                             >
                               {name}
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              {description}
-                            </p>
+                            <p className="text-sm {cn(theme.text.muted)} mt-1">{description}</p>
                             {stats && (
                               <div className="mt-2 text-xs space-y-1">
                                 <div className="flex justify-between">
-                                  <span className="text-gray-500 dark:text-gray-400">Total:</span>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  <span className="{cn(theme.text.muted)}">Total:</span>
+                                  <span className="font-medium text-gray-700 dark:text-slate-300">
                                     {stats.total}
                                   </span>
                                 </div>
@@ -1109,8 +1083,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                                 )}
                                 {stats.size > 0 && (
                                   <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Size:</span>
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                                    <span className="{cn(theme.text.muted)}">Size:</span>
+                                    <span className="font-medium text-gray-700 dark:text-slate-300">
                                       {formatBytes(stats.size)}
                                     </span>
                                   </div>
@@ -1143,7 +1117,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                       />
                       <label
                         htmlFor="prune-all"
-                        className="ml-2 block text-sm text-gray-900 dark:text-white"
+                        className="ml-2 block text-sm {cn(theme.text.strong)}"
                       >
                         {selectedPruneType === 'images'
                           ? 'Remove all unused images (not just dangling)'
@@ -1206,8 +1180,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">
+              <div className="{cn(theme.containers.panel)} p-6 rounded-lg shadow-sm border {cn(theme.cards.sectionDivider)}">
+                <h4 className="text-md font-medium {cn(theme.text.strong)} mb-4">
                   System Overview
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1215,25 +1189,25 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
                     <div className="text-2xl font-bold text-blue-600">
                       {maintenanceInfo?.image_summary.total_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Images</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Images</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
                       {maintenanceInfo?.container_summary.total_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Containers</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Containers</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
                       {maintenanceInfo?.volume_summary.total_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Volumes</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Volumes</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-indigo-600">
                       {maintenanceInfo?.network_summary.total_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Networks</div>
+                    <div className="text-sm {cn(theme.text.muted)}">Networks</div>
                   </div>
                 </div>
               </div>
@@ -1245,13 +1219,11 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       {/* Prune Confirmation Modal */}
       {showConfirm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div className="relative top-20 mx-auto p-5 border {cn(theme.cards.sectionDivider)} w-96 shadow-lg rounded-md {cn(theme.containers.panel)}">
             <div className="mt-3 text-center">
               <ExclamationTriangleIcon className="w-16 h-16 text-red-600 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-4">
-                Confirm Cleanup
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <h3 className="text-lg font-medium {cn(theme.text.strong)} mt-4">Confirm Cleanup</h3>
+              <p className="text-sm {cn(theme.text.muted)} mt-2">
                 {getPruneDescription(selectedPruneType)}
               </p>
               <p className="text-sm text-red-600 mt-2 font-medium">This action cannot be undone.</p>
@@ -1279,16 +1251,14 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div className="relative top-20 mx-auto p-5 border {cn(theme.cards.sectionDivider)} w-96 shadow-lg rounded-md {cn(theme.containers.panel)}">
             <div className="mt-3 text-center">
               <ExclamationTriangleIcon className="w-16 h-16 text-red-600 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-4">
-                Confirm Deletion
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <h3 className="text-lg font-medium {cn(theme.text.strong)} mt-4">Confirm Deletion</h3>
+              <p className="text-sm {cn(theme.text.muted)} mt-2">
                 Are you sure you want to delete this {deleteConfirm.type}?
               </p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white mt-2">
+              <p className="text-sm font-medium {cn(theme.text.strong)} mt-2">
                 {deleteConfirm.name || deleteConfirm.id}
               </p>
               <p className="text-sm text-red-600 mt-2 font-medium">This action cannot be undone.</p>

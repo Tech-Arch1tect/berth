@@ -1,6 +1,4 @@
 import { Link } from '@inertiajs/react';
-import { Server } from '../types/server';
-import { useServerStatistics } from '../hooks/useServerStatistics';
 import {
   ServerIcon,
   ChevronRightIcon,
@@ -8,10 +6,27 @@ import {
   NoSymbolIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
+import { Server } from '../types/server';
+import { useServerStatistics } from '../hooks/useServerStatistics';
 
 interface ServerCardProps {
   server: Server;
 }
+
+const statusConfig = {
+  online: {
+    text: 'Online',
+    icon: WifiIcon,
+    pulse: true,
+  },
+  offline: {
+    text: 'Offline',
+    icon: NoSymbolIcon,
+    pulse: false,
+  },
+} as const;
 
 export default function ServerCard({ server }: ServerCardProps) {
   const {
@@ -19,20 +34,6 @@ export default function ServerCard({ server }: ServerCardProps) {
     isLoading: statisticsLoading,
     error: statisticsError,
   } = useServerStatistics(server.id);
-  const statusConfig = {
-    online: {
-      color: 'emerald',
-      text: 'Online',
-      icon: WifiIcon,
-      pulse: true,
-    },
-    offline: {
-      color: 'slate',
-      text: 'Offline',
-      icon: NoSymbolIcon,
-      pulse: false,
-    },
-  };
 
   const status = server.is_active ? 'online' : 'offline';
   const config = statusConfig[status];
@@ -40,23 +41,23 @@ export default function ServerCard({ server }: ServerCardProps) {
   return (
     <Link
       href={`/servers/${server.id}/stacks`}
-      className="group relative block bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/20 hover:border-slate-300/50 dark:hover:border-slate-600/50 transition-all duration-300 cursor-pointer hover:scale-[1.02]"
+      className={cn(
+        theme.cards.shell,
+        theme.cards.translucent,
+        theme.cards.interactive,
+        theme.cards.lift,
+        theme.cards.padded
+      )}
     >
       {/* Status indicator */}
-      <div className="absolute top-4 right-4">
-        <div
-          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-            status === 'online'
-              ? 'bg-emerald-100/70 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-              : 'bg-slate-100/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-300'
-          }`}
-        >
+      <div className="absolute right-4 top-4">
+        <div className={cn(theme.badges.status.base, theme.badges.status[status])}>
           <div
-            className={`w-2 h-2 rounded-full ${
-              status === 'online'
-                ? 'bg-emerald-500' + (config.pulse ? ' animate-pulse' : '')
-                : 'bg-slate-400'
-            }`}
+            className={cn(
+              theme.badges.statusDot.base,
+              theme.badges.statusDot[status],
+              config.pulse && theme.badges.statusDot.pulse
+            )}
           />
           <span>{config.text}</span>
         </div>
@@ -66,81 +67,94 @@ export default function ServerCard({ server }: ServerCardProps) {
       <div className="flex items-start space-x-4">
         <div className="flex-shrink-0">
           <div
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-              status === 'online'
-                ? 'bg-gradient-to-br from-blue-500 to-purple-600'
-                : 'bg-gradient-to-br from-slate-400 to-slate-500'
-            }`}
+            className={cn(
+              theme.icon.squareLg,
+              status === 'online' ? theme.brand.serverOnline : theme.brand.serverOffline
+            )}
           >
-            <ServerIcon className="w-6 h-6 text-white" />
+            <ServerIcon className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="flex-1 min-w-0 pr-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <div className="min-w-0 flex-1 pr-8">
+          <div className="mb-2 flex items-center gap-2">
+            <h3
+              className={cn(
+                'text-xl font-semibold transition-colors',
+                theme.text.strong,
+                'group-hover:text-blue-600 dark:group-hover:text-blue-400'
+              )}
+            >
               {server.name}
             </h3>
-            <span className="text-sm font-mono text-slate-500 dark:text-slate-400">
-              #{server.id}
-            </span>
+            <span className={cn('font-mono text-sm', theme.text.subtle)}>#{server.id}</span>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-              <span className="font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
+            <div className={cn('flex items-center text-sm', theme.text.muted)}>
+              <span className={cn('rounded-lg px-2 py-1 font-mono', theme.surface.code)}>
                 https://{server.host}:{server.port}
               </span>
             </div>
 
             <div className="space-y-2">
               {statisticsError ? (
-                <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <div className="flex items-center justify-center space-x-2 text-red-600 dark:text-red-400">
-                    <ExclamationTriangleIcon className="w-4 h-4" />
+                <div className={cn('rounded-lg p-4 text-center', theme.intent.danger.surface)}>
+                  <div
+                    className={cn(
+                      'flex items-center justify-center space-x-2',
+                      theme.intent.danger.textStrong
+                    )}
+                  >
+                    <ExclamationTriangleIcon className="h-4 w-4" />
                     <span className="text-sm">Failed to load statistics</span>
                   </div>
                 </div>
               ) : statistics ? (
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                    <div className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <div className={cn('rounded-lg p-2 text-center', theme.intent.neutral.surface)}>
+                    <div className={cn('text-lg font-semibold', theme.intent.neutral.textStrong)}>
                       {statistics.total_stacks}
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
+                    <div className={cn('text-xs', theme.intent.neutral.textMuted)}>Total</div>
                   </div>
-                  <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                    <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                  <div className={cn('rounded-lg p-2 text-center', theme.intent.success.surface)}>
+                    <div className={cn('text-lg font-semibold', theme.intent.success.textStrong)}>
                       {statistics.healthy_stacks}
                     </div>
-                    <div className="text-xs text-emerald-600 dark:text-emerald-400">Healthy</div>
+                    <div className={cn('text-xs', theme.intent.success.textMuted)}>Healthy</div>
                   </div>
-                  <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                    <div className="text-lg font-semibold text-red-700 dark:text-red-300">
+                  <div className={cn('rounded-lg p-2 text-center', theme.intent.danger.surface)}>
+                    <div className={cn('text-lg font-semibold', theme.intent.danger.textStrong)}>
                       {statistics.unhealthy_stacks}
                     </div>
-                    <div className="text-xs text-red-600 dark:text-red-400">Unhealthy</div>
+                    <div className={cn('text-xs', theme.intent.danger.textMuted)}>Unhealthy</div>
                   </div>
                 </div>
               ) : statisticsLoading ? (
-                <div className="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className={cn('rounded-lg p-4 text-center', theme.intent.neutral.surface)}>
+                  <div className={cn('text-sm', theme.intent.neutral.textMuted)}>
                     Loading stack statistics...
                   </div>
                 </div>
               ) : (
-                <div className="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className={cn('rounded-lg p-4 text-center', theme.intent.neutral.surface)}>
+                  <div className={cn('text-sm', theme.intent.neutral.textMuted)}>
                     No statistics available
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  Docker Stack Management
-                </span>
-                <ChevronRightIcon className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" />
+              <div
+                className={cn('flex items-center justify-between pt-2', theme.cards.sectionDivider)}
+              >
+                <span className={cn('text-sm', theme.text.subtle)}>Docker Stack Management</span>
+                <ChevronRightIcon
+                  className={cn(
+                    'h-5 w-5 transition-all duration-200 group-hover:translate-x-1 group-hover:text-blue-500',
+                    theme.text.subtle
+                  )}
+                />
               </div>
             </div>
           </div>
@@ -148,7 +162,7 @@ export default function ServerCard({ server }: ServerCardProps) {
       </div>
 
       {/* Hover effect gradient */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      <div className={theme.effects.hoverGlow} />
     </Link>
   );
 }

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Role {
   id: number;
@@ -83,7 +85,12 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+            <h2
+              className={cn(
+                'text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
+                theme.text.strong
+              )}
+            >
               {title}
             </h2>
           </div>
@@ -96,7 +103,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                   setShowAddForm(!showAddForm);
                 }
               }}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
+              className={cn('ml-3', theme.buttons.primary)}
             >
               {editingRole ? 'Cancel Edit' : showAddForm ? 'Cancel' : 'Add Role'}
             </button>
@@ -106,34 +113,30 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
         <FlashMessages />
 
         {(showAddForm || editingRole) && (
-          <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+          <div className={cn('mt-8', theme.cards.shell, theme.cards.padded)}>
+            <div>
+              <h3 className={cn('text-lg leading-6 font-medium mb-4', theme.text.strong)}>
                 {editingRole ? `Edit Role: ${editingRole.name}` : 'Add New Role'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Name
-                    </label>
+                    <label className={theme.forms.label}>Name</label>
                     <input
                       type="text"
                       required
                       value={data.name}
                       onChange={(e) => setData('name', e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Description
-                    </label>
+                    <label className={theme.forms.label}>Description</label>
                     <textarea
                       value={data.description}
                       onChange={(e) => setData('description', e.target.value)}
                       rows={3}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.textarea)}
                     />
                   </div>
                 </div>
@@ -147,14 +150,17 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                         setShowAddForm(false);
                       }
                     }}
-                    className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className={theme.buttons.secondary}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={processing}
-                    className="bg-blue-600 dark:bg-blue-700 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    className={cn(
+                      theme.buttons.primary,
+                      processing && 'opacity-50 cursor-not-allowed'
+                    )}
                   >
                     {processing ? 'Saving...' : editingRole ? 'Update Role' : 'Add Role'}
                   </button>
@@ -166,39 +172,42 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
 
         <div className="mt-8 grid gap-6">
           {roles.map((role) => (
-            <div key={role.id} className="bg-white dark:bg-gray-800 shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div key={role.id} className={cn(theme.cards.shell)}>
+              <div className={cn('px-6 py-4 border-b', theme.surface.muted)}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white capitalize flex items-center">
+                    <h3
+                      className={cn(
+                        'text-lg font-medium capitalize flex items-center',
+                        theme.text.strong
+                      )}
+                    >
                       {role.name}
                       {role.is_admin && (
-                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                        <span
+                          className={cn('ml-3', theme.badges.tag.base, theme.badges.tag.danger)}
+                        >
                           Admin
                         </span>
                       )}
-                      <span
-                        className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200`}
-                      >
+                      <span className={cn('ml-3', theme.badges.tag.base, theme.badges.tag.info)}>
                         {role.is_admin ? 'Full Access' : 'Stack Permissions'}
                       </span>
                     </h3>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      {role.description}
-                    </p>
+                    <p className={cn('mt-1 text-sm', theme.text.muted)}>{role.description}</p>
                   </div>
                   <div className="flex items-center space-x-3">
                     {!role.is_admin && (
                       <>
                         <button
                           onClick={() => handleEdit(role)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium"
+                          className={cn('text-sm font-medium', theme.text.info)}
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(role.id, role.name, role.is_admin)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+                          className={cn('text-sm font-medium', theme.text.danger)}
                         >
                           Delete
                         </button>
@@ -207,7 +216,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                     {!role.is_admin && (
                       <button
                         onClick={() => router.visit(`/admin/roles/${role.id}/stack-permissions`)}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className={theme.buttons.secondary}
                       >
                         Stack Permissions
                       </button>
@@ -217,12 +226,12 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
               </div>
               <div className="px-6 py-4">
                 {role.is_admin ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className={cn('text-sm', theme.text.muted)}>
                     Admin users have full access to all servers and functionality. This role cannot
                     be modified or deleted.
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className={cn('text-sm', theme.text.muted)}>
                     Stack permissions are managed using patterns. Click "Stack Permissions" to
                     configure access to specific stacks using patterns like *dev* or *prod*.
                   </div>
@@ -233,7 +242,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
 
           {roles.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-sm text-gray-500 dark:text-gray-400">No roles found.</div>
+              <div className={cn('text-sm', theme.text.muted)}>No roles found.</div>
             </div>
           )}
         </div>

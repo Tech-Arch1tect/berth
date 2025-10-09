@@ -6,6 +6,8 @@ import {
   ArchiveFormat,
   FileEntry,
 } from '../../types/files';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ArchiveOperationModalProps {
   isOpen: boolean;
@@ -82,17 +84,17 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+      <div className={theme.modal.overlay} onClick={onClose}></div>
+      <div
+        className={cn(theme.modal.content, 'max-w-md w-full max-h-[90vh] overflow-y-auto relative')}
+      >
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
               {operation === 'create' ? 'Create Archive' : 'Extract Archive'}
             </h3>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            >
+            <button onClick={onClose} className={theme.buttons.icon}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -108,13 +110,11 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
             {operation === 'create' ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Archive Format
-                  </label>
+                  <label className={cn(theme.forms.label, 'mb-2')}>Archive Format</label>
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value as ArchiveFormat)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={cn(theme.forms.select, 'w-full')}
                   >
                     <option value="zip">ZIP</option>
                     <option value="tar">TAR</option>
@@ -123,21 +123,19 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Output Path
-                  </label>
+                  <label className={cn(theme.forms.label, 'mb-2')}>Output Path</label>
                   <input
                     type="text"
                     value={outputPath}
                     onChange={(e) => setOutputPath(e.target.value)}
                     placeholder="archive.tar.gz"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={cn(theme.forms.input, 'w-full')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={cn(theme.forms.label, 'mb-2')}>
                     Include Paths (comma-separated, leave empty to include all)
                   </label>
                   <input
@@ -145,12 +143,12 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                     value={includePaths}
                     onChange={(e) => setIncludePaths(e.target.value)}
                     placeholder="file1.txt, folder1, *.pdf"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={cn(theme.forms.input, 'w-full')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={cn(theme.forms.label, 'mb-2')}>
                     Exclude Patterns (comma-separated)
                   </label>
                   <input
@@ -158,9 +156,9 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                     value={excludePatterns}
                     onChange={(e) => setExcludePatterns(e.target.value)}
                     placeholder="*.log, temp*, .git"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={cn(theme.forms.input, 'w-full')}
                   />
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className={cn('mt-1 text-xs', theme.text.subtle)}>
                     Note: The output file is automatically excluded to prevent self-reference
                   </p>
                 </div>
@@ -168,19 +166,17 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
             ) : (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Archive File
-                  </label>
+                  <label className={cn(theme.forms.label, 'mb-2')}>Archive File</label>
                   <input
                     type="text"
                     value={selectedFile?.name || ''}
                     disabled
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-100 dark:bg-slate-600 text-slate-900 dark:text-white"
+                    className={cn(theme.forms.input, 'w-full opacity-60')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={cn(theme.forms.label, 'mb-2')}>
                     Destination Path (leave empty for current directory)
                   </label>
                   <input
@@ -188,7 +184,7 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                     value={destinationPath}
                     onChange={(e) => setDestinationPath(e.target.value)}
                     placeholder="extracted/"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={cn(theme.forms.input, 'w-full')}
                   />
                 </div>
 
@@ -198,9 +194,9 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                       type="checkbox"
                       checked={overwrite}
                       onChange={(e) => setOverwrite(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                    <span className={cn('ml-2 text-sm', theme.text.standard)}>
                       Overwrite existing files
                     </span>
                   </label>
@@ -210,9 +206,9 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
                       type="checkbox"
                       checked={createDirs}
                       onChange={(e) => setCreateDirs(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                    <span className={cn('ml-2 text-sm', theme.text.standard)}>
                       Create directories if they don't exist
                     </span>
                   </label>
@@ -220,18 +216,15 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
               </>
             )}
 
-            <div className="flex gap-2 pt-4">
+            <div className={theme.modal.footer}>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md transition-colors"
+                className={cn(theme.buttons.secondary, 'flex-1')}
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
+              <button type="submit" className={cn(theme.buttons.primary, 'flex-1')}>
                 {operation === 'create' ? 'Create Archive' : 'Extract Archive'}
               </button>
             </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FileContent, WriteFileRequest } from '../../types/files';
 import { FileViewer } from './FileViewer';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FileEditorProps {
   file: FileContent | null;
@@ -76,17 +78,29 @@ export const FileEditor: React.FC<FileEditorProps> = ({
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+        className="absolute inset-0 bg-slate-900/70 backdrop-blur"
         onClick={handleBackdropClick}
       />
 
       {/* Modal with padding and rounded corners */}
       <div className="relative w-full h-full p-4 sm:p-6 lg:p-8">
-        <div className="w-full h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 flex flex-col overflow-hidden">
+        <div
+          className={cn(
+            'w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden',
+            'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl',
+            'border border-slate-200/50 dark:border-slate-700/50'
+          )}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl">
+          <div
+            className={cn(
+              'flex items-center justify-between px-6 py-4',
+              'border-b border-slate-200/50 dark:border-slate-700/50',
+              'bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl'
+            )}
+          >
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <div className={cn(theme.icon.squareMd, theme.brand.accent)}>
                 <svg
                   className="w-5 h-5 text-white"
                   fill="none"
@@ -102,19 +116,15 @@ export const FileEditor: React.FC<FileEditorProps> = ({
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  {file.path}
-                </h2>
-                <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                <h2 className={cn('text-lg font-semibold', theme.text.strong)}>{file.path}</h2>
+                <div className={cn('flex items-center space-x-2 text-sm', theme.text.muted)}>
                   <span>{(file.size / 1024).toFixed(2)} KB</span>
                   <span>•</span>
                   <span className="capitalize">{file.encoding}</span>
                   {isDirty && (
                     <>
                       <span>•</span>
-                      <span className="text-orange-600 dark:text-orange-400 font-medium">
-                        Modified
-                      </span>
+                      <span className={cn('font-medium', theme.text.warning)}>Modified</span>
                     </>
                   )}
                 </div>
@@ -122,25 +132,28 @@ export const FileEditor: React.FC<FileEditorProps> = ({
             </div>
             <div className="flex items-center space-x-3">
               {isTextFile && (
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                <div className={cn(theme.surface.code, 'flex items-center rounded-lg p-1')}>
                   <button
                     onClick={() => setViewMode('view')}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
                       viewMode === 'view'
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                        ? cn('shadow-sm', theme.surface.panel, theme.text.strong)
+                        : cn(theme.text.muted, 'hover:text-slate-900 dark:hover:text-white')
+                    )}
                   >
                     View
                   </button>
                   <button
                     onClick={() => setViewMode('edit')}
                     disabled={!canWrite}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
                       viewMode === 'edit'
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                        ? cn('shadow-sm', theme.surface.panel, theme.text.strong)
+                        : cn(theme.text.muted, 'hover:text-slate-900 dark:hover:text-white')
+                    )}
                   >
                     Edit
                   </button>
@@ -151,7 +164,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
                 <button
                   onClick={handleSave}
                   disabled={saving || !isDirty}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={theme.buttons.primary}
                 >
                   {saving ? (
                     <>
@@ -196,10 +209,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
                   )}
                 </button>
               )}
-              <button
-                onClick={handleClose}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              <button onClick={handleClose} className={theme.buttons.secondary}>
                 Close
               </button>
             </div>
@@ -208,22 +218,45 @@ export const FileEditor: React.FC<FileEditorProps> = ({
           {/* Content Area */}
           <div className="flex-1 flex flex-col p-6 min-h-0">
             {viewMode === 'view' ? (
-              <div className="flex-1 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+              <div
+                className={cn(
+                  'flex-1 rounded-xl overflow-hidden',
+                  theme.surface.subtle,
+                  'border border-slate-200/50 dark:border-slate-700/50'
+                )}
+              >
                 <FileViewer file={file} />
               </div>
             ) : (
-              <div className="flex-1 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden flex flex-col">
+              <div
+                className={cn(
+                  'flex-1 rounded-xl overflow-hidden flex flex-col',
+                  theme.surface.subtle,
+                  'border border-slate-200/50 dark:border-slate-700/50'
+                )}
+              >
                 <textarea
                   value={content}
                   onChange={(e) => handleContentChange(e.target.value)}
-                  className="flex-1 w-full p-6 font-mono text-sm bg-transparent text-slate-900 dark:text-slate-100 border-0 resize-none focus:ring-0 focus:outline-none placeholder-slate-400 dark:placeholder-slate-500"
+                  className={cn(
+                    'flex-1 w-full p-6 font-mono text-sm bg-transparent',
+                    theme.text.strong,
+                    'border-0 resize-none focus:ring-0 focus:outline-none',
+                    'placeholder-slate-400 dark:placeholder-slate-500'
+                  )}
                   readOnly={!canWrite}
                   placeholder={canWrite ? 'Enter file content...' : 'File content (read-only)'}
                   style={{ minHeight: '400px' }}
                 />
                 {!canWrite && (
-                  <div className="p-4 bg-amber-50/50 dark:bg-amber-900/20 border-t border-amber-200/50 dark:border-amber-800/50 backdrop-blur-sm">
-                    <p className="text-sm text-amber-800 dark:text-amber-200 flex items-center">
+                  <div
+                    className={cn(
+                      'p-4 border-t backdrop-blur-sm',
+                      theme.intent.warning.surface,
+                      theme.intent.warning.border
+                    )}
+                  >
+                    <p className={cn('text-sm flex items-center', theme.intent.warning.textStrong)}>
                       <svg
                         className="w-4 h-4 mr-2 flex-shrink-0"
                         fill="currentColor"

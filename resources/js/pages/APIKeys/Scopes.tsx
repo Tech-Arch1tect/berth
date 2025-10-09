@@ -10,6 +10,8 @@ import {
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Scope {
   id: number;
@@ -164,7 +166,11 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           <div className="mb-6">
             <button
               onClick={() => router.visit('/api-keys')}
-              className="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              className={cn(
+                'inline-flex items-center text-sm',
+                theme.text.muted,
+                'hover:text-slate-900 dark:hover:text-white'
+              )}
             >
               <ArrowLeftIcon className="h-4 w-4 mr-1" />
               Back to API Keys
@@ -172,12 +178,10 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           </div>
 
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Manage API Key Scopes
-            </h1>
+            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Manage API Key Scopes</h1>
             <button
               onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
+              className={cn('inline-flex items-center', theme.buttons.primary)}
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Add Scope
@@ -188,20 +192,16 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
           {/* Add Scope Modal */}
           {showAddModal && (
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Add New Scope
-                </h3>
+            <div className={theme.modal.overlay}>
+              <div className={cn(theme.modal.content, 'max-w-md')}>
+                <h3 className={cn(theme.modal.header, 'mb-4')}>Add New Scope</h3>
                 <form onSubmit={addScope}>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Server
-                    </label>
+                    <label className={cn(theme.forms.label, 'mb-2')}>Server</label>
                     <select
                       value={formData.server_id}
                       onChange={(e) => setData('server_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className={cn('w-full', theme.forms.select)}
                     >
                       <option value="all">All Servers</option>
                       {servers.map((server) => (
@@ -213,31 +213,35 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Stack Pattern
-                    </label>
+                    <label className={cn(theme.forms.label, 'mb-2')}>Stack Pattern</label>
                     <input
                       type="text"
                       value={formData.stack_pattern}
                       onChange={(e) => setData('stack_pattern', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className={cn('w-full', theme.forms.input)}
                       placeholder="* or specific-stack or prod-*"
                       required
                     />
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p className={cn('mt-1 text-sm', theme.text.muted)}>
                       Use * for all stacks, or specify patterns like "prod-*"
                     </p>
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Permissions
-                    </label>
-                    <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 bg-white dark:bg-gray-900">
+                    <label className={cn(theme.forms.label, 'mb-2')}>Permissions</label>
+                    <div
+                      className={cn(
+                        'space-y-2 max-h-64 overflow-y-auto rounded-md p-3',
+                        theme.surface.muted
+                      )}
+                    >
                       {PERMISSIONS.map((perm) => (
                         <label
                           key={perm.value}
-                          className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+                          className={cn(
+                            'flex items-start space-x-3 p-2 rounded cursor-pointer',
+                            theme.buttons.ghost
+                          )}
                         >
                           <input
                             type="checkbox"
@@ -252,20 +256,18 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                                 );
                               }
                             }}
-                            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className={theme.forms.checkbox}
                           />
                           <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className={cn('text-sm font-medium', theme.text.strong)}>
                               {perm.label}
                             </span>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {perm.value}
-                            </div>
+                            <div className={cn('text-xs', theme.text.muted)}>{perm.value}</div>
                           </div>
                         </label>
                       ))}
                     </div>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p className={cn('mt-1 text-sm', theme.text.muted)}>
                       Selected: {formData.permissions.length} permission
                       {formData.permissions.length !== 1 ? 's' : ''}
                     </p>
@@ -278,14 +280,14 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                         setShowAddModal(false);
                         reset();
                       }}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className={theme.buttons.secondary}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={processing}
-                      className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50"
+                      className={cn(theme.buttons.primary, processing && 'opacity-50')}
                     >
                       Add Scope
                     </button>
@@ -298,21 +300,21 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           {/* Scopes List */}
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading scopes...</p>
+              <p className={theme.text.muted}>Loading scopes...</p>
             </div>
           ) : scopes.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <ShieldCheckIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            <div className={cn('text-center py-12 rounded-lg shadow', theme.surface.panel)}>
+              <ShieldCheckIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
+              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>
                 No scopes configured
               </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className={cn('mt-1 text-sm', theme.text.muted)}>
                 Add scopes to grant this API key access to specific resources.
               </p>
               <div className="mt-6">
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
+                  className={cn('inline-flex items-center', theme.buttons.primary)}
                 >
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Add Scope
@@ -320,35 +322,40 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
+              <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {scopes.map((scope) => (
                   <li key={scope.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">
                         <div className="flex-shrink-0">
-                          <ShieldCheckIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                          <ShieldCheckIcon className={cn('h-8 w-8', theme.text.info)} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400">
+                            <span className={cn(theme.badges.tag.base, theme.badges.tag.info)}>
                               {scope.permission}
                             </span>
                             {scope.server_id ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400">
+                              <span
+                                className={cn(
+                                  theme.badges.tag.base,
+                                  'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400'
+                                )}
+                              >
                                 <ServerIcon className="h-3 w-3 mr-1" />
                                 {scope.server_name || `Server #${scope.server_id}`}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
                                 All Servers
                               </span>
                             )}
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
+                            <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
                               Pattern: {scope.stack_pattern}
                             </span>
                           </div>
-                          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          <div className={cn('mt-1 text-sm', theme.text.muted)}>
                             <p>
                               {PERMISSIONS.find((p) => p.value === scope.permission)?.label ||
                                 scope.permission}
@@ -360,7 +367,10 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                       <div className="flex-shrink-0">
                         <button
                           onClick={() => removeScope(scope.id)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30"
+                          className={cn(
+                            'inline-flex items-center text-sm leading-4',
+                            theme.buttons.danger
+                          )}
                         >
                           <TrashIcon className="h-4 w-4 mr-1" />
                           Remove
@@ -373,13 +383,13 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
             </div>
           )}
 
-          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
             <div className="flex">
               <div className="flex-shrink-0">
-                <ShieldCheckIcon className="h-5 w-5 text-blue-400" />
+                <ShieldCheckIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
               </div>
               <div className="ml-3">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className={cn('text-sm', theme.intent.info.textStrong)}>
                   <strong>About Scopes:</strong> Scopes define what this API key can access. Each
                   scope combines a server (or all servers), a stack pattern (with wildcard support),
                   and a specific permission. The API key's effective permissions are limited by your

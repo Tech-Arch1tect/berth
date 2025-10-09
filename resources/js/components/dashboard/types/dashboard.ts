@@ -15,6 +15,6 @@ export interface DashboardStat {
   value: string;
   subtitle?: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  color: 'blue' | 'green' | 'amber' | 'red' | 'emerald';
+  color: 'info' | 'success' | 'warning' | 'danger' | 'neutral';
   trend: 'good' | 'warning' | 'neutral';
 }

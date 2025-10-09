@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Permission {
   id: number;
@@ -256,7 +258,7 @@ export default function RoleStackPermissions({
                 <li>
                   <button
                     onClick={() => router.visit('/admin/roles')}
-                    className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                    className={theme.text.subtle}
                   >
                     Roles
                   </button>
@@ -264,7 +266,7 @@ export default function RoleStackPermissions({
                 <li>
                   <div className="flex items-center">
                     <svg
-                      className="flex-shrink-0 h-5 w-5 text-gray-300"
+                      className="flex-shrink-0 h-5 w-5 text-slate-300 dark:text-slate-600"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -272,26 +274,28 @@ export default function RoleStackPermissions({
                     >
                       <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
                     </svg>
-                    <span className="ml-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <span className={cn('ml-4 text-sm font-medium', theme.text.subtle)}>
                       {role.name} Stack Permissions
                     </span>
                   </div>
                 </li>
               </ol>
             </nav>
-            <h2 className="mt-2 text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+            <h2
+              className={cn(
+                'mt-2 text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
+                theme.text.strong
+              )}
+            >
               {title}
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className={cn('mt-1 text-sm', theme.text.subtle)}>
               Manage stack-based permissions for the <strong>{role.name}</strong> role using
               patterns
             </p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button
-              onClick={() => setShowAddRule(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
+            <button onClick={() => setShowAddRule(true)} className={theme.buttons.primary}>
               Add Permission Rule
             </button>
           </div>
@@ -301,21 +305,19 @@ export default function RoleStackPermissions({
 
         {/* Add Rule Modal */}
         {showAddRule && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div className={theme.modal.overlay}>
+            <div className={cn(theme.modal.content, 'relative top-20 mx-auto w-full max-w-md')}>
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>
                   Add Permission Rule
                 </h3>
                 <form onSubmit={handleAddRule} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Server
-                    </label>
+                    <label className={cn('block mb-1', theme.forms.label)}>Server</label>
                     <select
                       value={newRule.server_id}
                       onChange={(e) => setNewRule({ ...newRule, server_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('w-full', theme.forms.select)}
                       required
                     >
                       <option value="">Select a server</option>
@@ -327,9 +329,7 @@ export default function RoleStackPermissions({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Permissions
-                    </label>
+                    <label className={cn('block mb-3', theme.forms.label)}>Permissions</label>
                     <div className="space-y-3">
                       {permissions.map((permission) => (
                         <div key={permission.id} className="flex items-start">
@@ -345,35 +345,31 @@ export default function RoleStackPermissions({
                           <div className="ml-3 text-sm">
                             <label
                               htmlFor={`permission-${permission.id}`}
-                              className="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                              className={cn('font-medium cursor-pointer', theme.text.standard)}
                             >
                               {permission.name}
                             </label>
-                            <p className="text-gray-500 dark:text-gray-400">
-                              {permission.description}
-                            </p>
+                            <p className={theme.text.subtle}>{permission.description}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                     {newRule.permission_ids.length === 0 && (
-                      <p className="mt-2 text-sm text-red-500">
+                      <p className={cn('mt-2 text-sm', theme.text.danger)}>
                         Please select at least one permission.
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Stack Pattern
-                    </label>
+                    <label className={cn('block mb-1', theme.forms.label)}>Stack Pattern</label>
                     <input
                       type="text"
                       value={newRule.stack_pattern}
                       onChange={(e) => setNewRule({ ...newRule, stack_pattern: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('w-full', theme.forms.input)}
                       placeholder="* (all stacks)"
                     />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className={cn('mt-1 text-xs', theme.text.subtle)}>
                       Use * for all stacks, *dev* for stacks containing 'dev', *dev*test* for
                       complex patterns
                     </p>
@@ -382,14 +378,14 @@ export default function RoleStackPermissions({
                     <button
                       type="button"
                       onClick={() => setShowAddRule(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                      className={theme.buttons.secondary}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={adding}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className={cn(theme.buttons.primary, 'disabled:opacity-50')}
                     >
                       {adding ? 'Adding...' : 'Add Rule'}
                     </button>
@@ -402,25 +398,25 @@ export default function RoleStackPermissions({
 
         {/* Add To Pattern Modal */}
         {showAddToPattern && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div className={theme.modal.overlay}>
+            <div className={cn(theme.modal.content, 'relative top-20 mx-auto w-full max-w-md')}>
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>
                   Add Permissions to Pattern
                 </h3>
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                <div className={cn('mb-4 p-3 rounded-md', theme.intent.info.surface)}>
+                  <p className={cn('text-sm', theme.intent.info.textStrong)}>
                     <strong>Server:</strong> {getServerName(showAddToPattern.serverid)}
                     <br />
                     <strong>Pattern:</strong>{' '}
-                    <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
+                    <code className={cn('px-1 rounded', theme.surface.code)}>
                       {showAddToPattern.stackPattern}
                     </code>
                   </p>
                 </div>
                 <form onSubmit={handleAddToPattern} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    <label className={cn('block mb-3', theme.forms.label)}>
                       Available Permissions
                     </label>
                     <div className="space-y-3">
@@ -453,19 +449,17 @@ export default function RoleStackPermissions({
                           <div className="ml-3 text-sm">
                             <label
                               htmlFor={`add-permission-${permission.id}`}
-                              className="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                              className={cn('font-medium cursor-pointer', theme.text.standard)}
                             >
                               {permission.name}
                             </label>
-                            <p className="text-gray-500 dark:text-gray-400">
-                              {permission.description}
-                            </p>
+                            <p className={theme.text.subtle}>{permission.description}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                     {addToPatternRule.permission_ids.length === 0 && (
-                      <p className="mt-2 text-sm text-red-500">
+                      <p className={cn('mt-2 text-sm', theme.text.danger)}>
                         Please select at least one permission.
                       </p>
                     )}
@@ -474,14 +468,14 @@ export default function RoleStackPermissions({
                     <button
                       type="button"
                       onClick={() => setShowAddToPattern(null)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                      className={theme.buttons.secondary}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={adding || addToPatternRule.permission_ids.length === 0}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className={cn(theme.buttons.primary, 'disabled:opacity-50')}
                     >
                       {adding ? 'Adding...' : 'Add Permissions'}
                     </button>
@@ -497,7 +491,7 @@ export default function RoleStackPermissions({
           {(permissionRules || []).length === 0 ? (
             <div className="text-center py-12">
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                className={cn('mx-auto h-12 w-12', theme.text.subtle)}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -509,17 +503,14 @@ export default function RoleStackPermissions({
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>
                 No permission rules
               </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className={cn('mt-1 text-sm', theme.text.subtle)}>
                 Get started by creating your first permission rule for this role.
               </p>
               <div className="mt-6">
-                <button
-                  onClick={() => setShowAddRule(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
+                <button onClick={() => setShowAddRule(true)} className={theme.buttons.primary}>
                   Add Permission Rule
                 </button>
               </div>
@@ -529,15 +520,18 @@ export default function RoleStackPermissions({
               {Object.entries(groupedRules).map(([key, group]) => (
                 <div
                   key={key}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+                  className={cn(
+                    theme.surface.panel,
+                    'border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden'
+                  )}
                 >
                   <div className="px-4 py-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">
+                        <h3 className={cn('text-base font-medium', theme.text.strong)}>
                           {group.serverName}
                         </h3>
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <span className={cn(theme.badges.tag.base, theme.badges.tag.info)}>
                           {group.stackPattern}
                         </span>
                       </div>
@@ -548,7 +542,10 @@ export default function RoleStackPermissions({
                             onClick={() =>
                               handleShowAddToPattern(group.serverid, group.stackPattern)
                             }
-                            className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className={cn(
+                              'inline-flex items-center px-2 py-1 text-xs font-medium rounded',
+                              theme.buttons.secondary
+                            )}
                           >
                             <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                               <path
@@ -594,39 +591,40 @@ export default function RoleStackPermissions({
         </div>
 
         {/* Pattern Examples */}
-        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+        <div
+          className={cn('mt-6 rounded-lg p-4', theme.intent.info.surface, theme.intent.info.border)}
+        >
+          <h3 className={cn('text-sm font-medium mb-2', theme.intent.info.textStrong)}>
             Pattern Examples
           </h3>
-          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-2">
+          <div className={cn('text-xs space-y-2', theme.intent.info.textMuted)}>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">*</code> All stacks
+                <code className={cn('px-1 rounded', theme.surface.code)}>*</code> All stacks
               </span>
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">*dev*</code> Contains
-                "dev"
+                <code className={cn('px-1 rounded', theme.surface.code)}>*dev*</code> Contains "dev"
               </span>
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">*prod*</code> Contains
+                <code className={cn('px-1 rounded', theme.surface.code)}>*prod*</code> Contains
                 "prod"
               </span>
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">app*</code> Starts with
+                <code className={cn('px-1 rounded', theme.surface.code)}>app*</code> Starts with
                 "app"
               </span>
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">*-staging</code> Ends
-                with "-staging"
+                <code className={cn('px-1 rounded', theme.surface.code)}>*-staging</code> Ends with
+                "-staging"
               </span>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">*dev*test*</code>{' '}
-                Contains "dev" then "test"
+                <code className={cn('px-1 rounded', theme.surface.code)}>*dev*test*</code> Contains
+                "dev" then "test"
               </span>
               <span>
-                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">api*staging*v1*</code>{' '}
+                <code className={cn('px-1 rounded', theme.surface.code)}>api*staging*v1*</code>{' '}
                 Complex matching
               </span>
             </div>

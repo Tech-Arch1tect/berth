@@ -1,5 +1,7 @@
 import React from 'react';
 import { OperationPreset, OperationRequest } from '../../types/operations';
+import { theme } from '../../theme';
+import { cn } from '../../utils/cn';
 
 interface OperationPresetsProps {
   onOperationSelect: (operation: OperationRequest) => void;
@@ -69,19 +71,35 @@ export const OperationPresets: React.FC<OperationPresetsProps> = ({
   disabled = false,
   className = '',
 }) => {
-  const getVariantClasses = (variant: OperationPreset['variant']) => {
-    switch (variant) {
-      case 'success':
-        return 'bg-green-50 border-green-200 hover:bg-green-100 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:hover:bg-green-900/30 dark:text-green-200';
-      case 'danger':
-        return 'bg-red-50 border-red-200 hover:bg-red-100 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:hover:bg-red-900/30 dark:text-red-200';
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-800 dark:hover:bg-yellow-900/30 dark:text-yellow-200';
-      case 'secondary':
-        return 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 dark:text-gray-200';
-      default:
-        return 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:hover:bg-blue-900/30 dark:text-blue-200';
-    }
+  const variantStyles: Record<
+    NonNullable<OperationPreset['variant']>,
+    { surface: string; border: string; text: string }
+  > = {
+    primary: {
+      surface: theme.intent.info.surface,
+      border: theme.intent.info.border,
+      text: theme.intent.info.textStrong,
+    },
+    secondary: {
+      surface: theme.intent.neutral.surface,
+      border: theme.intent.neutral.border,
+      text: theme.intent.neutral.textStrong,
+    },
+    success: {
+      surface: theme.intent.success.surface,
+      border: theme.intent.success.border,
+      text: theme.intent.success.textStrong,
+    },
+    warning: {
+      surface: theme.intent.warning.surface,
+      border: theme.intent.warning.border,
+      text: theme.intent.warning.textStrong,
+    },
+    danger: {
+      surface: theme.intent.danger.surface,
+      border: theme.intent.danger.border,
+      text: theme.intent.danger.textStrong,
+    },
   };
 
   const handlePresetClick = (preset: OperationPreset) => {
@@ -97,30 +115,35 @@ export const OperationPresets: React.FC<OperationPresetsProps> = ({
   };
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 ${className}`}>
+    <div className={cn('grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3', className)}>
       {defaultPresets.map((preset) => (
         <button
           key={preset.id}
           onClick={() => handlePresetClick(preset)}
           disabled={disabled}
-          className={`
-            p-4 rounded-lg border-2 transition-all duration-200 text-left
-            ${getVariantClasses(preset.variant)}
-            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer transform hover:scale-105'}
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900
-          `}
+          type="button"
+          className={cn(
+            theme.cards.shell,
+            theme.cards.padded,
+            'border-2 text-left transition-transform duration-200',
+            preset.variant ? variantStyles[preset.variant].surface : variantStyles.primary.surface,
+            preset.variant ? variantStyles[preset.variant].border : variantStyles.primary.border,
+            preset.variant ? variantStyles[preset.variant].text : variantStyles.primary.text,
+            !disabled && 'hover:scale-[1.02] hover:shadow-md',
+            disabled && theme.selectable.tileDisabled
+          )}
         >
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xl">{preset.icon}</span>
             <h3 className="font-semibold text-sm">{preset.name}</h3>
           </div>
-          <p className="text-xs opacity-80 mb-2">{preset.description}</p>
+          <p className={cn('mb-2 text-xs', theme.text.muted)}>{preset.description}</p>
           <div className="flex flex-wrap gap-1">
-            <span className="text-xs px-2 py-1 rounded bg-black/10 dark:bg-white/10">
+            <span className={cn(theme.selectable.pill, 'text-xs uppercase tracking-wide')}>
               {preset.command}
             </span>
             {preset.options.map((option, index) => (
-              <span key={index} className="text-xs px-2 py-1 rounded bg-black/10 dark:bg-white/10">
+              <span key={index} className={cn(theme.selectable.pill, 'text-xs')}>
                 {option}
               </span>
             ))}

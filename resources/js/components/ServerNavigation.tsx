@@ -1,8 +1,9 @@
-import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { CircleStackIcon, WrenchScrewdriverIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useMaintenancePermissions } from '../hooks/useMaintenancePermissions';
 import { useRegistryPermissions } from '../hooks/useRegistryPermissions';
+import { theme } from '../theme';
+import { cn } from '../utils/cn';
 
 interface ServerNavigationProps {
   serverId: number;
@@ -10,17 +11,13 @@ interface ServerNavigationProps {
   className?: string;
 }
 
-export const ServerNavigation: React.FC<ServerNavigationProps> = ({
-  serverId,
-  serverName,
-  className = '',
-}) => {
+export const ServerNavigation = ({ serverId, className }: ServerNavigationProps) => {
   const { url } = usePage();
   const { data: maintenancePerms } = useMaintenancePermissions({
     serverid: serverId,
   });
   const { data: registryPerms } = useRegistryPermissions({
-    serverId: serverId,
+    serverId,
   });
 
   const navItems = [
@@ -45,24 +42,29 @@ export const ServerNavigation: React.FC<ServerNavigationProps> = ({
   ].filter((item) => item.show);
 
   return (
-    <nav className={`flex space-x-1 ${className}`}>
+    <nav className={cn(theme.tabs.container, className)}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = url === item.href;
-
         return (
           <Link
             key={item.name}
             href={item.href}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              isActive
-                ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className={cn(theme.tabs.trigger, isActive ? theme.tabs.active : theme.tabs.inactive)}
           >
-            <Icon className="w-4 h-4" />
-            <span>{item.name}</span>
-            {isActive && <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />}
+            <div className="flex items-center gap-2">
+              <Icon className="h-4 w-4" />
+              <span>{item.name}</span>
+            </div>
+            {isActive && (
+              <span
+                className={cn(
+                  theme.badges.dot.base,
+                  theme.badges.dot.success,
+                  'absolute right-2 top-2'
+                )}
+              />
+            )}
           </Link>
         );
       })}

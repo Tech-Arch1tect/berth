@@ -1,21 +1,31 @@
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 import { HealthSummary } from './types/dashboard';
 
 interface DashboardStatusAlertProps {
   healthSummary: HealthSummary;
 }
 
-export const DashboardStatusAlert: React.FC<DashboardStatusAlertProps> = ({ healthSummary }) => {
+export const DashboardStatusAlert = ({ healthSummary }: DashboardStatusAlertProps) => {
   if (healthSummary.serversWithErrors === 0 && healthSummary.serversLoading === 0) {
     return null;
   }
 
   return (
-    <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl">
-      <div className="flex items-center space-x-3">
-        <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    <div
+      className={cn(
+        'mb-6 rounded-xl border p-4',
+        theme.intent.warning.border,
+        theme.intent.warning.surface
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <ExclamationTriangleIcon
+          className={cn('h-5 w-5 flex-shrink-0', theme.intent.warning.textStrong)}
+        />
         <div>
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+          <p className={cn('text-sm font-medium', theme.intent.warning.textStrong)}>
             {healthSummary.serversLoading > 0 && (
               <>
                 Loading data from {healthSummary.serversLoading} server
@@ -30,7 +40,7 @@ export const DashboardStatusAlert: React.FC<DashboardStatusAlertProps> = ({ heal
               </>
             )}
           </p>
-          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+          <p className={cn('mt-1 text-xs', theme.intent.warning.textMuted)}>
             Some statistics may be incomplete or outdated.
           </p>
         </div>

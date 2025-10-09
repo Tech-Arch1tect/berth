@@ -7,6 +7,8 @@ import {
   getCommandType,
   getCommandColor,
 } from './utils/image-helpers';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ImageHistoryLayerProps {
   layer: ImageHistoryLayerType;
@@ -18,9 +20,9 @@ export const ImageHistoryLayer: React.FC<ImageHistoryLayerProps> = ({ layer }) =
   const colorClass = getCommandColor(commandType);
 
   return (
-    <div className="flex items-start space-x-3 py-2 px-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+    <div className="flex items-start space-x-3 py-2 px-3 rounded-lg transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
       <div className="flex-shrink-0 mt-0.5">
-        <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+        <div className={cn('w-2 h-2 rounded-full', theme.surface.muted)} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -29,17 +31,13 @@ export const ImageHistoryLayer: React.FC<ImageHistoryLayerProps> = ({ layer }) =
             <code className={`text-sm font-mono leading-relaxed ${colorClass}`}>{command}</code>
 
             {layer.comment && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
-                {layer.comment}
-              </p>
+              <p className={cn('text-xs mt-1 italic', theme.text.subtle)}>{layer.comment}</p>
             )}
           </div>
 
           <div className="flex-shrink-0 ml-4 text-right">
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              {formatImageSize(layer.size)}
-            </div>
-            <div className="text-xs text-slate-400 dark:text-slate-500">
+            <div className={cn('text-xs', theme.text.subtle)}>{formatImageSize(layer.size)}</div>
+            <div className={cn('text-xs', theme.text.subtle)}>
               {formatCreatedTime(layer.created)}
             </div>
           </div>

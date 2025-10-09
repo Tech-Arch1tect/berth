@@ -6,6 +6,8 @@ import OperationLogStats from '../components/operations/OperationLogStats';
 import OperationLogFilters from '../components/operations/OperationLogFilters';
 import OperationLogTable from '../components/operations/OperationLogTable';
 import OperationLogModal from '../components/operations/OperationLogModal';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 interface OperationLog {
   id: number;
@@ -162,30 +164,18 @@ export default function OperationLogs({ title }: Props) {
   const getStatusBadge = (log: OperationLog) => {
     if (log.is_incomplete) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-          ⚠️ Incomplete
-        </span>
+        <span className={cn(theme.badges.tag.base, theme.badges.tag.warning)}>⚠️ Incomplete</span>
       );
     }
     if (log.success === true) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-          ✅ Success
-        </span>
+        <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>✅ Success</span>
       );
     }
     if (log.success === false) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
-          ❌ Failed
-        </span>
-      );
+      return <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>❌ Failed</span>;
     }
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-        Unknown
-      </span>
-    );
+    return <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>Unknown</span>;
   };
 
   const uniqueCommands = Array.from(new Set(logs.map((log) => log.command))).sort();
@@ -197,10 +187,15 @@ export default function OperationLogs({ title }: Props) {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+            <h2
+              className={cn(
+                'text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
+                theme.text.strong
+              )}
+            >
               My Operation Logs
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className={cn('mt-1 text-sm', theme.text.muted)}>
               View your Docker stack operation history and details
             </p>
           </div>

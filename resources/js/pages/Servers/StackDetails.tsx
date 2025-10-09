@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 import { Server } from '../../types/server';
 import { useStackDetails } from '../../hooks/useStackDetails';
 import { useStackWebSocket } from '../../hooks/useStackWebSocket';
@@ -276,23 +278,27 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
       {/* Breadcrumb Navigation */}
       <div className="mb-6">
-        <nav className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+        <nav className={cn('flex items-center space-x-2 text-sm', theme.text.muted)}>
           <Link
             href="/"
-            className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className={cn(
+              'flex items-center space-x-1 transition-colors',
+              theme.text.muted,
+              'hover:text-blue-600 dark:hover:text-blue-400'
+            )}
           >
             <HomeIcon className="w-4 h-4" />
             <span>Dashboard</span>
           </Link>
-          <ChevronRightIcon className="w-4 h-4 text-slate-400" />
+          <ChevronRightIcon className={cn('w-4 h-4', theme.text.subtle)} />
           <Link
             href={`/servers/${serverid}/stacks`}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className={cn('transition-colors', 'hover:text-blue-600 dark:hover:text-blue-400')}
           >
             {server.name} Stacks
           </Link>
-          <ChevronRightIcon className="w-4 h-4 text-slate-400" />
-          <span className="text-slate-900 dark:text-white font-medium">{stackname}</span>
+          <ChevronRightIcon className={cn('w-4 h-4', theme.text.subtle)} />
+          <span className={cn('font-medium', theme.text.strong)}>{stackname}</span>
         </nav>
       </div>
 
@@ -300,32 +306,35 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       <div className="mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+            <div
+              className={cn(
+                'w-16 h-16 rounded-2xl flex items-center justify-center',
+                theme.brand.stack
+              )}
+            >
               <CircleStackIcon className="w-8 h-8 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                  {stackname}
-                </h1>
+                <h1 className={cn('text-3xl font-bold', theme.brand.titleGradient)}>{stackname}</h1>
                 {/* Connection Status */}
                 <div
-                  className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${
-                    connectionStatus === 'connected'
-                      ? 'bg-emerald-100/70 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                      : connectionStatus === 'connecting'
-                        ? 'bg-yellow-100/70 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                        : 'bg-red-100/70 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  }`}
+                  className={cn(
+                    'flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium',
+                    connectionStatus === 'connected' && theme.badges.tag.success,
+                    connectionStatus === 'connecting' && theme.badges.tag.warning,
+                    connectionStatus === 'disconnected' && theme.badges.tag.danger
+                  )}
                 >
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      connectionStatus === 'connected'
-                        ? 'bg-emerald-500 animate-pulse'
-                        : connectionStatus === 'connecting'
-                          ? 'bg-yellow-500 animate-pulse'
-                          : 'bg-red-500'
-                    }`}
+                    className={cn(
+                      theme.badges.statusDot.base,
+                      connectionStatus === 'connected' && theme.badges.statusDot.online,
+                      connectionStatus === 'connecting' && 'bg-yellow-500',
+                      connectionStatus === 'disconnected' && 'bg-red-500',
+                      (connectionStatus === 'connected' || connectionStatus === 'connecting') &&
+                        theme.badges.statusDot.pulse
+                    )}
                   />
                   <span>
                     {connectionStatus === 'connected'
@@ -337,18 +346,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 </div>
               </div>
               <div className="flex items-center space-x-4 mt-2">
-                <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                <div className={cn('flex items-center space-x-2 text-sm', theme.text.muted)}>
                   <ServerIcon className="w-4 h-4" />
                   <span>{server.name}</span>
                 </div>
                 {stackDetails && (
                   <>
-                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
+                    <div className={cn('text-sm', theme.text.muted)}>
                       {stackDetails.services?.length || 0} services
                     </div>
-                    <div className="w-1 h-1 bg-slate-400 rounded-full" />
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
+                    <div className={cn('text-sm', theme.text.muted)}>
                       {stackDetails.services?.reduce(
                         (total, service) => total + (service.containers?.length || 0),
                         0
@@ -366,7 +375,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             {stackDetails &&
               stackDetails.services &&
               stackPermissions?.permissions?.includes('stacks.manage') && (
-                <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl px-3 py-2">
+                <div className={cn(theme.cards.translucent, 'rounded-xl px-3 py-2')}>
                   <StackQuickActions
                     services={stackDetails.services}
                     onQuickOperation={handleQuickOperation}
@@ -381,7 +390,13 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             {stackDetails && (
               <button
                 onClick={handleGenerateDocumentation}
-                className="flex items-center space-x-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700/50 rounded-xl transition-colors duration-200"
+                className={cn(
+                  'flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors duration-200',
+                  theme.intent.info.surface,
+                  theme.intent.info.textStrong,
+                  theme.intent.info.border,
+                  'border hover:opacity-90'
+                )}
                 title="Generate stack documentation"
               >
                 <DocumentTextIcon className="w-5 h-5" />
@@ -407,10 +422,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 environmentFetching ||
                 statsFetching
               }
-              className="inline-flex items-center px-4 py-2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={cn(theme.buttons.secondary)}
             >
               <ArrowPathIcon
-                className={`w-4 h-4 mr-2 ${isFetching || networksFetching || volumesFetching || environmentFetching || statsFetching ? 'animate-spin' : ''}`}
+                className={cn(
+                  'w-4 h-4 mr-2',
+                  (isFetching ||
+                    networksFetching ||
+                    volumesFetching ||
+                    environmentFetching ||
+                    statsFetching) &&
+                    'animate-spin'
+                )}
               />
               Refresh All
             </button>
@@ -419,7 +442,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             {stackPermissions?.permissions?.includes('stacks.manage') && (
               <button
                 onClick={() => setAdvancedOperationsOpen(true)}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                className={cn(theme.buttons.primary, 'shadow-lg hover:shadow-xl')}
               >
                 <Cog6ToothIcon className="w-4 h-4 mr-2" />
                 Advanced Operations
@@ -434,18 +457,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         <div className="text-center py-16">
           <div className="relative">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
+              <div className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)} />
             </div>
             <div className="relative">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6 animate-spin">
-                <ArrowPathIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+              <div className={cn(theme.icon.emptyState, 'mb-6 animate-spin')}>
+                <ArrowPathIcon className={cn('w-8 h-8', theme.text.subtle)} />
               </div>
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
             Loading stack details...
           </h3>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className={theme.text.muted}>
             Please wait while we fetch your Docker stack information.
           </p>
         </div>
@@ -457,19 +480,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             </div>
             <div className="relative">
               <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-800 dark:to-red-700 rounded-2xl flex items-center justify-center mb-6">
-                <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+                <ExclamationTriangleIcon className={cn('w-8 h-8', theme.text.danger)} />
               </div>
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
             Error loading stack details
           </h3>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
+          <p className={cn('mb-6', theme.text.muted)}>
             {error?.message || 'Unable to connect to the Docker stack.'}
           </p>
           <button
             onClick={() => refetch()}
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className={cn(theme.buttons.primary, 'shadow-lg hover:shadow-xl')}
           >
             <ArrowPathIcon className="w-4 h-4 mr-2" />
             Try Again
@@ -479,44 +502,56 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         <div className="space-y-8">
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Services</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                  <p className={cn('text-sm font-medium', theme.text.muted)}>Services</p>
+                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
                     {stackDetails.services?.length || 0}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/20 dark:border-blue-800/20">
+                <div
+                  className={cn(
+                    'p-3 rounded-xl border',
+                    theme.intent.info.surface,
+                    theme.intent.info.textStrong,
+                    theme.intent.info.border
+                  )}
+                >
                   <CircleStackIcon className="w-6 h-6" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Containers
-                  </p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                  <p className={cn('text-sm font-medium', theme.text.muted)}>Containers</p>
+                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
                     {stackDetails.services?.reduce(
                       (total, service) => total + (service.containers?.length || 0),
                       0
                     ) || 0}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200/20 dark:border-green-800/20">
+                <div
+                  className={cn(
+                    'p-3 rounded-xl border',
+                    theme.intent.success.surface,
+                    theme.intent.success.textStrong,
+                    theme.intent.success.border
+                  )}
+                >
                   <ServerIcon className="w-6 h-6" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Networks</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                  <p className={cn('text-sm font-medium', theme.text.muted)}>Networks</p>
+                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
                     {networks?.length || 0}
                   </p>
                 </div>
@@ -526,15 +561,22 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               </div>
             </div>
 
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Volumes</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                  <p className={cn('text-sm font-medium', theme.text.muted)}>Volumes</p>
+                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
                     {volumes?.length || 0}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 dark:border-emerald-800/20">
+                <div
+                  className={cn(
+                    'p-3 rounded-xl border',
+                    theme.intent.success.surface,
+                    theme.intent.success.textStrong,
+                    theme.intent.success.border
+                  )}
+                >
                   <FolderIcon className="w-6 h-6" />
                 </div>
               </div>
@@ -542,37 +584,48 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           </div>
 
           {/* Stack Info Card */}
-          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200/50 dark:border-slate-700/50">
+          <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden')}>
+            <div className={cn(theme.containers.sectionHeader, 'px-6 py-4')}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center',
+                    theme.brand.accent
+                  )}
+                >
                   <DocumentTextIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <h2 className={cn('text-lg font-semibold', theme.text.strong)}>
                     Stack Information
                   </h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Configuration and metadata
-                  </p>
+                  <p className={cn('text-sm', theme.text.muted)}>Configuration and metadata</p>
                 </div>
               </div>
             </div>
             <div className="p-6">
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col space-y-1">
-                  <dt className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Compose File
-                  </dt>
-                  <dd className="text-sm font-mono bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-slate-900 dark:text-white">
+                  <dt className={cn('text-sm font-medium', theme.text.muted)}>Compose File</dt>
+                  <dd
+                    className={cn(
+                      'text-sm font-mono px-3 py-2 rounded-lg',
+                      theme.surface.code,
+                      theme.text.strong
+                    )}
+                  >
                     {stackDetails.compose_file}
                   </dd>
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <dt className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Stack Path
-                  </dt>
-                  <dd className="text-sm font-mono bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-slate-900 dark:text-white">
+                  <dt className={cn('text-sm font-medium', theme.text.muted)}>Stack Path</dt>
+                  <dd
+                    className={cn(
+                      'text-sm font-mono px-3 py-2 rounded-lg',
+                      theme.surface.code,
+                      theme.text.strong
+                    )}
+                  >
                     {stackDetails.path}
                   </dd>
                 </div>
@@ -581,8 +634,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           </div>
 
           {/* Modern Tab Navigation */}
-          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
-            <div className="border-b border-slate-200/50 dark:border-slate-700/50">
+          <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden')}>
+            <div className={theme.cards.sectionDivider}>
               <nav className="flex space-x-1 p-2">
                 {[
                   { id: 'services', name: 'Services', icon: CircleStackIcon, permission: null },
@@ -616,16 +669,25 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                               | 'files'
                           )
                         }
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        className={cn(
+                          'flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                           activeTab === tab.id
                             ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                        }`}
+                            : cn(
+                                theme.text.muted,
+                                'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                              )
+                        )}
                       >
                         <Icon className="w-4 h-4" />
                         <span>{tab.name}</span>
                         {activeTab === tab.id && (
-                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                          <div
+                            className={cn(
+                              theme.badges.statusDot.base,
+                              theme.badges.statusDot.online
+                            )}
+                          />
                         )}
                       </button>
                     );
@@ -640,9 +702,14 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                 stackDetails.services.length > 0 && (
                   <div className="space-y-4">
                     {/* Expand All / Collapse All Controls */}
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-slate-700/50">
+                    <div
+                      className={cn(
+                        'flex items-center justify-between pb-4',
+                        theme.cards.sectionDivider
+                      )}
+                    >
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
                           Services ({stackDetails.services.length})
                         </h3>
                       </div>
@@ -650,7 +717,11 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                         {stackPermissions?.permissions?.includes('stacks.manage') && (
                           <button
                             onClick={() => setShowComposeEditor(true)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-700/50 transition-colors"
+                            className={cn(
+                              'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
+                              'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
+                              'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
+                            )}
                             title="Edit compose configuration"
                           >
                             <PencilSquareIcon className="w-3 h-3 mr-1" />
@@ -659,14 +730,14 @@ const StackDetails: React.FC<StackDetailsProps> = ({
                         )}
                         <button
                           onClick={handleExpandAll}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 transition-colors"
+                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
                         >
                           <ChevronDownIcon className="w-3 h-3 mr-1" />
                           Expand All
                         </button>
                         <button
                           onClick={handleCollapseAll}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 transition-colors"
+                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
                         >
                           <ChevronUpIcon className="w-3 h-3 mr-1" />
                           Collapse All
@@ -754,20 +825,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         <div className="text-center py-16">
           <div className="relative">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-full opacity-50" />
+              <div className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)} />
             </div>
             <div className="relative">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6">
-                <ExclamationTriangleIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+              <div className={cn(theme.icon.emptyState, 'mb-6')}>
+                <ExclamationTriangleIcon className={cn('w-8 h-8', theme.text.subtle)} />
               </div>
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
             No stack details available
           </h3>
-          <p className="text-slate-600 dark:text-slate-400">
-            Unable to load information for this stack.
-          </p>
+          <p className={theme.text.muted}>Unable to load information for this stack.</p>
         </div>
       )}
 

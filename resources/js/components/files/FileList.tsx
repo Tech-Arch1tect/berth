@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { FileEntry, FileOperation } from '../../types/files';
 import { FileIcon } from './FileIcon';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FileListProps {
   entries: FileEntry[];
@@ -70,10 +72,20 @@ export const FileList: React.FC<FileListProps> = ({
   return (
     <div className="h-full bg-transparent overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-slate-50/50 to-blue-50/50 dark:from-slate-800/30 dark:to-blue-900/20 border-b border-slate-200/20 dark:border-slate-700/20">
+      <div
+        className={cn(
+          'px-4 py-3 border-b',
+          'bg-gradient-to-r from-slate-50/50 to-blue-50/50 dark:from-slate-800/30 dark:to-blue-900/20 border-slate-200/20 dark:border-slate-700/20'
+        )}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+            <div
+              className={cn(
+                'w-8 h-8 rounded-lg flex items-center justify-center',
+                theme.brand.accent
+              )}
+            >
               <svg
                 className="w-4 h-4 text-white"
                 fill="none"
@@ -95,10 +107,8 @@ export const FileList: React.FC<FileListProps> = ({
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Files</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {entries?.length || 0} items
-              </p>
+              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Files</h3>
+              <p className={cn('text-xs', theme.text.subtle)}>{entries?.length || 0} items</p>
             </div>
           </div>
 
@@ -106,7 +116,10 @@ export const FileList: React.FC<FileListProps> = ({
           {canWrite && entries && entries.length > 0 && (
             <button
               onClick={() => onFileOperation('create_archive')}
-              className="px-3 py-1.5 bg-orange-100/70 dark:bg-orange-900/30 hover:bg-orange-200/70 dark:hover:bg-orange-800/40 text-orange-700 dark:text-orange-300 text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2"
+              className={cn(
+                'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2',
+                theme.toolbar.buttonWarning
+              )}
               title="Create Archive"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,9 +138,14 @@ export const FileList: React.FC<FileListProps> = ({
         {/* Modern Breadcrumb */}
         {currentPath && (
           <div className="flex items-center mt-4 text-sm">
-            <div className="flex items-center bg-slate-100/50 dark:bg-slate-800/50 rounded-lg px-3 py-2 space-x-2">
+            <div
+              className={cn(
+                'flex items-center rounded-lg px-3 py-2 space-x-2',
+                theme.intent.neutral.surfaceSoft
+              )}
+            >
               <svg
-                className="w-4 h-4 text-slate-500"
+                className={cn('w-4 h-4', theme.text.subtle)}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -141,7 +159,11 @@ export const FileList: React.FC<FileListProps> = ({
               </svg>
               <button
                 onClick={() => onNavigate('')}
-                className="px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded transition-all duration-200"
+                className={cn(
+                  'px-2 py-1 rounded transition-all duration-200',
+                  theme.text.muted,
+                  'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30'
+                )}
               >
                 Root
               </button>
@@ -153,7 +175,7 @@ export const FileList: React.FC<FileListProps> = ({
                   return (
                     <React.Fragment key={segmentPath}>
                       <svg
-                        className="w-3 h-3 text-slate-400"
+                        className={cn('w-3 h-3', theme.text.subtle)}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -167,7 +189,11 @@ export const FileList: React.FC<FileListProps> = ({
                       </svg>
                       <button
                         onClick={() => onNavigate(segmentPath)}
-                        className="px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded transition-all duration-200 max-w-32 truncate"
+                        className={cn(
+                          'px-2 py-1 rounded transition-all duration-200 max-w-32 truncate',
+                          theme.text.muted,
+                          'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30'
+                        )}
                       >
                         {segment}
                       </button>
@@ -184,12 +210,17 @@ export const FileList: React.FC<FileListProps> = ({
           <div className="text-center">
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
+                <div className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)} />
               </div>
               <div className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mx-auto">
+                <div
+                  className={cn(
+                    'w-20 h-20 rounded-2xl flex items-center justify-center mx-auto',
+                    'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700'
+                  )}
+                >
                   <svg
-                    className="w-10 h-10 text-slate-400 dark:text-slate-500"
+                    className={theme.text.subtle}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -210,10 +241,10 @@ export const FileList: React.FC<FileListProps> = ({
                 </div>
               </div>
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
+            <h3 className={cn('text-xl font-semibold mb-3', theme.text.strong)}>
               Directory is empty
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm">
+            <p className={cn('mb-6 max-w-sm', theme.text.muted)}>
               {canWrite
                 ? 'Create your first file or folder to get started with this directory.'
                 : 'No files or folders found in this directory.'}
@@ -222,7 +253,11 @@ export const FileList: React.FC<FileListProps> = ({
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => onFileOperation('create')}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center space-x-2"
+                  className={cn(
+                    'px-4 py-2 text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center space-x-2',
+                    theme.brand.accent,
+                    'hover:from-blue-600 hover:to-purple-600'
+                  )}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -236,7 +271,10 @@ export const FileList: React.FC<FileListProps> = ({
                 </button>
                 <button
                   onClick={() => onFileOperation('mkdir')}
-                  className="px-4 py-2 bg-slate-100/70 dark:bg-slate-800/70 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                  className={cn(
+                    'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2',
+                    theme.buttons.secondary
+                  )}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -250,7 +288,10 @@ export const FileList: React.FC<FileListProps> = ({
                 </button>
                 <button
                   onClick={() => onFileOperation('create_archive')}
-                  className="px-4 py-2 bg-orange-100/70 dark:bg-orange-900/30 hover:bg-orange-200/70 dark:hover:bg-orange-800/40 text-orange-700 dark:text-orange-300 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                  className={cn(
+                    'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2',
+                    theme.toolbar.buttonWarning
+                  )}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -272,7 +313,13 @@ export const FileList: React.FC<FileListProps> = ({
             <div className="p-3 space-y-2">
               {/* Parent directory link */}
               {currentPath && (
-                <div className="group bg-slate-50/30 dark:bg-slate-800/30 hover:bg-blue-50/40 dark:hover:bg-blue-900/20 rounded-lg p-3 transition-all duration-200 border border-slate-200/30 dark:border-slate-700/30 hover:border-blue-200/40 dark:hover:border-blue-800/40">
+                <div
+                  className={cn(
+                    'group rounded-lg p-3 transition-all duration-200 border',
+                    theme.surface.subtle,
+                    'hover:bg-blue-50/40 dark:hover:bg-blue-900/20 border-slate-200/30 dark:border-slate-700/30 hover:border-blue-200/40 dark:hover:border-blue-800/40'
+                  )}
+                >
                   <button
                     onClick={() => {
                       const parentPath = currentPath.split('/').slice(0, -1).join('/');
@@ -280,9 +327,17 @@ export const FileList: React.FC<FileListProps> = ({
                     }}
                     className="flex items-center w-full text-left group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
                   >
-                    <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-lg mr-4 group-hover:from-blue-200 group-hover:to-blue-300 dark:group-hover:from-blue-800 dark:group-hover:to-blue-700 transition-all">
+                    <div
+                      className={cn(
+                        'flex items-center justify-center w-10 h-10 rounded-lg mr-4 transition-all',
+                        'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 group-hover:from-blue-200 group-hover:to-blue-300 dark:group-hover:from-blue-800 dark:group-hover:to-blue-700'
+                      )}
+                    >
                       <svg
-                        className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                        className={cn(
+                          'w-5 h-5 group-hover:text-blue-600 dark:group-hover:text-blue-400',
+                          theme.text.muted
+                        )}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -297,10 +352,20 @@ export const FileList: React.FC<FileListProps> = ({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        <span
+                          className={cn(
+                            'font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400',
+                            theme.text.standard
+                          )}
+                        >
                           ..
                         </span>
-                        <span className="text-sm text-slate-500 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400">
+                        <span
+                          className={cn(
+                            'text-sm group-hover:text-blue-500 dark:group-hover:text-blue-400',
+                            theme.text.subtle
+                          )}
+                        >
                           (Parent Directory)
                         </span>
                       </div>
@@ -313,11 +378,15 @@ export const FileList: React.FC<FileListProps> = ({
                 entries.map((entry) => (
                   <div
                     key={entry.path}
-                    className={`group bg-white/40 dark:bg-slate-800/40 hover:bg-blue-50/60 dark:hover:bg-blue-900/25 rounded-lg p-3 transition-all duration-200 cursor-pointer border border-slate-200/20 dark:border-slate-700/20 hover:border-blue-200/40 dark:hover:border-blue-700/40 hover:shadow-md ${
+                    className={cn(
+                      'group rounded-lg p-3 transition-all duration-200 cursor-pointer border',
+                      'bg-white/40 dark:bg-slate-800/40 hover:bg-blue-50/60 dark:hover:bg-blue-900/25',
+                      'border-slate-200/20 dark:border-slate-700/20 hover:border-blue-200/40 dark:hover:border-blue-700/40',
+                      'hover:shadow-md',
                       hoveredEntry === entry.path
                         ? 'shadow-md scale-[1.005]'
                         : 'hover:scale-[1.002]'
-                    }`}
+                    )}
                     onClick={() => handleEntryClick(entry)}
                     onContextMenu={(e) => handleContextMenu(e, entry)}
                     onMouseEnter={() => setHoveredEntry(entry.path)}
@@ -328,20 +397,22 @@ export const FileList: React.FC<FileListProps> = ({
                         {/* Modern File Icon */}
                         <div className="flex-shrink-0">
                           <div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                            className={cn(
+                              'w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200',
                               entry.is_directory
                                 ? 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 group-hover:from-blue-200 group-hover:to-blue-300 dark:group-hover:from-blue-800/70 dark:group-hover:to-blue-700/70'
                                 : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 group-hover:from-purple-100 group-hover:to-purple-200 dark:group-hover:from-purple-900/50 dark:group-hover:to-purple-800/50'
-                            }`}
+                            )}
                           >
                             <FileIcon
                               fileName={entry.name}
                               isDirectory={entry.is_directory}
-                              className={`w-6 h-6 transition-colors ${
+                              className={cn(
+                                'w-6 h-6 transition-colors',
                                 entry.is_directory
                                   ? 'text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300'
                                   : 'text-slate-600 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
-                              }`}
+                              )}
                             />
                           </div>
                         </div>
@@ -349,17 +420,30 @@ export const FileList: React.FC<FileListProps> = ({
                         {/* File Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                            <h4
+                              className={cn(
+                                'font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate',
+                                theme.text.strong
+                              )}
+                            >
                               {entry.name}
                             </h4>
                             {entry.extension && (
-                              <span className="px-2 py-0.5 text-xs font-medium bg-slate-100/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 rounded-md uppercase">
+                              <span
+                                className={cn(
+                                  'px-2 py-0.5 text-xs font-medium rounded-md uppercase',
+                                  theme.badges.tag.base,
+                                  theme.badges.tag.neutral
+                                )}
+                              >
                                 {entry.extension}
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400">
+                          <div
+                            className={cn('flex items-center space-x-4 text-sm', theme.text.subtle)}
+                          >
                             <div className="flex items-center space-x-1">
                               <svg
                                 className="w-3 h-3"
@@ -441,15 +525,29 @@ export const FileList: React.FC<FileListProps> = ({
                       {/* Action Buttons */}
                       {canWrite && (
                         <div
-                          className={`flex items-center space-x-1 transition-all duration-200 ${hoveredEntry === entry.path ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}
+                          className={cn(
+                            'flex items-center space-x-1 transition-all duration-200',
+                            hoveredEntry === entry.path
+                              ? 'opacity-100 translate-x-0'
+                              : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'
+                          )}
                         >
-                          <div className="flex items-center bg-white/80 dark:bg-slate-800/80 rounded-lg p-1 space-x-0.5 shadow-sm">
+                          <div
+                            className={cn(
+                              'flex items-center rounded-lg p-1 space-x-0.5 shadow-sm',
+                              'bg-white/80 dark:bg-slate-800/80'
+                            )}
+                          >
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onFileOperation('rename', entry);
                               }}
-                              className="p-2 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-900/30 rounded-md transition-all duration-200"
+                              className={cn(
+                                'p-2 rounded-md transition-all duration-200',
+                                theme.text.subtle,
+                                'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-900/30'
+                              )}
                               title="Rename"
                             >
                               <svg
@@ -472,7 +570,11 @@ export const FileList: React.FC<FileListProps> = ({
                                 e.stopPropagation();
                                 onFileOperation('copy', entry);
                               }}
-                              className="p-2 text-slate-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/80 dark:hover:bg-green-900/30 rounded-md transition-all duration-200"
+                              className={cn(
+                                'p-2 rounded-md transition-all duration-200',
+                                theme.text.subtle,
+                                'hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/80 dark:hover:bg-green-900/30'
+                              )}
                               title="Copy"
                             >
                               <svg
@@ -496,7 +598,11 @@ export const FileList: React.FC<FileListProps> = ({
                                   e.stopPropagation();
                                   onDownload(entry);
                                 }}
-                                className="p-2 text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/80 dark:hover:bg-purple-900/30 rounded-md transition-all duration-200"
+                                className={cn(
+                                  'p-2 rounded-md transition-all duration-200',
+                                  theme.text.subtle,
+                                  'hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/80 dark:hover:bg-purple-900/30'
+                                )}
                                 title="Download"
                               >
                                 <svg
@@ -520,7 +626,11 @@ export const FileList: React.FC<FileListProps> = ({
                                 e.stopPropagation();
                                 onFileOperation('chmod', entry);
                               }}
-                              className="p-2 text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50/80 dark:hover:bg-orange-900/30 rounded-md transition-all duration-200"
+                              className={cn(
+                                'p-2 rounded-md transition-all duration-200',
+                                theme.text.subtle,
+                                'hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50/80 dark:hover:bg-orange-900/30'
+                              )}
                               title="Change Permissions"
                             >
                               <svg
@@ -542,7 +652,11 @@ export const FileList: React.FC<FileListProps> = ({
                                 e.stopPropagation();
                                 onFileOperation('chown', entry);
                               }}
-                              className="p-2 text-slate-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/80 dark:hover:bg-green-900/30 rounded-md transition-all duration-200"
+                              className={cn(
+                                'p-2 rounded-md transition-all duration-200',
+                                theme.text.subtle,
+                                'hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/80 dark:hover:bg-green-900/30'
+                              )}
                               title="Change Ownership"
                             >
                               <svg
@@ -570,7 +684,11 @@ export const FileList: React.FC<FileListProps> = ({
                                     e.stopPropagation();
                                     onFileOperation('extract_archive', entry);
                                   }}
-                                  className="p-2 text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50/80 dark:hover:bg-orange-900/30 rounded-md transition-all duration-200"
+                                  className={cn(
+                                    'p-2 rounded-md transition-all duration-200',
+                                    theme.text.subtle,
+                                    'hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50/80 dark:hover:bg-orange-900/30'
+                                  )}
                                   title="Extract Archive"
                                 >
                                   <svg
@@ -594,7 +712,11 @@ export const FileList: React.FC<FileListProps> = ({
                                 e.stopPropagation();
                                 onFileOperation('delete', entry);
                               }}
-                              className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/30 rounded-md transition-all duration-200"
+                              className={cn(
+                                'p-2 rounded-md transition-all duration-200',
+                                theme.text.subtle,
+                                'hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/30'
+                              )}
                               title="Delete"
                             >
                               <svg

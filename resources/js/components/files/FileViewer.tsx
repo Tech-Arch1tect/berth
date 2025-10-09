@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FileContent } from '../../types/files';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FileViewerProps {
   file: FileContent;
@@ -169,14 +171,20 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
     return (
       <div className="relative group">
         {/* Header with file info and actions */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50">
+        <div
+          className={cn(
+            'flex items-center justify-between px-4 py-3',
+            theme.surface.subtle,
+            'border-b border-slate-200/50 dark:border-slate-700/50'
+          )}
+        >
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
               <div className="w-3 h-3 rounded-full bg-green-400"></div>
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">
+            <div className={cn('text-sm', theme.text.muted)}>
               <span className="font-mono">{file.path.split('/').pop()}</span>
               <span className="mx-2">•</span>
               <span>{language}</span>
@@ -190,18 +198,29 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowLineNumbers(!showLineNumbers)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
                 showLineNumbers
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-              }`}
+                  ? cn(theme.intent.info.surface, theme.intent.info.textStrong)
+                  : cn(
+                      theme.surface.code,
+                      theme.text.muted,
+                      'hover:bg-slate-200 dark:hover:bg-slate-600'
+                    )
+              )}
             >
               Line Numbers
             </button>
 
             <button
               onClick={copyToClipboard}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5"
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
+                'flex items-center space-x-1.5',
+                theme.surface.code,
+                theme.text.muted,
+                'hover:bg-slate-200 dark:hover:bg-slate-600'
+              )}
             >
               {copied ? (
                 <>
@@ -238,7 +257,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         </div>
 
         {/* Code content */}
-        <div className="relative bg-white dark:bg-slate-900">
+        <div className={cn('relative', theme.surface.panel)}>
           <SyntaxHighlighter
             language={language}
             style={isDarkTheme ? oneDark : oneLight}
@@ -274,10 +293,21 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
     return (
       <div className="relative group">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50">
+        <div
+          className={cn(
+            'flex items-center justify-between px-4 py-3',
+            theme.surface.subtle,
+            'border-b border-slate-200/50 dark:border-slate-700/50'
+          )}
+        >
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-slate-400 to-slate-500 rounded-lg flex items-center justify-center">
+              <div
+                className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center',
+                  theme.brand.serverOffline
+                )}
+              >
                 <svg
                   className="w-4 h-4 text-white"
                   fill="none"
@@ -293,7 +323,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                 </svg>
               </div>
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">
+            <div className={cn('text-sm', theme.text.muted)}>
               <span className="font-mono">{file.path.split('/').pop()}</span>
               <span className="mx-2">•</span>
               <span>{lineCount} lines</span>
@@ -304,7 +334,13 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
 
           <button
             onClick={copyToClipboard}
-            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5"
+            className={cn(
+              'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
+              'flex items-center space-x-1.5',
+              theme.surface.code,
+              theme.text.muted,
+              'hover:bg-slate-200 dark:hover:bg-slate-600'
+            )}
           >
             {copied ? (
               <>
@@ -340,8 +376,13 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         </div>
 
         {/* Text content */}
-        <div className="p-6 bg-white dark:bg-slate-900">
-          <pre className="whitespace-pre-wrap text-sm font-mono text-slate-800 dark:text-slate-200 leading-relaxed">
+        <div className={cn('p-6', theme.surface.panel)}>
+          <pre
+            className={cn(
+              'whitespace-pre-wrap text-sm font-mono leading-relaxed',
+              theme.text.standard
+            )}
+          >
             {file.content}
           </pre>
         </div>
@@ -368,7 +409,12 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
           };
 
           return (
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl">
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center p-8 rounded-xl',
+                theme.surface.subtle
+              )}
+            >
               <img
                 src={`data:${getMimeType(ext)};base64,${file.content}`}
                 alt={file.path}
@@ -378,7 +424,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
+              <div className={cn('mt-4 text-center text-sm', theme.text.muted)}>
                 <span className="font-mono">{file.path.split('/').pop()}</span>
                 <span className="mx-2">•</span>
                 <span>{formatFileSize(file.size)}</span>
@@ -388,10 +434,10 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         }
         return (
           <div className="flex justify-center p-8">
-            <div className="text-center text-slate-500 dark:text-slate-400">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-2xl mb-4">
+            <div className={cn('text-center', theme.text.subtle)}>
+              <div className={cn(theme.icon.emptyState, 'mb-4', theme.intent.info.surface)}>
                 <svg
-                  className="w-8 h-8 text-blue-600 dark:text-blue-400"
+                  className={cn('w-8 h-8', theme.text.info)}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -404,11 +450,9 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                Image File
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-2">Image preview not available</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <h3 className={cn('text-lg font-semibold mb-2', theme.text.strong)}>Image File</h3>
+              <p className={cn('mb-2', theme.text.muted)}>Image preview not available</p>
+              <p className={cn('text-sm', theme.text.subtle)}>
                 File encoding: {file.encoding} (expected: base64)
               </p>
             </div>
@@ -425,9 +469,9 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         const ext = file.path.split('.').pop()?.toLowerCase() || '';
         return (
           <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl mb-6">
+            <div className={cn(theme.icon.emptyState, 'w-20 h-20 mb-6')}>
               <svg
-                className="w-10 h-10 text-slate-500 dark:text-slate-400"
+                className={cn('w-10 h-10', theme.text.subtle)}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -440,14 +484,18 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
-              Binary File
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md">
+            <h3 className={cn('text-xl font-semibold mb-3', theme.text.strong)}>Binary File</h3>
+            <p className={cn('mb-6 max-w-md', theme.text.muted)}>
               This is a binary file that cannot be displayed as text. Download the file to view its
               contents.
             </p>
-            <div className="inline-flex flex-col space-y-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 px-4 py-3 rounded-lg">
+            <div
+              className={cn(
+                'inline-flex flex-col space-y-2 text-sm px-4 py-3 rounded-lg',
+                theme.surface.subtle,
+                theme.text.subtle
+              )}
+            >
               <div>
                 <strong>File type:</strong> .{ext}
               </div>
@@ -496,7 +544,10 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         return (
           <div className="text-center py-12">
             <div
-              className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br ${iconData.bg} rounded-2xl mb-6`}
+              className={cn(
+                'inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6',
+                `bg-gradient-to-br ${iconData.bg}`
+              )}
             >
               <svg
                 className="w-10 h-10 text-white"
@@ -512,14 +563,20 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
+            <h3 className={cn('text-xl font-semibold mb-3', theme.text.strong)}>
               {typeNames[fileType as keyof typeof typeNames]}
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md">
+            <p className={cn('mb-6 max-w-md', theme.text.muted)}>
               This file type cannot be previewed in the browser. Download the file to view its
               contents.
             </p>
-            <div className="inline-flex flex-col space-y-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 px-4 py-3 rounded-lg">
+            <div
+              className={cn(
+                'inline-flex flex-col space-y-2 text-sm px-4 py-3 rounded-lg',
+                theme.surface.subtle,
+                theme.text.subtle
+              )}
+            >
               <div>
                 <strong>File type:</strong> .{file.path.split('.').pop()?.toLowerCase()}
               </div>
@@ -538,7 +595,12 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
 
   return (
     <div
-      className={`${className} h-full bg-slate-50/30 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-auto`}
+      className={cn(
+        className,
+        'h-full rounded-xl overflow-auto',
+        'bg-slate-50/30 dark:bg-slate-800/30',
+        'border border-slate-200/50 dark:border-slate-700/50'
+      )}
     >
       {renderContent()}
     </div>

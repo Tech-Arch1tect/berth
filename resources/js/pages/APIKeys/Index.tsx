@@ -15,6 +15,8 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface APIKey {
   id: number;
@@ -144,10 +146,10 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">API Keys</h1>
+            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Keys</h1>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
+              className={cn('inline-flex items-center', theme.buttons.primary)}
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Create API Key
@@ -158,18 +160,16 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
 
           {/* New Key Display Modal */}
           {newKeyData && (
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  API Key Created Successfully
-                </h3>
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+            <div className={theme.modal.overlay}>
+              <div className={cn(theme.modal.content, 'max-w-2xl')}>
+                <h3 className={cn(theme.modal.header, 'mb-4')}>API Key Created Successfully</h3>
+                <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <InformationCircleIcon className="h-5 w-5 text-yellow-400" />
+                      <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                      <p className={cn('text-sm', theme.intent.warning.textStrong)}>
                         <strong>Important:</strong> Copy this API key now. You won't be able to see
                         it again!
                       </p>
@@ -177,7 +177,7 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className={cn(theme.forms.label, 'mb-2')}>
                     API Key: {newKeyData.name}
                   </label>
                   <div className="flex items-center space-x-2">
@@ -185,25 +185,26 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
                       type="text"
                       value={newKeyData.key}
                       readOnly
-                      className="flex-1 font-mono text-sm p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className={cn(
+                        theme.forms.input,
+                        theme.surface.code,
+                        'flex-1 font-mono text-sm'
+                      )}
                     />
                     <button
                       onClick={() => copyToClipboard(newKeyData.key)}
-                      className="p-3 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                      className={cn(theme.buttons.ghost, 'p-3')}
                     >
                       {copiedKey ? (
-                        <CheckIcon className="h-5 w-5 text-green-600" />
+                        <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
                       ) : (
-                        <ClipboardDocumentIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
                       )}
                     </button>
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <button
-                    onClick={() => setNewKeyData(null)}
-                    className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
-                  >
+                  <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
                     Done
                   </button>
                 </div>
@@ -213,38 +214,34 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
 
           {/* Create Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Create New API Key
-                </h3>
+            <div className={theme.modal.overlay}>
+              <div className={cn(theme.modal.content, 'max-w-md')}>
+                <h3 className={cn(theme.modal.header, 'mb-4')}>Create New API Key</h3>
                 <form onSubmit={createAPIKey}>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Name
-                    </label>
+                    <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setData('name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className={cn('w-full', theme.forms.input)}
                       placeholder="My API Key"
                       required
                     />
-                    {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                    {errors.name && (
+                      <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
+                    )}
                   </div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Expires At (Optional)
-                    </label>
+                    <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
                     <input
                       type="datetime-local"
                       value={formData.expires_at}
                       onChange={(e) => setData('expires_at', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className={cn('w-full', theme.forms.input)}
                     />
                     {errors.expires_at && (
-                      <p className="mt-1 text-sm text-red-600">{errors.expires_at}</p>
+                      <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
                     )}
                   </div>
                   <div className="flex justify-end space-x-3">
@@ -254,14 +251,14 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
                         setShowCreateModal(false);
                         reset();
                       }}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className={theme.buttons.secondary}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={processing}
-                      className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50"
+                      className={cn(theme.buttons.primary, processing && 'opacity-50')}
                     >
                       Create
                     </button>
@@ -274,21 +271,19 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
           {/* API Keys List */}
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading API keys...</p>
+              <p className={theme.text.muted}>Loading API keys...</p>
             </div>
           ) : apiKeys.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <KeyIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                No API keys
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <div className={cn('text-center py-12', theme.surface.panel, 'rounded-lg shadow')}>
+              <KeyIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
+              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>No API keys</h3>
+              <p className={cn('mt-1 text-sm', theme.text.muted)}>
                 Get started by creating a new API key.
               </p>
               <div className="mt-6">
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
+                  className={cn('inline-flex items-center', theme.buttons.primary)}
                 >
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Create API Key
@@ -296,34 +291,34 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
+              <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {apiKeys.map((apiKey) => (
                   <li key={apiKey.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">
                         <div className="flex-shrink-0">
-                          <KeyIcon className="h-8 w-8 text-gray-600 dark:text-gray-400" />
+                          <KeyIcon className={cn('h-8 w-8', theme.text.muted)} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            <p className={cn('text-sm font-medium', theme.text.strong)}>
                               {apiKey.name}
                             </p>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                            <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
                               {apiKey.key_prefix}...
                             </span>
                             {apiKey.is_active ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
                                 Active
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400">
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>
                                 Inactive
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                          <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
                             <p className="flex items-center">
                               <ClockIcon className="h-4 w-4 mr-1" />
                               <span className="font-medium">Last used:</span>{' '}
@@ -352,14 +347,20 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
                           onClick={() =>
                             router.visit(`/api-keys/${apiKey.id}/scopes`, { preserveState: false })
                           }
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className={cn(
+                            'inline-flex items-center text-sm leading-4',
+                            theme.buttons.secondary
+                          )}
                         >
                           <EyeIcon className="h-4 w-4 mr-1" />
                           Manage Scopes
                         </button>
                         <button
                           onClick={() => revokeAPIKey(apiKey.id, apiKey.name)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30"
+                          className={cn(
+                            'inline-flex items-center text-sm leading-4',
+                            theme.buttons.danger
+                          )}
                         >
                           <TrashIcon className="h-4 w-4 mr-1" />
                           Revoke
@@ -372,13 +373,13 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
             </div>
           )}
 
-          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
             <div className="flex">
               <div className="flex-shrink-0">
-                <InformationCircleIcon className="h-5 w-5 text-blue-400" />
+                <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
               </div>
               <div className="ml-3">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className={cn('text-sm', theme.intent.info.textStrong)}>
                   <strong>Security Note:</strong> API keys provide access to your account. Keep them
                   secure and never share them publicly. Each key's permissions are limited by scopes
                   you assign and cannot exceed your own user permissions.

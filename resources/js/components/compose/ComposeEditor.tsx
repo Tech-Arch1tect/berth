@@ -4,6 +4,8 @@ import { ServiceImageEditor } from './ServiceImageEditor';
 import { ServicePortsEditor, derivePortsFromService } from './ServicePortsEditor';
 import { XMarkIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { showToast } from '../../utils/toast';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 export interface ComposeChanges {
   service_image_updates?: Array<{
@@ -214,8 +216,8 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
 
       <div className="relative w-full max-w-6xl h-[90vh] max-h-[900px]">
         <div className="pointer-events-auto w-full h-full">
-          <div className="flex h-full flex-col bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6">
+          <div className="flex h-full flex-col bg-white dark:bg-slate-900 shadow-2xl rounded-2xl overflow-hidden">
+            <div className={cn(theme.brand.composeHeader, 'px-6 py-6')}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Compose Editor</h2>
@@ -233,9 +235,20 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-              <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-y-auto">
+              <div
+                className={cn(
+                  'w-64 border-r overflow-y-auto',
+                  theme.surface.muted,
+                  'border-slate-200 dark:border-slate-700'
+                )}
+              >
                 <div className="p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
+                  <h3
+                    className={cn(
+                      'text-sm font-semibold uppercase tracking-wider mb-3',
+                      theme.text.standard
+                    )}
+                  >
                     Services
                   </h3>
                   <div className="space-y-1">
@@ -243,11 +256,12 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                       <button
                         key={service.name}
                         onClick={() => setSelectedService(service.name)}
-                        className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
+                        className={cn(
+                          'w-full text-left px-4 py-3 rounded-lg transition-all duration-200',
                           selectedService === service.name
                             ? 'bg-indigo-600 text-white shadow-md'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}
+                            : cn(theme.text.standard, 'hover:bg-slate-200 dark:hover:bg-slate-700')
+                        )}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{service.name}</span>
@@ -266,7 +280,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
 
               <div className="flex-1 overflow-y-auto">
                 {!currentService && (
-                  <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+                  <div className={cn('h-full flex items-center justify-center', theme.text.muted)}>
                     No service selected
                   </div>
                 )}
@@ -432,7 +446,11 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                   <button
                     onClick={handleSave}
                     disabled={!hasChanges || isSaving}
-                    className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={cn(
+                      'inline-flex items-center gap-2 px-6 py-2',
+                      theme.brand.composeButton,
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
                   >
                     {isSaving ? (
                       <>

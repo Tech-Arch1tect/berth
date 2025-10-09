@@ -10,6 +10,8 @@ import {
   DeleteRequest,
   DirectoryStats,
 } from '../../types/files';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FileOperationModalProps {
   isOpen: boolean;
@@ -209,34 +211,20 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
     }
   };
 
-  const getConfirmButtonColor = () => {
-    return operation === 'delete'
-      ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-      : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
-  };
-
   if (!isOpen || !operation) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
-        onClick={handleBackdropClick}
-      />
+      <div className={theme.modal.overlay} onClick={handleBackdropClick} />
 
       {/* Modal Content */}
       <div className="relative w-full h-full flex items-center justify-center p-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl max-w-md w-full">
+        <div className={cn(theme.modal.content, 'max-w-md w-full')}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {getModalTitle()}
-              </h3>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
+              <h3 className={cn('text-lg font-medium', theme.text.strong)}>{getModalTitle()}</h3>
+              <button onClick={onClose} className={theme.buttons.icon}>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -251,10 +239,10 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
             <div className="space-y-4">
               {operation === 'delete' ? (
                 <div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                  <p className={cn(theme.text.standard, 'mb-4')}>
                     Are you sure you want to delete <strong>{selectedFile?.name}</strong>?
                     {selectedFile?.is_directory && (
-                      <span className="block text-sm text-red-600 dark:text-red-400 mt-2">
+                      <span className={cn('block text-sm mt-2', theme.text.danger)}>
                         This will permanently delete the directory and all its contents.
                       </span>
                     )}
@@ -263,7 +251,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className={cn(theme.forms.label, 'mb-2')}>
                       {operation === 'mkdir'
                         ? 'Directory Name'
                         : operation === 'create'
@@ -276,7 +264,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
                       type="text"
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      className={cn(theme.forms.input, 'w-full')}
                       placeholder={
                         operation === 'mkdir'
                           ? 'my-directory'
@@ -290,34 +278,39 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
                   {operation === 'copy' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Target Name
-                      </label>
+                      <label className={cn(theme.forms.label, 'mb-2')}>Target Name</label>
                       <input
                         type="text"
                         value={targetValue}
                         onChange={(e) => setTargetValue(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        className={cn(theme.forms.input, 'w-full')}
                         placeholder={selectedFile ? `${selectedFile.name}_copy` : 'copy-name'}
                       />
                     </div>
                   )}
 
                   {currentPath && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className={cn('text-sm', theme.text.muted)}>
                       <strong>Location:</strong> /{currentPath}
                     </div>
                   )}
 
                   {(operation === 'mkdir' || operation === 'create') && (
-                    <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                       <button
                         type="button"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        className={cn(
+                          'flex items-center space-x-2 text-sm',
+                          theme.text.info,
+                          'hover:opacity-80'
+                        )}
                       >
                         <svg
-                          className={`w-4 h-4 transform transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+                          className={cn(
+                            'w-4 h-4 transform transition-transform',
+                            showAdvanced && 'rotate-180'
+                          )}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -333,50 +326,46 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
                       </button>
 
                       {showAdvanced && (
-                        <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+                        <div className={cn(theme.surface.muted, 'space-y-3 p-4 rounded-md')}>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className={cn(theme.forms.label, 'mb-1')}>
                               Permissions (octal)
                             </label>
                             <input
                               type="text"
                               value={mode}
                               onChange={(e) => setMode(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                              className={cn(theme.forms.input, 'w-full')}
                               placeholder={operation === 'mkdir' ? '755' : '644'}
                             />
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className={cn('text-xs mt-1', theme.text.subtle)}>
                               Leave empty to use default permissions
                             </p>
                           </div>
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Owner ID
-                              </label>
+                              <label className={cn(theme.forms.label, 'mb-1')}>Owner ID</label>
                               <input
                                 type="number"
                                 value={ownerId}
                                 onChange={(e) => setOwnerId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                className={cn(theme.forms.input, 'w-full')}
                                 placeholder="1000"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Group ID
-                              </label>
+                              <label className={cn(theme.forms.label, 'mb-1')}>Group ID</label>
                               <input
                                 type="number"
                                 value={groupId}
                                 onChange={(e) => setGroupId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                className={cn(theme.forms.input, 'w-full')}
                                 placeholder="1000"
                               />
                             </div>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className={cn('text-xs', theme.text.subtle)}>
                             Leave empty to use server defaults
                           </p>
                         </div>
@@ -387,18 +376,21 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
               )}
             </div>
 
-            <div className="flex items-center justify-end space-x-3 mt-6">
+            <div className={theme.modal.footer}>
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={loading || (operation !== 'delete' && !inputValue.trim())}
-                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${getConfirmButtonColor()} focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={cn(
+                  operation === 'delete' ? theme.buttons.danger : theme.buttons.primary,
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
               >
                 {loading ? (
                   <>

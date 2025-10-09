@@ -22,6 +22,8 @@ import { User } from '../types';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { Toaster } from '../utils/toast';
 import { GlobalOperationsTracker } from './operations/GlobalOperationsTracker';
+import { theme } from '../theme';
+import { cn } from '../utils/cn';
 
 interface LayoutProps {
   children: ReactNode;
@@ -38,11 +40,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
-    {
-      name: 'All Stacks',
-      href: '/stacks',
-      icon: CircleStackIcon,
-    },
+    { name: 'All Stacks', href: '/stacks', icon: CircleStackIcon },
     {
       name: 'Operation Logs',
       href: '/operation-logs',
@@ -88,25 +86,26 @@ export default function Layout({ children }: LayoutProps) {
 
   if (!user || url === '/auth/totp/verify') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className={theme.layout.authShell}>
+        <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-8">
-                <ServerIcon className="w-8 h-8 text-white" />
+              <div
+                className={cn(
+                  'mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl',
+                  theme.brand.accent
+                )}
+              >
+                <ServerIcon className="h-8 w-8" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                Berth
-              </h1>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              <h1 className={cn('text-3xl font-bold', theme.brand.titleGradient)}>Berth</h1>
+              <p className={cn('mt-2 text-sm', theme.text.muted)}>
                 Docker Stack Management Platform
               </p>
             </div>
           </div>
           <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl py-8 px-6 shadow-xl rounded-2xl border border-white/20 dark:border-slate-700/50 sm:px-8">
-              {children}
-            </div>
+            <div className={theme.cards.auth}>{children}</div>
           </div>
         </div>
         <Toaster
@@ -114,7 +113,7 @@ export default function Layout({ children }: LayoutProps) {
           gutter={8}
           toastOptions={{
             duration: 4000,
-            className: 'backdrop-blur-sm',
+            className: theme.toast.container,
           }}
         />
       </div>
@@ -122,45 +121,48 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900">
+    <div className={theme.layout.appShell}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className={theme.overlays.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 transition-transform duration-300 ease-in-out ${
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-72 border-r transition-transform duration-300 ease-in-out lg:translate-x-0',
+          theme.surface.sidebar,
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
+        )}
       >
         <div className="flex h-full flex-col">
           {/* Logo and close button */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 dark:border-slate-800/50">
+          <div className="flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/50">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <ServerIcon className="w-6 h-6 text-white" />
+              <div
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-xl',
+                  theme.brand.accent
+                )}
+              >
+                <ServerIcon className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                  Berth
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">v1.0.0</p>
+                <h1 className={cn('text-xl font-bold', theme.brand.titleGradient)}>Berth</h1>
+                <p className={cn('text-xs', theme.text.subtle)}>v1.0.0</p>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className={cn('lg:hidden', theme.buttons.ghost)}
+              aria-label="Close navigation"
             >
-              <XMarkIcon className="w-5 h-5 text-slate-500" />
+              <XMarkIcon className={cn('h-5 w-5', theme.text.subtle)} />
             </button>
           </div>
 
           {/* Navigation */}
-          <div className="flex-1 px-4 py-6 space-y-2">
+          <div className="flex-1 space-y-2 px-4 py-6">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = url === item.href;
@@ -168,50 +170,39 @@ export default function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  className={cn(
+                    theme.navigation.itemBase,
+                    isActive ? theme.navigation.itemActive : theme.navigation.itemInactive
+                  )}
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Icon
-                    className={`mr-3 h-5 w-5 transition-colors ${
-                      isActive
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'
-                    }`}
+                    className={cn(
+                      theme.navigation.iconBase,
+                      isActive ? theme.navigation.iconActive : theme.navigation.iconInactive
+                    )}
                   />
                   {item.name}
-                  {isActive && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
-                  )}
+                  {isActive && <div className={theme.navigation.indicator} />}
                 </Link>
               );
             })}
           </div>
 
           {/* User section */}
-          <div className="border-t border-slate-200/50 dark:border-slate-800/50 px-4 py-4">
-            <div className="mb-4 px-3 py-2 bg-slate-50/70 dark:bg-slate-800/50 rounded-xl">
+          <div className="border-t px-4 py-4 dark:border-slate-800/50">
+            <div className={cn('mb-4 rounded-xl px-3 py-2', theme.surface.muted)}>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {user.username.charAt(0).toUpperCase()}
-                  </span>
+                <div className={theme.badges.userInitials}>
+                  {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">
-                    {user.username}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {isAdmin ? 'Administrator' : 'User'}
-                  </p>
+                  <p className={cn('text-sm font-semibold', theme.text.strong)}>{user.username}</p>
+                  <p className={cn('text-xs', theme.text.subtle)}>{user.email}</p>
                 </div>
               </div>
             </div>
-
-            <div className="space-y-1">
+            <div className="space-y-2">
               {userNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = url === item.href;
@@ -219,87 +210,102 @@ export default function Layout({ children }: LayoutProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    className={cn(
+                      'group flex items-center rounded-xl px-3 py-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                        ? 'bg-slate-100/80 text-slate-900 dark:bg-slate-800/60 dark:text-white'
+                        : 'text-slate-700 hover:bg-slate-100/60 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/40 dark:hover:text-white'
+                    )}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <Icon className="mr-3 h-4 w-4" />
+                    <Icon
+                      className={cn(
+                        'mr-3 h-5 w-5',
+                        isActive ? theme.navigation.iconActive : theme.navigation.iconInactive
+                      )}
+                    />
                     {item.name}
                   </Link>
                 );
               })}
-
-              <button
-                onClick={toggleDarkMode}
-                className="group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
-              >
-                {isDark ? (
-                  <SunIcon className="mr-3 h-4 w-4" />
-                ) : (
-                  <MoonIcon className="mr-3 h-4 w-4" />
-                )}
-                {isDark ? 'Light Mode' : 'Dark Mode'}
-              </button>
-
               <button
                 onClick={handleLogout}
-                className="group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                className={cn(
+                  'flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                  theme.text.muted,
+                  'hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                )}
               >
-                <ArrowLeftOnRectangleIcon className="mr-3 h-4 w-4" />
-                Sign Out
+                <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                Log out
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content area */}
       <div className="lg:pl-72">
-        {/* Mobile header */}
-        <div className="sticky top-0 z-30 flex h-16 items-center gap-x-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <Bars3Icon className="h-5 w-5" />
-          </button>
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <ServerIcon className="w-5 h-5 text-white" />
+        <div className="sticky top-0 z-30 border-b bg-white/70 px-4 py-4 shadow-sm backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                className={cn('lg:hidden', theme.buttons.ghost)}
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open navigation"
+              >
+                <Bars3Icon className={cn('h-6 w-6 text-slate-500 dark:text-slate-300')} />
+              </button>
+              <div>
+                <p className={cn('text-sm', theme.text.subtle)}>Welcome back</p>
+                <h2 className={cn('text-xl font-semibold', theme.text.strong)}>{user.username}</h2>
+              </div>
             </div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              Berth
-            </h1>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={toggleDarkMode}
+                className={cn(
+                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                {isDark ? (
+                  <>
+                    <MoonIcon className="h-5 w-5" />
+                    Dark
+                  </>
+                ) : (
+                  <>
+                    <SunIcon className="h-5 w-5" />
+                    Light
+                  </>
+                )}
+              </button>
+              <div className="hidden sm:block">
+                <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  <span>All systems operational</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Page content */}
-        <main className="px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
+        <main className="px-4 py-8 sm:px-6 lg:px-10">
+          <div className="mx-auto max-w-6xl space-y-6">{children}</div>
         </main>
       </div>
 
-      {/* Toast notifications */}
+      <GlobalOperationsTracker />
       <Toaster
         position="top-right"
-        gutter={8}
         toastOptions={{
           duration: 4000,
-          className: 'backdrop-blur-sm border-0 shadow-xl',
-          style: {
-            background: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-            color: isDark ? '#f1f5f9' : '#334155',
-            borderRadius: '12px',
-          },
+          className: theme.toast.container,
         }}
       />
-
-      {/* Global operations tracker */}
-      <GlobalOperationsTracker />
     </div>
   );
 }

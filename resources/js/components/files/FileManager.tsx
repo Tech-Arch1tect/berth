@@ -24,6 +24,8 @@ import { ArchiveOperationModal } from './ArchiveOperationModal';
 import { useFiles } from '../../hooks/useFiles';
 import { useOperations } from '../../hooks/useOperations';
 import { showToast } from '../../utils/toast';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FileManagerProps {
   serverid: number;
@@ -422,11 +424,16 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
   if (!canRead) {
     return (
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
+      <div className={cn(theme.containers.panel)}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+          <div
+            className={cn(
+              'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
+              theme.intent.danger.surface
+            )}
+          >
             <svg
-              className="w-8 h-8 text-red-600 dark:text-red-400"
+              className={cn('w-8 h-8', theme.intent.danger.textStrong)}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -439,8 +446,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
               />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Access Denied</h3>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>Access Denied</h3>
+          <p className={theme.text.muted}>
             You don't have permission to access files in this stack.
           </p>
         </div>
@@ -449,13 +456,13 @@ export const FileManager: React.FC<FileManagerProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-50/30 dark:bg-slate-900/30">
+    <div className={cn('h-full flex flex-col', theme.surface.subtle)}>
       {/* Modern Toolbar */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4">
+      <div className={cn('backdrop-blur-xl border-b px-6 py-4', theme.surface.panel)}>
         <div className="flex items-center justify-between">
           {/* Breadcrumb Navigation */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <div className="flex items-center space-x-1 text-sm text-slate-600 dark:text-slate-400">
+            <div className={cn('flex items-center space-x-1 text-sm', theme.text.muted)}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -469,7 +476,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
               <span className="font-medium">Stack Files</span>
               {currentPath && (
                 <>
-                  <span className="text-slate-400">/</span>
+                  <span className={theme.text.subtle}>/</span>
                   <span className="truncate max-w-xs">{currentPath}</span>
                 </>
               )}
@@ -479,7 +486,13 @@ export const FileManager: React.FC<FileManagerProps> = ({
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
             {/* Permissions Badge */}
-            <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/70 dark:bg-slate-800/70 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400">
+            <div
+              className={cn(
+                'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium',
+                theme.intent.neutral.surfaceSoft,
+                theme.text.muted
+              )}
+            >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -496,13 +509,22 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
             {canWrite && (
               <div className="flex items-center space-x-1">
-                <div className="flex items-center bg-slate-100/70 dark:bg-slate-800/70 rounded-lg p-1 space-x-1">
+                <div
+                  className={cn(
+                    'flex items-center rounded-lg p-1 space-x-1',
+                    theme.intent.neutral.surfaceSoft
+                  )}
+                >
                   <button
                     onClick={() => {
                       setCurrentOperation('mkdir');
                       setIsOperationModalOpen(true);
                     }}
-                    className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-md transition-all duration-200 flex items-center space-x-1.5"
+                    className={cn(
+                      'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5',
+                      theme.text.standard,
+                      'hover:bg-white/80 dark:hover:bg-slate-700/80'
+                    )}
                     title="New Folder"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,7 +542,11 @@ export const FileManager: React.FC<FileManagerProps> = ({
                       setCurrentOperation('create');
                       setIsOperationModalOpen(true);
                     }}
-                    className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-md transition-all duration-200 flex items-center space-x-1.5"
+                    className={cn(
+                      'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5',
+                      theme.text.standard,
+                      'hover:bg-white/80 dark:hover:bg-slate-700/80'
+                    )}
                     title="New File"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -536,7 +562,11 @@ export const FileManager: React.FC<FileManagerProps> = ({
                 </div>
                 <button
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2"
+                  className={cn(
+                    'px-3 py-2 text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2',
+                    theme.brand.accent,
+                    'hover:from-blue-700 hover:to-purple-700'
+                  )}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -561,12 +591,19 @@ export const FileManager: React.FC<FileManagerProps> = ({
             <div className="text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
+                  <div
+                    className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)}
+                  />
                 </div>
                 <div className="relative">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-6 animate-spin">
+                  <div
+                    className={cn(
+                      'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 animate-spin',
+                      'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700'
+                    )}
+                  >
                     <svg
-                      className="w-8 h-8 text-slate-400 dark:text-slate-500"
+                      className={theme.text.subtle}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -581,12 +618,10 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   </div>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
                 Loading files...
               </h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                Please wait while we fetch the directory contents.
-              </p>
+              <p className={theme.text.muted}>Please wait while we fetch the directory contents.</p>
             </div>
           </div>
         ) : directoryListing ? (
@@ -603,9 +638,14 @@ export const FileManager: React.FC<FileManagerProps> = ({
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+            <div
+              className={cn(
+                'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
+                theme.intent.danger.surface
+              )}
+            >
               <svg
-                className="w-8 h-8 text-red-600 dark:text-red-400"
+                className={cn('w-8 h-8', theme.intent.danger.textStrong)}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -618,16 +658,13 @@ export const FileManager: React.FC<FileManagerProps> = ({
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>
               Failed to load directory
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className={cn('mb-4', theme.text.muted)}>
               There was an error loading the file listing.
             </p>
-            <button
-              onClick={() => loadDirectory(currentPath)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
+            <button onClick={() => loadDirectory(currentPath)} className={theme.buttons.primary}>
               Try Again
             </button>
           </div>

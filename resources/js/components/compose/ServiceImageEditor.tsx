@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ComposeService } from '../../types/stack';
 import { ArrowLeftIcon, CheckIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ServiceImageEditorProps {
   service: ComposeService;
@@ -66,7 +68,11 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
         {/* Header */}
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
+          className={cn(
+            'flex items-center gap-2 transition-colors mb-6',
+            theme.text.muted,
+            'hover:' + theme.text.strong
+          )}
         >
           <ArrowLeftIcon className="h-5 w-5" />
           Back
@@ -77,26 +83,39 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
             <div className="rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 p-2 text-white">
               <PhotoIcon className="h-6 w-6" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Image</h3>
+            <h3 className={cn('text-2xl font-bold', theme.text.strong)}>Edit Image</h3>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={theme.text.muted}>
             Service: <span className="font-semibold">{service.name}</span>
           </p>
         </div>
 
         {/* Current Image */}
-        <div className="mb-8 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div
+          className={cn(
+            'mb-8 p-4 rounded-lg border',
+            theme.surface.muted,
+            'border-slate-200 dark:border-slate-700'
+          )}
+        >
+          <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
             Current Image
           </label>
-          <div className="font-mono text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 px-4 py-2 rounded border border-gray-300 dark:border-gray-600">
+          <div
+            className={cn(
+              'font-mono text-sm px-4 py-2 rounded border',
+              theme.surface.panel,
+              theme.text.strong,
+              'border-slate-300 dark:border-slate-600'
+            )}
+          >
             {service.image || 'No image specified'}
           </div>
         </div>
 
         {/* Edit Mode Selector */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <label className={cn('block text-sm font-medium mb-3', theme.forms.label)}>
             Edit Mode
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -105,28 +124,22 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
               className={`p-4 rounded-lg border-2 text-left transition-all ${
                 editMode === 'tag'
                   ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
-              <div className="font-semibold text-gray-900 dark:text-white mb-1">
-                Change Tag Only
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Update image version/tag
-              </div>
+              <div className={cn('font-semibold mb-1', theme.text.strong)}>Change Tag Only</div>
+              <div className={cn('text-xs', theme.text.muted)}>Update image version/tag</div>
             </button>
             <button
               onClick={() => setEditMode('full')}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
                 editMode === 'full'
                   ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
-              <div className="font-semibold text-gray-900 dark:text-white mb-1">Full Image</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Change entire image reference
-              </div>
+              <div className={cn('font-semibold mb-1', theme.text.strong)}>Full Image</div>
+              <div className={cn('text-xs', theme.text.muted)}>Change entire image reference</div>
             </button>
           </div>
         </div>
@@ -135,7 +148,7 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
         {editMode === 'tag' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
                 New Tag
               </label>
               <input
@@ -143,13 +156,13 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
                 value={imageTag}
                 onChange={(e) => setImageTag(e.target.value)}
                 placeholder="e.g., latest, stable, v1.2.3"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                className={cn('w-full px-4 py-3 rounded-lg transition-shadow', theme.forms.input)}
               />
             </div>
 
             {/* Common Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
                 Quick Select
               </label>
               <div className="flex flex-wrap gap-2">
@@ -160,7 +173,11 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       imageTag === tag
                         ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        : cn(
+                            theme.surface.muted,
+                            theme.text.standard,
+                            'hover:bg-slate-200 dark:hover:bg-slate-600'
+                          )
                     }`}
                   >
                     {tag}
@@ -174,7 +191,7 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
         {/* Full Image Editor */}
         {editMode === 'full' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
               Full Image Reference
             </label>
             <input
@@ -182,36 +199,45 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
               value={fullImage}
               onChange={(e) => setFullImage(e.target.value)}
               placeholder="e.g., nginx:stable, registry.example.com/app:v1.0"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+              className={cn(
+                'w-full px-4 py-3 rounded-lg font-mono transition-shadow',
+                theme.forms.input
+              )}
             />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className={cn('mt-2 text-sm', theme.text.muted)}>
               Include registry, repository, and tag
             </p>
           </div>
         )}
 
         {/* Preview */}
-        <div className="mt-8 p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800">
+        <div className={cn('mt-8 p-6 rounded-xl', theme.brand.composePreview)}>
           <label className="block text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
             Preview
           </label>
-          <div className="font-mono text-lg text-indigo-900 dark:text-indigo-100 bg-white dark:bg-gray-900 px-4 py-3 rounded-lg shadow-sm">
+          <div
+            className={cn(
+              'font-mono text-lg text-indigo-900 dark:text-indigo-100 px-4 py-3 rounded-lg shadow-sm',
+              theme.surface.panel
+            )}
+          >
             {getPreviewImage() || 'Enter an image...'}
           </div>
         </div>
 
         {/* Actions */}
         <div className="mt-8 flex items-center justify-end gap-3">
-          <button
-            onClick={onBack}
-            className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
+          <button onClick={onBack} className={theme.buttons.ghost}>
             Cancel
           </button>
           <button
             onClick={handleApply}
             disabled={!isValid()}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className={cn(
+              'inline-flex items-center gap-2 px-6 py-2.5',
+              theme.brand.composeButton,
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
           >
             <CheckIcon className="h-5 w-5" />
             Apply Changes

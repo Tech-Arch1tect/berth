@@ -1,5 +1,7 @@
 import { ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Link } from '@inertiajs/react';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 import { ActivitySummary, RecentActivity } from './hooks/useDashboardActivity';
 
 interface DashboardRecentActivityProps {
@@ -8,104 +10,100 @@ interface DashboardRecentActivityProps {
 
 const getStatusIcon = (operation: RecentActivity) => {
   if (operation.is_incomplete) {
-    return <span className="text-amber-500">⚠️</span>;
+    return <span className={theme.text.warning}>⚠️</span>;
   }
   if (operation.success === true) {
-    return <span className="text-green-500">✅</span>;
+    return <span className={theme.text.success}>✅</span>;
   }
   if (operation.success === false) {
-    return <span className="text-red-500">❌</span>;
+    return <span className={theme.text.danger}>❌</span>;
   }
-  return <span className="text-gray-500">⏳</span>;
+  return <span className={theme.text.subtle}>⏳</span>;
 };
 
-const formatDuration = (duration: number | null, isPartial: boolean = false) => {
-  if (duration === null || duration === undefined || duration === 0) return 'N/A';
-  if (duration < 0) return 'N/A';
+const formatDuration = (duration: number | null, isPartial = false) => {
+  if (!duration || duration <= 0) return 'N/A';
 
-  let formattedTime = '';
-  if (duration < 1000) formattedTime = `${duration}ms`;
-  else if (duration < 60000) formattedTime = `${(duration / 1000).toFixed(1)}s`;
-  else formattedTime = `${(duration / 60000).toFixed(1)}m`;
+  let formatted = '';
+  if (duration < 1000) formatted = `${duration}ms`;
+  else if (duration < 60000) formatted = `${(duration / 1000).toFixed(1)}s`;
+  else formatted = `${(duration / 60000).toFixed(1)}m`;
 
-  return isPartial ? `~${formattedTime}` : formattedTime;
+  return isPartial ? `~${formatted}` : formatted;
 };
 
 const getOperationDuration = (operation: RecentActivity) => {
   if (operation.duration_ms !== null) {
     return formatDuration(operation.duration_ms, false);
-  } else if (operation.partial_duration_ms !== null) {
+  }
+  if (operation.partial_duration_ms !== null) {
     return formatDuration(operation.partial_duration_ms, true);
   }
   return 'N/A';
 };
 
-export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = ({
-  activitySummary,
-}) => {
+const LoadingCard = () => (
+  <div className={theme.containers.subtle}>
+    <div className="animate-pulse space-y-3">
+      <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
+      {[...Array(3)].map((_, index) => (
+        <div key={index} className="h-4 rounded bg-slate-200 dark:bg-slate-700" />
+      ))}
+    </div>
+  </div>
+);
+
+export const DashboardRecentActivity = ({ activitySummary }: DashboardRecentActivityProps) => {
   const { recentOperations, failedOperations, loading, error } = activitySummary;
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
-            <div className="space-y-3">
-              {[...Array(2)].map((_, i) => (
-                <div key={i} className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <LoadingCard />
+        <LoadingCard />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
-        <div className="flex items-center space-x-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+      <div
+        className={cn(
+          'mb-8 rounded-xl border p-4',
+          theme.intent.danger.border,
+          theme.intent.danger.surface
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.danger.textStrong)} />
+          <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      {/* Recent Activity Feed */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <ClockIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Recent Activity
-              </h3>
-            </div>
-            <Link
-              href="/operation-logs"
-              className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-            >
-              View all
-            </Link>
+    <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className={theme.containers.subtle}>
+        <header className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-700/60">
+          <div className="flex items-center gap-2">
+            <ClockIcon className={cn('h-5 w-5', theme.text.subtle)} />
+            <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Recent Activity</h3>
           </div>
-        </div>
-        <div className="p-6">
+          <Link
+            href="/operation-logs"
+            className={cn(
+              'text-sm font-medium transition-colors',
+              theme.text.info,
+              'hover:text-blue-700 dark:hover:text-blue-300'
+            )}
+          >
+            View all
+          </Link>
+        </header>
+        <div className="pt-6">
           {recentOperations.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            <p className={cn('py-4 text-center text-sm', theme.text.subtle)}>
               No recent operations
             </p>
           ) : (
@@ -113,20 +111,24 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
               {recentOperations.slice(0, 5).map((operation) => (
                 <div
                   key={operation.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className={cn(
+                    'flex items-center justify-between rounded-lg border px-3 py-3',
+                    theme.intent.neutral.border,
+                    theme.intent.neutral.surface
+                  )}
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3">
                     {getStatusIcon(operation)}
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className={cn('text-sm font-medium', theme.text.strong)}>
                         {operation.command} on {operation.stack_name}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className={cn('text-xs', theme.text.subtle)}>
                         {operation.server_name} • {operation.formatted_date}
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className={cn('text-xs', theme.text.subtle)}>
                     {getOperationDuration(operation)}
                   </div>
                 </div>
@@ -136,44 +138,47 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
         </div>
       </div>
 
-      {/* Failed Operations Panel */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Failed Operations
-              </h3>
-            </div>
-            <Link
-              href="/operation-logs?status=failed"
-              className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-            >
-              View all
-            </Link>
+      <div className={theme.containers.subtle}>
+        <header className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-700/60">
+          <div className="flex items-center gap-2">
+            <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.danger.textStrong)} />
+            <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Failed Operations</h3>
           </div>
-        </div>
-        <div className="p-6">
+          <Link
+            href="/operation-logs?status=failed"
+            className={cn(
+              'text-sm font-medium transition-colors',
+              theme.text.danger,
+              'hover:text-red-700 dark:hover:text-red-300'
+            )}
+          >
+            View all
+          </Link>
+        </header>
+        <div className="pt-6">
           {failedOperations.length === 0 ? (
-            <div className="text-center py-4">
-              <span className="text-green-500 text-2xl">✅</span>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No recent failures</p>
+            <div className="py-4 text-center">
+              <span className="text-2xl">✅</span>
+              <p className={cn('mt-2 text-sm', theme.text.subtle)}>No recent failures</p>
             </div>
           ) : (
             <div className="space-y-4">
               {failedOperations.slice(0, 3).map((operation) => (
                 <div
                   key={operation.id}
-                  className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/50"
+                  className={cn(
+                    'flex items-center justify-between rounded-lg border px-3 py-3',
+                    theme.intent.danger.border,
+                    theme.intent.danger.surface
+                  )}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-red-500">❌</span>
+                  <div className="flex items-center gap-3">
+                    <span className={theme.text.danger}>❌</span>
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className={cn('text-sm font-medium', theme.text.strong)}>
                         {operation.command} on {operation.stack_name}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className={cn('text-xs', theme.text.subtle)}>
                         {operation.server_name} • {operation.formatted_date}
                         {operation.exit_code !== null && (
                           <span className="ml-2">Exit: {operation.exit_code}</span>
@@ -181,7 +186,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className={cn('text-xs', theme.text.subtle)}>
                     {getOperationDuration(operation)}
                   </div>
                 </div>

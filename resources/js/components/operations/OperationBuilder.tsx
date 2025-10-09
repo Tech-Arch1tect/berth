@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DockerOperationRequest } from '../../types/operations';
+import { theme } from '../../theme';
+import { cn } from '../../utils/cn';
 
 interface OperationBuilderProps {
   onOperationBuild: (operation: DockerOperationRequest) => void;
@@ -94,25 +96,20 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
   const needsTimeout = ['down', 'stop', 'restart'].includes(command);
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={cn('space-y-6', className)}>
       {/* Command Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Command
-        </label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <label className={cn(theme.forms.label, 'mb-2')}>Command</label>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {(Object.keys(commandDescriptions) as DockerOperationRequest['command'][]).map((cmd) => (
             <button
               key={cmd}
               onClick={() => setCommand(cmd)}
-              className={`
-                p-3 text-left rounded-lg border transition-all duration-200
-                ${
-                  command === cmd
-                    ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-200'
-                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300'
-                }
-              `}
+              className={cn(
+                theme.selectable.tileBase,
+                command === cmd ? theme.selectable.tileActive : theme.selectable.tileInactive
+              )}
+              type="button"
             >
               <div className="font-medium text-sm">{cmd}</div>
               <div className="text-xs opacity-70 mt-1">{commandDescriptions[cmd]}</div>
@@ -124,29 +121,25 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
       {/* Common Options */}
       {availableOptions.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Options
-          </label>
+          <label className={cn(theme.forms.label, 'mb-2')}>Options</label>
           <div className="space-y-2">
             {availableOptions
               .filter((option) => !['--timeout', '-t'].includes(option))
               .map((option) => (
                 <label
                   key={option}
-                  className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="flex items-start gap-3 rounded px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <input
                     type="checkbox"
                     checked={selectedOptions.includes(option)}
                     onChange={() => handleOptionToggle(option)}
                     disabled={disabled}
-                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
+                    className={cn('mt-1', theme.forms.checkbox)}
                   />
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {option}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className={cn('text-sm font-medium', theme.text.strong)}>{option}</div>
+                    <div className={cn('text-xs', theme.text.subtle)}>
                       {optionDescriptions[option] || 'No description available'}
                     </div>
                   </div>
@@ -155,19 +148,17 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
 
             {/* Timeout Option */}
             {needsTimeout && (
-              <label className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+              <label className="flex items-start gap-3 rounded px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
                 <input
                   type="checkbox"
                   checked={selectedOptions.includes('-t') || selectedOptions.includes('--timeout')}
                   onChange={() => handleOptionToggle('--timeout')}
                   disabled={disabled}
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
+                  className={cn('mt-1', theme.forms.checkbox)}
                 />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    --timeout
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  <div className={cn('text-sm font-medium', theme.text.strong)}>--timeout</div>
+                  <div className={cn('mb-2 text-xs', theme.text.subtle)}>
                     Shutdown timeout in seconds
                   </div>
                   {(selectedOptions.includes('-t') || selectedOptions.includes('--timeout')) && (
@@ -178,7 +169,10 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                       disabled={disabled}
                       min="1"
                       max="300"
-                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className={cn(
+                        theme.forms.input,
+                        'w-20 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus-visible:ring-blue-500'
+                      )}
                     />
                   )}
                 </div>
@@ -192,22 +186,25 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
       {services.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Services (leave empty for all)
-            </label>
+            <label className={theme.forms.label}>Services (leave empty for all)</label>
             {selectedServices.length > 0 && (
               <button
                 type="button"
                 onClick={() => setSelectedServices([])}
                 disabled={disabled}
-                className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+                className={cn(
+                  'text-sm transition-colors',
+                  theme.text.info,
+                  'hover:text-blue-700 dark:hover:text-blue-300',
+                  disabled && 'opacity-50'
+                )}
               >
                 Clear all
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
             {services.map((service) => {
               const serviceName = service.service_name || service.name;
               const isSelected = selectedServices.includes(serviceName);
@@ -217,15 +214,11 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                   key={service.name}
                   onClick={() => handleServiceToggle(serviceName)}
                   disabled={disabled}
-                  className={`
-                    p-2 text-left rounded-lg border transition-all duration-200 text-sm
-                    ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-200'
-                        : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300'
-                    }
-                    ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                  `}
+                  className={cn(
+                    theme.selectable.tileBase,
+                    isSelected ? theme.selectable.tileActive : theme.selectable.tileInactive,
+                    disabled ? theme.selectable.tileDisabled : 'cursor-pointer'
+                  )}
                 >
                   <div className="font-medium truncate" title={service.name}>
                     {service.name}
@@ -247,14 +240,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
         <button
           onClick={buildOperation}
           disabled={disabled}
-          className={`
-            px-4 py-2 rounded-lg font-medium transition-colors duration-200
-            ${
-              disabled
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
-                : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
-            }
-          `}
+          className={cn(theme.buttons.primary, disabled && 'cursor-not-allowed opacity-60')}
         >
           Run Operation
         </button>

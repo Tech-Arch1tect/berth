@@ -2,6 +2,8 @@ import { FormEvent } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Props {
   token: string;
@@ -28,13 +30,13 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
     <Layout>
       <Head title="Reset Password" />
 
-      <div className="min-h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h2 className={cn('mt-6 text-center text-3xl font-extrabold', theme.text.strong)}>
               Choose a new password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className={cn('mt-2 text-center text-sm', theme.text.muted)}>
               Enter your new password below.
             </p>
           </div>
@@ -55,13 +57,13 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={theme.forms.input}
                   placeholder="New password"
                   value={data.password}
                   onChange={(e) => setData('password', e.target.value)}
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.password}</p>
                 )}
               </div>
 
@@ -75,15 +77,13 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={theme.forms.input}
                   placeholder="Confirm new password"
                   value={data.password_confirm}
                   onChange={(e) => setData('password_confirm', e.target.value)}
                 />
                 {errors.password_confirm && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.password_confirm}
-                  </p>
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.password_confirm}</p>
                 )}
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
               <button
                 type="submit"
                 disabled={processing}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 dark:bg-indigo-700 hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-indigo-500 disabled:opacity-50"
+                className={cn('w-full flex justify-center', theme.buttons.primary)}
               >
                 {processing ? 'Resetting...' : 'Reset password'}
               </button>
@@ -101,7 +101,10 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
             <div className="text-center">
               <Link
                 href="/auth/login"
-                className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+                className={cn(
+                  'font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors',
+                  theme.text.info
+                )}
               >
                 Back to login
               </Link>

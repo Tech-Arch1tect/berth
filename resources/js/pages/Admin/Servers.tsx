@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface Server {
   id: number;
@@ -168,7 +170,12 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+            <h2
+              className={cn(
+                'text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
+                theme.text.strong
+              )}
+            >
               {title}
             </h2>
           </div>
@@ -181,7 +188,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                   setShowAddForm(!showAddForm);
                 }
               }}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
+              className={cn('ml-3', theme.buttons.primary)}
             >
               {editingServer ? 'Cancel Edit' : showAddForm ? 'Cancel' : 'Add Server'}
             </button>
@@ -191,47 +198,41 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
         <FlashMessages />
 
         {(showAddForm || editingServer) && (
-          <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div className={cn('mt-8 shadow rounded-lg', theme.surface.panel)}>
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className={cn('text-lg leading-6 font-medium mb-4', theme.text.strong)}>
                 {editingServer ? `Edit Server: ${editingServer.name}` : 'Add New Server'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Name
-                    </label>
+                    <label className={theme.forms.label}>Name</label>
                     <input
                       type="text"
                       required
                       value={data.name}
                       onChange={(e) => setData('name', e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Host
-                    </label>
+                    <label className={theme.forms.label}>Host</label>
                     <input
                       type="text"
                       required
                       value={data.host}
                       onChange={(e) => setData('host', e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Port
-                    </label>
+                    <label className={theme.forms.label}>Port</label>
                     <input
                       type="number"
                       required
                       value={data.port}
                       onChange={(e) => setData('port', parseInt(e.target.value))}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                   <div className="flex items-center">
@@ -239,28 +240,28 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                       type="checkbox"
                       checked={data.skip_ssl_verification}
                       onChange={(e) => setData('skip_ssl_verification', e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className={theme.forms.checkbox}
                     />
-                    <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    <label className={cn('ml-2 block text-sm', theme.text.standard)}>
                       Skip SSL Verification
                     </label>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Description
-                    </label>
+                    <label className={theme.forms.label}>Description</label>
                     <textarea
                       value={data.description}
                       onChange={(e) => setData('description', e.target.value)}
                       rows={3}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.textarea)}
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className={theme.forms.label}>
                       Access Token{' '}
                       {editingServer && (
-                        <span className="text-sm text-gray-500">(leave blank to keep current)</span>
+                        <span className={cn('text-sm', theme.text.subtle)}>
+                          (leave blank to keep current)
+                        </span>
                       )}
                     </label>
                     <input
@@ -269,7 +270,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                       value={data.access_token}
                       onChange={(e) => setData('access_token', e.target.value)}
                       placeholder={editingServer ? 'Enter new token or leave blank' : ''}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                 </div>
@@ -283,14 +284,14 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                         setShowAddForm(false);
                       }
                     }}
-                    className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className={theme.buttons.secondary}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={processing}
-                    className="bg-blue-600 dark:bg-blue-700 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    className={cn(theme.buttons.primary, 'disabled:opacity-50')}
                   >
                     {processing ? 'Saving...' : editingServer ? 'Update Server' : 'Add Server'}
                   </button>
@@ -304,22 +305,22 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
           <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+                <table className="min-w-full divide-y divide-slate-300 dark:divide-slate-700">
+                  <thead className={theme.table.head}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Server
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Host
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Created
                       </th>
                       <th className="relative px-6 py-3">
@@ -327,22 +328,27 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody
+                    className={cn(
+                      theme.table.body,
+                      'divide-y divide-slate-200 dark:divide-slate-700'
+                    )}
+                  >
                     {servers.map((server) => (
                       <tr key={server.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-mono text-gray-900 dark:text-white">
+                          <div className={cn('text-sm font-mono', theme.text.strong)}>
                             #{server.id}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              <div className={cn('text-sm font-medium', theme.text.strong)}>
                                 {server.name}
                               </div>
                               {server.description && (
-                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                <div className={cn('text-sm', theme.text.subtle)}>
                                   {server.description}
                                 </div>
                               )}
@@ -350,10 +356,10 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                          <div className={cn('text-sm', theme.text.strong)}>
                             https://{server.host}:{server.port}
                             {server.skip_ssl_verification && (
-                              <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">
+                              <span className={cn('ml-2 text-xs', theme.text.warning)}>
                                 (No SSL Verification)
                               </span>
                             )}
@@ -362,35 +368,38 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => toggleServerStatus(server.id, server.is_active)}
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            className={cn(
+                              'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
                               server.is_active
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            }`}
+                            )}
                           >
                             {server.is_active ? 'Active' : 'Inactive'}
                           </button>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <td
+                          className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.subtle)}
+                        >
                           {formatDate(server.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                           <button
                             onClick={() => handleEdit(server)}
-                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            className={cn('hover:underline', theme.text.info)}
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleTestConnection(server.id)}
                             disabled={testingConnection === server.id}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+                            className={cn('hover:underline disabled:opacity-50', theme.text.info)}
                           >
                             {testingConnection === server.id ? 'Testing...' : 'Test'}
                           </button>
                           <button
                             onClick={() => handleDelete(server.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            className={cn('hover:underline', theme.text.danger)}
                           >
                             Delete
                           </button>
@@ -401,7 +410,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                 </table>
                 {servers.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">No servers configured yet.</p>
+                    <p className={theme.text.subtle}>No servers configured yet.</p>
                   </div>
                 )}
               </div>

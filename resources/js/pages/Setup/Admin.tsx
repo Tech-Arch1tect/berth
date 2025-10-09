@@ -2,6 +2,8 @@ import React from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FormData {
   username: string;
@@ -27,13 +29,18 @@ export default function AdminSetup() {
     <Layout>
       <Head title="Admin Setup" />
 
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div
+        className={cn(
+          'min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8',
+          theme.layout.authShell
+        )}
+      >
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h2 className={cn('mt-6 text-center text-3xl font-extrabold', theme.text.strong)}>
               Create Admin Account
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className={cn('mt-2 text-center text-sm', theme.text.muted)}>
               Set up your first admin account to get started
             </p>
           </div>
@@ -51,12 +58,14 @@ export default function AdminSetup() {
                   name="username"
                   type="text"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={cn(theme.forms.input, 'rounded-none rounded-t-md')}
                   placeholder="Username"
                   value={data.username}
                   onChange={(e) => setData('username', e.target.value)}
                 />
-                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                {errors.username && (
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.username}</p>
+                )}
               </div>
 
               <div>
@@ -68,12 +77,14 @@ export default function AdminSetup() {
                   name="email"
                   type="email"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={cn(theme.forms.input, 'rounded-none')}
                   placeholder="Email"
                   value={data.email}
                   onChange={(e) => setData('email', e.target.value)}
                 />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && (
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.email}</p>
+                )}
               </div>
 
               <div>
@@ -85,12 +96,14 @@ export default function AdminSetup() {
                   name="password"
                   type="password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={cn(theme.forms.input, 'rounded-none')}
                   placeholder="Password"
                   value={data.password}
                   onChange={(e) => setData('password', e.target.value)}
                 />
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                {errors.password && (
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.password}</p>
+                )}
               </div>
 
               <div>
@@ -102,13 +115,13 @@ export default function AdminSetup() {
                   name="password_confirm"
                   type="password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className={cn(theme.forms.input, 'rounded-none rounded-b-md')}
                   placeholder="Confirm Password"
                   value={data.password_confirm}
                   onChange={(e) => setData('password_confirm', e.target.value)}
                 />
                 {errors.password_confirm && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password_confirm}</p>
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.password_confirm}</p>
                 )}
               </div>
             </div>
@@ -117,7 +130,11 @@ export default function AdminSetup() {
               <button
                 type="submit"
                 disabled={processing}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={cn(
+                  'w-full flex justify-center',
+                  theme.buttons.primary,
+                  processing && 'opacity-50 cursor-not-allowed'
+                )}
               >
                 {processing ? 'Creating Admin...' : 'Create Admin Account'}
               </button>

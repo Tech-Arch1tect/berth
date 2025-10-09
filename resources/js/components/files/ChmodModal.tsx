@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileEntry, ChmodRequest } from '../../types/files';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface ChmodModalProps {
   isOpen: boolean;
@@ -122,20 +124,15 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose}></div>
+        <div className={theme.modal.overlay} onClick={onClose}></div>
 
-        <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl">
-          <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className={cn(theme.modal.content, 'relative w-full max-w-md')}>
+          <div className={theme.modal.header}>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Change Permissions
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{entry.name}</p>
+              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Change Permissions</h3>
+              <p className={cn('text-sm mt-1', theme.text.muted)}>{entry.name}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
+            <button onClick={onClose} className={theme.buttons.icon}>
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -143,126 +140,137 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
           <form onSubmit={handleSubmit} className="p-6">
             {/* Octal Input */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Octal Notation
-              </label>
+              <label className={cn(theme.forms.label, 'mb-2')}>Octal Notation</label>
               <input
                 type="text"
                 value={octalMode}
                 onChange={(e) => handleOctalChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={cn(theme.forms.input, 'w-full')}
                 placeholder="755"
                 maxLength={3}
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className={cn('text-xs mt-1', theme.text.subtle)}>
                 Enter 3-digit octal permissions (e.g., 755, 644)
               </p>
             </div>
 
             {/* Visual Permission Editor */}
             <div className="space-y-4">
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                Permissions
-              </div>
+              <div className={cn('text-sm font-medium mb-3', theme.text.standard)}>Permissions</div>
 
               {/* User/Owner */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Owner</div>
+              <div
+                className={cn(
+                  theme.surface.muted,
+                  'flex items-center justify-between p-3 rounded-lg'
+                )}
+              >
+                <div className={cn('text-sm font-medium', theme.text.standard)}>Owner</div>
                 <div className="flex space-x-4">
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={userRead}
                       onChange={(e) => setUserRead(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Read</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Read</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={userWrite}
                       onChange={(e) => setUserWrite(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Write</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Write</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={userExecute}
                       onChange={(e) => setUserExecute(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Execute</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Execute</span>
                   </label>
                 </div>
               </div>
 
               {/* Group */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Group</div>
+              <div
+                className={cn(
+                  theme.surface.muted,
+                  'flex items-center justify-between p-3 rounded-lg'
+                )}
+              >
+                <div className={cn('text-sm font-medium', theme.text.standard)}>Group</div>
                 <div className="flex space-x-4">
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={groupRead}
                       onChange={(e) => setGroupRead(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Read</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Read</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={groupWrite}
                       onChange={(e) => setGroupWrite(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Write</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Write</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={groupExecute}
                       onChange={(e) => setGroupExecute(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Execute</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Execute</span>
                   </label>
                 </div>
               </div>
 
               {/* Others */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Others</div>
+              <div
+                className={cn(
+                  theme.surface.muted,
+                  'flex items-center justify-between p-3 rounded-lg'
+                )}
+              >
+                <div className={cn('text-sm font-medium', theme.text.standard)}>Others</div>
                 <div className="flex space-x-4">
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={otherRead}
                       onChange={(e) => setOtherRead(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Read</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Read</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={otherWrite}
                       onChange={(e) => setOtherWrite(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Write</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Write</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={otherExecute}
                       onChange={(e) => setOtherExecute(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      className={theme.forms.checkbox}
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Execute</span>
+                    <span className={cn('text-xs', theme.text.muted)}>Execute</span>
                   </label>
                 </div>
               </div>
@@ -270,19 +278,25 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
 
             {/* Recursive Option for Directories */}
             {entry.is_directory && (
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div
+                className={cn(
+                  theme.intent.info.surface,
+                  theme.intent.info.border,
+                  'mt-6 p-4 rounded-lg border'
+                )}
+              >
                 <label className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     checked={recursive}
                     onChange={(e) => setRecursive(e.target.checked)}
-                    className="rounded border-blue-300 dark:border-blue-600 text-blue-600 focus:ring-blue-500"
+                    className={theme.forms.checkbox}
                   />
                   <div>
-                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    <span className={cn('text-sm font-medium', theme.intent.info.textStrong)}>
                       Apply recursively
                     </span>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    <p className={cn('text-xs mt-1', theme.intent.info.textMuted)}>
                       Change permissions for all files and subdirectories within this directory
                     </p>
                   </div>
@@ -290,19 +304,21 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               </div>
             )}
 
-            <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className={theme.modal.footer}>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                className={cn(theme.buttons.ghost, 'disabled:opacity-50')}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || octalMode.length !== 3}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className={cn(
+                  'bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 px-4 py-2'
+                )}
               >
                 {loading && (
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
