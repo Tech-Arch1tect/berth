@@ -1,15 +1,16 @@
 import { theme } from '../../theme';
 import { Volume } from '../../types/stack';
 import { cn } from '../../utils/cn';
+import { formatDate } from '../../utils/formatters';
 
 interface VolumeCardProps {
   volume: Volume;
 }
 
-const formatDate = (value?: string) => {
+const formatDateSafe = (value?: string) => {
   if (!value) return 'Unknown';
   try {
-    return new Date(value).toLocaleString();
+    return formatDate(value);
   } catch {
     return 'Invalid date';
   }
@@ -62,7 +63,9 @@ export const VolumeCard = ({ volume }: VolumeCardProps) => {
         {volume.created && (
           <div>
             <p className={theme.forms.label}>Created</p>
-            <p className={cn('mt-1 text-sm', theme.text.standard)}>{formatDate(volume.created)}</p>
+            <p className={cn('mt-1 text-sm', theme.text.standard)}>
+              {formatDateSafe(volume.created)}
+            </p>
           </div>
         )}
         {volume.scope && (

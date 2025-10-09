@@ -11,6 +11,7 @@ import {
 import { theme } from '../../theme';
 import { ContainerStats } from '../../hooks/useStackStats';
 import { cn } from '../../utils/cn';
+import { formatBytes, formatNumber } from '../../utils/formatters';
 
 interface StackStatsProps {
   containers: ContainerStats[];
@@ -20,21 +21,10 @@ interface StackStatsProps {
 
 type Severity = 'neutral' | 'success' | 'info' | 'warning' | 'danger';
 
-const formatBytes = (bytes: number): string => {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  if (bytes === 0) return '0 B';
-  if (!Number.isFinite(bytes)) return 'Unlimited';
-  const exponent = Math.floor(Math.log(bytes) / Math.log(1024));
-  const index = Math.min(exponent, units.length - 1);
-  return `${(bytes / Math.pow(1024, index)).toFixed(1)} ${units[index]}`;
-};
-
 const formatPercent = (value: number): string => {
   if (value < 0) return '—';
   return `${value.toFixed(1)}%`;
 };
-
-const formatNumber = (value: number): string => value.toLocaleString();
 
 const resolveSeverity = (value?: number): Severity => {
   if (value === undefined || value < 0) return 'neutral';

@@ -13,6 +13,8 @@ import {
   DeleteRequest,
 } from '../../hooks/useDockerMaintenance';
 import { showToast } from '../../utils/toast';
+import { formatBytes, formatNumber, formatDate } from '../../utils/formatters';
+import { getContainerStatusBadge, getResourceStatusBadge } from '../../utils/statusHelpers';
 import {
   HomeIcon,
   ChevronRightIcon,
@@ -57,74 +59,13 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
   const pruneMutation = useDockerPrune();
   const deleteMutation = useDeleteResource();
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatNumber = (num: number): string => {
-    return num.toLocaleString();
-  };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    } catch {
-      return dateString;
-    }
-  };
-
   const getStatusBadge = (status: string, isUnused?: boolean, isDangling?: boolean) => {
-    if (isDangling) {
-      return <span className={cn(theme.badges.tag.base, theme.badges.tag.warning)}>Dangling</span>;
-    }
-    if (isUnused) {
-      return <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>Unused</span>;
-    }
+    const badgeInfo =
+      isUnused !== undefined || isDangling !== undefined
+        ? getResourceStatusBadge(status, isUnused, isDangling)
+        : getContainerStatusBadge(status);
 
-    const statusMap: { [key: string]: { className: string; label: string } } = {
-      running: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.success),
-        label: 'Running',
-      },
-      exited: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.danger),
-        label: 'Exited',
-      },
-      created: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.info),
-        label: 'Created',
-      },
-      paused: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.warning),
-        label: 'Paused',
-      },
-      restarting: {
-        className: cn(
-          theme.badges.tag.base,
-          'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-        ),
-        label: 'Restarting',
-      },
-      removing: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.warning),
-        label: 'Removing',
-      },
-      dead: {
-        className: cn(theme.badges.tag.base, theme.badges.tag.neutral),
-        label: 'Dead',
-      },
-    };
-
-    const statusInfo = statusMap[status.toLowerCase()] || {
-      className: cn(theme.badges.tag.base, theme.badges.tag.neutral),
-      label: status,
-    };
-    return <span className={statusInfo.className}>{statusInfo.label}</span>;
+    return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
   const handleDelete = async () => {
