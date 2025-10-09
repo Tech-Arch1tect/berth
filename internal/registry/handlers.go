@@ -32,6 +32,11 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 
 	userID := session.GetUserIDAsUint(c)
 
+	server, err := h.service.serverSvc.GetActiveServerForUser(serverID, userID)
+	if err != nil {
+		return common.SendNotFound(c, "Server not found")
+	}
+
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
 	if err != nil {
 		return h.inertiaSvc.Render(c, "Errors/Generic", map[string]any{
@@ -47,20 +52,13 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 		})
 	}
 
-	var server struct {
-		ID   uint   `json:"id"`
-		Name string `json:"name"`
-	}
-
-	server.ID = serverID
-
 	credentials, err := h.service.GetCredentials(serverID)
 	if err != nil {
 		credentials = []models.ServerRegistryCredential{}
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Registries", map[string]any{
-		"title":       "Registry Credentials",
+		"title":       "Registry Credentials - " + server.Name,
 		"server_id":   serverID,
 		"server_name": server.Name,
 		"credentials": credentials,
