@@ -1,0 +1,75 @@
+import React from 'react';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
+
+export interface Tab {
+  id: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
+  hidden?: boolean;
+  badge?: string | number;
+}
+
+export interface TabsProps {
+  tabs: Tab[];
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  activeTab,
+  onTabChange,
+  children,
+  className,
+}) => {
+  return (
+    <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden', className)}>
+      <div className={theme.cards.sectionDivider}>
+        <nav className="flex space-x-1 p-2">
+          {tabs
+            .filter((tab) => !tab.hidden)
+            .map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  disabled={tab.disabled}
+                  className={cn(
+                    'flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
+                      : cn(
+                          theme.text.muted,
+                          'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                        ),
+                    tab.disabled && 'opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  <span>{tab.label}</span>
+                  {tab.badge !== undefined && (
+                    <span
+                      className={cn(
+                        'ml-1 px-2 py-0.5 text-xs font-semibold rounded-full',
+                        activeTab === tab.id
+                          ? 'bg-blue-600 text-white dark:bg-blue-500'
+                          : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                      )}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        </nav>
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
+  );
+};
