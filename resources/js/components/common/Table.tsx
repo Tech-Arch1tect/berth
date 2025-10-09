@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { LoadingSpinner } from './LoadingSpinner';
 
 export interface Column<T> {
   key: string;
@@ -32,11 +33,7 @@ export function Table<T>({
   className,
 }: TableProps<T>) {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className={theme.effects.spinner}></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (data.length === 0) {

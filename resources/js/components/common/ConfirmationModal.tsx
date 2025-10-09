@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Modal } from './Modal';
+import { LoadingSpinner } from './LoadingSpinner';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -63,7 +64,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               isLoading && 'opacity-50 cursor-not-allowed'
             )}
           >
-            {isLoading ? 'Processing...' : confirmText}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" />
+                Processing...
+              </span>
+            ) : (
+              confirmText
+            )}
           </button>
           <button
             onClick={onClose}
