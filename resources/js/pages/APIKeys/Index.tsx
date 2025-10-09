@@ -17,6 +17,8 @@ import {
 import axios from 'axios';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 interface APIKey {
   id: number;
@@ -270,26 +272,18 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
 
           {/* API Keys List */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className={theme.text.muted}>Loading API keys...</p>
-            </div>
+            <LoadingSpinner size="lg" text="Loading API keys..." />
           ) : apiKeys.length === 0 ? (
-            <div className={cn('text-center py-12', theme.surface.panel, 'rounded-lg shadow')}>
-              <KeyIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
-              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>No API keys</h3>
-              <p className={cn('mt-1 text-sm', theme.text.muted)}>
-                Get started by creating a new API key.
-              </p>
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className={cn('inline-flex items-center', theme.buttons.primary)}
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Create API Key
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              icon={KeyIcon}
+              title="No API keys"
+              description="Get started by creating a new API key."
+              variant="info"
+              action={{
+                label: 'Create API Key',
+                onClick: () => setShowCreateModal(true),
+              }}
+            />
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">

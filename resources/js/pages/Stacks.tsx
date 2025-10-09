@@ -10,6 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 import Layout from '../components/Layout';
 import { StackCard } from '../components/StackCard';
+import { EmptyState } from '../components/common/EmptyState';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { cn } from '../utils/cn';
@@ -189,25 +191,7 @@ export default function Stacks({ title, servers }: StacksProps) {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-16">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
-            </div>
-            <div className="relative">
-              <div
-                className={cn(
-                  'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 animate-spin',
-                  theme.surface.panel
-                )}
-              >
-                <ArrowPathIcon className={cn('w-8 h-8', theme.text.subtle)} />
-              </div>
-            </div>
-          </div>
-          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>Loading stacks...</h3>
-          <p className={theme.text.muted}>Please wait while we fetch stacks from all servers.</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading stacks from all servers..." fullScreen />
       ) : (
         <>
           <div
@@ -274,31 +258,19 @@ export default function Stacks({ title, servers }: StacksProps) {
           </div>
 
           {filteredStacks.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className={cn('w-32 h-32 rounded-full opacity-50', theme.surface.panel)} />
-                </div>
-                <div className="relative">
-                  <div
-                    className={cn(
-                      'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6',
-                      theme.surface.panel
-                    )}
-                  >
-                    <MagnifyingGlassIcon className={cn('w-8 h-8', theme.text.subtle)} />
-                  </div>
-                </div>
-              </div>
-              <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-                No stacks found
-              </h3>
-              <p className={theme.text.muted}>
-                {searchTerm || healthFilter !== 'all' || serverFilter !== 'all'
+            <EmptyState
+              icon={
+                searchTerm || healthFilter !== 'all' || serverFilter !== 'all'
+                  ? MagnifyingGlassIcon
+                  : CircleStackIcon
+              }
+              title="No stacks found"
+              description={
+                searchTerm || healthFilter !== 'all' || serverFilter !== 'all'
                   ? 'Try adjusting your search or filter criteria.'
-                  : 'There are no Docker Compose stacks configured on any server.'}
-              </p>
-            </div>
+                  : 'There are no Docker Compose stacks configured on any server.'
+              }
+            />
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredStacks.map((stack) => (

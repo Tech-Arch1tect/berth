@@ -1,9 +1,11 @@
 import React from 'react';
 import { useStackImages } from '../../hooks/useStackImages';
 import { ContainerImageCard } from './ContainerImageCard';
-import { ArrowPathIcon, ExclamationTriangleIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface StackImagesTabProps {
   serverid: number;
@@ -20,93 +22,49 @@ export const StackImagesTab: React.FC<StackImagesTabProps> = ({ serverid, stackn
   } = useStackImages({ serverid, stackname });
 
   if (isLoading) {
-    return (
-      <div className="text-center py-16">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full opacity-50" />
-          </div>
-          <div className="relative">
-            <div
-              className={cn(
-                'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 animate-spin',
-                theme.surface.muted
-              )}
-            >
-              <ArrowPathIcon className={cn('w-8 h-8', theme.text.subtle)} />
-            </div>
-          </div>
-        </div>
-        <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-          Loading image details...
-        </h3>
-        <p className={theme.text.muted}>Inspecting Docker images and build history.</p>
-      </div>
-    );
+    return <LoadingSpinner text="Inspecting Docker images and build history..." />;
   }
 
   if (error) {
     return (
-      <div className="text-center py-16">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/20 dark:to-orange-900/20 rounded-full opacity-50" />
-          </div>
-          <div className="relative">
-            <div
-              className={cn(
-                'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6',
-                theme.intent.danger.surface
-              )}
-            >
-              <ExclamationTriangleIcon className={cn('w-8 h-8', theme.intent.danger.icon)} />
-            </div>
-          </div>
-        </div>
-        <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-          Error loading image details
-        </h3>
-        <p className={cn('mb-6', theme.text.muted)}>
-          {error?.message || 'Unable to fetch container image information.'}
-        </p>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className={cn(
-            'inline-flex items-center px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200',
-            theme.buttons.primary
-          )}
-        >
-          <ArrowPathIcon className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-          Try Again
-        </button>
-      </div>
+      <EmptyState
+        variant="error"
+        title="Error loading image details"
+        description={error?.message || 'Unable to fetch container image information.'}
+        action={{
+          label: 'Try Again',
+          onClick: () => refetch(),
+        }}
+        icon={({ className }) => (
+          <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        )}
+      />
     );
   }
 
   if (!imageDetails || imageDetails.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800/20 dark:to-slate-700/20 rounded-full opacity-50" />
-          </div>
-          <div className="relative">
-            <div
-              className={cn(
-                'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6',
-                theme.surface.muted
-              )}
-            >
-              <CubeIcon className={cn('w-8 h-8', theme.text.subtle)} />
-            </div>
-          </div>
-        </div>
-        <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>No images found</h3>
-        <p className={theme.text.muted}>
-          This stack doesn't have any running containers with image information.
-        </p>
-      </div>
+      <EmptyState
+        title="No images found"
+        description="This stack doesn't have any running containers with image information."
+        icon={({ className }) => (
+          <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
+            />
+          </svg>
+        )}
+      />
     );
   }
 

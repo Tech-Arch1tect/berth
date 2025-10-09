@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 const LogViewer: React.FC<LogViewerProps> = ({
   serverid,
@@ -451,8 +452,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 theme.containers.card
               )}
             >
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className={cn('font-medium', theme.text.standard)}>Loading logs...</span>
+              <LoadingSpinner size="md" text="Loading logs..." />
             </div>
           </div>
         )}

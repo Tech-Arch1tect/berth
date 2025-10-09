@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
 
 interface Session {
   id: number;
@@ -212,14 +213,12 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
           </div>
 
           {sessions.length === 0 && (
-            <div className="text-center py-12">
-              <div className={theme.text.muted}>
-                <p className="text-lg">No active sessions found.</p>
-                <p className="text-sm mt-2">
-                  This might indicate a configuration issue with session tracking.
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={InformationCircleIcon}
+              title="No active sessions found"
+              description="This might indicate a configuration issue with session tracking."
+              variant="info"
+            />
           )}
 
           <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>

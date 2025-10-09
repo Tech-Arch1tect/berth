@@ -5,6 +5,8 @@ import { ServerNavigation } from '../../components/ServerNavigation';
 import { Server } from '../../types/server';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { EmptyState } from '../../components/common/EmptyState';
 import {
   useMaintenanceInfo,
   useDockerPrune,
@@ -212,9 +214,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
     return (
       <Layout>
         <Head title={title} />
-        <div className="flex items-center justify-center h-64">
-          <div className={theme.effects.spinner}></div>
-        </div>
+        <LoadingSpinner size="lg" text="Loading maintenance information..." fullScreen />
       </Layout>
     );
   }
@@ -223,18 +223,17 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
     return (
       <Layout>
         <Head title={title} />
-        <div className="text-center py-12">
-          <ExclamationTriangleIcon className={cn('h-12 w-12 mx-auto mb-4', theme.text.danger)} />
-          <h2 className={cn('text-lg font-semibold mb-2', theme.text.strong)}>
-            Failed to load maintenance information
-          </h2>
-          <p className={cn('mb-4', theme.text.muted)}>
-            Unable to connect to the Docker maintenance service.
-          </p>
-          <button onClick={() => refetch()} className={theme.buttons.primary}>
-            Retry
-          </button>
-        </div>
+        <EmptyState
+          icon={ExclamationTriangleIcon}
+          title="Failed to load maintenance information"
+          description="Unable to connect to the Docker maintenance service."
+          variant="error"
+          size="lg"
+          action={{
+            label: 'Retry',
+            onClick: () => refetch(),
+          }}
+        />
       </Layout>
     );
   }

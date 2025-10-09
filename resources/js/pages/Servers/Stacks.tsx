@@ -5,10 +5,14 @@ import {
   FunnelIcon,
   HomeIcon,
   ChevronRightIcon,
+  ExclamationCircleIcon,
+  ServerStackIcon,
 } from '@heroicons/react/24/outline';
 import Layout from '../../components/Layout';
 import { StackCard } from '../../components/StackCard';
 import { ServerNavigation } from '../../components/ServerNavigation';
+import { EmptyState } from '../../components/common/EmptyState';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 import { cn } from '../../utils/cn';
@@ -173,92 +177,24 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
 
       {/* Stacks Content */}
       {loading ? (
-        <div className="text-center py-12">
-          <div
-            className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 animate-spin',
-              theme.surface.panel
-            )}
-          >
-            <svg
-              className={cn('w-8 h-8', theme.text.subtle)}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </div>
-          <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>Loading stacks...</h3>
-        </div>
+        <LoadingSpinner size="lg" text="Loading stacks..." fullScreen />
       ) : error ? (
-        <div className="text-center py-12">
-          <div
-            className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
-              theme.intent.danger.surface
-            )}
-          >
-            <svg
-              className={cn('w-8 h-8', theme.intent.danger.icon)}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>
-            Error loading stacks
-          </h3>
-          <p className={cn('mb-4', theme.text.muted)}>{error?.message}</p>
-          <button
-            onClick={() => refetch()}
-            className={cn(
-              'inline-flex items-center px-4 py-2 rounded-md text-sm font-medium',
-              theme.buttons.primary
-            )}
-          >
-            Try again
-          </button>
-        </div>
+        <EmptyState
+          icon={ExclamationCircleIcon}
+          title="Error loading stacks"
+          description={error?.message}
+          variant="error"
+          action={{
+            label: 'Try again',
+            onClick: () => refetch(),
+          }}
+        />
       ) : stacks.length === 0 ? (
-        <div className="text-center py-12">
-          <div
-            className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
-              theme.surface.panel
-            )}
-          >
-            <svg
-              className={cn('w-8 h-8', theme.text.subtle)}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-          </div>
-          <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>No stacks found</h3>
-          <p className={theme.text.muted}>
-            There are no Docker Compose stacks configured on this server.
-          </p>
-        </div>
+        <EmptyState
+          icon={ServerStackIcon}
+          title="No stacks found"
+          description="There are no Docker Compose stacks configured on this server."
+        />
       ) : (
         <>
           {/* Search and Filter Controls */}
@@ -300,13 +236,11 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
           </div>
 
           {filteredStacks.length === 0 ? (
-            <div className="text-center py-12">
-              <MagnifyingGlassIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
-              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>No stacks found</h3>
-              <p className={cn('mt-1 text-sm', theme.text.muted)}>
-                Try adjusting your search or filter criteria.
-              </p>
-            </div>
+            <EmptyState
+              icon={MagnifyingGlassIcon}
+              title="No stacks found"
+              description="Try adjusting your search or filter criteria."
+            />
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredStacks.map((stack, index) => (

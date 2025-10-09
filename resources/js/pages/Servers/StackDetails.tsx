@@ -22,6 +22,8 @@ import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
 import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
+import { EmptyState } from '../../components/common/EmptyState';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { showToast } from '../../utils/toast';
 import {
   generateStackDocumentation,
@@ -454,50 +456,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
       {/* Main Content */}
       {loading ? (
-        <div className="text-center py-16">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)} />
-            </div>
-            <div className="relative">
-              <div className={cn(theme.icon.emptyState, 'mb-6 animate-spin')}>
-                <ArrowPathIcon className={cn('w-8 h-8', theme.text.subtle)} />
-              </div>
-            </div>
-          </div>
-          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-            Loading stack details...
-          </h3>
-          <p className={theme.text.muted}>
-            Please wait while we fetch your Docker stack information.
-          </p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading stack details..." />
       ) : error ? (
-        <div className="text-center py-16">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/20 dark:to-orange-900/20 rounded-full opacity-50" />
-            </div>
-            <div className="relative">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-800 dark:to-red-700 rounded-2xl flex items-center justify-center mb-6">
-                <ExclamationTriangleIcon className={cn('w-8 h-8', theme.text.danger)} />
-              </div>
-            </div>
-          </div>
-          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-            Error loading stack details
-          </h3>
-          <p className={cn('mb-6', theme.text.muted)}>
-            {error?.message || 'Unable to connect to the Docker stack.'}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className={cn(theme.buttons.primary, 'shadow-lg hover:shadow-xl')}
-          >
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
-            Try Again
-          </button>
-        </div>
+        <EmptyState
+          icon={ExclamationTriangleIcon}
+          title="Error loading stack details"
+          description={error?.message || 'Unable to connect to the Docker stack.'}
+          variant="error"
+          size="lg"
+          action={{
+            label: 'Try Again',
+            onClick: () => refetch(),
+          }}
+        />
       ) : stackDetails ? (
         <div className="space-y-8">
           {/* Quick Stats Grid */}
@@ -697,69 +668,79 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
             {/* Tab Content */}
             <div className="p-6">
-              {activeTab === 'services' &&
-                stackDetails.services &&
-                stackDetails.services.length > 0 && (
-                  <div className="space-y-4">
-                    {/* Expand All / Collapse All Controls */}
-                    <div
-                      className={cn(
-                        'flex items-center justify-between pb-4',
-                        theme.cards.sectionDivider
-                      )}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
-                          Services ({stackDetails.services.length})
-                        </h3>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {stackPermissions?.permissions?.includes('stacks.manage') && (
-                          <button
-                            onClick={() => setShowComposeEditor(true)}
-                            className={cn(
-                              'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                              'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
-                              'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
-                            )}
-                            title="Edit compose configuration"
-                          >
-                            <PencilSquareIcon className="w-3 h-3 mr-1" />
-                            Edit Compose
-                          </button>
+              {activeTab === 'services' && (
+                <>
+                  {stackDetails.services && stackDetails.services.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Expand All / Collapse All Controls */}
+                      <div
+                        className={cn(
+                          'flex items-center justify-between pb-4',
+                          theme.cards.sectionDivider
                         )}
-                        <button
-                          onClick={handleExpandAll}
-                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                        >
-                          <ChevronDownIcon className="w-3 h-3 mr-1" />
-                          Expand All
-                        </button>
-                        <button
-                          onClick={handleCollapseAll}
-                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                        >
-                          <ChevronUpIcon className="w-3 h-3 mr-1" />
-                          Collapse All
-                        </button>
+                      >
+                        <div className="flex items-center space-x-2">
+                          <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
+                            Services ({stackDetails.services.length})
+                          </h3>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {stackPermissions?.permissions?.includes('stacks.manage') && (
+                            <button
+                              onClick={() => setShowComposeEditor(true)}
+                              className={cn(
+                                'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
+                                'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
+                                'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
+                              )}
+                              title="Edit compose configuration"
+                            >
+                              <PencilSquareIcon className="w-3 h-3 mr-1" />
+                              Edit Compose
+                            </button>
+                          )}
+                          <button
+                            onClick={handleExpandAll}
+                            className={cn(theme.buttons.subtle, theme.buttons.sm)}
+                          >
+                            <ChevronDownIcon className="w-3 h-3 mr-1" />
+                            Expand All
+                          </button>
+                          <button
+                            onClick={handleCollapseAll}
+                            className={cn(theme.buttons.subtle, theme.buttons.sm)}
+                          >
+                            <ChevronUpIcon className="w-3 h-3 mr-1" />
+                            Collapse All
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {stackDetails.services.map((service) => (
-                      <CompactServiceCard
-                        key={service.name}
-                        service={service}
-                        onQuickOperation={handleQuickOperation}
-                        serverid={serverid}
-                        stackname={stackname}
-                        isOperationRunning={quickOperationState.isRunning}
-                        runningOperation={quickOperationState.operation}
-                        isExpanded={expandedServices.has(service.name)}
-                        onToggleExpand={() => toggleServiceExpanded(service.name)}
-                      />
-                    ))}
-                  </div>
-                )}
+                      {stackDetails.services.map((service) => (
+                        <CompactServiceCard
+                          key={service.name}
+                          service={service}
+                          onQuickOperation={handleQuickOperation}
+                          serverid={serverid}
+                          stackname={stackname}
+                          isOperationRunning={quickOperationState.isRunning}
+                          runningOperation={quickOperationState.operation}
+                          isExpanded={expandedServices.has(service.name)}
+                          onToggleExpand={() => toggleServiceExpanded(service.name)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={CircleStackIcon}
+                      title="No services found"
+                      description="This stack doesn't have any services defined yet."
+                      variant="info"
+                      size="md"
+                    />
+                  )}
+                </>
+              )}
 
               {activeTab === 'networks' && (
                 <NetworkList
@@ -822,22 +803,13 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           </div>
         </div>
       ) : (
-        <div className="text-center py-16">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)} />
-            </div>
-            <div className="relative">
-              <div className={cn(theme.icon.emptyState, 'mb-6')}>
-                <ExclamationTriangleIcon className={cn('w-8 h-8', theme.text.subtle)} />
-              </div>
-            </div>
-          </div>
-          <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-            No stack details available
-          </h3>
-          <p className={theme.text.muted}>Unable to load information for this stack.</p>
-        </div>
+        <EmptyState
+          icon={ExclamationTriangleIcon}
+          title="No stack details available"
+          description="Unable to load information for this stack."
+          variant="warning"
+          size="lg"
+        />
       )}
 
       {/* Advanced Operations Modal */}

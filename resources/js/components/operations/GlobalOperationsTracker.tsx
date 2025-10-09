@@ -13,6 +13,7 @@ import { OperationBuilder } from './OperationBuilder';
 import { useOperations } from '../../hooks/useOperations';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../common/EmptyState';
 
 interface OperationTrackerProps {
   serverid: number;
@@ -440,9 +441,14 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
         {/* Operations List */}
         <div className="flex-1 overflow-y-auto">
           {operations.length === 0 ? (
-            <div className={cn('p-8 text-center', theme.text.muted)}>
-              <Cog6ToothIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No operations running</p>
+            <div className="p-8">
+              <EmptyState
+                icon={Cog6ToothIcon}
+                title="No operations running"
+                description="Docker operations will appear here when you start them."
+                variant="info"
+                size="sm"
+              />
             </div>
           ) : (
             operations.map((op) => (

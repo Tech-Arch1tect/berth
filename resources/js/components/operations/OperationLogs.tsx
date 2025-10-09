@@ -16,6 +16,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
 import { StreamMessage } from '../../types/operations';
+import { EmptyState } from '../common/EmptyState';
 
 interface OperationLogsProps {
   logs: StreamMessage[];
@@ -270,17 +271,17 @@ export const OperationLogs: React.FC<OperationLogsProps> = ({ logs, isRunning, c
           >
             {logs.length === 0 ? (
               <div className="flex h-full items-center justify-center">
-                <div className="text-center">
-                  <DocumentDuplicateIcon className="mx-auto mb-4 h-12 w-12 text-slate-500" />
-                  <p className={cn('text-lg font-medium', theme.text.subtle)}>
-                    {isRunning ? 'Waiting for logs...' : 'No logs available'}
-                  </p>
-                  <p className={cn('text-sm', theme.text.subtle)}>
-                    {isRunning
+                <EmptyState
+                  icon={DocumentDuplicateIcon}
+                  title={isRunning ? 'Waiting for logs...' : 'No logs available'}
+                  description={
+                    isRunning
                       ? 'The operation will start producing logs soon'
-                      : 'This operation did not produce any output'}
-                  </p>
-                </div>
+                      : 'This operation did not produce any output'
+                  }
+                  variant="info"
+                  size="lg"
+                />
               </div>
             ) : (
               <div className="space-y-2 p-6">

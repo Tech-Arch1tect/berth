@@ -12,6 +12,7 @@ import { theme } from '../../theme';
 import { ContainerStats } from '../../hooks/useStackStats';
 import { cn } from '../../utils/cn';
 import { formatBytes, formatNumber } from '../../utils/formatters';
+import { EmptyState } from '../common/EmptyState';
 
 interface StackStatsProps {
   containers: ContainerStats[];
@@ -160,34 +161,25 @@ export const StackStats = ({ containers, isLoading, error }: StackStatsProps) =>
 
   if (error) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
-        <div className={cn(theme.icon.squareLg, 'bg-red-500 text-white')}>
-          <ExclamationCircleIcon className="h-8 w-8" />
-        </div>
-        <div>
-          <h3 className={cn('text-xl font-semibold', theme.text.strong)}>
-            Failed to load statistics
-          </h3>
-          <p className={cn('mt-2 max-w-md text-sm', theme.text.subtle)}>{error.message}</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={ExclamationCircleIcon}
+        title="Failed to load statistics"
+        description={error.message}
+        variant="error"
+        size="lg"
+      />
     );
   }
 
   if (!containers || containers.length === 0) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
-        <div className={cn(theme.icon.squareLg, 'bg-slate-500 text-white')}>
-          <ChartBarIcon className="h-8 w-8" />
-        </div>
-        <div>
-          <h3 className={cn('text-xl font-semibold', theme.text.strong)}>No running containers</h3>
-          <p className={cn('mt-2 max-w-md text-sm', theme.text.subtle)}>
-            Statistics will appear once containers are running. Start your services to view
-            real-time metrics.
-          </p>
-        </div>
-      </div>
+      <EmptyState
+        icon={ChartBarIcon}
+        title="No running containers"
+        description="Statistics will appear once containers are running. Start your services to view real-time metrics."
+        variant="info"
+        size="lg"
+      />
     );
   }
 

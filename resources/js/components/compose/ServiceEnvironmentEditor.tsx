@@ -11,6 +11,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 interface ServiceEnvironmentEditorProps {
   service: ComposeService;
@@ -186,11 +189,15 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
         {/* Existing Variables */}
         <div className="space-y-3">
           {isLoading ? (
-            <div className={cn('text-center py-8', theme.text.muted)}>Loading variables...</div>
+            <LoadingSpinner size="md" text="Loading variables..." />
           ) : Object.keys(variables).length === 0 ? (
-            <div className={cn('text-center py-8', theme.text.muted)}>
-              No environment variables defined
-            </div>
+            <EmptyState
+              icon={Cog6ToothIcon}
+              title="No environment variables defined"
+              description="Add new variables using the form above."
+              variant="info"
+              size="sm"
+            />
           ) : (
             Object.entries(variables).map(([key, value]) => (
               <div

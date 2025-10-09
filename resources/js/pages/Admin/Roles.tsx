@@ -4,6 +4,8 @@ import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 interface Role {
   id: number;
@@ -241,9 +243,13 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
           ))}
 
           {roles.length === 0 && (
-            <div className="text-center py-12">
-              <div className={cn('text-sm', theme.text.muted)}>No roles found.</div>
-            </div>
+            <EmptyState
+              icon={ShieldCheckIcon}
+              title="No roles defined"
+              description="Create your first role to manage user permissions and access control."
+              variant="info"
+              size="md"
+            />
           )}
         </div>
       </div>

@@ -4,6 +4,8 @@ import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 interface Permission {
   id: number;
@@ -489,32 +491,16 @@ export default function RoleStackPermissions({
         {/* Permission Rules */}
         <div className="mt-8">
           {(permissionRules || []).length === 0 ? (
-            <div className="text-center py-12">
-              <svg
-                className={cn('mx-auto h-12 w-12', theme.text.subtle)}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>
-                No permission rules
-              </h3>
-              <p className={cn('mt-1 text-sm', theme.text.subtle)}>
-                Get started by creating your first permission rule for this role.
-              </p>
-              <div className="mt-6">
-                <button onClick={() => setShowAddRule(true)} className={theme.buttons.primary}>
-                  Add Permission Rule
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              icon={ShieldCheckIcon}
+              title="No permission rules"
+              description="Get started by creating your first permission rule for this role."
+              variant="info"
+              action={{
+                label: 'Add Permission Rule',
+                onClick: () => setShowAddRule(true),
+              }}
+            />
           ) : (
             <div className="space-y-3">
               {Object.entries(groupedRules).map(([key, group]) => (

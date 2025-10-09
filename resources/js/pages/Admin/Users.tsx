@@ -4,6 +4,8 @@ import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
+import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 interface User {
   id: number;
@@ -322,9 +324,13 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                 </table>
 
                 {users.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className={cn('text-sm', theme.text.muted)}>No users found.</div>
-                  </div>
+                  <EmptyState
+                    icon={UserGroupIcon}
+                    title="No users found"
+                    description="There are no users in the system yet. Create the first user to get started."
+                    variant="info"
+                    size="md"
+                  />
                 )}
               </div>
             </div>

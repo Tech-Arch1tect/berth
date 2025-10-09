@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import ServerCard from './ServerCard';
 import EmptyServerState from './EmptyServerState';
+import { EmptyState } from './common/EmptyState';
 import { Server } from '../types/server';
 import { theme } from '../theme';
 import { cn } from '../utils/cn';
@@ -52,13 +53,11 @@ export default function ServerList({ servers }: ServerListProps) {
       {servers.length === 0 ? (
         <EmptyServerState />
       ) : filteredServers.length === 0 ? (
-        <div className="py-8 text-center">
-          <MagnifyingGlassIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
-          <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>No servers found</h3>
-          <p className={cn('mt-1 text-sm', theme.text.muted)}>
-            Try adjusting your search criteria.
-          </p>
-        </div>
+        <EmptyState
+          icon={MagnifyingGlassIcon}
+          title="No servers found"
+          description="Try adjusting your search criteria."
+        />
       ) : (
         <div className="space-y-4">
           {filteredServers.map((server) => (

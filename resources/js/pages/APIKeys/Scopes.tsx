@@ -12,6 +12,8 @@ import {
 import axios from 'axios';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { EmptyState } from '../../components/common/EmptyState';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 interface Scope {
   id: number;
@@ -299,28 +301,18 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
           {/* Scopes List */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className={theme.text.muted}>Loading scopes...</p>
-            </div>
+            <LoadingSpinner size="lg" text="Loading scopes..." />
           ) : scopes.length === 0 ? (
-            <div className={cn('text-center py-12 rounded-lg shadow', theme.surface.panel)}>
-              <ShieldCheckIcon className={cn('mx-auto h-12 w-12', theme.text.subtle)} />
-              <h3 className={cn('mt-2 text-sm font-medium', theme.text.strong)}>
-                No scopes configured
-              </h3>
-              <p className={cn('mt-1 text-sm', theme.text.muted)}>
-                Add scopes to grant this API key access to specific resources.
-              </p>
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className={cn('inline-flex items-center', theme.buttons.primary)}
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Add Scope
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              icon={ShieldCheckIcon}
+              title="No scopes configured"
+              description="Add scopes to grant this API key access to specific resources."
+              variant="info"
+              action={{
+                label: 'Add Scope',
+                onClick: () => setShowAddModal(true),
+              }}
+            />
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
