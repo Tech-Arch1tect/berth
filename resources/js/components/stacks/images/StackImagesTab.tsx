@@ -6,20 +6,18 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { EmptyState } from '../../common/EmptyState';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
+import { useServerStack } from '../../../contexts/ServerStackContext';
 
-interface StackImagesTabProps {
-  serverid: number;
-  stackname: string;
-}
+export const StackImagesTab: React.FC = () => {
+  const { serverId, stackName } = useServerStack();
 
-export const StackImagesTab: React.FC<StackImagesTabProps> = ({ serverid, stackname }) => {
   const {
     data: imageDetails,
     isLoading,
     error,
     refetch,
     isFetching,
-  } = useStackImages({ serverid, stackname });
+  } = useStackImages({ serverid: serverId, stackname: stackName });
 
   if (isLoading) {
     return <LoadingSpinner text="Inspecting Docker images and build history..." />;

@@ -14,12 +14,11 @@ import { ComposeService } from '../../../types/stack';
 import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../utils/cn';
 import { TerminalModal } from '../../terminal/TerminalModal';
+import { useServerStack } from '../../../contexts/ServerStackContext';
 
 interface ServiceQuickActionsProps {
   service: ComposeService;
   onQuickOperation: (operation: OperationRequest) => void;
-  serverid?: number;
-  stackname?: string;
   disabled?: boolean;
   isOperationRunning?: boolean;
   runningOperation?: string;
@@ -50,13 +49,12 @@ const iconMap: Record<ActionKey, ComponentType<SVGProps<SVGSVGElement>>> = {
 export const ServiceQuickActions = ({
   service,
   onQuickOperation,
-  serverid,
-  stackname,
   disabled = false,
   isOperationRunning = false,
   runningOperation,
 }: ServiceQuickActionsProps) => {
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const { serverId, stackName } = useServerStack();
 
   const determineState = (): ServiceState => {
     const containers = service.containers ?? [];
@@ -149,7 +147,7 @@ export const ServiceQuickActions = ({
   ];
 
   const canOpenTerminal = Boolean(
-    serverid && stackname && (serviceState === 'all-running' || serviceState === 'mixed-running')
+    serverId && stackName && (serviceState === 'all-running' || serviceState === 'mixed-running')
   );
 
   return (
@@ -197,12 +195,12 @@ export const ServiceQuickActions = ({
         </button>
       )}
 
-      {terminalOpen && serverid && stackname && (
+      {terminalOpen && serverId && stackName && (
         <TerminalModal
           isOpen={terminalOpen}
           onClose={() => setTerminalOpen(false)}
-          serverid={serverid}
-          stackname={stackname}
+          serverid={serverId}
+          stackname={stackName}
           serviceName={service.name}
           containerName={service.containers?.[0]?.name}
         />

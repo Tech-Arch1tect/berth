@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { RunningOperation } from '../types/running-operation';
 import { StreamMessage } from '../types/operations';
+import StorageManager from '../utils/storage';
 
 interface OperationState {
   operation: RunningOperation;
@@ -19,15 +20,13 @@ interface OperationsContextType {
 
 const OperationsContext = createContext<OperationsContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'berth_operations_state';
 const MAX_COMPLETED_OPERATIONS = 50;
 
 const loadPersistedOperations = (): Map<string, OperationState> => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return new Map();
+    const parsed = StorageManager.operations.get();
+    if (!parsed) return new Map();
 
-    const parsed = JSON.parse(stored);
     const map = new Map<string, OperationState>();
 
     if (Array.isArray(parsed)) {
@@ -60,7 +59,7 @@ const persistOperations = (states: Map<string, OperationState>) => {
         logs: state.logs,
       }));
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(completedOps));
+    StorageManager.operations.set(completedOps);
   } catch (err) {
     console.error('Failed to persist operations:', err);
   }

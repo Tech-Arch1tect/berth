@@ -13,22 +13,17 @@ import { useFileManager } from '../../hooks/useFileManager';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { useServerStack } from '../../contexts/ServerStackContext';
 
 interface FileManagerProps {
-  serverid: number;
-  stackname: string;
   canRead: boolean;
   canWrite: boolean;
 }
 
-export const FileManager: React.FC<FileManagerProps> = ({
-  serverid,
-  stackname,
-  canRead,
-  canWrite,
-}) => {
-  // Use the consolidated hook for all business logic
-  const fm = useFileManager({ serverid, stackname, canRead, canWrite });
+export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) => {
+  const { serverId, stackName } = useServerStack();
+
+  const fm = useFileManager({ serverid: serverId, stackname: stackName, canRead, canWrite });
 
   if (!canRead) {
     return (

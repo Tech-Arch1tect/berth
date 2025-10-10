@@ -14,8 +14,6 @@ import {
 
 interface StackServicesTabProps {
   services: ComposeService[];
-  serverid: number;
-  stackname: string;
   onQuickOperation: (operation: OperationRequest) => void;
   quickOperationState: {
     isRunning: boolean;
@@ -31,8 +29,6 @@ interface StackServicesTabProps {
 
 export const StackServicesTab: React.FC<StackServicesTabProps> = ({
   services,
-  serverid,
-  stackname,
   onQuickOperation,
   quickOperationState,
   expandedServices,
@@ -96,8 +92,6 @@ export const StackServicesTab: React.FC<StackServicesTabProps> = ({
           key={service.name}
           service={service}
           onQuickOperation={onQuickOperation}
-          serverid={serverid}
-          stackname={stackname}
           isOperationRunning={quickOperationState.isRunning}
           runningOperation={quickOperationState.operation}
           isExpanded={expandedServices.has(service.name)}

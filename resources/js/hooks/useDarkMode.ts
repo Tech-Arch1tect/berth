@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
+import StorageManager from '../utils/storage';
 
 export function useDarkMode() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('darkMode');
-    const initialValue = stored === 'true';
+    const initialValue = StorageManager.theme.isDark();
     setIsDark(initialValue);
 
     if (initialValue) {
@@ -18,7 +18,7 @@ export function useDarkMode() {
   const toggleDarkMode = () => {
     const newValue = !isDark;
     setIsDark(newValue);
-    localStorage.setItem('darkMode', newValue.toString());
+    StorageManager.theme.set(newValue);
 
     if (newValue) {
       document.documentElement.classList.add('dark');

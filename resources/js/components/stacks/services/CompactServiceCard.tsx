@@ -25,12 +25,11 @@ import {
 } from '@heroicons/react/24/solid';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
+import { useServerStack } from '../../../contexts/ServerStackContext';
 
 interface CompactServiceCardProps {
   service: ComposeService;
   onQuickOperation: (operation: OperationRequest) => void;
-  serverid: number;
-  stackname: string;
   isOperationRunning: boolean;
   runningOperation?: string;
   isExpanded?: boolean;
@@ -40,8 +39,6 @@ interface CompactServiceCardProps {
 export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
   service,
   onQuickOperation,
-  serverid,
-  stackname,
   isOperationRunning,
   runningOperation,
   isExpanded: externalIsExpanded,
@@ -50,9 +47,11 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
 
+  const { serverId, stackName } = useServerStack();
+
   const { data: stackPermissions } = useStackPermissions({
-    serverid,
-    stackname,
+    serverid: serverId,
+    stackname: stackName,
   });
 
   const getContainerStatusInfo = (container: Container) => {
@@ -202,8 +201,6 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
               <ServiceQuickActions
                 service={service}
                 onQuickOperation={onQuickOperation}
-                serverid={serverid}
-                stackname={stackname}
                 isOperationRunning={isOperationRunning}
                 runningOperation={runningOperation}
               />

@@ -21,24 +21,19 @@ import {
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { LoadingSpinner } from '../common/LoadingSpinner';
+import { useServerStack } from '../../contexts/ServerStackContext';
 
-const LogViewer: React.FC<LogViewerProps> = ({
-  serverid,
-  stackname,
-  serviceName,
-  containerName,
-  containers = [],
-}) => {
-  // Use the consolidated hook for all state and logic
+const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, containers = [] }) => {
+  const { serverId, stackName } = useServerStack();
+
   const viewer = useLogViewerState({
-    serverid,
-    stackname,
+    serverid: serverId,
+    stackname: stackName,
     serviceName,
     containerName,
     containers,
   });
 
-  // Helper functions for styling (UI-specific, not state-related)
   const getLogLevelStyle = (level?: string) => {
     switch (level) {
       case 'error':

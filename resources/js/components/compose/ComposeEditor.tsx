@@ -21,8 +21,6 @@ export interface ComposeChanges {
 
 interface ComposeEditorProps {
   services: ComposeService[];
-  serverid: number;
-  stackname: string;
   onUpdate: (changes: ComposeChanges) => Promise<void>;
   onClose: () => void;
 }
@@ -64,10 +62,8 @@ const serviceHasPendingChanges = (changes: ComposeChanges, serviceName: string):
 };
 
 export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate, onClose }) => {
-  // Use the consolidated hook for all business logic
   const editor = useComposeEditor(services, onUpdate);
 
-  // Handle save success to close modal
   const handleSave = async () => {
     const success = await editor.handleSave();
     if (success) {
