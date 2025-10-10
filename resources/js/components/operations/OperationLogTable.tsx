@@ -95,11 +95,7 @@ export default function OperationLogTable({
               e.stopPropagation();
               onViewDetails(log.id);
             }}
-            className={cn(
-              'transition-colors',
-              theme.text.info,
-              'hover:text-blue-700 dark:hover:text-blue-300'
-            )}
+            className={cn('transition-colors', theme.link.primary)}
           >
             View Details
           </button>

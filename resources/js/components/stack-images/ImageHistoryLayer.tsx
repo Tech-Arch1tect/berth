@@ -46,10 +46,7 @@ export const ImageHistoryLayer: React.FC<ImageHistoryLayerProps> = ({ layer }) =
         {layer.tags && layer.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {layer.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-              >
+              <span key={index} className={cn(theme.badges.tag.base, theme.badges.tag.info)}>
                 {tag}
               </span>
             ))}

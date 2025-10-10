@@ -140,32 +140,32 @@ export default function Stacks({ title, servers }: StacksProps) {
           label="Total Stacks"
           value={statistics.total}
           icon={CircleStackIcon}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-100 dark:bg-blue-900/20"
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
           className="rounded-2xl"
         />
         <StatCard
           label="Healthy"
           value={statistics.healthy}
           icon={CircleStackIcon}
-          iconColor="text-green-600 dark:text-green-400"
-          iconBg="bg-green-100 dark:bg-green-900/20"
+          iconColor={theme.text.success}
+          iconBg={theme.intent.success.surface}
           className="rounded-2xl"
         />
         <StatCard
           label="Unhealthy"
           value={statistics.unhealthy}
           icon={ExclamationTriangleIcon}
-          iconColor="text-red-600 dark:text-red-400"
-          iconBg="bg-red-100 dark:bg-red-900/20"
+          iconColor={theme.text.danger}
+          iconBg={theme.intent.danger.surface}
           className="rounded-2xl"
         />
         <StatCard
           label="Containers"
           value={`${statistics.running}/${statistics.totalContainers}`}
           icon={ServerIcon}
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBg="bg-purple-100 dark:bg-purple-900/20"
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
           className="rounded-2xl"
         />
       </div>

@@ -34,7 +34,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
     >
       <div className={cn('px-6 py-4 border-b', theme.cards.sectionDivider)}>
         <h3 className={cn('text-lg font-medium flex items-center', theme.text.strong)}>
-          <FolderIcon className="h-5 w-5 text-purple-600 mr-2" />
+          <FolderIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
           Docker Volumes ({volumes.length})
         </h3>
       </div>

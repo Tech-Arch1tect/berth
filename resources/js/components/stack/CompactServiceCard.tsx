@@ -62,50 +62,50 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
       case 'running':
         return {
           icon: CheckCircleIconSolid,
-          color: 'text-emerald-500',
-          bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-          border: 'border-emerald-200 dark:border-emerald-800/50',
+          color: theme.text.success,
+          bg: theme.intent.success.surface,
+          border: theme.intent.success.border,
           label: 'Running',
         };
       case 'stopped':
       case 'exited':
         return {
           icon: StopIcon,
-          color: 'text-red-500',
-          bg: 'bg-red-50 dark:bg-red-900/20',
-          border: 'border-red-200 dark:border-red-800/50',
+          color: theme.text.danger,
+          bg: theme.intent.danger.surface,
+          border: theme.intent.danger.border,
           label: container.exit_code === 0 ? 'Stopped' : `Error (${container.exit_code})`,
         };
       case 'paused':
         return {
           icon: ClockIconSolid,
-          color: 'text-amber-500',
-          bg: 'bg-amber-50 dark:bg-amber-900/20',
-          border: 'border-amber-200 dark:border-amber-800/50',
+          color: theme.text.warning,
+          bg: theme.intent.warning.surface,
+          border: theme.intent.warning.border,
           label: 'Paused',
         };
       case 'restarting':
         return {
           icon: ArrowPathIcon,
-          color: 'text-blue-500',
-          bg: 'bg-blue-50 dark:bg-blue-900/20',
-          border: 'border-blue-200 dark:border-blue-800/50',
+          color: theme.text.info,
+          bg: theme.intent.info.surface,
+          border: theme.intent.info.border,
           label: 'Restarting',
         };
       case 'not created':
         return {
           icon: XCircleIconSolid,
-          color: 'text-slate-400',
-          bg: 'bg-slate-50 dark:bg-slate-800/20',
-          border: 'border-slate-200 dark:border-slate-700/50',
+          color: theme.text.subtle,
+          bg: theme.intent.neutral.surface,
+          border: theme.intent.neutral.border,
           label: 'Not Created',
         };
       default:
         return {
           icon: ExclamationTriangleIconSolid,
-          color: 'text-orange-500',
-          bg: 'bg-orange-50 dark:bg-orange-900/20',
-          border: 'border-orange-200 dark:border-orange-800/50',
+          color: theme.text.warning,
+          bg: theme.intent.warning.surface,
+          border: theme.intent.warning.border,
           label: state.charAt(0).toUpperCase() + state.slice(1),
         };
     }
@@ -158,7 +158,14 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                 <h3 className={cn('font-semibold truncate', theme.text.strong)}>{service.name}</h3>
                 <div className="flex items-center space-x-1 text-xs">
                   <div
-                    className={`w-2 h-2 rounded-full ${runningContainers.length === totalContainers ? 'bg-emerald-500' : runningContainers.length > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
+                    className={cn(
+                      'w-2 h-2 rounded-full',
+                      runningContainers.length === totalContainers
+                        ? theme.badges.dot.success
+                        : runningContainers.length > 0
+                          ? theme.badges.dot.warning
+                          : theme.badges.dot.danger
+                    )}
                   />
                   <span className={cn('font-medium', theme.text.muted)}>
                     {runningContainers.length}/{totalContainers}
@@ -430,13 +437,14 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
                             <div key={mountIndex} className="space-y-1">
                               <div className="flex items-center space-x-2">
                                 <span
-                                  className={`px-1.5 py-0.5 text-xs rounded font-medium ${
+                                  className={cn(
+                                    theme.badges.tag.base,
                                     mount.type === 'volume'
-                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                      ? theme.badges.tag.info
                                       : mount.type === 'bind'
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                        : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                                  }`}
+                                        ? theme.badges.tag.success
+                                        : theme.badges.tag.neutral
+                                  )}
                                 >
                                   {mount.type}
                                 </span>

@@ -178,25 +178,19 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
                 className={cn(
                   'p-4 rounded-lg border-2 cursor-pointer transition-all duration-200',
                   isSelected
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : cn(
-                        'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
-                        theme.containers.panel
-                      )
+                    ? cn(theme.selection.tile.selected, 'border-2')
+                    : cn(theme.selection.tile.unselected, 'border-2', theme.containers.panel)
                 )}
               >
                 <div className="flex items-start space-x-3">
                   <Icon
-                    className={cn(
-                      'h-6 w-6 mt-1',
-                      isSelected ? 'text-blue-600 dark:text-blue-400' : theme.text.muted
-                    )}
+                    className={cn('h-6 w-6 mt-1', isSelected ? theme.text.info : theme.text.muted)}
                   />
                   <div className="flex-1 min-w-0">
                     <h4
                       className={cn(
                         'font-medium',
-                        isSelected ? 'text-blue-900 dark:text-blue-100' : theme.text.strong
+                        isSelected ? theme.intent.info.textStrong : theme.text.strong
                       )}
                     >
                       {name}
@@ -212,8 +206,8 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
                         </div>
                         {stats.problematic > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-orange-600 dark:text-orange-400">To Clean:</span>
-                            <span className="font-medium text-orange-700 dark:text-orange-300">
+                            <span className={theme.text.warning}>To Clean:</span>
+                            <span className={cn('font-medium', theme.text.warning)}>
                               {stats.problematic}
                             </span>
                           </div>
@@ -229,9 +223,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
                       </div>
                     )}
                   </div>
-                  {isSelected && (
-                    <CheckCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  )}
+                  {isSelected && <CheckCircleIcon className={cn('h-5 w-5', theme.text.info)} />}
                 </div>
               </div>
             );
@@ -264,14 +256,14 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
         )}
 
         {/* Description */}
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div className={cn('mb-6 p-4 rounded-lg', theme.intent.info.surface)}>
           <div className="flex items-start space-x-3">
-            <InformationCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <InformationCircleIcon className={cn('h-5 w-5 mt-0.5', theme.text.info)} />
             <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+              <p className={cn('text-sm font-medium mb-1', theme.intent.info.textStrong)}>
                 {selectedPruneType.charAt(0).toUpperCase() + selectedPruneType.slice(1)} Cleanup
               </p>
-              <p className="text-sm text-blue-800 dark:text-blue-300">
+              <p className={cn('text-sm', theme.intent.info.textMuted)}>
                 {getPruneDescription(selectedPruneType)}
               </p>
             </div>
@@ -321,25 +313,25 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
         <h4 className={cn('text-md font-medium mb-4', theme.text.strong)}>System Overview</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {maintenanceInfo?.image_summary.total_count || 0}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Images</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className={cn('text-2xl font-bold', theme.text.success)}>
               {maintenanceInfo?.container_summary.total_count || 0}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Containers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {maintenanceInfo?.volume_summary.total_count || 0}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Volumes</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-indigo-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {maintenanceInfo?.network_summary.total_count || 0}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Networks</div>

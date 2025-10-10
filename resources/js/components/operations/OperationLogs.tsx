@@ -240,7 +240,7 @@ export const OperationLogs: React.FC<OperationLogsProps> = ({ logs, isRunning, c
                   theme.buttons.subtle,
                   'rounded-xl px-3 py-2 text-sm font-medium',
                   autoScroll
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300'
+                    ? cn(theme.intent.success.surface, theme.intent.success.textStrong)
                     : 'bg-white/50 text-slate-600 hover:bg-white dark:bg-slate-700/50 dark:text-slate-300 dark:hover:bg-slate-700'
                 )}
               >

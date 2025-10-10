@@ -70,11 +70,11 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
                   'w-2 h-2 rounded-full flex-shrink-0',
                   isComplete
                     ? isFailed
-                      ? 'bg-red-500'
-                      : 'bg-green-500'
+                      ? theme.badges.dot.danger
+                      : theme.badges.dot.success
                     : isConnected
-                      ? 'bg-blue-500 animate-pulse'
-                      : 'bg-yellow-500'
+                      ? cn(theme.badges.dot.info, 'animate-pulse')
+                      : theme.badges.dot.warning
                 )}
               />
               <span className={cn('font-medium text-sm truncate', theme.text.strong)}>
@@ -136,11 +136,11 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
                     key={idx}
                     className={
                       log.type === 'stderr' || log.type === 'error'
-                        ? 'text-red-400'
+                        ? theme.logs.level.error
                         : log.type === 'complete'
                           ? log.success
-                            ? 'text-green-400'
-                            : 'text-red-400'
+                            ? theme.logs.level.success
+                            : theme.logs.level.error
                           : 'text-slate-300'
                     }
                   >
@@ -259,9 +259,9 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           className={cn(
             'flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-colors',
             runningOps.length > 0
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? theme.buttons.info
               : completedOps.length > 0
-                ? 'bg-green-600 hover:bg-green-700 text-white'
+                ? theme.buttons.success
                 : cn(
                     'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600',
                     theme.text.standard
@@ -307,10 +307,10 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                 className={cn(
                   'w-2 h-2 rounded-full',
                   advancedOps.isConnected
-                    ? 'bg-green-500'
+                    ? theme.badges.dot.success
                     : advancedOps.isConnecting
-                      ? 'bg-yellow-500 animate-pulse'
-                      : 'bg-red-500'
+                      ? cn(theme.badges.dot.warning, 'animate-pulse')
+                      : theme.badges.dot.danger
                 )}
               />
               <span className={cn('text-xs', theme.text.muted)}>
@@ -458,19 +458,19 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
         {/* Resize handles */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-blue-500/20 transition-colors z-10"
+          className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-blue-500/20 dark:hover:bg-blue-400/20 transition-colors z-10"
           onMouseDown={(e) => handleResizeStart(e, 'left')}
           title="Resize width"
           style={{ pointerEvents: 'auto' }}
         />
         <div
-          className="absolute left-0 right-0 top-0 h-2 cursor-ns-resize hover:bg-blue-500/20 transition-colors z-10"
+          className="absolute left-0 right-0 top-0 h-2 cursor-ns-resize hover:bg-blue-500/20 dark:hover:bg-blue-400/20 transition-colors z-10"
           onMouseDown={(e) => handleResizeStart(e, 'top')}
           title="Resize height"
           style={{ pointerEvents: 'auto' }}
         />
         <div
-          className="absolute left-0 top-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-500/40 transition-colors rounded-tl-lg z-10"
+          className="absolute left-0 top-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-500/40 dark:hover:bg-blue-400/40 transition-colors rounded-tl-lg z-10"
           onMouseDown={(e) => handleResizeStart(e, 'topleft')}
           title="Resize"
           style={{ pointerEvents: 'auto' }}

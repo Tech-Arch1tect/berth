@@ -35,10 +35,7 @@ export const getContainerStatusBadge = (status: string): StatusBadgeInfo => {
       label: 'Paused',
     },
     restarting: {
-      className: cn(
-        theme.badges.tag.base,
-        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-      ),
+      className: cn(theme.badges.tag.base, theme.badges.tag.info),
       label: 'Restarting',
     },
     removing: {

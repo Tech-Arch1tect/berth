@@ -147,32 +147,32 @@ export default function SecurityAuditLogs({ title }: Props) {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.danger);
       case 'high':
-        return 'text-orange-800 bg-orange-100 dark:text-orange-200 dark:bg-orange-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.warning);
       case 'medium':
-        return 'text-yellow-800 bg-yellow-100 dark:text-yellow-200 dark:bg-yellow-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.warning);
       case 'low':
-        return 'text-blue-800 bg-blue-100 dark:text-blue-200 dark:bg-blue-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.info);
       default:
-        return 'text-gray-800 bg-gray-100 dark:text-gray-200 dark:bg-gray-700';
+        return cn(theme.badges.tag.base, theme.badges.tag.neutral);
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'auth':
-        return 'text-purple-800 bg-purple-100 dark:text-purple-200 dark:bg-purple-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.info);
       case 'user_mgmt':
-        return 'text-indigo-800 bg-indigo-100 dark:text-indigo-200 dark:bg-indigo-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.info);
       case 'rbac':
-        return 'text-pink-800 bg-pink-100 dark:text-pink-200 dark:bg-pink-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.warning);
       case 'server':
-        return 'text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.success);
       case 'file':
-        return 'text-amber-800 bg-amber-100 dark:text-amber-200 dark:bg-amber-900';
+        return cn(theme.badges.tag.base, theme.badges.tag.warning);
       default:
-        return 'text-gray-800 bg-gray-100 dark:text-gray-200 dark:bg-gray-700';
+        return cn(theme.badges.tag.base, theme.badges.tag.neutral);
     }
   };
 
@@ -400,11 +400,11 @@ export default function SecurityAuditLogs({ title }: Props) {
                 header: 'Status',
                 render: (log) =>
                   log.success ? (
-                    <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
+                    <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
                       Success
                     </span>
                   ) : (
-                    <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
+                    <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>
                       Failed
                     </span>
                   ),
@@ -511,13 +511,11 @@ export default function SecurityAuditLogs({ title }: Props) {
               <div className={cn('text-sm font-medium', theme.text.subtle)}>Status</div>
               <div className="mt-1">
                 {selectedLog.success ? (
-                  <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
+                  <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
                     Success
                   </span>
                 ) : (
-                  <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
-                    Failed
-                  </span>
+                  <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>Failed</span>
                 )}
               </div>
             </div>

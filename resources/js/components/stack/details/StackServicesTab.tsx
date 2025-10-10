@@ -69,8 +69,10 @@ export const StackServicesTab: React.FC<StackServicesTabProps> = ({
               onClick={onEditCompose}
               className={cn(
                 'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
-                'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
+                theme.intent.info.surface,
+                'hover:bg-blue-100 dark:hover:bg-blue-900/30',
+                theme.intent.info.textStrong,
+                theme.intent.info.border
               )}
               title="Edit compose configuration"
             >

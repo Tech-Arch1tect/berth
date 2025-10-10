@@ -114,11 +114,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   };
 
   const getDeviceTypeColor = (session: Session) => {
-    if (session.bot)
-      return cn(
-        theme.badges.tag.base,
-        'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400'
-      );
+    if (session.bot) return cn(theme.badges.tag.base, theme.badges.tag.info);
     if (session.mobile) return cn(theme.badges.tag.base, theme.badges.tag.info);
     if (session.tablet) return cn(theme.badges.tag.base, theme.badges.tag.success);
     return cn(theme.badges.tag.base, theme.badges.tag.neutral);

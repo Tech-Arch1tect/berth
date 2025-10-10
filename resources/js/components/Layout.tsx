@@ -211,16 +211,14 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'group flex items-center rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-slate-100/80 text-slate-900 dark:bg-slate-800/60 dark:text-white'
-                        : 'text-slate-700 hover:bg-slate-100/60 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/40 dark:hover:text-white'
+                      theme.navigation.itemBase,
+                      isActive ? theme.navigation.itemActive : theme.navigation.itemInactive
                     )}
                     onClick={() => setSidebarOpen(false)}
                   >
                     <Icon
                       className={cn(
-                        'mr-3 h-5 w-5',
+                        theme.navigation.iconBase,
                         isActive ? theme.navigation.iconActive : theme.navigation.iconInactive
                       )}
                     />
@@ -285,7 +283,9 @@ export default function Layout({ children }: LayoutProps) {
               </button>
               <div className="hidden sm:block">
                 <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
-                  <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  <div
+                    className={cn('h-2 w-2 animate-pulse rounded-full', theme.badges.dot.success)}
+                  />
                   <span>All systems operational</span>
                 </div>
               </div>

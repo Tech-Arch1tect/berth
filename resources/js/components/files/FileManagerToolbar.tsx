@@ -121,8 +121,7 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
                 onClick={onUpload}
                 className={cn(
                   'px-3 py-2 text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2',
-                  theme.brand.accent,
-                  'hover:from-blue-700 hover:to-purple-700'
+                  theme.brand.accent
                 )}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

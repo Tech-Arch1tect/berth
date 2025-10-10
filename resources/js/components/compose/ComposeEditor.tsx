@@ -221,7 +221,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Compose Editor</h2>
-                  <p className="mt-1 text-sm text-indigo-100">
+                  <p className={cn('mt-1 text-sm', theme.brand.composeAccent)}>
                     Edit your Docker Compose configuration
                   </p>
                 </div>
@@ -259,7 +259,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                         className={cn(
                           'w-full text-left px-4 py-3 rounded-lg transition-all duration-200',
                           selectedService === service.name
-                            ? 'bg-indigo-600 text-white shadow-md'
+                            ? theme.brand.composeSelected
                             : cn(theme.text.standard, 'hover:bg-slate-200 dark:hover:bg-slate-700')
                         )}
                       >
@@ -326,7 +326,10 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             )}
                             <button
                               onClick={() => setActiveEditor('image')}
-                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-900/60"
+                              className={cn(
+                                'px-3 py-1.5 text-xs font-medium rounded-lg',
+                                theme.brand.composePreview
+                              )}
                             >
                               Edit image
                             </button>
@@ -343,10 +346,17 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                           </div>
                           {updatedImageValue && (
                             <div className="pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
-                              <span className="block text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+                              <span
+                                className={cn(
+                                  'block text-xs font-semibold uppercase tracking-wide',
+                                  theme.text.info
+                                )}
+                              >
                                 Updated
                               </span>
-                              <div className="mt-1 font-mono text-sm text-indigo-700 dark:text-indigo-200 break-all">
+                              <div
+                                className={cn('mt-1 font-mono text-sm break-all', theme.text.info)}
+                              >
                                 {updatedImageValue}
                               </div>
                             </div>
@@ -376,7 +386,10 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             )}
                             <button
                               onClick={() => setActiveEditor('ports')}
-                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-900/60"
+                              className={cn(
+                                'px-3 py-1.5 text-xs font-medium rounded-lg',
+                                theme.brand.composePreview
+                              )}
                             >
                               Edit ports
                             </button>
@@ -401,17 +414,27 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                           </div>
                           {pendingPortUpdate && (
                             <div className="pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
-                              <span className="block text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+                              <span
+                                className={cn(
+                                  'block text-xs font-semibold uppercase tracking-wide',
+                                  theme.text.info
+                                )}
+                              >
                                 Updated
                               </span>
                               {pendingPortUpdate.ports.length > 0 ? (
-                                <ul className="mt-2 space-y-1 font-mono text-sm text-indigo-700 dark:text-indigo-200">
+                                <ul
+                                  className={cn(
+                                    'mt-2 space-y-1 font-mono text-sm',
+                                    theme.text.info
+                                  )}
+                                >
                                   {pendingPortUpdate.ports.map((entry) => (
                                     <li key={entry}>{entry}</li>
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="mt-2 text-sm text-indigo-700 dark:text-indigo-200">
+                                <p className={cn('mt-2 text-sm', theme.text.info)}>
                                   Ports will be cleared
                                 </p>
                               )}
@@ -429,8 +452,13 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
               <div className="flex items-center justify-between">
                 <div>
                   {hasChanges && (
-                    <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                    <p className={cn('text-sm flex items-center gap-2', theme.text.warning)}>
+                      <div
+                        className={cn(
+                          'h-2 w-2 rounded-full animate-pulse',
+                          theme.badges.dot.warning
+                        )}
+                      />
                       Unsaved changes
                     </p>
                   )}

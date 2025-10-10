@@ -31,9 +31,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   showWarning = true,
 }) => {
   const iconClasses = {
-    danger: 'text-red-600 dark:text-red-400',
-    warning: 'text-amber-600 dark:text-amber-400',
-    info: 'text-blue-600 dark:text-blue-400',
+    danger: theme.text.danger,
+    warning: theme.text.warning,
+    info: theme.text.info,
   };
 
   const buttonClasses = {
@@ -49,7 +49,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>{title}</h3>
         <p className={cn('text-sm mb-2', theme.text.muted)}>{message}</p>
         {showWarning && variant === 'danger' && (
-          <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-medium">
+          <p className={cn('text-sm mt-2 font-medium', theme.text.danger)}>
             This action cannot be undone.
           </p>
         )}

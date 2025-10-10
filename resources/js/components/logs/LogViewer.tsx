@@ -101,28 +101,28 @@ const LogViewer: React.FC<LogViewerProps> = ({
         return {
           icon: XCircleIconSolid,
           bgClass: 'bg-red-500/10 border-red-500/20',
-          textClass: 'text-red-400',
+          textClass: theme.logs.level.error,
           dotClass: 'bg-red-500',
         };
       case 'warn':
         return {
           icon: ExclamationTriangleIconSolid,
           bgClass: 'bg-yellow-500/10 border-yellow-500/20',
-          textClass: 'text-yellow-400',
+          textClass: theme.logs.level.warn,
           dotClass: 'bg-yellow-500',
         };
       case 'info':
         return {
           icon: InformationCircleIconSolid,
           bgClass: 'bg-blue-500/10 border-blue-500/20',
-          textClass: 'text-blue-400',
+          textClass: theme.logs.level.info,
           dotClass: 'bg-blue-500',
         };
       default:
         return {
           icon: CheckCircleIcon,
           bgClass: 'bg-slate-500/10 border-slate-500/20',
-          textClass: 'text-slate-400',
+          textClass: theme.logs.level.debug,
           dotClass: 'bg-slate-500',
         };
     }
@@ -242,9 +242,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 {logStats.info > 0 && (
                   <div className="flex items-center space-x-1.5 text-xs">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                      {logStats.info}
-                    </span>
+                    <span className={cn('font-medium', theme.text.info)}>{logStats.info}</span>
                   </div>
                 )}
               </div>
@@ -256,7 +254,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 className={cn(
                   'px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2',
                   isFilterPanelOpen
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    ? cn(theme.badges.tag.info)
                     : cn(
                         'bg-white/50 dark:bg-slate-700/50 hover:bg-white dark:hover:bg-slate-700',
                         theme.text.muted
@@ -512,7 +510,12 @@ const LogViewer: React.FC<LogViewerProps> = ({
                       {/* Source */}
                       {log.source && (
                         <div className="flex-shrink-0 text-xs">
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md font-medium border border-blue-500/20">
+                          <span
+                            className={cn(
+                              'px-2 py-1 rounded-md font-medium',
+                              theme.badges.tag.info
+                            )}
+                          >
                             {log.source}
                           </span>
                         </div>
@@ -576,7 +579,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 className={cn(
                   'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
                   autoRefresh
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    ? cn(theme.badges.tag.info)
                     : cn(
                         'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600',
                         theme.text.muted
@@ -592,7 +595,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 className={cn(
                   'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
                   followMode
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                    ? cn(theme.badges.tag.success)
                     : cn(
                         'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600',
                         theme.text.muted

@@ -78,13 +78,7 @@ export default function ServerCard({ server }: ServerCardProps) {
 
         <div className="min-w-0 flex-1 pr-8">
           <div className="mb-2 flex items-center gap-2">
-            <h3
-              className={cn(
-                'text-xl font-semibold transition-colors',
-                theme.text.strong,
-                'group-hover:text-blue-600 dark:group-hover:text-blue-400'
-              )}
-            >
+            <h3 className={cn('text-xl font-semibold transition-colors', theme.text.strong)}>
               {server.name}
             </h3>
             <span className={cn('font-mono text-sm', theme.text.subtle)}>#{server.id}</span>
@@ -151,7 +145,7 @@ export default function ServerCard({ server }: ServerCardProps) {
                 <span className={cn('text-sm', theme.text.subtle)}>Docker Stack Management</span>
                 <ChevronRightIcon
                   className={cn(
-                    'h-5 w-5 transition-all duration-200 group-hover:translate-x-1 group-hover:text-blue-500',
+                    'h-5 w-5 transition-all duration-200 group-hover:translate-x-1',
                     theme.text.subtle
                   )}
                 />

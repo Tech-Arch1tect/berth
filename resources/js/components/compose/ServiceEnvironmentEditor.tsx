@@ -147,8 +147,14 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
         </div>
 
         {/* Add New Variable */}
-        <div className="mb-6 p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
-          <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-300 mb-4">
+        <div
+          className={cn(
+            'mb-6 p-6 rounded-xl border',
+            theme.intent.success.surface,
+            theme.intent.success.border
+          )}
+        >
+          <h4 className={cn('text-sm font-semibold mb-4', theme.intent.success.textStrong)}>
             Add New Variable
           </h4>
           <div className="grid grid-cols-2 gap-3">
@@ -157,10 +163,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
               placeholder="Variable name (e.g., API_KEY)"
-              className={cn(
-                'px-4 py-2 rounded-lg border border-emerald-300 dark:border-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:border-transparent',
-                theme.forms.input
-              )}
+              className={theme.forms.input}
               onKeyPress={(e) => e.key === 'Enter' && handleAddNew()}
             />
             <div className="flex gap-2">
@@ -169,16 +172,13 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
                 placeholder="Value"
-                className={cn(
-                  'flex-1 px-4 py-2 rounded-lg border border-emerald-300 dark:border-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:border-transparent',
-                  theme.forms.input
-                )}
+                className={cn('flex-1', theme.forms.input)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddNew()}
               />
               <button
                 onClick={handleAddNew}
                 disabled={!newKey.trim() || !newValue.trim()}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={theme.buttons.success}
               >
                 <PlusIcon className="h-5 w-5" />
               </button>
@@ -239,10 +239,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
                         type={isSensitive(key) && !showValues.has(key) ? 'password' : 'text'}
                         value={value}
                         onChange={(e) => handleUpdate(key, e.target.value)}
-                        className={cn(
-                          'w-full px-3 py-2 pr-10 rounded border font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
-                          theme.forms.input
-                        )}
+                        className={cn('w-full pr-10 font-mono', theme.forms.input)}
                       />
                       {isSensitive(key) && (
                         <button
@@ -268,7 +265,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
                       className={cn(
                         'p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100',
                         theme.text.danger,
-                        'hover:bg-red-50 dark:hover:bg-red-900/20'
+                        'hover:' + theme.intent.danger.surface
                       )}
                     >
                       <TrashIcon className="h-5 w-5" />

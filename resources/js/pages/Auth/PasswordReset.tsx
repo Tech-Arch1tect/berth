@@ -74,10 +74,7 @@ export default function PasswordReset({ csrfToken }: Props) {
             <div className="text-center">
               <Link
                 href="/auth/login"
-                className={cn(
-                  'font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors',
-                  theme.text.info
-                )}
+                className={cn('font-medium transition-colors', theme.link.primary)}
               >
                 Back to login
               </Link>

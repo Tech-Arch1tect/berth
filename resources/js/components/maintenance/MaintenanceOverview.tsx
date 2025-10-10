@@ -110,49 +110,49 @@ export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ mainte
           label="Images"
           value={maintenanceInfo.image_summary.total_count}
           icon={DocumentDuplicateIcon}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-100 dark:bg-blue-900/20"
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
           subtext={
             maintenanceInfo.image_summary.unused_count > 0
               ? `${maintenanceInfo.image_summary.unused_count} unused`
               : undefined
           }
-          subtextColor="text-red-600 dark:text-red-400"
+          subtextColor={theme.text.danger}
         />
         <StatCard
           label="Containers"
           value={maintenanceInfo.container_summary.total_count}
           icon={CircleStackIcon}
-          iconColor="text-green-600 dark:text-green-400"
-          iconBg="bg-green-100 dark:bg-green-900/20"
+          iconColor={theme.text.success}
+          iconBg={theme.intent.success.surface}
           subtext={`${maintenanceInfo.container_summary.running_count} running`}
-          subtextColor="text-green-600 dark:text-green-400"
+          subtextColor={theme.text.success}
         />
         <StatCard
           label="Volumes"
           value={maintenanceInfo.volume_summary.total_count}
           icon={FolderIcon}
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBg="bg-purple-100 dark:bg-purple-900/20"
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
           subtext={
             maintenanceInfo.volume_summary.unused_count > 0
               ? `${maintenanceInfo.volume_summary.unused_count} unused`
               : undefined
           }
-          subtextColor="text-red-600 dark:text-red-400"
+          subtextColor={theme.text.danger}
         />
         <StatCard
           label="Networks"
           value={maintenanceInfo.network_summary.total_count}
           icon={GlobeAltIcon}
-          iconColor="text-indigo-600 dark:text-indigo-400"
-          iconBg="bg-indigo-100 dark:bg-indigo-900/20"
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
           subtext={
             maintenanceInfo.network_summary.unused_count > 0
               ? `${maintenanceInfo.network_summary.unused_count} unused`
               : undefined
           }
-          subtextColor="text-red-600 dark:text-red-400"
+          subtextColor={theme.text.danger}
         />
       </div>
 
@@ -166,36 +166,36 @@ export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ mainte
         )}
       >
         <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-          <ChartBarIcon className="h-5 w-5 text-purple-600 mr-2" />
+          <ChartBarIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
           Detailed Storage Usage
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {formatBytes(maintenanceInfo.disk_usage.images_size)}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Images</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className={cn('text-2xl font-bold', theme.text.success)}>
               {formatBytes(maintenanceInfo.disk_usage.containers_size)}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Containers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {formatBytes(maintenanceInfo.disk_usage.volumes_size)}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Volumes</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
+            <div className={cn('text-2xl font-bold', theme.text.warning)}>
               {formatBytes(maintenanceInfo.disk_usage.layers_size)}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Layers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-indigo-600">
+            <div className={cn('text-2xl font-bold', theme.text.info)}>
               {formatBytes(maintenanceInfo.disk_usage.build_cache_size)}
             </div>
             <div className={cn('text-sm', theme.text.muted)}>Build Cache</div>
@@ -213,7 +213,7 @@ export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ mainte
           )}
         >
           <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-            <DocumentDuplicateIcon className="h-5 w-5 text-blue-600 mr-2" />
+            <DocumentDuplicateIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
             Images Summary
           </h3>
           <div className="space-y-3">
@@ -225,14 +225,14 @@ export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ mainte
             </div>
             <div className="flex justify-between">
               <span className={cn(theme.text.muted)}>Dangling Images:</span>
-              <span className="font-medium text-orange-600">
+              <span className={cn('font-medium', theme.text.warning)}>
                 {formatNumber(maintenanceInfo.image_summary.dangling_count)} (
                 {formatBytes(maintenanceInfo.image_summary.dangling_size)})
               </span>
             </div>
             <div className="flex justify-between">
               <span className={cn(theme.text.muted)}>Unused Images:</span>
-              <span className="font-medium text-red-600">
+              <span className={cn('font-medium', theme.text.danger)}>
                 {formatNumber(maintenanceInfo.image_summary.unused_count)} (
                 {formatBytes(maintenanceInfo.image_summary.unused_size)})
               </span>
@@ -248,19 +248,19 @@ export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ mainte
           )}
         >
           <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-            <CircleStackIcon className="h-5 w-5 text-green-600 mr-2" />
+            <CircleStackIcon className={cn('h-5 w-5 mr-2', theme.text.success)} />
             Container Summary
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className={cn(theme.text.muted)}>Running:</span>
-              <span className="font-medium text-green-600">
+              <span className={cn('font-medium', theme.text.success)}>
                 {formatNumber(maintenanceInfo.container_summary.running_count)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className={cn(theme.text.muted)}>Stopped:</span>
-              <span className="font-medium text-orange-600">
+              <span className={cn('font-medium', theme.text.warning)}>
                 {formatNumber(maintenanceInfo.container_summary.stopped_count)}
               </span>
             </div>

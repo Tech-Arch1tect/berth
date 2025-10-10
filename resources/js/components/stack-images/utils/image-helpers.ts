@@ -77,10 +77,10 @@ export const getCommandColor = (commandType: string): string => {
     case 'FROM':
       return 'text-blue-600 dark:text-blue-400';
     case 'RUN':
-      return 'text-green-600 dark:text-green-400';
+      return 'text-emerald-600 dark:text-emerald-400';
     case 'COPY':
     case 'ADD':
-      return 'text-orange-600 dark:text-orange-400';
+      return 'text-amber-600 dark:text-amber-400';
     case 'CMD':
     case 'ENTRYPOINT':
       return 'text-purple-600 dark:text-purple-400';
@@ -91,8 +91,8 @@ export const getCommandColor = (commandType: string): string => {
       return 'text-yellow-600 dark:text-yellow-400';
     case 'WORKDIR':
     case 'USER':
-      return 'text-indigo-600 dark:text-indigo-400';
+      return 'text-blue-600 dark:text-blue-400';
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return 'text-slate-600 dark:text-slate-400';
   }
 };

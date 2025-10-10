@@ -97,11 +97,7 @@ export const DashboardRecentActivity = ({ activitySummary }: DashboardRecentActi
           </div>
           <Link
             href="/operation-logs"
-            className={cn(
-              'text-sm font-medium transition-colors',
-              theme.text.info,
-              'hover:text-blue-700 dark:hover:text-blue-300'
-            )}
+            className={cn('text-sm font-medium transition-colors', theme.link.primary)}
           >
             View all
           </Link>

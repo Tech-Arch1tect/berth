@@ -169,10 +169,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                       disabled={disabled}
                       min="1"
                       max="300"
-                      className={cn(
-                        theme.forms.input,
-                        'w-20 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus-visible:ring-blue-500'
-                      )}
+                      className={cn(theme.forms.input, 'w-20 px-2 py-1 text-sm')}
                     />
                   )}
                 </div>
@@ -194,8 +191,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                 disabled={disabled}
                 className={cn(
                   'text-sm transition-colors',
-                  theme.text.info,
-                  'hover:text-blue-700 dark:hover:text-blue-300',
+                  theme.link.primary,
                   disabled && 'opacity-50'
                 )}
               >

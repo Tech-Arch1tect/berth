@@ -34,7 +34,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
     >
       <div className={cn('px-6 py-4 border-b', theme.cards.sectionDivider)}>
         <h3 className={cn('text-lg font-medium flex items-center', theme.text.strong)}>
-          <GlobeAltIcon className="h-5 w-5 text-indigo-600 mr-2" />
+          <GlobeAltIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
           Docker Networks ({networks.length})
         </h3>
       </div>
@@ -50,7 +50,12 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
               <span className={cn('text-sm font-medium', theme.text.strong)}>
                 {network.name}
                 {network.internal && (
-                  <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  <span
+                    className={cn(
+                      'ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                      theme.badges.tag.info
+                    )}
+                  >
                     Internal
                   </span>
                 )}

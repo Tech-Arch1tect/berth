@@ -184,7 +184,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           className={cn(
             'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
             dragOver
-              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+              ? cn(theme.intent.info.border, theme.intent.info.surface)
               : 'border-gray-300 dark:border-gray-600'
           )}
           onDrop={handleDrop}

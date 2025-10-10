@@ -80,7 +80,7 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 p-2 text-white">
+            <div className={theme.iconBackground.primary}>
               <PhotoIcon className="h-6 w-6" />
             </div>
             <h3 className={cn('text-2xl font-bold', theme.text.strong)}>Edit Image</h3>
@@ -121,22 +121,22 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setEditMode('tag')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                editMode === 'tag'
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
+              className={cn(
+                theme.selection.tile.base,
+                editMode === 'tag' ? theme.selection.tile.selected : theme.selection.tile.unselected
+              )}
             >
               <div className={cn('font-semibold mb-1', theme.text.strong)}>Change Tag Only</div>
               <div className={cn('text-xs', theme.text.muted)}>Update image version/tag</div>
             </button>
             <button
               onClick={() => setEditMode('full')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
+              className={cn(
+                theme.selection.tile.base,
                 editMode === 'full'
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
+                  ? theme.selection.tile.selected
+                  : theme.selection.tile.unselected
+              )}
             >
               <div className={cn('font-semibold mb-1', theme.text.strong)}>Full Image</div>
               <div className={cn('text-xs', theme.text.muted)}>Change entire image reference</div>
@@ -170,15 +170,15 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
                   <button
                     key={tag}
                     onClick={() => setImageTag(tag)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    className={
                       imageTag === tag
-                        ? 'bg-indigo-600 text-white'
+                        ? cn(theme.buttons.primary, 'px-3 py-1.5')
                         : cn(
                             theme.surface.muted,
                             theme.text.standard,
-                            'hover:bg-slate-200 dark:hover:bg-slate-600'
+                            'px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-600'
                           )
-                    }`}
+                    }
                   >
                     {tag}
                   </button>
@@ -212,13 +212,12 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
 
         {/* Preview */}
         <div className={cn('mt-8 p-6 rounded-xl', theme.brand.composePreview)}>
-          <label className="block text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
-            Preview
-          </label>
+          <label className={cn('block text-sm font-semibold mb-3', theme.text.info)}>Preview</label>
           <div
             className={cn(
-              'font-mono text-lg text-indigo-900 dark:text-indigo-100 px-4 py-3 rounded-lg shadow-sm',
-              theme.surface.panel
+              'font-mono text-lg px-4 py-3 rounded-lg shadow-sm',
+              theme.surface.panel,
+              theme.text.strong
             )}
           >
             {getPreviewImage() || 'Enter an image...'}

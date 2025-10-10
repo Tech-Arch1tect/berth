@@ -364,7 +364,7 @@ export default function RoleStackPermissions({
                         type="checkbox"
                         checked={newRule.permission_ids.includes(permission.id)}
                         onChange={() => handlePermissionToggle(permission.id)}
-                        className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
+                        className={theme.forms.checkbox}
                       />
                     </div>
                     <div className="ml-3 text-sm">
@@ -469,7 +469,7 @@ export default function RoleStackPermissions({
                                 permission_ids: permissionIds,
                               });
                             }}
-                            className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
+                            className={theme.forms.checkbox}
                           />
                         </div>
                         <div className="ml-3 text-sm">

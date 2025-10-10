@@ -300,6 +300,53 @@ export const theme = {
     toolbarButton: 'text-sm font-medium',
     badge:
       'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+    level: {
+      error: 'text-red-400',
+      warn: 'text-amber-400',
+      info: 'text-blue-400',
+      debug: 'text-slate-400',
+      trace: 'text-slate-500',
+      success: 'text-emerald-400',
+    },
+  },
+  selection: {
+    tile: {
+      base: 'rounded-lg border-2 p-4 text-left transition-all cursor-pointer',
+      selected: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+      unselected:
+        'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
+    },
+    radio: {
+      base: 'rounded-lg border p-3 text-left transition-all cursor-pointer',
+      selected: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+      unselected:
+        'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50',
+    },
+  },
+  iconBackground: {
+    primary: 'rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2 text-white',
+    success: 'rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white',
+    danger: 'rounded-lg bg-gradient-to-br from-red-500 to-orange-600 p-2 text-white',
+    warning: 'rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 p-2 text-white',
+    info: 'rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 p-2 text-white',
+    neutral: 'rounded-lg bg-gradient-to-br from-slate-400 to-slate-500 p-2 text-white',
+  },
+  link: {
+    base: 'text-sm font-medium transition-colors',
+    primary: 'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300',
+    subtle: 'text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400',
+    underlined:
+      'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline',
+  },
+  syntax: {
+    keyword: 'text-purple-400',
+    string: 'text-emerald-400',
+    number: 'text-blue-400',
+    comment: 'text-slate-500',
+    function: 'text-yellow-400',
+    property: 'text-cyan-400',
+    operator: 'text-slate-300',
+    punctuation: 'text-slate-400',
   },
   icon: {
     squareLg: 'flex h-12 w-12 items-center justify-center rounded-2xl text-white',

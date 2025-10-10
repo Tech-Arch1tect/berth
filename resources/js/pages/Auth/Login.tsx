@@ -129,13 +129,7 @@ export default function Login({
 
               <div className="space-y-4 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
                 <div className="text-center">
-                  <Link
-                    href="/auth/password-reset"
-                    className={cn(
-                      'text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors',
-                      theme.text.muted
-                    )}
-                  >
+                  <Link href="/auth/password-reset" className={cn(theme.link.subtle)}>
                     Forgot your password?
                   </Link>
                 </div>
@@ -150,13 +144,7 @@ export default function Login({
                         placeholder="Enter email to resend verification"
                         className={cn('w-full text-sm', theme.forms.input)}
                       />
-                      <button
-                        type="submit"
-                        className={cn(
-                          'text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors',
-                          theme.text.info
-                        )}
-                      >
+                      <button type="submit" className={cn(theme.link.underlined)}>
                         Resend verification email
                       </button>
                     </form>

@@ -42,7 +42,11 @@ export const Tabs: React.FC<TabsProps> = ({
                   className={cn(
                     'flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
+                      ? cn(
+                          theme.effects.emptyAura,
+                          theme.text.info,
+                          'shadow-sm border border-blue-200/20 dark:border-blue-800/20'
+                        )
                       : cn(
                           theme.text.muted,
                           'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
@@ -57,7 +61,7 @@ export const Tabs: React.FC<TabsProps> = ({
                       className={cn(
                         'ml-1 px-2 py-0.5 text-xs font-semibold rounded-full',
                         activeTab === tab.id
-                          ? 'bg-blue-600 text-white dark:bg-blue-500'
+                          ? cn(theme.intent.info.icon)
                           : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                       )}
                     >

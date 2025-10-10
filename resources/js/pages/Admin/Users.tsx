@@ -222,7 +222,7 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                   data={users}
                   keyExtractor={(user) => user.id.toString()}
                   emptyMessage="No users found"
-                  emptyIcon={<UserGroupIcon className="h-12 w-12 mx-auto text-blue-400" />}
+                  emptyIcon={<UserGroupIcon className={cn('h-12 w-12 mx-auto', theme.text.info)} />}
                   columns={[
                     {
                       key: 'user',

@@ -38,7 +38,13 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
       <div className="p-6 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+            <div
+              className={cn(
+                'p-2 rounded-lg',
+                theme.intent.info.surface,
+                theme.intent.info.textStrong
+              )}
+            >
               <CubeIcon className="w-5 h-5" />
             </div>
 
@@ -181,7 +187,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
                       {image_info.repo_tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
+                          className={cn(theme.badges.tag.base, theme.badges.tag.info)}
                         >
                           {tag}
                         </span>

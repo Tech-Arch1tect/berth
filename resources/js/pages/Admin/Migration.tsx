@@ -272,9 +272,9 @@ export default function Migration({ title }: Props) {
                         'file:mr-4 file:py-2 file:px-4',
                         'file:rounded-full file:border-0',
                         'file:text-sm file:font-semibold',
-                        'file:bg-blue-50 file:text-blue-700',
-                        'hover:file:bg-blue-100',
-                        'dark:file:bg-blue-900 dark:file:text-blue-200'
+                        theme.intent.info.surface,
+                        theme.intent.info.textStrong,
+                        'hover:file:bg-blue-100 dark:hover:file:bg-blue-900/40'
                       )}
                       required
                     />
