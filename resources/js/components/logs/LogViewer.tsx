@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React from 'react';
 import { LogViewerProps } from '../../types/logs';
-import { useLogs } from '../../hooks/useLogs';
+import { useLogViewerState } from '../../hooks/useLogViewerState';
 import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
@@ -29,72 +29,16 @@ const LogViewer: React.FC<LogViewerProps> = ({
   containerName,
   containers = [],
 }) => {
-  const [selectedContainer, setSelectedContainer] = useState<string>('');
-  const [tail, setTail] = useState(100);
-  const [since, setSince] = useState('');
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [showTimestamps, setShowTimestamps] = useState(true);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [followMode, setFollowMode] = useState(true);
-  const [silentLoading, setSilentLoading] = useState(false);
-
-  const {
-    logs,
-    loading,
-    error,
-    fetchLogs,
-    filteredLogs,
-    searchTerm,
-    setSearchTerm,
-    levelFilter,
-    setLevelFilter,
-    resetLogs,
-  } = useLogs({
+  // Use the consolidated hook for all state and logic
+  const viewer = useLogViewerState({
     serverid,
     stackname,
-    serviceName: serviceName,
-    containerName: selectedContainer || containerName,
+    serviceName,
+    containerName,
+    containers,
   });
-  const logContainerRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<number | undefined>(undefined);
 
-  useEffect(() => {
-    resetLogs();
-    fetchLogs({ tail, since, timestamps: showTimestamps });
-  }, [tail, since, showTimestamps, selectedContainer]);
-
-  useEffect(() => {
-    if (autoRefresh) {
-      intervalRef.current = window.setInterval(async () => {
-        setSilentLoading(true);
-        try {
-          await fetchLogs({ tail, since, timestamps: showTimestamps }, true);
-        } finally {
-          setSilentLoading(false);
-        }
-      }, 5000);
-    } else if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
-    };
-  }, [autoRefresh, tail, since, showTimestamps]); // Removed fetchLogs and logs.length from dependencies
-
-  const handleRefresh = () => {
-    fetchLogs({ tail, since, timestamps: showTimestamps });
-  };
-
-  const scrollToBottom = () => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-    }
-  };
-
+  // Helper functions for styling (UI-specific, not state-related)
   const getLogLevelStyle = (level?: string) => {
     switch (level) {
       case 'error':
@@ -141,52 +85,6 @@ const LogViewer: React.FC<LogViewerProps> = ({
     }
   };
 
-  const copyAllLogs = async () => {
-    try {
-      const logText = filteredLogs
-        .map(
-          (log) =>
-            `${formatTimestamp(log.timestamp).full} [${log.level?.toUpperCase() || 'LOG'}] ${log.source ? `[${log.source}] ` : ''}${log.message}`
-        )
-        .join('\n');
-      await navigator.clipboard.writeText(logText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy logs:', err);
-    }
-  };
-
-  const logStats = useMemo(() => {
-    const stats = { total: logs.length, error: 0, warn: 0, info: 0, debug: 0 };
-    logs.forEach((log) => {
-      if (log.level) {
-        stats[log.level as keyof typeof stats] = (stats[log.level as keyof typeof stats] || 0) + 1;
-      } else {
-        stats.debug++;
-      }
-    });
-    return stats;
-  }, [logs]);
-
-  const title = containerName ? containerName : serviceName ? serviceName : stackname;
-
-  const subtitle = containerName ? 'Container Logs' : serviceName ? 'Service Logs' : 'Stack Logs';
-
-  useEffect(() => {
-    if (followMode && logContainerRef.current) {
-      const element = logContainerRef.current;
-      element.scrollTop = element.scrollHeight;
-    }
-  }, [filteredLogs, followMode]);
-
-  const handleScroll = () => {
-    if (!logContainerRef.current) return;
-    const element = logContainerRef.current;
-    const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 10;
-    setFollowMode(isAtBottom);
-  };
-
   return (
     <div
       className={cn(
@@ -216,8 +114,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                   <DocumentDuplicateIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className={cn('text-lg font-semibold', theme.text.strong)}>{title}</h2>
-                  <p className={cn('text-sm', theme.text.muted)}>{subtitle}</p>
+                  <h2 className={cn('text-lg font-semibold', theme.text.strong)}>{viewer.title}</h2>
+                  <p className={cn('text-sm', theme.text.muted)}>{viewer.subtitle}</p>
                 </div>
               </div>
 
@@ -225,24 +123,32 @@ const LogViewer: React.FC<LogViewerProps> = ({
               <div className="hidden md:flex items-center space-x-4 ml-8">
                 <div className="flex items-center space-x-1.5 text-xs">
                   <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
-                  <span className={cn('font-medium', theme.text.muted)}>{logStats.total}</span>
+                  <span className={cn('font-medium', theme.text.muted)}>
+                    {viewer.logStats.total}
+                  </span>
                 </div>
-                {logStats.error > 0 && (
+                {viewer.logStats.error > 0 && (
                   <div className="flex items-center space-x-1.5 text-xs">
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className={cn('font-medium', theme.text.danger)}>{logStats.error}</span>
+                    <span className={cn('font-medium', theme.text.danger)}>
+                      {viewer.logStats.error}
+                    </span>
                   </div>
                 )}
-                {logStats.warn > 0 && (
+                {viewer.logStats.warn > 0 && (
                   <div className="flex items-center space-x-1.5 text-xs">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className={cn('font-medium', theme.text.warning)}>{logStats.warn}</span>
+                    <span className={cn('font-medium', theme.text.warning)}>
+                      {viewer.logStats.warn}
+                    </span>
                   </div>
                 )}
-                {logStats.info > 0 && (
+                {viewer.logStats.info > 0 && (
                   <div className="flex items-center space-x-1.5 text-xs">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className={cn('font-medium', theme.text.info)}>{logStats.info}</span>
+                    <span className={cn('font-medium', theme.text.info)}>
+                      {viewer.logStats.info}
+                    </span>
                   </div>
                 )}
               </div>
@@ -250,10 +156,10 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                onClick={() => viewer.setIsFilterPanelOpen(!viewer.isFilterPanelOpen)}
                 className={cn(
                   'px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2',
-                  isFilterPanelOpen
+                  viewer.isFilterPanelOpen
                     ? cn(theme.badges.tag.info)
                     : cn(
                         'bg-white/50 dark:bg-slate-700/50 hover:bg-white dark:hover:bg-slate-700',
@@ -264,30 +170,30 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 <FunnelIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Filters</span>
                 <ChevronDownIcon
-                  className={`w-3 h-3 transition-transform duration-200 ${isFilterPanelOpen ? 'rotate-180' : ''}`}
+                  className={`w-3 h-3 transition-transform duration-200 ${viewer.isFilterPanelOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
               <button
-                onClick={copyAllLogs}
+                onClick={viewer.copyAllLogs}
                 className={cn(
                   'px-3 py-2 bg-white/50 dark:bg-slate-700/50 hover:bg-white dark:hover:bg-slate-700 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2',
                   theme.text.muted
                 )}
               >
                 <DocumentDuplicateIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
+                <span className="hidden sm:inline">{viewer.copied ? 'Copied!' : 'Copy'}</span>
               </button>
 
               <button
-                onClick={handleRefresh}
-                disabled={loading}
+                onClick={viewer.handleRefresh}
+                disabled={viewer.loading}
                 className={cn(
                   'px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25',
                   theme.brand.accent
                 )}
               >
-                <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <ArrowPathIcon className={`w-4 h-4 ${viewer.loading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
@@ -296,7 +202,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
       </div>
 
       {/* Filter Panel */}
-      {isFilterPanelOpen && (
+      {viewer.isFilterPanelOpen && (
         <div
           className={cn(
             'border-b border-slate-200/50 dark:border-slate-700/50',
@@ -319,8 +225,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                   />
                   <input
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={viewer.searchTerm}
+                    onChange={(e) => viewer.setSearchTerm(e.target.value)}
                     placeholder="Filter logs by content..."
                     className={cn(
                       'w-full pl-10 pr-4 py-2.5 rounded-xl transition-all duration-200',
@@ -336,8 +242,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                   Lines to Show
                 </label>
                 <select
-                  value={tail}
-                  onChange={(e) => setTail(Number(e.target.value))}
+                  value={viewer.tail}
+                  onChange={(e) => viewer.setTail(Number(e.target.value))}
                   className={cn(
                     'w-full px-3 py-2.5 rounded-xl transition-all duration-200',
                     theme.forms.select
@@ -356,8 +262,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                   Time Range
                 </label>
                 <select
-                  value={since}
-                  onChange={(e) => setSince(e.target.value)}
+                  value={viewer.since}
+                  onChange={(e) => viewer.setSince(e.target.value)}
                   className={cn(
                     'w-full px-3 py-2.5 rounded-xl transition-all duration-200',
                     theme.forms.select
@@ -378,8 +284,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                   Log Level
                 </label>
                 <select
-                  value={levelFilter}
-                  onChange={(e) => setLevelFilter(e.target.value)}
+                  value={viewer.levelFilter}
+                  onChange={(e) => viewer.setLevelFilter(e.target.value)}
                   className={cn(
                     'w-full px-3 py-2.5 rounded-xl transition-all duration-200',
                     theme.forms.select
@@ -399,8 +305,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                     Container
                   </label>
                   <select
-                    value={selectedContainer}
-                    onChange={(e) => setSelectedContainer(e.target.value)}
+                    value={viewer.selectedContainer}
+                    onChange={(e) => viewer.setSelectedContainer(e.target.value)}
                     className={cn(
                       'w-full px-3 py-2.5 rounded-xl transition-all duration-200',
                       theme.forms.select
@@ -421,8 +327,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={showTimestamps}
-                    onChange={(e) => setShowTimestamps(e.target.checked)}
+                    checked={viewer.showTimestamps}
+                    onChange={(e) => viewer.setShowTimestamps(e.target.checked)}
                     className={theme.forms.checkbox}
                   />
                   <span className={cn('ml-3 text-sm font-medium', theme.forms.label)}>
@@ -437,7 +343,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
       {/* Log Content */}
       <div className="relative flex-1 flex flex-col overflow-hidden">
-        {loading && (
+        {viewer.loading && (
           <div
             className={cn(
               'absolute inset-0 backdrop-blur-sm flex items-center justify-center z-10',
@@ -455,11 +361,11 @@ const LogViewer: React.FC<LogViewerProps> = ({
           </div>
         )}
 
-        {error && (
+        {viewer.error && (
           <div className={cn('mx-6 my-4 p-4 rounded-xl', theme.alerts.variants.error)}>
             <div className="flex items-center space-x-3">
               <XCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className={cn('text-sm font-medium', theme.text.danger)}>{error}</p>
+              <p className={cn('text-sm font-medium', theme.text.danger)}>{viewer.error}</p>
             </div>
           </div>
         )}
@@ -467,11 +373,11 @@ const LogViewer: React.FC<LogViewerProps> = ({
         {/* Log Display */}
         <div className="flex-1 relative min-h-[400px]">
           <div
-            ref={logContainerRef}
-            onScroll={handleScroll}
+            ref={viewer.logContainerRef}
+            onScroll={viewer.handleScroll}
             className="absolute inset-0 overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-mono text-sm"
           >
-            {filteredLogs.length === 0 && !loading ? (
+            {viewer.filteredLogs.length === 0 && !viewer.loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <DocumentDuplicateIcon
@@ -485,7 +391,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
               </div>
             ) : (
               <div className="p-4 space-y-1">
-                {filteredLogs.map((log, index) => {
+                {viewer.filteredLogs.map((log, index) => {
                   const levelStyle = getLogLevelStyle(log.level);
                   const timestamp = formatTimestamp(log.timestamp);
                   const LevelIcon = levelStyle.icon;
@@ -501,7 +407,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
                       </div>
 
                       {/* Timestamp */}
-                      {showTimestamps && (
+                      {viewer.showTimestamps && (
                         <div className="flex-shrink-0 text-xs text-slate-500 pt-0.5 min-w-[60px] group-hover:text-slate-400 transition-colors duration-200">
                           <div className="font-medium">{timestamp.time}</div>
                         </div>
@@ -556,18 +462,21 @@ const LogViewer: React.FC<LogViewerProps> = ({
             <div className="flex items-center space-x-6 text-sm">
               <span className={theme.text.muted}>
                 Showing{' '}
-                <span className={cn('font-medium', theme.text.strong)}>{filteredLogs.length}</span>{' '}
-                of <span className={cn('font-medium', theme.text.strong)}>{logs.length}</span>{' '}
+                <span className={cn('font-medium', theme.text.strong)}>
+                  {viewer.filteredLogs.length}
+                </span>{' '}
+                of{' '}
+                <span className={cn('font-medium', theme.text.strong)}>{viewer.logs.length}</span>{' '}
                 entries
               </span>
 
-              {autoRefresh && (
+              {viewer.autoRefresh && (
                 <div className={cn('flex items-center space-x-2', theme.text.success)}>
                   <div
-                    className={`w-2 h-2 bg-green-500 rounded-full ${silentLoading ? 'animate-spin' : 'animate-pulse'}`}
+                    className={`w-2 h-2 bg-green-500 rounded-full ${viewer.silentLoading ? 'animate-spin' : 'animate-pulse'}`}
                   ></div>
                   <span className="text-xs font-medium">
-                    {silentLoading ? 'Checking for new logs...' : 'Auto-refreshing'}
+                    {viewer.silentLoading ? 'Checking for new logs...' : 'Auto-refreshing'}
                   </span>
                 </div>
               )}
@@ -575,10 +484,10 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
+                onClick={() => viewer.setAutoRefresh(!viewer.autoRefresh)}
                 className={cn(
                   'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
-                  autoRefresh
+                  viewer.autoRefresh
                     ? cn(theme.badges.tag.info)
                     : cn(
                         'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600',
@@ -587,14 +496,14 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 )}
               >
                 <ArrowPathIcon className="w-3 h-3" />
-                <span>{autoRefresh ? 'Auto-refresh' : 'Manual'}</span>
+                <span>{viewer.autoRefresh ? 'Auto-refresh' : 'Manual'}</span>
               </button>
 
               <button
-                onClick={() => setFollowMode(!followMode)}
+                onClick={() => viewer.setFollowMode(!viewer.followMode)}
                 className={cn(
                   'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
-                  followMode
+                  viewer.followMode
                     ? cn(theme.badges.tag.success)
                     : cn(
                         'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600',
@@ -602,12 +511,16 @@ const LogViewer: React.FC<LogViewerProps> = ({
                       )
                 )}
               >
-                {followMode ? <PlayIcon className="w-3 h-3" /> : <PauseIcon className="w-3 h-3" />}
-                <span>{followMode ? 'Following' : 'Paused'}</span>
+                {viewer.followMode ? (
+                  <PlayIcon className="w-3 h-3" />
+                ) : (
+                  <PauseIcon className="w-3 h-3" />
+                )}
+                <span>{viewer.followMode ? 'Following' : 'Paused'}</span>
               </button>
 
               <button
-                onClick={scrollToBottom}
+                onClick={viewer.scrollToBottom}
                 className={cn(
                   'flex items-center space-x-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition-all duration-200',
                   theme.text.muted
