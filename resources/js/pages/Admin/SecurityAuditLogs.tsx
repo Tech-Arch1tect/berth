@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { Modal } from '../../components/common/Modal';
+import { Table, Column } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -331,119 +333,103 @@ export default function SecurityAuditLogs({ title }: Props) {
             'rounded-lg shadow overflow-hidden border border-slate-200 dark:border-slate-700'
           )}
         >
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className={theme.table.head}>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Time
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Event
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Severity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Actor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Target
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    IP
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className={cn(theme.table.body, 'divide-y divide-slate-200 dark:divide-slate-700')}
-              >
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className={cn('px-6 py-4 text-center', theme.text.subtle)}>
-                      Loading...
-                    </td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className={cn('px-6 py-4 text-center', theme.text.subtle)}>
-                      No logs found
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                      <td
-                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
-                      >
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
-                      <td
-                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
-                      >
-                        {log.event_type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(log.event_category)}`}
-                        >
-                          {log.event_category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(log.severity)}`}
-                        >
-                          {log.severity}
-                        </span>
-                      </td>
-                      <td
-                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
-                      >
-                        {log.actor_username || '-'}
-                      </td>
-                      <td
-                        className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.standard)}
-                      >
-                        {log.target_name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {log.success ? (
-                          <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
-                            Success
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
-                            Failed
-                          </span>
-                        )}
-                      </td>
-                      <td className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.subtle)}>
-                        {log.actor_ip}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => fetchLogDetails(log.id)}
-                          className={cn('hover:underline', theme.text.info)}
-                        >
-                          Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table<SecurityAuditLog>
+            data={logs}
+            keyExtractor={(log) => log.id.toString()}
+            isLoading={loading}
+            emptyMessage="No logs found"
+            columns={[
+              {
+                key: 'time',
+                header: 'Time',
+                render: (log) => (
+                  <span className={cn('text-sm', theme.text.standard)}>
+                    {new Date(log.created_at).toLocaleString()}
+                  </span>
+                ),
+              },
+              {
+                key: 'event',
+                header: 'Event',
+                render: (log) => (
+                  <span className={cn('text-sm', theme.text.standard)}>{log.event_type}</span>
+                ),
+              },
+              {
+                key: 'category',
+                header: 'Category',
+                render: (log) => (
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(log.event_category)}`}
+                  >
+                    {log.event_category}
+                  </span>
+                ),
+              },
+              {
+                key: 'severity',
+                header: 'Severity',
+                render: (log) => (
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(log.severity)}`}
+                  >
+                    {log.severity}
+                  </span>
+                ),
+              },
+              {
+                key: 'actor',
+                header: 'Actor',
+                render: (log) => (
+                  <span className={cn('text-sm', theme.text.standard)}>
+                    {log.actor_username || '-'}
+                  </span>
+                ),
+              },
+              {
+                key: 'target',
+                header: 'Target',
+                render: (log) => (
+                  <span className={cn('text-sm', theme.text.standard)}>
+                    {log.target_name || '-'}
+                  </span>
+                ),
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (log) =>
+                  log.success ? (
+                    <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
+                      Success
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
+                      Failed
+                    </span>
+                  ),
+              },
+              {
+                key: 'ip',
+                header: 'IP',
+                render: (log) => (
+                  <span className={cn('text-sm', theme.text.subtle)}>{log.actor_ip}</span>
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (log) => (
+                  <button
+                    onClick={() => fetchLogDetails(log.id)}
+                    className={cn('hover:underline', theme.text.info)}
+                  >
+                    Details
+                  </button>
+                ),
+              },
+            ]}
+          />
 
           {totalPages > 1 && (
             <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -481,132 +467,113 @@ export default function SecurityAuditLogs({ title }: Props) {
         </div>
       </div>
 
-      {showDetails && selectedLog && (
-        <div className={theme.modal.overlay}>
-          <div className={cn(theme.modal.content, 'max-w-3xl w-full max-h-[90vh] overflow-y-auto')}>
-            <div className={cn(theme.modal.header, 'flex justify-between items-center')}>
-              <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Event Details</h3>
-              <button
-                onClick={() => setShowDetails(false)}
-                className={cn('hover:opacity-70', theme.text.subtle)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+      <Modal
+        isOpen={showDetails && selectedLog !== null}
+        onClose={() => setShowDetails(false)}
+        title="Event Details"
+        size="lg"
+      >
+        {selectedLog && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Event Type</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>
+                {selectedLog.event_type}
+              </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Event Type</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {selectedLog.event_type}
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Category</div>
-                  <div className="mt-1">
-                    <span
-                      className={cn(
-                        'px-2 py-1 text-xs font-medium rounded',
-                        getCategoryColor(selectedLog.event_category)
-                      )}
-                    >
-                      {selectedLog.event_category}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Severity</div>
-                  <div className="mt-1">
-                    <span
-                      className={cn(
-                        'px-2 py-1 text-xs font-medium rounded',
-                        getSeverityColor(selectedLog.severity)
-                      )}
-                    >
-                      {selectedLog.severity}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Status</div>
-                  <div className="mt-1">
-                    {selectedLog.success ? (
-                      <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
-                        Success
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
-                        Failed
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {selectedLog.actor_username || '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor IP</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {selectedLog.actor_ip}
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Target</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {selectedLog.target_name || '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Target Type</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {selectedLog.target_type || '-'}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className={cn('text-sm font-medium', theme.text.subtle)}>Timestamp</div>
-                  <div className={cn('mt-1 text-sm', theme.text.standard)}>
-                    {new Date(selectedLog.created_at).toLocaleString()}
-                  </div>
-                </div>
-                {selectedLog.failure_reason && (
-                  <div className="col-span-2">
-                    <div className={cn('text-sm font-medium', theme.text.subtle)}>
-                      Failure Reason
-                    </div>
-                    <div className={cn('mt-1 text-sm', theme.text.danger)}>
-                      {selectedLog.failure_reason}
-                    </div>
-                  </div>
-                )}
-                {selectedLog.metadata && selectedLog.metadata !== '{}' && (
-                  <div className="col-span-2">
-                    <div className={cn('text-sm font-medium', theme.text.subtle)}>Metadata</div>
-                    <pre
-                      className={cn(
-                        'mt-1 text-xs p-3 rounded overflow-x-auto',
-                        theme.surface.code,
-                        theme.text.standard
-                      )}
-                    >
-                      {JSON.stringify(JSON.parse(selectedLog.metadata), null, 2)}
-                    </pre>
-                  </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Category</div>
+              <div className="mt-1">
+                <span
+                  className={cn(
+                    'px-2 py-1 text-xs font-medium rounded',
+                    getCategoryColor(selectedLog.event_category)
+                  )}
+                >
+                  {selectedLog.event_category}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Severity</div>
+              <div className="mt-1">
+                <span
+                  className={cn(
+                    'px-2 py-1 text-xs font-medium rounded',
+                    getSeverityColor(selectedLog.severity)
+                  )}
+                >
+                  {selectedLog.severity}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Status</div>
+              <div className="mt-1">
+                {selectedLog.success ? (
+                  <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded">
+                    Success
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-900 rounded">
+                    Failed
+                  </span>
                 )}
               </div>
             </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>
+                {selectedLog.actor_username || '-'}
+              </div>
+            </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Actor IP</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>{selectedLog.actor_ip}</div>
+            </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Target</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>
+                {selectedLog.target_name || '-'}
+              </div>
+            </div>
+            <div>
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Target Type</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>
+                {selectedLog.target_type || '-'}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className={cn('text-sm font-medium', theme.text.subtle)}>Timestamp</div>
+              <div className={cn('mt-1 text-sm', theme.text.standard)}>
+                {new Date(selectedLog.created_at).toLocaleString()}
+              </div>
+            </div>
+            {selectedLog.failure_reason && (
+              <div className="col-span-2">
+                <div className={cn('text-sm font-medium', theme.text.subtle)}>Failure Reason</div>
+                <div className={cn('mt-1 text-sm', theme.text.danger)}>
+                  {selectedLog.failure_reason}
+                </div>
+              </div>
+            )}
+            {selectedLog.metadata && selectedLog.metadata !== '{}' && (
+              <div className="col-span-2">
+                <div className={cn('text-sm font-medium', theme.text.subtle)}>Metadata</div>
+                <pre
+                  className={cn(
+                    'mt-1 text-xs p-3 rounded overflow-x-auto',
+                    theme.surface.code,
+                    theme.text.standard
+                  )}
+                >
+                  {JSON.stringify(JSON.parse(selectedLog.metadata), null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </Layout>
   );
 }

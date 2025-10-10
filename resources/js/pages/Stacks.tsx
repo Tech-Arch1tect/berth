@@ -12,6 +12,7 @@ import Layout from '../components/Layout';
 import { StackCard } from '../components/StackCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { StatCard } from '../components/common/StatCard';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { cn } from '../utils/cn';
@@ -135,59 +136,38 @@ export default function Stacks({ title, servers }: StacksProps) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className={cn('rounded-2xl p-6', theme.cards.translucent)}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={cn('text-sm font-medium', theme.text.muted)}>Total Stacks</p>
-              <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>{statistics.total}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/20 dark:border-blue-800/20">
-              <CircleStackIcon className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className={cn('rounded-2xl p-6', theme.cards.translucent)}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={cn('text-sm font-medium', theme.text.muted)}>Healthy</p>
-              <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                {statistics.healthy}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200/20 dark:border-green-800/20">
-              <CircleStackIcon className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className={cn('rounded-2xl p-6', theme.cards.translucent)}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={cn('text-sm font-medium', theme.text.muted)}>Unhealthy</p>
-              <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                {statistics.unhealthy}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200/20 dark:border-red-800/20">
-              <ExclamationTriangleIcon className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className={cn('rounded-2xl p-6', theme.cards.translucent)}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={cn('text-sm font-medium', theme.text.muted)}>Containers</p>
-              <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                {statistics.running}/{statistics.totalContainers}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/20 dark:border-purple-800/20">
-              <ServerIcon className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          label="Total Stacks"
+          value={statistics.total}
+          icon={CircleStackIcon}
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-100 dark:bg-blue-900/20"
+          className="rounded-2xl"
+        />
+        <StatCard
+          label="Healthy"
+          value={statistics.healthy}
+          icon={CircleStackIcon}
+          iconColor="text-green-600 dark:text-green-400"
+          iconBg="bg-green-100 dark:bg-green-900/20"
+          className="rounded-2xl"
+        />
+        <StatCard
+          label="Unhealthy"
+          value={statistics.unhealthy}
+          icon={ExclamationTriangleIcon}
+          iconColor="text-red-600 dark:text-red-400"
+          iconBg="bg-red-100 dark:bg-red-900/20"
+          className="rounded-2xl"
+        />
+        <StatCard
+          label="Containers"
+          value={`${statistics.running}/${statistics.totalContainers}`}
+          icon={ServerIcon}
+          iconColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-100 dark:bg-purple-900/20"
+          className="rounded-2xl"
+        />
       </div>
 
       {isLoading ? (

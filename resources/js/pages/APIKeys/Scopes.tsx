@@ -14,6 +14,8 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Modal } from '../../components/common/Modal';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 interface Scope {
   id: number;
@@ -57,6 +59,9 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   const [servers, setServers] = useState<Server[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
     data: formData,
@@ -106,7 +111,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
     e.preventDefault();
 
     if (formData.permissions.length === 0) {
-      alert('Please select at least one permission');
+      setErrorMessage('Please select at least one permission');
       return;
     }
 
@@ -136,17 +141,20 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
       router.reload({ only: ['flash'] });
     } catch (error: any) {
       console.error('Failed to add scope:', error);
-      alert(error.response?.data?.message || 'Failed to add scopes');
+      setErrorMessage(error.response?.data?.message || 'Failed to add scopes');
     }
   };
 
-  const removeScope = async (scopeId: number) => {
-    if (!confirm('Are you sure you want to remove this scope?')) {
-      return;
-    }
+  const handleRemoveClick = (scopeId: number) => {
+    setScopeToRemove(scopeId);
+  };
+
+  const confirmRemove = async () => {
+    if (!scopeToRemove) return;
 
     try {
-      await axios.delete(`/api/api-keys/${api_key_id}/scopes/${scopeId}`, {
+      setIsRemoving(true);
+      await axios.delete(`/api/api-keys/${api_key_id}/scopes/${scopeToRemove}`, {
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
@@ -154,9 +162,12 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
       loadScopes();
       router.reload({ only: ['flash'] });
+      setScopeToRemove(null);
     } catch (error) {
       console.error('Failed to remove scope:', error);
-      alert('Failed to remove scope');
+      setErrorMessage('Failed to remove scope');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -193,111 +204,116 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           <FlashMessages className="mb-6" />
 
           {/* Add Scope Modal */}
-          {showAddModal && (
-            <div className={theme.modal.overlay}>
-              <div className={cn(theme.modal.content, 'max-w-md')}>
-                <h3 className={cn(theme.modal.header, 'mb-4')}>Add New Scope</h3>
-                <form onSubmit={addScope}>
-                  <div className="mb-4">
-                    <label className={cn(theme.forms.label, 'mb-2')}>Server</label>
-                    <select
-                      value={formData.server_id}
-                      onChange={(e) => setData('server_id', e.target.value)}
-                      className={cn('w-full', theme.forms.select)}
-                    >
-                      <option value="all">All Servers</option>
-                      {servers.map((server) => (
-                        <option key={server.id} value={server.id}>
-                          {server.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          <Modal
+            isOpen={showAddModal}
+            onClose={() => {
+              setShowAddModal(false);
+              reset();
+            }}
+            title="Add New Scope"
+            size="md"
+            footer={
+              <div className="flex justify-end space-x-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    reset();
+                  }}
+                  className={theme.buttons.secondary}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="add-scope-form"
+                  disabled={processing}
+                  className={cn(theme.buttons.primary, processing && 'opacity-50')}
+                >
+                  Add Scope
+                </button>
+              </div>
+            }
+          >
+            <form id="add-scope-form" onSubmit={addScope}>
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>Server</label>
+                <select
+                  value={formData.server_id}
+                  onChange={(e) => setData('server_id', e.target.value)}
+                  className={cn('w-full', theme.forms.select)}
+                >
+                  <option value="all">All Servers</option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                  <div className="mb-4">
-                    <label className={cn(theme.forms.label, 'mb-2')}>Stack Pattern</label>
-                    <input
-                      type="text"
-                      value={formData.stack_pattern}
-                      onChange={(e) => setData('stack_pattern', e.target.value)}
-                      className={cn('w-full', theme.forms.input)}
-                      placeholder="* or specific-stack or prod-*"
-                      required
-                    />
-                    <p className={cn('mt-1 text-sm', theme.text.muted)}>
-                      Use * for all stacks, or specify patterns like "prod-*"
-                    </p>
-                  </div>
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>Stack Pattern</label>
+                <input
+                  type="text"
+                  value={formData.stack_pattern}
+                  onChange={(e) => setData('stack_pattern', e.target.value)}
+                  className={cn('w-full', theme.forms.input)}
+                  placeholder="* or specific-stack or prod-*"
+                  required
+                />
+                <p className={cn('mt-1 text-sm', theme.text.muted)}>
+                  Use * for all stacks, or specify patterns like "prod-*"
+                </p>
+              </div>
 
-                  <div className="mb-4">
-                    <label className={cn(theme.forms.label, 'mb-2')}>Permissions</label>
-                    <div
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>Permissions</label>
+                <div
+                  className={cn(
+                    'space-y-2 max-h-64 overflow-y-auto rounded-md p-3',
+                    theme.surface.muted
+                  )}
+                >
+                  {PERMISSIONS.map((perm) => (
+                    <label
+                      key={perm.value}
                       className={cn(
-                        'space-y-2 max-h-64 overflow-y-auto rounded-md p-3',
-                        theme.surface.muted
+                        'flex items-start space-x-3 p-2 rounded cursor-pointer',
+                        theme.buttons.ghost
                       )}
                     >
-                      {PERMISSIONS.map((perm) => (
-                        <label
-                          key={perm.value}
-                          className={cn(
-                            'flex items-start space-x-3 p-2 rounded cursor-pointer',
-                            theme.buttons.ghost
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.permissions.includes(perm.value)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setData('permissions', [...formData.permissions, perm.value]);
-                              } else {
-                                setData(
-                                  'permissions',
-                                  formData.permissions.filter((p) => p !== perm.value)
-                                );
-                              }
-                            }}
-                            className={theme.forms.checkbox}
-                          />
-                          <div className="flex-1">
-                            <span className={cn('text-sm font-medium', theme.text.strong)}>
-                              {perm.label}
-                            </span>
-                            <div className={cn('text-xs', theme.text.muted)}>{perm.value}</div>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                    <p className={cn('mt-1 text-sm', theme.text.muted)}>
-                      Selected: {formData.permissions.length} permission
-                      {formData.permissions.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddModal(false);
-                        reset();
-                      }}
-                      className={theme.buttons.secondary}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={processing}
-                      className={cn(theme.buttons.primary, processing && 'opacity-50')}
-                    >
-                      Add Scope
-                    </button>
-                  </div>
-                </form>
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions.includes(perm.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setData('permissions', [...formData.permissions, perm.value]);
+                          } else {
+                            setData(
+                              'permissions',
+                              formData.permissions.filter((p) => p !== perm.value)
+                            );
+                          }
+                        }}
+                        className={theme.forms.checkbox}
+                      />
+                      <div className="flex-1">
+                        <span className={cn('text-sm font-medium', theme.text.strong)}>
+                          {perm.label}
+                        </span>
+                        <div className={cn('text-xs', theme.text.muted)}>{perm.value}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className={cn('mt-1 text-sm', theme.text.muted)}>
+                  Selected: {formData.permissions.length} permission
+                  {formData.permissions.length !== 1 ? 's' : ''}
+                </p>
               </div>
-            </div>
-          )}
+            </form>
+          </Modal>
 
           {/* Scopes List */}
           {loading ? (
@@ -358,7 +374,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
                       <div className="flex-shrink-0">
                         <button
-                          onClick={() => removeScope(scope.id)}
+                          onClick={() => handleRemoveClick(scope.id)}
                           className={cn(
                             'inline-flex items-center text-sm leading-4',
                             theme.buttons.danger
@@ -392,6 +408,36 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           </div>
         </div>
       </div>
+
+      {/* Remove Scope Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!scopeToRemove}
+        onClose={() => setScopeToRemove(null)}
+        onConfirm={confirmRemove}
+        title="Remove Scope"
+        message="Are you sure you want to remove this scope? The API key will lose these permissions."
+        confirmText="Remove"
+        variant="warning"
+        isLoading={isRemoving}
+      />
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Error"
+        size="sm"
+        variant="danger"
+        footer={
+          <div className="flex justify-end">
+            <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>
+              OK
+            </button>
+          </div>
+        }
+      >
+        <p className={cn(theme.text.standard)}>{errorMessage}</p>
+      </Modal>
     </Layout>
   );
 }

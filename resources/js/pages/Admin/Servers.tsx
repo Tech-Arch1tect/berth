@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { Modal } from '../../components/common/Modal';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { Table, Column } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -27,6 +30,11 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; name: string } | null>(null);
+  const [testResultModal, setTestResultModal] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const { data, setData, post, put, processing, reset } = useForm({
     name: '',
@@ -95,19 +103,29 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     reset();
   };
 
-  const handleDelete = (serverid: number) => {
-    if (confirm('Are you sure you want to delete this server?')) {
-      router.delete(`/admin/servers/${serverid}`, {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-        onSuccess: () => {},
-        onError: (errors) => {
-          console.error('Delete failed:', errors);
-          alert('Failed to delete server');
-        },
-      });
-    }
+  const handleDeleteClick = (serverId: number, serverName: string) => {
+    setDeleteConfirm({ id: serverId, name: serverName });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+
+    router.delete(`/admin/servers/${deleteConfirm.id}`, {
+      headers: {
+        'X-CSRF-Token': csrfToken || '',
+      },
+      onSuccess: () => {
+        setDeleteConfirm(null);
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors);
+        setTestResultModal({
+          success: false,
+          message: 'Failed to delete server',
+        });
+        setDeleteConfirm(null);
+      },
+    });
   };
 
   const handleTestConnection = async (serverid: number) => {
@@ -123,13 +141,23 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
 
       if (response.ok) {
         await response.json(); // Consume the response body
-        alert('Connection successful!');
+        setTestResultModal({
+          success: true,
+          message: 'Connection successful!',
+        });
       } else {
         const errorData = await response.json();
-        alert('Connection failed: ' + (errorData.error || errorData.details || 'Unknown error'));
+        setTestResultModal({
+          success: false,
+          message:
+            'Connection failed: ' + (errorData.error || errorData.details || 'Unknown error'),
+        });
       }
     } catch (error) {
-      alert('Connection failed: ' + error);
+      setTestResultModal({
+        success: false,
+        message: 'Connection failed: ' + error,
+      });
     } finally {
       setTestingConnection(null);
     }
@@ -305,85 +333,84 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
           <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-slate-300 dark:divide-slate-700">
-                  <thead className={theme.table.head}>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Server
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Host
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    className={cn(
-                      theme.table.body,
-                      'divide-y divide-slate-200 dark:divide-slate-700'
-                    )}
-                  >
-                    {servers.map((server) => (
-                      <tr key={server.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={cn('text-sm font-mono', theme.text.strong)}>
-                            #{server.id}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div>
-                              <div className={cn('text-sm font-medium', theme.text.strong)}>
-                                {server.name}
-                              </div>
-                              {server.description && (
-                                <div className={cn('text-sm', theme.text.subtle)}>
-                                  {server.description}
-                                </div>
-                              )}
+                <Table<Server>
+                  data={servers}
+                  keyExtractor={(server) => server.id.toString()}
+                  emptyMessage="No servers configured yet."
+                  columns={[
+                    {
+                      key: 'id',
+                      header: 'ID',
+                      render: (server) => (
+                        <div className={cn('text-sm font-mono', theme.text.strong)}>
+                          #{server.id}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'server',
+                      header: 'Server',
+                      render: (server) => (
+                        <div className="flex items-center">
+                          <div>
+                            <div className={cn('text-sm font-medium', theme.text.strong)}>
+                              {server.name}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={cn('text-sm', theme.text.strong)}>
-                            https://{server.host}:{server.port}
-                            {server.skip_ssl_verification && (
-                              <span className={cn('ml-2 text-xs', theme.text.warning)}>
-                                (No SSL Verification)
-                              </span>
+                            {server.description && (
+                              <div className={cn('text-sm', theme.text.subtle)}>
+                                {server.description}
+                              </div>
                             )}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => toggleServerStatus(server.id, server.is_active)}
-                            className={cn(
-                              'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                              server.is_active
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            )}
-                          >
-                            {server.is_active ? 'Active' : 'Inactive'}
-                          </button>
-                        </td>
-                        <td
-                          className={cn('px-6 py-4 whitespace-nowrap text-sm', theme.text.subtle)}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'host',
+                      header: 'Host',
+                      render: (server) => (
+                        <div className={cn('text-sm', theme.text.strong)}>
+                          https://{server.host}:{server.port}
+                          {server.skip_ssl_verification && (
+                            <span className={cn('ml-2 text-xs', theme.text.warning)}>
+                              (No SSL Verification)
+                            </span>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      render: (server) => (
+                        <button
+                          onClick={() => toggleServerStatus(server.id, server.is_active)}
+                          className={cn(
+                            'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
+                            server.is_active
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          )}
                         >
+                          {server.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                      ),
+                    },
+                    {
+                      key: 'created',
+                      header: 'Created',
+                      render: (server) => (
+                        <span className={cn('text-sm', theme.text.subtle)}>
                           {formatDate(server.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      header: '',
+                      className: 'text-right',
+                      render: (server) => (
+                        <div className="text-sm font-medium space-x-2">
                           <button
                             onClick={() => handleEdit(server)}
                             className={cn('hover:underline', theme.text.info)}
@@ -398,26 +425,50 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
                             {testingConnection === server.id ? 'Testing...' : 'Test'}
                           </button>
                           <button
-                            onClick={() => handleDelete(server.id)}
+                            onClick={() => handleDeleteClick(server.id, server.name)}
                             className={cn('hover:underline', theme.text.danger)}
                           >
                             Delete
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {servers.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className={theme.text.subtle}>No servers configured yet.</p>
-                  </div>
-                )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Server"
+        message={`Are you sure you want to delete ${deleteConfirm?.name}? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+      />
+
+      {/* Test Result Modal */}
+      <Modal
+        isOpen={!!testResultModal}
+        onClose={() => setTestResultModal(null)}
+        title={testResultModal?.success ? 'Connection Successful' : 'Connection Failed'}
+        variant={testResultModal?.success ? 'default' : 'danger'}
+        size="sm"
+        footer={
+          <div className="flex justify-end">
+            <button onClick={() => setTestResultModal(null)} className={theme.buttons.primary}>
+              Close
+            </button>
+          </div>
+        }
+      >
+        <p className={theme.text.standard}>{testResultModal?.message}</p>
+      </Modal>
     </Layout>
   );
 }

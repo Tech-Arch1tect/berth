@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
+import { Modal } from '../../components/common/Modal';
+import { Tabs } from '../../components/common/Tabs';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -26,6 +28,13 @@ export default function Migration({ title }: Props) {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [showEncryptionSecret, setShowEncryptionSecret] = useState(false);
   const [exportProcessing, setExportProcessing] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string }>(
+    {
+      isOpen: false,
+      title: '',
+      message: '',
+    }
+  );
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
@@ -42,12 +51,20 @@ export default function Migration({ title }: Props) {
     e.preventDefault();
 
     if (!exportForm.data.password) {
-      alert('Password is required for export');
+      setErrorModal({
+        isOpen: true,
+        title: 'Password Required',
+        message: 'Password is required for export',
+      });
       return;
     }
 
     if (exportForm.data.password.length < 12) {
-      alert('Password must be at least 12 characters long');
+      setErrorModal({
+        isOpen: true,
+        title: 'Invalid Password',
+        message: 'Password must be at least 12 characters long',
+      });
       return;
     }
 
@@ -85,7 +102,11 @@ export default function Migration({ title }: Props) {
       exportForm.reset();
     } catch (error) {
       console.error('Export failed:', error);
-      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setErrorModal({
+        isOpen: true,
+        title: 'Export Failed',
+        message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      });
     } finally {
       setExportProcessing(false);
     }
@@ -95,12 +116,20 @@ export default function Migration({ title }: Props) {
     e.preventDefault();
 
     if (!importForm.data.password) {
-      alert('Password is required for import');
+      setErrorModal({
+        isOpen: true,
+        title: 'Password Required',
+        message: 'Password is required for import',
+      });
       return;
     }
 
     if (!importForm.data.backup_file) {
-      alert('Backup file is required for import');
+      setErrorModal({
+        isOpen: true,
+        title: 'File Required',
+        message: 'Backup file is required for import',
+      });
       return;
     }
 
@@ -128,7 +157,11 @@ export default function Migration({ title }: Props) {
       })
       .catch((error) => {
         console.error('Import failed:', error);
-        alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setErrorModal({
+          isOpen: true,
+          title: 'Import Failed',
+          message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
       });
   };
 
@@ -143,235 +176,221 @@ export default function Migration({ title }: Props) {
 
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={cn('shadow rounded-lg', theme.surface.panel)}>
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h1 className={cn('text-xl font-semibold', theme.text.strong)}>Data Migration</h1>
-              <p className={cn('mt-2 text-sm', theme.text.muted)}>
-                Export and import your Berth configuration data including users, servers, roles, and
-                permissions.
-              </p>
-            </div>
-
-            <FlashMessages />
-
-            <div className="p-6">
-              {/* Tab Navigation */}
-              <div className="border-b border-slate-200 dark:border-slate-700 mb-6">
-                <nav className="-mb-px flex space-x-8">
-                  <button
-                    onClick={() => setActiveTab('export')}
-                    className={cn(
-                      'py-2 px-1 border-b-2 font-medium text-sm transition-colors',
-                      activeTab === 'export'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : cn(
-                            'border-transparent hover:text-slate-700 dark:hover:text-slate-300',
-                            theme.text.subtle
-                          )
-                    )}
-                  >
-                    Export Data
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('import')}
-                    className={cn(
-                      'py-2 px-1 border-b-2 font-medium text-sm transition-colors',
-                      activeTab === 'import'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : cn(
-                            'border-transparent hover:text-slate-700 dark:hover:text-slate-300',
-                            theme.text.subtle
-                          )
-                    )}
-                  >
-                    Import Data
-                  </button>
-                </nav>
-              </div>
-
-              {/* Export Tab */}
-              {activeTab === 'export' && (
-                <div className="space-y-6">
-                  <div className={cn('p-4 rounded-lg', theme.intent.info.surface)}>
-                    <h3 className={cn('text-sm font-medium mb-2', theme.intent.info.textStrong)}>
-                      Export Information
-                    </h3>
-                    <ul className={cn('text-sm space-y-1', theme.intent.info.textMuted)}>
-                      <li>• All users, roles, and permissions with original IDs preserved</li>
-                      <li>• Server configurations and access tokens with original IDs</li>
-                      <li>• TOTP secrets for 2FA users with original IDs</li>
-                      <li>• Role-based access control settings and relationships</li>
-                      <li>• Encryption secret for reference (not imported)</li>
-                      <li>• Auto-increment sequence information for proper reset</li>
-                    </ul>
-                  </div>
-
-                  <form onSubmit={handleExport} className="space-y-4">
-                    <div>
-                      <label className={cn('block mb-2', theme.forms.label)}>Export Password</label>
-                      <input
-                        type="password"
-                        value={exportForm.data.password}
-                        onChange={(e) => exportForm.setData('password', e.target.value)}
-                        placeholder="Enter a strong password to encrypt the export (min 12 chars)"
-                        className={cn('w-full', theme.forms.input)}
-                        minLength={12}
-                        required
-                      />
-                      <p className={cn('mt-1 text-sm', theme.text.subtle)}>
-                        This password will be required to decrypt the backup during import.
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={exportProcessing}
-                        className={cn(theme.buttons.primary, 'disabled:opacity-50')}
-                      >
-                        {exportProcessing ? 'Exporting...' : 'Export Data'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Import Tab */}
-              {activeTab === 'import' && (
-                <div className="space-y-6">
-                  <div className={cn('p-4 rounded-lg', theme.intent.warning.surface)}>
-                    <h3 className={cn('text-sm font-medium mb-2', theme.intent.warning.textStrong)}>
-                      ⚠️ Import Warning
-                    </h3>
-                    <ul className={cn('text-sm space-y-1', theme.intent.warning.textMuted)}>
-                      <li>• This will COMPLETELY REPLACE ALL existing data</li>
-                      <li>
-                        • All users, roles, permissions, servers, and TOTP secrets will be replaced
-                      </li>
-                      <li>• Original IDs and relationships will be preserved</li>
-                      <li>• Auto-increment sequences will be properly reset</li>
-                      <li>• Ensure you have a backup of current data</li>
-                      <li>• Server agents must be reconfigured after import</li>
-                      <li>• You will need to update your .env file with the encryption secret</li>
-                    </ul>
-                  </div>
-
-                  <form onSubmit={handleImport} className="space-y-4">
-                    <div>
-                      <label className={cn('block mb-2', theme.forms.label)}>Backup File</label>
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        accept=".json"
-                        className={cn(
-                          'block w-full text-sm',
-                          theme.text.subtle,
-                          'file:mr-4 file:py-2 file:px-4',
-                          'file:rounded-full file:border-0',
-                          'file:text-sm file:font-semibold',
-                          'file:bg-blue-50 file:text-blue-700',
-                          'hover:file:bg-blue-100',
-                          'dark:file:bg-blue-900 dark:file:text-blue-200'
-                        )}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className={cn('block mb-2', theme.forms.label)}>
-                        Decryption Password
-                      </label>
-                      <input
-                        type="password"
-                        value={importForm.data.password}
-                        onChange={(e) => importForm.setData('password', e.target.value)}
-                        placeholder="Enter the password used during export"
-                        className={cn('w-full', theme.forms.input)}
-                        required
-                      />
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={importForm.processing}
-                        className={cn(theme.buttons.danger, 'disabled:opacity-50')}
-                      >
-                        {importForm.processing ? 'Importing...' : 'Import Data'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Import Result Modal */}
-              {importResult && showEncryptionSecret && (
-                <div className={theme.modal.overlay}>
-                  <div className={cn(theme.modal.content, 'max-w-lg w-full mx-4')}>
-                    <h3 className={cn('text-lg font-semibold mb-4', theme.text.strong)}>
-                      Import Completed Successfully
-                    </h3>
-
-                    <div className="space-y-4">
-                      <div className={cn('p-4 rounded-lg', theme.intent.success.surface)}>
-                        <h4 className={cn('font-medium mb-2', theme.intent.success.textStrong)}>
-                          Import Summary
-                        </h4>
-                        <ul className={cn('text-sm space-y-1', theme.intent.success.textMuted)}>
-                          <li>• {importResult.summary.users_imported} users imported</li>
-                          <li>• {importResult.summary.roles_imported} roles imported</li>
-                          <li>• {importResult.summary.servers_imported} servers imported</li>
-                          <li>
-                            • {importResult.summary.permissions_imported} permissions imported
-                          </li>
-                          <li>
-                            • {importResult.summary.totp_secrets_imported} TOTP secrets imported
-                          </li>
-                        </ul>
-                        <p className={cn('text-sm mt-2', theme.intent.success.textMuted)}>
-                          All data has been completely replaced with imported configuration.
-                          Original IDs and relationships have been preserved, and auto-increment
-                          sequences have been properly reset for future data creation.
-                        </p>
-                      </div>
-
-                      <div className={cn('p-4 rounded-lg', theme.intent.warning.surface)}>
-                        <h4 className={cn('font-medium mb-2', theme.intent.warning.textStrong)}>
-                          Required: Update Encryption Secret
-                        </h4>
-                        <p className={cn('text-sm mb-2', theme.intent.warning.textMuted)}>
-                          Add this to your .env file:
-                        </p>
-                        <div
-                          className={cn(
-                            'p-2 rounded font-mono text-xs break-all',
-                            theme.surface.code
-                          )}
-                        >
-                          ENCRYPTION_SECRET={importResult.encryption_secret}
-                        </div>
-                        <p className={cn('text-sm mt-2', theme.intent.warning.textMuted)}>
-                          Restart the application after updating your .env file.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end mt-6">
-                      <button
-                        onClick={() => {
-                          setShowEncryptionSecret(false);
-                          setImportResult(null);
-                        }}
-                        className={theme.buttons.primary}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="mb-6">
+            <h1 className={cn('text-xl font-semibold', theme.text.strong)}>Data Migration</h1>
+            <p className={cn('mt-2 text-sm', theme.text.muted)}>
+              Export and import your Berth configuration data including users, servers, roles, and
+              permissions.
+            </p>
           </div>
+
+          <FlashMessages />
+
+          <Tabs
+            tabs={[
+              { id: 'export', label: 'Export Data' },
+              { id: 'import', label: 'Import Data' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab as 'export' | 'import')}
+          >
+            {activeTab === 'export' && (
+              <div className="space-y-6">
+                <div className={cn('p-4 rounded-lg', theme.intent.info.surface)}>
+                  <h3 className={cn('text-sm font-medium mb-2', theme.intent.info.textStrong)}>
+                    Export Information
+                  </h3>
+                  <ul className={cn('text-sm space-y-1', theme.intent.info.textMuted)}>
+                    <li>• All users, roles, and permissions with original IDs preserved</li>
+                    <li>• Server configurations and access tokens with original IDs</li>
+                    <li>• TOTP secrets for 2FA users with original IDs</li>
+                    <li>• Role-based access control settings and relationships</li>
+                    <li>• Encryption secret for reference (not imported)</li>
+                    <li>• Auto-increment sequence information for proper reset</li>
+                  </ul>
+                </div>
+
+                <form onSubmit={handleExport} className="space-y-4">
+                  <div>
+                    <label className={cn('block mb-2', theme.forms.label)}>Export Password</label>
+                    <input
+                      type="password"
+                      value={exportForm.data.password}
+                      onChange={(e) => exportForm.setData('password', e.target.value)}
+                      placeholder="Enter a strong password to encrypt the export (min 12 chars)"
+                      className={cn('w-full', theme.forms.input)}
+                      minLength={12}
+                      required
+                    />
+                    <p className={cn('mt-1 text-sm', theme.text.subtle)}>
+                      This password will be required to decrypt the backup during import.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={exportProcessing}
+                      className={cn(theme.buttons.primary, 'disabled:opacity-50')}
+                    >
+                      {exportProcessing ? 'Exporting...' : 'Export Data'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {activeTab === 'import' && (
+              <div className="space-y-6">
+                <div className={cn('p-4 rounded-lg', theme.intent.warning.surface)}>
+                  <h3 className={cn('text-sm font-medium mb-2', theme.intent.warning.textStrong)}>
+                    ⚠️ Import Warning
+                  </h3>
+                  <ul className={cn('text-sm space-y-1', theme.intent.warning.textMuted)}>
+                    <li>• This will COMPLETELY REPLACE ALL existing data</li>
+                    <li>
+                      • All users, roles, permissions, servers, and TOTP secrets will be replaced
+                    </li>
+                    <li>• Original IDs and relationships will be preserved</li>
+                    <li>• Auto-increment sequences will be properly reset</li>
+                    <li>• Ensure you have a backup of current data</li>
+                    <li>• Server agents must be reconfigured after import</li>
+                    <li>• You will need to update your .env file with the encryption secret</li>
+                  </ul>
+                </div>
+
+                <form onSubmit={handleImport} className="space-y-4">
+                  <div>
+                    <label className={cn('block mb-2', theme.forms.label)}>Backup File</label>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".json"
+                      className={cn(
+                        'block w-full text-sm',
+                        theme.text.subtle,
+                        'file:mr-4 file:py-2 file:px-4',
+                        'file:rounded-full file:border-0',
+                        'file:text-sm file:font-semibold',
+                        'file:bg-blue-50 file:text-blue-700',
+                        'hover:file:bg-blue-100',
+                        'dark:file:bg-blue-900 dark:file:text-blue-200'
+                      )}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={cn('block mb-2', theme.forms.label)}>
+                      Decryption Password
+                    </label>
+                    <input
+                      type="password"
+                      value={importForm.data.password}
+                      onChange={(e) => importForm.setData('password', e.target.value)}
+                      placeholder="Enter the password used during export"
+                      className={cn('w-full', theme.forms.input)}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={importForm.processing}
+                      className={cn(theme.buttons.danger, 'disabled:opacity-50')}
+                    >
+                      {importForm.processing ? 'Importing...' : 'Import Data'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </Tabs>
+
+          {/* Error Modal */}
+          <Modal
+            isOpen={errorModal.isOpen}
+            onClose={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+            title={errorModal.title}
+            size="sm"
+            variant="danger"
+            footer={
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+                  className={theme.buttons.primary}
+                >
+                  OK
+                </button>
+              </div>
+            }
+          >
+            <p className={cn(theme.text.standard)}>{errorModal.message}</p>
+          </Modal>
+
+          {/* Import Result Modal */}
+          <Modal
+            isOpen={!!(importResult && showEncryptionSecret)}
+            onClose={() => {
+              setShowEncryptionSecret(false);
+              setImportResult(null);
+            }}
+            title="Import Completed Successfully"
+            size="md"
+            footer={
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowEncryptionSecret(false);
+                    setImportResult(null);
+                  }}
+                  className={theme.buttons.primary}
+                >
+                  Close
+                </button>
+              </div>
+            }
+          >
+            {importResult && (
+              <div className="space-y-4">
+                <div className={cn('p-4 rounded-lg', theme.intent.success.surface)}>
+                  <h4 className={cn('font-medium mb-2', theme.intent.success.textStrong)}>
+                    Import Summary
+                  </h4>
+                  <ul className={cn('text-sm space-y-1', theme.intent.success.textMuted)}>
+                    <li>• {importResult.summary.users_imported} users imported</li>
+                    <li>• {importResult.summary.roles_imported} roles imported</li>
+                    <li>• {importResult.summary.servers_imported} servers imported</li>
+                    <li>• {importResult.summary.permissions_imported} permissions imported</li>
+                    <li>• {importResult.summary.totp_secrets_imported} TOTP secrets imported</li>
+                  </ul>
+                  <p className={cn('text-sm mt-2', theme.intent.success.textMuted)}>
+                    All data has been completely replaced with imported configuration. Original IDs
+                    and relationships have been preserved, and auto-increment sequences have been
+                    properly reset for future data creation.
+                  </p>
+                </div>
+
+                <div className={cn('p-4 rounded-lg', theme.intent.warning.surface)}>
+                  <h4 className={cn('font-medium mb-2', theme.intent.warning.textStrong)}>
+                    Required: Update Encryption Secret
+                  </h4>
+                  <p className={cn('text-sm mb-2', theme.intent.warning.textMuted)}>
+                    Add this to your .env file:
+                  </p>
+                  <div
+                    className={cn('p-2 rounded font-mono text-xs break-all', theme.surface.code)}
+                  >
+                    ENCRYPTION_SECRET={importResult.encryption_secret}
+                  </div>
+                  <p className={cn('text-sm mt-2', theme.intent.warning.textMuted)}>
+                    Restart the application after updating your .env file.
+                  </p>
+                </div>
+              </div>
+            )}
+          </Modal>
         </div>
       </div>
     </Layout>

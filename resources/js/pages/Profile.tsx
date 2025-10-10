@@ -5,6 +5,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { User } from '../types';
 import { cn } from '../utils/cn';
 import { theme } from '../theme';
+import { Modal } from '../components/common/Modal';
 
 interface ProfileProps {
   title: string;
@@ -177,74 +178,74 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
           </div>
 
           {/* TOTP Disable Modal */}
-          {showDisableForm && (
-            <div className={theme.modal.overlay}>
-              <div className={cn('relative top-20 mx-auto p-5 w-96', theme.modal.content)}>
-                <div className="mt-3">
-                  <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>
-                    Disable Two-Factor Authentication
-                  </h3>
-
-                  <form onSubmit={disableTOTP}>
-                    <div className="mb-4">
-                      <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        value={disableData.password}
-                        onChange={(e) => setDisableData('password', e.target.value)}
-                        className={theme.forms.input}
-                        required
-                      />
-                    </div>
-
-                    <div className="mb-4">
-                      <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
-                        TOTP Code
-                      </label>
-                      <input
-                        type="text"
-                        value={disableData.code}
-                        onChange={(e) => setDisableData('code', e.target.value)}
-                        className={theme.forms.input}
-                        placeholder="123456"
-                        maxLength={6}
-                        required
-                      />
-                    </div>
-
-                    <div className={cn('p-3 rounded-md mb-4', theme.intent.warning.surface)}>
-                      <p className={cn('text-sm', theme.intent.warning.textStrong)}>
-                        <strong>Warning:</strong> Disabling 2FA will make your account less secure.
-                      </p>
-                    </div>
-
-                    <div className="flex space-x-3">
-                      <button
-                        type="submit"
-                        disabled={disableProcessing}
-                        className={cn('flex-1', theme.buttons.danger)}
-                      >
-                        {disableProcessing ? 'Disabling...' : 'Disable 2FA'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowDisableForm(false);
-                          setDisableData({ password: '', code: '' });
-                        }}
-                        className={cn('flex-1', theme.buttons.secondary)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
+          <Modal
+            isOpen={showDisableForm}
+            onClose={() => {
+              setShowDisableForm(false);
+              setDisableData({ password: '', code: '' });
+            }}
+            title="Disable Two-Factor Authentication"
+            size="sm"
+            variant="warning"
+            footer={
+              <div className="flex space-x-3 w-full">
+                <button
+                  type="submit"
+                  form="disable-2fa-form"
+                  disabled={disableProcessing}
+                  className={cn('flex-1', theme.buttons.danger)}
+                >
+                  {disableProcessing ? 'Disabling...' : 'Disable 2FA'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDisableForm(false);
+                    setDisableData({ password: '', code: '' });
+                  }}
+                  className={cn('flex-1', theme.buttons.secondary)}
+                >
+                  Cancel
+                </button>
               </div>
-            </div>
-          )}
+            }
+          >
+            <form id="disable-2fa-form" onSubmit={disableTOTP}>
+              <div className="mb-4">
+                <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={disableData.password}
+                  onChange={(e) => setDisableData('password', e.target.value)}
+                  className={theme.forms.input}
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
+                  TOTP Code
+                </label>
+                <input
+                  type="text"
+                  value={disableData.code}
+                  onChange={(e) => setDisableData('code', e.target.value)}
+                  className={theme.forms.input}
+                  placeholder="123456"
+                  maxLength={6}
+                  required
+                />
+              </div>
+
+              <div className={cn('p-3 rounded-md mb-4', theme.intent.warning.surface)}>
+                <p className={cn('text-sm', theme.intent.warning.textStrong)}>
+                  <strong>Warning:</strong> Disabling 2FA will make your account less secure.
+                </p>
+              </div>
+            </form>
+          </Modal>
         </div>
       </div>
     </Layout>

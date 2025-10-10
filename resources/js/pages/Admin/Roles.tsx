@@ -5,6 +5,7 @@ import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 interface Role {
@@ -23,6 +24,8 @@ interface Props {
 export default function AdminRoles({ title, roles, csrfToken }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<{ id: number; name: string } | null>(null);
 
   const { data, setData, post, put, processing, reset } = useForm({
     name: '',
@@ -69,15 +72,22 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
     reset();
   };
 
-  const handleDelete = (roleId: number, roleName: string, isAdmin: boolean) => {
+  const handleDeleteClick = (roleId: number, roleName: string, isAdmin: boolean) => {
     if (isAdmin) return;
-    if (confirm(`Are you sure you want to delete the role "${roleName}"?`)) {
-      router.delete(`/admin/roles/${roleId}`, {
+    setRoleToDelete({ id: roleId, name: roleName });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (roleToDelete) {
+      router.delete(`/admin/roles/${roleToDelete.id}`, {
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
       });
     }
+    setShowDeleteModal(false);
+    setRoleToDelete(null);
   };
 
   return (
@@ -208,7 +218,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(role.id, role.name, role.is_admin)}
+                          onClick={() => handleDeleteClick(role.id, role.name, role.is_admin)}
                           className={cn('text-sm font-medium', theme.text.danger)}
                         >
                           Delete
@@ -253,6 +263,19 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
           )}
         </div>
       </div>
+
+      {/* Delete Role Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setRoleToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Role"
+        message={`Are you sure you want to delete the role "${roleToDelete?.name}"? This action cannot be undone.`}
+        variant="danger"
+      />
     </Layout>
   );
 }

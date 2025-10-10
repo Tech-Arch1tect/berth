@@ -19,6 +19,8 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Modal } from '../../components/common/Modal';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 interface APIKey {
   id: number;
@@ -49,6 +51,9 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
   const [newKeyData, setNewKeyData] = useState<{ key: string; name: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [selectedKeyScopes, setSelectedKeyScopes] = useState<number | null>(null);
+  const [keyToRevoke, setKeyToRevoke] = useState<{ id: number; name: string } | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
     data: formData,
@@ -104,30 +109,32 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
       }
     } catch (error: any) {
       console.error('Failed to create API key:', error);
-      alert(error.response?.data?.message || 'Failed to create API key');
+      setErrorMessage(error.response?.data?.message || 'Failed to create API key');
     }
   };
 
-  const revokeAPIKey = async (id: number, name: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to revoke the API key "${name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+  const handleRevokeClick = (id: number, name: string) => {
+    setKeyToRevoke({ id, name });
+  };
+
+  const confirmRevoke = async () => {
+    if (!keyToRevoke) return;
 
     try {
-      await axios.delete(`/api/api-keys/${id}`, {
+      setIsRevoking(true);
+      await axios.delete(`/api/api-keys/${keyToRevoke.id}`, {
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
       });
       loadAPIKeys();
       router.reload({ only: ['flash'] });
+      setKeyToRevoke(null);
     } catch (error) {
       console.error('Failed to revoke API key:', error);
-      alert('Failed to revoke API key');
+      setErrorMessage('Failed to revoke API key');
+    } finally {
+      setIsRevoking(false);
     }
   };
 
@@ -161,114 +168,116 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
           <FlashMessages className="mb-6" />
 
           {/* New Key Display Modal */}
-          {newKeyData && (
-            <div className={theme.modal.overlay}>
-              <div className={cn(theme.modal.content, 'max-w-2xl')}>
-                <h3 className={cn(theme.modal.header, 'mb-4')}>API Key Created Successfully</h3>
-                <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
-                    </div>
-                    <div className="ml-3">
-                      <p className={cn('text-sm', theme.intent.warning.textStrong)}>
-                        <strong>Important:</strong> Copy this API key now. You won't be able to see
-                        it again!
-                      </p>
-                    </div>
-                  </div>
+          <Modal
+            isOpen={!!newKeyData}
+            onClose={() => setNewKeyData(null)}
+            title="API Key Created Successfully"
+            subtitle={newKeyData?.name}
+            size="lg"
+            footer={
+              <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
+                Done
+              </button>
+            }
+          >
+            <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
                 </div>
-                <div className="mb-4">
-                  <label className={cn(theme.forms.label, 'mb-2')}>
-                    API Key: {newKeyData.name}
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={newKeyData.key}
-                      readOnly
-                      className={cn(
-                        theme.forms.input,
-                        theme.surface.code,
-                        'flex-1 font-mono text-sm'
-                      )}
-                    />
-                    <button
-                      onClick={() => copyToClipboard(newKeyData.key)}
-                      className={cn(theme.buttons.ghost, 'p-3')}
-                    >
-                      {copiedKey ? (
-                        <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
-                      ) : (
-                        <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
-                    Done
-                  </button>
+                <div className="ml-3">
+                  <p className={cn('text-sm', theme.intent.warning.textStrong)}>
+                    <strong>Important:</strong> Copy this API key now. You won't be able to see it
+                    again!
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+            <div className="mb-4">
+              <label className={cn(theme.forms.label, 'mb-2')}>API Key</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={newKeyData?.key || ''}
+                  readOnly
+                  className={cn(theme.forms.input, theme.surface.code, 'flex-1 font-mono text-sm')}
+                />
+                <button
+                  onClick={() => copyToClipboard(newKeyData?.key || '')}
+                  className={cn(theme.buttons.ghost, 'p-3')}
+                  title={copiedKey ? 'Copied!' : 'Copy to clipboard'}
+                >
+                  {copiedKey ? (
+                    <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
+                  ) : (
+                    <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
+                  )}
+                </button>
+              </div>
+            </div>
+          </Modal>
 
           {/* Create Modal */}
-          {showCreateModal && (
-            <div className={theme.modal.overlay}>
-              <div className={cn(theme.modal.content, 'max-w-md')}>
-                <h3 className={cn(theme.modal.header, 'mb-4')}>Create New API Key</h3>
-                <form onSubmit={createAPIKey}>
-                  <div className="mb-4">
-                    <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setData('name', e.target.value)}
-                      className={cn('w-full', theme.forms.input)}
-                      placeholder="My API Key"
-                      required
-                    />
-                    {errors.name && (
-                      <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
-                    <input
-                      type="datetime-local"
-                      value={formData.expires_at}
-                      onChange={(e) => setData('expires_at', e.target.value)}
-                      className={cn('w-full', theme.forms.input)}
-                    />
-                    {errors.expires_at && (
-                      <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
-                    )}
-                  </div>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCreateModal(false);
-                        reset();
-                      }}
-                      className={theme.buttons.secondary}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={processing}
-                      className={cn(theme.buttons.primary, processing && 'opacity-50')}
-                    >
-                      Create
-                    </button>
-                  </div>
-                </form>
+          <Modal
+            isOpen={showCreateModal}
+            onClose={() => {
+              setShowCreateModal(false);
+              reset();
+            }}
+            title="Create New API Key"
+            size="md"
+            footer={
+              <div className="flex justify-end space-x-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    reset();
+                  }}
+                  className={theme.buttons.secondary}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="create-api-key-form"
+                  disabled={processing}
+                  className={cn(theme.buttons.primary, processing && 'opacity-50')}
+                >
+                  Create
+                </button>
               </div>
-            </div>
-          )}
+            }
+          >
+            <form id="create-api-key-form" onSubmit={createAPIKey}>
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setData('name', e.target.value)}
+                  className={cn('w-full', theme.forms.input)}
+                  placeholder="My API Key"
+                  required
+                />
+                {errors.name && (
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
+                <input
+                  type="datetime-local"
+                  value={formData.expires_at}
+                  onChange={(e) => setData('expires_at', e.target.value)}
+                  className={cn('w-full', theme.forms.input)}
+                />
+                {errors.expires_at && (
+                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
+                )}
+              </div>
+            </form>
+          </Modal>
 
           {/* API Keys List */}
           {loading ? (
@@ -350,7 +359,7 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
                           Manage Scopes
                         </button>
                         <button
-                          onClick={() => revokeAPIKey(apiKey.id, apiKey.name)}
+                          onClick={() => handleRevokeClick(apiKey.id, apiKey.name)}
                           className={cn(
                             'inline-flex items-center text-sm leading-4',
                             theme.buttons.danger
@@ -383,6 +392,36 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
           </div>
         </div>
       </div>
+
+      {/* Revoke Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!keyToRevoke}
+        onClose={() => setKeyToRevoke(null)}
+        onConfirm={confirmRevoke}
+        title="Revoke API Key"
+        message={`Are you sure you want to revoke the API key "${keyToRevoke?.name}"?`}
+        confirmText="Revoke"
+        variant="danger"
+        isLoading={isRevoking}
+      />
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Error"
+        size="sm"
+        variant="danger"
+        footer={
+          <div className="flex justify-end">
+            <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>
+              OK
+            </button>
+          </div>
+        }
+      >
+        <p className={cn(theme.text.standard)}>{errorMessage}</p>
+      </Modal>
     </Layout>
   );
 }

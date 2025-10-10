@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { FileManager } from '../../components/files/FileManager';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Server } from '../../types/server';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -32,93 +33,13 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8">
-            <nav className="flex" aria-label="Breadcrumb">
-              <ol className="inline-flex items-center space-x-1 md:space-x-3">
-                <li className="inline-flex items-center">
-                  <Link
-                    href="/"
-                    className={cn(
-                      'inline-flex items-center text-sm font-medium transition-colors',
-                      theme.text.muted,
-                      'hover:text-blue-600 dark:hover:text-blue-400'
-                    )}
-                  >
-                    <svg className="w-3 h-3 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                    </svg>
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <div className="flex items-center">
-                    <svg
-                      className={cn('w-6 h-6', theme.text.subtle)}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <Link
-                      href={`/servers/${serverid}/stacks`}
-                      className={cn(
-                        'ml-1 text-sm font-medium md:ml-2 transition-colors',
-                        theme.text.muted,
-                        'hover:text-blue-600 dark:hover:text-blue-400'
-                      )}
-                    >
-                      {server.name} Stacks
-                    </Link>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-center">
-                    <svg
-                      className={cn('w-6 h-6', theme.text.subtle)}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <Link
-                      href={`/servers/${serverid}/stacks/${stackname}`}
-                      className={cn(
-                        'ml-1 text-sm font-medium md:ml-2 transition-colors',
-                        theme.text.muted,
-                        'hover:text-blue-600 dark:hover:text-blue-400'
-                      )}
-                    >
-                      {stackname}
-                    </Link>
-                  </div>
-                </li>
-                <li aria-current="page">
-                  <div className="flex items-center">
-                    <svg
-                      className={cn('w-6 h-6', theme.text.subtle)}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <span className={cn('ml-1 text-sm font-medium md:ml-2', theme.text.subtle)}>
-                      Files
-                    </span>
-                  </div>
-                </li>
-              </ol>
-            </nav>
+            <Breadcrumb
+              items={[
+                { label: `${server.name} Stacks`, href: `/servers/${serverid}/stacks` },
+                { label: stackname, href: `/servers/${serverid}/stacks/${stackname}` },
+                { label: 'Files' },
+              ]}
+            />
 
             <div className="mt-4">
               <div className="flex items-center justify-between">

@@ -3,15 +3,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { ServerNavigation } from '../../components/ServerNavigation';
-import {
-  KeyIcon,
-  TrashIcon,
-  PencilIcon,
-  PlusIcon,
-  XMarkIcon,
-  HomeIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { Modal } from '../../components/common/Modal';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { KeyIcon, TrashIcon, PencilIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -44,6 +39,8 @@ export default function Registries({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCredential, setEditingCredential] = useState<RegistryCredential | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; url: string } | null>(null);
 
   const [data, setFormData] = useState({
     stack_pattern: '*',
@@ -116,7 +113,7 @@ export default function Registries({
       }
     } catch (error) {
       console.error('Submit failed:', error);
-      alert(error instanceof Error ? error.message : 'Failed to save credential');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to save credential');
     } finally {
       setProcessing(false);
     }
@@ -134,13 +131,15 @@ export default function Registries({
     });
   };
 
-  const handleDelete = async (credentialId: number) => {
-    if (!confirm('Are you sure you want to delete this registry credential?')) {
-      return;
-    }
+  const handleDeleteClick = (credentialId: number, registryUrl: string) => {
+    setDeleteConfirm({ id: credentialId, url: registryUrl });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
 
     try {
-      const response = await fetch(`/api/servers/${server_id}/registries/${credentialId}`, {
+      const response = await fetch(`/api/servers/${server_id}/registries/${deleteConfirm.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -154,10 +153,12 @@ export default function Registries({
         throw new Error(errorData.error || 'Delete failed');
       }
 
+      setDeleteConfirm(null);
       router.reload();
     } catch (error) {
       console.error('Delete failed:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete credential');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to delete credential');
+      setDeleteConfirm(null);
     }
   };
 
@@ -172,44 +173,12 @@ export default function Registries({
       <Head title={title} />
 
       {/* Breadcrumb */}
-      <nav className="flex mb-6" aria-label="Breadcrumb">
-        <ol className="flex items-center space-x-4">
-          <li>
-            <Link
-              href="/"
-              className={cn(
-                theme.text.subtle,
-                'hover:text-slate-700 dark:hover:text-slate-300 transition-colors'
-              )}
-            >
-              <HomeIcon className="h-5 w-5" />
-            </Link>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
-              <Link
-                href={`/servers/${server_id}/stacks`}
-                className={cn(
-                  'ml-4 text-sm font-medium transition-colors',
-                  theme.text.muted,
-                  'hover:text-slate-700 dark:hover:text-slate-300'
-                )}
-              >
-                {server_name}
-              </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
-              <span className={cn('ml-4 text-sm font-medium', theme.text.strong)}>
-                Registry Credentials
-              </span>
-            </div>
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb
+        items={[
+          { label: server_name, href: `/servers/${server_id}/stacks` },
+          { label: 'Registry Credentials' },
+        ]}
+      />
 
       {/* Server Navigation */}
       <div className="mb-8">
@@ -424,7 +393,7 @@ export default function Registries({
                       <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(credential.id)}
+                      onClick={() => handleDeleteClick(credential.id, credential.registry_url)}
                       className={cn(
                         'p-2 rounded-lg transition-colors',
                         theme.text.danger,
@@ -441,6 +410,35 @@ export default function Registries({
           </div>
         )}
       </div>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Error"
+        variant="danger"
+        size="sm"
+        footer={
+          <div className="flex justify-end">
+            <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>
+              Close
+            </button>
+          </div>
+        }
+      >
+        <p className={theme.text.standard}>{errorMessage}</p>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Registry Credential"
+        message={`Are you sure you want to delete the credential for ${deleteConfirm?.url}? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </Layout>
   );
 }

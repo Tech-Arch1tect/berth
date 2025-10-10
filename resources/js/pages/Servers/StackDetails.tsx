@@ -24,6 +24,9 @@ import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { StatCard } from '../../components/common/StatCard';
+import { Tabs } from '../../components/common/Tabs';
 import { showToast } from '../../utils/toast';
 import {
   generateStackDocumentation,
@@ -33,8 +36,6 @@ import { StackImagesTab } from '../../components/stack-images';
 import { ComposeEditor, ComposeChanges } from '../../components/compose';
 import { useComposeUpdate } from '../../hooks/useComposeUpdate';
 import {
-  HomeIcon,
-  ChevronRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ServerIcon,
@@ -279,30 +280,17 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       <Head title={title} />
 
       {/* Breadcrumb Navigation */}
-      <div className="mb-6">
-        <nav className={cn('flex items-center space-x-2 text-sm', theme.text.muted)}>
-          <Link
-            href="/"
-            className={cn(
-              'flex items-center space-x-1 transition-colors',
-              theme.text.muted,
-              'hover:text-blue-600 dark:hover:text-blue-400'
-            )}
-          >
-            <HomeIcon className="w-4 h-4" />
-            <span>Dashboard</span>
-          </Link>
-          <ChevronRightIcon className={cn('w-4 h-4', theme.text.subtle)} />
-          <Link
-            href={`/servers/${serverid}/stacks`}
-            className={cn('transition-colors', 'hover:text-blue-600 dark:hover:text-blue-400')}
-          >
-            {server.name} Stacks
-          </Link>
-          <ChevronRightIcon className={cn('w-4 h-4', theme.text.subtle)} />
-          <span className={cn('font-medium', theme.text.strong)}>{stackname}</span>
-        </nav>
-      </div>
+      <Breadcrumb
+        items={[
+          {
+            label: `${server.name} Stacks`,
+            href: `/servers/${serverid}/stacks`,
+          },
+          {
+            label: stackname,
+          },
+        ]}
+      />
 
       {/* Header Section */}
       <div className="mb-8">
@@ -473,85 +461,43 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         <div className="space-y-8">
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn('text-sm font-medium', theme.text.muted)}>Services</p>
-                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                    {stackDetails.services?.length || 0}
-                  </p>
-                </div>
-                <div
-                  className={cn(
-                    'p-3 rounded-xl border',
-                    theme.intent.info.surface,
-                    theme.intent.info.textStrong,
-                    theme.intent.info.border
-                  )}
-                >
-                  <CircleStackIcon className="w-6 h-6" />
-                </div>
-              </div>
-            </div>
-
-            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn('text-sm font-medium', theme.text.muted)}>Containers</p>
-                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                    {stackDetails.services?.reduce(
-                      (total, service) => total + (service.containers?.length || 0),
-                      0
-                    ) || 0}
-                  </p>
-                </div>
-                <div
-                  className={cn(
-                    'p-3 rounded-xl border',
-                    theme.intent.success.surface,
-                    theme.intent.success.textStrong,
-                    theme.intent.success.border
-                  )}
-                >
-                  <ServerIcon className="w-6 h-6" />
-                </div>
-              </div>
-            </div>
-
-            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn('text-sm font-medium', theme.text.muted)}>Networks</p>
-                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                    {networks?.length || 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/20 dark:border-purple-800/20">
-                  <GlobeAltIcon className="w-6 h-6" />
-                </div>
-              </div>
-            </div>
-
-            <div className={cn(theme.cards.translucent, theme.cards.padded, 'rounded-2xl')}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn('text-sm font-medium', theme.text.muted)}>Volumes</p>
-                  <p className={cn('text-2xl font-bold mt-1', theme.text.strong)}>
-                    {volumes?.length || 0}
-                  </p>
-                </div>
-                <div
-                  className={cn(
-                    'p-3 rounded-xl border',
-                    theme.intent.success.surface,
-                    theme.intent.success.textStrong,
-                    theme.intent.success.border
-                  )}
-                >
-                  <FolderIcon className="w-6 h-6" />
-                </div>
-              </div>
-            </div>
+            <StatCard
+              label="Services"
+              value={stackDetails.services?.length || 0}
+              icon={CircleStackIcon}
+              iconColor="text-blue-600 dark:text-blue-400"
+              iconBg="bg-blue-100 dark:bg-blue-900/20"
+              className="rounded-2xl"
+            />
+            <StatCard
+              label="Containers"
+              value={
+                stackDetails.services?.reduce(
+                  (total, service) => total + (service.containers?.length || 0),
+                  0
+                ) || 0
+              }
+              icon={ServerIcon}
+              iconColor="text-green-600 dark:text-green-400"
+              iconBg="bg-green-100 dark:bg-green-900/20"
+              className="rounded-2xl"
+            />
+            <StatCard
+              label="Networks"
+              value={networks?.length || 0}
+              icon={GlobeAltIcon}
+              iconColor="text-purple-600 dark:text-purple-400"
+              iconBg="bg-purple-100 dark:bg-purple-900/20"
+              className="rounded-2xl"
+            />
+            <StatCard
+              label="Volumes"
+              value={volumes?.length || 0}
+              icon={FolderIcon}
+              iconColor="text-emerald-600 dark:text-emerald-400"
+              iconBg="bg-emerald-100 dark:bg-emerald-900/20"
+              className="rounded-2xl"
+            />
           </div>
 
           {/* Stack Info Card */}
@@ -605,202 +551,157 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           </div>
 
           {/* Modern Tab Navigation */}
-          <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden')}>
-            <div className={theme.cards.sectionDivider}>
-              <nav className="flex space-x-1 p-2">
-                {[
-                  { id: 'services', name: 'Services', icon: CircleStackIcon, permission: null },
-                  { id: 'networks', name: 'Networks', icon: GlobeAltIcon, permission: null },
-                  { id: 'volumes', name: 'Volumes', icon: FolderIcon, permission: null },
-                  { id: 'environment', name: 'Environment', icon: Cog6ToothIcon, permission: null },
-                  { id: 'images', name: 'Images', icon: PhotoIcon, permission: null },
-                  { id: 'stats', name: 'Stats', icon: CpuChipIcon, permission: null },
-                  { id: 'logs', name: 'Logs', icon: DocumentTextIcon, permission: 'logs.read' },
-                  { id: 'files', name: 'Files', icon: FolderIcon, permission: 'files.read' },
-                ]
-                  .filter(
-                    (tab) =>
-                      !tab.permission || stackPermissions?.permissions?.includes(tab.permission)
-                  )
-                  .map((tab) => {
-                    const Icon = tab.icon;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() =>
-                          setActiveTab(
-                            tab.id as
-                              | 'services'
-                              | 'networks'
-                              | 'volumes'
-                              | 'environment'
-                              | 'images'
-                              | 'stats'
-                              | 'logs'
-                              | 'files'
-                          )
-                        }
-                        className={cn(
-                          'flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-                          activeTab === tab.id
-                            ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/20 dark:border-blue-800/20'
-                            : cn(
-                                theme.text.muted,
-                                'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                              )
-                        )}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span>{tab.name}</span>
-                        {activeTab === tab.id && (
-                          <div
-                            className={cn(
-                              theme.badges.statusDot.base,
-                              theme.badges.statusDot.online
-                            )}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-              </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-6">
-              {activeTab === 'services' && (
-                <>
-                  {stackDetails.services && stackDetails.services.length > 0 ? (
-                    <div className="space-y-4">
-                      {/* Expand All / Collapse All Controls */}
-                      <div
-                        className={cn(
-                          'flex items-center justify-between pb-4',
-                          theme.cards.sectionDivider
-                        )}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
-                            Services ({stackDetails.services.length})
-                          </h3>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {stackPermissions?.permissions?.includes('stacks.manage') && (
-                            <button
-                              onClick={() => setShowComposeEditor(true)}
-                              className={cn(
-                                'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                                'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
-                                'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
-                              )}
-                              title="Edit compose configuration"
-                            >
-                              <PencilSquareIcon className="w-3 h-3 mr-1" />
-                              Edit Compose
-                            </button>
-                          )}
-                          <button
-                            onClick={handleExpandAll}
-                            className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                          >
-                            <ChevronDownIcon className="w-3 h-3 mr-1" />
-                            Expand All
-                          </button>
-                          <button
-                            onClick={handleCollapseAll}
-                            className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                          >
-                            <ChevronUpIcon className="w-3 h-3 mr-1" />
-                            Collapse All
-                          </button>
-                        </div>
+          <Tabs
+            tabs={[
+              { id: 'services', label: 'Services', icon: CircleStackIcon },
+              { id: 'networks', label: 'Networks', icon: GlobeAltIcon },
+              { id: 'volumes', label: 'Volumes', icon: FolderIcon },
+              { id: 'environment', label: 'Environment', icon: Cog6ToothIcon },
+              { id: 'images', label: 'Images', icon: PhotoIcon },
+              { id: 'stats', label: 'Stats', icon: CpuChipIcon },
+              {
+                id: 'logs',
+                label: 'Logs',
+                icon: DocumentTextIcon,
+                hidden: !stackPermissions?.permissions?.includes('logs.read'),
+              },
+              {
+                id: 'files',
+                label: 'Files',
+                icon: FolderIcon,
+                hidden: !stackPermissions?.permissions?.includes('files.read'),
+              },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as typeof activeTab)}
+            className="rounded-2xl"
+          >
+            {activeTab === 'services' && (
+              <>
+                {stackDetails.services && stackDetails.services.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Expand All / Collapse All Controls */}
+                    <div
+                      className={cn(
+                        'flex items-center justify-between pb-4',
+                        theme.cards.sectionDivider
+                      )}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
+                          Services ({stackDetails.services.length})
+                        </h3>
                       </div>
-
-                      {stackDetails.services.map((service) => (
-                        <CompactServiceCard
-                          key={service.name}
-                          service={service}
-                          onQuickOperation={handleQuickOperation}
-                          serverid={serverid}
-                          stackname={stackname}
-                          isOperationRunning={quickOperationState.isRunning}
-                          runningOperation={quickOperationState.operation}
-                          isExpanded={expandedServices.has(service.name)}
-                          onToggleExpand={() => toggleServiceExpanded(service.name)}
-                        />
-                      ))}
+                      <div className="flex items-center space-x-2">
+                        {stackPermissions?.permissions?.includes('stacks.manage') && (
+                          <button
+                            onClick={() => setShowComposeEditor(true)}
+                            className={cn(
+                              'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
+                              'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
+                              'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
+                            )}
+                            title="Edit compose configuration"
+                          >
+                            <PencilSquareIcon className="w-3 h-3 mr-1" />
+                            Edit Compose
+                          </button>
+                        )}
+                        <button
+                          onClick={handleExpandAll}
+                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
+                        >
+                          <ChevronDownIcon className="w-3 h-3 mr-1" />
+                          Expand All
+                        </button>
+                        <button
+                          onClick={handleCollapseAll}
+                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
+                        >
+                          <ChevronUpIcon className="w-3 h-3 mr-1" />
+                          Collapse All
+                        </button>
+                      </div>
                     </div>
-                  ) : (
-                    <EmptyState
-                      icon={CircleStackIcon}
-                      title="No services found"
-                      description="This stack doesn't have any services defined yet."
-                      variant="info"
-                      size="md"
-                    />
-                  )}
-                </>
-              )}
 
-              {activeTab === 'networks' && (
-                <NetworkList
-                  networks={networks || []}
-                  isLoading={networksLoading}
-                  error={networksError}
-                />
-              )}
+                    {stackDetails.services.map((service) => (
+                      <CompactServiceCard
+                        key={service.name}
+                        service={service}
+                        onQuickOperation={handleQuickOperation}
+                        serverid={serverid}
+                        stackname={stackname}
+                        isOperationRunning={quickOperationState.isRunning}
+                        runningOperation={quickOperationState.operation}
+                        isExpanded={expandedServices.has(service.name)}
+                        onToggleExpand={() => toggleServiceExpanded(service.name)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={CircleStackIcon}
+                    title="No services found"
+                    description="This stack doesn't have any services defined yet."
+                    variant="info"
+                    size="md"
+                  />
+                )}
+              </>
+            )}
 
-              {activeTab === 'volumes' && (
-                <VolumeList
-                  volumes={volumes || []}
-                  isLoading={volumesLoading}
-                  error={volumesError}
-                />
-              )}
+            {activeTab === 'networks' && (
+              <NetworkList
+                networks={networks || []}
+                isLoading={networksLoading}
+                error={networksError}
+              />
+            )}
 
-              {activeTab === 'environment' && (
-                <EnvironmentVariableList
-                  environmentData={environmentVariables || {}}
-                  isLoading={environmentLoading}
-                  error={environmentError}
-                />
-              )}
+            {activeTab === 'volumes' && (
+              <VolumeList volumes={volumes || []} isLoading={volumesLoading} error={volumesError} />
+            )}
 
-              {activeTab === 'images' && (
-                <StackImagesTab serverid={serverid} stackname={stackname} />
-              )}
+            {activeTab === 'environment' && (
+              <EnvironmentVariableList
+                environmentData={environmentVariables || {}}
+                isLoading={environmentLoading}
+                error={environmentError}
+              />
+            )}
 
-              {activeTab === 'stats' && (
-                <StackStats
-                  containers={stackStats?.containers || []}
-                  isLoading={statsLoading}
-                  error={statsError}
-                />
-              )}
+            {activeTab === 'images' && <StackImagesTab serverid={serverid} stackname={stackname} />}
 
-              {activeTab === 'logs' && stackPermissions?.permissions?.includes('logs.read') && (
-                <LogViewer
-                  serverid={serverid}
-                  stackname={stackname}
-                  containers={
-                    stackStats?.containers?.map((container) => ({
-                      name: container.name,
-                      service_name: container.service_name,
-                    })) || []
-                  }
-                />
-              )}
+            {activeTab === 'stats' && (
+              <StackStats
+                containers={stackStats?.containers || []}
+                isLoading={statsLoading}
+                error={statsError}
+              />
+            )}
 
-              {activeTab === 'files' && stackPermissions?.permissions?.includes('files.read') && (
-                <FileManager
-                  serverid={serverid}
-                  stackname={stackname}
-                  canRead={stackPermissions.permissions.includes('files.read')}
-                  canWrite={stackPermissions.permissions.includes('files.write')}
-                />
-              )}
-            </div>
-          </div>
+            {activeTab === 'logs' && stackPermissions?.permissions?.includes('logs.read') && (
+              <LogViewer
+                serverid={serverid}
+                stackname={stackname}
+                containers={
+                  stackStats?.containers?.map((container) => ({
+                    name: container.name,
+                    service_name: container.service_name,
+                  })) || []
+                }
+              />
+            )}
+
+            {activeTab === 'files' && stackPermissions?.permissions?.includes('files.read') && (
+              <FileManager
+                serverid={serverid}
+                stackname={stackname}
+                canRead={stackPermissions.permissions.includes('files.read')}
+                canWrite={stackPermissions.permissions.includes('files.write')}
+              />
+            )}
+          </Tabs>
         </div>
       ) : (
         <EmptyState

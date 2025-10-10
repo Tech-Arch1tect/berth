@@ -3,8 +3,6 @@ import { Head, Link } from '@inertiajs/react';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
-  HomeIcon,
-  ChevronRightIcon,
   ExclamationCircleIcon,
   ServerStackIcon,
 } from '@heroicons/react/24/outline';
@@ -13,6 +11,7 @@ import { StackCard } from '../../components/StackCard';
 import { ServerNavigation } from '../../components/ServerNavigation';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 import { cn } from '../../utils/cn';
@@ -56,44 +55,17 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
       <Head title={title} />
 
       {/* Breadcrumb */}
-      <nav className="flex mb-6" aria-label="Breadcrumb">
-        <ol className="flex items-center space-x-4">
-          <li>
-            <Link
-              href="/"
-              className={cn(
-                theme.text.subtle,
-                'hover:text-slate-700 dark:hover:text-slate-300 transition-colors'
-              )}
-            >
-              <HomeIcon className="h-5 w-5" />
-            </Link>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
-              <Link
-                href={`/servers/${serverid}/stacks`}
-                className={cn(
-                  'ml-4 text-sm font-medium transition-colors',
-                  theme.text.muted,
-                  'hover:text-slate-700 dark:hover:text-slate-300'
-                )}
-              >
-                {server.name}
-              </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
-              <span className={cn('ml-4 text-sm font-medium', theme.text.strong)}>
-                Docker Stacks
-              </span>
-            </div>
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb
+        items={[
+          {
+            label: server.name,
+            href: `/servers/${serverid}/stacks`,
+          },
+          {
+            label: 'Docker Stacks',
+          },
+        ]}
+      />
 
       {/* Server Navigation */}
       <div className="mb-8">

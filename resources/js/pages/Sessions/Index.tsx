@@ -17,6 +17,8 @@ import {
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { useState } from 'react';
 
 interface Session {
   id: number;
@@ -46,16 +48,21 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
-  const revokeSession = (sessionId: number) => {
-    if (
-      confirm(
-        'Are you sure you want to revoke this session? You will be logged out from that device.'
-      )
-    ) {
+  const [showRevokeModal, setShowRevokeModal] = useState(false);
+  const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
+  const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
+
+  const handleRevokeSessionClick = (sessionId: number) => {
+    setSessionToRevoke(sessionId);
+    setShowRevokeModal(true);
+  };
+
+  const confirmRevokeSession = () => {
+    if (sessionToRevoke) {
       router.post(
         '/sessions/revoke',
         {
-          session_id: sessionId,
+          session_id: sessionToRevoke,
         },
         {
           headers: {
@@ -65,25 +72,22 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
         }
       );
     }
+    setShowRevokeModal(false);
+    setSessionToRevoke(null);
   };
 
-  const revokeAllOthers = () => {
-    if (
-      confirm(
-        'Are you sure you want to revoke all other sessions? You will be logged out from all other devices.'
-      )
-    ) {
-      router.post(
-        '/sessions/revoke-all-others',
-        {},
-        {
-          headers: {
-            'X-CSRF-Token': csrfToken || '',
-          },
-          preserveState: true,
-        }
-      );
-    }
+  const confirmRevokeAllOthers = () => {
+    router.post(
+      '/sessions/revoke-all-others',
+      {},
+      {
+        headers: {
+          'X-CSRF-Token': csrfToken || '',
+        },
+        preserveState: true,
+      }
+    );
+    setShowRevokeAllModal(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -129,7 +133,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
             <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
             {sessions.filter((s) => !s.current).length > 0 && (
               <button
-                onClick={revokeAllOthers}
+                onClick={() => setShowRevokeAllModal(true)}
                 disabled={processing}
                 className={cn(theme.buttons.danger, processing && 'opacity-50')}
               >
@@ -194,7 +198,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                     {!session.current && (
                       <div className="flex-shrink-0">
                         <button
-                          onClick={() => revokeSession(session.id)}
+                          onClick={() => handleRevokeSessionClick(session.id)}
                           disabled={processing}
                           className={cn(
                             'inline-flex items-center text-sm leading-4',
@@ -237,6 +241,29 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
           </div>
         </div>
       </div>
+
+      {/* Revoke Session Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRevokeModal}
+        onClose={() => {
+          setShowRevokeModal(false);
+          setSessionToRevoke(null);
+        }}
+        onConfirm={confirmRevokeSession}
+        title="Revoke Session"
+        message="Are you sure you want to revoke this session? You will be logged out from that device."
+        variant="danger"
+      />
+
+      {/* Revoke All Others Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRevokeAllModal}
+        onClose={() => setShowRevokeAllModal(false)}
+        onConfirm={confirmRevokeAllOthers}
+        title="Revoke All Other Sessions"
+        message="Are you sure you want to revoke all other sessions? You will be logged out from all other devices."
+        variant="danger"
+      />
     </Layout>
   );
 }

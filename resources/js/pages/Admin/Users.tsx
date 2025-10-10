@@ -5,6 +5,7 @@ import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Table, Column } from '../../components/common/Table';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 interface User {
@@ -217,121 +218,101 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
           <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
               <div className={theme.table.panel}>
-                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-                  <thead className={theme.table.head}>
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      >
-                        User
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      >
-                        Roles
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      >
-                        2FA
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      >
-                        Last Login
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      >
-                        Joined
-                      </th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className={theme.table.body}>
-                    {users.map((user) => (
-                      <tr key={user.id} className={theme.table.row}>
-                        <td className={theme.table.cell}>
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div
-                                className={cn(
-                                  'h-10 w-10 rounded-full flex items-center justify-center',
-                                  theme.surface.muted
-                                )}
-                              >
-                                <span className={cn('text-sm font-medium', theme.text.standard)}>
-                                  {user.username.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className={cn('text-sm font-medium', theme.text.strong)}>
-                                {user.username}
-                              </div>
-                              <div className={cn('text-sm', theme.text.muted)}>{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={theme.table.cell}>
-                          <div className="flex flex-wrap gap-2">
-                            {user.roles.map((role) => (
-                              <span
-                                key={role.id}
-                                className={cn(theme.badges.tag.base, theme.badges.tag.info)}
-                              >
-                                {role.name}
+                <Table<User>
+                  data={users}
+                  keyExtractor={(user) => user.id.toString()}
+                  emptyMessage="No users found"
+                  emptyIcon={<UserGroupIcon className="h-12 w-12 mx-auto text-blue-400" />}
+                  columns={[
+                    {
+                      key: 'user',
+                      header: 'User',
+                      render: (user) => (
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div
+                              className={cn(
+                                'h-10 w-10 rounded-full flex items-center justify-center',
+                                theme.surface.muted
+                              )}
+                            >
+                              <span className={cn('text-sm font-medium', theme.text.standard)}>
+                                {user.username.charAt(0).toUpperCase()}
                               </span>
-                            ))}
-                            {user.roles.length === 0 && (
-                              <span className={cn('text-sm', theme.text.subtle)}>No roles</span>
-                            )}
+                            </div>
                           </div>
-                        </td>
-                        <td className={theme.table.cell}>
-                          <span
-                            className={cn(
-                              theme.badges.tag.base,
-                              user.totp_enabled
-                                ? theme.badges.tag.success
-                                : theme.badges.tag.neutral
-                            )}
-                          >
-                            {user.totp_enabled ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </td>
-                        <td className={cn(theme.table.cell, 'text-sm', theme.text.muted)}>
+                          <div className="ml-4">
+                            <div className={cn('text-sm font-medium', theme.text.strong)}>
+                              {user.username}
+                            </div>
+                            <div className={cn('text-sm', theme.text.muted)}>{user.email}</div>
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'roles',
+                      header: 'Roles',
+                      render: (user) => (
+                        <div className="flex flex-wrap gap-2">
+                          {user.roles.map((role) => (
+                            <span
+                              key={role.id}
+                              className={cn(theme.badges.tag.base, theme.badges.tag.info)}
+                            >
+                              {role.name}
+                            </span>
+                          ))}
+                          {user.roles.length === 0 && (
+                            <span className={cn('text-sm', theme.text.subtle)}>No roles</span>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: '2fa',
+                      header: '2FA',
+                      render: (user) => (
+                        <span
+                          className={cn(
+                            theme.badges.tag.base,
+                            user.totp_enabled ? theme.badges.tag.success : theme.badges.tag.neutral
+                          )}
+                        >
+                          {user.totp_enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'last_login',
+                      header: 'Last Login',
+                      render: (user) => (
+                        <span className={cn('text-sm', theme.text.muted)}>
                           {user.last_login_at ? formatDate(user.last_login_at) : 'Never'}
-                        </td>
-                        <td className={cn(theme.table.cell, 'text-sm', theme.text.muted)}>
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'joined',
+                      header: 'Joined',
+                      render: (user) => (
+                        <span className={cn('text-sm', theme.text.muted)}>
                           {formatDate(user.created_at)}
-                        </td>
-                        <td className={cn(theme.table.cell, 'text-right text-sm font-medium')}>
-                          <Link href={`/admin/users/${user.id}/roles`} className={theme.text.info}>
-                            Manage Roles
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {users.length === 0 && (
-                  <EmptyState
-                    icon={UserGroupIcon}
-                    title="No users found"
-                    description="There are no users in the system yet. Create the first user to get started."
-                    variant="info"
-                    size="md"
-                  />
-                )}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      header: '',
+                      className: 'text-right',
+                      render: (user) => (
+                        <Link href={`/admin/users/${user.id}/roles`} className={theme.text.info}>
+                          Manage Roles
+                        </Link>
+                      ),
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>
