@@ -8,8 +8,8 @@ import {
   ServerIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import Layout from '../components/Layout';
-import { StackCard } from '../components/StackCard';
+import Layout from '../components/layout/Layout';
+import { StackCard } from '../components/dashboard/StackCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { StatCard } from '../components/common/StatCard';

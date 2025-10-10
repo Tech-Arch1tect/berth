@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import OperationLogStats from '../../components/operations/OperationLogStats';
 import OperationLogFilters from '../../components/operations/OperationLogFilters';

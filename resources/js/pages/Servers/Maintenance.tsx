@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/Layout';
-import { ServerNavigation } from '../../components/ServerNavigation';
+import Layout from '../../components/layout/Layout';
+import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Server } from '../../types/server';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';

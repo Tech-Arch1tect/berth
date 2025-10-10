@@ -6,9 +6,9 @@ import {
   ExclamationCircleIcon,
   ServerStackIcon,
 } from '@heroicons/react/24/outline';
-import Layout from '../../components/Layout';
-import { StackCard } from '../../components/StackCard';
-import { ServerNavigation } from '../../components/ServerNavigation';
+import Layout from '../../components/layout/Layout';
+import { StackCard } from '../../components/dashboard/StackCard';
+import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Breadcrumb } from '../../components/common/Breadcrumb';

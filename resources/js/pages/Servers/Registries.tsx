@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
-import { ServerNavigation } from '../../components/ServerNavigation';
+import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';

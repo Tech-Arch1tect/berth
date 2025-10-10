@@ -1,4 +1,4 @@
-import Layout from '../components/Layout';
+import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { Head } from '@inertiajs/react';
 import { Server } from '../types/server';

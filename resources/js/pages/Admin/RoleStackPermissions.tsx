@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Modal } from '../../components/common/Modal';

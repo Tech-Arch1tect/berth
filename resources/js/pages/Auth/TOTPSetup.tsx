@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';

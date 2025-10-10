@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { Table, Column } from '../../components/common/Table';

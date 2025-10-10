@@ -1,6 +1,6 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import { FileManager } from '../../components/files/FileManager';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Server } from '../../types/server';

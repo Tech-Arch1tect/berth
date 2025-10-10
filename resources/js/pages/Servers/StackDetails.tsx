@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Server } from '../../types/server';
@@ -12,10 +12,10 @@ import { useStackEnvironmentVariables } from '../../hooks/useStackEnvironmentVar
 import { useStackStats } from '../../hooks/useStackStats';
 import { useOperations } from '../../hooks/useOperations';
 import { useStackPermissions } from '../../hooks/useStackPermissions';
-import NetworkList from '../../components/stack/NetworkList';
-import VolumeList from '../../components/stack/VolumeList';
-import EnvironmentVariableList from '../../components/stack/EnvironmentVariableList';
-import StackStats from '../../components/stack/StackStats';
+import NetworkList from '../../components/stacks/resources/NetworkList';
+import VolumeList from '../../components/stacks/resources/VolumeList';
+import EnvironmentVariableList from '../../components/stacks/resources/EnvironmentVariableList';
+import StackStats from '../../components/stacks/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
 import { FileManager } from '../../components/files/FileManager';
@@ -29,13 +29,13 @@ import {
   generateStackDocumentation,
   downloadMarkdown,
 } from '../../utils/generateStackDocumentation';
-import { StackImagesTab } from '../../components/stack-images';
+import { StackImagesTab } from '../../components/stacks/images';
 import { ComposeEditor, ComposeChanges } from '../../components/compose';
 import { useComposeUpdate } from '../../hooks/useComposeUpdate';
-import { StackHeader } from '../../components/stack/details/StackHeader';
-import { StackQuickStats } from '../../components/stack/details/StackQuickStats';
-import { StackInfoCard } from '../../components/stack/details/StackInfoCard';
-import { StackServicesTab } from '../../components/stack/details/StackServicesTab';
+import { StackHeader } from '../../components/stacks/details/StackHeader';
+import { StackQuickStats } from '../../components/stacks/details/StackQuickStats';
+import { StackInfoCard } from '../../components/stacks/details/StackInfoCard';
+import { StackServicesTab } from '../../components/stacks/details/StackServicesTab';
 import {
   CircleStackIcon,
   CpuChipIcon,

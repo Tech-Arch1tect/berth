@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
+import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { User } from '../types';

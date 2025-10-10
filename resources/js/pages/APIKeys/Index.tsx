@@ -1,4 +1,4 @@
-import Layout from '../../components/Layout';
+import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
