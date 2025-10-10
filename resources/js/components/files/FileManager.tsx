@@ -16,16 +16,20 @@ import {
 } from '../../types/files';
 import { FileList } from './FileList';
 import { FileEditor } from './FileEditor';
+import { FileManagerToolbar } from './FileManagerToolbar';
 import { FileOperationModal } from './FileOperationModal';
 import { FileUploadModal } from './FileUploadModal';
 import { ChmodModal } from './ChmodModal';
 import { ChownModal } from './ChownModal';
 import { ArchiveOperationModal } from './ArchiveOperationModal';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { EmptyState } from '../common/EmptyState';
 import { useFiles } from '../../hooks/useFiles';
 import { useOperations } from '../../hooks/useOperations';
 import { showToast } from '../../utils/toast';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 interface FileManagerProps {
   serverid: number;
@@ -424,206 +428,38 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
   if (!canRead) {
     return (
-      <div className={cn(theme.containers.panel)}>
-        <div className="text-center">
-          <div
-            className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
-              theme.intent.danger.surface
-            )}
-          >
-            <svg
-              className={cn('w-8 h-8', theme.intent.danger.textStrong)}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>Access Denied</h3>
-          <p className={theme.text.muted}>
-            You don't have permission to access files in this stack.
-          </p>
-        </div>
-      </div>
+      <EmptyState
+        icon={LockClosedIcon}
+        title="Access Denied"
+        description="You don't have permission to access files in this stack."
+        variant="error"
+        size="md"
+      />
     );
   }
 
   return (
     <div className={cn('h-full flex flex-col', theme.surface.subtle)}>
-      {/* Modern Toolbar */}
-      <div className={cn('backdrop-blur-xl border-b px-6 py-4', theme.surface.panel)}>
-        <div className="flex items-center justify-between">
-          {/* Breadcrumb Navigation */}
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <div className={cn('flex items-center space-x-1 text-sm', theme.text.muted)}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 1v4" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 1v4" />
-              </svg>
-              <span className="font-medium">Stack Files</span>
-              {currentPath && (
-                <>
-                  <span className={theme.text.subtle}>/</span>
-                  <span className="truncate max-w-xs">{currentPath}</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-2">
-            {/* Permissions Badge */}
-            <div
-              className={cn(
-                'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium',
-                theme.intent.neutral.surfaceSoft,
-                theme.text.muted
-              )}
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>
-                {canRead && 'Read'}
-                {canRead && canWrite && ' + Write'}
-                {!canRead && 'No Access'}
-              </span>
-            </div>
-
-            {canWrite && (
-              <div className="flex items-center space-x-1">
-                <div
-                  className={cn(
-                    'flex items-center rounded-lg p-1 space-x-1',
-                    theme.intent.neutral.surfaceSoft
-                  )}
-                >
-                  <button
-                    onClick={() => {
-                      setCurrentOperation('mkdir');
-                      setIsOperationModalOpen(true);
-                    }}
-                    className={cn(
-                      'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5',
-                      theme.text.standard,
-                      'hover:bg-white/80 dark:hover:bg-slate-700/80'
-                    )}
-                    title="New Folder"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    <span>Folder</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCurrentOperation('create');
-                      setIsOperationModalOpen(true);
-                    }}
-                    className={cn(
-                      'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5',
-                      theme.text.standard,
-                      'hover:bg-white/80 dark:hover:bg-slate-700/80'
-                    )}
-                    title="New File"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span>File</span>
-                  </button>
-                </div>
-                <button
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className={cn(
-                    'px-3 py-2 text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2',
-                    theme.brand.accent,
-                    'hover:from-blue-700 hover:to-purple-700'
-                  )}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <span>Upload</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Toolbar */}
+      <FileManagerToolbar
+        currentPath={currentPath}
+        canRead={canRead}
+        canWrite={canWrite}
+        onCreateFolder={() => {
+          setCurrentOperation('mkdir');
+          setIsOperationModalOpen(true);
+        }}
+        onCreateFile={() => {
+          setCurrentOperation('create');
+          setIsOperationModalOpen(true);
+        }}
+        onUpload={() => setIsUploadModalOpen(true)}
+      />
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
         {loading && !directoryListing ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    className={cn('w-32 h-32 rounded-full opacity-50', theme.effects.emptyAura)}
-                  />
-                </div>
-                <div className="relative">
-                  <div
-                    className={cn(
-                      'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 animate-spin',
-                      'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700'
-                    )}
-                  >
-                    <svg
-                      className={theme.text.subtle}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <h3 className={cn('text-xl font-semibold mb-2', theme.text.strong)}>
-                Loading files...
-              </h3>
-              <p className={theme.text.muted}>Please wait while we fetch the directory contents.</p>
-            </div>
-          </div>
+          <LoadingSpinner size="lg" text="Loading files..." fullScreen />
         ) : directoryListing ? (
           <div className="h-full overflow-hidden">
             <FileList
@@ -637,37 +473,17 @@ export const FileManager: React.FC<FileManagerProps> = ({
             />
           </div>
         ) : (
-          <div className="text-center py-12">
-            <div
-              className={cn(
-                'inline-flex items-center justify-center w-16 h-16 rounded-full mb-4',
-                theme.intent.danger.surface
-              )}
-            >
-              <svg
-                className={cn('w-8 h-8', theme.intent.danger.textStrong)}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>
-              Failed to load directory
-            </h3>
-            <p className={cn('mb-4', theme.text.muted)}>
-              There was an error loading the file listing.
-            </p>
-            <button onClick={() => loadDirectory(currentPath)} className={theme.buttons.primary}>
-              Try Again
-            </button>
-          </div>
+          <EmptyState
+            icon={ExclamationTriangleIcon}
+            title="Failed to load directory"
+            description="There was an error loading the file listing."
+            variant="error"
+            size="md"
+            action={{
+              label: 'Try Again',
+              onClick: () => loadDirectory(currentPath),
+            }}
+          />
         )}
       </div>
 
