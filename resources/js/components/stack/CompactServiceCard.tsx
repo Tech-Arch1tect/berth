@@ -144,8 +144,13 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
       <div className="px-4 py-3 border-b border-slate-100/50 dark:border-slate-700/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <ServerIcon className="w-4 h-4 text-white" />
+            <div
+              className={cn(
+                'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                theme.brand.stack
+              )}
+            >
+              <ServerIcon className="w-4 h-4" />
             </div>
 
             <div className="min-w-0 flex-1">

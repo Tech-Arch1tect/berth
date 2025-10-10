@@ -11,6 +11,7 @@ import { useOperationsContext } from '../../contexts/OperationsContext';
 import { StreamMessage } from '../../types/operations';
 import { OperationBuilder } from './OperationBuilder';
 import { useOperations } from '../../hooks/useOperations';
+import { Modal } from '../common/Modal';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../common/EmptyState';
@@ -293,92 +294,82 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   if (advancedMode) {
     return (
-      <div className={theme.modal.overlay}>
-        <div className={cn('w-full max-w-6xl h-[80vh] flex flex-col', theme.modal.content)}>
-          {/* Header */}
-          <div className={theme.modal.header}>
-            <div>
-              <h3 className={theme.modal.title}>Advanced Operations</h3>
-              <p className={theme.modal.subtitle}>
-                {advancedMode.stackname} on Server {advancedMode.serverid}
-              </p>
-            </div>
+      <Modal
+        isOpen={true}
+        onClose={handleClose}
+        title="Advanced Operations"
+        subtitle={`${advancedMode.stackname} on Server ${advancedMode.serverid}`}
+        size="xl"
+        headerExtra={
+          advancedOps ? (
             <div className="flex items-center gap-2">
-              {advancedOps && (
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'w-2 h-2 rounded-full',
-                      advancedOps.isConnected
-                        ? 'bg-green-500'
-                        : advancedOps.isConnecting
-                          ? 'bg-yellow-500 animate-pulse'
-                          : 'bg-red-500'
-                    )}
-                  />
-                  <span className={cn('text-xs', theme.text.muted)}>
-                    {advancedOps.isConnected
-                      ? 'Connected'
-                      : advancedOps.isConnecting
-                        ? 'Connecting...'
-                        : 'Disconnected'}
-                  </span>
-                </div>
-              )}
-              <button onClick={handleClose} className={theme.buttons.ghost}>
-                <XMarkIcon className="w-6 h-6" />
-              </button>
+              <div
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  advancedOps.isConnected
+                    ? 'bg-green-500'
+                    : advancedOps.isConnecting
+                      ? 'bg-yellow-500 animate-pulse'
+                      : 'bg-red-500'
+                )}
+              />
+              <span className={cn('text-xs', theme.text.muted)}>
+                {advancedOps.isConnected
+                  ? 'Connected'
+                  : advancedOps.isConnecting
+                    ? 'Connecting...'
+                    : 'Disconnected'}
+              </span>
             </div>
+          ) : null
+        }
+      >
+        <div className="flex overflow-hidden" style={{ height: '60vh' }}>
+          {/* Operation Builder */}
+          <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 overflow-y-auto p-4">
+            <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
+              Build Custom Operation
+            </h4>
+            {advancedOps && (
+              <OperationBuilder
+                services={advancedMode.services || []}
+                onOperationBuild={(operation) => {
+                  advancedOps.startOperation(operation);
+                }}
+                disabled={advancedOps.operationStatus.isRunning}
+              />
+            )}
           </div>
 
-          {/* Two column layout: Builder on left, Running ops on right */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Operation Builder */}
-            <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 overflow-y-auto p-4">
-              <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
-                Build Custom Operation
+          {/* Running Operations */}
+          <div className="w-1/2 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
+                Operations ({runningOps.length} running, {completedOps.length} completed)
               </h4>
-              {advancedOps && (
-                <OperationBuilder
-                  services={advancedMode.services || []}
-                  onOperationBuild={(operation) => {
-                    advancedOps.startOperation(operation);
-                  }}
-                  disabled={advancedOps.operationStatus.isRunning}
-                />
-              )}
             </div>
-
-            {/* Running Operations */}
-            <div className="w-1/2 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
-                  Operations ({runningOps.length} running, {completedOps.length} completed)
-                </h4>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {operations.length === 0 ? (
-                  <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
-                    No operations running
-                  </div>
-                ) : (
-                  operations.map((op) => (
-                    <OperationTracker
-                      key={op.operation_id}
-                      serverid={op.server_id}
-                      stackname={op.stack_name}
-                      operationId={op.operation_id}
-                      command={op.command}
-                      startTime={op.start_time}
-                      onDismiss={() => removeOperation(op.operation_id)}
-                    />
-                  ))
-                )}
-              </div>
+            <div className="flex-1 overflow-y-auto">
+              {operations.length === 0 ? (
+                <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
+                  No operations running
+                </div>
+              ) : (
+                operations.map((op) => (
+                  <OperationTracker
+                    key={op.operation_id}
+                    serverid={op.server_id}
+                    stackname={op.stack_name}
+                    operationId={op.operation_id}
+                    command={op.command}
+                    startTime={op.start_time}
+                    onDismiss={() => removeOperation(op.operation_id)}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </Modal>
     );
   }
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   FileEntry,
   FileOperation,
@@ -12,6 +11,7 @@ import {
 } from '../../types/files';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { Modal } from '../common/Modal';
 
 interface FileOperationModalProps {
   isOpen: boolean;
@@ -213,218 +213,188 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
   if (!isOpen || !operation) return null;
 
-  const modalContent = (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div className={theme.modal.overlay} onClick={handleBackdropClick} />
-
-      {/* Modal Content */}
-      <div className="relative w-full h-full flex items-center justify-center p-6">
-        <div className={cn(theme.modal.content, 'max-w-md w-full')}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={cn('text-lg font-medium', theme.text.strong)}>{getModalTitle()}</h3>
-              <button onClick={onClose} className={theme.buttons.icon}>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {operation === 'delete' ? (
-                <div>
-                  <p className={cn(theme.text.standard, 'mb-4')}>
-                    Are you sure you want to delete <strong>{selectedFile?.name}</strong>?
-                    {selectedFile?.is_directory && (
-                      <span className={cn('block text-sm mt-2', theme.text.danger)}>
-                        This will permanently delete the directory and all its contents.
-                      </span>
-                    )}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className={cn(theme.forms.label, 'mb-2')}>
-                      {operation === 'mkdir'
-                        ? 'Directory Name'
-                        : operation === 'create'
-                          ? 'File Name'
-                          : operation === 'rename'
-                            ? 'New Name'
-                            : 'Source'}
-                    </label>
-                    <input
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      className={cn(theme.forms.input, 'w-full')}
-                      placeholder={
-                        operation === 'mkdir'
-                          ? 'my-directory'
-                          : operation === 'create'
-                            ? 'my-file.txt'
-                            : 'New name'
-                      }
-                      disabled={operation === 'copy'}
-                    />
-                  </div>
-
-                  {operation === 'copy' && (
-                    <div>
-                      <label className={cn(theme.forms.label, 'mb-2')}>Target Name</label>
-                      <input
-                        type="text"
-                        value={targetValue}
-                        onChange={(e) => setTargetValue(e.target.value)}
-                        className={cn(theme.forms.input, 'w-full')}
-                        placeholder={selectedFile ? `${selectedFile.name}_copy` : 'copy-name'}
-                      />
-                    </div>
-                  )}
-
-                  {currentPath && (
-                    <div className={cn('text-sm', theme.text.muted)}>
-                      <strong>Location:</strong> /{currentPath}
-                    </div>
-                  )}
-
-                  {(operation === 'mkdir' || operation === 'create') && (
-                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <button
-                        type="button"
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className={cn(
-                          'flex items-center space-x-2 text-sm',
-                          theme.text.info,
-                          'hover:opacity-80'
-                        )}
-                      >
-                        <svg
-                          className={cn(
-                            'w-4 h-4 transform transition-transform',
-                            showAdvanced && 'rotate-180'
-                          )}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                        <span>Permissions & Ownership</span>
-                      </button>
-
-                      {showAdvanced && (
-                        <div className={cn(theme.surface.muted, 'space-y-3 p-4 rounded-md')}>
-                          <div>
-                            <label className={cn(theme.forms.label, 'mb-1')}>
-                              Permissions (octal)
-                            </label>
-                            <input
-                              type="text"
-                              value={mode}
-                              onChange={(e) => setMode(e.target.value)}
-                              className={cn(theme.forms.input, 'w-full')}
-                              placeholder={operation === 'mkdir' ? '755' : '644'}
-                            />
-                            <p className={cn('text-xs mt-1', theme.text.subtle)}>
-                              Leave empty to use default permissions
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className={cn(theme.forms.label, 'mb-1')}>Owner ID</label>
-                              <input
-                                type="number"
-                                value={ownerId}
-                                onChange={(e) => setOwnerId(e.target.value)}
-                                className={cn(theme.forms.input, 'w-full')}
-                                placeholder="1000"
-                              />
-                            </div>
-                            <div>
-                              <label className={cn(theme.forms.label, 'mb-1')}>Group ID</label>
-                              <input
-                                type="number"
-                                value={groupId}
-                                onChange={(e) => setGroupId(e.target.value)}
-                                className={cn(theme.forms.input, 'w-full')}
-                                placeholder="1000"
-                              />
-                            </div>
-                          </div>
-                          <p className={cn('text-xs', theme.text.subtle)}>
-                            Leave empty to use server defaults
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className={theme.modal.footer}>
-              <button
-                onClick={onClose}
-                disabled={loading}
-                className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={loading || (operation !== 'delete' && !inputValue.trim())}
-                className={cn(
-                  operation === 'delete' ? theme.buttons.danger : theme.buttons.primary,
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
-                )}
-              >
-                {loading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  getConfirmButtonText()
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  const footer = (
+    <>
+      <button
+        onClick={onClose}
+        disabled={loading}
+        className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleConfirm}
+        disabled={loading || (operation !== 'delete' && !inputValue.trim())}
+        className={cn(
+          operation === 'delete' ? theme.buttons.danger : theme.buttons.primary,
+          'disabled:opacity-50 disabled:cursor-not-allowed'
+        )}
+      >
+        {loading ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Processing...
+          </>
+        ) : (
+          getConfirmButtonText()
+        )}
+      </button>
+    </>
   );
 
-  return createPortal(modalContent, document.body);
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={getModalTitle()} size="sm" footer={footer}>
+      <div className="space-y-4">
+        {operation === 'delete' ? (
+          <div>
+            <p className={cn(theme.text.standard, 'mb-4')}>
+              Are you sure you want to delete <strong>{selectedFile?.name}</strong>?
+              {selectedFile?.is_directory && (
+                <span className={cn('block text-sm mt-2', theme.text.danger)}>
+                  This will permanently delete the directory and all its contents.
+                </span>
+              )}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className={cn(theme.forms.label, 'mb-2')}>
+                {operation === 'mkdir'
+                  ? 'Directory Name'
+                  : operation === 'create'
+                    ? 'File Name'
+                    : operation === 'rename'
+                      ? 'New Name'
+                      : 'Source'}
+              </label>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className={cn(theme.forms.input, 'w-full')}
+                placeholder={
+                  operation === 'mkdir'
+                    ? 'my-directory'
+                    : operation === 'create'
+                      ? 'my-file.txt'
+                      : 'New name'
+                }
+                disabled={operation === 'copy'}
+              />
+            </div>
+
+            {operation === 'copy' && (
+              <div>
+                <label className={cn(theme.forms.label, 'mb-2')}>Target Name</label>
+                <input
+                  type="text"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(e.target.value)}
+                  className={cn(theme.forms.input, 'w-full')}
+                  placeholder={selectedFile ? `${selectedFile.name}_copy` : 'copy-name'}
+                />
+              </div>
+            )}
+
+            {currentPath && (
+              <div className={cn('text-sm', theme.text.muted)}>
+                <strong>Location:</strong> /{currentPath}
+              </div>
+            )}
+
+            {(operation === 'mkdir' || operation === 'create') && (
+              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className={cn(
+                    'flex items-center space-x-2 text-sm',
+                    theme.text.info,
+                    'hover:opacity-80'
+                  )}
+                >
+                  <svg
+                    className={cn(
+                      'w-4 h-4 transform transition-transform',
+                      showAdvanced && 'rotate-180'
+                    )}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                  <span>Permissions & Ownership</span>
+                </button>
+
+                {showAdvanced && (
+                  <div className={cn(theme.surface.muted, 'space-y-3 p-4 rounded-md')}>
+                    <div>
+                      <label className={cn(theme.forms.label, 'mb-1')}>Permissions (octal)</label>
+                      <input
+                        type="text"
+                        value={mode}
+                        onChange={(e) => setMode(e.target.value)}
+                        className={cn(theme.forms.input, 'w-full')}
+                        placeholder={operation === 'mkdir' ? '755' : '644'}
+                      />
+                      <p className={cn('text-xs mt-1', theme.text.subtle)}>
+                        Leave empty to use default permissions
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={cn(theme.forms.label, 'mb-1')}>Owner ID</label>
+                        <input
+                          type="number"
+                          value={ownerId}
+                          onChange={(e) => setOwnerId(e.target.value)}
+                          className={cn(theme.forms.input, 'w-full')}
+                          placeholder="1000"
+                        />
+                      </div>
+                      <div>
+                        <label className={cn(theme.forms.label, 'mb-1')}>Group ID</label>
+                        <input
+                          type="number"
+                          value={groupId}
+                          onChange={(e) => setGroupId(e.target.value)}
+                          className={cn(theme.forms.input, 'w-full')}
+                          placeholder="1000"
+                        />
+                      </div>
+                    </div>
+                    <p className={cn('text-xs', theme.text.subtle)}>
+                      Leave empty to use server defaults
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Modal>
+  );
 };

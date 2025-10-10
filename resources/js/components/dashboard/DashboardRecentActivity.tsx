@@ -1,4 +1,9 @@
-import { ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  ClockIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
 import { Link } from '@inertiajs/react';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -10,15 +15,15 @@ interface DashboardRecentActivityProps {
 
 const getStatusIcon = (operation: RecentActivity) => {
   if (operation.is_incomplete) {
-    return <span className={theme.text.warning}>⚠️</span>;
+    return <ExclamationTriangleIcon className={cn('h-5 w-5', theme.text.warning)} />;
   }
   if (operation.success === true) {
-    return <span className={theme.text.success}>✅</span>;
+    return <CheckCircleIcon className={cn('h-5 w-5', theme.text.success)} />;
   }
   if (operation.success === false) {
-    return <span className={theme.text.danger}>❌</span>;
+    return <XCircleIcon className={cn('h-5 w-5', theme.text.danger)} />;
   }
-  return <span className={theme.text.subtle}>⏳</span>;
+  return <ClockIcon className={cn('h-5 w-5', theme.text.subtle)} />;
 };
 
 const formatDuration = (duration: number | null, isPartial = false) => {
@@ -158,7 +163,7 @@ export const DashboardRecentActivity = ({ activitySummary }: DashboardRecentActi
         <div className="pt-6">
           {failedOperations.length === 0 ? (
             <div className="py-4 text-center">
-              <span className="text-2xl">✅</span>
+              <CheckCircleIcon className={cn('h-12 w-12 mx-auto', theme.text.success)} />
               <p className={cn('mt-2 text-sm', theme.text.subtle)}>No recent failures</p>
             </div>
           ) : (
@@ -173,7 +178,7 @@ export const DashboardRecentActivity = ({ activitySummary }: DashboardRecentActi
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={theme.text.danger}>❌</span>
+                    <XCircleIcon className={cn('h-5 w-5', theme.text.danger)} />
                     <div>
                       <div className={cn('text-sm font-medium', theme.text.strong)}>
                         {operation.command} on {operation.stack_name}

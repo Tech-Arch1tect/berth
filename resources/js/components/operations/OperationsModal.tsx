@@ -1,7 +1,8 @@
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 import { useOperations } from '../../hooks/useOperations';
 import { OperationRequest } from '../../types/operations';
+import { Modal } from '../common/Modal';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
 import { OperationBuilder } from './OperationBuilder';
@@ -28,6 +29,8 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
   onOperationComplete,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('presets');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   const { operationStatus, isConnecting, error, startOperation, clearLogs, connect, isConnected } =
     useOperations({
@@ -54,201 +57,208 @@ export const OperationsModal: React.FC<OperationsModalProps> = ({
       setActiveTab('logs');
     } catch (err) {
       console.error('Failed to start operation:', err);
-      alert(`Failed to start operation: ${err instanceof Error ? err.message : String(err)}`);
+      setErrorMessage(
+        `Failed to start operation: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   };
 
   const handleClose = () => {
     if (operationStatus.isRunning) {
-      const confirmed = confirm(
-        'An operation is currently running. Are you sure you want to close?'
-      );
-      if (!confirmed) {
-        return;
-      }
+      setShowCloseConfirmation(true);
+      return;
     }
     onClose();
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  const confirmClose = () => {
+    setShowCloseConfirmation(false);
+    onClose();
+  };
 
   const connectionStatus = isConnected ? 'connected' : isConnecting ? 'connecting' : 'disconnected';
 
   return (
-    <div className={theme.modal.overlay}>
-      <div className={theme.modal.content} role="dialog" aria-modal="true">
-        <header className={theme.modal.header}>
-          <div>
-            <h2 className={theme.modal.title}>Stack Operations</h2>
-            <p className={theme.modal.subtitle}>
-              {stackname} on Server {serverid}
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Stack Operations"
+      subtitle={`${stackname} on Server ${serverid}`}
+      size="xl"
+      headerExtra={
+        <div className="flex items-center gap-2 text-xs">
+          <span
+            className={cn(
+              theme.badges.dot.base,
+              connectionStatus === 'connected'
+                ? theme.badges.dot.success
+                : connectionStatus === 'connecting'
+                  ? theme.badges.dot.warning
+                  : theme.badges.dot.danger,
+              connectionStatus === 'connecting' && 'animate-pulse'
+            )}
+          />
+          <span className={theme.text.subtle}>
+            {connectionStatus === 'connected'
+              ? 'Connected'
+              : connectionStatus === 'connecting'
+                ? 'Connecting…'
+                : 'Disconnected'}
+          </span>
+          {!isConnected && !isConnecting && (
+            <button type="button" onClick={connect} className={cn(theme.buttons.subtle, 'text-xs')}>
+              Reconnect
+            </button>
+          )}
+        </div>
+      }
+      footer={
+        <div className="flex items-center justify-between gap-4 w-full">
+          <div className="flex items-center gap-3 text-sm">
+            {operationStatus.isRunning && (
+              <div className="flex items-center gap-2">
+                <span className={theme.effects.spinner} />
+                <span className={theme.text.subtle}>Running: {operationStatus.command}</span>
+                {operationStatus.startTime && (
+                  <span className={cn('text-xs', theme.text.subtle)}>
+                    Started {operationStatus.startTime.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs">
-              <span
+          <div className="flex items-center gap-2">
+            {operationStatus.logs.length > 0 && (
+              <button
+                type="button"
+                onClick={clearLogs}
+                disabled={operationStatus.isRunning}
                 className={cn(
-                  theme.badges.dot.base,
-                  connectionStatus === 'connected'
-                    ? theme.badges.dot.success
-                    : connectionStatus === 'connecting'
-                      ? theme.badges.dot.warning
-                      : theme.badges.dot.danger,
-                  connectionStatus === 'connecting' && 'animate-pulse'
+                  theme.buttons.subtle,
+                  'text-sm',
+                  operationStatus.isRunning && 'opacity-60'
                 )}
-              />
-              <span className={theme.text.subtle}>
-                {connectionStatus === 'connected'
-                  ? 'Connected'
-                  : connectionStatus === 'connecting'
-                    ? 'Connecting…'
-                    : 'Disconnected'}
-              </span>
-              {!isConnected && !isConnecting && (
-                <button
-                  type="button"
-                  onClick={connect}
-                  className={cn(theme.buttons.subtle, 'text-xs')}
-                >
-                  Reconnect
-                </button>
-              )}
-            </div>
+              >
+                Clear Logs
+              </button>
+            )}
 
             <button
               type="button"
               onClick={handleClose}
               disabled={operationStatus.isRunning}
-              className={cn(theme.buttons.icon, operationStatus.isRunning && 'opacity-60')}
-              aria-label="Close operations modal"
+              className={cn(
+                theme.buttons.secondary,
+                operationStatus.isRunning ? 'opacity-60 cursor-not-allowed' : ''
+              )}
             >
-              <XMarkIcon className="h-5 w-5" />
+              {operationStatus.isRunning ? 'Operation Running…' : 'Close'}
             </button>
           </div>
-        </header>
+        </div>
+      }
+    >
+      {error && (
+        <div className={cn(theme.alerts.base, theme.alerts.variants.error, 'mb-4')}>
+          <strong>Connection Error:</strong> {error}
+        </div>
+      )}
 
-        {error && (
-          <div className={cn(theme.alerts.base, theme.alerts.variants.error, 'mx-6 mt-4')}>
-            <strong>Connection Error:</strong> {error}
+      <nav className={cn(theme.tabs.container, 'mb-4')}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('presets')}
+          className={cn(
+            theme.tabs.trigger,
+            activeTab === 'presets' ? theme.tabs.active : theme.tabs.inactive
+          )}
+        >
+          Quick Actions
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('builder')}
+          className={cn(
+            theme.tabs.trigger,
+            activeTab === 'builder' ? theme.tabs.active : theme.tabs.inactive
+          )}
+        >
+          Custom Operation
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('logs')}
+          className={cn(
+            theme.tabs.trigger,
+            'relative',
+            activeTab === 'logs' ? theme.tabs.active : theme.tabs.inactive
+          )}
+        >
+          Logs
+          {operationStatus.logs.length > 0 && (
+            <span className={theme.tabs.badge}>
+              {operationStatus.logs.length > 99 ? '99+' : operationStatus.logs.length}
+            </span>
+          )}
+        </button>
+      </nav>
+
+      <div className="overflow-hidden" style={{ height: '400px' }}>
+        {activeTab === 'presets' && (
+          <div className="h-full overflow-auto">
+            <OperationPresets
+              onOperationSelect={handleOperationStart}
+              disabled={operationStatus.isRunning || !isConnected}
+            />
           </div>
         )}
 
-        <nav className={cn(theme.tabs.container, 'px-6 mt-4')}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('presets')}
-            className={cn(
-              theme.tabs.trigger,
-              activeTab === 'presets' ? theme.tabs.active : theme.tabs.inactive
-            )}
-          >
-            Quick Actions
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('builder')}
-            className={cn(
-              theme.tabs.trigger,
-              activeTab === 'builder' ? theme.tabs.active : theme.tabs.inactive
-            )}
-          >
-            Custom Operation
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('logs')}
-            className={cn(
-              theme.tabs.trigger,
-              'relative',
-              activeTab === 'logs' ? theme.tabs.active : theme.tabs.inactive
-            )}
-          >
-            Logs
-            {operationStatus.logs.length > 0 && (
-              <span className={theme.tabs.badge}>
-                {operationStatus.logs.length > 99 ? '99+' : operationStatus.logs.length}
-              </span>
-            )}
-          </button>
-        </nav>
-
-        <main className="flex-1 overflow-hidden">
-          {activeTab === 'presets' && (
-            <div className="h-full overflow-auto px-6 py-6">
-              <OperationPresets
-                onOperationSelect={handleOperationStart}
-                disabled={operationStatus.isRunning || !isConnected}
-              />
-            </div>
-          )}
-
-          {activeTab === 'builder' && (
-            <div className="h-full overflow-auto px-6 py-6">
-              <OperationBuilder
-                onOperationBuild={handleOperationStart}
-                disabled={operationStatus.isRunning || !isConnected}
-                services={services}
-              />
-            </div>
-          )}
-
-          {activeTab === 'logs' && (
-            <div className="h-full px-6 py-6">
-              <OperationLogs logs={operationStatus.logs} isRunning={operationStatus.isRunning} />
-            </div>
-          )}
-        </main>
-
-        <footer className={theme.modal.footer}>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-sm">
-              {operationStatus.isRunning && (
-                <div className="flex items-center gap-2">
-                  <span className={theme.effects.spinner} />
-                  <span className={theme.text.subtle}>Running: {operationStatus.command}</span>
-                  {operationStatus.startTime && (
-                    <span className={cn('text-xs', theme.text.subtle)}>
-                      Started {operationStatus.startTime.toLocaleTimeString()}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {operationStatus.logs.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearLogs}
-                  disabled={operationStatus.isRunning}
-                  className={cn(
-                    theme.buttons.subtle,
-                    'text-sm',
-                    operationStatus.isRunning && 'opacity-60'
-                  )}
-                >
-                  Clear Logs
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleClose}
-                disabled={operationStatus.isRunning}
-                className={cn(
-                  theme.buttons.secondary,
-                  operationStatus.isRunning ? 'opacity-60 cursor-not-allowed' : ''
-                )}
-              >
-                {operationStatus.isRunning ? 'Operation Running…' : 'Close'}
-              </button>
-            </div>
+        {activeTab === 'builder' && (
+          <div className="h-full overflow-auto">
+            <OperationBuilder
+              onOperationBuild={handleOperationStart}
+              disabled={operationStatus.isRunning || !isConnected}
+              services={services}
+            />
           </div>
-        </footer>
+        )}
+
+        {activeTab === 'logs' && (
+          <div className="h-full">
+            <OperationLogs logs={operationStatus.logs} isRunning={operationStatus.isRunning} />
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Operation Error"
+        size="sm"
+        variant="danger"
+        footer={
+          <div className="flex justify-end">
+            <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>
+              OK
+            </button>
+          </div>
+        }
+      >
+        <p className={cn(theme.text.standard)}>{errorMessage}</p>
+      </Modal>
+
+      {/* Close Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={confirmClose}
+        title="Operation Running"
+        message="An operation is currently running. Are you sure you want to close?"
+        confirmText="Close Anyway"
+        variant="warning"
+      />
+    </Modal>
   );
 };

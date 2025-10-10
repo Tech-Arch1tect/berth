@@ -4,6 +4,7 @@ import { FileContent, WriteFileRequest } from '../../types/files';
 import { FileViewer } from './FileViewer';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 
 interface FileEditorProps {
   file: FileContent | null;
@@ -24,6 +25,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   useEffect(() => {
     if (file) {
@@ -56,12 +58,15 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 
   const handleClose = () => {
     if (isDirty) {
-      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
-        onClose();
-      }
+      setShowCloseConfirmation(true);
     } else {
       onClose();
     }
+  };
+
+  const confirmClose = () => {
+    setShowCloseConfirmation(false);
+    onClose();
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -280,5 +285,17 @@ export const FileEditor: React.FC<FileEditorProps> = ({
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      <ConfirmationModal
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={confirmClose}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Are you sure you want to close without saving?"
+        variant="warning"
+      />
+    </>
+  );
 };

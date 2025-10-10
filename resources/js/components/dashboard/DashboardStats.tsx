@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { StatCard } from '../common/StatCard';
 import { HealthSummary, DashboardStat } from './types/dashboard';
 
 interface DashboardStatsProps {
@@ -14,61 +15,31 @@ interface DashboardStatsProps {
   userRoles: string[];
 }
 
-const intentStyles: Record<
-  DashboardStat['color'],
-  { iconWrap: string; icon: string; accentText: string }
-> = {
+const colorToIconStyles: Record<DashboardStat['color'], { iconColor: string; iconBg: string }> = {
   info: {
-    iconWrap: cn(
-      'flex-shrink-0 rounded-xl border p-3',
-      theme.intent.info.border,
-      theme.intent.info.surface
-    ),
-    icon: theme.intent.info.textStrong,
-    accentText: theme.intent.info.textMuted,
+    iconColor: theme.intent.info.textStrong,
+    iconBg: cn(theme.intent.info.surface, theme.intent.info.border, 'border'),
   },
   success: {
-    iconWrap: cn(
-      'flex-shrink-0 rounded-xl border p-3',
+    iconColor: theme.intent.success.textStrong,
+    iconBg: cn(
+      theme.intent.success.surfaceSoft ?? theme.intent.success.surface,
       theme.intent.success.border,
-      theme.intent.success.surfaceSoft ?? theme.intent.success.surface
+      'border'
     ),
-    icon: theme.intent.success.textStrong,
-    accentText: theme.intent.success.textMuted,
   },
   warning: {
-    iconWrap: cn(
-      'flex-shrink-0 rounded-xl border p-3',
-      theme.intent.warning.border,
-      theme.intent.warning.surface
-    ),
-    icon: theme.intent.warning.textStrong,
-    accentText: theme.intent.warning.textMuted,
+    iconColor: theme.intent.warning.textStrong,
+    iconBg: cn(theme.intent.warning.surface, theme.intent.warning.border, 'border'),
   },
   danger: {
-    iconWrap: cn(
-      'flex-shrink-0 rounded-xl border p-3',
-      theme.intent.danger.border,
-      theme.intent.danger.surface
-    ),
-    icon: theme.intent.danger.textStrong,
-    accentText: theme.intent.danger.textMuted,
+    iconColor: theme.intent.danger.textStrong,
+    iconBg: cn(theme.intent.danger.surface, theme.intent.danger.border, 'border'),
   },
   neutral: {
-    iconWrap: cn(
-      'flex-shrink-0 rounded-xl border p-3',
-      theme.intent.neutral.border,
-      theme.intent.neutral.surface
-    ),
-    icon: theme.intent.neutral.textStrong,
-    accentText: theme.intent.neutral.textMuted,
+    iconColor: theme.intent.neutral.textStrong,
+    iconBg: cn(theme.intent.neutral.surface, theme.intent.neutral.border, 'border'),
   },
-};
-
-const trendBorder: Record<DashboardStat['trend'], string> = {
-  good: theme.intent.success.border,
-  warning: theme.intent.warning.border,
-  neutral: theme.intent.neutral.border,
 };
 
 export const DashboardStats = ({ healthSummary, userRoles }: DashboardStatsProps) => {
@@ -127,33 +98,18 @@ export const DashboardStats = ({ healthSummary, userRoles }: DashboardStatsProps
   return (
     <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => {
-        const Icon = stat.icon;
-        const styles = intentStyles[stat.color];
+        const iconStyles = colorToIconStyles[stat.color];
 
         return (
-          <div
+          <StatCard
             key={stat.name}
-            className={cn(
-              theme.cards.shell,
-              theme.cards.translucent,
-              theme.cards.padded,
-              theme.cards.interactive,
-              trendBorder[stat.trend]
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className={cn('text-sm font-medium', theme.text.muted)}>{stat.name}</p>
-                <p className={cn('mt-1 text-2xl font-bold', theme.text.strong)}>{stat.value}</p>
-                {stat.subtitle && (
-                  <p className={cn('mt-1 text-xs', styles.accentText)}>{stat.subtitle}</p>
-                )}
-              </div>
-              <div className={styles.iconWrap}>
-                <Icon className={cn('h-6 w-6', styles.icon)} />
-              </div>
-            </div>
-          </div>
+            label={stat.name}
+            value={stat.value}
+            icon={stat.icon}
+            iconColor={iconStyles.iconColor}
+            iconBg={iconStyles.iconBg}
+            subtext={stat.subtitle}
+          />
         );
       })}
     </div>
