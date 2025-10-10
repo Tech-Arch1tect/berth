@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import Layout from '../../components/Layout';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -18,14 +18,11 @@ import EnvironmentVariableList from '../../components/stack/EnvironmentVariableL
 import StackStats from '../../components/stack/StackStats';
 import LogViewer from '../../components/logs/LogViewer';
 import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
-import { CompactServiceCard } from '../../components/stack/CompactServiceCard';
-import { StackQuickActions } from '../../components/stack/StackQuickActions';
 import { FileManager } from '../../components/files/FileManager';
 import { OperationRequest } from '../../types/operations';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { StatCard } from '../../components/common/StatCard';
 import { Tabs } from '../../components/common/Tabs';
 import { showToast } from '../../utils/toast';
 import {
@@ -35,20 +32,19 @@ import {
 import { StackImagesTab } from '../../components/stack-images';
 import { ComposeEditor, ComposeChanges } from '../../components/compose';
 import { useComposeUpdate } from '../../hooks/useComposeUpdate';
+import { StackHeader } from '../../components/stack/details/StackHeader';
+import { StackQuickStats } from '../../components/stack/details/StackQuickStats';
+import { StackInfoCard } from '../../components/stack/details/StackInfoCard';
+import { StackServicesTab } from '../../components/stack/details/StackServicesTab';
 import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ServerIcon,
-  CpuChipIcon,
   CircleStackIcon,
+  CpuChipIcon,
   GlobeAltIcon,
   FolderIcon,
   Cog6ToothIcon,
   DocumentTextIcon,
-  ArrowPathIcon,
   ExclamationTriangleIcon,
   PhotoIcon,
-  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 
 interface StackDetailsProps {
@@ -275,6 +271,18 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     await composeUpdateMutation.mutateAsync(changes);
   };
 
+  const handleRefresh = () => {
+    showToast.info('Refreshing stack data...');
+    setIsRefreshing(true);
+    refetch();
+    refetchNetworks();
+    refetchVolumes();
+    refetchEnvironment();
+    refetchStats();
+  };
+
+  const canManageStack = stackPermissions?.permissions?.includes('stacks.manage') ?? false;
+
   return (
     <Layout>
       <Head title={title} />
@@ -293,154 +301,36 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       />
 
       {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="flex items-center space-x-4">
-            <div
-              className={cn(
-                'w-16 h-16 rounded-2xl flex items-center justify-center',
-                theme.brand.stack
-              )}
-            >
-              <CircleStackIcon className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1 className={cn('text-3xl font-bold', theme.brand.titleGradient)}>{stackname}</h1>
-                {/* Connection Status */}
-                <div
-                  className={cn(
-                    'flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium',
-                    connectionStatus === 'connected' && theme.badges.tag.success,
-                    connectionStatus === 'connecting' && theme.badges.tag.warning,
-                    connectionStatus === 'disconnected' && theme.badges.tag.danger
-                  )}
-                >
-                  <div
-                    className={cn(
-                      theme.badges.statusDot.base,
-                      connectionStatus === 'connected' && theme.badges.statusDot.online,
-                      connectionStatus === 'connecting' && 'bg-yellow-500',
-                      connectionStatus === 'disconnected' && 'bg-red-500',
-                      (connectionStatus === 'connected' || connectionStatus === 'connecting') &&
-                        theme.badges.statusDot.pulse
-                    )}
-                  />
-                  <span>
-                    {connectionStatus === 'connected'
-                      ? 'Live'
-                      : connectionStatus === 'connecting'
-                        ? 'Connecting'
-                        : 'Offline'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 mt-2">
-                <div className={cn('flex items-center space-x-2 text-sm', theme.text.muted)}>
-                  <ServerIcon className="w-4 h-4" />
-                  <span>{server.name}</span>
-                </div>
-                {stackDetails && (
-                  <>
-                    <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
-                    <div className={cn('text-sm', theme.text.muted)}>
-                      {stackDetails.services?.length || 0} services
-                    </div>
-                    <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
-                    <div className={cn('text-sm', theme.text.muted)}>
-                      {stackDetails.services?.reduce(
-                        (total, service) => total + (service.containers?.length || 0),
-                        0
-                      ) || 0}{' '}
-                      containers
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Stack Quick Actions */}
-            {stackDetails &&
-              stackDetails.services &&
-              stackPermissions?.permissions?.includes('stacks.manage') && (
-                <div className={cn(theme.cards.translucent, 'rounded-xl px-3 py-2')}>
-                  <StackQuickActions
-                    services={stackDetails.services}
-                    onQuickOperation={handleQuickOperation}
-                    disabled={quickOperationState.isRunning}
-                    isOperationRunning={quickOperationState.isRunning}
-                    runningOperation={quickOperationState.operation}
-                  />
-                </div>
-              )}
-
-            {/* Documentation Button */}
-            {stackDetails && (
-              <button
-                onClick={handleGenerateDocumentation}
-                className={cn(
-                  'flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors duration-200',
-                  theme.intent.info.surface,
-                  theme.intent.info.textStrong,
-                  theme.intent.info.border,
-                  'border hover:opacity-90'
-                )}
-                title="Generate stack documentation"
-              >
-                <DocumentTextIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Documentation</span>
-              </button>
-            )}
-
-            {/* Refresh Button */}
-            <button
-              onClick={() => {
-                showToast.info('Refreshing stack data...');
-                setIsRefreshing(true);
-                refetch();
-                refetchNetworks();
-                refetchVolumes();
-                refetchEnvironment();
-                refetchStats();
-              }}
-              disabled={
-                isFetching ||
-                networksFetching ||
-                volumesFetching ||
-                environmentFetching ||
-                statsFetching
-              }
-              className={cn(theme.buttons.secondary)}
-            >
-              <ArrowPathIcon
-                className={cn(
-                  'w-4 h-4 mr-2',
-                  (isFetching ||
-                    networksFetching ||
-                    volumesFetching ||
-                    environmentFetching ||
-                    statsFetching) &&
-                    'animate-spin'
-                )}
-              />
-              Refresh All
-            </button>
-
-            {/* Operations Button */}
-            {stackPermissions?.permissions?.includes('stacks.manage') && (
-              <button
-                onClick={() => setAdvancedOperationsOpen(true)}
-                className={cn(theme.buttons.primary, 'shadow-lg hover:shadow-xl')}
-              >
-                <Cog6ToothIcon className="w-4 h-4 mr-2" />
-                Advanced Operations
-              </button>
-            )}
-          </div>
+      {stackDetails && (
+        <div className="mb-8">
+          <StackHeader
+            stackname={stackname}
+            server={server}
+            connectionStatus={connectionStatus}
+            services={stackDetails.services}
+            serviceCount={stackDetails.services?.length || 0}
+            containerCount={
+              stackDetails.services?.reduce(
+                (total, service) => total + (service.containers?.length || 0),
+                0
+              ) || 0
+            }
+            canManageStack={canManageStack}
+            onQuickOperation={handleQuickOperation}
+            quickOperationState={quickOperationState}
+            onGenerateDocumentation={handleGenerateDocumentation}
+            onRefresh={handleRefresh}
+            isRefreshing={
+              isFetching ||
+              networksFetching ||
+              volumesFetching ||
+              environmentFetching ||
+              statsFetching
+            }
+            onOpenAdvancedOperations={() => setAdvancedOperationsOpen(true)}
+          />
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       {loading ? (
@@ -460,95 +350,20 @@ const StackDetails: React.FC<StackDetailsProps> = ({
       ) : stackDetails ? (
         <div className="space-y-8">
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              label="Services"
-              value={stackDetails.services?.length || 0}
-              icon={CircleStackIcon}
-              iconColor="text-blue-600 dark:text-blue-400"
-              iconBg="bg-blue-100 dark:bg-blue-900/20"
-              className="rounded-2xl"
-            />
-            <StatCard
-              label="Containers"
-              value={
-                stackDetails.services?.reduce(
-                  (total, service) => total + (service.containers?.length || 0),
-                  0
-                ) || 0
-              }
-              icon={ServerIcon}
-              iconColor="text-green-600 dark:text-green-400"
-              iconBg="bg-green-100 dark:bg-green-900/20"
-              className="rounded-2xl"
-            />
-            <StatCard
-              label="Networks"
-              value={networks?.length || 0}
-              icon={GlobeAltIcon}
-              iconColor="text-purple-600 dark:text-purple-400"
-              iconBg="bg-purple-100 dark:bg-purple-900/20"
-              className="rounded-2xl"
-            />
-            <StatCard
-              label="Volumes"
-              value={volumes?.length || 0}
-              icon={FolderIcon}
-              iconColor="text-emerald-600 dark:text-emerald-400"
-              iconBg="bg-emerald-100 dark:bg-emerald-900/20"
-              className="rounded-2xl"
-            />
-          </div>
+          <StackQuickStats
+            serviceCount={stackDetails.services?.length || 0}
+            containerCount={
+              stackDetails.services?.reduce(
+                (total, service) => total + (service.containers?.length || 0),
+                0
+              ) || 0
+            }
+            networkCount={networks?.length || 0}
+            volumeCount={volumes?.length || 0}
+          />
 
           {/* Stack Info Card */}
-          <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden')}>
-            <div className={cn(theme.containers.sectionHeader, 'px-6 py-4')}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center',
-                    theme.brand.accent
-                  )}
-                >
-                  <DocumentTextIcon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className={cn('text-lg font-semibold', theme.text.strong)}>
-                    Stack Information
-                  </h2>
-                  <p className={cn('text-sm', theme.text.muted)}>Configuration and metadata</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="flex flex-col space-y-1">
-                  <dt className={cn('text-sm font-medium', theme.text.muted)}>Compose File</dt>
-                  <dd
-                    className={cn(
-                      'text-sm font-mono px-3 py-2 rounded-lg',
-                      theme.surface.code,
-                      theme.text.strong
-                    )}
-                  >
-                    {stackDetails.compose_file}
-                  </dd>
-                </div>
-                <div className="flex flex-col space-y-1">
-                  <dt className={cn('text-sm font-medium', theme.text.muted)}>Stack Path</dt>
-                  <dd
-                    className={cn(
-                      'text-sm font-mono px-3 py-2 rounded-lg',
-                      theme.surface.code,
-                      theme.text.strong
-                    )}
-                  >
-                    {stackDetails.path}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </div>
+          <StackInfoCard composeFile={stackDetails.compose_file} stackPath={stackDetails.path} />
 
           {/* Modern Tab Navigation */}
           <Tabs
@@ -577,77 +392,19 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             className="rounded-2xl"
           >
             {activeTab === 'services' && (
-              <>
-                {stackDetails.services && stackDetails.services.length > 0 ? (
-                  <div className="space-y-4">
-                    {/* Expand All / Collapse All Controls */}
-                    <div
-                      className={cn(
-                        'flex items-center justify-between pb-4',
-                        theme.cards.sectionDivider
-                      )}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
-                          Services ({stackDetails.services.length})
-                        </h3>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {stackPermissions?.permissions?.includes('stacks.manage') && (
-                          <button
-                            onClick={() => setShowComposeEditor(true)}
-                            className={cn(
-                              'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                              'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30',
-                              'text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-700/50'
-                            )}
-                            title="Edit compose configuration"
-                          >
-                            <PencilSquareIcon className="w-3 h-3 mr-1" />
-                            Edit Compose
-                          </button>
-                        )}
-                        <button
-                          onClick={handleExpandAll}
-                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                        >
-                          <ChevronDownIcon className="w-3 h-3 mr-1" />
-                          Expand All
-                        </button>
-                        <button
-                          onClick={handleCollapseAll}
-                          className={cn(theme.buttons.subtle, theme.buttons.sm)}
-                        >
-                          <ChevronUpIcon className="w-3 h-3 mr-1" />
-                          Collapse All
-                        </button>
-                      </div>
-                    </div>
-
-                    {stackDetails.services.map((service) => (
-                      <CompactServiceCard
-                        key={service.name}
-                        service={service}
-                        onQuickOperation={handleQuickOperation}
-                        serverid={serverid}
-                        stackname={stackname}
-                        isOperationRunning={quickOperationState.isRunning}
-                        runningOperation={quickOperationState.operation}
-                        isExpanded={expandedServices.has(service.name)}
-                        onToggleExpand={() => toggleServiceExpanded(service.name)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={CircleStackIcon}
-                    title="No services found"
-                    description="This stack doesn't have any services defined yet."
-                    variant="info"
-                    size="md"
-                  />
-                )}
-              </>
+              <StackServicesTab
+                services={stackDetails.services || []}
+                serverid={serverid}
+                stackname={stackname}
+                onQuickOperation={handleQuickOperation}
+                quickOperationState={quickOperationState}
+                expandedServices={expandedServices}
+                onToggleExpand={toggleServiceExpanded}
+                onExpandAll={handleExpandAll}
+                onCollapseAll={handleCollapseAll}
+                canManageStack={canManageStack}
+                onEditCompose={() => setShowComposeEditor(true)}
+              />
             )}
 
             {activeTab === 'networks' && (
