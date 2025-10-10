@@ -15,6 +15,7 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   footer?: React.ReactNode;
+  headerExtra?: React.ReactNode;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -28,6 +29,7 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   closeOnOverlayClick = true,
   footer,
+  headerExtra,
 }) => {
   if (!isOpen) return null;
 
@@ -61,11 +63,14 @@ export const Modal: React.FC<ModalProps> = ({
             <h3 className={theme.modal.title}>{title}</h3>
             {subtitle && <p className={theme.modal.subtitle}>{subtitle}</p>}
           </div>
-          {showCloseButton && (
-            <button onClick={onClose} className={theme.buttons.ghost} aria-label="Close modal">
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {headerExtra}
+            {showCloseButton && (
+              <button onClick={onClose} className={theme.buttons.ghost} aria-label="Close modal">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Body */}
