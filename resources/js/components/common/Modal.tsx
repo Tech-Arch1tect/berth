@@ -10,7 +10,7 @@ export interface ModalProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | '2xl';
   variant?: 'default' | 'danger' | 'warning';
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
@@ -39,6 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
     full: 'max-w-6xl',
+    '2xl': 'max-w-7xl',
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {

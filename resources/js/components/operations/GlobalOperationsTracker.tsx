@@ -307,7 +307,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
         onClose={handleClose}
         title="Advanced Operations"
         subtitle={`${advancedMode.stackname} on Server ${advancedMode.serverid}`}
-        size="xl"
+        size="2xl"
         headerExtra={
           advancedOps ? (
             <div className="flex items-center gap-2">
@@ -332,7 +332,10 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           ) : null
         }
       >
-        <div className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900" style={{ height: '60vh' }}>
+        <div
+          className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900"
+          style={{ height: '75vh' }}
+        >
           {/* Operation Builder */}
           <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
             <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
