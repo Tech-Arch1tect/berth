@@ -317,11 +317,11 @@ export const FileList: React.FC<FileListProps> = ({
               {currentPath && (
                 <div
                   className={cn(
-                    'group rounded-lg p-3 transition-all duration-200 border',
-                    theme.surface.subtle,
-                    'border-slate-200/30 dark:border-slate-700/30',
-                    'hover:' + theme.intent.info.surface,
-                    'hover:' + theme.intent.info.border
+                    'group rounded-lg p-3 transition-all duration-200 border cursor-pointer',
+                    'bg-white dark:bg-zinc-800',
+                    'border-zinc-200 dark:border-zinc-700',
+                    'hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600',
+                    'hover:bg-teal-50 dark:hover:bg-teal-900/20'
                   )}
                 >
                   <button
@@ -387,11 +387,10 @@ export const FileList: React.FC<FileListProps> = ({
                     key={entry.path}
                     className={cn(
                       'group rounded-lg p-3 transition-all duration-200 cursor-pointer border',
-                      'bg-white/40 dark:bg-slate-800/40',
-                      'border-slate-200/20 dark:border-slate-700/20',
-                      'hover:shadow-md',
-                      'hover:' + theme.intent.info.surface,
-                      'hover:' + theme.intent.info.border,
+                      'bg-white dark:bg-zinc-800',
+                      'border-zinc-200 dark:border-zinc-700',
+                      'hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600',
+                      'hover:bg-teal-50 dark:hover:bg-teal-900/20',
                       hoveredEntry === entry.path
                         ? 'shadow-md scale-[1.005]'
                         : 'hover:scale-[1.002]'
