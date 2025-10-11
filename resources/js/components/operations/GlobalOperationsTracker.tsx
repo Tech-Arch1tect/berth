@@ -34,16 +34,23 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   onDismiss,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const operationRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const { getOperationLogs } = useOperationsContext();
 
   const logs = getOperationLogs(operationId);
 
   useEffect(() => {
+    if (expanded && operationRef.current) {
+      operationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [expanded]);
+
+  useEffect(() => {
     if (expanded && logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [logs, expanded]);
+  }, [logs]);
 
   const formatDuration = (startTime: string) => {
     const start = new Date(startTime);
@@ -60,7 +67,10 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const isConnected = logs.length > 0 || !isComplete;
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-700 last:border-b-0">
+    <div
+      ref={operationRef}
+      className="border-b border-zinc-200 dark:border-zinc-700 last:border-b-0"
+    >
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
