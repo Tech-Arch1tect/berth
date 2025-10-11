@@ -96,7 +96,7 @@ export const DashboardStats = ({ healthSummary, userRoles }: DashboardStatsProps
   ];
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => {
         const iconStyles = colorToIconStyles[stat.color];
 

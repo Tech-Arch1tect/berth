@@ -144,33 +144,44 @@ export const StackQuickActions = ({
   ];
 
   return (
-    <div className={theme.toolbar.container}>
+    <>
       {actions
         .filter((action) => action.visible)
-        .map((action) => (
-          <button
-            key={action.command}
-            type="button"
-            onClick={() => handleAction(action.command)}
-            disabled={isDisabled}
-            className={cn(
-              action.className,
-              isDisabled && theme.toolbar.disabled,
-              'flex items-center gap-1'
-            )}
-            title={action.title}
-          >
-            {(() => {
-              if (isBusy(action.command)) {
-                return spinner;
-              }
-              const Icon = iconMap[action.command];
-              return <Icon className={theme.toolbar.icon} />;
-            })()}
-            <span>{isBusy(action.command) ? `${action.label}…` : action.label}</span>
-          </button>
-        ))}
-    </div>
+        .map((action) => {
+          const Icon = iconMap[action.command];
+          return (
+            <button
+              key={action.command}
+              type="button"
+              onClick={() => handleAction(action.command)}
+              disabled={isDisabled}
+              className={cn(
+                'p-2 rounded-md transition-colors relative',
+                isDisabled && 'opacity-50 cursor-not-allowed',
+                action.command === 'up' &&
+                  'hover:bg-teal-100 text-teal-700 dark:hover:bg-teal-900/30 dark:text-teal-400',
+                action.command === 'start' &&
+                  'hover:bg-emerald-100 text-emerald-700 dark:hover:bg-emerald-900/30 dark:text-emerald-400',
+                action.command === 'stop' &&
+                  'hover:bg-rose-100 text-rose-700 dark:hover:bg-rose-900/30 dark:text-rose-400',
+                action.command === 'restart' &&
+                  'hover:bg-blue-100 text-blue-700 dark:hover:bg-blue-900/30 dark:text-blue-400',
+                action.command === 'pull' &&
+                  'hover:bg-indigo-100 text-indigo-700 dark:hover:bg-indigo-900/30 dark:text-indigo-400',
+                action.command === 'down' &&
+                  'hover:bg-amber-100 text-amber-700 dark:hover:bg-amber-900/30 dark:text-amber-400'
+              )}
+              title={`${action.title}${isBusy(action.command) ? ' (running…)' : ''}`}
+            >
+              {isBusy(action.command) ? (
+                <span className={cn(theme.effects.spinnerSm, 'border-current')} />
+              ) : (
+                <Icon className="w-4 h-4" />
+              )}
+            </button>
+          );
+        })}
+    </>
   );
 };
 

@@ -46,11 +46,11 @@ export default function ServerCard({ server }: ServerCardProps) {
         theme.cards.translucent,
         theme.cards.interactive,
         theme.cards.lift,
-        theme.cards.padded
+        'p-4'
       )}
     >
       {/* Status indicator */}
-      <div className="absolute right-4 top-4">
+      <div className="absolute right-3 top-3">
         <div className={cn(theme.badges.status.base, theme.badges.status[status])}>
           <div
             className={cn(
@@ -64,93 +64,65 @@ export default function ServerCard({ server }: ServerCardProps) {
       </div>
 
       {/* Server info */}
-      <div className="flex items-start space-x-4">
+      <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
           <div
             className={cn(
-              theme.icon.squareLg,
-              status === 'online' ? theme.brand.serverOnline : theme.brand.serverOffline
+              theme.icon.squareMd,
+              status === 'online' ? theme.brand.serverOnline : theme.brand.serverOffline,
+              'shadow-md'
             )}
           >
-            <ServerIcon className="h-6 w-6" />
+            <ServerIcon className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 pr-8">
+        <div className="min-w-0 flex-1 pr-6">
           <div className="mb-2 flex items-center gap-2">
-            <h3 className={cn('text-xl font-semibold transition-colors', theme.text.strong)}>
+            <h3 className={cn('text-lg font-bold transition-colors', theme.text.strong)}>
               {server.name}
             </h3>
-            <span className={cn('font-mono text-sm', theme.text.subtle)}>#{server.id}</span>
+            <span
+              className={cn(
+                'rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-xs font-medium dark:bg-zinc-800',
+                theme.text.subtle
+              )}
+            >
+              #{server.id}
+            </span>
           </div>
 
           <div className="space-y-2">
-            <div className={cn('flex items-center text-sm', theme.text.muted)}>
-              <span className={cn('rounded-lg px-2 py-1 font-mono', theme.surface.code)}>
-                https://{server.host}:{server.port}
+            <div className={cn('flex items-center gap-2 text-xs', theme.text.muted)}>
+              <span className={cn('rounded px-1.5 py-0.5 font-mono text-xs', theme.surface.code)}>
+                {server.host}:{server.port}
               </span>
             </div>
 
-            <div className="space-y-2">
-              {statisticsError ? (
-                <div className={cn('rounded-lg p-4 text-center', theme.intent.danger.surface)}>
-                  <div
-                    className={cn(
-                      'flex items-center justify-center space-x-2',
-                      theme.intent.danger.textStrong
-                    )}
-                  >
-                    <ExclamationTriangleIcon className="h-4 w-4" />
-                    <span className="text-sm">Failed to load statistics</span>
-                  </div>
-                </div>
-              ) : statistics ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className={cn('rounded-lg p-2 text-center', theme.intent.neutral.surface)}>
-                    <div className={cn('text-lg font-semibold', theme.intent.neutral.textStrong)}>
-                      {statistics.total_stacks}
-                    </div>
-                    <div className={cn('text-xs', theme.intent.neutral.textMuted)}>Total</div>
-                  </div>
-                  <div className={cn('rounded-lg p-2 text-center', theme.intent.success.surface)}>
-                    <div className={cn('text-lg font-semibold', theme.intent.success.textStrong)}>
-                      {statistics.healthy_stacks}
-                    </div>
-                    <div className={cn('text-xs', theme.intent.success.textMuted)}>Healthy</div>
-                  </div>
-                  <div className={cn('rounded-lg p-2 text-center', theme.intent.danger.surface)}>
-                    <div className={cn('text-lg font-semibold', theme.intent.danger.textStrong)}>
-                      {statistics.unhealthy_stacks}
-                    </div>
-                    <div className={cn('text-xs', theme.intent.danger.textMuted)}>Unhealthy</div>
-                  </div>
-                </div>
-              ) : statisticsLoading ? (
-                <div className={cn('rounded-lg p-4 text-center', theme.intent.neutral.surface)}>
-                  <div className={cn('text-sm', theme.intent.neutral.textMuted)}>
-                    Loading stack statistics...
-                  </div>
-                </div>
-              ) : (
-                <div className={cn('rounded-lg p-4 text-center', theme.intent.neutral.surface)}>
-                  <div className={cn('text-sm', theme.intent.neutral.textMuted)}>
-                    No statistics available
-                  </div>
-                </div>
-              )}
-
-              <div
-                className={cn('flex items-center justify-between pt-2', theme.cards.sectionDivider)}
-              >
-                <span className={cn('text-sm', theme.text.subtle)}>Docker Stack Management</span>
-                <ChevronRightIcon
-                  className={cn(
-                    'h-5 w-5 transition-all duration-200 group-hover:translate-x-1',
-                    theme.text.subtle
-                  )}
-                />
+            {statisticsError ? (
+              <div className="flex items-center gap-1.5">
+                <ExclamationTriangleIcon className={cn('h-4 w-4', theme.text.danger)} />
+                <span className={cn('text-xs', theme.text.danger)}>Failed to load stats</span>
               </div>
-            </div>
+            ) : statistics ? (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
+                  {statistics.total_stacks} Total
+                </span>
+                <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
+                  {statistics.healthy_stacks} Healthy
+                </span>
+                {statistics.unhealthy_stacks > 0 && (
+                  <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>
+                    {statistics.unhealthy_stacks} Unhealthy
+                  </span>
+                )}
+              </div>
+            ) : statisticsLoading ? (
+              <span className={cn('text-xs', theme.text.muted)}>Loading stats...</span>
+            ) : (
+              <span className={cn('text-xs', theme.text.muted)}>No stats available</span>
+            )}
           </div>
         </div>
       </div>

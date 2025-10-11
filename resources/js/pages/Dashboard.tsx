@@ -34,31 +34,17 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
       <Head title={title} />
 
       {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1
-              className={cn(
-                'text-3xl font-bold bg-clip-text text-transparent',
-                theme.brand.titleGradient
-              )}
-            >
-              {title}
-            </h1>
-            <p className={cn('mt-2', theme.text.muted)}>
-              Welcome back,{' '}
-              <span className={cn('font-semibold', theme.text.strong)}>{currentUser.username}</span>
-              ! Here's your infrastructure overview.
-            </p>
-          </div>
-          <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <h1 className={cn('text-2xl font-bold', theme.brand.titleColor)}>{title}</h1>
+          <div className={cn('flex items-center space-x-2 text-xs', theme.text.subtle)}>
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
             <span>Live data</span>
           </div>
         </div>
       </div>
 
-      <FlashMessages className="mb-8" />
+      <FlashMessages className="mb-4" />
 
       {/* Status Alert */}
       <DashboardStatusAlert healthSummary={healthSummary} />

@@ -29,19 +29,19 @@ export const StatCard: React.FC<StatCardProps> = ({
     <div
       className={cn(
         theme.containers.panel,
-        'p-6 rounded-lg shadow-sm',
+        'p-4 rounded-lg shadow-sm',
         onClick && 'cursor-pointer hover:shadow-md transition-shadow',
         className
       )}
       onClick={onClick}
     >
       <div className="flex items-center">
-        <div className={cn('p-3 rounded-xl', iconBg)}>
-          <Icon className={cn('h-8 w-8', iconColor)} />
+        <div className={cn('p-2 rounded-lg', iconBg)}>
+          <Icon className={cn('h-6 w-6', iconColor)} />
         </div>
-        <div className="ml-4">
-          <p className={cn('text-sm font-medium', theme.text.muted)}>{label}</p>
-          <p className={cn('text-2xl font-bold', theme.text.strong)}>{value}</p>
+        <div className="ml-3">
+          <p className={cn('text-xs font-semibold', theme.text.muted)}>{label}</p>
+          <p className={cn('text-xl font-bold', theme.text.strong)}>{value}</p>
           {subtext && <p className={cn('text-xs', subtextColor || theme.text.muted)}>{subtext}</p>}
         </div>
       </div>

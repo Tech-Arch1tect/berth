@@ -100,19 +100,21 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-gray-900/75 dark:bg-gray-950/90 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-zinc-900/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-6xl h-[90vh] max-h-[900px]">
+      <div className="relative w-full max-w-6xl h-[90vh] max-h-[900px] z-10">
         <div className="pointer-events-auto w-full h-full">
-          <div className="flex h-full flex-col bg-white dark:bg-slate-900 shadow-2xl rounded-2xl overflow-hidden">
+          <div
+            className={cn(
+              'flex h-full flex-col shadow-2xl rounded-2xl overflow-hidden dark:shadow-black/40',
+              theme.containers.panel
+            )}
+          >
             <div className={cn(theme.brand.composeHeader, 'px-6 py-6')}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Compose Editor</h2>
-                  <p className={cn('mt-1 text-sm', theme.brand.composeAccent)}>
+                  <p className="mt-1 text-sm text-white/80">
                     Edit your Docker Compose configuration
                   </p>
                 </div>
@@ -130,13 +132,13 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                 className={cn(
                   'w-64 border-r overflow-y-auto',
                   theme.surface.muted,
-                  'border-slate-200 dark:border-slate-700'
+                  'border-zinc-200 dark:border-zinc-800'
                 )}
               >
                 <div className="p-4">
                   <h3
                     className={cn(
-                      'text-sm font-semibold uppercase tracking-wider mb-3',
+                      'text-sm font-bold uppercase tracking-wider mb-3',
                       theme.text.standard
                     )}
                   >
@@ -151,7 +153,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                           'w-full text-left px-4 py-3 rounded-lg transition-all duration-200',
                           editor.selectedService === service.name
                             ? theme.brand.composeSelected
-                            : cn(theme.text.standard, 'hover:bg-slate-200 dark:hover:bg-slate-700')
+                            : cn(theme.text.standard, 'hover:bg-zinc-100 dark:hover:bg-zinc-800')
                         )}
                       >
                         <div className="flex items-center justify-between">
@@ -196,13 +198,13 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                 {editor.currentService && !editor.activeEditor && (
                   <div className="p-8">
                     <div className="max-w-3xl mx-auto space-y-8">
-                      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-                        <div className="flex items-start justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                      <div className={cn(theme.containers.card)}>
+                        <div className={cn(theme.containers.sectionHeader, 'p-6')}>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            <h3 className={cn('text-lg font-bold', theme.text.strong)}>
                               Container Image
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className={cn('text-sm mt-1', theme.text.muted)}>
                               Replace the full image reference or update its tag.
                             </p>
                           </div>
@@ -210,7 +212,11 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             {pendingImageUpdate && (
                               <button
                                 onClick={() => editor.clearImageUpdate(editor.currentService!.name)}
-                                className="text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                                className={cn(
+                                  'text-xs font-medium transition-colors',
+                                  theme.text.muted,
+                                  'hover:text-zinc-900 dark:hover:text-zinc-100'
+                                )}
                               >
                                 Discard change
                               </button>
@@ -218,7 +224,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             <button
                               onClick={() => editor.setActiveEditor('image')}
                               className={cn(
-                                'px-3 py-1.5 text-xs font-medium rounded-lg',
+                                'px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm',
                                 theme.brand.composePreview
                               )}
                             >
@@ -228,18 +234,30 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                         </div>
                         <div className="p-6 space-y-3">
                           <div>
-                            <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <span
+                              className={cn(
+                                'block text-xs font-bold uppercase tracking-wide',
+                                theme.text.muted
+                              )}
+                            >
                               Current
                             </span>
-                            <div className="mt-1 font-mono text-sm text-gray-900 dark:text-white break-all">
+                            <div
+                              className={cn('mt-1 font-mono text-sm break-all', theme.text.strong)}
+                            >
                               {editor.currentService.image || 'No image specified'}
                             </div>
                           </div>
                           {updatedImageValue && (
-                            <div className="pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+                            <div
+                              className={cn(
+                                'pt-2 border-t border-dashed',
+                                'border-zinc-200 dark:border-zinc-700'
+                              )}
+                            >
                               <span
                                 className={cn(
-                                  'block text-xs font-semibold uppercase tracking-wide',
+                                  'block text-xs font-bold uppercase tracking-wide',
                                   theme.text.info
                                 )}
                               >
@@ -255,13 +273,11 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-                        <div className="flex items-start justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                      <div className={cn(theme.containers.card)}>
+                        <div className={cn(theme.containers.sectionHeader, 'p-6')}>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                              Ports
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <h3 className={cn('text-lg font-bold', theme.text.strong)}>Ports</h3>
+                            <p className={cn('text-sm mt-1', theme.text.muted)}>
                               Saving replaces the entire <code className="font-mono">ports</code>{' '}
                               list for this service.
                             </p>
@@ -270,7 +286,11 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             {pendingPortUpdate && (
                               <button
                                 onClick={() => editor.clearPortUpdate(editor.currentService!.name)}
-                                className="text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                                className={cn(
+                                  'text-xs font-medium transition-colors',
+                                  theme.text.muted,
+                                  'hover:text-zinc-900 dark:hover:text-zinc-100'
+                                )}
                               >
                                 Discard change
                               </button>
@@ -278,7 +298,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                             <button
                               onClick={() => editor.setActiveEditor('ports')}
                               className={cn(
-                                'px-3 py-1.5 text-xs font-medium rounded-lg',
+                                'px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm',
                                 theme.brand.composePreview
                               )}
                             >
@@ -288,26 +308,41 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                         </div>
                         <div className="p-6 space-y-4">
                           <div>
-                            <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <span
+                              className={cn(
+                                'block text-xs font-bold uppercase tracking-wide',
+                                theme.text.muted
+                              )}
+                            >
                               Current
                             </span>
                             {displayedCurrentPorts.length > 0 ? (
-                              <ul className="mt-2 space-y-1 font-mono text-sm text-gray-900 dark:text-white">
+                              <ul
+                                className={cn(
+                                  'mt-2 space-y-1 font-mono text-sm',
+                                  theme.text.strong
+                                )}
+                              >
                                 {displayedCurrentPorts.map((entry) => (
                                   <li key={entry}>{entry}</li>
                                 ))}
                               </ul>
                             ) : (
-                              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                              <p className={cn('mt-2 text-sm', theme.text.muted)}>
                                 No ports exposed
                               </p>
                             )}
                           </div>
                           {pendingPortUpdate && (
-                            <div className="pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+                            <div
+                              className={cn(
+                                'pt-2 border-t border-dashed',
+                                'border-zinc-200 dark:border-zinc-700'
+                              )}
+                            >
                               <span
                                 className={cn(
-                                  'block text-xs font-semibold uppercase tracking-wide',
+                                  'block text-xs font-bold uppercase tracking-wide',
                                   theme.text.info
                                 )}
                               >
@@ -339,11 +374,22 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-6 py-4 flex-shrink-0">
+            <div
+              className={cn(
+                'border-t px-6 py-4 flex-shrink-0',
+                'border-zinc-200 dark:border-zinc-800',
+                theme.surface.muted
+              )}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   {editor.hasChanges && (
-                    <p className={cn('text-sm flex items-center gap-2', theme.text.warning)}>
+                    <p
+                      className={cn(
+                        'text-sm font-semibold flex items-center gap-2',
+                        theme.text.warning
+                      )}
+                    >
                       <div
                         className={cn(
                           'h-2 w-2 rounded-full animate-pulse',
@@ -358,7 +404,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                   <button
                     onClick={onClose}
                     disabled={editor.isSaving}
-                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                    className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
                   >
                     Cancel
                   </button>
@@ -366,7 +412,7 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                     onClick={handleSave}
                     disabled={!editor.hasChanges || editor.isSaving}
                     className={cn(
-                      'inline-flex items-center gap-2 px-6 py-2',
+                      'inline-flex items-center gap-2 px-6 py-2.5',
                       theme.brand.composeButton,
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}

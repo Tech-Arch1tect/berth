@@ -26,17 +26,17 @@ export default function ServerList({ servers }: ServerListProps) {
   }, [servers, searchTerm]);
 
   return (
-    <div className={theme.containers.panel}>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className={cn('text-xl font-semibold', theme.text.strong)}>Servers</h2>
-        <span className={cn('text-sm', theme.text.subtle)}>
+    <div className={cn(theme.containers.panel, 'p-4')}>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className={cn('text-base font-bold', theme.text.strong)}>Servers</h2>
+        <span className={cn('text-xs', theme.text.subtle)}>
           {filteredServers.length} of {servers.length} server
           {servers.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {servers.length > 0 && (
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className={theme.forms.inputIcon} />
             <input
@@ -59,7 +59,7 @@ export default function ServerList({ servers }: ServerListProps) {
           description="Try adjusting your search criteria."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredServers.map((server) => (
             <ServerCard key={server.id} server={server} />
           ))}

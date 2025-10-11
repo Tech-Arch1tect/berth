@@ -203,7 +203,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
               <div
                 key={key}
                 className={cn(
-                  'group p-4 rounded-lg border hover:border-slate-300 dark:hover:border-slate-600 transition-all',
+                  'group p-4 rounded-lg border hover:border-zinc-300 dark:hover:border-zinc-600 transition-all',
                   theme.containers.card
                 )}
               >
@@ -218,7 +218,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
                           'w-full px-3 py-2 rounded border font-mono text-sm',
                           theme.surface.muted,
                           theme.text.strong,
-                          'border-slate-300 dark:border-slate-600'
+                          'border-zinc-300 dark:border-zinc-600'
                         )}
                       />
                       {isSensitive(key) && (
@@ -288,12 +288,12 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
 
         {/* Actions */}
         <div className="mt-8 flex items-center justify-end gap-3">
-          <button onClick={onBack} className={theme.buttons.ghost}>
+          <button onClick={onBack} className={theme.buttons.secondary}>
             Cancel
           </button>
           <button
             onClick={handleApply}
-            className={cn('inline-flex items-center gap-2 px-6 py-2.5', theme.brand.composeAccent)}
+            className={cn('inline-flex items-center gap-2 px-6 py-2.5', theme.brand.composeButton)}
           >
             <CheckIcon className="h-5 w-5" />
             Apply Changes

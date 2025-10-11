@@ -147,7 +147,7 @@ export const ServicePortsEditor: React.FC<ServicePortsEditorProps> = ({
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <button onClick={onCancel} className={theme.buttons.ghost}>
+          <button onClick={onCancel} className={theme.buttons.secondary}>
             Cancel
           </button>
           <button

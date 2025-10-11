@@ -98,7 +98,7 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <ServerIcon className="h-8 w-8" />
               </div>
-              <h1 className={cn('text-3xl font-bold', theme.brand.titleGradient)}>Berth</h1>
+              <h1 className={cn('text-3xl font-bold', theme.brand.titleColor)}>Berth</h1>
               <p className={cn('mt-2 text-sm', theme.text.muted)}>
                 Docker Stack Management Platform
               </p>
@@ -130,14 +130,14 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 border-r transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-72 border-r shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 dark:shadow-black/20',
           theme.surface.sidebar,
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo and close button */}
-          <div className="flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/50">
+          <div className="flex items-center justify-between border-b px-6 py-4 dark:border-zinc-800">
             <div className="flex items-center space-x-3">
               <div
                 className={cn(
@@ -148,7 +148,7 @@ export default function Layout({ children }: LayoutProps) {
                 <ServerIcon className="h-6 w-6" />
               </div>
               <div>
-                <h1 className={cn('text-xl font-bold', theme.brand.titleGradient)}>Berth</h1>
+                <h1 className={cn('text-xl font-bold', theme.brand.titleColor)}>Berth</h1>
                 <p className={cn('text-xs', theme.text.subtle)}>v1.0.0</p>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* User section */}
-          <div className="border-t px-4 py-4 dark:border-slate-800/50">
+          <div className="border-t px-4 py-4 dark:border-zinc-800">
             <div className={cn('mb-4 rounded-xl px-3 py-2', theme.surface.muted)}>
               <div className="flex items-center space-x-3">
                 <div className={theme.badges.userInitials}>
@@ -229,9 +229,9 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 onClick={handleLogout}
                 className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                  'flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   theme.text.muted,
-                  'hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                  'hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 )}
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" />
@@ -244,7 +244,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main content area */}
       <div className="lg:pl-72">
-        <div className="sticky top-0 z-30 border-b bg-white/70 px-4 py-4 shadow-sm backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70">
+        <div className="sticky top-0 z-30 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
@@ -263,10 +263,10 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 onClick={toggleDarkMode}
                 className={cn(
-                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
                   isDark
-                    ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                    ? 'border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700'
+                    : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100'
                 )}
               >
                 {isDark ? (

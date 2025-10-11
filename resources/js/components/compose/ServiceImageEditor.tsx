@@ -95,7 +95,7 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
           className={cn(
             'mb-8 p-4 rounded-lg border',
             theme.surface.muted,
-            'border-slate-200 dark:border-slate-700'
+            'border-zinc-200 dark:border-zinc-800'
           )}
         >
           <label className={cn('block text-sm font-medium mb-2', theme.forms.label)}>
@@ -103,10 +103,10 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
           </label>
           <div
             className={cn(
-              'font-mono text-sm px-4 py-2 rounded border',
+              'font-mono text-sm px-4 py-2 rounded-lg border-2',
               theme.surface.panel,
               theme.text.strong,
-              'border-slate-300 dark:border-slate-600'
+              'border-zinc-200 dark:border-zinc-700'
             )}
           >
             {service.image || 'No image specified'}
@@ -172,12 +172,8 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
                     onClick={() => setImageTag(tag)}
                     className={
                       imageTag === tag
-                        ? cn(theme.buttons.primary, 'px-3 py-1.5')
-                        : cn(
-                            theme.surface.muted,
-                            theme.text.standard,
-                            'px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-slate-200 dark:hover:bg-slate-600'
-                          )
+                        ? cn(theme.buttons.primary, theme.buttons.sm)
+                        : cn(theme.buttons.secondary, theme.buttons.sm)
                     }
                   >
                     {tag}
@@ -226,15 +222,15 @@ export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
 
         {/* Actions */}
         <div className="mt-8 flex items-center justify-end gap-3">
-          <button onClick={onBack} className={theme.buttons.ghost}>
+          <button onClick={onBack} className={theme.buttons.secondary}>
             Cancel
           </button>
           <button
             onClick={handleApply}
             disabled={!isValid()}
             className={cn(
-              'inline-flex items-center gap-2 px-6 py-2.5',
               theme.brand.composeButton,
+              'inline-flex items-center gap-2',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >

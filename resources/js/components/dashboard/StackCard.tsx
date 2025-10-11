@@ -35,13 +35,11 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
       <div className="space-y-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
-            <div className={cn(theme.icon.squareMd, theme.brand.stack)}>
+            <div className={cn(theme.icon.squareMd, theme.brand.stack, 'shadow-md')}>
               <CircleStackIcon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className={cn('truncate text-lg font-semibold', theme.text.strong)}>
-                {stack.name}
-              </h3>
+              <h3 className={cn('truncate text-lg font-bold', theme.text.strong)}>{stack.name}</h3>
               <div className="mt-1 flex items-center space-x-2">
                 <ServerIcon className={cn('h-3.5 w-3.5 flex-shrink-0', theme.text.subtle)} />
                 <span className={cn('truncate text-sm', theme.text.muted)}>
