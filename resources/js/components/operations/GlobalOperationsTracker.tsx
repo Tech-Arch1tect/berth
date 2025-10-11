@@ -60,7 +60,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const isConnected = logs.length > 0 || !isComplete;
 
   return (
-    <div className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
+    <div className="border-b border-zinc-200 dark:border-zinc-700 last:border-b-0">
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
@@ -102,7 +102,11 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setExpanded(!expanded)}
-              className={cn('p-1 rounded transition-colors', theme.buttons.ghost)}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                theme.text.info,
+                'hover:bg-teal-100 dark:hover:bg-teal-900/30'
+              )}
               title={expanded ? 'Collapse' : 'Expand'}
             >
               {expanded ? (
@@ -114,7 +118,11 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
             {isComplete && (
               <button
                 onClick={onDismiss}
-                className={cn('p-1 rounded transition-colors', theme.buttons.ghost)}
+                className={cn(
+                  'p-2 rounded-lg transition-colors',
+                  theme.text.danger,
+                  'hover:bg-rose-100 dark:hover:bg-rose-900/30'
+                )}
                 title="Dismiss"
               >
                 <XMarkIcon className="w-4 h-4" />
@@ -324,9 +332,9 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           ) : null
         }
       >
-        <div className="flex overflow-hidden" style={{ height: '60vh' }}>
+        <div className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900" style={{ height: '60vh' }}>
           {/* Operation Builder */}
-          <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 overflow-y-auto p-4">
+          <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
             <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
               Build Custom Operation
             </h4>
@@ -342,13 +350,13 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
           </div>
 
           {/* Running Operations */}
-          <div className="w-1/2 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="w-1/2 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
               <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
                 Operations ({runningOps.length} running, {completedOps.length} completed)
               </h4>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900">
               {operations.length === 0 ? (
                 <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
                   No operations running
