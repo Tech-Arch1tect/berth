@@ -13,6 +13,7 @@ interface OperationsContextType {
   operations: RunningOperation[];
   getOperationLogs: (operationId: string) => StreamMessage[];
   addOperation: (operation: RunningOperation) => void;
+  addOperationLog: (operationId: string, message: StreamMessage) => void;
   removeOperation: (operationId: string) => void;
   updateOperation: (operationId: string, updates: Partial<RunningOperation>) => void;
   refresh: () => void;
@@ -259,6 +260,27 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
   }, []);
 
+  const addOperationLog = useCallback((operationId: string, message: StreamMessage) => {
+    setOperationStates((prev) => {
+      const state = prev.get(operationId);
+      if (!state) return prev;
+
+      const newMap = new Map(prev);
+      const updatedLogs = [...state.logs, message];
+
+      if (message.type === 'complete') {
+        state.operation.is_incomplete = false;
+      }
+
+      newMap.set(operationId, {
+        ...state,
+        logs: updatedLogs,
+      });
+
+      return newMap;
+    });
+  }, []);
+
   const getOperationLogs = useCallback((operationId: string): StreamMessage[] => {
     return operationStatesRef.current.get(operationId)?.logs || [];
   }, []);
@@ -273,6 +295,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         operations,
         getOperationLogs,
         addOperation,
+        addOperationLog,
         removeOperation,
         updateOperation,
         refresh: fetchRunningOperations,

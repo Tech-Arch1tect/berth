@@ -28,12 +28,13 @@ export const useOperations = ({
   });
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { addOperation } = useOperationsContext();
+  const { addOperation, addOperationLog } = useOperationsContext();
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
   const pendingOperationRef = useRef<OperationRequest | null>(null);
+  const currentOperationIdRef = useRef<string | undefined>(undefined);
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
@@ -68,6 +69,8 @@ export const useOperations = ({
           const wsMessage = parsedData as WebSocketMessage;
           const opResponse = wsMessage.data as OperationResponse;
 
+          currentOperationIdRef.current = opResponse.operationId;
+
           setOperationStatus((prev) => ({
             ...prev,
             operationId: opResponse.operationId,
@@ -85,7 +88,7 @@ export const useOperations = ({
               last_message_at: new Date().toISOString(),
               user_name: '',
               server_name: '',
-              is_incomplete: true,
+              is_incomplete: false,
               partial_duration: null,
               message_count: 0,
             };
@@ -102,6 +105,10 @@ export const useOperations = ({
           ...prev,
           logs: [...prev.logs, message],
         }));
+
+        if (currentOperationIdRef.current) {
+          addOperationLog(currentOperationIdRef.current, message);
+        }
 
         if (message.type === 'complete') {
           setOperationStatus((prev) => ({
@@ -143,13 +150,23 @@ export const useOperations = ({
         onError(errorMsg);
       }
     };
-  }, [serverid, stackname, operationStatus.isRunning, onOperationComplete, onError, addOperation]);
+  }, [
+    serverid,
+    stackname,
+    operationStatus.isRunning,
+    operationStatus.operationId,
+    onOperationComplete,
+    onError,
+    addOperation,
+    addOperationLog,
+  ]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
+    currentOperationIdRef.current = undefined;
     setIsConnecting(false);
   }, []);
 

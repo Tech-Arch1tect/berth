@@ -81,7 +81,7 @@ export default function Stacks({ title, servers }: StacksProps) {
                 <h1
                   className={cn(
                     'text-3xl font-bold bg-clip-text text-transparent',
-                    theme.brand.titleGradient
+                    theme.brand.titleColor
                   )}
                 >
                   {title}
