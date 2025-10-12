@@ -36,6 +36,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const [expanded, setExpanded] = useState(false);
   const operationRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
   const { getOperationLogs } = useOperationsContext();
 
   const logs = getOperationLogs(operationId);
@@ -47,10 +48,10 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   }, [expanded]);
 
   useEffect(() => {
-    if (expanded && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (expanded && logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
-  }, [logs]);
+  }, [logs, expanded]);
 
   const formatDuration = (startTime: string) => {
     const start = new Date(startTime);
@@ -142,7 +143,10 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
         </div>
 
         {expanded && (
-          <div className="mt-3 bg-slate-950 rounded-lg p-3 max-h-64 overflow-y-auto">
+          <div
+            ref={logsContainerRef}
+            className="mt-3 bg-slate-950 rounded-lg p-3 max-h-64 overflow-y-auto"
+          >
             <div className="font-mono text-xs space-y-1">
               {logs.length === 0 ? (
                 <div className={cn('text-center py-2', theme.text.subtle)}>
