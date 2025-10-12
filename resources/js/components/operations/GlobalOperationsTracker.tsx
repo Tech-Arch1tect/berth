@@ -40,6 +40,13 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const { getOperationLogs } = useOperationsContext();
 
   const logs = getOperationLogs(operationId);
+  const isComplete = logs.some((log) => log.type === 'complete');
+
+  useEffect(() => {
+    if (!isComplete && !expanded) {
+      setExpanded(true);
+    }
+  }, [isComplete, expanded]);
 
   useEffect(() => {
     if (expanded && operationRef.current) {
@@ -63,7 +70,6 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
     return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
   };
 
-  const isComplete = logs.some((log) => log.type === 'complete');
   const isFailed = isComplete && logs.some((log) => log.type === 'complete' && !log.success);
   const isConnected = logs.length > 0 || !isComplete;
 
