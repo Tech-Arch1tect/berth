@@ -44,9 +44,14 @@ export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
   const isFetching = queries.some((query) => query.isFetching);
   const hasError = queries.some((query) => query.error);
   const errors = queries
-    .filter((query) => query.error)
     .map((query, index) => ({
+      query,
       server: servers[index],
+      index,
+    }))
+    .filter(({ query }) => query.error)
+    .map(({ server, query }) => ({
+      server,
       error: query.error as Error,
     }));
 
