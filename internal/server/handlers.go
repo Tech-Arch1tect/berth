@@ -54,14 +54,20 @@ func (h *Handler) Show(c echo.Context) error {
 }
 
 func (h *Handler) Store(c echo.Context) error {
-	var server models.Server
-	if err := common.BindRequest(c, &server); err != nil {
+	var req models.ServerCreateRequest
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request data")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
 
-	if err := h.service.CreateServer(&server); err != nil {
-		session.AddFlashError(c, "Failed to create server")
+	server := req.ToServer()
+	if err := h.service.CreateServer(server); err != nil {
+
+		if err.Error() == "access token is required" {
+			session.AddFlashError(c, "Access token is required when creating a server")
+		} else {
+			session.AddFlashError(c, "Failed to create server")
+		}
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
 
@@ -95,11 +101,13 @@ func (h *Handler) Update(c echo.Context) error {
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
 
-	var updates models.Server
-	if err := common.BindRequest(c, &updates); err != nil {
+	var req models.ServerUpdateRequest
+	if err := common.BindRequest(c, &req); err != nil {
 		session.AddFlashError(c, "Invalid request data")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")
 	}
+
+	updates := req.ToServer()
 
 	// If access_token is empty, don't update it (keep existing)
 	if updates.AccessToken == "" {
@@ -111,7 +119,7 @@ func (h *Handler) Update(c echo.Context) error {
 		updates.AccessToken = existing.AccessToken
 	}
 
-	server, err := h.service.UpdateServer(uint(id), &updates)
+	server, err := h.service.UpdateServer(uint(id), updates)
 	if err != nil {
 		session.AddFlashError(c, "Failed to update server")
 		return h.inertiaSvc.Redirect(c, "/admin/servers")

@@ -149,17 +149,22 @@ func (s *Service) CreateServer(server *models.Server) error {
 		zap.Int("port", server.Port),
 	)
 
-	if server.AccessToken != "" {
-		encryptedToken, err := s.crypto.Encrypt(server.AccessToken)
-		if err != nil {
-			s.logger.Error("failed to encrypt server access token",
-				zap.Error(err),
-				zap.String("server_name", server.Name),
-			)
-			return fmt.Errorf("failed to encrypt access token: %w", err)
-		}
-		server.AccessToken = encryptedToken
+	if server.AccessToken == "" {
+		s.logger.Error("access token is required when creating a server",
+			zap.String("server_name", server.Name),
+		)
+		return fmt.Errorf("access token is required")
 	}
+
+	encryptedToken, err := s.crypto.Encrypt(server.AccessToken)
+	if err != nil {
+		s.logger.Error("failed to encrypt server access token",
+			zap.Error(err),
+			zap.String("server_name", server.Name),
+		)
+		return fmt.Errorf("failed to encrypt access token: %w", err)
+	}
+	server.AccessToken = encryptedToken
 
 	if err := s.db.Create(server).Error; err != nil {
 		s.logger.Error("failed to create server in database",

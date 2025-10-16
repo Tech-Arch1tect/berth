@@ -45,12 +45,16 @@ func (h *APIHandler) GetServer(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
-	var server models.Server
-	if err := common.BindRequest(c, &server); err != nil {
+	var req models.ServerCreateRequest
+	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
 
-	if err := h.service.CreateServer(&server); err != nil {
+	server := req.ToServer()
+	if err := h.service.CreateServer(server); err != nil {
+		if err.Error() == "access token is required" {
+			return common.SendBadRequest(c, err.Error())
+		}
 		return common.SendInternalError(c, "Failed to create server")
 	}
 
@@ -66,10 +70,12 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		return err
 	}
 
-	var updates models.Server
-	if err := common.BindRequest(c, &updates); err != nil {
+	var req models.ServerUpdateRequest
+	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
+
+	updates := req.ToServer()
 
 	if updates.AccessToken == "" {
 		existing, err := h.service.GetServer(id)
@@ -79,7 +85,7 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		updates.AccessToken = existing.AccessToken
 	}
 
-	server, err := h.service.UpdateServer(id, &updates)
+	server, err := h.service.UpdateServer(id, updates)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to update server")
 	}

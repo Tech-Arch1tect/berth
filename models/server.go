@@ -33,6 +33,50 @@ type ServerResponse struct {
 	IsActive            bool   `json:"is_active"`
 }
 
+type ServerCreateRequest struct {
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	Host                string `json:"host"`
+	Port                int    `json:"port"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification"`
+	AccessToken         string `json:"access_token"`
+	IsActive            bool   `json:"is_active"`
+}
+
+type ServerUpdateRequest struct {
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	Host                string `json:"host"`
+	Port                int    `json:"port"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification"`
+	AccessToken         string `json:"access_token"`
+	IsActive            bool   `json:"is_active"`
+}
+
+func (r *ServerCreateRequest) ToServer() *Server {
+	return &Server{
+		Name:                r.Name,
+		Description:         r.Description,
+		Host:                r.Host,
+		Port:                r.Port,
+		SkipSSLVerification: r.SkipSSLVerification,
+		AccessToken:         r.AccessToken,
+		IsActive:            r.IsActive,
+	}
+}
+
+func (r *ServerUpdateRequest) ToServer() *Server {
+	return &Server{
+		Name:                r.Name,
+		Description:         r.Description,
+		Host:                r.Host,
+		Port:                r.Port,
+		SkipSSLVerification: r.SkipSSLVerification,
+		AccessToken:         r.AccessToken,
+		IsActive:            r.IsActive,
+	}
+}
+
 type ServerWithStatistics struct {
 	ID                  uint             `json:"id"`
 	CreatedAt           string           `json:"created_at"`
