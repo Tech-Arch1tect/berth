@@ -81,10 +81,17 @@ func (c *Client) readMessages() {
 		var baseMsg websocket.BaseMessage
 		if err := json.Unmarshal(message, &baseMsg); err == nil && baseMsg.Type != "" {
 			c.mu.Lock()
+
 			if handler, ok := c.handlers[string(baseMsg.Type)]; ok {
+				c.mu.Unlock()
 				go handler(message)
+			} else if handler, ok := c.handlers[""]; ok {
+
+				c.mu.Unlock()
+				go handler(message)
+			} else {
+				c.mu.Unlock()
 			}
-			c.mu.Unlock()
 		} else {
 			c.mu.Lock()
 			if handler, ok := c.handlers[""]; ok {
@@ -98,6 +105,12 @@ func (c *Client) readMessages() {
 func (c *Client) Send(msgType websocket.MessageType, payload interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if msgType == "" {
+		if rawData, ok := payload.([]byte); ok {
+			return c.conn.WriteMessage(ws.TextMessage, rawData)
+		}
+	}
 
 	msg := map[string]interface{}{
 		"type":    msgType,

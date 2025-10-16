@@ -125,19 +125,23 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 	var userID int
 
 	if clientType == "Flutter" {
-		auth := c.Request().Header.Get("Authorization")
-		token, ok := strings.CutPrefix(auth, "Bearer ")
-		if !ok || token == "" {
 
-			return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
+		if authUserID, ok := c.Get("_jwt_user_id").(uint); ok && authUserID > 0 {
+			userID = int(authUserID)
+		} else {
+
+			auth := c.Request().Header.Get("Authorization")
+			token, ok := strings.CutPrefix(auth, "Bearer ")
+			if !ok || token == "" {
+				return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
+			}
+
+			claims, err := h.jwtService.ValidateToken(token)
+			if err != nil {
+				return 0, 0, common.SendUnauthorized(c, "Invalid token")
+			}
+			userID = int(claims.UserID)
 		}
-
-		claims, err := h.jwtService.ValidateToken(token)
-		if err != nil {
-
-			return 0, 0, common.SendUnauthorized(c, "Invalid token")
-		}
-		userID = int(claims.UserID)
 	} else {
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
