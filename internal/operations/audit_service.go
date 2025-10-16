@@ -132,6 +132,19 @@ func (s *AuditService) FindOperationLogByOperationID(operationID string) (*model
 	return &log, nil
 }
 
+func (s *AuditService) GetOperationMessageCount(operationLogID uint) (int64, error) {
+	var count int64
+	err := s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", operationLogID).Count(&count).Error
+	if err != nil {
+		s.logger.Error("failed to count operation messages",
+			zap.Error(err),
+			zap.Uint("operation_log_id", operationLogID),
+		)
+		return 0, err
+	}
+	return count, nil
+}
+
 func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error {
 	s.logger.Debug("logging operation end",
 		zap.Uint("operation_log_id", operationLogID),
