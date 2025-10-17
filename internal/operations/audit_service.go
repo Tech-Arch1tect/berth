@@ -162,6 +162,14 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 		return err
 	}
 
+	if log.EndTime != nil {
+		s.logger.Debug("operation already ended, skipping",
+			zap.Uint("operation_log_id", operationLogID),
+			zap.Time("existing_end_time", *log.EndTime),
+		)
+		return nil
+	}
+
 	var duration int
 
 	if endTime.IsZero() || endTime.Before(log.StartTime) {
@@ -170,6 +178,8 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 			zap.Time("end_time", endTime),
 			zap.Time("start_time", log.StartTime),
 			zap.Bool("end_time_is_zero", endTime.IsZero()),
+			zap.Int64("end_time_unix_nano", endTime.UnixNano()),
+			zap.Int64("start_time_unix_nano", log.StartTime.UnixNano()),
 		)
 
 		duration = 0
