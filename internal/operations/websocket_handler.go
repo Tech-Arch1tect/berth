@@ -96,11 +96,13 @@ func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *we
 			messageCount, _ := h.service.auditSvc.GetOperationMessageCount(operationLog.ID)
 			if messageCount == 0 {
 				return h.relayToWebSocketWithAudit(ctx, conn, pipeReader, operationLog.ID)
+			} else {
+				return h.relayToWebSocketInternal(ctx, conn, pipeReader, &operationLog.ID, false)
 			}
 		}
 	}
 
-	return h.relayToWebSocket(ctx, conn, pipeReader)
+	return h.relayToWebSocketInternal(ctx, conn, pipeReader, nil, false)
 }
 
 func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string) error {
@@ -201,27 +203,10 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 }
 
 func (h *WebSocketHandler) relayToWebSocket(ctx context.Context, conn *websocket.Conn, reader *StreamReader) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case line, ok := <-reader.Lines():
-			if !ok {
-				return nil
-			}
-
-			if len(line) > 6 && line[:6] == "data: " {
-				jsonData := line[6:]
-
-				if err := conn.WriteMessage(websocket.TextMessage, []byte(jsonData)); err != nil {
-					return err
-				}
-			}
-		}
-	}
+	return h.relayToWebSocketInternal(ctx, conn, reader, nil, false)
 }
 
-func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *websocket.Conn, reader *StreamReader, operationLogID uint) error {
+func (h *WebSocketHandler) relayToWebSocketInternal(ctx context.Context, conn *websocket.Conn, reader *StreamReader, operationLogID *uint, logAllMessages bool) error {
 	sequenceNumber := 0
 
 	for {
@@ -238,17 +223,25 @@ func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *
 
 				var streamMsg StreamMessage
 				if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
-					sequenceNumber++
-
-					_ = h.service.auditSvc.LogOperationMessage(
-						operationLogID,
-						streamMsg.Type,
-						streamMsg.Data,
-						streamMsg.Timestamp,
-						sequenceNumber,
-					)
 
 					if streamMsg.Type == "complete" {
+						fmt.Printf("[DEBUG] Complete message received: %s\n", jsonData)
+						fmt.Printf("[DEBUG] Parsed - Success: %v, ExitCode: %v, Timestamp: %v\n",
+							streamMsg.Success, streamMsg.ExitCode, streamMsg.Timestamp)
+					}
+
+					if operationLogID != nil && logAllMessages {
+						sequenceNumber++
+						_ = h.service.auditSvc.LogOperationMessage(
+							*operationLogID,
+							streamMsg.Type,
+							streamMsg.Data,
+							streamMsg.Timestamp,
+							sequenceNumber,
+						)
+					}
+
+					if streamMsg.Type == "complete" && operationLogID != nil {
 						success := streamMsg.Success != nil && *streamMsg.Success
 						exitCode := 0
 						if streamMsg.ExitCode != nil {
@@ -256,7 +249,7 @@ func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *
 						}
 
 						_ = h.service.auditSvc.LogOperationEnd(
-							operationLogID,
+							*operationLogID,
 							streamMsg.Timestamp,
 							success,
 							exitCode,
@@ -270,6 +263,10 @@ func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *
 			}
 		}
 	}
+}
+
+func (h *WebSocketHandler) relayToWebSocketWithAudit(ctx context.Context, conn *websocket.Conn, reader *StreamReader, operationLogID uint) error {
+	return h.relayToWebSocketInternal(ctx, conn, reader, &operationLogID, true)
 }
 
 func (h *WebSocketHandler) sendError(conn *websocket.Conn, message string) {
