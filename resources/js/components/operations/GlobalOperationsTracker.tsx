@@ -132,19 +132,17 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
                 <ChevronDownIcon className="w-4 h-4" />
               )}
             </button>
-            {isComplete && (
-              <button
-                onClick={onDismiss}
-                className={cn(
-                  'p-2 rounded-lg transition-colors',
-                  theme.text.danger,
-                  'hover:bg-rose-100 dark:hover:bg-rose-900/30'
-                )}
-                title="Dismiss"
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={onDismiss}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                theme.text.danger,
+                'hover:bg-rose-100 dark:hover:bg-rose-900/30'
+              )}
+              title={isComplete ? 'Dismiss' : 'Remove (operation may still be running)'}
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
