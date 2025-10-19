@@ -9,6 +9,7 @@ import (
 	"berth/internal/apikey"
 	berthconfig "berth/internal/config"
 	"berth/internal/files"
+	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
 	"berth/internal/migration"
@@ -164,6 +165,7 @@ func NewApp(opts *AppOptions) *app.App {
 		operationlogs.Module,
 		migration.Module,
 		queue.Module(),
+		imageupdates.Module,
 		fx.Provide(security.NewHandler),
 		fx.Provide(handlers.NewDashboardHandler),
 		fx.Provide(handlers.NewStacksHandler),
@@ -191,6 +193,7 @@ func NewApp(opts *AppOptions) *app.App {
 		websocket.Module,
 		fx.Invoke(StartWebSocketHub),
 		fx.Invoke(websocket.StartWebSocketServiceManager),
+		fx.Invoke(func(svc *imageupdates.Service) {}),
 		fx.Invoke(RegisterOperationAuditLoggerShutdown),
 		fx.Invoke(RegisterSecurityAuditLoggerShutdown),
 	)
@@ -210,6 +213,7 @@ func NewApp(opts *AppOptions) *app.App {
 			&models.SecurityAuditLog{},
 			&models.SeedTracker{},
 			&models.QueuedOperation{}, &session.UserSession{},
+			&models.ContainerImageUpdate{},
 			&totp.TOTPSecret{}, &totp.UsedCode{},
 			&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
 			&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
