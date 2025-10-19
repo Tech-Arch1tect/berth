@@ -23,6 +23,8 @@ import { StackQuickStats } from '../../components/stacks/details/StackQuickStats
 import { StackInfoCard } from '../../components/stacks/details/StackInfoCard';
 import { StackServicesTab } from '../../components/stacks/details/StackServicesTab';
 import { ServerStackProvider } from '../../contexts/ServerStackContext';
+import { ImageUpdateBanner } from '../../components/image-updates';
+import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import {
   CircleStackIcon,
   CpuChipIcon,
@@ -52,6 +54,13 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   const stack = useStackDetailsPage({ serverid, stackname });
 
   const canManageStack = stack.stackPermissions?.permissions?.includes('stacks.manage') ?? false;
+
+  // Fetch image updates for this stack
+  const { updates, hasUpdates, lastChecked } = useStackImageUpdates({
+    serverid,
+    stackname,
+    enabled: true,
+  });
 
   return (
     <Layout>
@@ -113,6 +122,16 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           />
         ) : stack.stackDetails ? (
           <div className="space-y-8">
+            {/* Image Update Banner */}
+            {hasUpdates && (
+              <ImageUpdateBanner
+                updates={updates}
+                stackName={stackname}
+                serverName={server.name}
+                lastChecked={lastChecked}
+              />
+            )}
+
             {/* Quick Stats Grid */}
             <StackQuickStats
               serviceCount={stack.stackDetails.services?.length || 0}

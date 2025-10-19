@@ -9,6 +9,8 @@ import {
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Stack } from '../../types/stack';
+import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
+import { UpdateAvailableBadge } from '../image-updates';
 
 interface StackCardProps {
   stack: Stack;
@@ -21,6 +23,13 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
       : 0;
 
   const healthVariant = stack.is_healthy ? 'healthy' : 'unhealthy';
+
+  // Fetch image updates for this stack
+  const { updateCount } = useStackImageUpdates({
+    serverid: stack.server_id,
+    stackname: stack.name,
+    enabled: true,
+  });
 
   return (
     <Link
@@ -48,14 +57,17 @@ export const StackCard: React.FC<StackCardProps> = ({ stack }) => {
               </div>
             </div>
           </div>
-          <span className={cn(theme.badges.health.base, theme.badges.health[healthVariant])}>
-            {stack.is_healthy ? (
-              <CheckCircleIcon className="h-3.5 w-3.5" />
-            ) : (
-              <XCircleIcon className="h-3.5 w-3.5" />
-            )}
-            <span>{stack.is_healthy ? 'Healthy' : 'Unhealthy'}</span>
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className={cn(theme.badges.health.base, theme.badges.health[healthVariant])}>
+              {stack.is_healthy ? (
+                <CheckCircleIcon className="h-3.5 w-3.5" />
+              ) : (
+                <XCircleIcon className="h-3.5 w-3.5" />
+              )}
+              <span>{stack.is_healthy ? 'Healthy' : 'Unhealthy'}</span>
+            </span>
+            <UpdateAvailableBadge count={updateCount} variant="compact" />
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">
