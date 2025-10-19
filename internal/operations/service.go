@@ -138,13 +138,23 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	defer func() { _ = agentResp.Body.Close() }()
 
 	if agentResp.StatusCode != http.StatusOK {
+		var errorResponse struct {
+			Error string `json:"error"`
+		}
+
+		errorMsg := agentResp.Status
+		if err := json.NewDecoder(agentResp.Body).Decode(&errorResponse); err == nil && errorResponse.Error != "" {
+			errorMsg = errorResponse.Error
+		}
+
 		s.logger.Warn("agent returned error for operation",
 			zap.Int("status_code", agentResp.StatusCode),
 			zap.String("status", agentResp.Status),
+			zap.String("error_message", errorMsg),
 			zap.String("operation_command", req.Command),
 			zap.String("stack_name", stackname),
 		)
-		return nil, fmt.Errorf("agent returned error: %s", agentResp.Status)
+		return nil, fmt.Errorf("agent error: %s", errorMsg)
 	}
 
 	var response OperationResponse

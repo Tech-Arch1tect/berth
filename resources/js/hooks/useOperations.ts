@@ -99,6 +99,22 @@ export const useOperations = ({
           return;
         }
 
+        if (parsedData.type === 'error') {
+          const errorMsg = parsedData.data?.error || parsedData.error || 'Operation failed';
+
+          setOperationStatus((prev) => ({
+            ...prev,
+            isRunning: false,
+          }));
+
+          pendingOperationRef.current = null;
+
+          if (onError) {
+            onError(errorMsg);
+          }
+          return;
+        }
+
         const message = parsedData as StreamMessage;
 
         setOperationStatus((prev) => ({
@@ -174,7 +190,6 @@ export const useOperations = ({
     async (operation: OperationRequest) => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
         connect();
-
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 

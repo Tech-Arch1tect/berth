@@ -68,9 +68,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
       stackStatsQuery.refetch();
     },
     onError: (error) => {
-      console.error('Quick operation error:', error);
       setQuickOperationState({ isRunning: false });
-      showToast.error('Operation failed to start');
+      showToast.error(error || 'Operation failed to start');
     },
   });
 
