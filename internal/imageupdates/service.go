@@ -279,7 +279,9 @@ func (s *Service) processUpdateResults(serverID uint, results []ContainerImageCh
 				)
 			}
 		} else {
-			if err := s.db.Model(&existing).Updates(update).Error; err != nil {
+			if err := s.db.Model(&existing).
+				Select("CurrentImageName", "CurrentRepoDigest", "LatestRepoDigest", "UpdateAvailable", "LastCheckedAt", "CheckError").
+				Updates(update).Error; err != nil {
 				s.logger.Error("failed to update image update record",
 					zap.Uint("server_id", serverID),
 					zap.String("stack_name", result.StackName),
@@ -354,7 +356,7 @@ func (s *Service) GetAvailableUpdates() ([]models.ContainerImageUpdate, error) {
 
 func (s *Service) GetServerUpdates(serverID uint) ([]models.ContainerImageUpdate, error) {
 	var updates []models.ContainerImageUpdate
-	err := s.db.Where("server_id = ? AND update_available = ?", serverID, true).
+	err := s.db.Where("server_id = ?", serverID).
 		Order("stack_name ASC, container_name ASC").
 		Find(&updates).Error
 
@@ -366,11 +368,93 @@ func (s *Service) GetServerUpdates(serverID uint) ([]models.ContainerImageUpdate
 		return nil, err
 	}
 
-	s.logger.Debug("fetched server updates",
+	enrichedUpdates, err := s.enrichWithLiveDigests(serverID, updates)
+	if err != nil {
+		s.logger.Warn("failed to enrich updates with live data, returning cached data",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return updates, nil
+	}
+
+	s.logger.Debug("fetched and enriched server updates",
 		zap.Uint("server_id", serverID),
-		zap.Int("count", len(updates)),
+		zap.Int("count", len(enrichedUpdates)),
 	)
-	return updates, nil
+	return enrichedUpdates, nil
+}
+
+func (s *Service) enrichWithLiveDigests(serverID uint, updates []models.ContainerImageUpdate) ([]models.ContainerImageUpdate, error) {
+	server, err := s.serverSvc.GetServer(serverID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
+	defer cancel()
+
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", "/stacks", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, errors.New("agent returned non-200 status")
+	}
+
+	var stacksResp struct {
+		Stacks []struct {
+			Name     string `json:"name"`
+			Services []struct {
+				Containers []struct {
+					Name        string   `json:"name"`
+					RepoDigests []string `json:"repo_digests"`
+				} `json:"containers"`
+			} `json:"services"`
+		} `json:"stacks"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&stacksResp); err != nil {
+		return nil, err
+	}
+
+	liveDigests := make(map[string]string)
+	for _, stack := range stacksResp.Stacks {
+		for _, service := range stack.Services {
+			for _, container := range service.Containers {
+				key := stack.Name + "|" + container.Name
+				if len(container.RepoDigests) > 0 {
+					digest := container.RepoDigests[0]
+					if idx := strings.Index(digest, "@"); idx != -1 {
+						liveDigests[key] = digest[idx+1:]
+					}
+				}
+			}
+		}
+	}
+
+	enriched := make([]models.ContainerImageUpdate, 0)
+	for _, update := range updates {
+		key := update.StackName + "|" + update.ContainerName
+		if liveDigest, found := liveDigests[key]; found {
+			update.CurrentRepoDigest = liveDigest
+			update.UpdateAvailable = (liveDigest != update.LatestRepoDigest) && update.LatestRepoDigest != ""
+
+			s.logger.Debug("enriched update with live digest",
+				zap.String("stack", update.StackName),
+				zap.String("container", update.ContainerName),
+				zap.String("live_digest", liveDigest),
+				zap.String("latest_digest", update.LatestRepoDigest),
+				zap.Bool("update_available", update.UpdateAvailable),
+			)
+		}
+		if update.UpdateAvailable || update.CheckError != "" {
+			enriched = append(enriched, update)
+		}
+	}
+
+	return enriched, nil
 }
 
 func (s *Service) Shutdown() {
