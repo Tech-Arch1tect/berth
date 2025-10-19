@@ -305,10 +305,7 @@ export default function Registries({
               <button
                 type="submit"
                 disabled={processing}
-                className={cn(
-                  'px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200',
-                  processing && 'opacity-50 cursor-not-allowed'
-                )}
+                className={cn(theme.buttons.primary, 'rounded-xl')}
               >
                 {processing ? 'Saving...' : editingCredential ? 'Update' : 'Add'}
               </button>
@@ -339,7 +336,7 @@ export default function Registries({
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className={cn(theme.buttons.primary, 'rounded-xl')}
             >
               <PlusIcon className="w-5 h-5 mr-2" />
               Add First Credential
