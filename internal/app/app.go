@@ -140,7 +140,9 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(rbac.NewMiddleware),
 		fx.Provide(rbac.NewRBACHandler),
 		fx.Provide(rbac.NewAPIHandler),
-		fx.Provide(apikey.NewService),
+		fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
+			return apikey.NewService(db, logger, rbacSvc)
+		}),
 		fx.Provide(apikey.NewHandler),
 		fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
 			return setup.NewService(db, rbacSvc, logger)

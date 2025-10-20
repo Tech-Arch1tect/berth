@@ -1,7 +1,6 @@
 package apikey
 
 import (
-	"berth/internal/rbac"
 	"berth/models"
 	"berth/utils"
 	"crypto/rand"
@@ -21,13 +20,19 @@ const (
 	KeyLength = 32
 )
 
+type RBACService interface {
+	UserHasServerAccess(userID uint, serverID uint) (bool, error)
+	UserHasAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error)
+	GetUserAccessibleServerIDs(userID uint) ([]uint, error)
+}
+
 type Service struct {
 	db          *gorm.DB
 	logger      *logging.Service
-	rbacService *rbac.Service
+	rbacService RBACService
 }
 
-func NewService(db *gorm.DB, logger *logging.Service, rbacService *rbac.Service) *Service {
+func NewService(db *gorm.DB, logger *logging.Service, rbacService RBACService) *Service {
 	return &Service{
 		db:          db,
 		logger:      logger,

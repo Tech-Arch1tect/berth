@@ -42,6 +42,10 @@ import (
 )
 
 func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+	if rbacMiddleware != nil && apiKeySvc != nil {
+		rbacMiddleware.SetAPIKeyService(apiKeySvc)
+	}
+
 	e := srv.Echo()
 	e.Use(middleware.Recover())
 
@@ -385,21 +389,26 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		apiProtected := api.Group("")
 		apiProtected.Use(generalApiRateLimit)
 		apiProtected.Use(berthauth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
-		apiProtected.GET("/profile", mobileAuthHandler.Profile)
-		apiProtected.POST("/auth/logout", mobileAuthHandler.Logout)
 
-		apiProtected.GET("/totp/setup", mobileAuthHandler.GetTOTPSetup)
-		apiProtected.POST("/totp/enable", mobileAuthHandler.EnableTOTP)
-		apiProtected.POST("/totp/disable", mobileAuthHandler.DisableTOTP)
-		apiProtected.GET("/totp/status", mobileAuthHandler.GetTOTPStatus)
+		// Profile Management
+		apiProtected.GET("/profile", mobileAuthHandler.Profile, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/auth/logout", mobileAuthHandler.Logout, rbacMiddleware.RequireAPIKeyDenied())
 
-		apiProtected.POST("/sessions", mobileAuthHandler.GetSessions)
-		apiProtected.POST("/sessions/revoke", mobileAuthHandler.RevokeSession)
-		apiProtected.POST("/sessions/revoke-all-others", mobileAuthHandler.RevokeAllOtherSessions)
+		// TOTP Management
+		apiProtected.GET("/totp/setup", mobileAuthHandler.GetTOTPSetup, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/totp/enable", mobileAuthHandler.EnableTOTP, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/totp/disable", mobileAuthHandler.DisableTOTP, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.GET("/totp/status", mobileAuthHandler.GetTOTPStatus, rbacMiddleware.RequireAPIKeyDenied())
 
+		// Session Management
+		apiProtected.POST("/sessions", mobileAuthHandler.GetSessions, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/sessions/revoke", mobileAuthHandler.RevokeSession, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/sessions/revoke-all-others", mobileAuthHandler.RevokeAllOtherSessions, rbacMiddleware.RequireAPIKeyDenied())
+
+		// Server Access
 		if serverUserAPIHandler != nil {
-			apiProtected.GET("/servers", serverUserAPIHandler.ListServers)
-			apiProtected.GET("/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
+			apiProtected.GET("/servers", serverUserAPIHandler.ListServers, rbacMiddleware.RequireUserScopeJWT("servers.read"))
+			apiProtected.GET("/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics, rbacMiddleware.RequireUserScopeJWT("servers.read"))
 		}
 
 		if stackAPIHandler != nil {
@@ -434,11 +443,12 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if operationsHandler != nil {
 			apiProtected.POST("/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 		}
+		// Operation Logs
 		if operationLogsHandler != nil {
-			apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs)
-			apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
-			apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
-			apiProtected.GET("/running-operations", operationLogsHandler.GetRunningOperations)
+			apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
+			apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
+			apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
+			apiProtected.GET("/running-operations", operationLogsHandler.GetRunningOperations, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
 		}
 		if maintenanceAPIHandler != nil {
 			apiProtected.GET("/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
@@ -451,49 +461,54 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 			// Admin routes
 			apiAdmin := apiProtected.Group("/admin")
-			apiAdmin.Use(rbacMiddleware.RequireRoleJWT("admin"))
 
-			apiAdmin.GET("/users", rbacAPIHandler.ListUsers)
-			apiAdmin.POST("/users", rbacAPIHandler.CreateUser)
-			apiAdmin.GET("/users/:id/roles", rbacAPIHandler.GetUserRoles)
-			apiAdmin.POST("/users/assign-role", rbacAPIHandler.AssignRole)
-			apiAdmin.POST("/users/revoke-role", rbacAPIHandler.RevokeRole)
+			// User Management
+			apiAdmin.GET("/users", rbacAPIHandler.ListUsers, rbacMiddleware.RequireAdminScopeJWT("admin.users.read"))
+			apiAdmin.POST("/users", rbacAPIHandler.CreateUser, rbacMiddleware.RequireAdminScopeJWT("admin.users.write"))
+			apiAdmin.GET("/users/:id/roles", rbacAPIHandler.GetUserRoles, rbacMiddleware.RequireAdminScopeJWT("admin.users.read"))
+			apiAdmin.POST("/users/assign-role", rbacAPIHandler.AssignRole, rbacMiddleware.RequireAdminScopeJWT("admin.users.write"))
+			apiAdmin.POST("/users/revoke-role", rbacAPIHandler.RevokeRole, rbacMiddleware.RequireAdminScopeJWT("admin.users.write"))
 
-			apiAdmin.GET("/roles", rbacAPIHandler.ListRoles)
-			apiAdmin.POST("/roles", rbacAPIHandler.CreateRole)
-			apiAdmin.PUT("/roles/:id", rbacAPIHandler.UpdateRole)
-			apiAdmin.DELETE("/roles/:id", rbacAPIHandler.DeleteRole)
-			apiAdmin.GET("/roles/:roleId/stack-permissions", rbacAPIHandler.ListRoleServerStackPermissions)
-			apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission)
-			apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission)
+			// Role Management
+			apiAdmin.GET("/roles", rbacAPIHandler.ListRoles, rbacMiddleware.RequireAdminScopeJWT("admin.roles.read"))
+			apiAdmin.POST("/roles", rbacAPIHandler.CreateRole, rbacMiddleware.RequireAdminScopeJWT("admin.roles.write"))
+			apiAdmin.PUT("/roles/:id", rbacAPIHandler.UpdateRole, rbacMiddleware.RequireAdminScopeJWT("admin.roles.write"))
+			apiAdmin.DELETE("/roles/:id", rbacAPIHandler.DeleteRole, rbacMiddleware.RequireAdminScopeJWT("admin.roles.write"))
+			apiAdmin.GET("/roles/:roleId/stack-permissions", rbacAPIHandler.ListRoleServerStackPermissions, rbacMiddleware.RequireAdminScopeJWT("admin.roles.read"))
+			apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission, rbacMiddleware.RequireAdminScopeJWT("admin.roles.write"))
+			apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission, rbacMiddleware.RequireAdminScopeJWT("admin.roles.write"))
 
-			apiAdmin.GET("/permissions", rbacAPIHandler.ListPermissions)
+			// Permissions
+			apiAdmin.GET("/permissions", rbacAPIHandler.ListPermissions, rbacMiddleware.RequireAdminScopeJWT("admin.permissions.read"))
 
 			// Operation logs API routes
 			if operationLogsHandler != nil {
-				apiAdmin.GET("/operation-logs", operationLogsHandler.ListOperationLogs)
-				apiAdmin.GET("/operation-logs/stats", operationLogsHandler.GetOperationLogsStats)
-				apiAdmin.GET("/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
+				apiAdmin.GET("/operation-logs", operationLogsHandler.ListOperationLogs, rbacMiddleware.RequireAdminScopeJWT("admin.logs.read"))
+				apiAdmin.GET("/operation-logs/stats", operationLogsHandler.GetOperationLogsStats, rbacMiddleware.RequireAdminScopeJWT("admin.logs.read"))
+				apiAdmin.GET("/operation-logs/:id", operationLogsHandler.GetOperationLogDetails, rbacMiddleware.RequireAdminScopeJWT("admin.logs.read"))
 			}
 
+			// Server Management
 			if serverAPIHandler != nil {
-				apiAdmin.GET("/servers", serverAPIHandler.ListServers)
-				apiAdmin.GET("/servers/:id", serverAPIHandler.GetServer)
-				apiAdmin.POST("/servers", serverAPIHandler.CreateServer)
-				apiAdmin.PUT("/servers/:id", serverAPIHandler.UpdateServer)
-				apiAdmin.DELETE("/servers/:id", serverAPIHandler.DeleteServer)
-				apiAdmin.POST("/servers/:id/test", serverAPIHandler.TestConnection)
+				apiAdmin.GET("/servers", serverAPIHandler.ListServers, rbacMiddleware.RequireAdminScopeJWT("admin.servers.read"))
+				apiAdmin.GET("/servers/:id", serverAPIHandler.GetServer, rbacMiddleware.RequireAdminScopeJWT("admin.servers.read"))
+				apiAdmin.POST("/servers", serverAPIHandler.CreateServer, rbacMiddleware.RequireAdminScopeJWT("admin.servers.write"))
+				apiAdmin.PUT("/servers/:id", serverAPIHandler.UpdateServer, rbacMiddleware.RequireAdminScopeJWT("admin.servers.write"))
+				apiAdmin.DELETE("/servers/:id", serverAPIHandler.DeleteServer, rbacMiddleware.RequireAdminScopeJWT("admin.servers.write"))
+				apiAdmin.POST("/servers/:id/test", serverAPIHandler.TestConnection, rbacMiddleware.RequireAdminScopeJWT("admin.servers.write"))
 			}
 
+			// Migration
 			if migrationHandler != nil {
-				apiAdmin.POST("/migration/export", migrationHandler.Export)
-				apiAdmin.POST("/migration/import", migrationHandler.Import)
+				apiAdmin.POST("/migration/export", migrationHandler.Export, rbacMiddleware.RequireAdminScopeJWT("admin.system.export"))
+				apiAdmin.POST("/migration/import", migrationHandler.Import, rbacMiddleware.RequireAdminScopeJWT("admin.system.import"))
 			}
 
+			// Security Audit Logs
 			if securityHandler != nil {
-				apiAdmin.GET("/security-audit-logs", securityHandler.ListLogs)
-				apiAdmin.GET("/security-audit-logs/stats", securityHandler.GetStats)
-				apiAdmin.GET("/security-audit-logs/:id", securityHandler.GetLog)
+				apiAdmin.GET("/security-audit-logs", securityHandler.ListLogs, rbacMiddleware.RequireAdminScopeJWT("admin.audit.read"))
+				apiAdmin.GET("/security-audit-logs/stats", securityHandler.GetStats, rbacMiddleware.RequireAdminScopeJWT("admin.audit.read"))
+				apiAdmin.GET("/security-audit-logs/:id", securityHandler.GetLog, rbacMiddleware.RequireAdminScopeJWT("admin.audit.read"))
 			}
 		}
 	}

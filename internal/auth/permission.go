@@ -2,13 +2,19 @@ package auth
 
 import (
 	"berth/internal/apikey"
-	"berth/internal/rbac"
 	"berth/utils"
 
 	"github.com/labstack/echo/v4"
 )
 
-func CheckStackPermission(c echo.Context, rbacService *rbac.Service, apiKeyService *apikey.Service, serverID uint, stackName string, permissionName string) (bool, error) {
+type RBACService interface {
+	UserHasStackPermission(userID uint, serverID uint, stackName string, permissionName string) (bool, error)
+	UserHasServerAccess(userID uint, serverID uint) (bool, error)
+	GetUserAccessibleServerIDs(userID uint) ([]uint, error)
+	GetUserStackPermissions(userID uint, serverID uint, stackName string) ([]string, error)
+}
+
+func CheckStackPermission(c echo.Context, rbacService RBACService, apiKeyService *apikey.Service, serverID uint, stackName string, permissionName string) (bool, error) {
 	userID := GetUserID(c)
 	if userID == 0 {
 		return false, nil
@@ -35,7 +41,7 @@ func CheckStackPermission(c echo.Context, rbacService *rbac.Service, apiKeyServi
 	return false, nil
 }
 
-func CheckServerAccess(c echo.Context, rbacService *rbac.Service, apiKeyService *apikey.Service, serverID uint) (bool, error) {
+func CheckServerAccess(c echo.Context, rbacService RBACService, apiKeyService *apikey.Service, serverID uint) (bool, error) {
 	userID := GetUserID(c)
 	if userID == 0 {
 		return false, nil
@@ -73,7 +79,7 @@ func CheckServerAccess(c echo.Context, rbacService *rbac.Service, apiKeyService 
 	return false, nil
 }
 
-func GetAccessibleServerIDs(c echo.Context, rbacService *rbac.Service, apiKeyService *apikey.Service) ([]uint, error) {
+func GetAccessibleServerIDs(c echo.Context, rbacService RBACService, apiKeyService *apikey.Service) ([]uint, error) {
 	userID := GetUserID(c)
 	if userID == 0 {
 		return []uint{}, nil
@@ -120,7 +126,7 @@ func GetAccessibleServerIDs(c echo.Context, rbacService *rbac.Service, apiKeySer
 	return []uint{}, nil
 }
 
-func GetStackPermissions(c echo.Context, rbacService *rbac.Service, apiKeyService *apikey.Service, serverID uint, stackName string) ([]string, error) {
+func GetStackPermissions(c echo.Context, rbacService RBACService, apiKeyService *apikey.Service, serverID uint, stackName string) ([]string, error) {
 	userID := GetUserID(c)
 	if userID == 0 {
 		return []string{}, nil

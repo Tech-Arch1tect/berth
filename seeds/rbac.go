@@ -8,6 +8,7 @@ import (
 
 func SeedRBACData(db *gorm.DB) error {
 	permissions := []models.Permission{
+		// stack/server-level permissions
 		{Name: "stacks.read", Resource: "stacks", Action: "read", Description: "View stacks and containers"},
 		{Name: "stacks.manage", Resource: "stacks", Action: "manage", Description: "Start/stop/deploy/remove stacks"},
 		{Name: "files.read", Resource: "files", Action: "read", Description: "Read files within stacks"},
@@ -16,6 +17,23 @@ func SeedRBACData(db *gorm.DB) error {
 		{Name: "docker.maintenance.read", Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)"},
 		{Name: "docker.maintenance.write", Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)"},
 		{Name: "registries.manage", Resource: "registries", Action: "manage", Description: "Create, update, and delete registry credentials"},
+
+		// admin permissions for API key scope enforcement
+		{Name: "admin.users.read", Resource: "admin.users", Action: "read", Description: "View users and their roles"},
+		{Name: "admin.users.write", Resource: "admin.users", Action: "write", Description: "Create users, assign/revoke roles"},
+		{Name: "admin.roles.read", Resource: "admin.roles", Action: "read", Description: "View roles and permissions"},
+		{Name: "admin.roles.write", Resource: "admin.roles", Action: "write", Description: "Create/modify/delete roles and permissions"},
+		{Name: "admin.permissions.read", Resource: "admin.permissions", Action: "read", Description: "List available permissions"},
+		{Name: "admin.servers.read", Resource: "admin.servers", Action: "read", Description: "View server configurations"},
+		{Name: "admin.servers.write", Resource: "admin.servers", Action: "write", Description: "Create/modify/delete servers"},
+		{Name: "admin.logs.read", Resource: "admin.logs", Action: "read", Description: "View all operation logs"},
+		{Name: "admin.audit.read", Resource: "admin.audit", Action: "read", Description: "View security audit logs"},
+		{Name: "admin.system.export", Resource: "admin.system", Action: "export", Description: "Export system configuration"},
+		{Name: "admin.system.import", Resource: "admin.system", Action: "import", Description: "Import system configuration"},
+
+		// user-level permissions for API key scope enforcement
+		{Name: "servers.read", Resource: "servers", Action: "read", Description: "View accessible servers"},
+		{Name: "logs.operations.read", Resource: "logs.operations", Action: "read", Description: "View own operation logs"},
 	}
 
 	for _, permission := range permissions {
