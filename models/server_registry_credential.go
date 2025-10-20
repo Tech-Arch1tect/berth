@@ -1,5 +1,12 @@
 package models
 
+import (
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+)
+
 type ServerRegistryCredential struct {
 	BaseModel
 	ServerID     uint   `json:"server_id" gorm:"not null;index:idx_server_stack_registry,unique"`
@@ -9,6 +16,15 @@ type ServerRegistryCredential struct {
 	Username     string `json:"username" gorm:"not null"`
 	Password     string `json:"-" gorm:"not null"`
 	Server       Server `json:"server" gorm:"foreignKey:ServerID"`
+}
+
+func (s *ServerRegistryCredential) BeforeDelete(tx *gorm.DB) error {
+	if s.DeletedAt.Time.IsZero() {
+		timestamp := time.Now().Unix()
+		newStackPattern := fmt.Sprintf("%s-deleted-%d", s.StackPattern, timestamp)
+		return tx.Model(s).Update("stack_pattern", newStackPattern).Error
+	}
+	return nil
 }
 
 func (ServerRegistryCredential) TableName() string {

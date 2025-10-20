@@ -1,7 +1,10 @@
 package models
 
 import (
+	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type APIKey struct {
@@ -15,6 +18,15 @@ type APIKey struct {
 	IsActive   bool          `json:"is_active" gorm:"default:true;index"`
 	User       User          `json:"user" gorm:"foreignKey:UserID"`
 	Scopes     []APIKeyScope `json:"scopes" gorm:"foreignKey:APIKeyID"`
+}
+
+func (a *APIKey) BeforeDelete(tx *gorm.DB) error {
+	if a.DeletedAt.Time.IsZero() {
+		timestamp := time.Now().Unix()
+		newKeyHash := fmt.Sprintf("%s-deleted-%d", a.KeyHash, timestamp)
+		return tx.Model(a).Update("key_hash", newKeyHash).Error
+	}
+	return nil
 }
 
 type APIKeyResponse struct {
