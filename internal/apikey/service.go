@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -250,7 +251,35 @@ func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPatt
 		return err
 	}
 
-	if serverID != nil {
+	if permission.IsAPIKeyOnly {
+		if strings.HasPrefix(permission.Name, "admin.") {
+			var user models.User
+			err = s.db.Preload("Roles").First(&user, userID).Error
+			if err != nil {
+				s.logger.Error("failed to load user roles",
+					zap.Error(err),
+					zap.Uint("user_id", userID),
+				)
+				return errors.New("failed to verify user permissions")
+			}
+
+			isAdmin := false
+			for _, role := range user.Roles {
+				if role.IsAdmin {
+					isAdmin = true
+					break
+				}
+			}
+
+			if !isAdmin {
+				s.logger.Warn("non-admin user attempted to grant admin API key scope",
+					zap.Uint("user_id", userID),
+					zap.String("permission", permissionName),
+				)
+				return errors.New("admin role required to grant admin API key scopes")
+			}
+		}
+	} else if serverID != nil {
 
 		var server models.Server
 		err = s.db.First(&server, *serverID).Error

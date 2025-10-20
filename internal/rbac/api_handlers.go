@@ -384,8 +384,16 @@ func (h *APIHandler) GetUserPermissions(c echo.Context) error {
 }
 
 func (h *APIHandler) ListPermissions(c echo.Context) error {
+	permType := c.QueryParam("type")
+
+	query := h.db
+
+	if permType == "role" {
+		query = query.Where("is_api_key_only = ?", false)
+	}
+
 	var permissions []models.Permission
-	if err := h.db.Find(&permissions).Error; err != nil {
+	if err := query.Find(&permissions).Error; err != nil {
 		return common.SendInternalError(c, "Failed to fetch permissions")
 	}
 

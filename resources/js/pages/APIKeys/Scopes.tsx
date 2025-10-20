@@ -47,9 +47,31 @@ const PERMISSIONS = [
   { value: 'files.read', label: 'Read files within stacks' },
   { value: 'files.write', label: 'Modify files within stacks' },
   { value: 'logs.read', label: 'View container logs' },
-  { value: 'docker.maintenance.read', label: 'View Docker usage statistics' },
-  { value: 'docker.maintenance.write', label: 'Run Docker maintenance tasks' },
-  { value: 'registries.manage', label: 'Manage registry credentials' },
+  {
+    value: 'docker.maintenance.read',
+    label: 'View Docker usage statistics and system information (server-wide, not stack-specific)',
+  },
+  {
+    value: 'docker.maintenance.write',
+    label:
+      'Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)',
+  },
+  { value: 'registries.manage', label: 'Create, update, and delete registry credentials' },
+
+  { value: 'admin.users.read', label: 'View users and their roles' },
+  { value: 'admin.users.write', label: 'Create users, assign/revoke roles' },
+  { value: 'admin.roles.read', label: 'View roles and permissions' },
+  { value: 'admin.roles.write', label: 'Create/modify/delete roles and permissions' },
+  { value: 'admin.permissions.read', label: 'List available permissions' },
+  { value: 'admin.servers.read', label: 'View server configurations' },
+  { value: 'admin.servers.write', label: 'Create/modify/delete servers' },
+  { value: 'admin.logs.read', label: 'View all operation logs' },
+  { value: 'admin.audit.read', label: 'View security audit logs' },
+  { value: 'admin.system.export', label: 'Export system configuration' },
+  { value: 'admin.system.import', label: 'Import system configuration' },
+
+  { value: 'servers.read', label: 'View accessible servers' },
+  { value: 'logs.operations.read', label: 'View own operation logs' },
 ];
 
 export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {

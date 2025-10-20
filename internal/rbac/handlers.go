@@ -413,7 +413,7 @@ func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 	}
 
 	var permissions []models.Permission
-	if err := h.db.Find(&permissions).Error; err != nil {
+	if err := h.db.Where("is_api_key_only = ?", false).Find(&permissions).Error; err != nil {
 		return common.SendInternalError(c, "failed to fetch permissions")
 	}
 
