@@ -383,6 +383,17 @@ func (h *APIHandler) GetUserPermissions(c echo.Context) error {
 	})
 }
 
+func (h *APIHandler) ListPermissions(c echo.Context) error {
+	var permissions []models.Permission
+	if err := h.db.Find(&permissions).Error; err != nil {
+		return common.SendInternalError(c, "Failed to fetch permissions")
+	}
+
+	return common.SendSuccess(c, map[string]any{
+		"permissions": permissions,
+	})
+}
+
 func isValidPermission(permission string) bool {
 	validPermissions := []string{
 		"read",

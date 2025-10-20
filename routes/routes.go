@@ -467,6 +467,8 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission)
 			apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission)
 
+			apiAdmin.GET("/permissions", rbacAPIHandler.ListPermissions)
+
 			// Operation logs API routes
 			if operationLogsHandler != nil {
 				apiAdmin.GET("/operation-logs", operationLogsHandler.ListOperationLogs)
