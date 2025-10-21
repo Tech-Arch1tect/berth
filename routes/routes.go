@@ -311,12 +311,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		admin.GET("/users/:id/roles", rbacHandler.ShowUserRoles)
 
 		admin.GET("/roles", rbacHandler.ListRoles)
-		admin.POST("/roles", rbacHandler.CreateRole)
-		admin.PUT("/roles/:id", rbacHandler.UpdateRole)
-		admin.DELETE("/roles/:id", rbacHandler.DeleteRole)
 		admin.GET("/roles/:id/stack-permissions", rbacHandler.RoleServerStackPermissions)
-		admin.POST("/roles/:id/stack-permissions", rbacHandler.CreateRoleStackPermission)
-		admin.DELETE("/roles/:id/stack-permissions/:permissionId", rbacHandler.DeleteRoleStackPermission)
 
 		// Operation logs routes
 		if operationLogsHandler != nil {

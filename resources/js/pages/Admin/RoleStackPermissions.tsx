@@ -135,7 +135,7 @@ export default function RoleStackPermissions({
     try {
       // Create multiple rules for each selected permission
       const promises = newRule.permission_ids.map((permissionId) =>
-        fetch(`/admin/roles/${role.id}/stack-permissions`, {
+        fetch(`/api/v1/admin/roles/${role.id}/stack-permissions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ export default function RoleStackPermissions({
     setAdding(true);
     try {
       const promises = addToPatternRule.permission_ids.map((permissionId) =>
-        fetch(`/admin/roles/${role.id}/stack-permissions`, {
+        fetch(`/api/v1/admin/roles/${role.id}/stack-permissions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -223,13 +223,16 @@ export default function RoleStackPermissions({
 
     setDeleting(ruleToDelete);
     try {
-      const response = await fetch(`/admin/roles/${role.id}/stack-permissions/${ruleToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `/api/v1/admin/roles/${role.id}/stack-permissions/${ruleToDelete}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-CSRF-Token': csrfToken || '',
+          },
+          credentials: 'include',
+        }
+      );
 
       if (response.ok) {
         router.reload();
