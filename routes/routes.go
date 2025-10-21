@@ -308,10 +308,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		admin.Use(rbacMiddleware.RequireRole("admin"))
 
 		admin.GET("/users", rbacHandler.ListUsers)
-		admin.POST("/users", rbacHandler.CreateUser)
 		admin.GET("/users/:id/roles", rbacHandler.ShowUserRoles)
-		admin.POST("/users/assign-role", rbacHandler.AssignRole)
-		admin.POST("/users/revoke-role", rbacHandler.RevokeRole)
 
 		admin.GET("/roles", rbacHandler.ListRoles)
 		admin.POST("/roles", rbacHandler.CreateRole)

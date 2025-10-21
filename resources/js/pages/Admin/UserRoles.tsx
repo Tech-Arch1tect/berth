@@ -27,43 +27,72 @@ interface Props {
 
 export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const assignRole = async (roleId: number) => {
     if (processing) return;
 
     setProcessing(true);
-    router.post(
-      '/admin/users/assign-role',
-      {
-        user_id: user.id,
-        role_id: roleId,
-      },
-      {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/v1/admin/users/assign-role', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
-        onFinish: () => setProcessing(false),
+        credentials: 'include',
+        body: JSON.stringify({
+          user_id: user.id,
+          role_id: roleId,
+        }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        setError(error.message || 'Failed to assign role');
       }
-    );
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const revokeRole = async (roleId: number) => {
     if (processing) return;
 
     setProcessing(true);
-    router.post(
-      '/admin/users/revoke-role',
-      {
-        user_id: user.id,
-        role_id: roleId,
-      },
-      {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/v1/admin/users/revoke-role', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
-        onFinish: () => setProcessing(false),
+        credentials: 'include',
+        body: JSON.stringify({
+          user_id: user.id,
+          role_id: roleId,
+        }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        setError(error.message || 'Failed to revoke role');
       }
-    );
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const userRoleIds = user.roles.map((role) => role.id);
@@ -100,6 +129,12 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
         </div>
 
         <FlashMessages />
+
+        {error && (
+          <div className="mt-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <p className={cn('text-sm', theme.text.danger)}>{error}</p>
+          </div>
+        )}
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Current Roles */}
