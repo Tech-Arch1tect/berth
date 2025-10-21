@@ -328,8 +328,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		if migrationHandler != nil {
 			admin.GET("/migration", migrationHandler.Index)
-			admin.POST("/migration/export", migrationHandler.Export)
-			admin.POST("/migration/import", migrationHandler.Import)
 		}
 
 		if securityHandler != nil {
