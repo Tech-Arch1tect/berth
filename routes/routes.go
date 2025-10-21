@@ -365,6 +365,10 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			api.Use(session.SessionServiceMiddleware(sessionService))
 		}
 
+		if cfg.CSRF.Enabled {
+			api.Use(berthauth.ConditionalCSRFMiddleware(cfg))
+		}
+
 		authApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
 			Store:        rateLimitStore,
 			Rate:         25,

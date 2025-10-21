@@ -45,6 +45,7 @@ interface SessionsProps {
 
 export default function SessionsIndex({ sessions }: SessionsProps) {
   const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
 
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
@@ -66,11 +67,17 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
     setError(null);
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
       const response = await fetch('/api/v1/sessions/revoke', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
           session_id: sessionToRevoke,
@@ -98,11 +105,17 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
     setError(null);
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
       const response = await fetch('/api/v1/sessions/revoke-all-others', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
       });
 
