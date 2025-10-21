@@ -1,4 +1,5 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
@@ -11,22 +12,41 @@ interface Props {
   csrfToken?: string;
 }
 
-interface FormData {
-  code: string;
-}
-
 export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props) {
-  const { data, setData, post, processing, errors } = useForm<FormData>({
-    code: '',
-  });
+  const [code, setCode] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState('');
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    post('/auth/totp/enable', {
-      headers: {
-        'X-CSRF-Token': csrfToken || '',
-      },
-    });
+    setProcessing(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/v1/totp/enable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        body: JSON.stringify({ code }),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        router.visit('/profile', {
+          onSuccess: () => {},
+        });
+      } else {
+        setError(data.message || 'Failed to enable two-factor authentication');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -83,17 +103,15 @@ export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props
               <div className="mb-4">
                 <input
                   type="text"
-                  value={data.code}
-                  onChange={(e) => setData('code', e.target.value)}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
                   className={theme.forms.input}
                   placeholder="123456"
                   maxLength={6}
                   pattern="[0-9]{6}"
                   required
                 />
-                {errors.code && (
-                  <div className={cn('mt-2 text-sm', theme.text.danger)}>{errors.code}</div>
-                )}
+                {error && <div className={cn('mt-2 text-sm', theme.text.danger)}>{error}</div>}
               </div>
 
               <div className="flex gap-4">
