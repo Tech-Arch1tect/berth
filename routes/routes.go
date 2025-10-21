@@ -219,8 +219,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	}
 
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
-	protected.POST("/auth/totp/enable", totpHandler.EnableTOTP)
-	protected.POST("/auth/totp/disable", totpHandler.DisableTOTP)
 	protected.GET("/api/totp/status", totpHandler.GetTOTPStatus)
 
 	if sessionHandler != nil {
@@ -364,6 +362,11 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	if mobileAuthHandler != nil && jwtSvc != nil {
 		api := srv.Group("/api/v1")
 
+		api.Use(session.Middleware(sessionManager))
+		if sessionService != nil {
+			api.Use(session.SessionServiceMiddleware(sessionService))
+		}
+
 		authApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
 			Store:        rateLimitStore,
 			Rate:         25,
@@ -388,7 +391,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 		apiProtected := api.Group("")
 		apiProtected.Use(generalApiRateLimit)
-		apiProtected.Use(berthauth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+		apiProtected.Use(berthauth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
 
 		// Profile Management
 		apiProtected.GET("/profile", mobileAuthHandler.Profile, rbacMiddleware.RequireAPIKeyDenied())

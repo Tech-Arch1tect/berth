@@ -742,6 +742,21 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		})
 	}
 
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventTOTPEnabled,
+		&userModel.ID,
+		userModel.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
+
+	if session.IsAuthenticated(c) {
+		session.SetTOTPEnabled(c, true)
+	}
+
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Two-factor authentication has been enabled successfully",
 	})
@@ -798,6 +813,21 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 			Error:   "totp_disable_failed",
 			Message: "Failed to disable TOTP",
 		})
+	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventTOTPDisabled,
+		&userModel.ID,
+		userModel.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
+
+	if session.IsAuthenticated(c) {
+		session.SetTOTPEnabled(c, false)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
