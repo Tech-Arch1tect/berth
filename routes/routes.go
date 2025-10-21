@@ -223,8 +223,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 
 	if sessionHandler != nil {
 		protected.GET("/sessions", sessionHandler.Sessions)
-		protected.POST("/sessions/revoke", sessionHandler.RevokeSession)
-		protected.POST("/sessions/revoke-all-others", sessionHandler.RevokeAllOtherSessions)
 	}
 
 	// API Key management routes

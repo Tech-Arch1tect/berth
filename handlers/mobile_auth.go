@@ -1000,6 +1000,19 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthSessionRevoked,
+		&userModel.ID,
+		userModel.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		map[string]any{
+			"session_id": req.SessionID,
+		},
+	)
+
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Session revoked successfully",
 	})
@@ -1029,40 +1042,72 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		})
 	}
 
-	var req struct {
-		RefreshToken string `json:"refresh_token"`
+	var currentToken string
+
+	if session.IsAuthenticated(c) {
+		manager := session.GetManager(c)
+		if manager == nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+				Error:   "session_manager_unavailable",
+				Message: "Session manager not available",
+			})
+		}
+
+		currentToken = manager.Token(c.Request().Context())
+		if currentToken == "" {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+				Error:   "current_session_not_found",
+				Message: "Current session token not found",
+			})
+		}
+	} else {
+
+		var req struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+
+		if err := c.Bind(&req); err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{
+				Error:   "invalid_request",
+				Message: "Invalid request format",
+			})
+		}
+
+		if req.RefreshToken == "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{
+				Error:   "validation_error",
+				Message: "Refresh token is required",
+			})
+		}
+
+		refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{
+				Error:   "invalid_token",
+				Message: "Invalid refresh token",
+			})
+		}
+		currentToken = h.generateSessionTokenFromID(refreshToken.ID)
 	}
 
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
-	}
-
-	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "validation_error",
-			Message: "Refresh token is required",
-		})
-	}
-
-	refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_token",
-			Message: "Invalid refresh token",
-		})
-	}
-	currentToken := h.generateSessionTokenFromID(refreshToken.ID)
-
-	err = h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
+	err := h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error:   "sessions_revoke_failed",
 			Message: "Failed to revoke other sessions",
 		})
 	}
+
+	_ = h.auditSvc.LogAuthEvent(
+		security.EventAuthSessionsRevokedAll,
+		&userModel.ID,
+		userModel.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "All other sessions revoked successfully",
