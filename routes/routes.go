@@ -324,10 +324,6 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		if serverHandler != nil {
 			admin.GET("/servers", serverHandler.Index)
 			admin.GET("/servers/:id", serverHandler.Show)
-			admin.POST("/servers", serverHandler.Store)
-			admin.PUT("/servers/:id", serverHandler.Update)
-			admin.DELETE("/servers/:id", serverHandler.Delete)
-			admin.POST("/servers/:id/test", serverHandler.TestConnection)
 		}
 
 		if migrationHandler != nil {
