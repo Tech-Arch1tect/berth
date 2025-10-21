@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
 	jwtservice "github.com/tech-arch1tect/brx/services/jwt"
+	"github.com/tech-arch1tect/brx/session"
 )
 
 const (
@@ -21,8 +22,9 @@ const (
 type AuthType string
 
 const (
-	AuthTypeJWT    AuthType = "jwt"
-	AuthTypeAPIKey AuthType = "apikey"
+	AuthTypeJWT     AuthType = "jwt"
+	AuthTypeAPIKey  AuthType = "apikey"
+	AuthTypeSession AuthType = "session"
 )
 
 func RequireAuth(jwtService *jwtservice.Service, apiKeyService *apikey.Service, userProvider jwtshared.UserProvider) echo.MiddlewareFunc {
@@ -122,4 +124,50 @@ func IsAPIKeyAuth(c echo.Context) bool {
 
 func IsJWTAuth(c echo.Context) bool {
 	return GetAuthType(c) == AuthTypeJWT
+}
+
+func IsSessionAuth(c echo.Context) bool {
+	return GetAuthType(c) == AuthTypeSession
+}
+
+func RequireHybridAuth(jwtService *jwtservice.Service, apiKeyService *apikey.Service, userProvider jwtshared.UserProvider) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			isAuth := session.IsAuthenticated(c)
+			if isAuth {
+				userID := session.GetUserIDAsUint(c)
+				if userID > 0 {
+					c.Set(UserIDKey, userID)
+					c.Set(AuthTypeKey, AuthTypeSession)
+					if userProvider != nil {
+						user, err := userProvider.GetUser(userID)
+						if err == nil && user != nil {
+							c.Set("currentUser", user)
+						}
+					}
+					return next(c)
+				}
+			}
+
+			authHeader := c.Request().Header.Get("Authorization")
+
+			if authHeader == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
+			}
+
+			if !strings.HasPrefix(authHeader, "Bearer ") {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
+			}
+
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			if tokenString == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Token required")
+			}
+
+			if strings.HasPrefix(tokenString, apikey.KeyPrefix) {
+				return handleAPIKeyAuth(c, next, apiKeyService, tokenString)
+			}
+			return handleJWTAuth(c, next, jwtService, userProvider, tokenString)
+		}
+	}
 }
