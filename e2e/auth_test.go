@@ -217,10 +217,10 @@ func TestSessionManagement(t *testing.T) {
 
 		app.SessionHelper.AssertSessionCount(t, user.ID, 2)
 
-		resp, err := authenticatedClient.PostForm("/sessions/revoke-all-others", nil)
+		resp, err := authenticatedClient.Post("/api/v1/sessions/revoke-all-others", nil)
 		require.NoError(t, err)
 
-		resp.AssertRedirect(t, "/sessions")
+		assert.Equal(t, 200, resp.StatusCode)
 
 		app.SessionHelper.AssertSessionCount(t, user.ID, 1)
 	})
