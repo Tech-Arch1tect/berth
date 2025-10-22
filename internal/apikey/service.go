@@ -200,8 +200,7 @@ func (s *Service) RevokeAPIKey(apiKeyID uint, userID uint) error {
 		zap.Uint("user_id", userID),
 	)
 
-	result := s.db.Where("id = ? AND user_id = ?", apiKeyID, userID).
-		Delete(&models.APIKey{})
+	result := s.db.Delete(&models.APIKey{}, "id = ? AND user_id = ?", apiKeyID, userID)
 
 	if result.Error != nil {
 		s.logger.Error("failed to revoke API key",
