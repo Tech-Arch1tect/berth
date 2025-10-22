@@ -32,7 +32,10 @@ import (
 
 	"berth/handlers"
 	"berth/internal/agent"
+	"berth/internal/apikey"
+	berthconfig "berth/internal/config"
 	"berth/internal/files"
+	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
 	"berth/internal/migration"
@@ -40,6 +43,8 @@ import (
 	"berth/internal/operations"
 	"berth/internal/queue"
 	"berth/internal/rbac"
+	"berth/internal/registry"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
@@ -88,10 +93,13 @@ func SetupTestApp(t *testing.T) *TestApp {
 		app.NewApp().
 			WithDatabase(
 				&models.User{}, &models.Role{}, &models.Permission{},
-				&models.Server{}, &models.ServerRoleStackPermission{},
+				&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
+				&models.APIKey{}, &models.APIKeyScope{},
 				&models.OperationLog{}, &models.OperationLogMessage{},
+				&models.SecurityAuditLog{},
 				&models.SeedTracker{},
 				&models.QueuedOperation{}, &session.UserSession{},
+				&models.ContainerImageUpdate{},
 				&totp.TOTPSecret{}, &totp.UsedCode{},
 				&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
 				&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
@@ -104,8 +112,23 @@ func SetupTestApp(t *testing.T) *TestApp {
 			WithJWTRevocation().
 			WithFxOptions(
 				jwt.Options,
-				fx.Provide(func() *utils.Crypto {
-					return utils.NewCrypto("test-encryption-secret-key-32chars!!")
+				fx.Provide(func(cfg *config.Config) *berthconfig.BerthConfig {
+					return &berthconfig.BerthConfig{
+						Config: *cfg,
+						Custom: berthconfig.AppCustomConfig{
+							EncryptionSecret:                   "test-encryption-secret-key-32chars!!",
+							LogDir:                             os.TempDir(),
+							OperationLogLogToFile:              false,
+							SecurityAuditLogLogToFile:          false,
+							OperationTimeoutSeconds:            600,
+							ImageUpdateCheckEnabled:            false,
+							ImageUpdateCheckInterval:           "6h",
+							ImageUpdateCheckDisabledRegistries: "",
+						},
+					}
+				}),
+				fx.Provide(func(cfg *berthconfig.BerthConfig) *utils.Crypto {
+					return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 				}),
 				fx.Provide(func(logger *logging.Service) *agent.Service {
 					return agent.NewService(logger, 600)
@@ -114,6 +137,10 @@ func SetupTestApp(t *testing.T) *TestApp {
 				fx.Provide(rbac.NewMiddleware),
 				fx.Provide(rbac.NewRBACHandler),
 				fx.Provide(rbac.NewAPIHandler),
+				fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
+					return apikey.NewService(db, logger, rbacSvc)
+				}),
+				fx.Provide(apikey.NewHandler),
 				fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
 					return setup.NewService(db, rbacSvc, logger)
 				}),
@@ -131,10 +158,15 @@ func SetupTestApp(t *testing.T) *TestApp {
 				files.Module,
 				logs.Module,
 				operations.Module,
+				registry.Module,
 				operationlogs.Module,
 				migration.Module,
 				queue.Module(),
+				imageupdates.Module,
+				fx.Provide(security.NewAuditService),
+				fx.Provide(security.NewHandler),
 				fx.Provide(handlers.NewDashboardHandler),
+				fx.Provide(handlers.NewStacksHandler),
 				fx.Provide(handlers.NewAuthHandler),
 				fx.Provide(handlers.NewMobileAuthHandler),
 				fx.Provide(handlers.NewSessionHandler),
