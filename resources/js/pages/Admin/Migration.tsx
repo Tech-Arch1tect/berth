@@ -71,12 +71,13 @@ export default function Migration({ title }: Props) {
     try {
       setExportProcessing(true);
 
-      const response = await fetch('/admin/migration/export', {
+      const response = await fetch('/api/v1/admin/migration/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
+        credentials: 'include',
         body: JSON.stringify({ password: exportForm.data.password }),
       });
 
@@ -137,11 +138,12 @@ export default function Migration({ title }: Props) {
     importFormData.append('password', importForm.data.password);
     importFormData.append('backup_file', importForm.data.backup_file);
 
-    fetch('/admin/migration/import', {
+    fetch('/api/v1/admin/migration/import', {
       method: 'POST',
       headers: {
         'X-CSRF-Token': csrfToken || '',
       },
+      credentials: 'include',
       body: importFormData,
     })
       .then((response) => {

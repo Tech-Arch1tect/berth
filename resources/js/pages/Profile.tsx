@@ -17,36 +17,52 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
   const user = props.currentUser as User;
   const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
   const [showDisableForm, setShowDisableForm] = useState(false);
-  const {
-    data: disableData,
-    setData: setDisableData,
-    post: postDisable,
-    processing: disableProcessing,
-  } = useForm({
-    password: '',
-    code: '',
-  });
+  const [disableData, setDisableDataState] = useState({ password: '', code: '' });
+  const [disableProcessing, setDisableProcessing] = useState(false);
+  const [disableError, setDisableError] = useState('');
+
+  const setDisableData = (field: string, value: string) => {
+    setDisableDataState((prev) => ({ ...prev, [field]: value }));
+  };
 
   useEffect(() => {
     // Fetch TOTP status
-    fetch('/api/totp/status')
+    fetch('/api/totp/status', { credentials: 'include' })
       .then((response) => response.json())
       .then((data) => setTotpEnabled(data.enabled))
       .catch((error) => console.error('Failed to fetch TOTP status:', error));
   }, []);
 
-  const disableTOTP = (e: React.FormEvent) => {
+  const disableTOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    postDisable('/auth/totp/disable', {
-      headers: {
-        'X-CSRF-Token': csrfToken || '',
-      },
-      onSuccess: () => {
+    setDisableProcessing(true);
+    setDisableError('');
+
+    try {
+      const response = await fetch('/api/v1/totp/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        body: JSON.stringify(disableData),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
         setShowDisableForm(false);
-        setDisableData({ password: '', code: '' });
+        setDisableDataState({ password: '', code: '' });
         setTotpEnabled(false);
-      },
-    });
+      } else {
+        setDisableError(data.message || 'Failed to disable two-factor authentication');
+      }
+    } catch (err) {
+      setDisableError('Network error. Please try again.');
+    } finally {
+      setDisableProcessing(false);
+    }
   };
 
   return (
@@ -182,7 +198,8 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
             isOpen={showDisableForm}
             onClose={() => {
               setShowDisableForm(false);
-              setDisableData({ password: '', code: '' });
+              setDisableDataState({ password: '', code: '' });
+              setDisableError('');
             }}
             title="Disable Two-Factor Authentication"
             size="sm"
@@ -201,7 +218,8 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                   type="button"
                   onClick={() => {
                     setShowDisableForm(false);
-                    setDisableData({ password: '', code: '' });
+                    setDisableDataState({ password: '', code: '' });
+                    setDisableError('');
                   }}
                   className={cn('flex-1', theme.buttons.secondary)}
                 >
@@ -237,6 +255,9 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                   maxLength={6}
                   required
                 />
+                {disableError && (
+                  <div className={cn('mt-2 text-sm', theme.text.danger)}>{disableError}</div>
+                )}
               </div>
 
               <div className={cn('p-3 rounded-md mb-4', theme.intent.warning.surface)}>

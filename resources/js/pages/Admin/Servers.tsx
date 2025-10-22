@@ -36,7 +36,9 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     message: string;
   } | null>(null);
 
-  const { data, setData, post, put, processing, reset } = useForm({
+  const [processing, setProcessing] = useState(false);
+
+  const { data, setData, reset } = useForm({
     name: '',
     description: '',
     host: '',
@@ -56,31 +58,47 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingServer) {
-      put(`/admin/servers/${editingServer.id}`, {
+    setProcessing(true);
+
+    try {
+      const url = editingServer
+        ? `/api/v1/admin/servers/${editingServer.id}`
+        : '/api/v1/admin/servers';
+
+      const method = editingServer ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
+          'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
-        onSuccess: () => {
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        router.reload();
+        if (editingServer) {
           setEditingServer(null);
-          reset();
-        },
-        onError: (errors) => {
-          console.error('Update failed:', errors);
-        },
-      });
-    } else {
-      post('/admin/servers', {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-        onSuccess: () => {
+        } else {
           setShowAddForm(false);
-          reset();
-        },
-      });
+        }
+        reset();
+      } else {
+        const errorData = await response.json();
+        console.error('Operation failed:', errorData);
+        alert(
+          `Failed to ${editingServer ? 'update' : 'create'} server: ${errorData.message || errorData.error || 'Unknown error'}`
+        );
+      }
+    } catch (error) {
+      console.error('Request failed:', error);
+      alert(`Failed to ${editingServer ? 'update' : 'create'} server: ${error}`);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -107,40 +125,55 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     setDeleteConfirm({ id: serverId, name: serverName });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteConfirm) return;
 
-    router.delete(`/admin/servers/${deleteConfirm.id}`, {
-      headers: {
-        'X-CSRF-Token': csrfToken || '',
-      },
-      onSuccess: () => {
+    try {
+      const response = await fetch(`/api/v1/admin/servers/${deleteConfirm.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        router.reload();
         setDeleteConfirm(null);
-      },
-      onError: (errors) => {
-        console.error('Delete failed:', errors);
+      } else {
+        const errorData = await response.json();
+        console.error('Delete failed:', errorData);
         setTestResultModal({
           success: false,
-          message: 'Failed to delete server',
+          message: `Failed to delete server: ${errorData.message || errorData.error || 'Unknown error'}`,
         });
         setDeleteConfirm(null);
-      },
-    });
+      }
+    } catch (error) {
+      console.error('Delete request failed:', error);
+      setTestResultModal({
+        success: false,
+        message: `Failed to delete server: ${error}`,
+      });
+      setDeleteConfirm(null);
+    }
   };
 
   const handleTestConnection = async (serverid: number) => {
     setTestingConnection(serverid);
     try {
-      const response = await fetch(`/admin/servers/${serverid}/test`, {
+      const response = await fetch(`/api/v1/admin/servers/${serverid}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        await response.json(); // Consume the response body
+        await response.json();
         setTestResultModal({
           success: true,
           message: 'Connection successful!',
@@ -163,32 +196,44 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     }
   };
 
-  const toggleServerStatus = (serverid: number, currentStatus: boolean) => {
+  const toggleServerStatus = async (serverid: number, currentStatus: boolean) => {
     const server = servers.find((s) => s.id === serverid);
     if (!server) {
       console.error('Server not found');
       return;
     }
 
-    router.put(
-      `/admin/servers/${serverid}`,
-      {
-        name: server.name,
-        description: server.description,
-        host: server.host,
-        port: server.port,
-        skip_ssl_verification: server.skip_ssl_verification,
-        is_active: !currentStatus,
-      },
-      {
+    try {
+      const response = await fetch(`/api/v1/admin/servers/${serverid}`, {
+        method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
-        onError: (errors) => {
-          console.error('Update failed:', errors);
-        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: server.name,
+          description: server.description,
+          host: server.host,
+          port: server.port,
+          skip_ssl_verification: server.skip_ssl_verification,
+          is_active: !currentStatus,
+        }),
+      });
+
+      if (response.ok) {
+        router.reload();
+      } else {
+        const errorData = await response.json();
+        console.error('Update failed:', errorData);
+        alert(
+          `Failed to update server status: ${errorData.message || errorData.error || 'Unknown error'}`
+        );
       }
-    );
+    } catch (error) {
+      console.error('Update request failed:', error);
+      alert(`Failed to update server status: ${error}`);
+    }
   };
 
   return (

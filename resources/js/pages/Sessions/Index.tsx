@@ -1,6 +1,6 @@
 import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DevicePhoneMobileIcon,
@@ -44,50 +44,94 @@ interface SessionsProps {
 }
 
 export default function SessionsIndex({ sessions }: SessionsProps) {
-  const { processing } = useForm();
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
   const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
+  const [isRevokingAll, setIsRevokingAll] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRevokeSessionClick = (sessionId: number) => {
     setSessionToRevoke(sessionId);
     setShowRevokeModal(true);
+    setError(null);
   };
 
-  const confirmRevokeSession = () => {
-    if (sessionToRevoke) {
-      router.post(
-        '/sessions/revoke',
-        {
-          session_id: sessionToRevoke,
-        },
-        {
-          headers: {
-            'X-CSRF-Token': csrfToken || '',
-          },
-          preserveState: true,
-        }
-      );
-    }
-    setShowRevokeModal(false);
-    setSessionToRevoke(null);
-  };
+  const confirmRevokeSession = async () => {
+    if (!sessionToRevoke) return;
 
-  const confirmRevokeAllOthers = () => {
-    router.post(
-      '/sessions/revoke-all-others',
-      {},
-      {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-        preserveState: true,
+    setIsRevoking(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
       }
-    );
-    setShowRevokeAllModal(false);
+
+      const response = await fetch('/api/v1/sessions/revoke', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          session_id: sessionToRevoke,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to revoke session');
+      }
+
+      router.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke session');
+    } finally {
+      setIsRevoking(false);
+      setShowRevokeModal(false);
+      setSessionToRevoke(null);
+    }
+  };
+
+  const confirmRevokeAllOthers = async () => {
+    setIsRevokingAll(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await fetch('/api/v1/sessions/revoke-all-others', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to revoke sessions');
+      }
+
+      router.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke sessions');
+    } finally {
+      setIsRevokingAll(false);
+      setShowRevokeAllModal(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -130,15 +174,28 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
             {sessions.filter((s) => !s.current).length > 0 && (
               <button
                 onClick={() => setShowRevokeAllModal(true)}
-                disabled={processing}
-                className={cn(theme.buttons.danger, processing && 'opacity-50')}
+                disabled={isRevokingAll || isRevoking}
+                className={cn(theme.buttons.danger, (isRevokingAll || isRevoking) && 'opacity-50')}
               >
-                Revoke All Others
+                {isRevokingAll ? 'Revoking...' : 'Revoke All Others'}
               </button>
             )}
           </div>
 
           <FlashMessages className="mb-6" />
+
+          {error && (
+            <div className={cn(theme.intent.danger.surface, 'mb-6 rounded-lg p-4')}>
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.danger.icon)} />
+                </div>
+                <div className="ml-3">
+                  <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
             <ul className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -195,14 +252,14 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                       <div className="flex-shrink-0">
                         <button
                           onClick={() => handleRevokeSessionClick(session.id)}
-                          disabled={processing}
+                          disabled={isRevoking || isRevokingAll}
                           className={cn(
                             'inline-flex items-center text-sm leading-4',
                             theme.buttons.danger,
-                            processing && 'opacity-50'
+                            (isRevoking || isRevokingAll) && 'opacity-50'
                           )}
                         >
-                          Revoke
+                          {isRevoking && sessionToRevoke === session.id ? 'Revoking...' : 'Revoke'}
                         </button>
                       </div>
                     )}

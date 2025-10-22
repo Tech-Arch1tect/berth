@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
@@ -35,24 +35,58 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
   const { props } = usePage();
   const actualCsrfToken = csrfToken || (props.csrfToken as string | undefined);
 
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     password_confirm: '',
   });
+  const [processing, setProcessing] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    post('/admin/users', {
-      headers: {
-        'X-CSRF-Token': actualCsrfToken || '',
-      },
-      onSuccess: () => {
-        reset();
+    setProcessing(true);
+    setErrors({});
+
+    try {
+      const response = await fetch('/api/v1/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': actualCsrfToken || '',
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          password_confirm: '',
+        });
         setShowCreateForm(false);
-      },
-    });
+
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        if (error.message) {
+          setErrors({ general: error.message });
+        } else if (error.errors) {
+          setErrors(error.errors);
+        } else {
+          setErrors({ general: 'Failed to create user' });
+        }
+      }
+    } catch (err) {
+      setErrors({ general: 'Network error. Please try again.' });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -92,6 +126,12 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
 
         <FlashMessages />
 
+        {errors.general && (
+          <div className="mt-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <p className={cn('text-sm', theme.text.danger)}>{errors.general}</p>
+          </div>
+        )}
+
         {showCreateForm && (
           <div className="mt-8 max-w-md">
             <div className={cn(theme.cards.shell, theme.cards.padded)}>
@@ -115,8 +155,8 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         <input
                           type="text"
                           id="username"
-                          value={data.username}
-                          onChange={(e) => setData('username', e.target.value)}
+                          value={formData.username}
+                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                           className={theme.forms.input}
                           placeholder="Enter username"
                         />
@@ -134,8 +174,8 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         <input
                           type="email"
                           id="email"
-                          value={data.email}
-                          onChange={(e) => setData('email', e.target.value)}
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className={theme.forms.input}
                           placeholder="Enter email address"
                         />
@@ -153,8 +193,8 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         <input
                           type="password"
                           id="password"
-                          value={data.password}
-                          onChange={(e) => setData('password', e.target.value)}
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           className={theme.forms.input}
                           placeholder="Enter password"
                         />
@@ -172,8 +212,10 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                         <input
                           type="password"
                           id="password_confirm"
-                          value={data.password_confirm}
-                          onChange={(e) => setData('password_confirm', e.target.value)}
+                          value={formData.password_confirm}
+                          onChange={(e) =>
+                            setFormData({ ...formData, password_confirm: e.target.value })
+                          }
                           className={theme.forms.input}
                           placeholder="Confirm password"
                         />
@@ -191,7 +233,13 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                       type="button"
                       onClick={() => {
                         setShowCreateForm(false);
-                        reset();
+                        setFormData({
+                          username: '',
+                          email: '',
+                          password: '',
+                          password_confirm: '',
+                        });
+                        setErrors({});
                       }}
                       className={theme.buttons.secondary}
                     >

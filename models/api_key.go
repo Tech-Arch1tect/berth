@@ -24,7 +24,7 @@ func (a *APIKey) BeforeDelete(tx *gorm.DB) error {
 	if a.DeletedAt.Time.IsZero() {
 		timestamp := time.Now().Unix()
 		newKeyHash := fmt.Sprintf("%s-deleted-%d", a.KeyHash, timestamp)
-		return tx.Model(a).Update("key_hash", newKeyHash).Error
+		return tx.Model(a).Where("id = ?", a.ID).Update("key_hash", newKeyHash).Error
 	}
 	return nil
 }

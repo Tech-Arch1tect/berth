@@ -270,6 +270,10 @@ func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc 
 				})
 			}
 
+			if auth.IsSessionAuth(c) {
+				return next(c)
+			}
+
 			if auth.IsJWTAuth(c) {
 				return next(c)
 			}
@@ -320,6 +324,10 @@ func (m *Middleware) RequireUserScopeJWT(scopeName string) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
 				})
+			}
+
+			if auth.IsSessionAuth(c) {
+				return next(c)
 			}
 
 			if auth.IsJWTAuth(c) {

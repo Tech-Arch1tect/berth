@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
@@ -26,34 +26,45 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<{ id: number; name: string } | null>(null);
-
-  const { data, setData, post, put, processing, reset } = useForm({
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
   });
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingRole) {
-      put(`/admin/roles/${editingRole.id}`, {
+    setError(null);
+    setProcessing(true);
+
+    try {
+      const url = editingRole ? `/api/v1/admin/roles/${editingRole.id}` : '/api/v1/admin/roles';
+      const method = editingRole ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
+          'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
-        onSuccess: () => {
-          setEditingRole(null);
-          reset();
-        },
+        credentials: 'include',
+        body: JSON.stringify(formData),
       });
-    } else {
-      post('/admin/roles', {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-        onSuccess: () => {
-          setShowAddForm(false);
-          reset();
-        },
-      });
+
+      if (response.ok) {
+        router.reload();
+        setEditingRole(null);
+        setShowAddForm(false);
+        setFormData({ name: '', description: '' });
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || errorData.error || 'Operation failed');
+      }
+    } catch (err) {
+      setError('Network error: ' + err);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -61,7 +72,8 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
     if (role.is_admin) return;
     setEditingRole(role);
     setShowAddForm(false);
-    setData({
+    setError(null);
+    setFormData({
       name: role.name,
       description: role.description,
     });
@@ -69,7 +81,8 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
 
   const handleCancelEdit = () => {
     setEditingRole(null);
-    reset();
+    setError(null);
+    setFormData({ name: '', description: '' });
   };
 
   const handleDeleteClick = (roleId: number, roleName: string, isAdmin: boolean) => {
@@ -78,16 +91,37 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (roleToDelete) {
-      router.delete(`/admin/roles/${roleToDelete.id}`, {
+  const confirmDelete = async () => {
+    if (!roleToDelete) return;
+
+    setError(null);
+    setProcessing(true);
+
+    try {
+      const response = await fetch(`/api/v1/admin/roles/${roleToDelete.id}`, {
+        method: 'DELETE',
         headers: {
           'X-CSRF-Token': csrfToken || '',
         },
+        credentials: 'include',
       });
+
+      if (response.ok) {
+        router.reload();
+        setShowDeleteModal(false);
+        setRoleToDelete(null);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || errorData.error || 'Failed to delete role');
+        setShowDeleteModal(false);
+      }
+    } catch (err) {
+      setError('Network error: ' + err);
+      setShowDeleteModal(false);
+    } finally {
+      setProcessing(false);
+      setRoleToDelete(null);
     }
-    setShowDeleteModal(false);
-    setRoleToDelete(null);
   };
 
   return (
@@ -131,22 +165,33 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                 {editingRole ? `Edit Role: ${editingRole.name}` : 'Add New Role'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div
+                    className={cn(
+                      'p-4 rounded-md',
+                      theme.intent.danger.surface,
+                      theme.intent.danger.border
+                    )}
+                  >
+                    <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={theme.forms.label}>Name</label>
                     <input
                       type="text"
                       required
-                      value={data.name}
-                      onChange={(e) => setData('name', e.target.value)}
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className={cn('mt-1', theme.forms.input)}
                     />
                   </div>
                   <div className="sm:col-span-2">
                     <label className={theme.forms.label}>Description</label>
                     <textarea
-                      value={data.description}
-                      onChange={(e) => setData('description', e.target.value)}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
                       className={cn('mt-1', theme.forms.textarea)}
                     />
@@ -160,6 +205,8 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
                         handleCancelEdit();
                       } else {
                         setShowAddForm(false);
+                        setError(null);
+                        setFormData({ name: '', description: '' });
                       }
                     }}
                     className={theme.buttons.secondary}
