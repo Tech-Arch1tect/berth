@@ -282,7 +282,6 @@ func registerProtectedWebRoutes(web *echo.Group, authSvc *auth.Service, totpSvc 
 		protected.GET("/api/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)
 		protected.GET("/api/servers/:id/image-updates", imageUpdatesAPIHandler.ListServerUpdates)
 	}
-	protected.GET("/api/totp/status", totpHandler.GetTOTPStatus)
 	if apiKeyHandler != nil {
 		protected.GET("/api/api-keys", apiKeyHandler.ListAPIKeys)
 		protected.GET("/api/api-keys/:id", apiKeyHandler.GetAPIKey)

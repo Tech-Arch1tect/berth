@@ -27,7 +27,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
 
   useEffect(() => {
     // Fetch TOTP status
-    fetch('/api/totp/status', { credentials: 'include' })
+    fetch('/api/v1/totp/status', { credentials: 'include' })
       .then((response) => response.json())
       .then((data) => setTotpEnabled(data.enabled))
       .catch((error) => console.error('Failed to fetch TOTP status:', error));

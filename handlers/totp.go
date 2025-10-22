@@ -161,12 +161,3 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 	session.SetTOTPVerified(c, true)
 	return c.Redirect(http.StatusFound, "/")
 }
-
-func (h *TOTPHandler) GetTOTPStatus(c echo.Context) error {
-	userID := session.GetUserIDAsUint(c)
-	enabled := h.totpSvc.IsUserTOTPEnabled(userID)
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"enabled": enabled,
-	})
-}
