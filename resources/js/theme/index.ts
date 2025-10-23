@@ -341,6 +341,7 @@ export const theme = {
   icon: {
     squareLg: 'flex h-12 w-12 items-center justify-center rounded-2xl text-white',
     squareMd: 'flex h-10 w-10 items-center justify-center rounded-xl text-white',
+    squareSm: 'flex h-8 w-8 items-center justify-center rounded-lg text-white',
     emptyState:
       'mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200/50 bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400 dark:border-zinc-700/50 dark:from-zinc-800 dark:to-zinc-700 dark:text-zinc-500',
   },

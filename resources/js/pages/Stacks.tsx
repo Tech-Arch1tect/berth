@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import {
   MagnifyingGlassIcon,
@@ -7,6 +7,8 @@ import {
   CircleStackIcon,
   ServerIcon,
   ExclamationTriangleIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
 } from '@heroicons/react/24/outline';
 import Layout from '../components/layout/Layout';
 import { StackCard } from '../components/dashboard/StackCard';
@@ -17,6 +19,7 @@ import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { cn } from '../utils/cn';
 import { theme } from '../theme';
+import { StorageManager } from '../utils/storage';
 
 interface StacksProps {
   title: string;
@@ -27,10 +30,22 @@ export default function Stacks({ title, servers }: StacksProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [serverFilter, setServerFilter] = useState<number | 'all'>('all');
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>('normal');
 
   const { stacks, isLoading, isFetching, hasError, errors, refetchAll } = useAllStacks({
     servers,
   });
+
+  useEffect(() => {
+    const savedLayout = StorageManager.stacksLayout.get();
+    setLayoutMode(savedLayout);
+  }, []);
+
+  const toggleLayout = () => {
+    const newLayout = layoutMode === 'compact' ? 'normal' : 'compact';
+    setLayoutMode(newLayout);
+    StorageManager.stacksLayout.set(newLayout);
+  };
 
   const filteredStacks = useMemo(() => {
     return stacks.filter((stack) => {
@@ -99,17 +114,39 @@ export default function Stacks({ title, servers }: StacksProps) {
             </div>
           </div>
 
-          <button
-            onClick={refetchAll}
-            disabled={isFetching}
-            className={cn(
-              'inline-flex items-center px-4 py-2 rounded-xl transition-all duration-200',
-              theme.buttons.secondary
-            )}
-          >
-            <ArrowPathIcon className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh All
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLayout}
+              className={cn(
+                'inline-flex items-center px-4 py-2 rounded-xl transition-all duration-200',
+                theme.buttons.secondary
+              )}
+              title={layoutMode === 'compact' ? 'Switch to normal view' : 'Switch to compact view'}
+            >
+              {layoutMode === 'compact' ? (
+                <>
+                  <Squares2X2Icon className="w-4 h-4 mr-2" />
+                  Normal View
+                </>
+              ) : (
+                <>
+                  <ListBulletIcon className="w-4 h-4 mr-2" />
+                  Compact View
+                </>
+              )}
+            </button>
+            <button
+              onClick={refetchAll}
+              disabled={isFetching}
+              className={cn(
+                'inline-flex items-center px-4 py-2 rounded-xl transition-all duration-200',
+                theme.buttons.secondary
+              )}
+            >
+              <ArrowPathIcon className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh All
+            </button>
+          </div>
         </div>
       </div>
 
@@ -252,9 +289,20 @@ export default function Stacks({ title, servers }: StacksProps) {
               }
             />
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={cn(
+                'grid gap-6',
+                layoutMode === 'compact'
+                  ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'md:grid-cols-2 lg:grid-cols-3'
+              )}
+            >
               {filteredStacks.map((stack) => (
-                <StackCard key={`${stack.server_id}-${stack.name}`} stack={stack} />
+                <StackCard
+                  key={`${stack.server_id}-${stack.name}`}
+                  stack={stack}
+                  compact={layoutMode === 'compact'}
+                />
               ))}
             </div>
           )}

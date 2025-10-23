@@ -1,10 +1,16 @@
-type StorageKey = 'darkMode' | 'berth_operations_state' | 'sidebar_collapsed' | 'preferred_tab';
+type StorageKey =
+  | 'darkMode'
+  | 'berth_operations_state'
+  | 'sidebar_collapsed'
+  | 'preferred_tab'
+  | 'stacks_layout';
 
 interface StorageValue {
   darkMode: 'true' | 'false';
   berth_operations_state: string;
   sidebar_collapsed: 'true' | 'false';
   preferred_tab: string;
+  stacks_layout: 'compact' | 'normal';
 }
 
 class StorageManagerClass {
@@ -127,11 +133,27 @@ class StorageManagerClass {
     },
   };
 
+  stacksLayout = {
+    get: (): 'compact' | 'normal' => {
+      const value = this.getItem('stacks_layout');
+      return value === 'compact' ? 'compact' : 'normal';
+    },
+
+    set: (layout: 'compact' | 'normal'): void => {
+      this.setItem('stacks_layout', layout);
+    },
+
+    clear: (): void => {
+      this.removeItem('stacks_layout');
+    },
+  };
+
   clearAll(): void {
     this.theme.clear();
     this.operations.clear();
     this.sidebar.clear();
     this.preferredTab.clear();
+    this.stacksLayout.clear();
   }
 }
 
