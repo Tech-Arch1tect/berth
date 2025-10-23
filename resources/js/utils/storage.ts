@@ -3,7 +3,8 @@ type StorageKey =
   | 'berth_operations_state'
   | 'sidebar_collapsed'
   | 'preferred_tab'
-  | 'stacks_layout';
+  | 'stacks_layout'
+  | 'stacks_sort';
 
 interface StorageValue {
   darkMode: 'true' | 'false';
@@ -11,6 +12,13 @@ interface StorageValue {
   sidebar_collapsed: 'true' | 'false';
   preferred_tab: string;
   stacks_layout: 'compact' | 'normal';
+  stacks_sort:
+    | 'name-asc'
+    | 'name-desc'
+    | 'health-asc'
+    | 'health-desc'
+    | 'containers-asc'
+    | 'containers-desc';
 }
 
 class StorageManagerClass {
@@ -148,12 +156,50 @@ class StorageManagerClass {
     },
   };
 
+  stacksSort = {
+    get: ():
+      | 'name-asc'
+      | 'name-desc'
+      | 'health-asc'
+      | 'health-desc'
+      | 'containers-asc'
+      | 'containers-desc' => {
+      const value = this.getItem('stacks_sort');
+      const validSorts = [
+        'name-asc',
+        'name-desc',
+        'health-asc',
+        'health-desc',
+        'containers-asc',
+        'containers-desc',
+      ];
+      return validSorts.includes(value || '') ? (value as any) : 'name-asc';
+    },
+
+    set: (
+      sort:
+        | 'name-asc'
+        | 'name-desc'
+        | 'health-asc'
+        | 'health-desc'
+        | 'containers-asc'
+        | 'containers-desc'
+    ): void => {
+      this.setItem('stacks_sort', sort);
+    },
+
+    clear: (): void => {
+      this.removeItem('stacks_sort');
+    },
+  };
+
   clearAll(): void {
     this.theme.clear();
     this.operations.clear();
     this.sidebar.clear();
     this.preferredTab.clear();
     this.stacksLayout.clear();
+    this.stacksSort.clear();
   }
 }
 

@@ -7,6 +7,7 @@ import {
   ServerStackIcon,
   Squares2X2Icon,
   ListBulletIcon,
+  ArrowsUpDownIcon,
 } from '@heroicons/react/24/outline';
 import Layout from '../../components/layout/Layout';
 import { StackCard } from '../../components/dashboard/StackCard';
@@ -20,6 +21,14 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { StorageManager } from '../../utils/storage';
 
+type SortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'health-asc'
+  | 'health-desc'
+  | 'containers-asc'
+  | 'containers-desc';
+
 interface ServerStacksProps {
   title: string;
   server: Server;
@@ -30,6 +39,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>('normal');
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
 
   const {
     data: stacks = [],
@@ -39,10 +49,12 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     isFetching,
   } = useServerStacks({ serverid });
 
-  // Load layout preference from storage on mount
+  // Load preferences from storage on mount
   useEffect(() => {
     const savedLayout = StorageManager.stacksLayout.get();
+    const savedSort = StorageManager.stacksSort.get();
     setLayoutMode(savedLayout);
+    setSortBy(savedSort);
   }, []);
 
   // Handle layout toggle
@@ -52,8 +64,13 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     StorageManager.stacksLayout.set(newLayout);
   };
 
-  const filteredStacks = useMemo(() => {
-    return stacks.filter((stack) => {
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort);
+    StorageManager.stacksSort.set(newSort);
+  };
+
+  const filteredAndSortedStacks = useMemo(() => {
+    const filtered = stacks.filter((stack) => {
       const matchesSearch =
         stack.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         stack.compose_file.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,7 +83,28 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
 
       return matchesSearch && matchesHealth;
     });
-  }, [stacks, searchTerm, healthFilter]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'health-asc':
+          return (a.is_healthy ? 0 : 1) - (b.is_healthy ? 0 : 1);
+        case 'health-desc':
+          return (b.is_healthy ? 0 : 1) - (a.is_healthy ? 0 : 1);
+        case 'containers-asc':
+          return a.running_containers - b.running_containers;
+        case 'containers-desc':
+          return b.running_containers - a.running_containers;
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [stacks, searchTerm, healthFilter, sortBy]);
   return (
     <Layout>
       <Head title={title} />
@@ -225,6 +263,21 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
+                <ArrowsUpDownIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as SortOption)}
+                  className={cn('pl-10 pr-8 py-2 rounded-lg', theme.forms.select)}
+                >
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                  <option value="health-asc">Health (Healthy First)</option>
+                  <option value="health-desc">Health (Unhealthy First)</option>
+                  <option value="containers-asc">Containers (Low-High)</option>
+                  <option value="containers-desc">Containers (High-Low)</option>
+                </select>
+              </div>
+              <div className="relative">
                 <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <select
                   value={healthFilter}
@@ -239,12 +292,12 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
                 </select>
               </div>
               <span className={cn('text-sm whitespace-nowrap', theme.text.subtle)}>
-                {filteredStacks.length} of {stacks.length}
+                {filteredAndSortedStacks.length} of {stacks.length}
               </span>
             </div>
           </div>
 
-          {filteredStacks.length === 0 ? (
+          {filteredAndSortedStacks.length === 0 ? (
             <EmptyState
               icon={MagnifyingGlassIcon}
               title="No stacks found"
@@ -259,7 +312,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
                   : 'md:grid-cols-2 lg:grid-cols-3'
               )}
             >
-              {filteredStacks.map((stack, index) => (
+              {filteredAndSortedStacks.map((stack, index) => (
                 <StackCard
                   key={`${stack.name}-${index}`}
                   stack={stack}

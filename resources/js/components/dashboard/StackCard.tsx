@@ -23,8 +23,6 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
       ? Math.round((stack.running_containers / stack.total_containers) * 100)
       : 0;
 
-  const healthVariant = stack.is_healthy ? 'healthy' : 'unhealthy';
-
   // Fetch image updates for this stack
   const { updateCount } = useStackImageUpdates({
     serverid: stack.server_id,
