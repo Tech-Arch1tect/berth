@@ -1,14 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
   MagnifyingGlassIcon,
-  FunnelIcon,
   ExclamationCircleIcon,
   ServerStackIcon,
   Squares2X2Icon,
   ListBulletIcon,
-  ArrowsUpDownIcon,
-  MinusCircleIcon,
 } from '@heroicons/react/24/outline';
 import Layout from '../../components/layout/Layout';
 import { StackCard } from '../../components/dashboard/StackCard';
@@ -16,20 +13,12 @@ import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { NegativeFilters } from '../../components/common/NegativeFilters';
+import { StacksFilterBar, SortOption } from '../../components/common/StacksFilterBar';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { StorageManager } from '../../utils/storage';
-
-type SortOption =
-  | 'name-asc'
-  | 'name-desc'
-  | 'health-asc'
-  | 'health-desc'
-  | 'containers-asc'
-  | 'containers-desc';
 
 interface ServerStacksProps {
   title: string;
@@ -257,87 +246,22 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
         />
       ) : (
         <>
-          {/* Search and Filter Controls */}
-          <div className={cn('space-y-4 mb-6 p-6 rounded-lg', theme.surface.panel)}>
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search stacks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 rounded-lg', theme.forms.input)}
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-              <div className="flex flex-wrap items-center gap-3 flex-1">
-                <div className="relative flex-1 min-w-[180px]">
-                  <ArrowsUpDownIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => handleSortChange(e.target.value as SortOption)}
-                    className={cn('w-full pl-10 pr-8 py-2.5 rounded-lg', theme.forms.select)}
-                  >
-                    <option value="name-asc">Name (A-Z)</option>
-                    <option value="name-desc">Name (Z-A)</option>
-                    <option value="health-asc">Health (Healthy First)</option>
-                    <option value="health-desc">Health (Unhealthy First)</option>
-                    <option value="containers-asc">Containers (Low-High)</option>
-                    <option value="containers-desc">Containers (High-Low)</option>
-                  </select>
-                </div>
-                <div className="relative flex-1 min-w-[160px]">
-                  <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={healthFilter}
-                    onChange={(e) =>
-                      setHealthFilter(e.target.value as 'all' | 'healthy' | 'unhealthy')
-                    }
-                    className={cn('w-full pl-10 pr-8 py-2.5 rounded-lg', theme.forms.select)}
-                  >
-                    <option value="all">All Health</option>
-                    <option value="healthy">Healthy Only</option>
-                    <option value="unhealthy">Unhealthy Only</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => setShowExclusionFilter(!showExclusionFilter)}
-                  className={cn(
-                    'inline-flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 whitespace-nowrap',
-                    showExclusionFilter || negativeFilters.length > 0
-                      ? theme.buttons.primary
-                      : theme.buttons.secondary
-                  )}
-                  title="Toggle exclusion filters"
-                >
-                  <MinusCircleIcon className="h-4 w-4 mr-2" />
-                  Exclude
-                  {negativeFilters.length > 0 && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded-full bg-white/20 text-xs font-medium">
-                      {negativeFilters.length}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <span className={cn('text-sm whitespace-nowrap flex-shrink-0', theme.text.subtle)}>
-                {filteredAndSortedStacks.length} of {stacks.length}
-              </span>
-            </div>
-
-            {showExclusionFilter && (
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                <NegativeFilters
-                  filters={negativeFilters}
-                  onFiltersChange={setNegativeFilters}
-                  isExpanded={showExclusionFilter}
-                  onToggle={() => setShowExclusionFilter(!showExclusionFilter)}
-                />
-              </div>
-            )}
-          </div>
+          <StacksFilterBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            healthFilter={healthFilter}
+            onHealthFilterChange={setHealthFilter}
+            negativeFilters={negativeFilters}
+            onNegativeFiltersChange={setNegativeFilters}
+            showExclusionFilter={showExclusionFilter}
+            onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
+            filteredCount={filteredAndSortedStacks.length}
+            totalCount={stacks.length}
+            searchPlaceholder="Search stacks..."
+            rounded="lg"
+          />
 
           {filteredAndSortedStacks.length === 0 ? (
             <EmptyState
