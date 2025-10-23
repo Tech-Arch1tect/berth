@@ -35,20 +35,18 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
       <Link
         href={`/servers/${stack.server_id}/stacks/${stack.name}`}
         className={cn(
-          'group relative block rounded-xl border-2 transition-all duration-200 overflow-hidden',
-          'bg-white dark:bg-zinc-900',
+          theme.cards.stack.compact.base,
           stack.is_healthy
-            ? 'border-emerald-200 hover:border-emerald-400 dark:border-emerald-900/50 dark:hover:border-emerald-700'
-            : 'border-rose-200 hover:border-rose-400 dark:border-rose-900/50 dark:hover:border-rose-700',
-          'hover:shadow-xl hover:-translate-y-0.5'
+            ? theme.cards.stack.compact.healthy
+            : theme.cards.stack.compact.unhealthy,
+          theme.cards.stack.compact.lift
         )}
       >
         {/* Color accent bar at bottom */}
         <div
-          className={cn(
-            'absolute bottom-0 left-0 right-0 h-1',
-            stack.is_healthy ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'
-          )}
+          className={
+            stack.is_healthy ? theme.progress.compactHealthy : theme.progress.compactUnhealthy
+          }
           style={{ width: `${healthPercentage}%` }}
         />
 
@@ -58,9 +56,7 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
               <CircleStackIcon
                 className={cn(
                   'h-4 w-4 flex-shrink-0',
-                  stack.is_healthy
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'
+                  stack.is_healthy ? theme.text.success : theme.text.danger
                 )}
               />
               <h3 className={cn('truncate text-sm font-semibold', theme.text.strong)}>
@@ -69,9 +65,9 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {stack.is_healthy ? (
-                <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircleIcon className={cn('h-3.5 w-3.5', theme.text.success)} />
               ) : (
-                <XCircleIcon className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                <XCircleIcon className={cn('h-3.5 w-3.5', theme.text.danger)} />
               )}
               <UpdateAvailableBadge count={updateCount} variant="compact" />
             </div>
@@ -91,18 +87,13 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
   return (
     <Link
       href={`/servers/${stack.server_id}/stacks/${stack.name}`}
-      className={cn(
-        'group relative block rounded-xl border transition-all duration-200 overflow-hidden',
-        'bg-white shadow-sm dark:bg-zinc-900',
-        'border-zinc-200 dark:border-zinc-800',
-        'hover:border-teal-300 hover:shadow-xl hover:-translate-y-1 dark:hover:border-teal-700'
-      )}
+      className={cn(theme.cards.stack.normal.base, theme.cards.stack.normal.hover)}
     >
       {/* Health accent bar at top */}
       <div
         className={cn(
           'h-1.5',
-          stack.is_healthy ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'
+          stack.is_healthy ? theme.intent.success.icon : theme.intent.danger.icon
         )}
       />
 
@@ -113,9 +104,7 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
             <div
               className={cn(
                 theme.icon.squareMd,
-                stack.is_healthy
-                  ? 'bg-emerald-600 dark:bg-emerald-500'
-                  : 'bg-rose-600 dark:bg-rose-500',
+                stack.is_healthy ? theme.intent.success.icon : theme.intent.danger.icon,
                 'shadow-md flex-shrink-0'
               )}
             >
@@ -134,35 +123,27 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             {/* Icon-only health indicator */}
             {stack.is_healthy ? (
-              <CheckCircleIcon
-                className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
-                title="Healthy"
-              />
+              <CheckCircleIcon className={cn('h-5 w-5', theme.text.success)} title="Healthy" />
             ) : (
-              <XCircleIcon className="h-5 w-5 text-rose-600 dark:text-rose-400" title="Unhealthy" />
+              <XCircleIcon className={cn('h-5 w-5', theme.text.danger)} title="Unhealthy" />
             )}
             <UpdateAvailableBadge count={updateCount} variant="compact" />
           </div>
         </div>
 
         {/* Container count */}
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+        <div
+          className={cn('flex items-center justify-between mb-3 pb-3', theme.cards.sectionDivider)}
+        >
           <div className="flex items-center gap-2">
             <div
               className={cn(
                 'flex items-center justify-center h-8 w-8 rounded-lg',
-                stack.is_healthy
-                  ? 'bg-emerald-50 dark:bg-emerald-900/20'
-                  : 'bg-rose-50 dark:bg-rose-900/20'
+                stack.is_healthy ? theme.intent.success.surface : theme.intent.danger.surface
               )}
             >
               <ServerIcon
-                className={cn(
-                  'h-4 w-4',
-                  stack.is_healthy
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'
-                )}
+                className={cn('h-4 w-4', stack.is_healthy ? theme.text.success : theme.text.danger)}
               />
             </div>
             <div>
@@ -176,9 +157,7 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
             <div
               className={cn(
                 'text-2xl font-bold',
-                stack.is_healthy
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-rose-600 dark:text-rose-400'
+                stack.is_healthy ? theme.text.success : theme.text.danger
               )}
             >
               {healthPercentage}%
@@ -191,12 +170,9 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
         <div className="relative h-2 mb-3">
           <div className="absolute inset-0 rounded-full bg-zinc-100 dark:bg-zinc-800" />
           <div
-            className={cn(
-              'absolute inset-y-0 left-0 rounded-full transition-all',
-              stack.is_healthy
-                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                : 'bg-gradient-to-r from-rose-500 to-rose-400'
-            )}
+            className={
+              stack.is_healthy ? theme.progress.healthyGradient : theme.progress.unhealthyGradient
+            }
             style={{ width: `${healthPercentage}%` }}
           />
         </div>

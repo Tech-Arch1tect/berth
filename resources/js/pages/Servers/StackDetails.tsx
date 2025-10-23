@@ -121,7 +121,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             }}
           />
         ) : stack.stackDetails ? (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Image Update Banner */}
             {hasUpdates && (
               <ImageUpdateBanner
@@ -132,24 +132,31 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               />
             )}
 
-            {/* Quick Stats Grid */}
-            <StackQuickStats
-              serviceCount={stack.stackDetails.services?.length || 0}
-              containerCount={
-                stack.stackDetails.services?.reduce(
-                  (total, service) => total + (service.containers?.length || 0),
-                  0
-                ) || 0
-              }
-              networkCount={stack.networks?.length || 0}
-              volumeCount={stack.volumes?.length || 0}
-            />
+            {/* Two-column layout for stats and info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Quick Stats Grid - spans 2 columns */}
+              <div className="lg:col-span-2">
+                <StackQuickStats
+                  serviceCount={stack.stackDetails.services?.length || 0}
+                  containerCount={
+                    stack.stackDetails.services?.reduce(
+                      (total, service) => total + (service.containers?.length || 0),
+                      0
+                    ) || 0
+                  }
+                  networkCount={stack.networks?.length || 0}
+                  volumeCount={stack.volumes?.length || 0}
+                />
+              </div>
 
-            {/* Stack Info Card */}
-            <StackInfoCard
-              composeFile={stack.stackDetails.compose_file}
-              stackPath={stack.stackDetails.path}
-            />
+              {/* Stack Info Card - spans 1 column */}
+              <div className="lg:col-span-1">
+                <StackInfoCard
+                  composeFile={stack.stackDetails.compose_file}
+                  stackPath={stack.stackDetails.path}
+                />
+              </div>
+            </div>
 
             {/* Modern Tab Navigation */}
             <Tabs

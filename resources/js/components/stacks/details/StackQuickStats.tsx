@@ -17,14 +17,13 @@ export const StackQuickStats: React.FC<StackQuickStatsProps> = ({
   volumeCount,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 gap-4">
       <StatCard
         label="Services"
         value={serviceCount}
         icon={CircleStackIcon}
         iconColor={theme.text.info}
         iconBg={theme.intent.info.surface}
-        className="rounded-2xl"
       />
       <StatCard
         label="Containers"
@@ -32,7 +31,6 @@ export const StackQuickStats: React.FC<StackQuickStatsProps> = ({
         icon={ServerIcon}
         iconColor={theme.text.success}
         iconBg={theme.intent.success.surface}
-        className="rounded-2xl"
       />
       <StatCard
         label="Networks"
@@ -40,7 +38,6 @@ export const StackQuickStats: React.FC<StackQuickStatsProps> = ({
         icon={GlobeAltIcon}
         iconColor={theme.text.info}
         iconBg={theme.intent.info.surface}
-        className="rounded-2xl"
       />
       <StatCard
         label="Volumes"
@@ -48,7 +45,6 @@ export const StackQuickStats: React.FC<StackQuickStatsProps> = ({
         icon={FolderIcon}
         iconColor={theme.text.success}
         iconBg={theme.intent.success.surface}
-        className="rounded-2xl"
       />
     </div>
   );

@@ -48,127 +48,146 @@ export const StackHeader: React.FC<StackHeaderProps> = ({
   isRefreshing,
   onOpenAdvancedOperations,
 }) => {
+  const connectionBadgeStyle =
+    connectionStatus === 'connected'
+      ? theme.badges.connection.connected
+      : connectionStatus === 'connecting'
+        ? theme.badges.connection.connecting
+        : theme.badges.connection.disconnected;
+
+  const connectionDotStyle =
+    connectionStatus === 'connected'
+      ? theme.badges.connectionDot.connected
+      : connectionStatus === 'connecting'
+        ? theme.badges.connectionDot.connecting
+        : theme.badges.connectionDot.disconnected;
+
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div
-          className={cn(
-            'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md',
-            theme.brand.stack
-          )}
-        >
-          <CircleStackIcon className="w-6 h-6 text-white" />
+    <div className={cn(theme.cards.enhanced.base, 'p-6')}>
+      <div className={cn('absolute top-0 left-0 right-0', theme.brand.gradientAccent)} />
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className={theme.icon.gradientLg}>
+            <CircleStackIcon className="w-7 h-7 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              <h1 className={cn('text-2xl font-bold truncate', theme.brand.titleColor)}>
+                {stackname}
+              </h1>
+              <div className={cn(theme.badges.connection.base, connectionBadgeStyle)}>
+                <div
+                  className={cn(
+                    theme.badges.connectionDot.base,
+                    connectionDotStyle,
+                    (connectionStatus === 'connected' || connectionStatus === 'connecting') &&
+                      theme.badges.connectionDot.pulse
+                  )}
+                />
+                <span>
+                  {connectionStatus === 'connected'
+                    ? 'Live'
+                    : connectionStatus === 'connecting'
+                      ? 'Connecting'
+                      : 'Offline'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className={cn('flex items-center gap-2 text-sm', theme.text.muted)}>
+                <ServerIcon className="w-4 h-4" />
+                <span className="font-medium">{server.name}</span>
+              </div>
+              <div className={cn('flex items-center gap-2 text-sm font-medium', theme.text.muted)}>
+                <div className="flex items-center gap-1.5">
+                  <div className={cn('w-1.5 h-1.5 rounded-full', theme.badges.dot.info)} />
+                  <span>{serviceCount} services</span>
+                </div>
+              </div>
+              <div className={cn('flex items-center gap-2 text-sm font-medium', theme.text.muted)}>
+                <div className="flex items-center gap-1.5">
+                  <div className={cn('w-1.5 h-1.5 rounded-full', theme.badges.dot.success)} />
+                  <span>{containerCount} containers</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className={cn('text-xl font-bold truncate', theme.brand.titleColor)}>
-              {stackname}
-            </h1>
-            {/* Connection Status */}
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Stack Quick Actions */}
+          {services && canManageStack && (
             <div
               className={cn(
-                'flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold flex-shrink-0',
-                connectionStatus === 'connected' && theme.badges.tag.success,
-                connectionStatus === 'connecting' && theme.badges.tag.warning,
-                connectionStatus === 'disconnected' && theme.badges.tag.danger
+                'flex items-center gap-1 px-2 py-1 rounded-lg',
+                theme.surface.subtle,
+                theme.intent.neutral.border,
+                'border'
               )}
             >
-              <div
-                className={cn(
-                  'w-1.5 h-1.5 rounded-full',
-                  connectionStatus === 'connected' && theme.badges.statusDot.online,
-                  connectionStatus === 'connecting' && 'bg-yellow-500',
-                  connectionStatus === 'disconnected' && 'bg-red-500',
-                  (connectionStatus === 'connected' || connectionStatus === 'connecting') &&
-                    theme.badges.statusDot.pulse
-                )}
+              <StackQuickActions
+                services={services}
+                onQuickOperation={onQuickOperation}
+                disabled={quickOperationState.isRunning}
+                isOperationRunning={quickOperationState.isRunning}
+                runningOperation={quickOperationState.operation}
               />
-              <span>
-                {connectionStatus === 'connected'
-                  ? 'Live'
-                  : connectionStatus === 'connecting'
-                    ? 'Connecting'
-                    : 'Offline'}
-              </span>
             </div>
-          </div>
-          <div className="flex items-center gap-3 mt-1.5">
-            <div className={cn('flex items-center gap-1.5 text-xs', theme.text.muted)}>
-              <ServerIcon className="w-3.5 h-3.5" />
-              <span>{server.name}</span>
-            </div>
-            <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
-            <div className={cn('text-xs font-medium', theme.text.muted)}>
-              {serviceCount} services
-            </div>
-            <div className={cn('w-1 h-1 rounded-full', theme.badges.dot.neutral)} />
-            <div className={cn('text-xs font-medium', theme.text.muted)}>
-              {containerCount} containers
-            </div>
-          </div>
-        </div>
-      </div>
+          )}
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Stack Quick Actions */}
-        {services && canManageStack && (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-50 border border-zinc-200 dark:bg-zinc-800/50 dark:border-zinc-700">
-            <StackQuickActions
-              services={services}
-              onQuickOperation={onQuickOperation}
-              disabled={quickOperationState.isRunning}
-              isOperationRunning={quickOperationState.isRunning}
-              runningOperation={quickOperationState.operation}
-            />
-          </div>
-        )}
-
-        {/* Utility Actions Group */}
-        <div className="flex items-center gap-1 px-1 py-1 rounded-lg bg-zinc-50 border border-zinc-200 dark:bg-zinc-800/50 dark:border-zinc-700">
-          {/* Documentation Button */}
-          <button
-            onClick={onGenerateDocumentation}
+          {/* Utility Actions Group */}
+          <div
             className={cn(
-              'p-2 rounded-md transition-colors',
-              'hover:bg-teal-100 dark:hover:bg-teal-900/30',
-              theme.text.muted,
-              'hover:text-teal-700 dark:hover:text-teal-300'
+              'flex items-center gap-1 px-1 py-1 rounded-lg',
+              theme.surface.subtle,
+              theme.intent.neutral.border,
+              'border'
             )}
-            title="Generate stack documentation"
           >
-            <DocumentTextIcon className="w-4 h-4" />
-          </button>
-
-          {/* Refresh Button */}
-          <button
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className={cn(
-              'p-2 rounded-md transition-colors',
-              'hover:bg-zinc-200 dark:hover:bg-zinc-700',
-              theme.text.muted,
-              'hover:text-zinc-900 dark:hover:text-zinc-100',
-              isRefreshing && 'opacity-60'
-            )}
-            title="Refresh all data"
-          >
-            <ArrowPathIcon className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
-          </button>
-
-          {/* Operations Button */}
-          {canManageStack && (
+            {/* Documentation Button */}
             <button
-              onClick={onOpenAdvancedOperations}
+              onClick={onGenerateDocumentation}
               className={cn(
                 'p-2 rounded-md transition-colors',
-                'bg-teal-600 hover:bg-teal-700',
-                'text-white shadow-sm'
+                theme.text.muted,
+                'hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300'
               )}
-              title="Advanced operations"
+              title="Generate stack documentation"
             >
-              <Cog6ToothIcon className="w-4 h-4" />
+              <DocumentTextIcon className="w-4 h-4" />
             </button>
-          )}
+
+            {/* Refresh Button */}
+            <button
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className={cn(
+                'p-2 rounded-md transition-colors',
+                theme.text.muted,
+                'hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100',
+                isRefreshing && 'opacity-60'
+              )}
+              title="Refresh all data"
+            >
+              <ArrowPathIcon className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+            </button>
+
+            {/* Operations Button */}
+            {canManageStack && (
+              <button
+                onClick={onOpenAdvancedOperations}
+                className={cn(
+                  'p-2 rounded-md transition-colors',
+                  theme.brand.accent,
+                  'shadow-sm hover:bg-teal-700'
+                )}
+                title="Advanced operations"
+              >
+                <Cog6ToothIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

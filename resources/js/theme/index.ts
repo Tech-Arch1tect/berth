@@ -23,13 +23,17 @@ export const theme = {
     warning: 'text-amber-600 dark:text-amber-400',
   },
   brand: {
-    // Clean, solid brand colors - no gradients
+    // Solid brand colors
     accent: 'bg-teal-600 text-white',
     titleColor: 'text-zinc-900 dark:text-white',
     serverOnline: 'bg-teal-600 text-white',
     serverOffline: 'bg-zinc-400 text-white',
     stack: 'bg-teal-600 text-white',
-    // Compose Editor - simplified
+    // Gradients
+    gradient: 'bg-gradient-to-br from-teal-500 to-emerald-500',
+    gradientHorizontal: 'bg-gradient-to-r from-teal-500 to-emerald-500',
+    gradientAccent: 'h-1 bg-gradient-to-r from-teal-500 to-emerald-500',
+    // Compose Editor
     composeHeader: 'bg-teal-600',
     composeButton: 'bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors',
     composePreview: 'bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800',
@@ -86,6 +90,19 @@ export const theme = {
       online: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
       offline: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
     },
+    connection: {
+      base: 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm flex-shrink-0',
+      connected: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+      connecting: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+      disconnected: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+    },
+    connectionDot: {
+      base: 'w-2 h-2 rounded-full',
+      connected: 'bg-emerald-500',
+      connecting: 'bg-amber-500',
+      disconnected: 'bg-rose-500',
+      pulse: 'animate-pulse',
+    },
     statusDot: {
       base: 'h-2 w-2 rounded-full shadow-sm',
       online: 'bg-emerald-500',
@@ -124,6 +141,26 @@ export const theme = {
     lift: 'hover:-translate-y-1 hover:scale-[1.01]',
     padded: 'p-6',
     sectionDivider: 'border-t border-zinc-200 dark:border-zinc-800',
+    enhanced: {
+      base: 'relative overflow-hidden rounded-xl border transition-all duration-200 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm',
+      hover: 'hover:shadow-lg',
+      lift: 'hover:-translate-y-0.5',
+    },
+    stack: {
+      compact: {
+        base: 'group relative block rounded-xl border-2 transition-all duration-200 overflow-hidden bg-white dark:bg-zinc-900',
+        healthy:
+          'border-emerald-200 hover:border-emerald-400 dark:border-emerald-900/50 dark:hover:border-emerald-700',
+        unhealthy:
+          'border-rose-200 hover:border-rose-400 dark:border-rose-900/50 dark:hover:border-rose-700',
+        lift: 'hover:shadow-xl hover:-translate-y-0.5',
+      },
+      normal: {
+        base: 'group relative block rounded-xl border transition-all duration-200 overflow-hidden bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm',
+        hover:
+          'hover:border-teal-300 hover:shadow-xl hover:-translate-y-1 dark:hover:border-teal-700',
+      },
+    },
   },
   overlays: {
     sidebarBackdrop: 'fixed inset-0 z-40 bg-zinc-900/30 backdrop-blur-sm lg:hidden',
@@ -190,6 +227,14 @@ export const theme = {
     warning: 'h-full bg-amber-500 rounded-full',
     info: 'h-full bg-teal-500 rounded-full',
     neutral: 'h-full bg-zinc-400 rounded-full',
+    healthyGradient:
+      'h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all',
+    unhealthyGradient:
+      'h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all',
+    compactHealthy:
+      'absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 dark:bg-emerald-400 transition-all',
+    compactUnhealthy:
+      'absolute bottom-0 left-0 right-0 h-1 bg-rose-500 dark:bg-rose-400 transition-all',
   },
   forms: {
     input:
@@ -342,6 +387,12 @@ export const theme = {
     squareLg: 'flex h-12 w-12 items-center justify-center rounded-2xl text-white',
     squareMd: 'flex h-10 w-10 items-center justify-center rounded-xl text-white',
     squareSm: 'flex h-8 w-8 items-center justify-center rounded-lg text-white',
+    gradientLg:
+      'w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-gradient-to-br from-teal-500 to-emerald-500',
+    gradientMd:
+      'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 bg-gradient-to-br from-teal-500 to-emerald-500',
+    gradientSm:
+      'w-6 h-6 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 bg-gradient-to-br from-teal-500 to-emerald-500',
     emptyState:
       'mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200/50 bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400 dark:border-zinc-700/50 dark:from-zinc-800 dark:to-zinc-700 dark:text-zinc-500',
   },

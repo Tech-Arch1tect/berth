@@ -28,21 +28,33 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        theme.containers.panel,
-        'p-4 rounded-lg shadow-sm',
-        onClick && 'cursor-pointer hover:shadow-md transition-shadow',
+        'group relative overflow-hidden rounded-xl border transition-all duration-200',
+        'bg-white dark:bg-zinc-900',
+        'border-zinc-200 dark:border-zinc-800',
+        'shadow-sm hover:shadow-lg',
+        onClick &&
+          'cursor-pointer hover:border-teal-300 hover:-translate-y-0.5 dark:hover:border-teal-700',
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-center">
-        <div className={cn('p-2 rounded-lg', iconBg)}>
-          <Icon className={cn('h-6 w-6', iconColor)} />
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-zinc-50/50 dark:to-zinc-800/30 opacity-50" />
+
+      <div className="relative p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className={cn('p-2.5 rounded-xl shadow-sm', iconBg)}>
+            <Icon className={cn('h-5 w-5', iconColor)} />
+          </div>
         </div>
-        <div className="ml-3">
-          <p className={cn('text-xs font-semibold', theme.text.muted)}>{label}</p>
-          <p className={cn('text-xl font-bold', theme.text.strong)}>{value}</p>
-          {subtext && <p className={cn('text-xs', subtextColor || theme.text.muted)}>{subtext}</p>}
+
+        <div className="space-y-1">
+          <p className={cn('text-xs font-semibold uppercase tracking-wide', theme.text.subtle)}>
+            {label}
+          </p>
+          <p className={cn('text-3xl font-bold', theme.text.strong)}>{value}</p>
+          {subtext && (
+            <p className={cn('text-xs font-medium', subtextColor || theme.text.muted)}>{subtext}</p>
+          )}
         </div>
       </div>
     </div>
