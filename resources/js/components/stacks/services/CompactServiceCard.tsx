@@ -138,41 +138,48 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
   const totalContainers = service.containers?.length || 0;
 
   return (
-    <div className={theme.cards.translucent}>
-      {/* Service Header - Compact */}
-      <div className="px-4 py-3 border-b border-slate-100/50 dark:border-slate-700/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
+    <div
+      className={cn(
+        'rounded-xl border bg-white dark:bg-zinc-900',
+        'border-zinc-200 dark:border-zinc-800',
+        'shadow-sm hover:shadow-md transition-shadow'
+      )}
+    >
+      {/* Service Header */}
+      <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
               className={cn(
-                'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                theme.brand.stack
+                'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+                theme.brand.stack,
+                'shadow-sm'
               )}
             >
               <ServerIcon className="w-4 h-4" />
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className={cn('font-semibold truncate', theme.text.strong)}>{service.name}</h3>
-                <div className="flex items-center space-x-1 text-xs">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className={cn('font-bold text-base truncate', theme.text.strong)}>
+                  {service.name}
+                </h3>
+                <div className="flex items-center gap-1.5">
                   <div
                     className={cn(
                       'w-2 h-2 rounded-full',
                       runningContainers.length === totalContainers
                         ? theme.badges.dot.success
-                        : runningContainers.length > 0
-                          ? theme.badges.dot.warning
-                          : theme.badges.dot.danger
+                        : theme.badges.dot.danger
                     )}
                   />
-                  <span className={cn('font-medium', theme.text.muted)}>
+                  <span className={cn('text-xs font-semibold', theme.text.muted)}>
                     {runningContainers.length}/{totalContainers}
                   </span>
                 </div>
               </div>
               {service.image && (
-                <div className={cn('text-xs font-mono truncate mt-0.5', theme.text.subtle)}>
+                <div className={cn('text-xs font-mono truncate', theme.text.subtle)}>
                   {service.image}
                 </div>
               )}
@@ -210,7 +217,7 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
       </div>
 
       {/* Containers List */}
-      <div className="px-4 py-3 space-y-2">
+      <div className="p-4 space-y-2">
         {service.containers &&
           service.containers.map((container, index) => {
             const statusInfo = getContainerStatusInfo(container);
@@ -218,45 +225,50 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
             const StatusIcon = statusInfo.icon;
 
             return (
-              <div key={container.name || index} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <div
-                    className={`p-1.5 rounded-lg ${statusInfo.bg} ${statusInfo.border} border flex-shrink-0`}
-                  >
-                    <StatusIcon className={`w-3 h-3 ${statusInfo.color}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className={cn('font-medium text-sm truncate', theme.text.strong)}>
-                        {container.name}
-                      </span>
-                      <span
-                        className={`px-1.5 py-0.5 text-xs font-medium rounded ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border} border`}
-                      >
-                        {statusInfo.label}
-                      </span>
-                    </div>
-                    {uptime && <div className={cn('text-xs', theme.text.subtle)}>Up {uptime}</div>}
-                  </div>
-                </div>
+              <div
+                key={container.name || index}
+                className="flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {/* Status indicator */}
+                  <StatusIcon
+                    className={cn('w-5 h-5 flex-shrink-0', statusInfo.color)}
+                    title={statusInfo.label}
+                  />
 
-                {container.ports && container.ports.length > 0 && (
-                  <div className="flex items-center space-x-1 flex-shrink-0">
-                    {container.ports.slice(0, 2).map((port, portIndex) => (
-                      <span
-                        key={portIndex}
-                        className={cn('px-2 py-1 rounded text-xs font-mono', theme.surface.code)}
-                      >
-                        {port.public ? `${port.public}:${port.private}` : port.private}
-                      </span>
-                    ))}
-                    {container.ports.length > 2 && (
-                      <span className={cn('text-xs', theme.text.subtle)}>
-                        +{container.ports.length - 2}
+                  {/* Container info */}
+                  <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                    <span className={cn('font-medium text-sm truncate', theme.text.strong)}>
+                      {container.name}
+                    </span>
+                    {uptime && (
+                      <span className={cn('text-xs whitespace-nowrap', theme.text.subtle)}>
+                        {uptime}
                       </span>
                     )}
+                    {container.ports && container.ports.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        {container.ports.slice(0, 2).map((port, portIndex) => (
+                          <span
+                            key={portIndex}
+                            className={cn(
+                              'px-2 py-0.5 rounded text-xs font-mono',
+                              theme.surface.code,
+                              theme.text.muted
+                            )}
+                          >
+                            {port.public ? `${port.public}:${port.private}` : port.private}
+                          </span>
+                        ))}
+                        {container.ports.length > 2 && (
+                          <span className={cn('text-xs', theme.text.subtle)}>
+                            +{container.ports.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -265,227 +277,256 @@ export const CompactServiceCard: React.FC<CompactServiceCardProps> = ({
       {/* Expanded Details */}
       {isExpanded && (
         <div
-          className={cn(
-            'p-4 space-y-4 border-t border-slate-100/50 dark:border-slate-700/30',
-            theme.surface.muted
-          )}
+          className={cn('p-4 space-y-4 border-t', theme.cards.sectionDivider, theme.surface.muted)}
         >
           {service.containers &&
-            service.containers.map((container, index) => (
-              <div key={`details-${container.name || index}`} className="space-y-3">
-                <div className="flex items-center space-x-2 pb-2 border-b border-slate-200/30 dark:border-slate-700/30">
-                  <ServerIcon className={cn('w-4 h-4', theme.text.muted)} />
-                  <span className={cn('font-medium', theme.text.strong)}>{container.name}</span>
-                </div>
+            service.containers.map((container, index) => {
+              const statusInfo = getContainerStatusInfo(container);
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
-                  {/* Left Column */}
-                  <div className="space-y-3">
-                    {/* Basic Info */}
-                    <div className="space-y-2">
-                      {container.restart_policy && (
-                        <div className="flex items-center justify-between py-1">
-                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                            <ArrowPathIcon className="w-3 h-3" />
-                            <span>Restart:</span>
+              return (
+                <div key={`details-${container.name || index}`} className="space-y-4">
+                  {/* Container header */}
+                  <div className="flex items-center gap-2 pb-3 border-b border-zinc-200 dark:border-zinc-700">
+                    <ServerIcon className={cn('w-4 h-4', theme.text.muted)} />
+                    <span className={cn('font-semibold', theme.text.strong)}>{container.name}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                    {/* Configuration Section */}
+                    <div className="space-y-3">
+                      <div
+                        className={cn(
+                          'text-xs font-semibold uppercase tracking-wide',
+                          theme.text.subtle
+                        )}
+                      >
+                        Configuration
+                      </div>
+                      <div className="space-y-2">
+                        {container.restart_policy && (
+                          <div className="flex items-center justify-between py-1">
+                            <div className={cn('flex items-center space-x-2', theme.text.muted)}>
+                              <ArrowPathIcon className="w-3 h-3" />
+                              <span>Restart:</span>
+                            </div>
+                            <span className={cn('font-medium', theme.text.strong)}>
+                              {container.restart_policy.name}
+                            </span>
                           </div>
-                          <span className={cn('font-medium', theme.text.strong)}>
-                            {container.restart_policy.name}
-                          </span>
-                        </div>
-                      )}
+                        )}
 
-                      {container.user && (
-                        <div className="flex items-center justify-between py-1">
-                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                            <UserIcon className="w-3 h-3" />
-                            <span>User:</span>
+                        {container.user && (
+                          <div className="flex items-center justify-between py-1">
+                            <div className={cn('flex items-center space-x-2', theme.text.muted)}>
+                              <UserIcon className="w-3 h-3" />
+                              <span>User:</span>
+                            </div>
+                            <span className={cn('font-mono', theme.text.strong)}>
+                              {container.user}
+                            </span>
                           </div>
-                          <span className={cn('font-mono', theme.text.strong)}>
-                            {container.user}
-                          </span>
-                        </div>
-                      )}
+                        )}
 
-                      {container.working_dir && (
-                        <div className="flex items-center justify-between py-1">
-                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                            <FolderIcon className="w-3 h-3" />
-                            <span>WorkDir:</span>
+                        {container.working_dir && (
+                          <div className="flex items-center justify-between py-1">
+                            <div className={cn('flex items-center space-x-2', theme.text.muted)}>
+                              <FolderIcon className="w-3 h-3" />
+                              <span>WorkDir:</span>
+                            </div>
+                            <span className={cn('font-mono truncate', theme.text.strong)}>
+                              {container.working_dir}
+                            </span>
                           </div>
-                          <span className={cn('font-mono truncate', theme.text.strong)}>
-                            {container.working_dir}
-                          </span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Resource Limits */}
-                      {container.resource_limits && (
+                        {/* Resource Limits */}
+                        {container.resource_limits && (
+                          <>
+                            {container.resource_limits.memory && (
+                              <div className="flex items-center justify-between py-1">
+                                <div
+                                  className={cn('flex items-center space-x-2', theme.text.muted)}
+                                >
+                                  <CpuChipIcon className="w-3 h-3" />
+                                  <span>Memory:</span>
+                                </div>
+                                <span className={cn('font-medium', theme.text.strong)}>
+                                  {formatMemory(container.resource_limits.memory)}
+                                </span>
+                              </div>
+                            )}
+                            {container.resource_limits.cpu_shares && (
+                              <div className="flex items-center justify-between py-1">
+                                <div
+                                  className={cn('flex items-center space-x-2', theme.text.muted)}
+                                >
+                                  <CpuChipIcon className="w-3 h-3" />
+                                  <span>CPU:</span>
+                                </div>
+                                <span className={cn('font-medium', theme.text.strong)}>
+                                  {container.resource_limits.cpu_shares} shares
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Networks Section */}
+                      {container.networks && container.networks.length > 0 && (
                         <>
-                          {container.resource_limits.memory && (
-                            <div className="flex items-center justify-between py-1">
-                              <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                                <CpuChipIcon className="w-3 h-3" />
-                                <span>Memory:</span>
+                          <div
+                            className={cn(
+                              'text-xs font-semibold uppercase tracking-wide mt-4',
+                              theme.text.subtle
+                            )}
+                          >
+                            Networks
+                          </div>
+                          {container.networks.map((network, netIndex) => (
+                            <div key={netIndex} className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className={theme.text.muted}>{network.name}</span>
+                                {network.ip_address && (
+                                  <span
+                                    className={cn(
+                                      'font-mono text-xs px-2 py-1 rounded',
+                                      theme.surface.code
+                                    )}
+                                  >
+                                    {network.ip_address}
+                                  </span>
+                                )}
                               </div>
-                              <span className={cn('font-medium', theme.text.strong)}>
-                                {formatMemory(container.resource_limits.memory)}
-                              </span>
+                              {network.aliases && network.aliases.length > 0 && (
+                                <div className={cn('text-xs', theme.text.subtle)}>
+                                  Aliases: {network.aliases.join(', ')}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {container.resource_limits.cpu_shares && (
-                            <div className="flex items-center justify-between py-1">
-                              <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                                <CpuChipIcon className="w-3 h-3" />
-                                <span>CPU:</span>
-                              </div>
-                              <span className={cn('font-medium', theme.text.strong)}>
-                                {container.resource_limits.cpu_shares} shares
-                              </span>
-                            </div>
-                          )}
+                          ))}
                         </>
                       )}
                     </div>
 
-                    {/* Networks */}
-                    {container.networks && container.networks.length > 0 && (
-                      <div className="space-y-2">
-                        <div
-                          className={cn(
-                            'flex items-center space-x-2 font-medium',
-                            theme.text.standard
-                          )}
-                        >
-                          <GlobeAltIcon className="w-4 h-4" />
-                          <span>Networks</span>
-                        </div>
-                        {container.networks.map((network, netIndex) => (
-                          <div key={netIndex} className="pl-6 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className={theme.text.muted}>{network.name}</span>
-                              {network.ip_address && (
-                                <span
-                                  className={cn(
-                                    'font-mono text-xs px-2 py-1 rounded',
-                                    theme.surface.code
-                                  )}
+                    {/* Right Column */}
+                    <div className="space-y-3">
+                      {/* Timestamps Section */}
+                      {(container.created || container.started) && (
+                        <>
+                          <div
+                            className={cn(
+                              'text-xs font-semibold uppercase tracking-wide',
+                              theme.text.subtle
+                            )}
+                          >
+                            Timestamps
+                          </div>
+                          <div className="space-y-2">
+                            {container.created && (
+                              <div className="flex items-center justify-between py-1">
+                                <div
+                                  className={cn('flex items-center space-x-2', theme.text.muted)}
                                 >
-                                  {network.ip_address}
+                                  <ClockIcon className="w-3 h-3" />
+                                  <span>Created:</span>
+                                </div>
+                                <span className={cn('font-mono text-xs', theme.text.strong)}>
+                                  {new Date(container.created).toLocaleDateString()}{' '}
+                                  {new Date(container.created).toLocaleTimeString()}
                                 </span>
-                              )}
-                            </div>
-                            {network.aliases && network.aliases.length > 0 && (
-                              <div className={cn('text-xs', theme.text.subtle)}>
-                                Aliases: {network.aliases.join(', ')}
+                              </div>
+                            )}
+
+                            {container.started && (
+                              <div className="flex items-center justify-between py-1">
+                                <div
+                                  className={cn('flex items-center space-x-2', theme.text.muted)}
+                                >
+                                  <ClockIcon className="w-3 h-3" />
+                                  <span>Started:</span>
+                                </div>
+                                <span className={cn('font-mono text-xs', theme.text.strong)}>
+                                  {new Date(container.started).toLocaleDateString()}{' '}
+                                  {new Date(container.started).toLocaleTimeString()}
+                                </span>
                               </div>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Column */}
-                  <div className="space-y-3">
-                    {/* Timestamps */}
-                    <div className="space-y-2">
-                      {container.created && (
-                        <div className="flex items-center justify-between py-1">
-                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                            <ClockIcon className="w-3 h-3" />
-                            <span>Created:</span>
-                          </div>
-                          <span className={cn('font-mono text-xs', theme.text.strong)}>
-                            {new Date(container.created).toLocaleDateString()}{' '}
-                            {new Date(container.created).toLocaleTimeString()}
-                          </span>
-                        </div>
+                        </>
                       )}
 
-                      {container.started && (
-                        <div className="flex items-center justify-between py-1">
-                          <div className={cn('flex items-center space-x-2', theme.text.muted)}>
-                            <ClockIcon className="w-3 h-3" />
-                            <span>Started:</span>
+                      {/* Mounts Section */}
+                      {container.mounts && container.mounts.length > 0 && (
+                        <>
+                          <div
+                            className={cn(
+                              'text-xs font-semibold uppercase tracking-wide',
+                              theme.text.subtle
+                            )}
+                          >
+                            Mounts ({container.mounts.length})
                           </div>
-                          <span className={cn('font-mono text-xs', theme.text.strong)}>
-                            {new Date(container.started).toLocaleDateString()}{' '}
-                            {new Date(container.started).toLocaleTimeString()}
-                          </span>
-                        </div>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {container.mounts.map((mount, mountIndex) => (
+                              <div key={mountIndex} className="space-y-1">
+                                <div className="flex items-center space-x-2">
+                                  <span
+                                    className={cn(
+                                      theme.badges.tag.base,
+                                      mount.type === 'volume'
+                                        ? theme.badges.tag.info
+                                        : mount.type === 'bind'
+                                          ? theme.badges.tag.success
+                                          : theme.badges.tag.neutral
+                                    )}
+                                  >
+                                    {mount.type}
+                                  </span>
+                                  <span
+                                    className={`text-xs ${mount.rw ? theme.text.success : theme.text.danger}`}
+                                  >
+                                    {mount.rw ? 'RW' : 'RO'}
+                                  </span>
+                                </div>
+                                <div
+                                  className={cn('text-xs font-mono break-all', theme.text.muted)}
+                                >
+                                  {mount.source} → {mount.destination}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Command Section */}
+                      {container.command && container.command.length > 0 && (
+                        <>
+                          <div
+                            className={cn(
+                              'text-xs font-semibold uppercase tracking-wide',
+                              theme.text.subtle
+                            )}
+                          >
+                            Command
+                          </div>
+                          <div
+                            className={cn(
+                              'font-mono text-xs p-3 rounded break-all',
+                              theme.surface.code,
+                              theme.text.muted
+                            )}
+                          >
+                            {container.command.join(' ')}
+                          </div>
+                        </>
                       )}
                     </div>
-
-                    {/* Mounts */}
-                    {container.mounts && container.mounts.length > 0 && (
-                      <div className="space-y-2">
-                        <div
-                          className={cn(
-                            'flex items-center space-x-2 font-medium',
-                            theme.text.standard
-                          )}
-                        >
-                          <CircleStackIcon className="w-4 h-4" />
-                          <span>Mounts</span>
-                        </div>
-                        <div className="pl-6 space-y-1 max-h-32 overflow-y-auto">
-                          {container.mounts.map((mount, mountIndex) => (
-                            <div key={mountIndex} className="space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <span
-                                  className={cn(
-                                    theme.badges.tag.base,
-                                    mount.type === 'volume'
-                                      ? theme.badges.tag.info
-                                      : mount.type === 'bind'
-                                        ? theme.badges.tag.success
-                                        : theme.badges.tag.neutral
-                                  )}
-                                >
-                                  {mount.type}
-                                </span>
-                                <span
-                                  className={`text-xs ${mount.rw ? theme.text.success : theme.text.danger}`}
-                                >
-                                  {mount.rw ? 'RW' : 'RO'}
-                                </span>
-                              </div>
-                              <div className={cn('text-xs font-mono break-all', theme.text.muted)}>
-                                {mount.source} → {mount.destination}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Command */}
-                    {container.command && container.command.length > 0 && (
-                      <div className="space-y-2">
-                        <div
-                          className={cn(
-                            'flex items-center space-x-2 font-medium',
-                            theme.text.standard
-                          )}
-                        >
-                          <CommandLineIcon className="w-4 h-4" />
-                          <span>Command</span>
-                        </div>
-                        <div
-                          className={cn(
-                            'font-mono text-xs p-2 rounded break-all',
-                            theme.surface.code
-                          )}
-                        >
-                          {container.command.join(' ')}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       )}
     </div>
