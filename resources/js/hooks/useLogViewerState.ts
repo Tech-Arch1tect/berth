@@ -50,7 +50,7 @@ export function useLogViewerState({
   useEffect(() => {
     resetLogs();
     fetchLogs({ tail, since, timestamps: showTimestamps });
-  }, [tail, since, showTimestamps, selectedContainer]);
+  }, [tail, since, showTimestamps, selectedContainer, resetLogs, fetchLogs]);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -71,7 +71,7 @@ export function useLogViewerState({
         window.clearInterval(intervalRef.current);
       }
     };
-  }, [autoRefresh, tail, since, showTimestamps]);
+  }, [autoRefresh, tail, since, showTimestamps, fetchLogs]);
 
   useEffect(() => {
     if (followMode && logContainerRef.current) {

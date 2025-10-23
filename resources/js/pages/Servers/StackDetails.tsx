@@ -183,6 +183,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               activeTab={stack.activeTab}
               onTabChange={(tabId) => stack.setActiveTab(tabId as typeof stack.activeTab)}
               className="rounded-2xl"
+              noPadding={stack.activeTab === 'logs'}
             >
               {stack.activeTab === 'services' && (
                 <StackServicesTab

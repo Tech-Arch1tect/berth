@@ -17,6 +17,7 @@ export interface TabsProps {
   onTabChange: (tabId: string) => void;
   children: React.ReactNode;
   className?: string;
+  noPadding?: boolean;
 }
 
 export const Tabs: React.FC<TabsProps> = ({
@@ -25,6 +26,7 @@ export const Tabs: React.FC<TabsProps> = ({
   onTabChange,
   children,
   className,
+  noPadding = false,
 }) => {
   return (
     <div className={cn(theme.containers.cardSoft, 'rounded-2xl overflow-hidden', className)}>
@@ -73,7 +75,7 @@ export const Tabs: React.FC<TabsProps> = ({
             })}
         </nav>
       </div>
-      <div className="p-6">{children}</div>
+      <div className={noPadding ? '' : 'p-6'}>{children}</div>
     </div>
   );
 };

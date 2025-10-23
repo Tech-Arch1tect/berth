@@ -294,7 +294,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         <main className="px-4 py-8 sm:px-6 lg:px-10">
-          <div className="mx-auto max-w-6xl space-y-6">{children}</div>
+          <div className="space-y-6">{children}</div>
         </main>
       </div>
 
