@@ -4,7 +4,8 @@ type StorageKey =
   | 'sidebar_collapsed'
   | 'preferred_tab'
   | 'stacks_layout'
-  | 'stacks_sort';
+  | 'stacks_sort'
+  | 'stacks_negative_filters_history';
 
 interface StorageValue {
   darkMode: 'true' | 'false';
@@ -19,6 +20,7 @@ interface StorageValue {
     | 'health-desc'
     | 'containers-asc'
     | 'containers-desc';
+  stacks_negative_filters_history: string;
 }
 
 class StorageManagerClass {
@@ -193,6 +195,43 @@ class StorageManagerClass {
     },
   };
 
+  negativeFilters = {
+    getHistory: (): string[] => {
+      const value = this.getItem('stacks_negative_filters_history');
+      if (!value) return [];
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    },
+
+    addToHistory: (filter: string): void => {
+      if (!filter.trim()) return;
+
+      const history = this.negativeFilters.getHistory();
+
+      const filtered = history.filter((f: string) => f !== filter);
+
+      filtered.unshift(filter);
+
+      const limited = filtered.slice(0, 20);
+
+      this.setItem('stacks_negative_filters_history', JSON.stringify(limited));
+    },
+
+    removeFromHistory: (filter: string): void => {
+      const history = this.negativeFilters.getHistory();
+      const filtered = history.filter((f: string) => f !== filter);
+      this.setItem('stacks_negative_filters_history', JSON.stringify(filtered));
+    },
+
+    clear: (): void => {
+      this.removeItem('stacks_negative_filters_history');
+    },
+  };
+
   clearAll(): void {
     this.theme.clear();
     this.operations.clear();
@@ -200,6 +239,7 @@ class StorageManagerClass {
     this.preferredTab.clear();
     this.stacksLayout.clear();
     this.stacksSort.clear();
+    this.negativeFilters.clear();
   }
 }
 

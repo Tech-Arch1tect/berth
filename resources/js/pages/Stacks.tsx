@@ -10,12 +10,14 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
   ArrowsUpDownIcon,
+  MinusCircleIcon,
 } from '@heroicons/react/24/outline';
 import Layout from '../components/layout/Layout';
 import { StackCard } from '../components/dashboard/StackCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { StatCard } from '../components/common/StatCard';
+import { NegativeFilters } from '../components/common/NegativeFilters';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { cn } from '../utils/cn';
@@ -41,6 +43,8 @@ export default function Stacks({ title, servers }: StacksProps) {
   const [serverFilter, setServerFilter] = useState<number | 'all'>('all');
   const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>('normal');
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [negativeFilters, setNegativeFilters] = useState<string[]>([]);
+  const [showExclusionFilter, setShowExclusionFilter] = useState(false);
 
   const { stacks, isLoading, isFetching, hasError, errors, refetchAll } = useAllStacks({
     servers,
@@ -79,7 +83,17 @@ export default function Stacks({ title, servers }: StacksProps) {
 
       const matchesServer = serverFilter === 'all' || stack.server_id === serverFilter;
 
-      return matchesSearch && matchesHealth && matchesServer;
+      const matchesNegativeFilters = negativeFilters.every((filter) => {
+        const lowerFilter = filter.toLowerCase();
+        return !(
+          stack.name.toLowerCase().includes(lowerFilter) ||
+          stack.server_name.toLowerCase().includes(lowerFilter) ||
+          stack.compose_file.toLowerCase().includes(lowerFilter) ||
+          stack.path.toLowerCase().includes(lowerFilter)
+        );
+      });
+
+      return matchesSearch && matchesHealth && matchesServer && matchesNegativeFilters;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -102,7 +116,7 @@ export default function Stacks({ title, servers }: StacksProps) {
     });
 
     return sorted;
-  }, [stacks, searchTerm, healthFilter, serverFilter, sortBy]);
+  }, [stacks, searchTerm, healthFilter, serverFilter, sortBy, negativeFilters]);
 
   const statistics = useMemo(() => {
     return {
@@ -249,13 +263,8 @@ export default function Stacks({ title, servers }: StacksProps) {
         <LoadingSpinner size="lg" text="Loading stacks from all servers..." fullScreen />
       ) : (
         <>
-          <div
-            className={cn(
-              'flex flex-col sm:flex-row gap-4 mb-6 p-4 rounded-2xl',
-              theme.cards.translucent
-            )}
-          >
-            <div className="relative flex-1">
+          <div className={cn('space-y-4 mb-6 p-6 rounded-2xl', theme.cards.translucent)}>
+            <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -268,66 +277,100 @@ export default function Stacks({ title, servers }: StacksProps) {
                 )}
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <ArrowsUpDownIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value as SortOption)}
+
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <div className="flex flex-wrap items-center gap-3 flex-1">
+                <div className="relative flex-1 min-w-[180px]">
+                  <ArrowsUpDownIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value as SortOption)}
+                    className={cn(
+                      'w-full pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
+                      theme.forms.select
+                    )}
+                  >
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="health-asc">Health (Healthy First)</option>
+                    <option value="health-desc">Health (Unhealthy First)</option>
+                    <option value="containers-asc">Containers (Low-High)</option>
+                    <option value="containers-desc">Containers (High-Low)</option>
+                  </select>
+                </div>
+                <div className="relative flex-1 min-w-[160px]">
+                  <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <select
+                    value={healthFilter}
+                    onChange={(e) =>
+                      setHealthFilter(e.target.value as 'all' | 'healthy' | 'unhealthy')
+                    }
+                    className={cn(
+                      'w-full pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
+                      theme.forms.select
+                    )}
+                  >
+                    <option value="all">All Health</option>
+                    <option value="healthy">Healthy Only</option>
+                    <option value="unhealthy">Unhealthy Only</option>
+                  </select>
+                </div>
+                <div className="relative flex-1 min-w-[160px]">
+                  <ServerIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <select
+                    value={serverFilter}
+                    onChange={(e) =>
+                      setServerFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                    }
+                    className={cn(
+                      'w-full pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
+                      theme.forms.select
+                    )}
+                  >
+                    <option value="all">All Servers</option>
+                    {servers.map((server) => (
+                      <option key={server.id} value={server.id}>
+                        {server.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => setShowExclusionFilter(!showExclusionFilter)}
                   className={cn(
-                    'pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
-                    theme.forms.select
+                    'inline-flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap',
+                    showExclusionFilter || negativeFilters.length > 0
+                      ? theme.buttons.primary
+                      : theme.buttons.secondary
                   )}
+                  title="Toggle exclusion filters"
                 >
-                  <option value="name-asc">Name (A-Z)</option>
-                  <option value="name-desc">Name (Z-A)</option>
-                  <option value="health-asc">Health (Healthy First)</option>
-                  <option value="health-desc">Health (Unhealthy First)</option>
-                  <option value="containers-asc">Containers (Low-High)</option>
-                  <option value="containers-desc">Containers (High-Low)</option>
-                </select>
-              </div>
-              <div className="relative">
-                <FunnelIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={healthFilter}
-                  onChange={(e) =>
-                    setHealthFilter(e.target.value as 'all' | 'healthy' | 'unhealthy')
-                  }
-                  className={cn(
-                    'pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
-                    theme.forms.select
+                  <MinusCircleIcon className="h-4 w-4 mr-2" />
+                  Exclude
+                  {negativeFilters.length > 0 && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded-full bg-white/20 text-xs font-medium">
+                      {negativeFilters.length}
+                    </span>
                   )}
-                >
-                  <option value="all">All Health</option>
-                  <option value="healthy">Healthy Only</option>
-                  <option value="unhealthy">Unhealthy Only</option>
-                </select>
+                </button>
               </div>
-              <div className="relative">
-                <ServerIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={serverFilter}
-                  onChange={(e) =>
-                    setServerFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                  }
-                  className={cn(
-                    'pl-10 pr-8 py-2.5 rounded-xl transition-all duration-200',
-                    theme.forms.select
-                  )}
-                >
-                  <option value="all">All Servers</option>
-                  {servers.map((server) => (
-                    <option key={server.id} value={server.id}>
-                      {server.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <span className={cn('text-sm whitespace-nowrap', theme.text.subtle)}>
+
+              <span className={cn('text-sm whitespace-nowrap flex-shrink-0', theme.text.subtle)}>
                 {filteredAndSortedStacks.length} of {stacks.length}
               </span>
             </div>
+
+            {showExclusionFilter && (
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <NegativeFilters
+                  filters={negativeFilters}
+                  onFiltersChange={setNegativeFilters}
+                  isExpanded={showExclusionFilter}
+                  onToggle={() => setShowExclusionFilter(!showExclusionFilter)}
+                />
+              </div>
+            )}
           </div>
 
           {filteredAndSortedStacks.length === 0 ? (
