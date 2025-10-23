@@ -142,7 +142,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchRunningOperations = useCallback(async () => {
     try {
-      const response = await fetch('/api/running-operations');
+      const response = await fetch('/api/v1/running-operations');
       if (!response.ok) {
         return;
       }

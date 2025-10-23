@@ -8,7 +8,7 @@ export const useRunningOperations = () => {
 
   const fetchRunningOperations = useCallback(async () => {
     try {
-      const response = await fetch('/api/running-operations');
+      const response = await fetch('/api/v1/running-operations');
       if (!response.ok) {
         throw new Error('Failed to fetch running operations');
       }

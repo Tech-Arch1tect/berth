@@ -272,7 +272,6 @@ func registerProtectedWebRoutes(web *echo.Group, authSvc *auth.Service, totpSvc 
 		protected.GET("/api/operation-logs", operationLogsHandler.ListUserOperationLogs)
 		protected.GET("/api/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
 		protected.GET("/api/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
-		protected.GET("/api/running-operations", operationLogsHandler.GetRunningOperations)
 	}
 	if serverUserAPIHandler != nil {
 		protected.GET("/api/servers", serverUserAPIHandler.ListServers)
