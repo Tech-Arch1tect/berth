@@ -32,10 +32,13 @@ func (h *AuthHandler) setRememberMeCookie(c echo.Context, token string, expiresA
 		sameSite = http.SameSiteLaxMode
 	}
 
+	maxAge := int(time.Until(expiresAt).Seconds())
+
 	cookie := &http.Cookie{
 		Name:     "remember_me",
 		Value:    token,
 		Expires:  expiresAt,
+		MaxAge:   maxAge,
 		HttpOnly: true,
 		Secure:   h.authSvc.GetRememberMeCookieSecure(),
 		SameSite: sameSite,
