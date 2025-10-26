@@ -70,6 +70,12 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	if sessionService != nil {
 		web.Use(session.SessionServiceMiddleware(sessionService))
 	}
+	web.Use(rememberme.Middleware(rememberme.Config{
+		AuthService:  authSvc,
+		UserProvider: userProvider,
+		TOTPService:  totpSvc,
+		Logger:       logger,
+	}))
 	if cfg.CSRF.Enabled {
 		web.Use(csrf.WithConfig(&cfg.CSRF))
 		web.Use(inertiacsrf.Middleware(cfg))
@@ -84,7 +90,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	}
 
 	registerAuthRoutes(web, authHandler, totpHandler, rateLimitStore)
-	registerProtectedWebRoutes(web, authSvc, totpSvc, userProvider, logger,
+	registerProtectedWebRoutes(web,
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
 		stackHandler, maintenanceHandler, registryHandler, filesHandler,
 		operationLogsHandler, serverUserAPIHandler, apiKeyHandler,
@@ -174,7 +180,7 @@ func registerAuthRoutes(web *echo.Group, authHandler *handlers.AuthHandler, totp
 	auth.POST("/totp/verify", totpHandler.VerifyTOTP, totpRateLimit)
 }
 
-func registerProtectedWebRoutes(web *echo.Group, authSvc *auth.Service, totpSvc *totp.Service, userProvider jwtshared.UserProvider, logger *logging.Service,
+func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler, filesHandler *files.Handler,
@@ -184,12 +190,6 @@ func registerProtectedWebRoutes(web *echo.Group, authSvc *auth.Service, totpSvc 
 	imageUpdatesAPIHandler *imageupdates.APIHandler) {
 
 	protected := web.Group("")
-	protected.Use(rememberme.Middleware(rememberme.Config{
-		AuthService:  authSvc,
-		UserProvider: userProvider,
-		TOTPService:  totpSvc,
-		Logger:       logger,
-	}))
 	protected.Use(session.RequireAuthWeb("/auth/login"))
 	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
 
