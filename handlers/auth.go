@@ -191,28 +191,32 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 
 	if h.authSvc.IsRememberMeEnabled() && req.RememberMe {
-		rememberToken, err := h.authSvc.CreateRememberMeToken(user.ID)
-		if err != nil {
-			h.logger.Error("failed to create remember me token",
-				zap.Uint("user_id", user.ID),
-				zap.Error(err),
-			)
+		if h.totpSvc != nil && h.totpSvc.IsUserTOTPEnabled(user.ID) {
+			session.Set(c, "pending_remember_me", true)
 		} else {
-			h.setRememberMeCookie(c, rememberToken.Token, rememberToken.ExpiresAt)
-			h.logger.Info("remember me token created",
-				zap.Uint("user_id", user.ID),
-				zap.Time("expires_at", rememberToken.ExpiresAt),
-			)
-			_ = h.auditSvc.LogAuthEvent(
-				security.EventAuthRememberMeCreated,
-				&user.ID,
-				req.Username,
-				c.RealIP(),
-				c.Request().UserAgent(),
-				true,
-				"",
-				nil,
-			)
+			rememberToken, err := h.authSvc.CreateRememberMeToken(user.ID)
+			if err != nil {
+				h.logger.Error("failed to create remember me token",
+					zap.Uint("user_id", user.ID),
+					zap.Error(err),
+				)
+			} else {
+				h.setRememberMeCookie(c, rememberToken.Token, rememberToken.ExpiresAt)
+				h.logger.Info("remember me token created",
+					zap.Uint("user_id", user.ID),
+					zap.Time("expires_at", rememberToken.ExpiresAt),
+				)
+				_ = h.auditSvc.LogAuthEvent(
+					security.EventAuthRememberMeCreated,
+					&user.ID,
+					req.Username,
+					c.RealIP(),
+					c.Request().UserAgent(),
+					true,
+					"",
+					nil,
+				)
+			}
 		}
 	}
 
