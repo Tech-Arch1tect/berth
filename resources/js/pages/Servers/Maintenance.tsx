@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Server } from '../../types/server';
 import { cn } from '../../utils/cn';
@@ -139,16 +138,16 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <Head title={title} />
         <LoadingSpinner size="lg" text="Loading maintenance information..." fullScreen />
-      </Layout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Layout>
+      <>
         <Head title={title} />
         <EmptyState
           icon={ExclamationTriangleIcon}
@@ -161,12 +160,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
             onClick: () => refetch(),
           }}
         />
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       {/* Breadcrumb */}
@@ -280,7 +279,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
         variant="danger"
         isLoading={deleteMutation.isPending}
       />
-    </Layout>
+    </>
   );
 };
 

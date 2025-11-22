@@ -1,6 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -50,7 +49,7 @@ export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-2xl mx-auto p-6">
@@ -141,6 +140,6 @@ export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

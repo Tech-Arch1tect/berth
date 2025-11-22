@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -125,7 +124,7 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -323,6 +322,6 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
         message={`Are you sure you want to delete the role "${roleToDelete?.name}"? This action cannot be undone.`}
         variant="danger"
       />
-    </Layout>
+    </>
   );
 }

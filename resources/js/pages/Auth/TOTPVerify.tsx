@@ -1,5 +1,4 @@
 import { Head, useForm } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -28,7 +27,7 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="space-y-6">
@@ -81,6 +80,6 @@ export default function TOTPVerify({ title, csrfToken }: Props) {
           </div>
         </form>
       </div>
-    </Layout>
+    </>
   );
 }

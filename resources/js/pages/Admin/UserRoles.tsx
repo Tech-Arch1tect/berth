@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -99,7 +98,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
   const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.id));
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -214,6 +213,6 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

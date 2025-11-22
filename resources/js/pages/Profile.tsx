@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { User } from '../types';
@@ -66,7 +65,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
@@ -269,6 +268,6 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
           </Modal>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

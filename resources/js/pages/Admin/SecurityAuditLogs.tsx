@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { Table, Column } from '../../components/common/Table';
@@ -177,7 +176,7 @@ export default function SecurityAuditLogs({ title }: Props) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
       <FlashMessages />
 
@@ -572,6 +571,6 @@ export default function SecurityAuditLogs({ title }: Props) {
           </div>
         )}
       </Modal>
-    </Layout>
+    </>
   );
 }

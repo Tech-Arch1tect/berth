@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Modal } from '../../components/common/Modal';
@@ -278,7 +277,7 @@ export default function RoleStackPermissions({
   );
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -664,6 +663,6 @@ export default function RoleStackPermissions({
           <p className={cn(theme.text.standard)}>{errorModal.message}</p>
         </Modal>
       </div>
-    </Layout>
+    </>
   );
 }

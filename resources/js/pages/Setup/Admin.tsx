@@ -1,6 +1,5 @@
 import React from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -26,7 +25,7 @@ export default function AdminSetup() {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Admin Setup" />
 
       <div
@@ -142,6 +141,6 @@ export default function AdminSetup() {
           </form>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

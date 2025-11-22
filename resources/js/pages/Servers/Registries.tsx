@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
@@ -169,7 +168,7 @@ export default function Registries({
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       {/* Breadcrumb */}
@@ -436,6 +435,6 @@ export default function Registries({
         confirmText="Delete"
         variant="danger"
       />
-    </Layout>
+    </>
   );
 }

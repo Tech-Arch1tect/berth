@@ -1,4 +1,3 @@
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Head, usePage, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
@@ -165,7 +164,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Active Sessions" />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
@@ -317,6 +316,6 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
         message="Are you sure you want to revoke all other sessions? You will be logged out from all other devices."
         variant="danger"
       />
-    </Layout>
+    </>
   );
 }

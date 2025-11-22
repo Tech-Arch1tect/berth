@@ -1,6 +1,5 @@
 import { useForm, Head, Link } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -34,7 +33,7 @@ export default function Login({
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Login" />
       <div className="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -155,6 +154,6 @@ export default function Login({
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

@@ -9,7 +9,6 @@ import {
   ListBulletIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import Layout from '../components/layout/Layout';
 import { StackCard } from '../components/dashboard/StackCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -118,7 +117,7 @@ export default function Stacks({ title, servers }: StacksProps) {
   }, [stacks]);
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="mb-8">
@@ -306,6 +305,6 @@ export default function Stacks({ title, servers }: StacksProps) {
           )}
         </>
       )}
-    </Layout>
+    </>
   );
 }

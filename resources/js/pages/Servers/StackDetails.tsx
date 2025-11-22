@@ -1,6 +1,5 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Server } from '../../types/server';
@@ -63,7 +62,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   });
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
       <ServerStackProvider serverId={serverid} stackName={stackname} serverName={server.name}>
         {/* Breadcrumb Navigation */}
@@ -289,7 +288,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
           />
         )}
       </ServerStackProvider>
-    </Layout>
+    </>
   );
 };
 

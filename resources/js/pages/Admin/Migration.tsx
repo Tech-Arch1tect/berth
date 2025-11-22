@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { Tabs } from '../../components/common/Tabs';
@@ -173,7 +172,7 @@ export default function Migration({ title }: Props) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="py-6">
@@ -395,6 +394,6 @@ export default function Migration({ title }: Props) {
           </Modal>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

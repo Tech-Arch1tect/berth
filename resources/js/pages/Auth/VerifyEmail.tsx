@@ -1,6 +1,5 @@
 import { useForm, Head, Link } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -23,7 +22,7 @@ export default function VerifyEmail({ token, csrfToken }: VerifyEmailProps) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Verify Email" />
       <div className="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -67,6 +66,6 @@ export default function VerifyEmail({ token, csrfToken }: VerifyEmailProps) {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

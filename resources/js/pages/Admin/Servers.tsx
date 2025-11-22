@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
@@ -237,7 +236,7 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
   };
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -514,6 +513,6 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
       >
         <p className={theme.text.standard}>{testResultModal?.message}</p>
       </Modal>
-    </Layout>
+    </>
   );
 }

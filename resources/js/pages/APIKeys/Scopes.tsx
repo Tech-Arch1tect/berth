@@ -1,4 +1,3 @@
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
@@ -194,7 +193,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Manage API Key Scopes" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
@@ -460,6 +459,6 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
       >
         <p className={cn(theme.text.standard)}>{errorMessage}</p>
       </Modal>
-    </Layout>
+    </>
   );
 }

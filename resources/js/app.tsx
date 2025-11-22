@@ -4,9 +4,9 @@ import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { OperationsProvider } from './contexts/OperationsContext';
 import { TerminalPanelProvider } from './contexts/TerminalPanelContext';
+import Layout from './components/layout/Layout';
 
 const appName = 'Berth';
 
@@ -25,13 +25,24 @@ createInertiaApp({
   resolve: (name) => {
     const pages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
       string,
-      { default: React.ComponentType<unknown> }
+      {
+        default: React.ComponentType<unknown> & {
+          layout?: (page: React.ReactElement) => React.ReactElement;
+        };
+      }
     >;
     const page = pages[`./pages/${name}.tsx`];
     if (!page) {
       throw new Error(`Page not found: ${name}`);
     }
-    return page.default;
+
+    const Component = page.default;
+
+    if (!Component.layout) {
+      Component.layout = (page) => <Layout>{page}</Layout>;
+    }
+
+    return Component;
   },
   setup({ el, App, props }) {
     const root = createRoot(el);

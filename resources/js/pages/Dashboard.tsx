@@ -1,4 +1,3 @@
-import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { Head } from '@inertiajs/react';
 import { Server } from '../types/server';
@@ -30,7 +29,7 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
   const activitySummary = useDashboardActivity();
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       {/* Header Section */}
@@ -57,6 +56,6 @@ export default function Dashboard({ title, servers, currentUser }: DashboardProp
 
       {/* Servers Section */}
       <DashboardServerSection servers={servers} healthSummary={healthSummary} />
-    </Layout>
+    </>
   );
 }

@@ -1,4 +1,3 @@
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
@@ -150,7 +149,7 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="API Keys" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
@@ -422,6 +421,6 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
       >
         <p className={cn(theme.text.standard)}>{errorMessage}</p>
       </Modal>
-    </Layout>
+    </>
   );
 }

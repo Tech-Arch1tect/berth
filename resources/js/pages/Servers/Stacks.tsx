@@ -7,7 +7,6 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
 } from '@heroicons/react/24/outline';
-import Layout from '../../components/layout/Layout';
 import { StackCard } from '../../components/dashboard/StackCard';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -108,7 +107,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     return sorted;
   }, [stacks, searchTerm, healthFilter, sortBy, negativeFilters]);
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       {/* Breadcrumb */}
@@ -289,6 +288,6 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
           )}
         </>
       )}
-    </Layout>
+    </>
   );
 }

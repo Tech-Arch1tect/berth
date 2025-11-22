@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import OperationLogStats from '../../components/operations/OperationLogStats';
 import OperationLogFilters from '../../components/operations/OperationLogFilters';
@@ -213,7 +212,7 @@ export default function OperationLogs({ title }: Props) {
   const uniqueCommands = Array.from(new Set(logs.map((log) => log.command))).sort();
 
   return (
-    <Layout>
+    <>
       <Head title={title} />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -271,6 +270,6 @@ export default function OperationLogs({ title }: Props) {
           getOperationDuration={getOperationDuration}
         />
       </div>
-    </Layout>
+    </>
   );
 }

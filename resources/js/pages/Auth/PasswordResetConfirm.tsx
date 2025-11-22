@@ -1,6 +1,5 @@
 import { FormEvent } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import Layout from '../../components/layout/Layout';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
@@ -27,7 +26,7 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
   };
 
   return (
-    <Layout>
+    <>
       <Head title="Reset Password" />
 
       <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -109,6 +108,6 @@ export default function PasswordResetConfirm({ token, csrfToken }: Props) {
           </form>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
