@@ -110,6 +110,21 @@ func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *we
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
+	messageChan := make(chan []byte, 10)
+	errorChan := make(chan error, 1)
+
+	go func() {
+		defer close(messageChan)
+		for {
+			_, messageData, err := conn.ReadMessage()
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			messageChan <- messageData
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -118,16 +133,12 @@ func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *we
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return err
 			}
-		default:
-
-			_, messageData, err := conn.ReadMessage()
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					return err
-				}
-				return nil
+		case err := <-errorChan:
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				return err
 			}
-
+			return nil
+		case messageData := <-messageChan:
 			var wsMsg WebSocketMessage
 			if err := json.Unmarshal(messageData, &wsMsg); err != nil {
 				h.sendError(conn, "Invalid message format")
