@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ComposeService } from '../types/stack';
 import { ComposeChanges } from '../components/compose';
 import { showToast } from '../utils/toast';
+import { getServicePortBaseline } from '../utils/portUtils';
 
 export function useComposeEditor(
   services: ComposeService[],
@@ -63,9 +64,10 @@ export function useComposeEditor(
     (serviceName: string, ports: string[]) => {
       const normalized = ports.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
       const baselineService = services.find((service) => service.name === serviceName);
-      const baseline =
-        baselineService?.ports?.map((entry) => entry.trim()).filter((entry) => entry.length > 0) ??
-        [];
+
+      const { ports: baseline } = baselineService
+        ? getServicePortBaseline(baselineService)
+        : { ports: [] };
 
       const isUnchanged =
         normalized.length === baseline.length &&

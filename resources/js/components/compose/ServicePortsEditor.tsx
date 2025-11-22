@@ -1,14 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ComposeService } from '../../types/stack';
-import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-
-type PortEntry = {
-  public?: number;
-  private: number;
-  type?: string;
-};
+import { getServicePortBaseline } from '../../utils/portUtils';
 
 interface ServicePortsEditorProps {
   service: ComposeService;
@@ -16,35 +11,6 @@ interface ServicePortsEditorProps {
   onApply: (serviceName: string, ports: string[]) => void;
   onCancel: () => void;
 }
-
-export const derivePortsFromService = (service: ComposeService): string[] => {
-  const firstContainer = service.containers?.[0];
-  if (!firstContainer || !firstContainer.ports) {
-    return [];
-  }
-
-  const seen = new Set<string>();
-  const mappings: string[] = [];
-
-  firstContainer.ports.forEach((port: PortEntry) => {
-    if (!port || typeof port.private !== 'number') {
-      return;
-    }
-
-    const protocol =
-      port.type && port.type.toLowerCase() !== 'tcp' ? `/${port.type.toLowerCase()}` : '';
-    const hasPublishedPort = typeof port.public === 'number' && port.public > 0;
-    const base = hasPublishedPort ? `${port.public}:${port.private}` : `${port.private}`;
-    const mapping = `${base}${protocol}`;
-
-    if (!seen.has(mapping)) {
-      seen.add(mapping);
-      mappings.push(mapping);
-    }
-  });
-
-  return mappings;
-};
 
 const parsePorts = (value: string) =>
   value
@@ -60,15 +26,15 @@ export const ServicePortsEditor: React.FC<ServicePortsEditorProps> = ({
   onApply,
   onCancel,
 }) => {
-  const basePorts = useMemo(() => {
+  const { basePorts, portSource } = useMemo(() => {
     if (pendingPorts) {
-      return pendingPorts;
+      const { source } = getServicePortBaseline(service);
+      return { basePorts: pendingPorts, portSource: source };
     }
-    if (service.ports && service.ports.length > 0) {
-      return service.ports;
-    }
-    return derivePortsFromService(service);
+    const { ports, source } = getServicePortBaseline(service);
+    return { basePorts: ports, portSource: source };
   }, [pendingPorts, service]);
+
   const [portText, setPortText] = useState<string>(basePorts.join('\n'));
   const [error, setError] = useState<string | null>(null);
 
@@ -118,6 +84,31 @@ export const ServicePortsEditor: React.FC<ServicePortsEditorProps> = ({
             Service: <span className="font-semibold">{service.name}</span>
           </p>
         </div>
+
+        {portSource === 'runtime' && (
+          <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-6')}>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
+              </div>
+              <div className="ml-3">
+                <h3 className={cn('text-sm font-medium', theme.intent.warning.textStrong)}>
+                  Editing Runtime-Derived Ports
+                </h3>
+                <div className={cn('mt-2 text-sm', theme.intent.warning.textMuted)}>
+                  <p>
+                    These ports are derived from the running container because the compose file
+                    doesn't define any ports. Saving will add them to the compose file.
+                  </p>
+                  <p className="mt-2">
+                    <strong>Note:</strong> Host IP bindings (e.g., 127.0.0.1:8080:80) cannot be
+                    preserved from runtime data and will be lost.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6">
           <label

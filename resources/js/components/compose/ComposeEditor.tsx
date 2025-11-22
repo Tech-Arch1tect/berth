@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { ComposeService } from '../../types/stack';
 import { ServiceImageEditor } from './ServiceImageEditor';
-import { ServicePortsEditor, derivePortsFromService } from './ServicePortsEditor';
+import { ServicePortsEditor } from './ServicePortsEditor';
 import { XMarkIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useComposeEditor } from '../../hooks/useComposeEditor';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { getServicePortBaseline } from '../../utils/portUtils';
 
 export interface ComposeChanges {
   service_image_updates?: Array<{
@@ -83,16 +84,13 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
       )
     : undefined;
 
-  const currentDefinedPorts = editor.currentService?.ports ?? [];
-
-  const runtimePorts = useMemo(() => {
+  const { displayedCurrentPorts, portSource } = useMemo(() => {
     if (!editor.currentService) {
-      return [];
+      return { displayedCurrentPorts: [], portSource: 'none' as const };
     }
-    return derivePortsFromService(editor.currentService);
+    const { ports, source } = getServicePortBaseline(editor.currentService);
+    return { displayedCurrentPorts: ports, portSource: source };
   }, [editor.currentService]);
-
-  const displayedCurrentPorts = currentDefinedPorts.length > 0 ? currentDefinedPorts : runtimePorts;
 
   const updatedImageValue = editor.currentService
     ? buildUpdatedImageValue(editor.currentService, pendingImageUpdate)
@@ -308,14 +306,40 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                         </div>
                         <div className="p-6 space-y-4">
                           <div>
-                            <span
-                              className={cn(
-                                'block text-xs font-bold uppercase tracking-wide',
-                                theme.text.muted
+                            <div className="flex items-center gap-2 mb-2">
+                              <span
+                                className={cn(
+                                  'text-xs font-bold uppercase tracking-wide',
+                                  theme.text.muted
+                                )}
+                              >
+                                Current
+                              </span>
+                              {portSource === 'runtime' && (
+                                <span
+                                  className={cn(
+                                    'text-xs px-2 py-0.5 rounded',
+                                    theme.badges.tag.base,
+                                    theme.badges.tag.warning
+                                  )}
+                                  title="Ports derived from running container (not defined in compose file)"
+                                >
+                                  Runtime
+                                </span>
                               )}
-                            >
-                              Current
-                            </span>
+                              {portSource === 'compose' && (
+                                <span
+                                  className={cn(
+                                    'text-xs px-2 py-0.5 rounded',
+                                    theme.badges.tag.base,
+                                    theme.badges.tag.success
+                                  )}
+                                  title="Ports defined in compose file"
+                                >
+                                  Compose
+                                </span>
+                              )}
+                            </div>
                             {displayedCurrentPorts.length > 0 ? (
                               <ul
                                 className={cn(
