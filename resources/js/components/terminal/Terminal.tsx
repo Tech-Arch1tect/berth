@@ -245,8 +245,8 @@ export const Terminal: React.FC<TerminalProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 p-2">
-        <div ref={terminalRef} className="w-full h-full" style={{ minHeight: '400px' }} />
+      <div className="flex-1 overflow-hidden">
+        <div ref={terminalRef} className="w-full h-full" />
       </div>
     </div>
   );
