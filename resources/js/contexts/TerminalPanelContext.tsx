@@ -79,7 +79,11 @@ export const TerminalPanelProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const openTerminal = useCallback((tab: Omit<TerminalTab, 'id' | 'label'>) => {
     setState((prev) => {
-      const existingTab = prev.tabs.find(
+      if (prev.tabs.length >= MAX_TERMINALS) {
+        return prev;
+      }
+
+      const sameServiceTabs = prev.tabs.filter(
         (t) =>
           t.serverid === tab.serverid &&
           t.stackname === tab.stackname &&
@@ -87,22 +91,15 @@ export const TerminalPanelProvider: React.FC<{ children: ReactNode }> = ({ child
           t.containerName === tab.containerName
       );
 
-      if (existingTab) {
-        return {
-          ...prev,
-          isOpen: true,
-          activeTabId: existingTab.id,
-        };
-      }
-
-      if (prev.tabs.length >= MAX_TERMINALS) {
-        return prev;
+      let label = generateTabLabel(tab);
+      if (sameServiceTabs.length > 0) {
+        label = `${label} (${sameServiceTabs.length + 1})`;
       }
 
       const newTab: TerminalTab = {
         ...tab,
         id: `terminal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        label: generateTabLabel(tab),
+        label,
       };
 
       return {
