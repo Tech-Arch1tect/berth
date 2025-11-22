@@ -181,6 +181,20 @@ export const Terminal: React.FC<TerminalProps> = ({
   }, [handleResize]);
 
   useEffect(() => {
+    if (!terminalRef.current || !isInitialised) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      setTimeout(handleResize, 50);
+    });
+
+    resizeObserver.observe(terminalRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isInitialised, handleResize]);
+
+  useEffect(() => {
     return () => {
       if (sessionRef.current.isConnected) {
         closeTerminalRef.current?.();

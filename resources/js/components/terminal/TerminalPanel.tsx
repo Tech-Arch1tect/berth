@@ -120,19 +120,26 @@ export const TerminalPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Panel content - active terminal */}
-      {state.isOpen && activeTab && (
-        <div className="h-[calc(100%-40px)] overflow-hidden">
-          <Terminal
-            key={activeTab.id}
-            serverid={activeTab.serverid}
-            stackname={activeTab.stackname}
-            serviceName={activeTab.serviceName}
-            containerName={activeTab.containerName}
-            className="h-full rounded-none"
-          />
-        </div>
-      )}
+      {/* Panel content */}
+      <div className="h-[calc(100%-40px)] overflow-hidden">
+        {state.tabs.map((tab) => (
+          <div
+            key={tab.id}
+            className="h-full"
+            style={{
+              display: state.isOpen && tab.id === state.activeTabId ? 'block' : 'none',
+            }}
+          >
+            <Terminal
+              serverid={tab.serverid}
+              stackname={tab.stackname}
+              serviceName={tab.serviceName}
+              containerName={tab.containerName}
+              className="h-full rounded-none"
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
