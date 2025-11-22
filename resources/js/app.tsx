@@ -6,6 +6,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { OperationsProvider } from './contexts/OperationsContext';
+import { TerminalPanelProvider } from './contexts/TerminalPanelContext';
 
 const appName = 'Berth';
 
@@ -37,7 +38,9 @@ createInertiaApp({
     root.render(
       <QueryClientProvider client={queryClient}>
         <OperationsProvider>
-          <App {...props} />
+          <TerminalPanelProvider>
+            <App {...props} />
+          </TerminalPanelProvider>
         </OperationsProvider>
       </QueryClientProvider>
     );

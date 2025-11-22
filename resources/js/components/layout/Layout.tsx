@@ -22,6 +22,7 @@ import { User } from '../../types';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { Toaster } from '../../utils/toast';
 import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
+import { TerminalPanel } from '../terminal/TerminalPanel';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
 
@@ -299,6 +300,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       <GlobalOperationsTracker />
+      <TerminalPanel />
       <Toaster
         position="top-right"
         toastOptions={{

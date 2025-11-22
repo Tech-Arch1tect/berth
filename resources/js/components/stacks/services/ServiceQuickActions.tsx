@@ -7,14 +7,13 @@ import {
   PlayIcon,
   StopCircleIcon,
 } from '@heroicons/react/24/outline';
-import { useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
 import { theme } from '../../../theme';
 import { ComposeService } from '../../../types/stack';
 import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../utils/cn';
-import { TerminalModal } from '../../terminal/TerminalModal';
 import { useServerStack } from '../../../contexts/ServerStackContext';
+import { useTerminalPanel } from '../../../contexts/TerminalPanelContext';
 
 interface ServiceQuickActionsProps {
   service: ComposeService;
@@ -53,8 +52,8 @@ export const ServiceQuickActions = ({
   isOperationRunning = false,
   runningOperation,
 }: ServiceQuickActionsProps) => {
-  const [terminalOpen, setTerminalOpen] = useState(false);
   const { serverId, stackName } = useServerStack();
+  const { openTerminal } = useTerminalPanel();
 
   const determineState = (): ServiceState => {
     const containers = service.containers ?? [];
@@ -186,7 +185,16 @@ export const ServiceQuickActions = ({
       {canOpenTerminal && (
         <button
           type="button"
-          onClick={() => setTerminalOpen(true)}
+          onClick={() =>
+            serverId &&
+            stackName &&
+            openTerminal({
+              serverid: serverId,
+              stackname: stackName,
+              serviceName: service.name,
+              containerName: service.containers?.[0]?.name,
+            })
+          }
           disabled={isDisabled}
           className={cn(
             'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-60',
@@ -198,17 +206,6 @@ export const ServiceQuickActions = ({
           <CommandLineIcon className={theme.toolbar.icon} />
           <span>Terminal</span>
         </button>
-      )}
-
-      {terminalOpen && serverId && stackName && (
-        <TerminalModal
-          isOpen={terminalOpen}
-          onClose={() => setTerminalOpen(false)}
-          serverid={serverId}
-          stackname={stackName}
-          serviceName={service.name}
-          containerName={service.containers?.[0]?.name}
-        />
       )}
     </div>
   );
