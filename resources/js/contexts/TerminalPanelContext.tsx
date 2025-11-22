@@ -77,6 +77,22 @@ export const TerminalPanelProvider: React.FC<{ children: ReactNode }> = ({ child
     );
   }, [state.isOpen, state.height]);
 
+  useEffect(() => {
+    if (state.tabs.length === 0) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [state.tabs.length]);
+
   const openTerminal = useCallback((tab: Omit<TerminalTab, 'id' | 'label'>) => {
     setState((prev) => {
       if (prev.tabs.length >= MAX_TERMINALS) {
