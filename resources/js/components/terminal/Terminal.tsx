@@ -242,14 +242,6 @@ export const Terminal: React.FC<TerminalProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <span className={cn('text-xs', getStatusColor())}>{getStatusText()}</span>
-          {session.isConnected && (
-            <button
-              onClick={closeTerminal}
-              className={cn('text-xs px-2 py-1 rounded transition-colors', theme.buttons.danger)}
-            >
-              Disconnect
-            </button>
-          )}
         </div>
       </div>
 

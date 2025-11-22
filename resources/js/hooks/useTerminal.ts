@@ -138,7 +138,7 @@ export const useTerminal = ({
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
-    autoReconnect: enabled,
+    autoReconnect: false,
   });
 
   const startTerminal = useCallback(
