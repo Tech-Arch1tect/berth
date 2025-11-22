@@ -23,6 +23,7 @@ import { useDarkMode } from '../../hooks/useDarkMode';
 import { Toaster } from '../../utils/toast';
 import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
 import { TerminalPanel } from '../terminal/TerminalPanel';
+import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
 
@@ -36,6 +37,7 @@ export default function Layout({ children }: LayoutProps) {
   const csrfToken = props.csrfToken as string | undefined;
   const { isDark, toggleDarkMode } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const terminalPanel = user ? useTerminalPanel() : null;
 
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
 
@@ -294,7 +296,15 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        <main className="px-4 py-8 sm:px-6 lg:px-10">
+        <main
+          className="px-4 py-8 sm:px-6 lg:px-10 transition-[padding-bottom] duration-200"
+          style={{
+            paddingBottom:
+              terminalPanel?.state.isOpen && terminalPanel.state.tabs.length > 0
+                ? `${terminalPanel.state.height + 32}px`
+                : undefined,
+          }}
+        >
           <div className="space-y-6">{children}</div>
         </main>
       </div>
