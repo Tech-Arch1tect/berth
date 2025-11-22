@@ -128,7 +128,9 @@ export function useComposeEditor(
       showToast.success('Compose file updated successfully');
       return true;
     } catch (error: any) {
-      showToast.error(error?.message || 'Failed to update compose file');
+      const errorMessage =
+        error?.response?.data?.error || error?.message || 'Failed to update compose file';
+      showToast.error(errorMessage);
       return false;
     } finally {
       setIsSaving(false);
