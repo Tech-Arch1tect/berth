@@ -38,6 +38,18 @@ export const Terminal: React.FC<TerminalProps> = ({
     }
   }, []);
 
+  const handleResize = useCallback(() => {
+    if (fitAddonRef.current && xtermRef.current) {
+      try {
+        fitAddonRef.current.fit();
+        const dims = fitAddonRef.current.proposeDimensions();
+        if (dims) {
+          resizeTerminalRef.current?.(dims.cols, dims.rows);
+        }
+      } catch {}
+    }
+  }, []);
+
   const handleConnect = useCallback(
     (sessionId: string) => {
       toast.success(`Terminal session started: ${sessionId.substring(0, 8)}...`);
@@ -47,8 +59,9 @@ export const Terminal: React.FC<TerminalProps> = ({
           `\x1b[32m✓ Connected to ${serviceName}${containerName ? `:${containerName}` : ''}\x1b[0m`
         );
       }
+      setTimeout(handleResize, 100);
     },
-    [serviceName, containerName]
+    [serviceName, containerName, handleResize]
   );
 
   const handleDisconnect = useCallback((exitCode?: number) => {
@@ -89,20 +102,6 @@ export const Terminal: React.FC<TerminalProps> = ({
   resizeTerminalRef.current = resizeTerminal;
   closeTerminalRef.current = closeTerminal;
   sessionRef.current = session;
-
-  const handleResize = useCallback(() => {
-    if (fitAddonRef.current && xtermRef.current) {
-      try {
-        fitAddonRef.current.fit();
-        const dims = fitAddonRef.current.proposeDimensions();
-        if (dims) {
-          resizeTerminalRef.current?.(dims.cols, dims.rows);
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (!terminalRef.current || isInitialised) return;
@@ -150,9 +149,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         if (xtermRef.current && fitAddonRef.current) {
           try {
             fitAddonRef.current.fit();
-          } catch {
-            // Ignore errors
-          }
+          } catch {}
         }
       }, 100);
 
