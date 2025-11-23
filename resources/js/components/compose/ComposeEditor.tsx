@@ -4,9 +4,11 @@ import { usePage } from '@inertiajs/react';
 import { ComposeService } from '../../types/stack';
 import { ServiceImageEditor } from './ServiceImageEditor';
 import { ServicePortsEditor } from './ServicePortsEditor';
+import { ServiceEnvironmentEditor } from './ServiceEnvironmentEditor';
 import { ComposeDiffModal } from './ComposeDiffModal';
 import { XMarkIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useComposeEditor } from '../../hooks/useComposeEditor';
+import { useStackEnvironmentVariables } from '../../hooks/useStackEnvironmentVariables';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { getServicePortBaseline } from '../../utils/portUtils';
@@ -21,6 +23,14 @@ export interface ComposeChanges {
   service_port_updates?: Array<{
     service_name: string;
     ports: string[];
+  }>;
+  service_env_updates?: Array<{
+    service_name: string;
+    environment: Array<{
+      key: string;
+      value: string;
+      is_sensitive: boolean;
+    }>;
   }>;
 }
 
@@ -65,7 +75,10 @@ const serviceHasPendingChanges = (changes: ComposeChanges, serviceName: string):
   const portChange = changes.service_port_updates?.some(
     (update) => update.service_name === serviceName
   );
-  return Boolean(imageChange || portChange);
+  const envChange = changes.service_env_updates?.some(
+    (update) => update.service_name === serviceName
+  );
+  return Boolean(imageChange || portChange || envChange);
 };
 
 export const ComposeEditor: React.FC<ComposeEditorProps> = ({
@@ -81,6 +94,11 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({
   const [showDiffModal, setShowDiffModal] = useState(false);
   const [diffData, setDiffData] = useState<{ original: string; preview: string } | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const { data: composeEnvironment } = useStackEnvironmentVariables({
+    serverid: serverId,
+    stackname: stackName,
+  });
 
   const handleSave = async () => {
     if (!editor.hasChanges) {
@@ -134,10 +152,23 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({
       )
     : undefined;
 
+  const pendingEnvironmentUpdate = editor.currentService
+    ? editor.changes.service_env_updates?.find(
+        (entry) => entry.service_name === editor.currentService!.name
+      )
+    : undefined;
+
   const currentPortsInfo = editor.currentService
     ? getServicePortBaseline(editor.currentService)
     : { ports: [], source: 'none' as const };
   const { ports: displayedCurrentPorts, source: portSource } = currentPortsInfo;
+
+  const currentEnvironment =
+    editor.currentService && composeEnvironment && composeEnvironment[editor.currentService.name]
+      ? composeEnvironment[editor.currentService.name]
+          .flatMap((env) => env.variables)
+          .filter((variable) => variable.source === 'compose')
+      : [];
 
   const updatedImageValue = editor.currentService
     ? buildUpdatedImageValue(editor.currentService, pendingImageUpdate)
@@ -236,6 +267,17 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({
                     service={editor.currentService}
                     pendingPorts={pendingPortUpdate?.ports}
                     onApply={editor.queuePortUpdate}
+                    onCancel={() => editor.setActiveEditor(null)}
+                  />
+                )}
+
+                {editor.currentService && editor.activeEditor === 'environment' && (
+                  <ServiceEnvironmentEditor
+                    service={editor.currentService}
+                    serverId={serverId}
+                    stackName={stackName}
+                    pendingEnvironment={pendingEnvironmentUpdate?.environment}
+                    onApply={editor.queueEnvironmentUpdate}
                     onCancel={() => editor.setActiveEditor(null)}
                   />
                 )}
@@ -433,6 +475,138 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({
                               ) : (
                                 <p className={cn('mt-2 text-sm', theme.text.info)}>
                                   Ports will be cleared
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={cn(theme.containers.card)}>
+                        <div className={cn(theme.containers.sectionHeader, 'p-6')}>
+                          <div>
+                            <h3 className={cn('text-lg font-bold', theme.text.strong)}>
+                              Environment Variables
+                            </h3>
+                            <p className={cn('text-sm mt-1', theme.text.muted)}>
+                              Manage environment variables defined in the compose file.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {pendingEnvironmentUpdate && (
+                              <button
+                                onClick={() =>
+                                  editor.clearEnvironmentUpdate(editor.currentService!.name)
+                                }
+                                className={cn(
+                                  'text-xs font-medium transition-colors',
+                                  theme.text.muted,
+                                  'hover:text-zinc-900 dark:hover:text-zinc-100'
+                                )}
+                              >
+                                Discard change
+                              </button>
+                            )}
+                            <button
+                              onClick={() => editor.setActiveEditor('environment')}
+                              className={cn(
+                                'px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm',
+                                theme.brand.composePreview
+                              )}
+                            >
+                              Edit environment
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span
+                                className={cn(
+                                  'text-xs font-bold uppercase tracking-wide',
+                                  theme.text.muted
+                                )}
+                              >
+                                Current
+                              </span>
+                              <span
+                                className={cn(
+                                  'text-xs px-2 py-0.5 rounded',
+                                  theme.badges.tag.base,
+                                  theme.badges.tag.success
+                                )}
+                                title="Variables defined in compose file"
+                              >
+                                Compose
+                              </span>
+                            </div>
+                            {currentEnvironment.length > 0 ? (
+                              <div className="mt-2 space-y-2">
+                                {currentEnvironment.map((env) => (
+                                  <div
+                                    key={env.key}
+                                    className={cn(theme.surface.soft, 'rounded p-2')}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={cn(
+                                          'font-mono text-xs font-semibold',
+                                          theme.text.strong
+                                        )}
+                                      >
+                                        {env.key}
+                                      </span>
+                                      {env.is_sensitive && (
+                                        <span
+                                          className={cn(
+                                            theme.badges.tag.base,
+                                            theme.badges.tag.warning
+                                          )}
+                                        >
+                                          Sensitive
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className={cn('mt-1 font-mono text-xs', theme.text.subtle)}>
+                                      {env.is_sensitive ? '***' : env.value || '(empty)'}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={cn('mt-2 text-sm', theme.text.muted)}>
+                                No environment variables defined
+                              </p>
+                            )}
+                          </div>
+                          {pendingEnvironmentUpdate && (
+                            <div
+                              className={cn(
+                                'pt-2 border-t border-dashed',
+                                'border-zinc-200 dark:border-zinc-700'
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'block text-xs font-bold uppercase tracking-wide',
+                                  theme.text.info
+                                )}
+                              >
+                                Updated
+                              </span>
+                              {pendingEnvironmentUpdate.environment.length > 0 ? (
+                                <div className={cn('mt-2 space-y-1', theme.text.info)}>
+                                  <p className="text-sm">
+                                    {pendingEnvironmentUpdate.environment.length} variable
+                                    {pendingEnvironmentUpdate.environment.length === 1
+                                      ? ''
+                                      : 's'}{' '}
+                                    defined
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className={cn('mt-2 text-sm', theme.text.info)}>
+                                  Environment variables will be cleared
                                 </p>
                               )}
                             </div>

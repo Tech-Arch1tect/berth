@@ -136,10 +136,30 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 		return err
 	}
 
-	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname)
+	unmask := c.QueryParam("unmask") == "true"
+
+	h.logger.Debug("fetching stack environment variables",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+		zap.Bool("unmask", unmask),
+	)
+
+	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname, unmask)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
+
+	h.logger.Debug("returning environment variables",
+		zap.Int("service_count", len(environmentVariables)),
+		zap.Strings("services", func() []string {
+			keys := make([]string, 0, len(environmentVariables))
+			for k := range environmentVariables {
+				keys = append(keys, k)
+			}
+			return keys
+		}()),
+	)
 
 	return common.SendSuccess(c, environmentVariables)
 }
@@ -185,8 +205,9 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 }
 
 type ComposeChanges struct {
-	ServiceImageUpdates []ServiceImageUpdate `json:"service_image_updates,omitempty"`
-	ServicePortUpdates  []ServicePortUpdate  `json:"service_port_updates,omitempty"`
+	ServiceImageUpdates []ServiceImageUpdate       `json:"service_image_updates,omitempty"`
+	ServicePortUpdates  []ServicePortUpdate        `json:"service_port_updates,omitempty"`
+	ServiceEnvUpdates   []ServiceEnvironmentUpdate `json:"service_env_updates,omitempty"`
 }
 
 type ServiceImageUpdate struct {
@@ -198,6 +219,11 @@ type ServiceImageUpdate struct {
 type ServicePortUpdate struct {
 	ServiceName string   `json:"service_name"`
 	Ports       []string `json:"ports"`
+}
+
+type ServiceEnvironmentUpdate struct {
+	ServiceName string                `json:"service_name"`
+	Environment []EnvironmentVariable `json:"environment"`
 }
 
 type UpdateComposeRequest struct {
@@ -305,6 +331,11 @@ func (h *APIHandler) PreviewComposeChanges(c echo.Context) error {
 			zap.Uint("user_id", ctx.UserID),
 			zap.Uint("server_id", ctx.ServerID),
 			zap.String("stack_name", ctx.StackName),
+		)
+
+		h.logger.Debug("returning preview response",
+			zap.String("original_length", fmt.Sprintf("%d", len(envelope.Data.Original))),
+			zap.String("preview_length", fmt.Sprintf("%d", len(envelope.Data.Preview))),
 		)
 
 		return common.SendSuccess(c, envelope.Data)

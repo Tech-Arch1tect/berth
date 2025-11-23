@@ -105,6 +105,7 @@ export class StackService {
   static async getStackEnvironmentVariables(
     serverid: number,
     stackname: string,
+    unmask: boolean = false,
     csrfToken?: string
   ): Promise<StackEnvironmentResponse> {
     try {
@@ -113,8 +114,10 @@ export class StackService {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
+      const params = unmask ? { unmask: 'true' } : {};
       const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/environment`, {
         headers,
+        params,
       });
       return response.data || {};
     } catch (error) {

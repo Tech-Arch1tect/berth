@@ -9,7 +9,7 @@ export function useComposeEditor(
   onUpdate: (changes: ComposeChanges) => Promise<void>
 ) {
   const [selectedService, setSelectedService] = useState<string | null>(services[0]?.name ?? null);
-  const [activeEditor, setActiveEditor] = useState<'image' | 'ports' | null>(null);
+  const [activeEditor, setActiveEditor] = useState<'image' | 'ports' | 'environment' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [changes, setChanges] = useState<ComposeChanges>({});
 
@@ -36,7 +36,8 @@ export function useComposeEditor(
   const hasChanges = useMemo(() => {
     const imageCount = changes.service_image_updates?.length ?? 0;
     const portCount = changes.service_port_updates?.length ?? 0;
-    return imageCount + portCount > 0;
+    const envCount = changes.service_env_updates?.length ?? 0;
+    return imageCount + portCount + envCount > 0;
   }, [changes]);
 
   const queueImageUpdate = useCallback(
@@ -94,6 +95,28 @@ export function useComposeEditor(
     [services]
   );
 
+  const queueEnvironmentUpdate = useCallback(
+    (
+      serviceName: string,
+      environment: Array<{ key: string; value: string; is_sensitive: boolean }>
+    ) => {
+      const update = { service_name: serviceName, environment };
+      setChanges((prev) => {
+        const remaining =
+          prev.service_env_updates?.filter((entry) => entry.service_name !== serviceName) ?? [];
+        const nextUpdates =
+          environment.length === 0
+            ? [...remaining, { service_name: serviceName, environment: [] }]
+            : [...remaining, update];
+        return {
+          ...prev,
+          service_env_updates: nextUpdates.length > 0 ? nextUpdates : undefined,
+        };
+      });
+    },
+    []
+  );
+
   const clearImageUpdate = useCallback((serviceName: string) => {
     setChanges((prev) => {
       const remaining =
@@ -112,6 +135,17 @@ export function useComposeEditor(
       return {
         ...prev,
         service_port_updates: remaining.length > 0 ? remaining : undefined,
+      };
+    });
+  }, []);
+
+  const clearEnvironmentUpdate = useCallback((serviceName: string) => {
+    setChanges((prev) => {
+      const remaining =
+        prev.service_env_updates?.filter((entry) => entry.service_name !== serviceName) ?? [];
+      return {
+        ...prev,
+        service_env_updates: remaining.length > 0 ? remaining : undefined,
       };
     });
   }, []);
@@ -148,8 +182,10 @@ export function useComposeEditor(
     changes,
     queueImageUpdate,
     queuePortUpdate,
+    queueEnvironmentUpdate,
     clearImageUpdate,
     clearPortUpdate,
+    clearEnvironmentUpdate,
     handleSave,
   };
 }

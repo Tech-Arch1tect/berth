@@ -352,8 +352,13 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 	return volumes, nil
 }
 
-func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackname string) (map[string][]ServiceEnvironment, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.read")
+func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
+	requiredPermission := "stacks.read"
+	if unmask {
+		requiredPermission = "stacks.manage"
+	}
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, requiredPermission)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -367,7 +372,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	environmentVariables, err := s.fetchStackEnvironmentVariablesFromAgent(ctx, server, stackname)
+	environmentVariables, err := s.fetchStackEnvironmentVariablesFromAgent(ctx, server, stackname, unmask)
 	if err != nil {
 		return nil, err
 	}
@@ -375,8 +380,13 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 	return environmentVariables, nil
 }
 
-func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackname string) (map[string][]ServiceEnvironment, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/environment", stackname), nil)
+func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
+	url := fmt.Sprintf("/stacks/%s/environment", stackname)
+	if unmask {
+		url += "?unmask=true"
+	}
+
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
