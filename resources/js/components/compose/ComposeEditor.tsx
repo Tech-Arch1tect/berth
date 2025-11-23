@@ -1,12 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { ComposeService } from '../../types/stack';
 import { ServiceImageEditor } from './ServiceImageEditor';
 import { ServicePortsEditor } from './ServicePortsEditor';
+import { ComposeDiffModal } from './ComposeDiffModal';
 import { XMarkIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useComposeEditor } from '../../hooks/useComposeEditor';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { getServicePortBaseline } from '../../utils/portUtils';
+import { showToast } from '../../utils/toast';
 
 export interface ComposeChanges {
   service_image_updates?: Array<{
@@ -22,6 +26,8 @@ export interface ComposeChanges {
 
 interface ComposeEditorProps {
   services: ComposeService[];
+  serverId: number;
+  stackName: string;
   onUpdate: (changes: ComposeChanges) => Promise<void>;
   onClose: () => void;
 }
@@ -62,12 +68,56 @@ const serviceHasPendingChanges = (changes: ComposeChanges, serviceName: string):
   return Boolean(imageChange || portChange);
 };
 
-export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate, onClose }) => {
+export const ComposeEditor: React.FC<ComposeEditorProps> = ({
+  services,
+  serverId,
+  stackName,
+  onUpdate,
+  onClose,
+}) => {
   const editor = useComposeEditor(services, onUpdate);
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+  const [showDiffModal, setShowDiffModal] = useState(false);
+  const [diffData, setDiffData] = useState<{ original: string; preview: string } | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   const handleSave = async () => {
+    if (!editor.hasChanges) {
+      showToast.error('No changes to save');
+      return;
+    }
+
+    setIsLoadingPreview(true);
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await axios.post(
+        `/api/v1/servers/${serverId}/stacks/${stackName}/compose/preview`,
+        { changes: editor.changes },
+        { headers }
+      );
+      setDiffData(response.data);
+      setShowDiffModal(true);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error || error?.message || 'Failed to generate preview';
+      showToast.error(errorMessage);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  const handleConfirmSave = async () => {
     const success = await editor.handleSave();
     if (success) {
+      setShowDiffModal(false);
       onClose();
     }
   };
@@ -84,13 +134,10 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
       )
     : undefined;
 
-  const { displayedCurrentPorts, portSource } = useMemo(() => {
-    if (!editor.currentService) {
-      return { displayedCurrentPorts: [], portSource: 'none' as const };
-    }
-    const { ports, source } = getServicePortBaseline(editor.currentService);
-    return { displayedCurrentPorts: ports, portSource: source };
-  }, [editor.currentService]);
+  const currentPortsInfo = editor.currentService
+    ? getServicePortBaseline(editor.currentService)
+    : { ports: [], source: 'none' as const };
+  const { ports: displayedCurrentPorts, source: portSource } = currentPortsInfo;
 
   const updatedImageValue = editor.currentService
     ? buildUpdatedImageValue(editor.currentService, pendingImageUpdate)
@@ -434,14 +481,19 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
                   </button>
                   <button
                     onClick={handleSave}
-                    disabled={!editor.hasChanges || editor.isSaving}
+                    disabled={!editor.hasChanges || editor.isSaving || isLoadingPreview}
                     className={cn(
                       'inline-flex items-center gap-2 px-6 py-2.5',
                       theme.brand.composeButton,
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                   >
-                    {editor.isSaving ? (
+                    {isLoadingPreview ? (
+                      <>
+                        <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                        Loading preview...
+                      </>
+                    ) : editor.isSaving ? (
                       <>
                         <ArrowPathIcon className="h-5 w-5 animate-spin" />
                         Saving...
@@ -459,6 +511,16 @@ export const ComposeEditor: React.FC<ComposeEditorProps> = ({ services, onUpdate
           </div>
         </div>
       </div>
+
+      {showDiffModal && diffData && (
+        <ComposeDiffModal
+          original={diffData.original}
+          preview={diffData.preview}
+          onConfirm={handleConfirmSave}
+          onCancel={() => setShowDiffModal(false)}
+          isLoading={editor.isSaving}
+        />
+      )}
     </div>
   );
 };

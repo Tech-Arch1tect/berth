@@ -22,6 +22,7 @@
     "@xterm/xterm": "^5.5.0",
     "date-fns": "^4.1.0",
     "react": "^19.1.1",
+    "react-diff-viewer-continued": "^4.0.6",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
     "react-syntax-highlighter": "^15.6.6"

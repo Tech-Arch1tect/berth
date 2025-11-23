@@ -283,6 +283,8 @@ const StackDetails: React.FC<StackDetailsProps> = ({
         {stack.showComposeEditor && stack.stackDetails && stack.stackDetails.services && (
           <ComposeEditor
             services={stack.stackDetails.services}
+            serverId={serverid}
+            stackName={stackname}
             onUpdate={stack.handleComposeUpdate}
             onClose={() => stack.setShowComposeEditor(false)}
           />
