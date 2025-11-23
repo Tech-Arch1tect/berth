@@ -287,7 +287,7 @@ func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogResponse,
 		return nil, err
 	}
 
-	var response []dto.OperationLogResponse
+	response := make([]dto.OperationLogResponse, 0)
 	for _, log := range logs {
 		var messageCount int64
 		s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
