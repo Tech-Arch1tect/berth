@@ -22,6 +22,7 @@ interface OperationTrackerProps {
   operationId: string;
   command: string;
   startTime: string;
+  isIncomplete: boolean;
   onDismiss: () => void;
 }
 
@@ -31,6 +32,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   operationId,
   command,
   startTime,
+  isIncomplete,
   onDismiss,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -40,7 +42,8 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const { getOperationLogs } = useOperationsContext();
 
   const logs = getOperationLogs(operationId);
-  const isComplete = logs.some((log) => log.type === 'complete');
+  const hasCompleteLogs = logs.some((log) => log.type === 'complete');
+  const isComplete = !isIncomplete || hasCompleteLogs;
 
   useEffect(() => {
     if (!isComplete && !expanded) {
@@ -391,6 +394,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                     operationId={op.operation_id}
                     command={op.command}
                     startTime={op.start_time}
+                    isIncomplete={op.is_incomplete}
                     onDismiss={() => removeOperation(op.operation_id)}
                   />
                 ))
@@ -479,6 +483,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                 operationId={op.operation_id}
                 command={op.command}
                 startTime={op.start_time}
+                isIncomplete={op.is_incomplete}
                 onDismiss={() => removeOperation(op.operation_id)}
               />
             ))
