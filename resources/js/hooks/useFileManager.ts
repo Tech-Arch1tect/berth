@@ -445,6 +445,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   return {
     currentPath,
+    setCurrentPath,
     directoryListing,
     loading,
     selectedFile,

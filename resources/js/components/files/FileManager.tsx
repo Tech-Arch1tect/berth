@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { FileManagerLayout } from './layout';
 import { FileTree, FileDetailsPanel } from './tree';
 import { TabBar } from './tabs';
@@ -14,7 +14,7 @@ import { ArchiveOperationModal } from './modals/ArchiveOperationModal';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { EmptyState } from '../common/EmptyState';
 import { useFileManager } from '../../hooks/useFileManager';
-import { useFileTree } from '../../hooks/useFileTree';
+import { useNestedFileTree } from '../../hooks/useNestedFileTree';
 import { useTabs } from '../../hooks/useTabs';
 import { useContextMenu } from '../../hooks/useContextMenu';
 import { cn } from '../../utils/cn';
@@ -82,10 +82,16 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     [tabs, setActiveTab, openTab, filesApi]
   );
 
-  const fileTree = useFileTree({
-    onNavigate: fm.handleNavigate,
+  const fileTree = useNestedFileTree({
     onFileSelect: handleOpenFile,
+    listDirectory: filesApi.listDirectory,
   });
+
+  useEffect(() => {
+    if (canRead) {
+      fileTree.loadRootDirectory();
+    }
+  }, [canRead]);
 
   const handleFileContextMenu = useCallback(
     (e: React.MouseEvent, entry: FileEntry) => {
@@ -195,7 +201,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
 
   const handleNewFile = useCallback(
     (folder: FileEntry) => {
-      fm.handleNavigate(folder.path);
+      fm.setCurrentPath(folder.path);
       fm.handleFileOperation('create');
     },
     [fm]
@@ -203,7 +209,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
 
   const handleNewFolder = useCallback(
     (folder: FileEntry) => {
-      fm.handleNavigate(folder.path);
+      fm.setCurrentPath(folder.path);
       fm.handleFileOperation('mkdir');
     },
     [fm]
@@ -244,12 +250,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     showToast.success('Path copied to clipboard');
   }, []);
 
-  const handleNavigateUp = useCallback(() => {
-    if (!fm.currentPath) return;
-    const parentPath = fm.currentPath.split('/').slice(0, -1).join('/');
-    fm.handleNavigate(parentPath);
-  }, [fm]);
-
   if (!canRead) {
     return (
       <EmptyState
@@ -265,19 +265,18 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   const sidebarContent = (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto">
-        {fm.loading && !fm.directoryListing ? (
+        {fileTree.rootLoading ? (
           <LoadingSpinner size="sm" text="Loading..." />
-        ) : fm.directoryListing ? (
+        ) : fileTree.rootEntries.length > 0 || fileTree.rootPath ? (
           <FileTree
-            entries={fm.directoryListing.entries || []}
-            currentPath={fm.currentPath}
-            expandedNodes={fileTree.expandedNodes}
-            selectedNode={fileTree.selectedNode}
-            onSelect={fileTree.selectNode}
+            entries={fileTree.rootEntries}
+            rootPath={fileTree.rootPath}
+            onSelect={fileTree.selectEntry}
             onContextMenu={handleFileContextMenu}
-            onNavigateUp={fm.currentPath ? handleNavigateUp : undefined}
             isExpanded={fileTree.isExpanded}
             isSelected={fileTree.isSelected}
+            isLoading={fileTree.isLoading}
+            getChildren={fileTree.getChildren}
           />
         ) : (
           <EmptyState
@@ -288,7 +287,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
             size="sm"
             action={{
               label: 'Retry',
-              onClick: () => fm.loadDirectory(fm.currentPath),
+              onClick: () => fileTree.loadRootDirectory(),
             }}
           />
         )}
