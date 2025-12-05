@@ -246,10 +246,12 @@ const StackDetails: React.FC<StackDetailsProps> = ({
 
               {stack.activeTab === 'files' &&
                 stack.stackPermissions?.permissions?.includes('files.read') && (
-                  <FileManager
-                    canRead={stack.stackPermissions.permissions.includes('files.read')}
-                    canWrite={stack.stackPermissions.permissions.includes('files.write')}
-                  />
+                  <div className="h-[calc(100vh-300px)] min-h-[500px]">
+                    <FileManager
+                      canRead={stack.stackPermissions.permissions.includes('files.read')}
+                      canWrite={stack.stackPermissions.permissions.includes('files.write')}
+                    />
+                  </div>
                 )}
             </Tabs>
           </div>

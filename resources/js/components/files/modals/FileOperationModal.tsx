@@ -318,7 +318,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
             )}
 
             {(operation === 'mkdir' || operation === 'create') && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}

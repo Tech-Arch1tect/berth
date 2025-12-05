@@ -85,10 +85,10 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
 
   const footer = (
     <>
-      <button type="button" onClick={onClose} className={cn(theme.buttons.secondary, 'flex-1')}>
+      <button type="button" onClick={onClose} className={theme.buttons.secondary}>
         Cancel
       </button>
-      <button type="submit" form="archive-form" className={cn(theme.buttons.primary, 'flex-1')}>
+      <button type="submit" form="archive-form" className={theme.buttons.primary}>
         {operation === 'create' ? 'Create Archive' : 'Extract Archive'}
       </button>
     </>

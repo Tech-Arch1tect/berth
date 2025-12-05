@@ -52,13 +52,12 @@ export const Modal: React.FC<ModalProps> = ({
     <div className={theme.modal.overlay} onClick={handleOverlayClick}>
       <div
         className={cn(
-          'w-full mx-4 flex flex-col rounded-2xl border bg-white shadow-2xl dark:bg-slate-900',
-          theme.containers.panel.split(' ').slice(1).join(' '), // Remove rounded-2xl duplication
+          'w-full mx-4 flex flex-col rounded-2xl border bg-white shadow-2xl dark:bg-zinc-900',
+          theme.containers.panel.split(' ').slice(1).join(' '),
           sizeClasses[size]
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className={theme.modal.header}>
           <div>
             <h3 className={theme.modal.title}>{title}</h3>
@@ -74,10 +73,8 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
 
-        {/* Footer */}
         {footer && <div className={theme.modal.footer}>{footer}</div>}
       </div>
     </div>

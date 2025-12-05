@@ -109,3 +109,14 @@ export type FileOperation =
   | 'upload'
   | 'create_archive'
   | 'extract_archive';
+
+export interface OpenTab {
+  id: string;
+  path: string;
+  name: string;
+  content: string;
+  encoding: string;
+  size: number;
+  isDirty: boolean;
+  originalContent: string;
+}

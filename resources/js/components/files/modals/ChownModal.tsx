@@ -51,7 +51,7 @@ export const ChownModal: React.FC<ChownModalProps> = ({
         type="button"
         onClick={onClose}
         disabled={loading}
-        className={cn(theme.buttons.ghost, 'disabled:opacity-50')}
+        className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
       >
         Cancel
       </button>
@@ -60,7 +60,7 @@ export const ChownModal: React.FC<ChownModalProps> = ({
         form="chown-form"
         disabled={loading || (!ownerID.trim() && !groupID.trim())}
         className={cn(
-          theme.buttons.success,
+          theme.buttons.primary,
           'disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2'
         )}
       >
@@ -82,7 +82,6 @@ export const ChownModal: React.FC<ChownModalProps> = ({
       footer={footer}
     >
       <form id="chown-form" onSubmit={handleSubmit} className="space-y-4">
-        {/* Current Ownership Display */}
         <div className={cn(theme.surface.muted, 'mb-6 p-4 rounded-lg')}>
           <div className={cn('text-sm font-medium mb-2', theme.text.standard)}>
             Current Ownership
@@ -107,7 +106,6 @@ export const ChownModal: React.FC<ChownModalProps> = ({
           </div>
         </div>
 
-        {/* Owner Input */}
         <div className="mb-4">
           <label className={cn(theme.forms.label, 'mb-2')}>New Owner ID</label>
           <input
@@ -122,7 +120,6 @@ export const ChownModal: React.FC<ChownModalProps> = ({
           </p>
         </div>
 
-        {/* Group Input */}
         <div className="mb-6">
           <label className={cn(theme.forms.label, 'mb-2')}>New Group ID</label>
           <input
@@ -137,7 +134,6 @@ export const ChownModal: React.FC<ChownModalProps> = ({
           </p>
         </div>
 
-        {/* Recursive Option for Directories */}
         {entry.is_directory && (
           <div
             className={cn(
