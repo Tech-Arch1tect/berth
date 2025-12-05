@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { FileManagerLayout } from './layout';
-import { FileTree } from './tree';
+import { FileTree, FileDetailsPanel } from './tree';
 import { TabBar } from './tabs';
 import { EditorArea } from './editor';
 import { FileContextMenu, FolderContextMenu, TabContextMenu } from './menus';
@@ -263,34 +263,37 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   }
 
   const sidebarContent = (
-    <div className="h-full flex flex-col overflow-auto">
-      {fm.loading && !fm.directoryListing ? (
-        <LoadingSpinner size="sm" text="Loading..." />
-      ) : fm.directoryListing ? (
-        <FileTree
-          entries={fm.directoryListing.entries || []}
-          currentPath={fm.currentPath}
-          expandedNodes={fileTree.expandedNodes}
-          selectedNode={fileTree.selectedNode}
-          onSelect={fileTree.selectNode}
-          onContextMenu={handleFileContextMenu}
-          onNavigateUp={fm.currentPath ? handleNavigateUp : undefined}
-          isExpanded={fileTree.isExpanded}
-          isSelected={fileTree.isSelected}
-        />
-      ) : (
-        <EmptyState
-          icon={ExclamationTriangleIcon}
-          title="Failed to load"
-          description="Could not load files"
-          variant="error"
-          size="sm"
-          action={{
-            label: 'Retry',
-            onClick: () => fm.loadDirectory(fm.currentPath),
-          }}
-        />
-      )}
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto">
+        {fm.loading && !fm.directoryListing ? (
+          <LoadingSpinner size="sm" text="Loading..." />
+        ) : fm.directoryListing ? (
+          <FileTree
+            entries={fm.directoryListing.entries || []}
+            currentPath={fm.currentPath}
+            expandedNodes={fileTree.expandedNodes}
+            selectedNode={fileTree.selectedNode}
+            onSelect={fileTree.selectNode}
+            onContextMenu={handleFileContextMenu}
+            onNavigateUp={fm.currentPath ? handleNavigateUp : undefined}
+            isExpanded={fileTree.isExpanded}
+            isSelected={fileTree.isSelected}
+          />
+        ) : (
+          <EmptyState
+            icon={ExclamationTriangleIcon}
+            title="Failed to load"
+            description="Could not load files"
+            variant="error"
+            size="sm"
+            action={{
+              label: 'Retry',
+              onClick: () => fm.loadDirectory(fm.currentPath),
+            }}
+          />
+        )}
+      </div>
+      <FileDetailsPanel entry={fileTree.selectedEntry} />
     </div>
   );
 

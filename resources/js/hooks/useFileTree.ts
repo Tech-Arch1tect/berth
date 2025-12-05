@@ -9,6 +9,7 @@ interface UseFileTreeOptions {
 interface UseFileTreeReturn {
   expandedNodes: Set<string>;
   selectedNode: string | null;
+  selectedEntry: FileEntry | null;
   toggleNode: (path: string) => void;
   selectNode: (entry: FileEntry) => void;
   expandNode: (path: string) => void;
@@ -20,6 +21,7 @@ interface UseFileTreeReturn {
 export function useFileTree({ onNavigate, onFileSelect }: UseFileTreeOptions): UseFileTreeReturn {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null);
 
   const toggleNode = useCallback((path: string) => {
     setExpandedNodes((prev) => {
@@ -52,6 +54,7 @@ export function useFileTree({ onNavigate, onFileSelect }: UseFileTreeOptions): U
   const selectNode = useCallback(
     (entry: FileEntry) => {
       setSelectedNode(entry.path);
+      setSelectedEntry(entry);
 
       if (entry.is_directory) {
         toggleNode(entry.path);
@@ -70,6 +73,7 @@ export function useFileTree({ onNavigate, onFileSelect }: UseFileTreeOptions): U
   return {
     expandedNodes,
     selectedNode,
+    selectedEntry,
     toggleNode,
     selectNode,
     expandNode,
