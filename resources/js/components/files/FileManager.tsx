@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FileManagerLayout } from './layout';
 import { FileTree, FileDetailsPanel } from './tree';
 import { TabBar } from './tabs';
@@ -23,6 +23,7 @@ import { useServerStack } from '../../contexts/ServerStackContext';
 import { FileEntry, OpenTab } from '../../types/files';
 import { showToast } from '../../utils/toast';
 import { useFiles } from '../../hooks/useFiles';
+import { useFileContentQuery } from '../../hooks/useFileQueries';
 
 interface FileManagerProps {
   canRead: boolean;
@@ -44,6 +45,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     tabs,
     activeTabId,
     openTab,
+    refreshTab,
     closeTab,
     setActiveTab,
     updateTabContent,
@@ -66,32 +68,30 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   const handleOpenFile = useCallback(
     async (entry: FileEntry) => {
       const existingTab = tabs.find((t) => t.path === entry.path);
-      if (existingTab) {
-        setActiveTab(existingTab.id);
-        return;
-      }
 
       try {
         const fileContent = await filesApi.readFile(entry.path);
-        openTab(fileContent);
+
+        if (existingTab) {
+          refreshTab(fileContent);
+          setActiveTab(existingTab.id);
+        } else {
+          openTab(fileContent);
+        }
       } catch (error) {
         console.error('Failed to open file:', error);
         showToast.error('Failed to open file');
       }
     },
-    [tabs, setActiveTab, openTab, filesApi]
+    [tabs, setActiveTab, openTab, refreshTab, filesApi]
   );
 
   const fileTree = useNestedFileTree({
+    serverid: serverId,
+    stackname: stackName,
     onFileSelect: handleOpenFile,
-    listDirectory: filesApi.listDirectory,
+    enabled: canRead,
   });
-
-  useEffect(() => {
-    if (canRead) {
-      fileTree.loadRootDirectory();
-    }
-  }, [canRead]);
 
   const handleFileContextMenu = useCallback(
     (e: React.MouseEvent, entry: FileEntry) => {
@@ -265,9 +265,21 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   const sidebarContent = (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto">
-        {fileTree.rootLoading ? (
+        {fileTree.rootLoading && fileTree.rootEntries.length === 0 ? (
           <LoadingSpinner size="sm" text="Loading..." />
-        ) : fileTree.rootEntries.length > 0 || fileTree.rootPath ? (
+        ) : fileTree.rootError ? (
+          <EmptyState
+            icon={ExclamationTriangleIcon}
+            title="Failed to load"
+            description={fileTree.rootError.message || 'Could not load files'}
+            variant="error"
+            size="sm"
+            action={{
+              label: 'Retry',
+              onClick: fileTree.refetchAll,
+            }}
+          />
+        ) : (
           <FileTree
             entries={fileTree.rootEntries}
             rootPath={fileTree.rootPath}
@@ -277,18 +289,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
             isSelected={fileTree.isSelected}
             isLoading={fileTree.isLoading}
             getChildren={fileTree.getChildren}
-          />
-        ) : (
-          <EmptyState
-            icon={ExclamationTriangleIcon}
-            title="Failed to load"
-            description="Could not load files"
-            variant="error"
-            size="sm"
-            action={{
-              label: 'Retry',
-              onClick: () => fileTree.loadRootDirectory(),
-            }}
           />
         )}
       </div>

@@ -5,6 +5,7 @@ interface UseTabsReturn {
   tabs: OpenTab[];
   activeTabId: string | null;
   openTab: (file: FileContent) => void;
+  refreshTab: (file: FileContent) => void;
   closeTab: (tabId: string) => void;
   closeOtherTabs: (tabId: string) => void;
   closeAllTabs: () => void;
@@ -14,6 +15,7 @@ interface UseTabsReturn {
   getActiveTab: () => OpenTab | null;
   hasUnsavedChanges: () => boolean;
   getDirtyTabs: () => OpenTab[];
+  hasExternalChanges: (tabId: string) => boolean;
 }
 
 export function useTabs(): UseTabsReturn {
@@ -45,6 +47,34 @@ export function useTabs(): UseTabsReturn {
     });
 
     setActiveTabId(tabId);
+  }, []);
+
+  const refreshTab = useCallback((file: FileContent) => {
+    const tabId = file.path;
+
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.id !== tabId) return tab;
+
+        if (tab.isDirty) {
+          return {
+            ...tab,
+            originalContent: file.content,
+            size: file.size,
+            encoding: file.encoding,
+          };
+        }
+
+        return {
+          ...tab,
+          content: file.content,
+          originalContent: file.content,
+          size: file.size,
+          encoding: file.encoding,
+          isDirty: false,
+        };
+      })
+    );
   }, []);
 
   const closeTab = useCallback((tabId: string) => {
@@ -119,10 +149,20 @@ export function useTabs(): UseTabsReturn {
     return tabs.filter((t) => t.isDirty);
   }, [tabs]);
 
+  const hasExternalChanges = useCallback(
+    (tabId: string) => {
+      const tab = tabs.find((t) => t.id === tabId);
+      if (!tab) return false;
+      return tab.isDirty && tab.content !== tab.originalContent;
+    },
+    [tabs]
+  );
+
   return {
     tabs,
     activeTabId,
     openTab,
+    refreshTab,
     closeTab,
     closeOtherTabs,
     closeAllTabs,
@@ -132,5 +172,6 @@ export function useTabs(): UseTabsReturn {
     getActiveTab,
     hasUnsavedChanges,
     getDirtyTabs,
+    hasExternalChanges,
   };
 }

@@ -1,106 +1,102 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQueries } from '@tanstack/react-query';
+import axios from 'axios';
 import { FileEntry, DirectoryListing } from '../types/files';
+import { fileQueryKeys } from './useFileQueries';
 
 interface UseNestedFileTreeOptions {
+  serverid: number;
+  stackname: string;
   onFileSelect: (entry: FileEntry) => void;
-  listDirectory: (path?: string) => Promise<DirectoryListing>;
-}
-
-interface TreeNode {
-  entry: FileEntry;
-  children: TreeNode[] | null;
-  isLoading: boolean;
+  enabled?: boolean;
 }
 
 interface UseNestedFileTreeReturn {
   rootEntries: FileEntry[];
-  childrenMap: Map<string, FileEntry[]>;
-  loadingPaths: Set<string>;
+  rootPath: string;
+  rootLoading: boolean;
+  rootError: Error | null;
   expandedPaths: Set<string>;
   selectedEntry: FileEntry | null;
-  loadRootDirectory: (path?: string) => Promise<void>;
-  toggleDirectory: (entry: FileEntry) => Promise<void>;
+  toggleDirectory: (entry: FileEntry) => void;
   selectEntry: (entry: FileEntry) => void;
   isExpanded: (path: string) => boolean;
   isLoading: (path: string) => boolean;
   isSelected: (path: string) => boolean;
   getChildren: (path: string) => FileEntry[];
-  rootPath: string;
-  rootLoading: boolean;
+  refetchAll: () => void;
 }
 
 export function useNestedFileTree({
+  serverid,
+  stackname,
   onFileSelect,
-  listDirectory,
+  enabled = true,
 }: UseNestedFileTreeOptions): UseNestedFileTreeReturn {
-  const [rootEntries, setRootEntries] = useState<FileEntry[]>([]);
-  const [rootPath, setRootPath] = useState<string>('');
-  const [rootLoading, setRootLoading] = useState(false);
-  const [childrenMap, setChildrenMap] = useState<Map<string, FileEntry[]>>(new Map());
-  const [loadingPaths, setLoadingPaths] = useState<Set<string>>(new Set());
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null);
 
-  const loadRootDirectory = useCallback(
-    async (path?: string) => {
-      setRootLoading(true);
-      try {
-        const result = await listDirectory(path);
-        setRootEntries(result.entries || []);
-        setRootPath(result.path || '');
-        setChildrenMap(new Map());
-        setExpandedPaths(new Set());
-      } finally {
-        setRootLoading(false);
+  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
+
+  const expandedPathsArray = useMemo(() => Array.from(expandedPaths), [expandedPaths]);
+
+  const allPaths = useMemo(() => ['', ...expandedPathsArray], [expandedPathsArray]);
+
+  const queries = useQueries({
+    queries: allPaths.map((path) => ({
+      queryKey: fileQueryKeys.directory(serverid, stackname, path),
+      queryFn: async (): Promise<DirectoryListing> => {
+        const params = path ? { path } : {};
+        const response = await axios.get<DirectoryListing>(baseUrl, { params });
+        return response.data;
+      },
+      enabled,
+      staleTime: 0,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      retry: 1,
+    })),
+  });
+
+  const rootQuery = queries[0];
+  const childQueries = queries.slice(1);
+
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, FileEntry[]>();
+    expandedPathsArray.forEach((path, index) => {
+      const query = childQueries[index];
+      if (query?.data?.entries) {
+        map.set(path, query.data.entries);
       }
-    },
-    [listDirectory]
-  );
+    });
+    return map;
+  }, [expandedPathsArray, childQueries]);
 
-  const loadChildren = useCallback(
-    async (path: string) => {
-      if (childrenMap.has(path)) return;
-
-      setLoadingPaths((prev) => new Set(prev).add(path));
-      try {
-        const result = await listDirectory(path);
-        setChildrenMap((prev) => {
-          const next = new Map(prev);
-          next.set(path, result.entries || []);
-          return next;
-        });
-      } finally {
-        setLoadingPaths((prev) => {
-          const next = new Set(prev);
-          next.delete(path);
-          return next;
-        });
+  const loadingPaths = useMemo(() => {
+    const set = new Set<string>();
+    expandedPathsArray.forEach((path, index) => {
+      const query = childQueries[index];
+      if (query?.isLoading || query?.isFetching) {
+        set.add(path);
       }
-    },
-    [listDirectory, childrenMap]
-  );
+    });
+    return set;
+  }, [expandedPathsArray, childQueries]);
 
-  const toggleDirectory = useCallback(
-    async (entry: FileEntry) => {
-      if (!entry.is_directory) return;
+  const toggleDirectory = useCallback((entry: FileEntry) => {
+    if (!entry.is_directory) return;
 
-      const isCurrentlyExpanded = expandedPaths.has(entry.path);
-
-      if (isCurrentlyExpanded) {
-        setExpandedPaths((prev) => {
-          const next = new Set(prev);
-          next.delete(entry.path);
-          return next;
-        });
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(entry.path)) {
+        next.delete(entry.path);
       } else {
-        setExpandedPaths((prev) => new Set(prev).add(entry.path));
-        if (!childrenMap.has(entry.path)) {
-          await loadChildren(entry.path);
-        }
+        next.add(entry.path);
       }
-    },
-    [expandedPaths, childrenMap, loadChildren]
-  );
+      return next;
+    });
+  }, []);
 
   const selectEntry = useCallback(
     (entry: FileEntry) => {
@@ -123,20 +119,23 @@ export function useNestedFileTree({
 
   const getChildren = useCallback((path: string) => childrenMap.get(path) || [], [childrenMap]);
 
+  const refetchAll = useCallback(() => {
+    queries.forEach((query) => query.refetch());
+  }, [queries]);
+
   return {
-    rootEntries,
-    childrenMap,
-    loadingPaths,
+    rootEntries: rootQuery?.data?.entries || [],
+    rootPath: rootQuery?.data?.path || '',
+    rootLoading: rootQuery?.isLoading || false,
+    rootError: rootQuery?.error || null,
     expandedPaths,
     selectedEntry,
-    loadRootDirectory,
     toggleDirectory,
     selectEntry,
     isExpanded,
     isLoading,
     isSelected,
     getChildren,
-    rootPath,
-    rootLoading,
+    refetchAll,
   };
 }

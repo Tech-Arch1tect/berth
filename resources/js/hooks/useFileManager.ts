@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useFiles } from './useFiles';
+import { useFileMutations } from './useFileQueries';
 import { useOperations } from './useOperations';
 import { showToast } from '../utils/toast';
 import {
@@ -49,6 +50,8 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     stackname,
     onError: handleError,
   });
+
+  const mutations = useFileMutations({ serverid, stackname });
 
   const loadDirectory = useCallback(
     async (path: string) => {
@@ -190,61 +193,44 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       try {
         switch (currentOperation) {
           case 'mkdir':
-            await files.createDirectory(data as CreateDirectoryRequest);
+            await mutations.createDirectory.mutateAsync(data as CreateDirectoryRequest);
             showToast.success('Directory created successfully');
             break;
           case 'create':
-            await files.writeFile(data as WriteFileRequest);
+            await mutations.writeFile.mutateAsync(data as WriteFileRequest);
             showToast.success('File created successfully');
             break;
           case 'rename':
-            await files.renameFile(data as RenameRequest);
+            await mutations.renameFile.mutateAsync(data as RenameRequest);
             showToast.success('File renamed successfully');
             break;
           case 'copy':
-            await files.copyFile(data as CopyRequest);
+            await mutations.copyFile.mutateAsync(data as CopyRequest);
             showToast.success('File copied successfully');
             break;
           case 'delete':
-            await files.deleteFile(data as DeleteRequest);
+            await mutations.deleteFile.mutateAsync(data as DeleteRequest);
             showToast.success('File deleted successfully');
             break;
         }
-
-        await loadDirectory(currentPath);
       } catch (error) {
         console.error('Operation failed:', error);
         throw error;
       }
     },
-    [
-      currentOperation,
-      files.createDirectory,
-      files.writeFile,
-      files.renameFile,
-      files.copyFile,
-      files.deleteFile,
-      loadDirectory,
-      currentPath,
-    ]
+    [currentOperation, mutations]
   );
 
   const handleFileSave = useCallback(
     async (data: WriteFileRequest) => {
       try {
-        await files.writeFile(data);
-        showToast.success('File saved successfully');
-
-        if (selectedFile) {
-          const content = await files.readFile(selectedFile.path);
-          setFileContent(content);
-        }
+        await mutations.writeFile.mutateAsync(data);
       } catch (error) {
         console.error('Failed to save file:', error);
         throw error;
       }
     },
-    [files.writeFile, files.readFile, selectedFile]
+    [mutations]
   );
 
   const handleDownload = useCallback(
@@ -272,39 +258,33 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       options?: { mode?: string; owner_id?: number; group_id?: number }
     ) => {
       try {
-        if (options && (options.mode || options.owner_id || options.group_id)) {
-          await files.uploadFile(file, path);
+        await mutations.uploadFile.mutateAsync({ file, path });
 
-          if (options.mode) {
-            await files.chmodFile({ path, mode: options.mode, recursive: false });
-          }
-          if (options.owner_id || options.group_id) {
-            const chownRequest: any = { path, recursive: false };
-            if (options.owner_id) chownRequest.owner_id = options.owner_id;
-            if (options.group_id) chownRequest.group_id = options.group_id;
-            await files.chownFile(chownRequest);
-          }
-        } else {
-          await files.uploadFile(file, path);
+        if (options?.mode) {
+          await mutations.chmodFile.mutateAsync({ path, mode: options.mode, recursive: false });
+        }
+        if (options?.owner_id || options?.group_id) {
+          const chownRequest: ChownRequest = { path, recursive: false };
+          if (options.owner_id) chownRequest.owner_id = options.owner_id;
+          if (options.group_id) chownRequest.group_id = options.group_id;
+          await mutations.chownFile.mutateAsync(chownRequest);
         }
 
         showToast.success(`Uploaded ${file.name} successfully`);
-        await loadDirectory(currentPath);
       } catch (error) {
         console.error('Failed to upload file:', error);
         showToast.error(`Failed to upload ${file.name}`);
         throw error;
       }
     },
-    [files.uploadFile, files.chmodFile, files.chownFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleChmodConfirm = useCallback(
     async (request: ChmodRequest) => {
       try {
-        await files.chmodFile(request);
+        await mutations.chmodFile.mutateAsync(request);
         showToast.success('Permissions changed successfully');
-        await loadDirectory(currentPath);
         setIsChmodModalOpen(false);
         setCurrentOperation(null);
         setSelectedFile(null);
@@ -313,15 +293,14 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         throw error;
       }
     },
-    [files.chmodFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleChownConfirm = useCallback(
     async (request: ChownRequest) => {
       try {
-        await files.chownFile(request);
+        await mutations.chownFile.mutateAsync(request);
         showToast.success('Ownership changed successfully');
-        await loadDirectory(currentPath);
         setIsChownModalOpen(false);
         setCurrentOperation(null);
         setSelectedFile(null);
@@ -330,7 +309,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         throw error;
       }
     },
-    [files.chownFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleCreateArchive = useCallback(
