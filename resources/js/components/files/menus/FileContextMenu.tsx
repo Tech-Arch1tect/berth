@@ -11,11 +11,20 @@ interface FileContextMenuProps {
   onOpen: (file: FileEntry) => void;
   onRename: (file: FileEntry) => void;
   onCopy: (file: FileEntry) => void;
+  onCopyPath: (file: FileEntry) => void;
   onDownload: (file: FileEntry) => void;
   onChmod: (file: FileEntry) => void;
   onChown: (file: FileEntry) => void;
+  onExtractArchive: (file: FileEntry) => void;
   onDelete: (file: FileEntry) => void;
 }
+
+const ARCHIVE_EXTENSIONS = ['zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', '7z', 'rar'];
+
+const isArchiveFile = (fileName: string): boolean => {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return ARCHIVE_EXTENSIONS.includes(ext);
+};
 
 export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   isOpen,
@@ -26,12 +35,16 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   onOpen,
   onRename,
   onCopy,
+  onCopyPath,
   onDownload,
   onChmod,
   onChown,
+  onExtractArchive,
   onDelete,
 }) => {
   if (!file) return null;
+
+  const isArchive = isArchiveFile(file.name);
 
   const items: ContextMenuItem[] = [
     {
@@ -74,7 +87,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     },
     {
       id: 'copy',
-      label: 'Copy Path',
+      label: 'Duplicate',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -85,7 +98,23 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
           />
         </svg>
       ),
+      disabled: !canWrite,
       onClick: () => onCopy(file),
+    },
+    {
+      id: 'copy-path',
+      label: 'Copy Path',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+          />
+        </svg>
+      ),
+      onClick: () => onCopyPath(file),
     },
     {
       id: 'download',
@@ -135,6 +164,27 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       disabled: !canWrite,
       onClick: () => onChown(file),
     },
+    ...(isArchive
+      ? [
+          { id: 'sep-archive', label: '', separator: true },
+          {
+            id: 'extract-archive',
+            label: 'Extract Archive',
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                />
+              </svg>
+            ),
+            disabled: !canWrite,
+            onClick: () => onExtractArchive(file),
+          },
+        ]
+      : []),
     { id: 'sep-3', label: '', separator: true },
     {
       id: 'delete',

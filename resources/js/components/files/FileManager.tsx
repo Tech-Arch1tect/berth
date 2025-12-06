@@ -187,7 +187,14 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     [fm]
   );
 
-  const handleFileCopy = useCallback((file: FileEntry) => {
+  const handleFileCopy = useCallback(
+    (file: FileEntry) => {
+      fm.handleFileOperation('copy', file);
+    },
+    [fm]
+  );
+
+  const handleFileCopyPath = useCallback((file: FileEntry) => {
     navigator.clipboard.writeText(file.path);
     showToast.success('Path copied to clipboard');
   }, []);
@@ -232,6 +239,21 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     (folder: FileEntry) => {
       fm.setCurrentPath(folder.path);
       fm.handleFileOperation('mkdir');
+    },
+    [fm]
+  );
+
+  const handleCreateArchive = useCallback(
+    (entry: FileEntry) => {
+      fm.setCurrentPath(entry.path);
+      fm.handleFileOperation('create_archive', entry);
+    },
+    [fm]
+  );
+
+  const handleExtractArchive = useCallback(
+    (file: FileEntry) => {
+      fm.handleFileOperation('extract_archive', file);
     },
     [fm]
   );
@@ -368,9 +390,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         onOpen={handleFileOpen}
         onRename={handleFileRename}
         onCopy={handleFileCopy}
+        onCopyPath={handleFileCopyPath}
         onDownload={handleFileDownload}
         onChmod={handleFileChmod}
         onChown={handleFileChown}
+        onExtractArchive={handleExtractArchive}
         onDelete={handleFileDelete}
       />
 
@@ -385,6 +409,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         onRename={handleFileRename}
         onChmod={handleFileChmod}
         onChown={handleFileChown}
+        onCreateArchive={handleCreateArchive}
         onDelete={handleFileDelete}
       />
 

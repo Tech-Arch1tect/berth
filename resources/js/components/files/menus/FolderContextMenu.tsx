@@ -13,6 +13,7 @@ interface FolderContextMenuProps {
   onRename: (folder: FileEntry) => void;
   onChmod: (folder: FileEntry) => void;
   onChown: (folder: FileEntry) => void;
+  onCreateArchive: (folder: FileEntry) => void;
   onDelete: (folder: FileEntry) => void;
 }
 
@@ -27,6 +28,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   onRename,
   onChmod,
   onChown,
+  onCreateArchive,
   onDelete,
 }) => {
   if (!folder) return null;
@@ -115,6 +117,23 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
       onClick: () => onChown(folder),
     },
     { id: 'sep-3', label: '', separator: true },
+    {
+      id: 'create-archive',
+      label: 'Create Archive',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+          />
+        </svg>
+      ),
+      disabled: !canWrite,
+      onClick: () => onCreateArchive(folder),
+    },
+    { id: 'sep-4', label: '', separator: true },
     {
       id: 'delete',
       label: 'Delete',
