@@ -1,6 +1,7 @@
 import React from 'react';
 import { OpenTab } from '../../../types/files';
 import { FileViewer } from '../FileViewer';
+import { MonacoEditor } from './MonacoEditor';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
@@ -34,21 +35,14 @@ export const EditorContent: React.FC<EditorContentProps> = ({ tab, canWrite, onC
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <textarea
-        value={tab.content}
-        onChange={(e) => onContentChange(e.target.value)}
-        readOnly={!canWrite}
-        className={cn(
-          'flex-1 w-full p-4 font-mono text-sm leading-relaxed resize-none',
-          'bg-white dark:bg-zinc-900',
-          theme.text.standard,
-          'border-0 focus:ring-0 focus:outline-none',
-          'placeholder-zinc-400 dark:placeholder-zinc-500',
-          !canWrite && 'cursor-default'
-        )}
-        placeholder={canWrite ? 'Enter file content...' : 'File content (read-only)'}
-        spellCheck={false}
-      />
+      <div className="flex-1 min-h-0">
+        <MonacoEditor
+          value={tab.content}
+          path={tab.path}
+          readOnly={!canWrite}
+          onChange={onContentChange}
+        />
+      </div>
 
       {!canWrite && (
         <div
