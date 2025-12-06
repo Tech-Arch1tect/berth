@@ -16,7 +16,6 @@ import { theme } from '../../theme';
 import { EmptyState } from '../common/EmptyState';
 
 interface OperationTrackerProps {
-  serverid: number;
   stackname: string;
   operationId: string;
   command: string;
@@ -26,7 +25,6 @@ interface OperationTrackerProps {
 }
 
 const OperationTracker: React.FC<OperationTrackerProps> = ({
-  serverid,
   stackname,
   operationId,
   command,
@@ -200,7 +198,6 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 }) => {
   const { operations, removeOperation } = useOperationsContext();
   const [isMinimized, setIsMinimized] = useState(true);
-  const [showBuilder, setShowBuilder] = useState(false);
   const [width, setWidth] = useState(384);
   const [height, setHeight] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
@@ -224,7 +221,6 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   useEffect(() => {
     if (advancedMode) {
-      setShowBuilder(true);
       setIsMinimized(false);
     }
   }, [advancedMode]);
@@ -388,7 +384,6 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                 operations.map((op) => (
                   <OperationTracker
                     key={op.operation_id}
-                    serverid={op.server_id}
                     stackname={op.stack_name}
                     operationId={op.operation_id}
                     command={op.command}
@@ -477,7 +472,6 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
             operations.map((op) => (
               <OperationTracker
                 key={op.operation_id}
-                serverid={op.server_id}
                 stackname={op.stack_name}
                 operationId={op.operation_id}
                 command={op.command}

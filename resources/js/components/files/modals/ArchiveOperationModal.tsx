@@ -13,7 +13,6 @@ interface ArchiveOperationModalProps {
   isOpen: boolean;
   onClose: () => void;
   operation: 'create' | 'extract';
-  currentPath: string;
   selectedFile?: FileEntry;
   onCreateArchive: (request: CreateArchiveRequest) => void;
   onExtractArchive: (request: ExtractArchiveRequest) => void;
@@ -23,7 +22,6 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
   isOpen,
   onClose,
   operation,
-  currentPath,
   selectedFile,
   onCreateArchive,
   onExtractArchive,

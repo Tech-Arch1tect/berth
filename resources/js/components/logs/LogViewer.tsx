@@ -23,7 +23,6 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
     stackname: stackName,
     serviceName,
     containerName,
-    containers,
   });
 
   const getLogLevelColor = (level?: string) => {

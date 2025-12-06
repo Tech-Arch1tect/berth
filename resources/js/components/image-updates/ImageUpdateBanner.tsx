@@ -13,7 +13,6 @@ import { ImageUpdateTable } from './ImageUpdateTable';
 interface ImageUpdateBannerProps {
   updates: ImageUpdate[];
   stackName: string;
-  serverName: string;
   lastChecked: string | null;
   className?: string;
 }
@@ -21,7 +20,6 @@ interface ImageUpdateBannerProps {
 export const ImageUpdateBanner: React.FC<ImageUpdateBannerProps> = ({
   updates,
   stackName,
-  serverName,
   lastChecked,
   className,
 }) => {

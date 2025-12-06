@@ -510,7 +510,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
       <ArchiveOperationModal
         isOpen={fm.isArchiveModalOpen}
         operation={fm.archiveOperation}
-        currentPath={fm.currentPath}
         selectedFile={fm.selectedFile || undefined}
         onClose={fm.closeArchiveModal}
         onCreateArchive={fm.handleCreateArchive}

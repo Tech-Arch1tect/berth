@@ -202,6 +202,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   const handleChmodConfirm = useCallback(
     async (request: ChmodRequest) => {
+      setLoading(true);
       try {
         await mutations.chmodFile.mutateAsync(request);
         showToast.success('Permissions changed successfully');
@@ -211,6 +212,8 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       } catch (error) {
         console.error('Failed to change permissions:', error);
         throw error;
+      } finally {
+        setLoading(false);
       }
     },
     [mutations]
@@ -218,6 +221,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   const handleChownConfirm = useCallback(
     async (request: ChownRequest) => {
+      setLoading(true);
       try {
         await mutations.chownFile.mutateAsync(request);
         showToast.success('Ownership changed successfully');
@@ -227,6 +231,8 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       } catch (error) {
         console.error('Failed to change ownership:', error);
         throw error;
+      } finally {
+        setLoading(false);
       }
     },
     [mutations]

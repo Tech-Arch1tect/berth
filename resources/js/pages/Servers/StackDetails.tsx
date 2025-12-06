@@ -90,7 +90,6 @@ const StackDetails: StackDetailsComponent = ({
               <ImageUpdateBanner
                 updates={updates}
                 stackName={stackname}
-                serverName={server.name}
                 lastChecked={lastChecked}
               />
             )}
@@ -131,7 +130,6 @@ const StackDetails: StackDetailsComponent = ({
                 content={
                   <StackContent
                     selection={selection}
-                    stackName={stackname}
                     stackPath={stack.stackDetails.path || ''}
                     composeFile={stack.stackDetails.compose_file || ''}
                     services={stack.stackDetails.services || []}

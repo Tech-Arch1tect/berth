@@ -54,7 +54,6 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [timeoutValue, setTimeoutValue] = useState('30');
-  const [showAdvanced, setShowAdvanced] = useState(true);
 
   useEffect(() => {
     setSelectedOptions([]);

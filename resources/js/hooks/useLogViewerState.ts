@@ -6,7 +6,6 @@ interface UseLogViewerStateOptions {
   stackname: string;
   serviceName?: string;
   containerName?: string;
-  containers?: { name: string; service_name?: string }[];
 }
 
 export function useLogViewerState({
@@ -14,7 +13,6 @@ export function useLogViewerState({
   stackname,
   serviceName,
   containerName,
-  containers = [],
 }: UseLogViewerStateOptions) {
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [tail, setTail] = useState(100);

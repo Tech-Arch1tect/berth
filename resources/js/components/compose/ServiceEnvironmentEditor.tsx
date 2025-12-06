@@ -210,7 +210,7 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
 
         <div className="mb-6">
           <div className="space-y-3">
-            {rows.map((row, index) => (
+            {rows.map((row) => (
               <div key={row.id} className={cn(theme.surface.soft, 'rounded-lg p-4')}>
                 <div className="flex gap-3">
                   <div className="flex-1">
