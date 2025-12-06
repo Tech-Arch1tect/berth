@@ -8,7 +8,6 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { useOperationsContext } from '../../contexts/OperationsContext';
-import { StreamMessage } from '../../types/operations';
 import { OperationBuilder } from './OperationBuilder';
 import { useOperations } from '../../hooks/useOperations';
 import { Modal } from '../common/Modal';

@@ -17,11 +17,6 @@ import {
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
-
 interface StackToolbarProps {
   stackName: string;
   serverName: string;

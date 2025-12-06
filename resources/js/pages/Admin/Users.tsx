@@ -3,8 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import { EmptyState } from '../../components/common/EmptyState';
-import { Table, Column } from '../../components/common/Table';
+import { Table } from '../../components/common/Table';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 interface User {

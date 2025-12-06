@@ -3,7 +3,7 @@ import { SidebarSection } from './SidebarSection';
 import { ServiceItem } from './ServiceItem';
 import { ResourceItem } from './ResourceItem';
 import { ToolItem } from './ToolItem';
-import { SidebarSelection, isSameSelection } from './types';
+import { SidebarSelection } from './types';
 import { ComposeService, Network, Volume } from '../../../types/stack';
 import {
   CubeIcon,

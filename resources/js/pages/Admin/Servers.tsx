@@ -3,7 +3,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Table, Column } from '../../components/common/Table';
+import { Table } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -501,7 +501,6 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
         isOpen={!!testResultModal}
         onClose={() => setTestResultModal(null)}
         title={testResultModal?.success ? 'Connection Successful' : 'Connection Failed'}
-        variant={testResultModal?.success ? 'default' : 'danger'}
         size="sm"
         footer={
           <div className="flex justify-end">

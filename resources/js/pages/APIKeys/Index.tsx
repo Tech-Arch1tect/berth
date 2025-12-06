@@ -410,7 +410,6 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
         onClose={() => setErrorMessage(null)}
         title="Error"
         size="sm"
-        variant="danger"
         footer={
           <div className="flex justify-end">
             <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>

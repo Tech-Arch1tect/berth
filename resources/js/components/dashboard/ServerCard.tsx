@@ -1,7 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
   ServerIcon,
-  ChevronRightIcon,
   WifiIcon,
   NoSymbolIcon,
   ExclamationTriangleIcon,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
-import { Table, Column } from '../../components/common/Table';
+import { Table } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 

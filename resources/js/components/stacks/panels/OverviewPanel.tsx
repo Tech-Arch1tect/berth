@@ -10,7 +10,6 @@ import {
   DocumentTextIcon,
   FolderIcon,
   ClockIcon,
-  ArrowPathIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon, XCircleIcon, StopIcon, PauseCircleIcon } from '@heroicons/react/24/solid';

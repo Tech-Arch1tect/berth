@@ -448,7 +448,6 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
         onClose={() => setErrorMessage(null)}
         title="Error"
         size="sm"
-        variant="danger"
         footer={
           <div className="flex justify-end">
             <button onClick={() => setErrorMessage(null)} className={theme.buttons.primary}>
