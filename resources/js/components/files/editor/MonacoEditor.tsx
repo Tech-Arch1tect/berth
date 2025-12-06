@@ -146,9 +146,9 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
           tabSize: 2,
           renderWhitespace: 'selection',
           bracketPairColorization: { enabled: true },
-          smoothScrolling: true,
-          cursorBlinking: 'smooth',
-          cursorSmoothCaretAnimation: 'on',
+          smoothScrolling: false,
+          cursorBlinking: 'blink',
+          cursorSmoothCaretAnimation: 'off',
           padding: { top: 16, bottom: 16 },
           scrollbar: {
             vertical: 'auto',
