@@ -29,9 +29,10 @@ import { cn } from '../../utils/cn';
 
 interface LayoutProps {
   children: ReactNode;
+  fullWidth?: boolean;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { url, props } = usePage();
   const user = props.currentUser as User | undefined;
   const csrfToken = props.csrfToken as string | undefined;
@@ -246,8 +247,8 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Main content area */}
-      <div className="lg:pl-72">
-        <div className="sticky top-0 z-30 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
+      <div className={cn('lg:pl-72', fullWidth && 'h-screen flex flex-col')}>
+        <div className="sticky top-0 z-30 flex-shrink-0 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
@@ -297,15 +298,18 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         <main
-          className="px-4 py-8 sm:px-6 lg:px-10 transition-[padding-bottom] duration-200"
+          className={cn(
+            'transition-[padding-bottom] duration-200',
+            fullWidth ? 'flex-1 overflow-hidden' : 'px-4 py-8 sm:px-6 lg:px-10'
+          )}
           style={{
             paddingBottom:
-              terminalPanel?.state.isOpen && terminalPanel.state.tabs.length > 0
+              !fullWidth && terminalPanel?.state.isOpen && terminalPanel.state.tabs.length > 0
                 ? `${terminalPanel.state.height + 32}px`
                 : undefined,
           }}
         >
-          <div className="space-y-6">{children}</div>
+          {fullWidth ? children : <div className="space-y-6">{children}</div>}
         </main>
       </div>
 
@@ -320,4 +324,8 @@ export default function Layout({ children }: LayoutProps) {
       />
     </div>
   );
+}
+
+export function FullWidthLayout({ children }: { children: ReactNode }) {
+  return <Layout fullWidth>{children}</Layout>;
 }

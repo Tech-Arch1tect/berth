@@ -1,0 +1,1 @@
+export { StackDetailsLayout } from './StackDetailsLayout';
