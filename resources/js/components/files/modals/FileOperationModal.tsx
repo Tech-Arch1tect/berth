@@ -53,12 +53,22 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         if (getDirectoryStats) {
           const stats = await getDirectoryStats(currentPath || '.');
 
-          const defaultMode =
-            operation === 'mkdir'
-              ? stats.most_common_mode || '755'
-              : stats.most_common_mode === '755'
-                ? '644'
-                : stats.most_common_mode || '644';
+          let defaultMode: string;
+          if (operation === 'mkdir') {
+            // Ensure directories have execute bits (644 -> 755)
+            const baseMode = stats.most_common_mode || '755';
+            defaultMode = baseMode
+              .split('')
+              .map((digit) => {
+                const d = parseInt(digit, 10);
+                if (isNaN(d)) return digit;
+                return (d & 4 ? d | 1 : d).toString();
+              })
+              .join('');
+          } else {
+            defaultMode =
+              stats.most_common_mode === '755' ? '644' : stats.most_common_mode || '644';
+          }
 
           setMode(defaultMode);
           setOwnerId(stats.most_common_owner?.toString() || '');
