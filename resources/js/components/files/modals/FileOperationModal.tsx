@@ -36,7 +36,6 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
-  const [_selectedFiles, _setSelectedFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('');
   const [ownerId, setOwnerId] = useState('');
@@ -53,12 +52,22 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         if (getDirectoryStats) {
           const stats = await getDirectoryStats(currentPath || '.');
 
-          const defaultMode =
-            operation === 'mkdir'
-              ? stats.most_common_mode || '755'
-              : stats.most_common_mode === '755'
-                ? '644'
-                : stats.most_common_mode || '644';
+          let defaultMode: string;
+          if (operation === 'mkdir') {
+            // Ensure directories have execute bits (644 -> 755)
+            const baseMode = stats.most_common_mode || '755';
+            defaultMode = baseMode
+              .split('')
+              .map((digit) => {
+                const d = parseInt(digit, 10);
+                if (isNaN(d)) return digit;
+                return (d & 4 ? d | 1 : d).toString();
+              })
+              .join('');
+          } else {
+            defaultMode =
+              stats.most_common_mode === '755' ? '644' : stats.most_common_mode || '644';
+          }
 
           setMode(defaultMode);
           setOwnerId(stats.most_common_owner?.toString() || '');
@@ -318,7 +327,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
             )}
 
             {(operation === 'mkdir' || operation === 'create') && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}

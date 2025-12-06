@@ -1,39 +1,23 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
 import { Server } from '../../types/server';
 import { useStackDetailsPage } from '../../hooks/useStackDetailsPage';
-import NetworkList from '../../components/stacks/resources/NetworkList';
-import VolumeList from '../../components/stacks/resources/VolumeList';
-import EnvironmentVariableList from '../../components/stacks/resources/EnvironmentVariableList';
-import StackStats from '../../components/stacks/StackStats';
-import LogViewer from '../../components/logs/LogViewer';
 import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
-import { FileManager } from '../../components/files/FileManager';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { Tabs } from '../../components/common/Tabs';
-import { StackImagesTab } from '../../components/stacks/images';
 import { ComposeEditor } from '../../components/compose';
-import { StackHeader } from '../../components/stacks/details/StackHeader';
-import { StackQuickStats } from '../../components/stacks/details/StackQuickStats';
-import { StackInfoCard } from '../../components/stacks/details/StackInfoCard';
-import { StackServicesTab } from '../../components/stacks/details/StackServicesTab';
 import { ServerStackProvider } from '../../contexts/ServerStackContext';
 import { ImageUpdateBanner } from '../../components/image-updates';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
-import {
-  CircleStackIcon,
-  CpuChipIcon,
-  GlobeAltIcon,
-  FolderIcon,
-  Cog6ToothIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  PhotoIcon,
-} from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { FullWidthLayout } from '../../components/layout/Layout';
+
+import { StackDetailsLayout } from '../../components/stacks/layout/StackDetailsLayout';
+import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
+import { SidebarSelection } from '../../components/stacks/sidebar/types';
+import { StackToolbar } from '../../components/stacks/toolbar/StackToolbar';
+import { StackStatusBar } from '../../components/stacks/statusbar/StackStatusBar';
+import { StackContent } from '../../components/stacks/content/StackContent';
 
 interface StackDetailsProps {
   title: string;
@@ -43,7 +27,11 @@ interface StackDetailsProps {
   permissions: string[];
 }
 
-const StackDetails: React.FC<StackDetailsProps> = ({
+type StackDetailsComponent = React.FC<StackDetailsProps> & {
+  layout?: (page: React.ReactElement) => React.ReactElement;
+};
+
+const StackDetails: StackDetailsComponent = ({
   title,
   server,
   serverid,
@@ -51,59 +39,35 @@ const StackDetails: React.FC<StackDetailsProps> = ({
   permissions = [],
 }) => {
   const stack = useStackDetailsPage({ serverid, stackname });
+  const [selection, setSelection] = useState<SidebarSelection | null>({ type: 'overview' });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
 
   const canManageStack = stack.stackPermissions?.permissions?.includes('stacks.manage') ?? false;
+  const canViewLogs = stack.stackPermissions?.permissions?.includes('logs.read') ?? false;
+  const canViewFiles = stack.stackPermissions?.permissions?.includes('files.read') ?? false;
+  const canWriteFiles = stack.stackPermissions?.permissions?.includes('files.write') ?? false;
 
-  // Fetch image updates for this stack
   const { updates, hasUpdates, lastChecked } = useStackImageUpdates({
     serverid,
     stackname,
     enabled: true,
   });
 
+  const handleRefresh = useCallback(() => {
+    stack.handleRefreshAll();
+    setLastUpdated(new Date());
+  }, [stack.handleRefreshAll]);
+
+  React.useEffect(() => {
+    if (selection?.type === 'stats') {
+      stack.setActiveTab('stats');
+    }
+  }, [selection, stack.setActiveTab]);
+
   return (
     <>
       <Head title={title} />
       <ServerStackProvider serverId={serverid} stackName={stackname} serverName={server.name}>
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb
-          items={[
-            {
-              label: `${server.name} Stacks`,
-              href: `/servers/${serverid}/stacks`,
-            },
-            {
-              label: stackname,
-            },
-          ]}
-        />
-
-        {/* Header Section */}
-        {stack.stackDetails && (
-          <div className="mb-8">
-            <StackHeader
-              stackname={stackname}
-              server={server}
-              connectionStatus={stack.connectionStatus}
-              services={stack.stackDetails.services}
-              serviceCount={stack.stackDetails.services?.length || 0}
-              containerCount={
-                stack.stackDetails.services?.reduce(
-                  (total, service) => total + (service.containers?.length || 0),
-                  0
-                ) || 0
-              }
-              canManageStack={canManageStack}
-              onQuickOperation={stack.handleQuickOperation}
-              quickOperationState={stack.quickOperationState}
-              onGenerateDocumentation={stack.handleGenerateDocumentation}
-              onRefresh={stack.handleRefreshAll}
-              isRefreshing={stack.isFetching}
-              onOpenAdvancedOperations={() => stack.setAdvancedOperationsOpen(true)}
-            />
-          </div>
-        )}
-
         {/* Main Content */}
         {stack.loading ? (
           <LoadingSpinner size="lg" text="Loading stack details..." />
@@ -120,7 +84,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
             }}
           />
         ) : stack.stackDetails ? (
-          <div className="space-y-6">
+          <div className="h-full flex flex-col">
             {/* Image Update Banner */}
             {hasUpdates && (
               <ImageUpdateBanner
@@ -131,127 +95,83 @@ const StackDetails: React.FC<StackDetailsProps> = ({
               />
             )}
 
-            {/* Two-column layout for stats and info */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Quick Stats Grid - spans 2 columns */}
-              <div className="lg:col-span-2">
-                <StackQuickStats
-                  serviceCount={stack.stackDetails.services?.length || 0}
-                  containerCount={
-                    stack.stackDetails.services?.reduce(
-                      (total, service) => total + (service.containers?.length || 0),
-                      0
-                    ) || 0
-                  }
-                  networkCount={stack.networks?.length || 0}
-                  volumeCount={stack.volumes?.length || 0}
-                />
-              </div>
-
-              {/* Stack Info Card - spans 1 column */}
-              <div className="lg:col-span-1">
-                <StackInfoCard
-                  composeFile={stack.stackDetails.compose_file}
-                  stackPath={stack.stackDetails.path}
-                />
-              </div>
-            </div>
-
-            {/* Modern Tab Navigation */}
-            <Tabs
-              tabs={[
-                { id: 'services', label: 'Services', icon: CircleStackIcon },
-                { id: 'networks', label: 'Networks', icon: GlobeAltIcon },
-                { id: 'volumes', label: 'Volumes', icon: FolderIcon },
-                { id: 'environment', label: 'Environment', icon: Cog6ToothIcon },
-                { id: 'images', label: 'Images', icon: PhotoIcon },
-                { id: 'stats', label: 'Stats', icon: CpuChipIcon },
-                {
-                  id: 'logs',
-                  label: 'Logs',
-                  icon: DocumentTextIcon,
-                  hidden: !stack.stackPermissions?.permissions?.includes('logs.read'),
-                },
-                {
-                  id: 'files',
-                  label: 'Files',
-                  icon: FolderIcon,
-                  hidden: !stack.stackPermissions?.permissions?.includes('files.read'),
-                },
-              ]}
-              activeTab={stack.activeTab}
-              onTabChange={(tabId) => stack.setActiveTab(tabId as typeof stack.activeTab)}
-              className="rounded-2xl"
-              noPadding={stack.activeTab === 'logs'}
-            >
-              {stack.activeTab === 'services' && (
-                <StackServicesTab
-                  services={stack.stackDetails.services || []}
-                  onQuickOperation={stack.handleQuickOperation}
-                  quickOperationState={stack.quickOperationState}
-                  expandedServices={stack.expandedServices}
-                  onToggleExpand={stack.toggleServiceExpanded}
-                  onExpandAll={stack.handleExpandAll}
-                  onCollapseAll={stack.handleCollapseAll}
-                  canManageStack={canManageStack}
-                  onEditCompose={() => stack.setShowComposeEditor(true)}
-                />
-              )}
-
-              {stack.activeTab === 'networks' && (
-                <NetworkList
-                  networks={stack.networks || []}
-                  isLoading={stack.networksLoading}
-                  error={stack.networksError}
-                />
-              )}
-
-              {stack.activeTab === 'volumes' && (
-                <VolumeList
-                  volumes={stack.volumes || []}
-                  isLoading={stack.volumesLoading}
-                  error={stack.volumesError}
-                />
-              )}
-
-              {stack.activeTab === 'environment' && (
-                <EnvironmentVariableList
-                  environmentData={stack.environmentVariables || {}}
-                  isLoading={stack.environmentLoading}
-                  error={stack.environmentError}
-                />
-              )}
-
-              {stack.activeTab === 'images' && <StackImagesTab />}
-
-              {stack.activeTab === 'stats' && (
-                <StackStats
-                  containers={stack.stackStats?.containers || []}
-                  isLoading={stack.statsLoading}
-                  error={stack.statsError}
-                />
-              )}
-
-              {stack.activeTab === 'logs' &&
-                stack.stackPermissions?.permissions?.includes('logs.read') && (
-                  <LogViewer
-                    containers={
-                      stack.stackStats?.containers?.map((container) => ({
-                        name: container.name,
-                        service_name: container.service_name,
+            <div className="flex-1 min-h-0">
+              <StackDetailsLayout
+                toolbar={
+                  <StackToolbar
+                    stackName={stackname}
+                    serverName={server.name}
+                    serverId={serverid}
+                    services={stack.stackDetails.services || []}
+                    connectionStatus={stack.connectionStatus}
+                    canManage={canManageStack}
+                    isOperationRunning={stack.quickOperationState.isRunning}
+                    runningOperation={stack.quickOperationState.operation}
+                    isRefreshing={stack.isFetching}
+                    onQuickOperation={stack.handleQuickOperation}
+                    onRefresh={handleRefresh}
+                    onGenerateDocs={stack.handleGenerateDocumentation}
+                    onEditCompose={() => stack.setShowComposeEditor(true)}
+                    onAdvancedOperations={() => stack.setAdvancedOperationsOpen(true)}
+                  />
+                }
+                sidebar={
+                  <StackSidebar
+                    services={stack.stackDetails.services || []}
+                    networks={stack.networks || []}
+                    volumes={stack.volumes || []}
+                    selection={selection}
+                    onSelect={setSelection}
+                    permissions={{
+                      canViewLogs,
+                      canViewFiles,
+                    }}
+                  />
+                }
+                content={
+                  <StackContent
+                    selection={selection}
+                    stackName={stackname}
+                    stackPath={stack.stackDetails.path || ''}
+                    composeFile={stack.stackDetails.compose_file || ''}
+                    services={stack.stackDetails.services || []}
+                    networks={stack.networks || []}
+                    volumes={stack.volumes || []}
+                    environment={stack.environmentVariables || {}}
+                    statsContainers={stack.stackStats?.containers || []}
+                    logContainers={
+                      stack.stackStats?.containers?.map((c) => ({
+                        name: c.name,
+                        service_name: c.service_name,
                       })) || []
                     }
+                    permissions={{
+                      canManage: canManageStack,
+                      canViewLogs,
+                      canViewFiles,
+                      canWriteFiles,
+                    }}
+                    onQuickOperation={stack.handleQuickOperation}
+                    isOperationRunning={stack.quickOperationState.isRunning}
+                    runningOperation={stack.quickOperationState.operation}
+                    statsLoading={stack.statsLoading ?? false}
+                    statsError={stack.statsError ?? null}
+                    onSelectService={(serviceName) =>
+                      setSelection({ type: 'service', serviceName })
+                    }
                   />
-                )}
-
-              {stack.activeTab === 'files' &&
-                stack.stackPermissions?.permissions?.includes('files.read') && (
-                  <FileManager
-                    canRead={stack.stackPermissions.permissions.includes('files.read')}
-                    canWrite={stack.stackPermissions.permissions.includes('files.write')}
+                }
+                statusBar={
+                  <StackStatusBar
+                    services={stack.stackDetails.services || []}
+                    connectionStatus={stack.connectionStatus}
+                    lastUpdated={lastUpdated}
+                    isOperationRunning={stack.quickOperationState.isRunning}
+                    runningOperation={stack.quickOperationState.operation}
                   />
-                )}
-            </Tabs>
+                }
+              />
+            </div>
           </div>
         ) : (
           <EmptyState
@@ -293,5 +213,7 @@ const StackDetails: React.FC<StackDetailsProps> = ({
     </>
   );
 };
+
+StackDetails.layout = (page: React.ReactElement) => <FullWidthLayout>{page}</FullWidthLayout>;
 
 export default StackDetails;

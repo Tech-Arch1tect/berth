@@ -67,10 +67,6 @@ export interface ChownRequest {
   recursive?: boolean;
 }
 
-export interface DirectoryStatsRequest {
-  path: string;
-}
-
 export interface DirectoryStats {
   path: string;
   most_common_owner: number;
@@ -109,3 +105,14 @@ export type FileOperation =
   | 'upload'
   | 'create_archive'
   | 'extract_archive';
+
+export interface OpenTab {
+  id: string;
+  path: string;
+  name: string;
+  content: string;
+  encoding: string;
+  size: number;
+  isDirty: boolean;
+  originalContent: string;
+}

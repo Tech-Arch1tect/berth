@@ -99,7 +99,6 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
   };
 
   const handleOctalChange = (value: string) => {
-    // Only allow 3-digit numbers
     if (value.match(/^\d{0,3}$/)) {
       setOctalMode(value);
       if (value.length === 3) {
@@ -127,7 +126,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
         type="button"
         onClick={onClose}
         disabled={loading}
-        className={cn(theme.buttons.ghost, 'disabled:opacity-50')}
+        className={cn(theme.buttons.secondary, 'disabled:opacity-50')}
       >
         Cancel
       </button>
@@ -136,7 +135,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
         form="chmod-form"
         disabled={loading || octalMode.length !== 3}
         className={cn(
-          'bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 px-4 py-2'
+          theme.buttons.primary,
+          'disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2'
         )}
       >
         {loading && (
@@ -157,7 +157,6 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
       footer={footer}
     >
       <form id="chmod-form" onSubmit={handleSubmit} className="space-y-4">
-        {/* Octal Input */}
         <div className="mb-6">
           <label className={cn(theme.forms.label, 'mb-2')}>Octal Notation</label>
           <input
@@ -173,11 +172,9 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
           </p>
         </div>
 
-        {/* Visual Permission Editor */}
         <div className="space-y-4">
           <div className={cn('text-sm font-medium mb-3', theme.text.standard)}>Permissions</div>
 
-          {/* User/Owner */}
           <div
             className={cn(theme.surface.muted, 'flex items-center justify-between p-3 rounded-lg')}
           >
@@ -213,7 +210,6 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
             </div>
           </div>
 
-          {/* Group */}
           <div
             className={cn(theme.surface.muted, 'flex items-center justify-between p-3 rounded-lg')}
           >
@@ -249,7 +245,6 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
             </div>
           </div>
 
-          {/* Others */}
           <div
             className={cn(theme.surface.muted, 'flex items-center justify-between p-3 rounded-lg')}
           >
@@ -286,7 +281,6 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
           </div>
         </div>
 
-        {/* Recursive Option for Directories */}
         {entry.is_directory && (
           <div
             className={cn(

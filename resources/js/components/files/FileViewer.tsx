@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FileContent } from '../../types/files';
+import { MonacoEditor } from './editor/MonacoEditor';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -83,60 +82,6 @@ const getFileType = (path: string, encoding: string) => {
   return 'text';
 };
 
-const getLanguageFromExtension = (path: string) => {
-  const ext = path.split('.').pop()?.toLowerCase() || '';
-  const filename = path.split('/').pop()?.toLowerCase() || '';
-
-  const languageMap: Record<string, string> = {
-    js: 'javascript',
-    jsx: 'jsx',
-    ts: 'typescript',
-    tsx: 'tsx',
-    json: 'json',
-    html: 'html',
-    css: 'css',
-    scss: 'scss',
-    sass: 'sass',
-    less: 'less',
-    xml: 'xml',
-    yaml: 'yaml',
-    yml: 'yaml',
-    toml: 'toml',
-    ini: 'ini',
-    conf: 'nginx',
-    config: 'nginx',
-    md: 'markdown',
-    py: 'python',
-    go: 'go',
-    php: 'php',
-    rb: 'ruby',
-    rs: 'rust',
-    java: 'java',
-    c: 'c',
-    cpp: 'cpp',
-    cs: 'csharp',
-    sh: 'bash',
-    sql: 'sql',
-    dockerfile: 'dockerfile',
-    env: 'bash',
-    gitignore: 'git',
-    makefile: 'makefile',
-  };
-
-  // Special filename mappings
-  const filenameMap: Record<string, string> = {
-    dockerfile: 'dockerfile',
-    makefile: 'makefile',
-    '.gitignore': 'git',
-    '.env': 'bash',
-    '.env.local': 'bash',
-    '.env.production': 'bash',
-    '.env.development': 'bash',
-  };
-
-  return filenameMap[filename] || languageMap[ext] || 'text';
-};
-
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -146,15 +91,12 @@ const formatFileSize = (bytes: number) => {
 };
 
 export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) => {
-  const [isDarkTheme] = useState(() => document.documentElement.classList.contains('dark'));
-  const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const fileType = useMemo(() => {
     return getFileType(file.path, file.encoding);
   }, [file.path, file.encoding]);
 
-  const language = useMemo(() => getLanguageFromExtension(file.path), [file.path]);
   const lineCount = useMemo(() => file.content.split('\n').length, [file.content]);
 
   const copyToClipboard = async () => {
@@ -169,11 +111,11 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
 
   const renderCodeViewer = () => {
     return (
-      <div className="relative group">
+      <div className="relative group h-full flex flex-col">
         {/* Header with file info and actions */}
         <div
           className={cn(
-            'flex items-center justify-between px-4 py-3',
+            'flex items-center justify-between px-4 py-3 flex-shrink-0',
             theme.surface.subtle,
             'border-b border-slate-200/50 dark:border-slate-700/50'
           )}
@@ -187,103 +129,58 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
             <div className={cn('text-sm', theme.text.muted)}>
               <span className="font-mono">{file.path.split('/').pop()}</span>
               <span className="mx-2">•</span>
-              <span>{language}</span>
-              <span className="mx-2">•</span>
               <span>{lineCount} lines</span>
               <span className="mx-2">•</span>
               <span>{formatFileSize(file.size)}</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowLineNumbers(!showLineNumbers)}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
-                showLineNumbers
-                  ? cn(theme.intent.info.surface, theme.intent.info.textStrong)
-                  : cn(
-                      theme.surface.code,
-                      theme.text.muted,
-                      'hover:bg-slate-200 dark:hover:bg-slate-600'
-                    )
-              )}
-            >
-              Line Numbers
-            </button>
-
-            <button
-              onClick={copyToClipboard}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
-                'flex items-center space-x-1.5',
-                theme.surface.code,
-                theme.text.muted,
-                'hover:bg-slate-200 dark:hover:bg-slate-600'
-              )}
-            >
-              {copied ? (
-                <>
-                  <svg
-                    className="w-3 h-3 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={copyToClipboard}
+            className={cn(
+              'px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
+              'flex items-center space-x-1.5',
+              theme.surface.code,
+              theme.text.muted,
+              'hover:bg-slate-200 dark:hover:bg-slate-600'
+            )}
+          >
+            {copied ? (
+              <>
+                <svg
+                  className="w-3 h-3 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Copy</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* Code content */}
-        <div className={cn('relative', theme.surface.panel)}>
-          <SyntaxHighlighter
-            language={language}
-            style={isDarkTheme ? oneDark : oneLight}
-            showLineNumbers={showLineNumbers}
-            customStyle={{
-              margin: 0,
-              padding: '1.5rem',
-              fontSize: '14px',
-              lineHeight: '1.5',
-              background: 'transparent',
-            }}
-            lineNumberStyle={{
-              minWidth: '3em',
-              paddingRight: '1em',
-              color: isDarkTheme ? '#64748b' : '#94a3b8',
-              userSelect: 'none',
-            }}
-            codeTagProps={{
-              style: {
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-              },
-            }}
-          >
-            {file.content}
-          </SyntaxHighlighter>
+        {/* Code content with Monaco */}
+        <div className={cn('flex-1 min-h-0', theme.surface.panel)}>
+          <MonacoEditor value={file.content} path={file.path} readOnly />
         </div>
       </div>
     );
@@ -291,11 +188,11 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
 
   const renderTextViewer = () => {
     return (
-      <div className="relative group">
+      <div className="relative group h-full flex flex-col">
         {/* Header */}
         <div
           className={cn(
-            'flex items-center justify-between px-4 py-3',
+            'flex items-center justify-between px-4 py-3 flex-shrink-0',
             theme.surface.subtle,
             'border-b border-slate-200/50 dark:border-slate-700/50'
           )}
@@ -376,15 +273,8 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
         </div>
 
         {/* Text content */}
-        <div className={cn('p-6', theme.surface.panel)}>
-          <pre
-            className={cn(
-              'whitespace-pre-wrap text-sm font-mono leading-relaxed',
-              theme.text.standard
-            )}
-          >
-            {file.content}
-          </pre>
+        <div className={cn('flex-1 min-h-0', theme.surface.panel)}>
+          <MonacoEditor value={file.content} path={file.path} readOnly />
         </div>
       </div>
     );
@@ -597,7 +487,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
     <div
       className={cn(
         className,
-        'h-full rounded-xl overflow-auto',
+        'h-full rounded-xl overflow-hidden',
         'bg-slate-50/30 dark:bg-slate-800/30',
         'border border-slate-200/50 dark:border-slate-700/50'
       )}

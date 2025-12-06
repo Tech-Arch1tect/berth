@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useFiles } from './useFiles';
+import { useFileMutations } from './useFileQueries';
 import { useOperations } from './useOperations';
 import { showToast } from '../utils/toast';
 import {
-  DirectoryListing,
   FileEntry,
-  FileContent,
   FileOperation,
   CreateDirectoryRequest,
   WriteFileRequest,
@@ -27,11 +26,8 @@ export interface UseFileManagerOptions {
 
 export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFileManagerOptions) {
   const [currentPath, setCurrentPath] = useState('');
-  const [directoryListing, setDirectoryListing] = useState<DirectoryListing | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
-  const [fileContent, setFileContent] = useState<FileContent | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isChmodModalOpen, setIsChmodModalOpen] = useState(false);
@@ -50,26 +46,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     onError: handleError,
   });
 
-  const loadDirectory = useCallback(
-    async (path: string) => {
-      if (!canRead) {
-        showToast.error('You do not have permission to read files in this stack');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const listing = await files.listDirectory(path);
-        setDirectoryListing(listing);
-        setCurrentPath(path);
-      } catch (error) {
-        console.error('Failed to load directory:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [canRead, files.listDirectory]
-  );
+  const mutations = useFileMutations({ serverid, stackname });
 
   const operations = useOperations({
     serverid: String(serverid),
@@ -77,64 +54,12 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     onOperationComplete: (success, exitCode) => {
       if (success) {
         showToast.success('Archive operation completed successfully');
-        loadDirectory(currentPath);
       } else {
         showToast.error(`Archive operation failed with exit code: ${exitCode}`);
       }
     },
     onError: handleError,
   });
-
-  useEffect(() => {
-    if (!canRead) {
-      return;
-    }
-
-    const initialLoad = async () => {
-      try {
-        setLoading(true);
-        const listing = await files.listDirectory('');
-        setDirectoryListing(listing);
-        setCurrentPath('');
-      } catch (error) {
-        console.error('Failed to load directory:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initialLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleNavigate = useCallback(
-    (path: string) => {
-      loadDirectory(path);
-    },
-    [loadDirectory]
-  );
-
-  const handleFileSelect = useCallback(
-    async (entry: FileEntry) => {
-      if (!canRead) {
-        showToast.error('You do not have permission to read this file');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const content = await files.readFile(entry.path);
-        setFileContent(content);
-        setSelectedFile(entry);
-        setIsEditorOpen(true);
-      } catch (error) {
-        console.error('Failed to read file:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [canRead, files.readFile]
-  );
 
   const handleFileOperation = useCallback(
     (operation: FileOperation, entry?: FileEntry) => {
@@ -160,9 +85,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       setCurrentOperation(operation);
       setSelectedFile(entry || null);
 
-      if (operation === 'edit' && entry) {
-        handleFileSelect(entry);
-      } else if (operation === 'upload') {
+      if (operation === 'upload') {
         setIsUploadModalOpen(true);
       } else if (operation === 'chmod') {
         setIsChmodModalOpen(true);
@@ -178,7 +101,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         setIsOperationModalOpen(true);
       }
     },
-    [canWrite, handleFileSelect]
+    [canWrite]
   );
 
   const handleOperationConfirm = useCallback(
@@ -190,61 +113,44 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       try {
         switch (currentOperation) {
           case 'mkdir':
-            await files.createDirectory(data as CreateDirectoryRequest);
+            await mutations.createDirectory.mutateAsync(data as CreateDirectoryRequest);
             showToast.success('Directory created successfully');
             break;
           case 'create':
-            await files.writeFile(data as WriteFileRequest);
+            await mutations.writeFile.mutateAsync(data as WriteFileRequest);
             showToast.success('File created successfully');
             break;
           case 'rename':
-            await files.renameFile(data as RenameRequest);
+            await mutations.renameFile.mutateAsync(data as RenameRequest);
             showToast.success('File renamed successfully');
             break;
           case 'copy':
-            await files.copyFile(data as CopyRequest);
+            await mutations.copyFile.mutateAsync(data as CopyRequest);
             showToast.success('File copied successfully');
             break;
           case 'delete':
-            await files.deleteFile(data as DeleteRequest);
+            await mutations.deleteFile.mutateAsync(data as DeleteRequest);
             showToast.success('File deleted successfully');
             break;
         }
-
-        await loadDirectory(currentPath);
       } catch (error) {
         console.error('Operation failed:', error);
         throw error;
       }
     },
-    [
-      currentOperation,
-      files.createDirectory,
-      files.writeFile,
-      files.renameFile,
-      files.copyFile,
-      files.deleteFile,
-      loadDirectory,
-      currentPath,
-    ]
+    [currentOperation, mutations]
   );
 
   const handleFileSave = useCallback(
     async (data: WriteFileRequest) => {
       try {
-        await files.writeFile(data);
-        showToast.success('File saved successfully');
-
-        if (selectedFile) {
-          const content = await files.readFile(selectedFile.path);
-          setFileContent(content);
-        }
+        await mutations.writeFile.mutateAsync(data);
       } catch (error) {
         console.error('Failed to save file:', error);
         throw error;
       }
     },
-    [files.writeFile, files.readFile, selectedFile]
+    [mutations]
   );
 
   const handleDownload = useCallback(
@@ -272,39 +178,33 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       options?: { mode?: string; owner_id?: number; group_id?: number }
     ) => {
       try {
-        if (options && (options.mode || options.owner_id || options.group_id)) {
-          await files.uploadFile(file, path);
+        await mutations.uploadFile.mutateAsync({ file, path });
 
-          if (options.mode) {
-            await files.chmodFile({ path, mode: options.mode, recursive: false });
-          }
-          if (options.owner_id || options.group_id) {
-            const chownRequest: any = { path, recursive: false };
-            if (options.owner_id) chownRequest.owner_id = options.owner_id;
-            if (options.group_id) chownRequest.group_id = options.group_id;
-            await files.chownFile(chownRequest);
-          }
-        } else {
-          await files.uploadFile(file, path);
+        if (options?.mode) {
+          await mutations.chmodFile.mutateAsync({ path, mode: options.mode, recursive: false });
+        }
+        if (options?.owner_id || options?.group_id) {
+          const chownRequest: ChownRequest = { path, recursive: false };
+          if (options.owner_id) chownRequest.owner_id = options.owner_id;
+          if (options.group_id) chownRequest.group_id = options.group_id;
+          await mutations.chownFile.mutateAsync(chownRequest);
         }
 
         showToast.success(`Uploaded ${file.name} successfully`);
-        await loadDirectory(currentPath);
       } catch (error) {
         console.error('Failed to upload file:', error);
         showToast.error(`Failed to upload ${file.name}`);
         throw error;
       }
     },
-    [files.uploadFile, files.chmodFile, files.chownFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleChmodConfirm = useCallback(
     async (request: ChmodRequest) => {
       try {
-        await files.chmodFile(request);
+        await mutations.chmodFile.mutateAsync(request);
         showToast.success('Permissions changed successfully');
-        await loadDirectory(currentPath);
         setIsChmodModalOpen(false);
         setCurrentOperation(null);
         setSelectedFile(null);
@@ -313,15 +213,14 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         throw error;
       }
     },
-    [files.chmodFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleChownConfirm = useCallback(
     async (request: ChownRequest) => {
       try {
-        await files.chownFile(request);
+        await mutations.chownFile.mutateAsync(request);
         showToast.success('Ownership changed successfully');
-        await loadDirectory(currentPath);
         setIsChownModalOpen(false);
         setCurrentOperation(null);
         setSelectedFile(null);
@@ -330,7 +229,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         throw error;
       }
     },
-    [files.chownFile, loadDirectory, currentPath]
+    [mutations]
   );
 
   const handleCreateArchive = useCallback(
@@ -408,12 +307,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     [operations.clearLogs, operations.startOperation]
   );
 
-  const closeEditor = useCallback(() => {
-    setIsEditorOpen(false);
-    setFileContent(null);
-    setSelectedFile(null);
-  }, []);
-
   const closeOperationModal = useCallback(() => {
     setIsOperationModalOpen(false);
     setCurrentOperation(null);
@@ -445,23 +338,18 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   return {
     currentPath,
-    directoryListing,
+    setCurrentPath,
     loading,
     selectedFile,
-    fileContent,
     currentOperation,
     archiveOperation,
 
-    isEditorOpen,
     isOperationModalOpen,
     isUploadModalOpen,
     isChmodModalOpen,
     isChownModalOpen,
     isArchiveModalOpen,
 
-    loadDirectory,
-    handleNavigate,
-    handleFileSelect,
     handleFileOperation,
     handleOperationConfirm,
     handleFileSave,
@@ -472,7 +360,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     handleCreateArchive,
     handleExtractArchive,
 
-    closeEditor,
     closeOperationModal,
     closeUploadModal,
     closeChmodModal,

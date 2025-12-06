@@ -96,7 +96,9 @@ const FileManagerPage: React.FC<FileManagerProps> = ({
             </div>
 
             {/* File Manager Component */}
-            <FileManager canRead={canRead} canWrite={canWrite} />
+            <div className="h-[calc(100vh-280px)] min-h-[500px] rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm">
+              <FileManager canRead={canRead} canWrite={canWrite} />
+            </div>
           </div>
         </div>
       </ServerStackProvider>

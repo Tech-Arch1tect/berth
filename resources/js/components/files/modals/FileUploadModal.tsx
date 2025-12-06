@@ -179,13 +179,12 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       footer={footer}
     >
       <div className="space-y-4">
-        {/* Upload Area */}
         <div
           className={cn(
             'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
             dragOver
               ? cn(theme.intent.info.border, theme.intent.info.surface)
-              : 'border-gray-300 dark:border-gray-600'
+              : 'border-zinc-300 dark:border-zinc-600'
           )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -194,7 +193,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           <div className="space-y-4">
             <div className="mx-auto flex justify-center">
               <svg
-                className="w-12 h-12 text-gray-400"
+                className={cn('w-12 h-12', theme.text.subtle)}
                 stroke="currentColor"
                 fill="none"
                 viewBox="0 0 48 48"
@@ -230,7 +229,6 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           />
         </div>
 
-        {/* File List */}
         {selectedFiles.length > 0 && (
           <div className="space-y-2">
             <h4 className={cn('font-medium', theme.text.strong)}>Selected Files:</h4>
@@ -283,15 +281,13 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           </div>
         )}
 
-        {/* Location */}
         {currentPath && (
           <div className={cn('text-sm', theme.text.muted)}>
             <strong>Upload to:</strong> /{currentPath}
           </div>
         )}
 
-        {/* Advanced Options */}
-        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
