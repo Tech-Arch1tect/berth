@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { FileEntry } from '../../../types/files';
 import { FileTreeNode } from './FileTreeNode';
 import { cn } from '../../../utils/cn';
@@ -9,6 +9,8 @@ interface FileTreeProps {
   rootPath: string;
   onSelect: (entry: FileEntry) => void;
   onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void;
+  onMove?: (sourcePath: string, targetDirectory: string) => void;
+  canWrite?: boolean;
   isExpanded: (path: string) => boolean;
   isSelected: (path: string) => boolean;
   isLoading: (path: string) => boolean;
@@ -20,6 +22,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
   rootPath,
   onSelect,
   onContextMenu,
+  onMove,
+  canWrite = false,
   isExpanded,
   isSelected,
   isLoading,
@@ -33,21 +37,68 @@ export const FileTree: React.FC<FileTreeProps> = ({
     });
   }, [entries]);
 
+  const [isRootDragOver, setIsRootDragOver] = useState(false);
+
+  const handleRootDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!canWrite) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    },
+    [canWrite]
+  );
+
+  const handleRootDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      if (!canWrite) return;
+      e.preventDefault();
+      setIsRootDragOver(true);
+    },
+    [canWrite]
+  );
+
+  const handleRootDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsRootDragOver(false);
+  }, []);
+
+  const handleRootDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsRootDragOver(false);
+
+      if (!canWrite || !onMove) return;
+
+      const sourcePath = e.dataTransfer.getData('text/plain');
+      if (!sourcePath) return;
+
+      onMove(sourcePath, '');
+    },
+    [canWrite, onMove]
+  );
+
   return (
     <div className="py-1">
-      {rootPath && (
-        <div
-          className={cn(
-            'flex items-center h-7 select-none px-2',
-            'border-b border-zinc-100 dark:border-zinc-800',
-            'mb-1'
-          )}
+      <div
+        className={cn(
+          'flex items-center h-7 select-none px-2',
+          'border-b border-zinc-100 dark:border-zinc-800',
+          'mb-1',
+          isRootDragOver && 'bg-blue-100 dark:bg-blue-900/30 ring-1 ring-blue-400'
+        )}
+        onDragOver={handleRootDragOver}
+        onDragEnter={handleRootDragEnter}
+        onDragLeave={handleRootDragLeave}
+        onDrop={handleRootDrop}
+      >
+        <span
+          className={cn('text-xs font-medium truncate', theme.text.subtle)}
+          title={rootPath || '/'}
         >
-          <span className={cn('text-xs font-medium truncate', theme.text.subtle)} title={rootPath}>
-            {rootPath}
-          </span>
-        </div>
-      )}
+          {rootPath || '/'}
+        </span>
+      </div>
 
       {sortedEntries.map((entry) => (
         <FileTreeNode
@@ -60,6 +111,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
           children={getChildren(entry.path)}
           onSelect={onSelect}
           onContextMenu={onContextMenu}
+          onMove={onMove}
+          canWrite={canWrite}
           getChildren={getChildren}
           checkExpanded={isExpanded}
           checkSelected={isSelected}

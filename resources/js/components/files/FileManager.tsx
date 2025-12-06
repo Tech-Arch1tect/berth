@@ -23,7 +23,7 @@ import { useServerStack } from '../../contexts/ServerStackContext';
 import { FileEntry, OpenTab } from '../../types/files';
 import { showToast } from '../../utils/toast';
 import { useFiles } from '../../hooks/useFiles';
-import { useFileContentQuery } from '../../hooks/useFileQueries';
+import { useFileContentQuery, useFileMutations } from '../../hooks/useFileQueries';
 
 interface FileManagerProps {
   canRead: boolean;
@@ -92,6 +92,27 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     onFileSelect: handleOpenFile,
     enabled: canRead,
   });
+
+  const mutations = useFileMutations({ serverid: serverId, stackname: stackName });
+
+  const handleMove = useCallback(
+    async (sourcePath: string, targetDirectory: string) => {
+      const fileName = sourcePath.split('/').pop() || '';
+      const newPath = targetDirectory ? `${targetDirectory}/${fileName}` : fileName;
+
+      try {
+        await mutations.renameFile.mutateAsync({
+          old_path: sourcePath,
+          new_path: newPath,
+        });
+        showToast.success(`Moved ${fileName} to ${targetDirectory || 'root'}`);
+      } catch (error) {
+        console.error('Failed to move file:', error);
+        showToast.error('Failed to move file');
+      }
+    },
+    [mutations]
+  );
 
   const handleFileContextMenu = useCallback(
     (e: React.MouseEvent, entry: FileEntry) => {
@@ -285,6 +306,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
             rootPath={fileTree.rootPath}
             onSelect={fileTree.selectEntry}
             onContextMenu={handleFileContextMenu}
+            onMove={handleMove}
+            canWrite={canWrite}
             isExpanded={fileTree.isExpanded}
             isSelected={fileTree.isSelected}
             isLoading={fileTree.isLoading}
