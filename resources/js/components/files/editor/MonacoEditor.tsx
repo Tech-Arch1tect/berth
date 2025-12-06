@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { cn } from '../../../utils/cn';
@@ -9,6 +9,7 @@ interface MonacoEditorProps {
   path: string;
   readOnly?: boolean;
   onChange?: (value: string) => void;
+  onSave?: () => void;
   className?: string;
 }
 
@@ -84,11 +85,17 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
   path,
   readOnly = false,
   onChange,
+  onSave,
   className,
 }) => {
   const [isDarkTheme, setIsDarkTheme] = useState(() =>
     document.documentElement.classList.contains('dark')
   );
+
+  const onSaveRef = useRef(onSave);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -118,6 +125,15 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
     (editorInstance: monaco.editor.IStandaloneCodeEditor) => {
       if (!readOnly) {
         editorInstance.focus();
+
+        editorInstance.addAction({
+          id: 'save-file',
+          label: 'Save File',
+          keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+          run: () => {
+            onSaveRef.current?.();
+          },
+        });
       }
     },
     [readOnly]

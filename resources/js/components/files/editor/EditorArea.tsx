@@ -31,7 +31,12 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   return (
     <div className={cn('flex-1 flex flex-col overflow-hidden', 'bg-white dark:bg-zinc-900')}>
       <EditorHeader tab={activeTab} canWrite={canWrite} isSaving={isSaving} onSave={onSave} />
-      <EditorContent tab={activeTab} canWrite={canWrite} onContentChange={onContentChange} />
+      <EditorContent
+        tab={activeTab}
+        canWrite={canWrite}
+        onContentChange={onContentChange}
+        onSave={onSave}
+      />
     </div>
   );
 };

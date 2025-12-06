@@ -9,13 +9,19 @@ interface EditorContentProps {
   tab: OpenTab;
   canWrite: boolean;
   onContentChange: (content: string) => void;
+  onSave?: () => void;
 }
 
 const isTextFile = (encoding: string): boolean => {
   return encoding === 'utf-8';
 };
 
-export const EditorContent: React.FC<EditorContentProps> = ({ tab, canWrite, onContentChange }) => {
+export const EditorContent: React.FC<EditorContentProps> = ({
+  tab,
+  canWrite,
+  onContentChange,
+  onSave,
+}) => {
   const isText = isTextFile(tab.encoding);
 
   if (!isText) {
@@ -41,6 +47,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({ tab, canWrite, onC
           path={tab.path}
           readOnly={!canWrite}
           onChange={onContentChange}
+          onSave={onSave}
         />
       </div>
 
