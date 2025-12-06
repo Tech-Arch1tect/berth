@@ -9,6 +9,7 @@ interface FileTreeProps {
   rootPath: string;
   onSelect: (entry: FileEntry) => void;
   onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void;
+  onBackgroundContextMenu?: (e: React.MouseEvent) => void;
   onMove?: (sourcePath: string, targetDirectory: string) => void;
   canWrite?: boolean;
   isExpanded: (path: string) => boolean;
@@ -22,6 +23,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
   rootPath,
   onSelect,
   onContextMenu,
+  onBackgroundContextMenu,
   onMove,
   canWrite = false,
   isExpanded,
@@ -78,8 +80,16 @@ export const FileTree: React.FC<FileTreeProps> = ({
     [canWrite, onMove]
   );
 
+  const handleBackgroundContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      onBackgroundContextMenu?.(e);
+    },
+    [onBackgroundContextMenu]
+  );
+
   return (
-    <div className="py-1">
+    <div className="py-1 h-full" onContextMenu={handleBackgroundContextMenu}>
       <div
         className={cn(
           'flex items-center h-7 select-none px-2',

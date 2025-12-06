@@ -3,7 +3,7 @@ import { FileManagerLayout } from './layout';
 import { FileTree, FileDetailsPanel } from './tree';
 import { TabBar } from './tabs';
 import { EditorArea } from './editor';
-import { FileContextMenu, FolderContextMenu, TabContextMenu } from './menus';
+import { FileContextMenu, FolderContextMenu, TabContextMenu, TreeContextMenu } from './menus';
 import { StatusBar } from './StatusBar';
 import { FileManagerToolbar } from './FileManagerToolbar';
 import { FileOperationModal } from './modals/FileOperationModal';
@@ -57,6 +57,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   const fileMenu = useContextMenu<FileEntry>();
   const folderMenu = useContextMenu<FileEntry>();
   const tabMenu = useContextMenu<OpenTab>();
+  const treeMenu = useContextMenu<null>();
 
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -130,6 +131,13 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
       tabMenu.open(e, tab);
     },
     [tabMenu]
+  );
+
+  const handleTreeBackgroundContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      treeMenu.open(e, null);
+    },
+    [treeMenu]
   );
 
   const handleContentChange = useCallback(
@@ -243,6 +251,21 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     [fm]
   );
 
+  const handleNewFileInRoot = useCallback(() => {
+    fm.setCurrentPath('');
+    fm.handleFileOperation('create');
+  }, [fm]);
+
+  const handleNewFolderInRoot = useCallback(() => {
+    fm.setCurrentPath('');
+    fm.handleFileOperation('mkdir');
+  }, [fm]);
+
+  const handleUploadToRoot = useCallback(() => {
+    fm.setCurrentPath('');
+    fm.handleFileOperation('upload');
+  }, [fm]);
+
   const handleCreateArchive = useCallback(
     (entry: FileEntry) => {
       fm.setCurrentPath(entry.path);
@@ -250,6 +273,20 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     },
     [fm]
   );
+
+  const handleCreateArchiveOfRoot = useCallback(() => {
+    fm.setCurrentPath('');
+    fm.handleFileOperation('create_archive', {
+      name: '.',
+      path: '',
+      is_directory: true,
+      size: 0,
+      mode: '',
+      mod_time: '',
+      owner: '',
+      group: '',
+    });
+  }, [fm]);
 
   const handleExtractArchive = useCallback(
     (file: FileEntry) => {
@@ -328,6 +365,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
             rootPath={fileTree.rootPath}
             onSelect={fileTree.selectEntry}
             onContextMenu={handleFileContextMenu}
+            onBackgroundContextMenu={handleTreeBackgroundContextMenu}
             onMove={handleMove}
             canWrite={canWrite}
             isExpanded={fileTree.isExpanded}
@@ -422,6 +460,17 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         onCloseOthers={handleTabCloseOthers}
         onCloseAll={handleTabCloseAll}
         onCopyPath={handleTabCopyPath}
+      />
+
+      <TreeContextMenu
+        isOpen={treeMenu.isOpen}
+        position={treeMenu.position}
+        canWrite={canWrite}
+        onClose={treeMenu.close}
+        onNewFile={handleNewFileInRoot}
+        onNewFolder={handleNewFolderInRoot}
+        onUpload={handleUploadToRoot}
+        onCreateArchive={handleCreateArchiveOfRoot}
       />
 
       <FileOperationModal
