@@ -36,7 +36,6 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
-  const [_selectedFiles, _setSelectedFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('');
   const [ownerId, setOwnerId] = useState('');

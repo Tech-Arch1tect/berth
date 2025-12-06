@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useFiles } from './useFiles';
 import { useFileMutations } from './useFileQueries';
 import { useOperations } from './useOperations';
 import { showToast } from '../utils/toast';
 import {
-  DirectoryListing,
   FileEntry,
-  FileContent,
   FileOperation,
   CreateDirectoryRequest,
   WriteFileRequest,
@@ -28,11 +26,8 @@ export interface UseFileManagerOptions {
 
 export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFileManagerOptions) {
   const [currentPath, setCurrentPath] = useState('');
-  const [directoryListing, setDirectoryListing] = useState<DirectoryListing | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
-  const [fileContent, setFileContent] = useState<FileContent | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isChmodModalOpen, setIsChmodModalOpen] = useState(false);
@@ -53,91 +48,18 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   const mutations = useFileMutations({ serverid, stackname });
 
-  const loadDirectory = useCallback(
-    async (path: string) => {
-      if (!canRead) {
-        showToast.error('You do not have permission to read files in this stack');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const listing = await files.listDirectory(path);
-        setDirectoryListing(listing);
-        setCurrentPath(path);
-      } catch (error) {
-        console.error('Failed to load directory:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [canRead, files.listDirectory]
-  );
-
   const operations = useOperations({
     serverid: String(serverid),
     stackname,
     onOperationComplete: (success, exitCode) => {
       if (success) {
         showToast.success('Archive operation completed successfully');
-        loadDirectory(currentPath);
       } else {
         showToast.error(`Archive operation failed with exit code: ${exitCode}`);
       }
     },
     onError: handleError,
   });
-
-  useEffect(() => {
-    if (!canRead) {
-      return;
-    }
-
-    const initialLoad = async () => {
-      try {
-        setLoading(true);
-        const listing = await files.listDirectory('');
-        setDirectoryListing(listing);
-        setCurrentPath('');
-      } catch (error) {
-        console.error('Failed to load directory:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initialLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleNavigate = useCallback(
-    (path: string) => {
-      loadDirectory(path);
-    },
-    [loadDirectory]
-  );
-
-  const handleFileSelect = useCallback(
-    async (entry: FileEntry) => {
-      if (!canRead) {
-        showToast.error('You do not have permission to read this file');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const content = await files.readFile(entry.path);
-        setFileContent(content);
-        setSelectedFile(entry);
-        setIsEditorOpen(true);
-      } catch (error) {
-        console.error('Failed to read file:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [canRead, files.readFile]
-  );
 
   const handleFileOperation = useCallback(
     (operation: FileOperation, entry?: FileEntry) => {
@@ -163,9 +85,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
       setCurrentOperation(operation);
       setSelectedFile(entry || null);
 
-      if (operation === 'edit' && entry) {
-        handleFileSelect(entry);
-      } else if (operation === 'upload') {
+      if (operation === 'upload') {
         setIsUploadModalOpen(true);
       } else if (operation === 'chmod') {
         setIsChmodModalOpen(true);
@@ -181,7 +101,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         setIsOperationModalOpen(true);
       }
     },
-    [canWrite, handleFileSelect]
+    [canWrite]
   );
 
   const handleOperationConfirm = useCallback(
@@ -387,12 +307,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     [operations.clearLogs, operations.startOperation]
   );
 
-  const closeEditor = useCallback(() => {
-    setIsEditorOpen(false);
-    setFileContent(null);
-    setSelectedFile(null);
-  }, []);
-
   const closeOperationModal = useCallback(() => {
     setIsOperationModalOpen(false);
     setCurrentOperation(null);
@@ -425,23 +339,17 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   return {
     currentPath,
     setCurrentPath,
-    directoryListing,
     loading,
     selectedFile,
-    fileContent,
     currentOperation,
     archiveOperation,
 
-    isEditorOpen,
     isOperationModalOpen,
     isUploadModalOpen,
     isChmodModalOpen,
     isChownModalOpen,
     isArchiveModalOpen,
 
-    loadDirectory,
-    handleNavigate,
-    handleFileSelect,
     handleFileOperation,
     handleOperationConfirm,
     handleFileSave,
@@ -452,7 +360,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
     handleCreateArchive,
     handleExtractArchive,
 
-    closeEditor,
     closeOperationModal,
     closeUploadModal,
     closeChmodModal,

@@ -215,5 +215,3 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
     </Modal>
   );
 };
-
-export default ArchiveOperationModal;

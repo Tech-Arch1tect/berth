@@ -67,10 +67,6 @@ export interface ChownRequest {
   recursive?: boolean;
 }
 
-export interface DirectoryStatsRequest {
-  path: string;
-}
-
 export interface DirectoryStats {
   path: string;
   most_common_owner: number;
