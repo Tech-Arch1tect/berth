@@ -288,7 +288,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     <div ref={containerRef} className="h-full overflow-auto">
       <div className="p-6 space-y-6">
         {/* Overview Section */}
-        <section id={SECTION_IDS.overview} className="scroll-mt-4">
+        <section id={SECTION_IDS.overview} className="scroll-mt-4 rounded-lg p-4 -m-4">
           <div className="mb-4">
             <h2 className={cn('text-lg font-bold', theme.text.strong)}>Overview</h2>
             <p className={cn('text-sm', theme.text.subtle)}>
@@ -339,7 +339,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </section>
 
         {/* Alerts Section */}
-        <section id={SECTION_IDS.alerts} className="scroll-mt-4">
+        <section id={SECTION_IDS.alerts} className="scroll-mt-4 rounded-lg p-4 -m-4">
           <div className="mb-4">
             <h2 className={cn('text-lg font-bold', theme.text.strong)}>Alerts</h2>
             <p className={cn('text-sm', theme.text.subtle)}>Health problems and system warnings</p>
@@ -417,7 +417,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </section>
 
         {/* Activity Section */}
-        <section id={SECTION_IDS.activity} className="scroll-mt-4">
+        <section id={SECTION_IDS.activity} className="scroll-mt-4 rounded-lg p-4 -m-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className={cn('text-lg font-bold', theme.text.strong)}>Recent Activity</h2>

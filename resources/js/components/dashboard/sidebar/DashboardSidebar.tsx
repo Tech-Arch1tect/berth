@@ -95,6 +95,14 @@ const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
   if (element) {
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    element.classList.add('animate-highlight-flash');
+
+    const handleAnimationEnd = () => {
+      element.classList.remove('animate-highlight-flash');
+      element.removeEventListener('animationend', handleAnimationEnd);
+    };
+    element.addEventListener('animationend', handleAnimationEnd);
   }
 };
 
