@@ -33,6 +33,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   onDismiss,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [prevIsComplete, setPrevIsComplete] = useState<boolean | null>(null);
   const operationRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
@@ -42,11 +43,12 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   const hasCompleteLogs = logs.some((log) => log.type === 'complete');
   const isComplete = !isIncomplete || hasCompleteLogs;
 
-  useEffect(() => {
+  if (isComplete !== prevIsComplete) {
+    setPrevIsComplete(isComplete);
     if (!isComplete && !expanded) {
       setExpanded(true);
     }
-  }, [isComplete, expanded]);
+  }
 
   useEffect(() => {
     if (expanded && operationRef.current) {
@@ -184,13 +186,118 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   );
 };
 
+interface AdvancedModeConfig {
+  serverid: string;
+  stackname: string;
+  services?: Array<{ name: string; service_name?: string }>;
+  onClose: () => void;
+}
+
+interface AdvancedOperationsModalProps {
+  config: AdvancedModeConfig;
+  operations: ReturnType<typeof useOperationsContext>['operations'];
+  removeOperation: ReturnType<typeof useOperationsContext>['removeOperation'];
+  runningOps: ReturnType<typeof useOperationsContext>['operations'];
+  completedOps: ReturnType<typeof useOperationsContext>['operations'];
+}
+
+const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
+  config,
+  operations,
+  removeOperation,
+  runningOps,
+  completedOps,
+}) => {
+  const advancedOps = useOperations({
+    serverid: config.serverid,
+    stackname: config.stackname,
+    onOperationComplete: () => {},
+    onError: (error) => {
+      console.error('Advanced operation error:', error);
+    },
+  });
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={config.onClose}
+      title="Advanced Operations"
+      subtitle={`${config.stackname} on Server ${config.serverid}`}
+      size="2xl"
+      headerExtra={
+        <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              'w-2 h-2 rounded-full',
+              advancedOps.isConnected
+                ? theme.badges.dot.success
+                : advancedOps.isConnecting
+                  ? cn(theme.badges.dot.warning, 'animate-pulse')
+                  : theme.badges.dot.danger
+            )}
+          />
+          <span className={cn('text-xs', theme.text.muted)}>
+            {advancedOps.isConnected
+              ? 'Connected'
+              : advancedOps.isConnecting
+                ? 'Connecting...'
+                : 'Disconnected'}
+          </span>
+        </div>
+      }
+    >
+      <div
+        className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900"
+        style={{ height: '75vh' }}
+      >
+        {/* Operation Builder */}
+        <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
+          <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
+            Build Custom Operation
+          </h4>
+          <OperationBuilder
+            services={config.services || []}
+            onOperationBuild={(operation) => {
+              advancedOps.startOperation(operation);
+            }}
+            disabled={advancedOps.operationStatus.isRunning}
+          />
+        </div>
+
+        {/* Running Operations */}
+        <div className="w-1/2 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+            <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
+              Operations ({runningOps.length} running, {completedOps.length} completed)
+            </h4>
+          </div>
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900">
+            {operations.length === 0 ? (
+              <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
+                No operations running
+              </div>
+            ) : (
+              operations.map((op) => (
+                <OperationTracker
+                  key={op.operation_id}
+                  stackname={op.stack_name}
+                  operationId={op.operation_id}
+                  command={op.command}
+                  startTime={op.start_time}
+                  isIncomplete={op.is_incomplete}
+                  onDismiss={() => removeOperation(op.operation_id)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 interface GlobalOperationsTrackerProps {
-  advancedMode?: {
-    serverid: string;
-    stackname: string;
-    services?: Array<{ name: string; service_name?: string }>;
-    onClose: () => void;
-  };
+  advancedMode?: AdvancedModeConfig;
 }
 
 export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = ({
@@ -201,6 +308,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
   const [width, setWidth] = useState(384);
   const [height, setHeight] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
+  const [prevAdvancedMode, setPrevAdvancedMode] = useState(advancedMode);
   const resizeRef = useRef<{
     startX: number;
     startY: number;
@@ -208,22 +316,12 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
     startHeight: number;
   } | null>(null);
 
-  const advancedOps = advancedMode
-    ? useOperations({
-        serverid: advancedMode.serverid,
-        stackname: advancedMode.stackname,
-        onOperationComplete: () => {},
-        onError: (error) => {
-          console.error('Advanced operation error:', error);
-        },
-      })
-    : null;
-
-  useEffect(() => {
+  if (advancedMode !== prevAdvancedMode) {
+    setPrevAdvancedMode(advancedMode);
     if (advancedMode) {
       setIsMinimized(false);
     }
-  }, [advancedMode]);
+  }
 
   const runningOps = operations.filter((op) => op.is_incomplete);
   const completedOps = operations.filter((op) => !op.is_incomplete);
@@ -269,12 +367,6 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
     [width, height]
   );
 
-  const handleClose = () => {
-    if (advancedMode) {
-      advancedMode.onClose();
-    }
-  };
-
   if (isMinimized && !advancedMode) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
@@ -318,85 +410,13 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   if (advancedMode) {
     return (
-      <Modal
-        isOpen={true}
-        onClose={handleClose}
-        title="Advanced Operations"
-        subtitle={`${advancedMode.stackname} on Server ${advancedMode.serverid}`}
-        size="2xl"
-        headerExtra={
-          advancedOps ? (
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'w-2 h-2 rounded-full',
-                  advancedOps.isConnected
-                    ? theme.badges.dot.success
-                    : advancedOps.isConnecting
-                      ? cn(theme.badges.dot.warning, 'animate-pulse')
-                      : theme.badges.dot.danger
-                )}
-              />
-              <span className={cn('text-xs', theme.text.muted)}>
-                {advancedOps.isConnected
-                  ? 'Connected'
-                  : advancedOps.isConnecting
-                    ? 'Connecting...'
-                    : 'Disconnected'}
-              </span>
-            </div>
-          ) : null
-        }
-      >
-        <div
-          className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900"
-          style={{ height: '75vh' }}
-        >
-          {/* Operation Builder */}
-          <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
-            <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
-              Build Custom Operation
-            </h4>
-            {advancedOps && (
-              <OperationBuilder
-                services={advancedMode.services || []}
-                onOperationBuild={(operation) => {
-                  advancedOps.startOperation(operation);
-                }}
-                disabled={advancedOps.operationStatus.isRunning}
-              />
-            )}
-          </div>
-
-          {/* Running Operations */}
-          <div className="w-1/2 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-              <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
-                Operations ({runningOps.length} running, {completedOps.length} completed)
-              </h4>
-            </div>
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900">
-              {operations.length === 0 ? (
-                <div className={cn('flex items-center justify-center h-full', theme.text.muted)}>
-                  No operations running
-                </div>
-              ) : (
-                operations.map((op) => (
-                  <OperationTracker
-                    key={op.operation_id}
-                    stackname={op.stack_name}
-                    operationId={op.operation_id}
-                    command={op.command}
-                    startTime={op.start_time}
-                    isIncomplete={op.is_incomplete}
-                    onDismiss={() => removeOperation(op.operation_id)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <AdvancedOperationsModal
+        config={advancedMode}
+        operations={operations}
+        removeOperation={removeOperation}
+        runningOps={runningOps}
+        completedOps={completedOps}
+      />
     );
   }
 
