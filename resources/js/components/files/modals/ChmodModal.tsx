@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { FileEntry, ChmodRequest } from '../../../types/files';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
@@ -12,6 +12,94 @@ interface ChmodModalProps {
   loading: boolean;
 }
 
+interface PermissionState {
+  userRead: boolean;
+  userWrite: boolean;
+  userExecute: boolean;
+  groupRead: boolean;
+  groupWrite: boolean;
+  groupExecute: boolean;
+  otherRead: boolean;
+  otherWrite: boolean;
+  otherExecute: boolean;
+}
+
+const parsePermissionsFromMode = (mode: string): PermissionState => {
+  const defaultState: PermissionState = {
+    userRead: false,
+    userWrite: false,
+    userExecute: false,
+    groupRead: false,
+    groupWrite: false,
+    groupExecute: false,
+    otherRead: false,
+    otherWrite: false,
+    otherExecute: false,
+  };
+
+  if (mode.length >= 9) {
+    const permissions = mode.slice(-9);
+    return {
+      userRead: permissions[0] === 'r',
+      userWrite: permissions[1] === 'w',
+      userExecute: permissions[2] === 'x' || permissions[2] === 's',
+      groupRead: permissions[3] === 'r',
+      groupWrite: permissions[4] === 'w',
+      groupExecute: permissions[5] === 'x' || permissions[5] === 's',
+      otherRead: permissions[6] === 'r',
+      otherWrite: permissions[7] === 'w',
+      otherExecute: permissions[8] === 'x' || permissions[8] === 't',
+    };
+  } else if (mode.match(/^\d{3,4}$/)) {
+    const octal = mode.length === 3 ? mode : mode.slice(1);
+    return parsePermissionsFromOctal(octal);
+  }
+
+  return defaultState;
+};
+
+const parsePermissionsFromOctal = (octal: string): PermissionState => {
+  if (octal.length !== 3) {
+    return {
+      userRead: false,
+      userWrite: false,
+      userExecute: false,
+      groupRead: false,
+      groupWrite: false,
+      groupExecute: false,
+      otherRead: false,
+      otherWrite: false,
+      otherExecute: false,
+    };
+  }
+
+  const userValue = parseInt(octal[0]);
+  const groupValue = parseInt(octal[1]);
+  const otherValue = parseInt(octal[2]);
+
+  return {
+    userRead: (userValue & 4) !== 0,
+    userWrite: (userValue & 2) !== 0,
+    userExecute: (userValue & 1) !== 0,
+    groupRead: (groupValue & 4) !== 0,
+    groupWrite: (groupValue & 2) !== 0,
+    groupExecute: (groupValue & 1) !== 0,
+    otherRead: (otherValue & 4) !== 0,
+    otherWrite: (otherValue & 2) !== 0,
+    otherExecute: (otherValue & 1) !== 0,
+  };
+};
+
+const permissionsToOctal = (perms: PermissionState): string => {
+  const userValue =
+    (perms.userRead ? 4 : 0) + (perms.userWrite ? 2 : 0) + (perms.userExecute ? 1 : 0);
+  const groupValue =
+    (perms.groupRead ? 4 : 0) + (perms.groupWrite ? 2 : 0) + (perms.groupExecute ? 1 : 0);
+  const otherValue =
+    (perms.otherRead ? 4 : 0) + (perms.otherWrite ? 2 : 0) + (perms.otherExecute ? 1 : 0);
+  return `${userValue}${groupValue}${otherValue}`;
+};
+
 export const ChmodModal: React.FC<ChmodModalProps> = ({
   isOpen,
   onClose,
@@ -19,100 +107,53 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
   entry,
   loading,
 }) => {
-  const [octalMode, setOctalMode] = useState('');
-  const [userRead, setUserRead] = useState(false);
-  const [userWrite, setUserWrite] = useState(false);
-  const [userExecute, setUserExecute] = useState(false);
-  const [groupRead, setGroupRead] = useState(false);
-  const [groupWrite, setGroupWrite] = useState(false);
-  const [groupExecute, setGroupExecute] = useState(false);
-  const [otherRead, setOtherRead] = useState(false);
-  const [otherWrite, setOtherWrite] = useState(false);
-  const [otherExecute, setOtherExecute] = useState(false);
+  const [permissions, setPermissions] = useState<PermissionState>(() =>
+    entry?.mode ? parsePermissionsFromMode(entry.mode) : parsePermissionsFromOctal('000')
+  );
+  const [octalInput, setOctalInput] = useState('');
+  const [isEditingOctal, setIsEditingOctal] = useState(false);
   const [recursive, setRecursive] = useState(false);
+  const [prevEntryMode, setPrevEntryMode] = useState(entry?.mode);
 
-  useEffect(() => {
+  if (entry?.mode !== prevEntryMode) {
+    setPrevEntryMode(entry?.mode);
     if (entry?.mode) {
-      parsePermissions(entry.mode);
+      setPermissions(parsePermissionsFromMode(entry.mode));
     }
-  }, [entry]);
+    setRecursive(false);
+    setIsEditingOctal(false);
+  }
 
-  useEffect(() => {
-    const userValue = (userRead ? 4 : 0) + (userWrite ? 2 : 0) + (userExecute ? 1 : 0);
-    const groupValue = (groupRead ? 4 : 0) + (groupWrite ? 2 : 0) + (groupExecute ? 1 : 0);
-    const otherValue = (otherRead ? 4 : 0) + (otherWrite ? 2 : 0) + (otherExecute ? 1 : 0);
+  const calculatedOctal = useMemo(() => permissionsToOctal(permissions), [permissions]);
 
-    const octal = `${userValue}${groupValue}${otherValue}`;
-    setOctalMode(octal);
-  }, [
-    userRead,
-    userWrite,
-    userExecute,
-    groupRead,
-    groupWrite,
-    groupExecute,
-    otherRead,
-    otherWrite,
-    otherExecute,
-  ]);
+  const displayedOctal = isEditingOctal ? octalInput : calculatedOctal;
 
-  const parsePermissions = (mode: string) => {
-    if (mode.length >= 9) {
-      const permissions = mode.slice(-9);
+  const handlePermissionChange = useCallback((key: keyof PermissionState, value: boolean) => {
+    setPermissions((prev) => ({ ...prev, [key]: value }));
+    setIsEditingOctal(false);
+  }, []);
 
-      setUserRead(permissions[0] === 'r');
-      setUserWrite(permissions[1] === 'w');
-      setUserExecute(permissions[2] === 'x' || permissions[2] === 's');
-
-      setGroupRead(permissions[3] === 'r');
-      setGroupWrite(permissions[4] === 'w');
-      setGroupExecute(permissions[5] === 'x' || permissions[5] === 's');
-
-      setOtherRead(permissions[6] === 'r');
-      setOtherWrite(permissions[7] === 'w');
-      setOtherExecute(permissions[8] === 'x' || permissions[8] === 't');
-    } else if (mode.match(/^\d{3,4}$/)) {
-      const octal = mode.length === 3 ? mode : mode.slice(1);
-      setOctalMode(octal);
-      parseFromOctal(octal);
-    }
-  };
-
-  const parseFromOctal = (octal: string) => {
-    if (octal.length !== 3) return;
-
-    const userValue = parseInt(octal[0]);
-    const groupValue = parseInt(octal[1]);
-    const otherValue = parseInt(octal[2]);
-
-    setUserRead((userValue & 4) !== 0);
-    setUserWrite((userValue & 2) !== 0);
-    setUserExecute((userValue & 1) !== 0);
-
-    setGroupRead((groupValue & 4) !== 0);
-    setGroupWrite((groupValue & 2) !== 0);
-    setGroupExecute((groupValue & 1) !== 0);
-
-    setOtherRead((otherValue & 4) !== 0);
-    setOtherWrite((otherValue & 2) !== 0);
-    setOtherExecute((otherValue & 1) !== 0);
-  };
-
-  const handleOctalChange = (value: string) => {
+  const handleOctalChange = useCallback((value: string) => {
     if (value.match(/^\d{0,3}$/)) {
-      setOctalMode(value);
+      setOctalInput(value);
+      setIsEditingOctal(true);
       if (value.length === 3) {
-        parseFromOctal(value);
+        setPermissions(parsePermissionsFromOctal(value));
+        setIsEditingOctal(false);
       }
     }
-  };
+  }, []);
+
+  const handleOctalBlur = useCallback(() => {
+    setIsEditingOctal(false);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (entry && octalMode.length === 3) {
+    if (entry && calculatedOctal.length === 3) {
       onConfirm({
         path: entry.path,
-        mode: octalMode,
+        mode: calculatedOctal,
         recursive: recursive && entry.is_directory,
       });
     }
@@ -133,7 +174,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
       <button
         type="submit"
         form="chmod-form"
-        disabled={loading || octalMode.length !== 3}
+        disabled={loading || calculatedOctal.length !== 3}
         className={cn(
           theme.buttons.primary,
           'disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2'
@@ -161,8 +202,9 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
           <label className={cn(theme.forms.label, 'mb-2')}>Octal Notation</label>
           <input
             type="text"
-            value={octalMode}
+            value={displayedOctal}
             onChange={(e) => handleOctalChange(e.target.value)}
+            onBlur={handleOctalBlur}
             className={cn(theme.forms.input, 'w-full')}
             placeholder="755"
             maxLength={3}
@@ -183,8 +225,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={userRead}
-                  onChange={(e) => setUserRead(e.target.checked)}
+                  checked={permissions.userRead}
+                  onChange={(e) => handlePermissionChange('userRead', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Read</span>
@@ -192,8 +234,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={userWrite}
-                  onChange={(e) => setUserWrite(e.target.checked)}
+                  checked={permissions.userWrite}
+                  onChange={(e) => handlePermissionChange('userWrite', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Write</span>
@@ -201,8 +243,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={userExecute}
-                  onChange={(e) => setUserExecute(e.target.checked)}
+                  checked={permissions.userExecute}
+                  onChange={(e) => handlePermissionChange('userExecute', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Execute</span>
@@ -218,8 +260,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={groupRead}
-                  onChange={(e) => setGroupRead(e.target.checked)}
+                  checked={permissions.groupRead}
+                  onChange={(e) => handlePermissionChange('groupRead', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Read</span>
@@ -227,8 +269,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={groupWrite}
-                  onChange={(e) => setGroupWrite(e.target.checked)}
+                  checked={permissions.groupWrite}
+                  onChange={(e) => handlePermissionChange('groupWrite', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Write</span>
@@ -236,8 +278,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={groupExecute}
-                  onChange={(e) => setGroupExecute(e.target.checked)}
+                  checked={permissions.groupExecute}
+                  onChange={(e) => handlePermissionChange('groupExecute', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Execute</span>
@@ -253,8 +295,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={otherRead}
-                  onChange={(e) => setOtherRead(e.target.checked)}
+                  checked={permissions.otherRead}
+                  onChange={(e) => handlePermissionChange('otherRead', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Read</span>
@@ -262,8 +304,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={otherWrite}
-                  onChange={(e) => setOtherWrite(e.target.checked)}
+                  checked={permissions.otherWrite}
+                  onChange={(e) => handlePermissionChange('otherWrite', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Write</span>
@@ -271,8 +313,8 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={otherExecute}
-                  onChange={(e) => setOtherExecute(e.target.checked)}
+                  checked={permissions.otherExecute}
+                  onChange={(e) => handlePermissionChange('otherExecute', e.target.checked)}
                   className={theme.forms.checkbox}
                 />
                 <span className={cn('text-xs', theme.text.muted)}>Execute</span>
