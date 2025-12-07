@@ -46,7 +46,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         if (dims) {
           resizeTerminalRef.current?.(dims.cols, dims.rows);
         }
-      } catch {}
+      } catch {
+        // fit() can throw if terminal element is not attached - expected during resize
+      }
     }
   }, []);
 
@@ -98,10 +100,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const sessionRef = useRef(session);
 
+  // Moving to useEffect breaks terminal session persistence across page navigations.
+  /* eslint-disable react-hooks/refs */
   sendInputRef.current = sendInput;
   resizeTerminalRef.current = resizeTerminal;
   closeTerminalRef.current = closeTerminal;
   sessionRef.current = session;
+  /* eslint-enable react-hooks/refs */
 
   useEffect(() => {
     if (!terminalRef.current || isInitialised) return;
@@ -149,7 +154,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         if (xtermRef.current && fitAddonRef.current) {
           try {
             fitAddonRef.current.fit();
-          } catch {}
+          } catch {
+            // fit() can throw during initial setup if container dimensions not ready
+          }
         }
       }, 100);
 
