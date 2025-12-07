@@ -7,19 +7,13 @@ import {
   CpuChipIcon,
   ServerIcon,
   ArrowPathIcon,
-  StopIcon,
   UserIcon,
   FolderIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline';
-import {
-  CheckCircleIcon as CheckCircleIconSolid,
-  XCircleIcon as XCircleIconSolid,
-  ClockIcon as ClockIconSolid,
-  ExclamationTriangleIcon as ExclamationTriangleIconSolid,
-} from '@heroicons/react/24/solid';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
+import { getContainerStatus } from '../../../utils/statusHelpers';
 
 interface ServiceDetailPanelProps {
   service: ComposeService;
@@ -28,52 +22,6 @@ interface ServiceDetailPanelProps {
   runningOperation?: string;
   canManage: boolean;
 }
-
-const getContainerStatusInfo = (container: Container) => {
-  const state = container.state?.toLowerCase() || 'unknown';
-
-  switch (state) {
-    case 'running':
-      return {
-        icon: CheckCircleIconSolid,
-        color: 'text-emerald-500',
-        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-        label: 'Running',
-      };
-    case 'stopped':
-    case 'exited':
-      return {
-        icon: container.exit_code === 0 ? StopIcon : XCircleIconSolid,
-        color: container.exit_code === 0 ? 'text-zinc-500' : 'text-red-500',
-        bg:
-          container.exit_code === 0
-            ? 'bg-zinc-50 dark:bg-zinc-800'
-            : 'bg-red-50 dark:bg-red-900/20',
-        label: container.exit_code === 0 ? 'Stopped' : `Error (${container.exit_code})`,
-      };
-    case 'paused':
-      return {
-        icon: ClockIconSolid,
-        color: 'text-amber-500',
-        bg: 'bg-amber-50 dark:bg-amber-900/20',
-        label: 'Paused',
-      };
-    case 'restarting':
-      return {
-        icon: ArrowPathIcon,
-        color: 'text-blue-500',
-        bg: 'bg-blue-50 dark:bg-blue-900/20',
-        label: 'Restarting',
-      };
-    default:
-      return {
-        icon: ExclamationTriangleIconSolid,
-        color: 'text-zinc-400',
-        bg: 'bg-zinc-50 dark:bg-zinc-800',
-        label: state.charAt(0).toUpperCase() + state.slice(1),
-      };
-  }
-};
 
 const formatUptime = (startedAt?: string) => {
   if (!startedAt) return null;
@@ -192,7 +140,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
 };
 
 const ContainerDetail: React.FC<{ container: Container }> = ({ container }) => {
-  const statusInfo = getContainerStatusInfo(container);
+  const statusInfo = getContainerStatus(container);
   const StatusIcon = statusInfo.icon;
   const uptime = formatUptime(container.started);
 

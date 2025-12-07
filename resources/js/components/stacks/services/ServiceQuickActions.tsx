@@ -14,6 +14,12 @@ import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../utils/cn';
 import { useServerStack } from '../../../contexts/ServerStackContext';
 import { useTerminalPanel } from '../../../contexts/TerminalPanelContext';
+import {
+  getServiceActionState,
+  hasStoppedContainers,
+  hasCreatedContainers,
+  type ActionState,
+} from '../../../utils/statusHelpers';
 
 interface ServiceQuickActionsProps {
   service: ComposeService;
@@ -22,15 +28,6 @@ interface ServiceQuickActionsProps {
   isOperationRunning?: boolean;
   runningOperation?: string;
 }
-
-type ServiceState =
-  | 'no-containers'
-  | 'all-running'
-  | 'all-stopped'
-  | 'all-not-created'
-  | 'mixed-running'
-  | 'mixed-not-created'
-  | 'other';
 
 type ActionKey = 'up' | 'start' | 'stop' | 'restart' | 'down' | 'pull';
 
@@ -55,26 +52,7 @@ export const ServiceQuickActions = ({
   const { serverId, stackName } = useServerStack();
   const { openTerminal } = useTerminalPanel();
 
-  const determineState = (): ServiceState => {
-    const containers = service.containers ?? [];
-    if (containers.length === 0) return 'no-containers';
-
-    const total = containers.length;
-    const running = containers.filter((container) => container.state === 'running').length;
-    const stopped = containers.filter((container) =>
-      ['stopped', 'exited'].includes(container.state ?? '')
-    ).length;
-    const notCreated = containers.filter((container) => container.state === 'not created').length;
-
-    if (running === total) return 'all-running';
-    if (stopped === total) return 'all-stopped';
-    if (notCreated === total) return 'all-not-created';
-    if (running > 0) return 'mixed-running';
-    if (notCreated > 0) return 'mixed-not-created';
-    return 'other';
-  };
-
-  const serviceState = determineState();
+  const serviceState: ActionState = getServiceActionState(service);
   const busy = (command: ActionKey) =>
     isOperationRunning && runningOperation === `${command}:${service.name}`;
   const isDisabled = disabled || isOperationRunning;
@@ -108,10 +86,7 @@ export const ServiceQuickActions = ({
       title: `Start ${service.name}`,
       visible:
         serviceState === 'all-stopped' ||
-        (serviceState === 'mixed-running' &&
-          service.containers?.some((container) =>
-            ['stopped', 'exited'].includes(container.state ?? '')
-          )),
+        (serviceState === 'mixed-running' && hasStoppedContainers(service)),
       colorClass:
         'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/25 dark:text-emerald-100 dark:hover:bg-emerald-500/40',
     },
@@ -143,9 +118,7 @@ export const ServiceQuickActions = ({
       command: 'down',
       baseLabel: 'Down',
       title: `Stop and remove ${service.name}`,
-      visible:
-        serviceState !== 'all-not-created' &&
-        service.containers?.some((container) => container.state !== 'not created') === true,
+      visible: serviceState !== 'all-not-created' && hasCreatedContainers(service),
       colorClass:
         'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/25 dark:text-amber-100 dark:hover:bg-amber-500/40',
     },
