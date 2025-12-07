@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DockerOperationRequest } from '../../types/operations';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
@@ -54,10 +54,12 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [timeoutValue, setTimeoutValue] = useState('30');
+  const [prevCommand, setPrevCommand] = useState(command);
 
-  useEffect(() => {
+  if (command !== prevCommand) {
+    setPrevCommand(command);
     setSelectedOptions([]);
-  }, [command]);
+  }
 
   const handleOptionToggle = (option: string) => {
     setSelectedOptions((prev) =>

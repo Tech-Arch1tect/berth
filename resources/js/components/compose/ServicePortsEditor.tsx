@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ComposeService } from '../../types/stack';
 import { ArrowLeftIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
@@ -35,17 +35,21 @@ export const ServicePortsEditor: React.FC<ServicePortsEditorProps> = ({
     return { basePorts: ports, portSource: source };
   }, [pendingPorts, service]);
 
-  const [portText, setPortText] = useState<string>(basePorts.join('\n'));
+  const basePortsKey = basePorts.join('\n');
+  const [portText, setPortText] = useState<string>(basePortsKey);
   const [error, setError] = useState<string | null>(null);
+  const [prevBasePortsKey, setPrevBasePortsKey] = useState(basePortsKey);
 
-  useEffect(() => {
-    setPortText(basePorts.join('\n'));
+  if (basePortsKey !== prevBasePortsKey) {
+    setPrevBasePortsKey(basePortsKey);
+    setPortText(basePortsKey);
     setError(null);
-  }, [basePorts]);
+  }
 
-  useEffect(() => {
+  const handlePortTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPortText(event.target.value);
     setError(null);
-  }, [portText]);
+  };
 
   const handleApply = () => {
     const ports = parsePorts(portText);
@@ -120,7 +124,7 @@ export const ServicePortsEditor: React.FC<ServicePortsEditorProps> = ({
           <textarea
             id="port-mappings"
             value={portText}
-            onChange={(event) => setPortText(event.target.value)}
+            onChange={handlePortTextChange}
             rows={8}
             placeholder="One mapping per line, e.g. 8080:80 or 127.0.0.1:5432:5432"
             className={cn(

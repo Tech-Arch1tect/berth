@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ComposeService } from '../../types/stack';
 import {
   ArrowLeftIcon,
@@ -35,6 +35,49 @@ interface EnvironmentRow {
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
+const computeInitialRows = (
+  pendingEnvironment: Array<{ key: string; value: string; is_sensitive: boolean }> | undefined,
+  composeEnvironment:
+    | Record<
+        string,
+        Array<{
+          variables: Array<{ key: string; value: string; is_sensitive: boolean; source: string }>;
+        }>
+      >
+    | undefined,
+  serviceName: string
+): EnvironmentRow[] => {
+  let initialEnv: Array<{ key: string; value: string; is_sensitive: boolean }> = [];
+
+  if (pendingEnvironment) {
+    initialEnv = pendingEnvironment;
+  } else if (composeEnvironment && composeEnvironment[serviceName]) {
+    initialEnv = composeEnvironment[serviceName]
+      .flatMap((env) => env.variables)
+      .filter((variable) => variable.source === 'compose');
+  }
+
+  const rows: EnvironmentRow[] = initialEnv.map((env) => ({
+    id: generateId(),
+    key: env.key,
+    value: env.value,
+    is_sensitive: env.is_sensitive,
+    revealed: false,
+  }));
+
+  if (rows.length === 0) {
+    rows.push({
+      id: generateId(),
+      key: '',
+      value: '',
+      is_sensitive: false,
+      revealed: false,
+    });
+  }
+
+  return rows;
+};
+
 export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> = ({
   service,
   serverId,
@@ -43,9 +86,6 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
   onApply,
   onCancel,
 }) => {
-  const [rows, setRows] = useState<EnvironmentRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
   const { data: composeEnvironment, isLoading } = useStackEnvironmentVariables({
     serverid: serverId,
     stackname: stackName,
@@ -53,38 +93,23 @@ export const ServiceEnvironmentEditor: React.FC<ServiceEnvironmentEditorProps> =
     enabled: !pendingEnvironment,
   });
 
-  useEffect(() => {
-    let initialEnv: Array<{ key: string; value: string; is_sensitive: boolean }> = [];
+  const [rows, setRows] = useState<EnvironmentRow[]>(() =>
+    computeInitialRows(pendingEnvironment, composeEnvironment, service.name)
+  );
+  const [error, setError] = useState<string | null>(null);
 
-    if (pendingEnvironment) {
-      initialEnv = pendingEnvironment;
-    } else if (composeEnvironment && composeEnvironment[service.name]) {
-      initialEnv = composeEnvironment[service.name]
-        .flatMap((env) => env.variables)
-        .filter((variable) => variable.source === 'compose');
-    }
+  const dataKey = pendingEnvironment
+    ? JSON.stringify(pendingEnvironment)
+    : composeEnvironment
+      ? JSON.stringify(composeEnvironment[service.name])
+      : '';
+  const [prevDataKey, setPrevDataKey] = useState(dataKey);
 
-    const initialRows: EnvironmentRow[] = initialEnv.map((env) => ({
-      id: generateId(),
-      key: env.key,
-      value: env.value,
-      is_sensitive: env.is_sensitive,
-      revealed: false,
-    }));
-
-    if (initialRows.length === 0) {
-      initialRows.push({
-        id: generateId(),
-        key: '',
-        value: '',
-        is_sensitive: false,
-        revealed: false,
-      });
-    }
-
-    setRows(initialRows);
+  if (dataKey !== prevDataKey) {
+    setPrevDataKey(dataKey);
+    setRows(computeInitialRows(pendingEnvironment, composeEnvironment, service.name));
     setError(null);
-  }, [pendingEnvironment, composeEnvironment, service.name]);
+  }
 
   const handleKeyChange = (id: string, newKey: string) => {
     setRows((prev) => prev.map((row) => (row.id === id ? { ...row, key: newKey } : row)));

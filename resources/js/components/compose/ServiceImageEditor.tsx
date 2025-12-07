@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ComposeService } from '../../types/stack';
 import { ArrowLeftIcon, CheckIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
@@ -10,24 +10,29 @@ interface ServiceImageEditorProps {
   onBack: () => void;
 }
 
+const extractTagFromImage = (image: string | undefined): string => {
+  if (image && image.includes(':')) {
+    const parts = image.split(':');
+    return parts[parts.length - 1];
+  }
+  return 'latest';
+};
+
 export const ServiceImageEditor: React.FC<ServiceImageEditorProps> = ({
   service,
   onUpdate,
   onBack,
 }) => {
   const [editMode, setEditMode] = useState<'tag' | 'full'>('tag');
-  const [imageTag, setImageTag] = useState('');
+  const [imageTag, setImageTag] = useState(() => extractTagFromImage(service.image));
   const [fullImage, setFullImage] = useState(service.image || '');
+  const [prevServiceImage, setPrevServiceImage] = useState(service.image);
 
-  // Parse current image to extract tag
-  useEffect(() => {
-    if (service.image && service.image.includes(':')) {
-      const parts = service.image.split(':');
-      setImageTag(parts[parts.length - 1]);
-    } else {
-      setImageTag('latest');
-    }
-  }, [service.image]);
+  if (service.image !== prevServiceImage) {
+    setPrevServiceImage(service.image);
+    setImageTag(extractTagFromImage(service.image));
+    setFullImage(service.image || '');
+  }
 
   const getCurrentImageName = () => {
     if (!service.image) return '';
