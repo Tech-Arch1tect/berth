@@ -12,6 +12,16 @@ import {
   ArrowPathIcon,
 } from '@heroicons/react/24/solid';
 
+const STOPPED_EXIT_CODES = [0, 137, 143];
+
+type ExitCodeStatus = 'stopped' | 'error' | 'unknown';
+
+const getExitCodeStatus = (exitCode: number | undefined): ExitCodeStatus => {
+  if (exitCode === undefined) return 'unknown';
+  if (STOPPED_EXIT_CODES.includes(exitCode)) return 'stopped';
+  return 'error';
+};
+
 export type ContainerState =
   | 'running'
   | 'exited'
@@ -55,8 +65,9 @@ export const getContainerStatus = (container: Container): ContainerStatusInfo =>
       };
 
     case 'stopped':
-    case 'exited':
-      if (container.exit_code === 0) {
+    case 'exited': {
+      const exitStatus = getExitCodeStatus(container.exit_code);
+      if (exitStatus === 'stopped') {
         return {
           status: 'stopped',
           icon: StopIcon,
@@ -65,13 +76,24 @@ export const getContainerStatus = (container: Container): ContainerStatusInfo =>
           label: 'Stopped',
         };
       }
+      if (exitStatus === 'error') {
+        return {
+          status: 'error',
+          icon: XCircleIcon,
+          color: 'text-red-500',
+          bg: 'bg-red-50 dark:bg-red-900/20',
+          label: `Error (${container.exit_code})`,
+        };
+      }
+
       return {
-        status: 'error',
-        icon: XCircleIcon,
-        color: 'text-red-500',
-        bg: 'bg-red-50 dark:bg-red-900/20',
-        label: `Error (${container.exit_code})`,
+        status: 'unknown',
+        icon: ExclamationTriangleIcon,
+        color: 'text-amber-500',
+        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        label: 'Exited (unknown)',
       };
+    }
 
     case 'paused':
       return {
@@ -165,13 +187,17 @@ export const getContainerCounts = (containers: Container[]): ContainerCounts => 
         counts.running++;
         break;
       case 'stopped':
-      case 'exited':
-        if (container.exit_code === 0) {
+      case 'exited': {
+        const exitStatus = getExitCodeStatus(container.exit_code);
+        if (exitStatus === 'stopped') {
           counts.stopped++;
-        } else {
+        } else if (exitStatus === 'error') {
           counts.error++;
+        } else {
+          counts.other++;
         }
         break;
+      }
       case 'not created':
         counts.notCreated++;
         break;
