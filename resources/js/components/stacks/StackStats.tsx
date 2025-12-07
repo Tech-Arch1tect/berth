@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChartBarIcon,
-  CircleStackIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   CpuChipIcon,
   ExclamationCircleIcon,
+  ExclamationTriangleIcon,
+  CircleStackIcon,
   GlobeAltIcon,
   ServerIcon,
 } from '@heroicons/react/24/outline';
@@ -35,128 +39,437 @@ const resolveSeverity = (value?: number): Severity => {
   return 'success';
 };
 
-const severityStyles: Record<
-  Severity,
-  { badge: string; icon: string; progress: string; text: string }
-> = {
+const severityColors: Record<Severity, { bar: string; text: string }> = {
   neutral: {
-    badge: cn(theme.badges.tag.base, theme.badges.tag.neutral),
-    icon: cn(theme.icon.squareMd, theme.intent.neutral.icon),
-    progress: theme.progress.neutral,
-    text: theme.intent.neutral.textStrong,
+    bar: 'bg-zinc-300 dark:bg-zinc-600',
+    text: 'text-zinc-600 dark:text-zinc-400',
   },
   success: {
-    badge: cn(theme.badges.tag.base, theme.badges.tag.success),
-    icon: cn(theme.icon.squareMd, theme.intent.success.icon),
-    progress: theme.progress.healthy,
-    text: theme.intent.success.textStrong,
+    bar: 'bg-emerald-500',
+    text: 'text-emerald-600 dark:text-emerald-400',
   },
   info: {
-    badge: cn(theme.badges.tag.base, theme.badges.tag.info),
-    icon: cn(theme.icon.squareMd, theme.intent.info.icon),
-    progress: theme.progress.info,
-    text: theme.intent.info.textStrong,
+    bar: 'bg-blue-500',
+    text: 'text-blue-600 dark:text-blue-400',
   },
   warning: {
-    badge: cn(theme.badges.tag.base, theme.badges.tag.warning),
-    icon: cn(theme.icon.squareMd, theme.intent.warning.icon),
-    progress: theme.progress.warning,
-    text: theme.intent.warning.textStrong,
+    bar: 'bg-amber-500',
+    text: 'text-amber-600 dark:text-amber-400',
   },
   danger: {
-    badge: cn(theme.badges.tag.base, theme.badges.tag.danger),
-    icon: cn(theme.icon.squareMd, theme.intent.danger.icon),
-    progress: theme.progress.unhealthy,
-    text: theme.intent.danger.textStrong,
+    bar: 'bg-red-500',
+    text: 'text-red-600 dark:text-red-400',
   },
 };
 
-const MetricCard = ({
-  title,
-  value,
-  subValue,
-  percent,
-  icon,
-}: {
-  title: string;
-  value: string;
-  subValue?: string;
-  percent?: number;
-  icon: React.ReactNode;
-}) => {
-  const severity = resolveSeverity(percent);
-  const styles = severityStyles[severity];
+const SummaryBar: React.FC<{ containers: ContainerStats[] }> = ({ containers }) => {
+  const totalMemory = containers.reduce((sum, c) => sum + c.memory_usage, 0);
+  const totalMemoryLimit = containers.reduce((sum, c) => sum + c.memory_limit, 0);
+  const avgCpu = containers.reduce((sum, c) => sum + c.cpu_percent, 0) / containers.length;
+  const maxCpu = Math.max(...containers.map((c) => c.cpu_percent));
+  const warningCount = containers.filter(
+    (c) => c.cpu_percent >= 70 || c.memory_percent >= 70
+  ).length;
+  const dangerCount = containers.filter(
+    (c) => c.cpu_percent >= 90 || c.memory_percent >= 90
+  ).length;
 
   return (
-    <div className={cn(theme.containers.cardSoft, 'p-6')} aria-label={`${title} metric card`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className={styles.icon}>{icon}</div>
-          <div>
-            <p className={cn('text-sm', theme.text.subtle)}>{title}</p>
-            <p className={cn('text-2xl font-semibold', styles.text)}>{value}</p>
-            {subValue && <p className={cn('text-xs', theme.text.subtle)}>{subValue}</p>}
-          </div>
+    <div
+      className={cn(
+        'flex flex-wrap items-center gap-4 rounded-lg border px-4 py-3',
+        'border-zinc-200 dark:border-zinc-700',
+        'bg-zinc-50 dark:bg-zinc-800/50'
+      )}
+    >
+      {/* Container count */}
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30">
+          <ServerIcon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
         </div>
-        {percent !== undefined && <span className={styles.badge}>{formatPercent(percent)}</span>}
+        <div>
+          <p className={cn('text-sm font-semibold tabular-nums', theme.text.strong)}>
+            {containers.length}
+          </p>
+          <p className={cn('text-xs', theme.text.subtle)}>containers</p>
+        </div>
+      </div>
+
+      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+
+      {/* CPU stats */}
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+          <CpuChipIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <p className={cn('text-sm font-semibold tabular-nums', theme.text.strong)}>
+            {formatPercent(avgCpu)}
+            <span className={cn('text-xs font-normal ml-1', theme.text.subtle)}>
+              (max {formatPercent(maxCpu)})
+            </span>
+          </p>
+          <p className={cn('text-xs', theme.text.subtle)}>avg CPU</p>
+        </div>
+      </div>
+
+      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+
+      {/* Memory stats */}
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
+          <CircleStackIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <p className={cn('text-sm font-semibold tabular-nums', theme.text.strong)}>
+            {formatBytes(totalMemory)}
+            <span className={cn('text-xs font-normal ml-1', theme.text.subtle)}>
+              / {formatBytes(totalMemoryLimit)}
+            </span>
+          </p>
+          <p className={cn('text-xs', theme.text.subtle)}>total memory</p>
+        </div>
+      </div>
+
+      {/* Warnings/Alerts */}
+      {(warningCount > 0 || dangerCount > 0) && (
+        <>
+          <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-lg',
+                dangerCount > 0
+                  ? 'bg-red-100 dark:bg-red-900/30'
+                  : 'bg-amber-100 dark:bg-amber-900/30'
+              )}
+            >
+              <ExclamationTriangleIcon
+                className={cn(
+                  'h-4 w-4',
+                  dangerCount > 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                )}
+              />
+            </div>
+            <div>
+              <p
+                className={cn(
+                  'text-sm font-semibold tabular-nums',
+                  dangerCount > 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                )}
+              >
+                {dangerCount > 0 ? dangerCount : warningCount}
+              </p>
+              <p className={cn('text-xs', theme.text.subtle)}>
+                {dangerCount > 0 ? 'critical' : 'warnings'}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Live indicator */}
+      <div className="ml-auto flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className={cn('text-xs font-medium', theme.text.subtle)}>Live</span>
       </div>
     </div>
   );
 };
 
-const ProgressBar = ({ percent }: { percent: number }) => {
+const CompactProgressBar: React.FC<{ percent: number; className?: string }> = ({
+  percent,
+  className,
+}) => {
   const severity = resolveSeverity(percent);
   const width = Math.min(Math.max(percent, 0), 100);
 
-  if (percent < 0) {
-    return (
-      <div
-        className={cn(theme.progress.track, 'relative overflow-hidden')}
-        aria-label="Usage loading"
-      >
-        <div className="absolute inset-0 animate-pulse bg-slate-400/40" />
-      </div>
-    );
-  }
-
   return (
-    <div className={cn(theme.progress.track, 'relative overflow-hidden')} aria-label="Usage">
+    <div className={cn('h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700', className)}>
       <div
-        className={cn(severityStyles[severity].progress, 'transition-all duration-500 ease-out')}
+        className={cn(
+          'h-full rounded-full transition-all duration-300',
+          severityColors[severity].bar
+        )}
         style={{ width: `${width}%` }}
       />
     </div>
   );
 };
 
+const ContainerRow: React.FC<{
+  container: ContainerStats;
+  isExpanded: boolean;
+  onToggle: () => void;
+}> = ({ container, isExpanded, onToggle }) => {
+  const cpuSeverity = resolveSeverity(container.cpu_percent);
+  const memorySeverity = resolveSeverity(container.memory_percent);
+  const hasWarning = container.cpu_percent >= 70 || container.memory_percent >= 70;
+  const hasDanger = container.cpu_percent >= 90 || container.memory_percent >= 90;
+
+  return (
+    <div
+      className={cn(
+        'rounded-lg border transition-colors',
+        'border-zinc-200 dark:border-zinc-700',
+        hasDanger
+          ? 'bg-red-50/50 dark:bg-red-900/10'
+          : hasWarning
+            ? 'bg-amber-50/50 dark:bg-amber-900/10'
+            : 'bg-white dark:bg-zinc-900'
+      )}
+    >
+      {/* Main Row */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors rounded-lg"
+      >
+        {/* Expand indicator */}
+        <div className={cn('flex-shrink-0', theme.text.subtle)}>
+          {isExpanded ? (
+            <ChevronDownIcon className="h-4 w-4" />
+          ) : (
+            <ChevronRightIcon className="h-4 w-4" />
+          )}
+        </div>
+
+        {/* Status dot */}
+        <span
+          className={cn(
+            'h-2.5 w-2.5 rounded-full flex-shrink-0',
+            hasDanger ? 'bg-red-500' : hasWarning ? 'bg-amber-500' : 'bg-emerald-500'
+          )}
+        />
+
+        {/* Container name */}
+        <div className="min-w-0 flex-shrink-0 w-48">
+          <p className={cn('text-sm font-medium truncate', theme.text.strong)}>
+            {container.service_name}
+          </p>
+          <p className={cn('text-xs truncate', theme.text.subtle)}>{container.name}</p>
+        </div>
+
+        {/* CPU */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className={cn('text-xs', theme.text.subtle)}>CPU</span>
+            <span
+              className={cn('text-xs font-medium tabular-nums', severityColors[cpuSeverity].text)}
+            >
+              {formatPercent(container.cpu_percent)}
+            </span>
+          </div>
+          <CompactProgressBar percent={container.cpu_percent} />
+        </div>
+
+        {/* Memory */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className={cn('text-xs', theme.text.subtle)}>Memory</span>
+            <span
+              className={cn(
+                'text-xs font-medium tabular-nums',
+                severityColors[memorySeverity].text
+              )}
+            >
+              {formatPercent(container.memory_percent)}
+            </span>
+          </div>
+          <CompactProgressBar percent={container.memory_percent} />
+        </div>
+
+        {/* Quick stats */}
+        <div className="hidden lg:flex items-center gap-4 text-xs flex-shrink-0">
+          <div className="flex items-center gap-1" title="Network I/O">
+            <GlobeAltIcon className={cn('h-3.5 w-3.5', theme.text.subtle)} />
+            <span className={cn('tabular-nums', theme.text.muted)}>
+              {formatBytes(container.network_rx_bytes + container.network_tx_bytes)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1" title="Disk I/O">
+            <ServerIcon className={cn('h-3.5 w-3.5', theme.text.subtle)} />
+            <span className={cn('tabular-nums', theme.text.muted)}>
+              {formatBytes(container.block_read_bytes + container.block_write_bytes)}
+            </span>
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Memory Breakdown */}
+            <div className={cn('rounded-lg p-3', 'bg-zinc-50 dark:bg-zinc-800/50')}>
+              <h4 className={cn('text-xs font-semibold mb-2', theme.text.strong)}>
+                Memory Breakdown
+              </h4>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Usage</span>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                    {formatBytes(container.memory_usage)} / {formatBytes(container.memory_limit)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>RSS</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatBytes(container.memory_rss)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Cache</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatBytes(container.memory_cache)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Swap</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatBytes(container.memory_swap)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Page Faults</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatNumber(container.page_faults)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Network I/O */}
+            <div className={cn('rounded-lg p-3', 'bg-zinc-50 dark:bg-zinc-800/50')}>
+              <h4 className={cn('text-xs font-semibold mb-2', theme.text.strong)}>Network I/O</h4>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className={cn('flex items-center gap-1', theme.text.subtle)}>
+                    <ArrowDownIcon className="h-3 w-3" /> Received
+                  </span>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                    {formatBytes(container.network_rx_bytes)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={cn('flex items-center gap-1', theme.text.subtle)}>
+                    <ArrowUpIcon className="h-3 w-3" /> Sent
+                  </span>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                    {formatBytes(container.network_tx_bytes)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                  <span className={theme.text.subtle}>Packets RX</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatNumber(container.network_rx_packets)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Packets TX</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatNumber(container.network_tx_packets)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Disk I/O */}
+            <div className={cn('rounded-lg p-3', 'bg-zinc-50 dark:bg-zinc-800/50')}>
+              <h4 className={cn('text-xs font-semibold mb-2', theme.text.strong)}>Disk I/O</h4>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className={cn('flex items-center gap-1', theme.text.subtle)}>
+                    <ArrowDownIcon className="h-3 w-3" /> Read
+                  </span>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                    {formatBytes(container.block_read_bytes)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={cn('flex items-center gap-1', theme.text.subtle)}>
+                    <ArrowUpIcon className="h-3 w-3" /> Write
+                  </span>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                    {formatBytes(container.block_write_bytes)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                  <span className={theme.text.subtle}>Read Ops</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatNumber(container.block_read_ops)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.text.subtle}>Write Ops</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatNumber(container.block_write_ops)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CPU Details */}
+          <div
+            className={cn(
+              'mt-3 rounded-lg p-3 flex items-center gap-6',
+              'bg-zinc-50 dark:bg-zinc-800/50'
+            )}
+          >
+            <span className={cn('text-xs font-semibold', theme.text.strong)}>CPU Time</span>
+            <div className="flex items-center gap-4 text-xs">
+              <span className={theme.text.muted}>
+                User:{' '}
+                <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                  {container.cpu_user_time}ms
+                </span>
+              </span>
+              <span className={theme.text.muted}>
+                System:{' '}
+                <span className={cn('font-medium tabular-nums', theme.text.strong)}>
+                  {container.cpu_system_time}ms
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LoadingSkeleton = () => (
-  <div className={cn(theme.containers.cardSoft, 'animate-pulse p-6')}>
-    <div className="flex items-center gap-3 mb-4">
-      <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
-      <div className="space-y-2">
-        <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-700" />
-        <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700" />
-      </div>
-    </div>
-    <div className="space-y-3">
-      <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-700" />
-      <div className="grid grid-cols-2 gap-2">
-        <div className="h-8 rounded bg-slate-200 dark:bg-slate-700" />
-        <div className="h-8 rounded bg-slate-200 dark:bg-slate-700" />
-      </div>
-    </div>
+  <div className="space-y-3">
+    {/* Summary skeleton */}
+    <div className="h-16 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+    {/* Row skeletons */}
+    {[0, 1, 2].map((i) => (
+      <div key={i} className="h-16 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+    ))}
   </div>
 );
 
 export const StackStats = ({ containers, isLoading, error }: StackStatsProps) => {
+  const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (name: string) => {
+    setExpandedContainers((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
+
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[0, 1, 2].map((index) => (
-          <LoadingSkeleton key={index} />
-        ))}
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (error) {
@@ -183,169 +496,32 @@ export const StackStats = ({ containers, isLoading, error }: StackStatsProps) =>
     );
   }
 
+  const sortedContainers = [...containers].sort((a, b) => {
+    const aScore =
+      (a.cpu_percent >= 90 || a.memory_percent >= 90 ? 2 : 0) +
+      (a.cpu_percent >= 70 || a.memory_percent >= 70 ? 1 : 0);
+    const bScore =
+      (b.cpu_percent >= 90 || b.memory_percent >= 90 ? 2 : 0) +
+      (b.cpu_percent >= 70 || b.memory_percent >= 70 ? 1 : 0);
+    if (aScore !== bScore) return bScore - aScore;
+    return a.service_name.localeCompare(b.service_name);
+  });
+
   return (
-    <div className="space-y-6">
-      <header className={cn(theme.containers.sectionHeader)}>
-        <div className="flex items-center gap-3">
-          <div className={cn(theme.icon.squareMd, theme.brand.accent)}>
-            <ChartBarIcon className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h2 className={cn('text-lg font-semibold', theme.text.strong)}>Container Statistics</h2>
-            <p className={cn('text-xs', theme.text.subtle)}>
-              Real-time metrics · Updates every 1s · {containers.length} container
-              {containers.length === 1 ? '' : 's'}
-            </p>
-          </div>
-        </div>
-        <span
-          className={cn(theme.badges.tag.base, theme.badges.tag.success, 'flex items-center gap-1')}
-        >
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live
-        </span>
-      </header>
+    <div className="space-y-4">
+      {/* Summary Bar */}
+      <SummaryBar containers={containers} />
 
-      <div className="space-y-6">
-        {containers.map((container) => {
-          const cpuSeverity = resolveSeverity(container.cpu_percent);
-          const memorySeverity = resolveSeverity(container.memory_percent);
-
-          return (
-            <article
-              key={container.name}
-              className={cn(theme.containers.cardSoft, 'space-y-6 p-6')}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h3 className={cn('text-xl font-semibold', theme.text.strong)}>
-                    {container.name}
-                  </h3>
-                  <p className={cn('text-sm', theme.text.subtle)}>
-                    Service:{' '}
-                    <span className={cn('font-medium', theme.text.strong)}>
-                      {container.service_name}
-                    </span>
-                  </p>
-                </div>
-                <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>Running</span>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-4">
-                <MetricCard
-                  title="CPU Usage"
-                  value={formatPercent(container.cpu_percent)}
-                  subValue={`${container.cpu_user_time}ms user · ${container.cpu_system_time}ms system`}
-                  percent={container.cpu_percent}
-                  icon={<CpuChipIcon className="h-5 w-5" />}
-                />
-                <MetricCard
-                  title="Memory Usage"
-                  value={formatBytes(container.memory_usage)}
-                  subValue={`Limit ${formatBytes(container.memory_limit)}`}
-                  percent={container.memory_percent}
-                  icon={<CircleStackIcon className="h-5 w-5" />}
-                />
-                <MetricCard
-                  title="Network I/O"
-                  value={`${formatBytes(container.network_rx_bytes + container.network_tx_bytes)}`}
-                  subValue={`${formatBytes(container.network_rx_bytes)} received · ${formatBytes(container.network_tx_bytes)} sent`}
-                  icon={<GlobeAltIcon className="h-5 w-5" />}
-                />
-                <MetricCard
-                  title="Disk I/O"
-                  value={formatBytes(container.block_read_bytes + container.block_write_bytes)}
-                  subValue={`${formatNumber(container.block_read_ops + container.block_write_ops)} operations`}
-                  icon={<ServerIcon className="h-5 w-5" />}
-                />
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <section className={cn(theme.surface.soft, 'rounded-xl p-5')}>
-                  <div className="flex items-center justify-between">
-                    <h4 className={cn('text-sm font-semibold', theme.text.strong)}>CPU Usage</h4>
-                    <span className={severityStyles[cpuSeverity].badge}>
-                      {formatPercent(container.cpu_percent)}
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <ProgressBar percent={container.cpu_percent} />
-                  </div>
-                </section>
-
-                <section className={cn(theme.surface.soft, 'rounded-xl p-5')}>
-                  <div className="flex items-center justify-between">
-                    <h4 className={cn('text-sm font-semibold', theme.text.strong)}>Memory Usage</h4>
-                    <span className={severityStyles[memorySeverity].badge}>
-                      {formatPercent(container.memory_percent)}
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <ProgressBar percent={container.memory_percent} />
-                  </div>
-                </section>
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <section className={cn(theme.surface.soft, 'rounded-xl p-5')}>
-                  <h4 className={cn('mb-3 text-sm font-semibold', theme.text.strong)}>
-                    Memory Breakdown
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className={cn('text-2xl font-semibold', theme.text.strong)}>
-                        {formatBytes(container.memory_rss)}
-                      </p>
-                      <p className={cn('text-xs', theme.text.subtle)}>RSS</p>
-                    </div>
-                    <div>
-                      <p className={cn('text-2xl font-semibold', theme.text.strong)}>
-                        {formatBytes(container.memory_cache)}
-                      </p>
-                      <p className={cn('text-xs', theme.text.subtle)}>Cache</p>
-                    </div>
-                    <div>
-                      <p className={cn('text-2xl font-semibold', theme.text.strong)}>
-                        {formatBytes(container.memory_swap)}
-                      </p>
-                      <p className={cn('text-xs', theme.text.subtle)}>Swap</p>
-                    </div>
-                    <div>
-                      <p className={cn('text-2xl font-semibold', theme.text.strong)}>
-                        {formatNumber(container.page_faults)}
-                      </p>
-                      <p className={cn('text-xs', theme.text.subtle)}>Page Faults</p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className={cn(theme.surface.soft, 'rounded-xl p-5')}>
-                  <h4 className={cn('mb-3 text-sm font-semibold', theme.text.strong)}>Network</h4>
-                  <div className="flex justify-between text-sm">
-                    <span className={cn('flex items-center gap-1', theme.text.subtle)}>
-                      <ArrowDownIcon className="h-4 w-4" />{' '}
-                      {formatBytes(container.network_rx_bytes)}
-                    </span>
-                    <span className={cn('flex items-center gap-1', theme.text.subtle)}>
-                      <ArrowUpIcon className="h-4 w-4" /> {formatBytes(container.network_tx_bytes)}
-                    </span>
-                  </div>
-                  <h4 className={cn('mt-6 mb-3 text-sm font-semibold', theme.text.strong)}>
-                    Disk I/O
-                  </h4>
-                  <div className="flex justify-between text-sm">
-                    <span className={cn('flex items-center gap-1', theme.text.subtle)}>
-                      <ArrowDownIcon className="h-4 w-4" />{' '}
-                      {formatBytes(container.block_read_bytes)}
-                    </span>
-                    <span className={cn('flex items-center gap-1', theme.text.subtle)}>
-                      <ArrowUpIcon className="h-4 w-4" /> {formatBytes(container.block_write_bytes)}
-                    </span>
-                  </div>
-                </section>
-              </div>
-            </article>
-          );
-        })}
+      {/* Container List */}
+      <div className="space-y-2">
+        {sortedContainers.map((container) => (
+          <ContainerRow
+            key={container.name}
+            container={container}
+            isExpanded={expandedContainers.has(container.name)}
+            onToggle={() => toggleExpanded(container.name)}
+          />
+        ))}
       </div>
     </div>
   );
