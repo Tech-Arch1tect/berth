@@ -247,54 +247,72 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       {/* Main content area */}
       <div className={cn('lg:pl-72', fullWidth && 'h-screen flex flex-col')}>
-        <div className="sticky top-0 z-30 flex-shrink-0 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                className={cn('lg:hidden', theme.buttons.ghost)}
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open navigation"
-              >
-                <Bars3Icon className={cn('h-6 w-6 text-slate-500 dark:text-slate-300')} />
-              </button>
-              <div>
-                <p className={cn('text-sm', theme.text.subtle)}>Welcome back</p>
-                <h2 className={cn('text-xl font-semibold', theme.text.strong)}>{user.username}</h2>
+        {/* Header - hidden for full-width layouts which have their own toolbar */}
+        {fullWidth ? (
+          /* Mobile menu button only for full-width layouts */
+          <button
+            className={cn(
+              'lg:hidden fixed top-3 left-3 z-40 p-2 rounded-lg',
+              'bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700',
+              theme.buttons.ghost
+            )}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Bars3Icon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
+          </button>
+        ) : (
+          <div className="sticky top-0 z-30 flex-shrink-0 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  className={cn('lg:hidden', theme.buttons.ghost)}
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open navigation"
+                >
+                  <Bars3Icon className={cn('h-6 w-6 text-slate-500 dark:text-slate-300')} />
+                </button>
+                <div>
+                  <p className={cn('text-sm', theme.text.subtle)}>Welcome back</p>
+                  <h2 className={cn('text-xl font-semibold', theme.text.strong)}>
+                    {user.username}
+                  </h2>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={toggleDarkMode}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-                  isDark
-                    ? 'border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700'
-                    : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100'
-                )}
-              >
-                {isDark ? (
-                  <>
-                    <MoonIcon className="h-5 w-5" />
-                    Dark
-                  </>
-                ) : (
-                  <>
-                    <SunIcon className="h-5 w-5" />
-                    Light
-                  </>
-                )}
-              </button>
-              <div className="hidden sm:block">
-                <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
-                  <div
-                    className={cn('h-2 w-2 animate-pulse rounded-full', theme.badges.dot.success)}
-                  />
-                  <span>All systems operational</span>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={toggleDarkMode}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                    isDark
+                      ? 'border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700'
+                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100'
+                  )}
+                >
+                  {isDark ? (
+                    <>
+                      <MoonIcon className="h-5 w-5" />
+                      Dark
+                    </>
+                  ) : (
+                    <>
+                      <SunIcon className="h-5 w-5" />
+                      Light
+                    </>
+                  )}
+                </button>
+                <div className="hidden sm:block">
+                  <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
+                    <div
+                      className={cn('h-2 w-2 animate-pulse rounded-full', theme.badges.dot.success)}
+                    />
+                    <span>All systems operational</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         <main
           className={cn(
