@@ -24,10 +24,14 @@ export const useWebSocket = ({
   const onMessageRef = useRef(onMessage);
   const onConnectRef = useRef(onConnect);
   const onDisconnectRef = useRef(onDisconnect);
+  const connectRef = useRef<(() => void) | null>(null);
 
+  // Moving to useEffect causes race conditions where events fire before refs are updated.
+  /* eslint-disable react-hooks/refs */
   onMessageRef.current = onMessage;
   onConnectRef.current = onConnect;
   onDisconnectRef.current = onDisconnect;
+  /* eslint-enable react-hooks/refs */
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
@@ -68,7 +72,7 @@ export const useWebSocket = ({
         if (autoReconnect && mountedRef.current) {
           reconnectTimeoutRef.current = setTimeout(() => {
             if (mountedRef.current) {
-              connect();
+              connectRef.current?.();
             }
           }, reconnectInterval);
         }
@@ -85,6 +89,10 @@ export const useWebSocket = ({
       setConnectionStatus('error');
     }
   }, [url, autoReconnect, reconnectInterval]);
+
+  // Update connectRef synchronously so reconnection timeout can call the latest connect function
+  // eslint-disable-next-line react-hooks/refs
+  connectRef.current = connect;
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

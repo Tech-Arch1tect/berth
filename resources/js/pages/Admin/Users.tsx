@@ -3,8 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import { EmptyState } from '../../components/common/EmptyState';
-import { Table, Column } from '../../components/common/Table';
+import { Table } from '../../components/common/Table';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 interface User {
@@ -60,8 +59,6 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
       });
 
       if (response.ok) {
-        const result = await response.json();
-
         setFormData({
           username: '',
           email: '',
@@ -81,7 +78,7 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
           setErrors({ general: 'Failed to create user' });
         }
       }
-    } catch (err) {
+    } catch {
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setProcessing(false);

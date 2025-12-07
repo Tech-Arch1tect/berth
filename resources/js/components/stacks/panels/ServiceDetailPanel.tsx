@@ -11,8 +11,6 @@ import {
   UserIcon,
   FolderIcon,
   GlobeAltIcon,
-  CircleStackIcon,
-  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import {
   CheckCircleIcon as CheckCircleIconSolid,

@@ -1,10 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  XMarkIcon,
-  MinusCircleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@heroicons/react/24/outline';
+import { XMarkIcon, MinusCircleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { StorageManager } from '../../utils/storage';
@@ -22,17 +17,15 @@ export const NegativeFilters: React.FC<NegativeFiltersProps> = ({
   onFiltersChange,
   placeholder = 'Exclude stacks containing...',
   isExpanded,
-  onToggle,
+  onToggle: _onToggle,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(() =>
+    StorageManager.negativeFilters.getHistory()
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setHistory(StorageManager.negativeFilters.getHistory());
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

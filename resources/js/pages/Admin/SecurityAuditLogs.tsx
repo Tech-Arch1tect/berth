@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
-import { Table, Column } from '../../components/common/Table';
+import { Table } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -52,7 +52,7 @@ export default function SecurityAuditLogs({ title }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [perPage, setPerPage] = useState(50);
+  const [perPage] = useState(50);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');

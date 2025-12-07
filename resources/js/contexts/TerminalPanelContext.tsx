@@ -57,7 +57,9 @@ export const TerminalPanelProvider: React.FC<{ children: ReactNode }> = ({ child
           activeTabId: null,
           tabs: [],
         };
-      } catch {}
+      } catch {
+        // localStorage data may be corrupted - fall back to defaults
+      }
     }
     return {
       isOpen: false,

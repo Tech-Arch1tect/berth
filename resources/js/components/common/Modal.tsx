@@ -11,7 +11,6 @@ export interface ModalProps {
   subtitle?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | '2xl';
-  variant?: 'default' | 'danger' | 'warning';
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   footer?: React.ReactNode;
@@ -25,7 +24,6 @@ export const Modal: React.FC<ModalProps> = ({
   subtitle,
   children,
   size = 'md',
-  variant = 'default',
   showCloseButton = true,
   closeOnOverlayClick = true,
   footer,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useStackDetails } from './useStackDetails';
 import { useStackNetworks } from './useStackNetworks';
 import { useStackVolumes } from './useStackVolumes';
@@ -47,6 +47,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
   const { connectionStatus } = useStackWebSocket({ serverid, stackname, enabled: true });
   const stackPermissionsQuery = useStackPermissions({ serverid, stackname });
 
+  const [prevPermissions, setPrevPermissions] = useState(stackPermissionsQuery.data);
+
   const operations = useOperations({
     serverid: String(serverid),
     stackname,
@@ -75,7 +77,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
 
   const composeUpdateMutation = useComposeUpdate({ serverid, stackname });
 
-  useEffect(() => {
+  if (stackPermissionsQuery.data !== prevPermissions) {
+    setPrevPermissions(stackPermissionsQuery.data);
     if (stackPermissionsQuery.data) {
       const tabPermissionMap: Record<string, string | null> = {
         services: null,
@@ -96,17 +99,21 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
         setActiveTab('services');
       }
     }
-  }, [stackPermissionsQuery.data, activeTab]);
+  }
 
-  useEffect(() => {
-    if (
-      isRefreshing &&
-      !stackDetailsQuery.isFetching &&
-      !networksQuery.isFetching &&
-      !volumesQuery.isFetching &&
-      !environmentVariablesQuery.isFetching &&
-      !stackStatsQuery.isFetching
-    ) {
+  const allFetchesComplete =
+    isRefreshing &&
+    !stackDetailsQuery.isFetching &&
+    !networksQuery.isFetching &&
+    !volumesQuery.isFetching &&
+    !environmentVariablesQuery.isFetching &&
+    !stackStatsQuery.isFetching;
+
+  const [prevAllFetchesComplete, setPrevAllFetchesComplete] = useState(false);
+
+  if (allFetchesComplete !== prevAllFetchesComplete) {
+    setPrevAllFetchesComplete(allFetchesComplete);
+    if (allFetchesComplete) {
       const hasErrors =
         stackDetailsQuery.error ||
         networksQuery.error ||
@@ -122,19 +129,7 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
 
       setIsRefreshing(false);
     }
-  }, [
-    isRefreshing,
-    stackDetailsQuery.isFetching,
-    networksQuery.isFetching,
-    volumesQuery.isFetching,
-    environmentVariablesQuery.isFetching,
-    stackStatsQuery.isFetching,
-    stackDetailsQuery.error,
-    networksQuery.error,
-    volumesQuery.error,
-    environmentVariablesQuery.error,
-    stackStatsQuery.error,
-  ]);
+  }
 
   const handleQuickOperation = useCallback(
     async (operation: OperationRequest) => {

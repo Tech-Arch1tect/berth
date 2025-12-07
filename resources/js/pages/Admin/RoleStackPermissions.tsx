@@ -648,7 +648,6 @@ export default function RoleStackPermissions({
           onClose={() => setErrorModal({ isOpen: false, message: '' })}
           title="Error"
           size="sm"
-          variant="danger"
           footer={
             <div className="flex justify-end">
               <button

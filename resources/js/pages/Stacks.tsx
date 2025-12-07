@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
 import {
   ArrowPathIcon,
@@ -29,21 +29,16 @@ export default function Stacks({ title, servers }: StacksProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [serverFilter, setServerFilter] = useState<number | 'all'>('all');
-  const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>('normal');
-  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>(() =>
+    StorageManager.stacksLayout.get()
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(() => StorageManager.stacksSort.get());
   const [negativeFilters, setNegativeFilters] = useState<string[]>([]);
   const [showExclusionFilter, setShowExclusionFilter] = useState(false);
 
   const { stacks, isLoading, isFetching, hasError, errors, refetchAll } = useAllStacks({
     servers,
   });
-
-  useEffect(() => {
-    const savedLayout = StorageManager.stacksLayout.get();
-    const savedSort = StorageManager.stacksSort.get();
-    setLayoutMode(savedLayout);
-    setSortBy(savedSort);
-  }, []);
 
   const toggleLayout = () => {
     const newLayout = layoutMode === 'compact' ? 'normal' : 'compact';

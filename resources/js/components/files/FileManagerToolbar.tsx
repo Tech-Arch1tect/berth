@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import { FileOperation } from '../../types/files';
 
 interface FileManagerToolbarProps {
   currentPath: string;

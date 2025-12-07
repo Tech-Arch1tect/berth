@@ -27,6 +27,7 @@ export const useOperations = ({
     logs: [],
   });
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { addOperation, addOperationLog } = useOperationsContext();
 
@@ -35,6 +36,7 @@ export const useOperations = ({
   const maxReconnectAttempts = 3;
   const pendingOperationRef = useRef<OperationRequest | null>(null);
   const currentOperationIdRef = useRef<string | undefined>(undefined);
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
@@ -57,6 +59,7 @@ export const useOperations = ({
 
     ws.onopen = () => {
       setIsConnecting(false);
+      setIsConnected(true);
       setError(null);
       reconnectAttempts.current = 0;
     };
@@ -143,11 +146,12 @@ export const useOperations = ({
 
     ws.onclose = (_event) => {
       setIsConnecting(false);
+      setIsConnected(false);
 
       if (operationStatus.isRunning && reconnectAttempts.current < maxReconnectAttempts) {
         setTimeout(() => {
           reconnectAttempts.current++;
-          connect();
+          connectRef.current();
         }, 1000 * reconnectAttempts.current);
       } else {
         setOperationStatus((prev) => ({
@@ -170,12 +174,15 @@ export const useOperations = ({
     serverid,
     stackname,
     operationStatus.isRunning,
-    operationStatus.operationId,
     onOperationComplete,
     onError,
     addOperation,
     addOperationLog,
   ]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  });
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -229,8 +236,6 @@ export const useOperations = ({
       disconnect();
     };
   }, [disconnect]);
-
-  const isConnected = wsRef.current?.readyState === WebSocket.OPEN;
 
   return {
     operationStatus,

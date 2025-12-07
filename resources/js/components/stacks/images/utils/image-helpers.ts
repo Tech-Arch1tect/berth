@@ -16,13 +16,11 @@ export const formatCreatedTime = (timestamp: number | string): string => {
 };
 
 export const parseDockerfileCommand = (createdBy: string): string => {
-  // Remove common shell prefixes that Docker adds
-  let command = createdBy
+  const command = createdBy
     .replace(/^\/bin\/sh -c #\(nop\) /, '')
     .replace(/^\/bin\/sh -c /, 'RUN ')
     .replace(/^\/bin\/bash -c /, 'RUN ');
 
-  // Clean up common patterns
   if (command.startsWith('ADD ') || command.startsWith('COPY ')) {
     return command;
   }

@@ -23,7 +23,7 @@ import { useServerStack } from '../../contexts/ServerStackContext';
 import { FileEntry, OpenTab } from '../../types/files';
 import { showToast } from '../../utils/toast';
 import { useFiles } from '../../hooks/useFiles';
-import { useFileContentQuery, useFileMutations } from '../../hooks/useFileQueries';
+import { useFileMutations } from '../../hooks/useFileQueries';
 
 interface FileManagerProps {
   canRead: boolean;
@@ -510,7 +510,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
       <ArchiveOperationModal
         isOpen={fm.isArchiveModalOpen}
         operation={fm.archiveOperation}
-        currentPath={fm.currentPath}
         selectedFile={fm.selectedFile || undefined}
         onClose={fm.closeArchiveModal}
         onCreateArchive={fm.handleCreateArchive}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import FlashMessages from '../components/FlashMessages';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { User } from '../types';
 import { cn } from '../utils/cn';
 import { theme } from '../theme';
@@ -57,7 +57,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
       } else {
         setDisableError(data.message || 'Failed to disable two-factor authentication');
       }
-    } catch (err) {
+    } catch {
       setDisableError('Network error. Please try again.');
     } finally {
       setDisableProcessing(false);
@@ -202,7 +202,6 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
             }}
             title="Disable Two-Factor Authentication"
             size="sm"
-            variant="warning"
             footer={
               <div className="flex space-x-3 w-full">
                 <button

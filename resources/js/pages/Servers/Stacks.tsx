@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
 import {
   MagnifyingGlassIcon,
@@ -28,8 +28,10 @@ interface ServerStacksProps {
 export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
-  const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>('normal');
-  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>(() =>
+    StorageManager.stacksLayout.get()
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(() => StorageManager.stacksSort.get());
   const [negativeFilters, setNegativeFilters] = useState<string[]>([]);
   const [showExclusionFilter, setShowExclusionFilter] = useState(false);
 
@@ -40,14 +42,6 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     refetch,
     isFetching,
   } = useServerStacks({ serverid });
-
-  // Load preferences from storage on mount
-  useEffect(() => {
-    const savedLayout = StorageManager.stacksLayout.get();
-    const savedSort = StorageManager.stacksSort.get();
-    setLayoutMode(savedLayout);
-    setSortBy(savedSort);
-  }, []);
 
   // Handle layout toggle
   const toggleLayout = () => {

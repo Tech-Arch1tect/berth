@@ -41,7 +41,7 @@ export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props
       } else {
         setError(data.message || 'Failed to enable two-factor authentication');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setProcessing(false);

@@ -17,7 +17,6 @@ import { CubeIcon } from '@heroicons/react/24/outline';
 
 interface StackContentProps {
   selection: SidebarSelection | null;
-  stackName: string;
   stackPath: string;
   composeFile: string;
   services: ComposeService[];
@@ -42,7 +41,6 @@ interface StackContentProps {
 
 export const StackContent: React.FC<StackContentProps> = ({
   selection,
-  stackName,
   stackPath,
   composeFile,
   services,
@@ -62,7 +60,6 @@ export const StackContent: React.FC<StackContentProps> = ({
   if (!selection) {
     return (
       <OverviewPanel
-        stackName={stackName}
         stackPath={stackPath}
         composeFile={composeFile}
         services={services}
@@ -81,7 +78,6 @@ export const StackContent: React.FC<StackContentProps> = ({
     case 'overview':
       return (
         <OverviewPanel
-          stackName={stackName}
           stackPath={stackPath}
           composeFile={composeFile}
           services={services}

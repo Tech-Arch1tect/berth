@@ -190,6 +190,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [createWebSocketForOperation, cleanupWebSocket]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRunningOperations();
 
     const interval = setInterval(fetchRunningOperations, 5000);

@@ -54,7 +54,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
         const error = await response.json();
         setError(error.message || 'Failed to assign role');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setProcessing(false);
@@ -87,7 +87,7 @@ export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
         const error = await response.json();
         setError(error.message || 'Failed to revoke role');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setProcessing(false);

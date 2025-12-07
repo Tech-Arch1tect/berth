@@ -38,8 +38,6 @@ export const TerminalPanel: React.FC = () => {
     return null;
   }
 
-  const activeTab = state.tabs.find((t) => t.id === state.activeTabId);
-
   return (
     <div
       ref={panelRef}

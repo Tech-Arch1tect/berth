@@ -18,12 +18,42 @@ import { useServerStack } from '../../contexts/ServerStackContext';
 const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, containers = [] }) => {
   const { serverId, stackName } = useServerStack();
 
-  const viewer = useLogViewerState({
+  const {
+    selectedContainer,
+    setSelectedContainer,
+    tail,
+    setTail,
+    since,
+    setSince,
+    autoRefresh,
+    setAutoRefresh,
+    showTimestamps,
+    setShowTimestamps,
+    copied,
+    followMode,
+    setFollowMode,
+    silentLoading,
+    logContainerRef,
+    logs,
+    filteredLogs,
+    loading,
+    error,
+    searchTerm,
+    setSearchTerm,
+    levelFilter,
+    setLevelFilter,
+    logStats,
+    title,
+    subtitle,
+    handleRefresh,
+    scrollToBottom,
+    handleScroll,
+    copyAllLogs,
+  } = useLogViewerState({
     serverid: serverId,
     stackname: stackName,
     serviceName,
     containerName,
-    containers,
   });
 
   const getLogLevelColor = (level?: string) => {
@@ -61,23 +91,19 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h3 className={cn('text-sm font-semibold truncate', theme.text.strong)}>
-              {viewer.title}
-            </h3>
-            <span className={cn('text-xs truncate', theme.text.muted)}>{viewer.subtitle}</span>
+            <h3 className={cn('text-sm font-semibold truncate', theme.text.strong)}>{title}</h3>
+            <span className={cn('text-xs truncate', theme.text.muted)}>{subtitle}</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-3 text-xs">
-            <span className={cn('font-mono', theme.text.muted)}>{viewer.logStats.total}</span>
-            {viewer.logStats.error > 0 && (
-              <span className="text-red-500 font-mono">{viewer.logStats.error}E</span>
+            <span className={cn('font-mono', theme.text.muted)}>{logStats.total}</span>
+            {logStats.error > 0 && (
+              <span className="text-red-500 font-mono">{logStats.error}E</span>
             )}
-            {viewer.logStats.warn > 0 && (
-              <span className="text-yellow-500 font-mono">{viewer.logStats.warn}W</span>
+            {logStats.warn > 0 && (
+              <span className="text-yellow-500 font-mono">{logStats.warn}W</span>
             )}
-            {viewer.logStats.info > 0 && (
-              <span className="text-blue-500 font-mono">{viewer.logStats.info}I</span>
-            )}
+            {logStats.info > 0 && <span className="text-blue-500 font-mono">{logStats.info}I</span>}
           </div>
         </div>
 
@@ -86,8 +112,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
             <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              value={viewer.searchTerm}
-              onChange={(e) => viewer.setSearchTerm(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search logs..."
               className={cn(
                 'w-64 lg:w-80 pl-8 pr-2 py-1 text-xs rounded border',
@@ -97,8 +123,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </div>
 
           <select
-            value={viewer.tail}
-            onChange={(e) => viewer.setTail(Number(e.target.value))}
+            value={tail}
+            onChange={(e) => setTail(Number(e.target.value))}
             className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
           >
             <option value={50}>50</option>
@@ -108,8 +134,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </select>
 
           <select
-            value={viewer.since}
-            onChange={(e) => viewer.setSince(e.target.value)}
+            value={since}
+            onChange={(e) => setSince(e.target.value)}
             className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
           >
             <option value="">All</option>
@@ -119,8 +145,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </select>
 
           <select
-            value={viewer.levelFilter}
-            onChange={(e) => viewer.setLevelFilter(e.target.value)}
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
             className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
           >
             <option value="all">All</option>
@@ -131,8 +157,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
 
           {containers && containers.length > 1 && (
             <select
-              value={viewer.selectedContainer}
-              onChange={(e) => viewer.setSelectedContainer(e.target.value)}
+              value={selectedContainer}
+              onChange={(e) => setSelectedContainer(e.target.value)}
               className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
             >
               <option value="">All</option>
@@ -145,10 +171,10 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           )}
 
           <button
-            onClick={() => viewer.setShowTimestamps(!viewer.showTimestamps)}
+            onClick={() => setShowTimestamps(!showTimestamps)}
             className={cn(
               'p-1.5 text-xs rounded-lg transition-colors',
-              viewer.showTimestamps ? theme.buttons.primary : theme.buttons.secondary
+              showTimestamps ? theme.buttons.primary : theme.buttons.secondary
             )}
             title="Toggle timestamps"
           >
@@ -156,33 +182,29 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </button>
 
           <button
-            onClick={() => viewer.setAutoRefresh(!viewer.autoRefresh)}
+            onClick={() => setAutoRefresh(!autoRefresh)}
             className={cn(
               'p-1.5 rounded-lg transition-colors',
-              viewer.autoRefresh ? theme.buttons.primary : theme.buttons.secondary
+              autoRefresh ? theme.buttons.primary : theme.buttons.secondary
             )}
-            title={viewer.autoRefresh ? 'Auto-refresh enabled' : 'Auto-refresh disabled'}
+            title={autoRefresh ? 'Auto-refresh enabled' : 'Auto-refresh disabled'}
           >
-            <ArrowPathIcon className={cn('w-4 h-4', viewer.silentLoading && 'animate-spin')} />
+            <ArrowPathIcon className={cn('w-4 h-4', silentLoading && 'animate-spin')} />
           </button>
 
           <button
-            onClick={() => viewer.setFollowMode(!viewer.followMode)}
+            onClick={() => setFollowMode(!followMode)}
             className={cn(
               'p-1.5 rounded-lg transition-colors',
-              viewer.followMode ? theme.buttons.primary : theme.buttons.secondary
+              followMode ? theme.buttons.primary : theme.buttons.secondary
             )}
-            title={viewer.followMode ? 'Following (auto-scroll)' : 'Paused'}
+            title={followMode ? 'Following (auto-scroll)' : 'Paused'}
           >
-            {viewer.followMode ? (
-              <PlayIcon className="w-4 h-4" />
-            ) : (
-              <PauseIcon className="w-4 h-4" />
-            )}
+            {followMode ? <PlayIcon className="w-4 h-4" /> : <PauseIcon className="w-4 h-4" />}
           </button>
 
           <button
-            onClick={viewer.copyAllLogs}
+            onClick={copyAllLogs}
             className={cn('p-1.5 rounded-lg transition-colors', theme.buttons.secondary)}
             title="Copy all logs"
           >
@@ -190,8 +212,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </button>
 
           <button
-            onClick={viewer.handleRefresh}
-            disabled={viewer.loading}
+            onClick={handleRefresh}
+            disabled={loading}
             className={cn(
               'px-3 py-1.5 text-xs rounded-lg transition-colors disabled:opacity-50',
               theme.buttons.primary
@@ -201,7 +223,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           </button>
 
           <button
-            onClick={viewer.scrollToBottom}
+            onClick={scrollToBottom}
             className={cn('p-1.5 rounded-lg transition-colors', theme.buttons.secondary)}
             title="Jump to bottom"
           >
@@ -210,7 +232,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
         </div>
       </div>
 
-      {viewer.error && (
+      {error && (
         <div
           className={cn(
             'mx-4 mt-2 p-2 rounded text-xs flex items-center gap-2',
@@ -218,35 +240,35 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
           )}
         >
           <XCircleIcon className="w-4 h-4 text-red-500 flex-shrink-0" />
-          <span>{viewer.error}</span>
+          <span>{error}</span>
         </div>
       )}
 
       <div className="flex-1 relative overflow-hidden">
-        {viewer.loading && (
+        {loading && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
             <LoadingSpinner size="md" text="Loading logs..." />
           </div>
         )}
 
         <div
-          ref={viewer.logContainerRef}
-          onScroll={viewer.handleScroll}
+          ref={logContainerRef}
+          onScroll={handleScroll}
           className="absolute inset-0 overflow-y-auto bg-slate-950 font-mono text-xs leading-tight"
         >
-          {viewer.filteredLogs.length === 0 && !viewer.loading ? (
+          {filteredLogs.length === 0 && !loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-slate-500">
                 <p className="mb-1">No logs to display</p>
                 <p className="text-xs">Try adjusting your filters or refresh</p>
                 <p className="text-xs mt-2">
-                  Total logs: {viewer.logs.length}, Filtered: {viewer.filteredLogs.length}
+                  Total logs: {logs.length}, Filtered: {filteredLogs.length}
                 </p>
               </div>
             </div>
           ) : (
             <div className="p-2">
-              {viewer.filteredLogs.map((log, index) => {
+              {filteredLogs.map((log, index) => {
                 const timestamp = formatTimestamp(log.timestamp);
                 const levelColor = getLogLevelColor(log.level);
 
@@ -255,7 +277,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
                     key={index}
                     className="flex items-start gap-2 py-0.5 px-1 hover:bg-slate-900/50 transition-colors group"
                   >
-                    {viewer.showTimestamps && (
+                    {showTimestamps && (
                       <span className="text-slate-600 shrink-0 select-none w-20 text-right">
                         {timestamp}
                       </span>
@@ -292,10 +314,10 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
         )}
       >
         <span className={theme.text.muted}>
-          Showing <span className={theme.text.strong}>{viewer.filteredLogs.length}</span> of{' '}
-          <span className={theme.text.strong}>{viewer.logs.length}</span>
+          Showing <span className={theme.text.strong}>{filteredLogs.length}</span> of{' '}
+          <span className={theme.text.strong}>{logs.length}</span>
         </span>
-        {viewer.copied && <span className="text-green-500 text-xs">Copied to clipboard!</span>}
+        {copied && <span className="text-green-500 text-xs">Copied to clipboard!</span>}
       </div>
     </div>
   );

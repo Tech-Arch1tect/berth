@@ -10,7 +10,6 @@ import {
   DocumentTextIcon,
   FolderIcon,
   ClockIcon,
-  ArrowPathIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon, XCircleIcon, StopIcon, PauseCircleIcon } from '@heroicons/react/24/solid';
@@ -18,7 +17,6 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface OverviewPanelProps {
-  stackName: string;
   stackPath: string;
   composeFile: string;
   services: ComposeService[];
@@ -110,7 +108,6 @@ const getOldestUptime = (containers: Container[]) => {
 };
 
 export const OverviewPanel: React.FC<OverviewPanelProps> = ({
-  stackName,
   stackPath,
   composeFile,
   services,

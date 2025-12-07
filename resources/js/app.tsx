@@ -6,6 +6,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OperationsProvider } from './contexts/OperationsContext';
 import { TerminalPanelProvider } from './contexts/TerminalPanelContext';
+import { TerminalPanel } from './components/terminal/TerminalPanel';
 import Layout from './components/layout/Layout';
 
 const appName = 'Berth';
@@ -51,6 +52,7 @@ createInertiaApp({
         <OperationsProvider>
           <TerminalPanelProvider>
             <App {...props} />
+            <TerminalPanel />
           </TerminalPanelProvider>
         </OperationsProvider>
       </QueryClientProvider>

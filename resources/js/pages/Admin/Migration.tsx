@@ -315,7 +315,6 @@ export default function Migration({ title }: Props) {
             onClose={() => setErrorModal({ isOpen: false, title: '', message: '' })}
             title={errorModal.title}
             size="sm"
-            variant="danger"
             footer={
               <div className="flex justify-end">
                 <button

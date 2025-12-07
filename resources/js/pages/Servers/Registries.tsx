@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
@@ -412,7 +412,6 @@ export default function Registries({
         isOpen={!!errorMessage}
         onClose={() => setErrorMessage(null)}
         title="Error"
-        variant="danger"
         size="sm"
         footer={
           <div className="flex justify-end">

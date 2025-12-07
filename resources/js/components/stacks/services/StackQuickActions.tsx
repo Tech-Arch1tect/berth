@@ -31,8 +31,6 @@ type StackState =
 
 type ActionKey = 'up' | 'start' | 'stop' | 'restart' | 'pull' | 'down';
 
-const spinner = <span className={theme.effects.spinnerSm} />;
-
 const iconMap: Record<ActionKey, ComponentType<SVGProps<SVGSVGElement>>> = {
   up: ArrowUpCircleIcon,
   start: PlayIcon,

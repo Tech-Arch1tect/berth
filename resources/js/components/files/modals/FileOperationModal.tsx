@@ -180,12 +180,6 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   const getModalTitle = () => {
     switch (operation) {
       case 'mkdir':
