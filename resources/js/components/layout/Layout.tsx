@@ -17,6 +17,8 @@ import {
   ShieldExclamationIcon,
   CircleStackIcon,
   KeyIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { User } from '../../types';
 import { useDarkMode } from '../../hooks/useDarkMode';
@@ -25,6 +27,7 @@ import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
 import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
+import { StorageManager } from '../../utils/storage';
 
 interface LayoutProps {
   children: ReactNode;
@@ -37,7 +40,16 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const csrfToken = props.csrfToken as string | undefined;
   const { isDark, toggleDarkMode } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    StorageManager.sidebar.isCollapsed()
+  );
   const terminalPanel = useTerminalPanel();
+
+  const toggleSidebarCollapse = () => {
+    const newValue = !sidebarCollapsed;
+    setSidebarCollapsed(newValue);
+    StorageManager.sidebar.setCollapsed(newValue);
+  };
 
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
 
@@ -133,24 +145,36 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 border-r shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 dark:shadow-black/20',
+          'fixed inset-y-0 left-0 z-50 border-r shadow-xl transition-all duration-300 ease-in-out lg:translate-x-0 dark:shadow-black/20',
           theme.surface.sidebar,
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          sidebarCollapsed ? 'lg:w-16' : 'lg:w-72',
+          'w-72'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo and close button */}
-          <div className="flex items-center justify-between border-b px-6 py-4 dark:border-zinc-800">
-            <div className="flex items-center space-x-3">
+          <div
+            className={cn(
+              'flex items-center border-b dark:border-zinc-800',
+              sidebarCollapsed ? 'lg:justify-center lg:px-2 lg:py-4' : 'justify-between px-6 py-4'
+            )}
+          >
+            <div
+              className={cn(
+                'flex items-center',
+                sidebarCollapsed ? 'lg:justify-center' : 'space-x-3'
+              )}
+            >
               <div
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-xl',
+                  'flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0',
                   theme.brand.accent
                 )}
               >
                 <ServerIcon className="h-6 w-6" />
               </div>
-              <div>
+              <div className={cn(sidebarCollapsed && 'lg:hidden')}>
                 <h1 className={cn('text-xl font-bold', theme.brand.titleColor)}>Berth</h1>
                 <p className={cn('text-xs', theme.text.subtle)}>v1.0.0</p>
               </div>
@@ -165,7 +189,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <div className="flex-1 space-y-2 px-4 py-6">
+          <div className={cn('flex-1 space-y-2 py-6', sidebarCollapsed ? 'lg:px-2' : 'px-4')}>
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = url === item.href;
@@ -175,31 +199,76 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   href={item.href}
                   className={cn(
                     theme.navigation.itemBase,
-                    isActive ? theme.navigation.itemActive : theme.navigation.itemInactive
+                    isActive ? theme.navigation.itemActive : theme.navigation.itemInactive,
+                    sidebarCollapsed && 'lg:justify-center lg:px-0'
                   )}
                   onClick={() => setSidebarOpen(false)}
+                  title={sidebarCollapsed ? item.name : undefined}
                 >
                   <Icon
                     className={cn(
                       theme.navigation.iconBase,
-                      isActive ? theme.navigation.iconActive : theme.navigation.iconInactive
+                      isActive ? theme.navigation.iconActive : theme.navigation.iconInactive,
+                      sidebarCollapsed && 'lg:mr-0'
                     )}
                   />
-                  {item.name}
-                  {isActive && <div className={theme.navigation.indicator} />}
+                  <span className={cn(sidebarCollapsed && 'lg:hidden')}>{item.name}</span>
+                  {isActive && !sidebarCollapsed && <div className={theme.navigation.indicator} />}
                 </Link>
               );
             })}
           </div>
 
+          {/* Collapse toggle button - desktop only */}
+          <div
+            className={cn(
+              'hidden lg:flex border-t dark:border-zinc-800',
+              sidebarCollapsed ? 'justify-center px-2 py-3' : 'justify-end px-4 py-3'
+            )}
+          >
+            <button
+              onClick={toggleSidebarCollapse}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                theme.text.muted
+              )}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? (
+                <ChevronRightIcon className="h-5 w-5" />
+              ) : (
+                <ChevronLeftIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+
           {/* User section */}
-          <div className="border-t px-4 py-4 dark:border-zinc-800">
-            <div className={cn('mb-4 rounded-xl px-3 py-2', theme.surface.muted)}>
-              <div className="flex items-center space-x-3">
-                <div className={theme.badges.userInitials}>
+          <div
+            className={cn(
+              'border-t dark:border-zinc-800',
+              sidebarCollapsed ? 'lg:px-2 lg:py-4' : 'px-4 py-4'
+            )}
+          >
+            <div
+              className={cn(
+                'mb-4 rounded-xl',
+                sidebarCollapsed ? 'lg:px-0 lg:py-0 lg:flex lg:justify-center' : 'px-3 py-2',
+                !sidebarCollapsed && theme.surface.muted
+              )}
+            >
+              <div
+                className={cn(
+                  'flex items-center',
+                  sidebarCollapsed ? 'lg:justify-center' : 'space-x-3'
+                )}
+                title={sidebarCollapsed ? `${user.username} (${user.email})` : undefined}
+              >
+                <div className={cn(theme.badges.userInitials, 'flex-shrink-0')}>
                   {user.username.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div className={cn(sidebarCollapsed && 'lg:hidden')}>
                   <p className={cn('text-sm font-semibold', theme.text.strong)}>{user.username}</p>
                   <p className={cn('text-xs', theme.text.subtle)}>{user.email}</p>
                 </div>
@@ -215,30 +284,37 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     href={item.href}
                     className={cn(
                       theme.navigation.itemBase,
-                      isActive ? theme.navigation.itemActive : theme.navigation.itemInactive
+                      isActive ? theme.navigation.itemActive : theme.navigation.itemInactive,
+                      sidebarCollapsed && 'lg:justify-center lg:px-0'
                     )}
                     onClick={() => setSidebarOpen(false)}
+                    title={sidebarCollapsed ? item.name : undefined}
                   >
                     <Icon
                       className={cn(
                         theme.navigation.iconBase,
-                        isActive ? theme.navigation.iconActive : theme.navigation.iconInactive
+                        isActive ? theme.navigation.iconActive : theme.navigation.iconInactive,
+                        sidebarCollapsed && 'lg:mr-0'
                       )}
                     />
-                    {item.name}
+                    <span className={cn(sidebarCollapsed && 'lg:hidden')}>{item.name}</span>
                   </Link>
                 );
               })}
               <button
                 onClick={handleLogout}
                 className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-center',
                   theme.text.muted,
                   'hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 )}
+                title={sidebarCollapsed ? 'Log out' : undefined}
               >
-                <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                Log out
+                <ArrowLeftOnRectangleIcon
+                  className={cn('h-5 w-5', sidebarCollapsed && 'lg:mr-0')}
+                />
+                <span className={cn(sidebarCollapsed && 'lg:hidden')}>Log out</span>
               </button>
             </div>
           </div>
@@ -246,7 +322,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       </div>
 
       {/* Main content area */}
-      <div className={cn('lg:pl-72', fullWidth && 'h-screen flex flex-col')}>
+      <div
+        className={cn(
+          'transition-[padding-left] duration-300',
+          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-72',
+          fullWidth && 'h-screen flex flex-col'
+        )}
+      >
         {/* Header - hidden for full-width layouts which have their own toolbar */}
         {fullWidth ? (
           /* Mobile menu button only for full-width layouts */
