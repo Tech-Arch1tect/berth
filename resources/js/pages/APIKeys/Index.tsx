@@ -32,16 +32,12 @@ interface APIKey {
   scope_count: number;
 }
 
-interface APIKeysProps {
-  title: string;
-}
-
 interface NewAPIKeyModal {
   name: string;
   expires_at: string;
 }
 
-export default function APIKeysIndex({ title }: APIKeysProps) {
+export default function APIKeysIndex() {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
@@ -49,7 +45,6 @@ export default function APIKeysIndex({ title }: APIKeysProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyData, setNewKeyData] = useState<{ key: string; name: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
-  const [selectedKeyScopes, setSelectedKeyScopes] = useState<number | null>(null);
   const [keyToRevoke, setKeyToRevoke] = useState<{ id: number; name: string } | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

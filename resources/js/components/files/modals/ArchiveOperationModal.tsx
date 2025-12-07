@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   CreateArchiveRequest,
   ExtractArchiveRequest,
@@ -18,6 +18,8 @@ interface ArchiveOperationModalProps {
   onExtractArchive: (request: ExtractArchiveRequest) => void;
 }
 
+const DEFAULT_ARCHIVE_NAMES = ['archive.zip', 'archive.tar', 'archive.tar.gz', ''];
+
 export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
   isOpen,
   onClose,
@@ -34,16 +36,13 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
   const [overwrite, setOverwrite] = useState(false);
   const [createDirs, setCreateDirs] = useState(true);
 
-  useEffect(() => {
-    if (
-      outputPath === 'archive.zip' ||
-      outputPath === 'archive.tar' ||
-      outputPath === 'archive.tar.gz' ||
-      outputPath === ''
-    ) {
-      setOutputPath(`archive.${format}`);
+  const handleFormatChange = (newFormat: ArchiveFormat) => {
+    setFormat(newFormat);
+
+    if (DEFAULT_ARCHIVE_NAMES.includes(outputPath)) {
+      setOutputPath(`archive.${newFormat}`);
     }
-  }, [format]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +51,7 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
       const includePathsArray = includePaths
         ? includePaths.split(',').map((p) => p.trim())
         : undefined;
-      let excludePatternsArray = excludePatterns
+      const excludePatternsArray = excludePatterns
         ? excludePatterns.split(',').map((p) => p.trim())
         : [];
 
@@ -107,7 +106,7 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
               <label className={cn(theme.forms.label, 'mb-2')}>Archive Format</label>
               <select
                 value={format}
-                onChange={(e) => setFormat(e.target.value as ArchiveFormat)}
+                onChange={(e) => handleFormatChange(e.target.value as ArchiveFormat)}
                 className={cn(theme.forms.select, 'w-full')}
               >
                 <option value="zip">ZIP</option>

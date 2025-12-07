@@ -59,8 +59,6 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
       });
 
       if (response.ok) {
-        const result = await response.json();
-
         setFormData({
           username: '',
           email: '',
@@ -80,7 +78,7 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
           setErrors({ general: 'Failed to create user' });
         }
       }
-    } catch (err) {
+    } catch {
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setProcessing(false);

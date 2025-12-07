@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FileEntry, ChownRequest } from '../../../types/files';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
@@ -19,17 +19,19 @@ export const ChownModal: React.FC<ChownModalProps> = ({
   entry,
   loading,
 }) => {
-  const [ownerID, setOwnerID] = useState('');
-  const [groupID, setGroupID] = useState('');
+  const [ownerID, setOwnerID] = useState(() => entry?.owner_id?.toString() || '');
+  const [groupID, setGroupID] = useState(() => entry?.group_id?.toString() || '');
   const [recursive, setRecursive] = useState(false);
+  const [prevEntry, setPrevEntry] = useState(entry);
 
-  useEffect(() => {
+  if (entry !== prevEntry) {
+    setPrevEntry(entry);
     if (entry) {
       setOwnerID(entry.owner_id?.toString() || '');
       setGroupID(entry.group_id?.toString() || '');
       setRecursive(false);
     }
-  }, [entry]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

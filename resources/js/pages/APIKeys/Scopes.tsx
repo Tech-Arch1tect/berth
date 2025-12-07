@@ -88,7 +88,6 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
     data: formData,
     setData,
     processing,
-    errors,
     reset,
   } = useForm<NewScopeForm>({
     server_id: '',

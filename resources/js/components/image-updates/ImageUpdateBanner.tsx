@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   XMarkIcon,
   InformationCircleIcon,
@@ -23,18 +23,16 @@ export const ImageUpdateBanner: React.FC<ImageUpdateBannerProps> = ({
   lastChecked,
   className,
 }) => {
-  const [isDismissed, setIsDismissed] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Use localStorage to persist dismissal per stack
   const dismissKey = `image-update-banner-${stackName}`;
 
-  useEffect(() => {
-    const dismissed = localStorage.getItem(dismissKey);
-    if (dismissed === 'true') {
-      setIsDismissed(true);
-    }
-  }, [dismissKey]);
+  const [isDismissed, setIsDismissed] = useState(() => localStorage.getItem(dismissKey) === 'true');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [prevDismissKey, setPrevDismissKey] = useState(dismissKey);
+
+  if (dismissKey !== prevDismissKey) {
+    setPrevDismissKey(dismissKey);
+    setIsDismissed(localStorage.getItem(dismissKey) === 'true');
+  }
 
   const handleDismiss = () => {
     setIsDismissed(true);

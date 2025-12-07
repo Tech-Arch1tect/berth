@@ -57,7 +57,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
       } else {
         setDisableError(data.message || 'Failed to disable two-factor authentication');
       }
-    } catch (err) {
+    } catch {
       setDisableError('Network error. Please try again.');
     } finally {
       setDisableProcessing(false);

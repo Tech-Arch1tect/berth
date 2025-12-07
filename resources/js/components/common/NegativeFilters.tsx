@@ -21,13 +21,11 @@ export const NegativeFilters: React.FC<NegativeFiltersProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(() =>
+    StorageManager.negativeFilters.getHistory()
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setHistory(StorageManager.negativeFilters.getHistory());
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

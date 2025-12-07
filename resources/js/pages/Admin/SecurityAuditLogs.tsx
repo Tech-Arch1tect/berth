@@ -52,7 +52,7 @@ export default function SecurityAuditLogs({ title }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [perPage, setPerPage] = useState(50);
+  const [perPage] = useState(50);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
