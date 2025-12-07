@@ -326,8 +326,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         className={cn(
           'transition-[padding-left] duration-300',
           sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-72',
-          fullWidth && 'h-screen flex flex-col'
+          fullWidth && 'flex flex-col'
         )}
+        style={{
+          height: fullWidth
+            ? terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0
+              ? `calc(100vh - ${terminalPanel.state.height}px)`
+              : '100vh'
+            : undefined,
+        }}
       >
         {/* Header - hidden for full-width layouts which have their own toolbar */}
         {fullWidth ? (
@@ -397,10 +404,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         )}
 
         <main
-          className={cn(
-            'transition-[padding-bottom] duration-200',
-            fullWidth ? 'flex-1 overflow-hidden' : 'px-4 py-8 sm:px-6 lg:px-10'
-          )}
+          className={cn(fullWidth ? 'flex-1 overflow-hidden' : 'px-4 py-8 sm:px-6 lg:px-10')}
           style={{
             paddingBottom:
               !fullWidth && terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0

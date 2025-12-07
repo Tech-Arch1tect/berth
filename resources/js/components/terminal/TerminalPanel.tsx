@@ -4,12 +4,27 @@ import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
 import { Terminal } from './Terminal';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { StorageManager } from '../../utils/storage';
 
 export const TerminalPanel: React.FC = () => {
   const { state, closeTerminal, setActiveTab, togglePanel, setPanelHeight } = useTerminalPanel();
   const [isResizing, setIsResizing] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    StorageManager.sidebar.isCollapsed()
+  );
   const panelRef = useRef<HTMLDivElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleCollapseChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      setSidebarCollapsed(customEvent.detail);
+    };
+    window.addEventListener('sidebar-collapse-change', handleCollapseChange);
+    return () => {
+      window.removeEventListener('sidebar-collapse-change', handleCollapseChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -41,7 +56,10 @@ export const TerminalPanel: React.FC = () => {
   return (
     <div
       ref={panelRef}
-      className="fixed bottom-0 left-0 right-0 z-40 border-t bg-slate-900 shadow-2xl transition-transform duration-200 lg:left-72"
+      className={cn(
+        'fixed bottom-0 left-0 right-0 z-40 border-t bg-slate-900 shadow-2xl',
+        sidebarCollapsed ? 'lg:left-16' : 'lg:left-72'
+      )}
       style={{
         height: state.isOpen ? `${state.height}px` : '40px',
         transform: state.isOpen ? 'translateY(0)' : `translateY(calc(100% - 40px))`,

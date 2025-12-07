@@ -105,6 +105,7 @@ class StorageManagerClass {
 
     setCollapsed: (isCollapsed: boolean): void => {
       this.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('sidebar-collapse-change', { detail: isCollapsed }));
     },
 
     clear: (): void => {
