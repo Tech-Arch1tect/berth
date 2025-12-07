@@ -1,16 +1,16 @@
-import FlashMessages from '../components/FlashMessages';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
+import { useQueries } from '@tanstack/react-query';
 import { Server } from '../types/server';
-import {
-  DashboardStats,
-  DashboardStatusAlert,
-  DashboardServerSection,
-  DashboardRecentActivity,
-  useDashboardHealth,
-  useDashboardActivity,
-} from '../components/dashboard';
-import { cn } from '../utils/cn';
-import { theme } from '../theme';
+import { StackStatistics } from '../types/server';
+import { useDashboardHealth, useDashboardActivity } from '../components/dashboard';
+import { DashboardLayout } from '../components/dashboard/layout/DashboardLayout';
+import { DashboardSidebar } from '../components/dashboard/sidebar/DashboardSidebar';
+import { DashboardPage, SECTION_IDS } from '../components/dashboard/content/DashboardPage';
+import { DashboardToolbar } from '../components/dashboard/toolbar/DashboardToolbar';
+import { DashboardStatusBar } from '../components/dashboard/statusbar/DashboardStatusBar';
+import { FullWidthLayout } from '../components/layout/Layout';
+import FlashMessages from '../components/FlashMessages';
 
 interface DashboardProps {
   title: string;
@@ -23,39 +23,128 @@ interface DashboardProps {
   };
 }
 
-export default function Dashboard({ title, servers, currentUser }: DashboardProps) {
+interface ServerStatisticsResponse {
+  statistics: StackStatistics;
+}
+
+const fetchServerStatistics = async (serverId: number): Promise<StackStatistics> => {
+  const response = await fetch(`/api/servers/${serverId}/statistics`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch server statistics');
+  }
+
+  const data: ServerStatisticsResponse = await response.json();
+  return data.statistics;
+};
+
+type DashboardComponent = React.FC<DashboardProps> & {
+  layout?: (page: React.ReactElement) => React.ReactElement;
+};
+
+const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
   const userRoles = currentUser?.roles?.map((role) => role.name) || [];
+  const isAdmin = userRoles.includes('admin');
+
+  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.overview);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const healthSummary = useDashboardHealth(servers);
   const activitySummary = useDashboardActivity();
+
+  const activeServers = servers.filter((s) => s.is_active);
+  const statisticsQueries = useQueries({
+    queries: activeServers.map((server) => ({
+      queryKey: ['server-statistics', server.id],
+      queryFn: () => fetchServerStatistics(server.id),
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const serverStats = useMemo(() => {
+    const map = new Map<number, { total: number; healthy: number; unhealthy: number }>();
+    activeServers.forEach((server, index) => {
+      const query = statisticsQueries[index];
+      if (query?.data) {
+        map.set(server.id, {
+          total: query.data.total_stacks,
+          healthy: query.data.healthy_stacks,
+          unhealthy: query.data.unhealthy_stacks,
+        });
+      }
+    });
+    return map;
+  }, [activeServers, statisticsQueries]);
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+
+    statisticsQueries.forEach((query) => {
+      query.refetch();
+    });
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setLastUpdated(new Date());
+    }, 500);
+  }, [statisticsQueries]);
+
+  const handleSectionChange = useCallback((sectionId: string) => {
+    setActiveSection(sectionId);
+  }, []);
+
+  const isLoading = statisticsQueries.some((q) => q.isLoading) || healthSummary.serversLoading > 0;
 
   return (
     <>
       <Head title={title} />
+      <FlashMessages className="fixed top-4 right-4 z-50" />
 
-      {/* Header Section */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <h1 className={cn('text-2xl font-bold', theme.brand.titleColor)}>{title}</h1>
-          <div className={cn('flex items-center space-x-2 text-xs', theme.text.subtle)}>
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Live data</span>
-          </div>
-        </div>
+      <div className="h-full flex flex-col">
+        <DashboardLayout
+          toolbar={
+            <DashboardToolbar
+              title={title}
+              isRefreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              isAdmin={isAdmin}
+            />
+          }
+          sidebar={
+            <DashboardSidebar
+              servers={servers}
+              activeSection={activeSection}
+              healthSummary={healthSummary}
+              serverStats={serverStats}
+            />
+          }
+          content={
+            <DashboardPage
+              servers={servers}
+              healthSummary={healthSummary}
+              activitySummary={activitySummary}
+              userRoles={userRoles}
+              serverStats={serverStats}
+              onSectionChange={handleSectionChange}
+            />
+          }
+          statusBar={
+            <DashboardStatusBar
+              healthSummary={healthSummary}
+              lastUpdated={lastUpdated}
+              isLoading={isLoading}
+            />
+          }
+        />
       </div>
-
-      <FlashMessages className="mb-4" />
-
-      {/* Status Alert */}
-      <DashboardStatusAlert healthSummary={healthSummary} />
-
-      {/* Stats Grid */}
-      <DashboardStats healthSummary={healthSummary} userRoles={userRoles} />
-
-      {/* Recent Activity & Operations */}
-      <DashboardRecentActivity activitySummary={activitySummary} />
-
-      {/* Servers Section */}
-      <DashboardServerSection servers={servers} healthSummary={healthSummary} />
     </>
   );
-}
+};
+
+Dashboard.layout = (page: React.ReactElement) => <FullWidthLayout>{page}</FullWidthLayout>;
+
+export default Dashboard;
