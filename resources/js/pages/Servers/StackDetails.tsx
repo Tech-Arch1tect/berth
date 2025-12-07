@@ -54,8 +54,10 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
   React.useEffect(() => {
     if (selection?.type === 'stats') {
       stack.setActiveTab('stats');
+    } else {
+      stack.setActiveTab('services');
     }
-  }, [selection, stack]);
+  }, [selection, stack.setActiveTab]);
 
   return (
     <>
