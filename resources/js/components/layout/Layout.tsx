@@ -22,7 +22,6 @@ import { User } from '../../types';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { Toaster } from '../../utils/toast';
 import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
-import { TerminalPanel } from '../terminal/TerminalPanel';
 import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
 import { theme } from '../../theme';
 import { cn } from '../../utils/cn';
@@ -38,7 +37,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const csrfToken = props.csrfToken as string | undefined;
   const { isDark, toggleDarkMode } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const terminalPanel = user ? useTerminalPanel() : null;
+  const terminalPanel = useTerminalPanel();
 
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
 
@@ -304,7 +303,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           )}
           style={{
             paddingBottom:
-              !fullWidth && terminalPanel?.state.isOpen && terminalPanel.state.tabs.length > 0
+              !fullWidth && terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0
                 ? `${terminalPanel.state.height + 32}px`
                 : undefined,
           }}
@@ -314,7 +313,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       </div>
 
       <GlobalOperationsTracker />
-      <TerminalPanel />
       <Toaster
         position="top-right"
         toastOptions={{
