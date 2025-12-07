@@ -24,20 +24,13 @@ interface StackDetailsProps {
   server: Server;
   serverid: number;
   stackname: string;
-  permissions: string[];
 }
 
 type StackDetailsComponent = React.FC<StackDetailsProps> & {
   layout?: (page: React.ReactElement) => React.ReactElement;
 };
 
-const StackDetails: StackDetailsComponent = ({
-  title,
-  server,
-  serverid,
-  stackname,
-  permissions = [],
-}) => {
+const StackDetails: StackDetailsComponent = ({ title, server, serverid, stackname }) => {
   const stack = useStackDetailsPage({ serverid, stackname });
   const [selection, setSelection] = useState<SidebarSelection | null>({ type: 'overview' });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
@@ -56,13 +49,13 @@ const StackDetails: StackDetailsComponent = ({
   const handleRefresh = useCallback(() => {
     stack.handleRefreshAll();
     setLastUpdated(new Date());
-  }, [stack.handleRefreshAll]);
+  }, [stack]);
 
   React.useEffect(() => {
     if (selection?.type === 'stats') {
       stack.setActiveTab('stats');
     }
-  }, [selection, stack.setActiveTab]);
+  }, [selection, stack]);
 
   return (
     <>
