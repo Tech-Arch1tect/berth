@@ -10,11 +10,10 @@ import {
   DocumentTextIcon,
   FolderIcon,
   ClockIcon,
-  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { CheckCircleIcon, XCircleIcon, StopIcon, PauseCircleIcon } from '@heroicons/react/24/solid';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
+import { getServiceStatus } from '../../../utils/statusHelpers';
 
 interface OverviewPanelProps {
   stackPath: string;
@@ -40,60 +39,6 @@ const formatUptime = (startedAt?: string) => {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
-};
-
-const getServiceStatus = (service: ComposeService) => {
-  const containers = service.containers || [];
-  const total = containers.length;
-  const running = containers.filter((c) => c.state?.toLowerCase() === 'running').length;
-  const unhealthy = containers.filter((c) => {
-    const state = c.state?.toLowerCase();
-    return state === 'exited' && c.exit_code !== 0;
-  }).length;
-
-  if (total === 0) {
-    return {
-      status: 'no-containers',
-      icon: XCircleIcon,
-      color: 'text-zinc-400',
-      bg: 'bg-zinc-100 dark:bg-zinc-800',
-      label: 'No Containers',
-    };
-  }
-  if (unhealthy > 0) {
-    return {
-      status: 'unhealthy',
-      icon: ExclamationTriangleIcon,
-      color: 'text-red-500',
-      bg: 'bg-red-100 dark:bg-red-900/30',
-      label: 'Unhealthy',
-    };
-  }
-  if (running === total) {
-    return {
-      status: 'running',
-      icon: CheckCircleIcon,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-      label: 'Running',
-    };
-  }
-  if (running === 0) {
-    return {
-      status: 'stopped',
-      icon: StopIcon,
-      color: 'text-zinc-500',
-      bg: 'bg-zinc-100 dark:bg-zinc-800',
-      label: 'Stopped',
-    };
-  }
-  return {
-    status: 'partial',
-    icon: PauseCircleIcon,
-    color: 'text-amber-500',
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
-    label: 'Partial',
-  };
 };
 
 const getOldestUptime = (containers: Container[]) => {
