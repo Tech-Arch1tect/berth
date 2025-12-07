@@ -17,6 +17,7 @@ import { ContainerStats } from '../../hooks/useStackStats';
 import { cn } from '../../utils/cn';
 import { formatBytes, formatNumber } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
+import { MemoryProgressBar } from './MemoryProgressBar';
 
 interface StackStatsProps {
   containers: ContainerStats[];
@@ -37,6 +38,16 @@ const resolveSeverity = (value?: number): Severity => {
   if (value >= 70) return 'warning';
   if (value >= 50) return 'info';
   return 'success';
+};
+
+const getRssPercent = (container: ContainerStats): number => {
+  if (container.memory_limit <= 0) return 0;
+  return (container.memory_rss / container.memory_limit) * 100;
+};
+
+const getCachePercent = (container: ContainerStats): number => {
+  if (container.memory_limit <= 0) return 0;
+  return (container.memory_cache / container.memory_limit) * 100;
 };
 
 const severityColors: Record<Severity, { bar: string; text: string }> = {
@@ -63,15 +74,17 @@ const severityColors: Record<Severity, { bar: string; text: string }> = {
 };
 
 const SummaryBar: React.FC<{ containers: ContainerStats[] }> = ({ containers }) => {
-  const totalMemory = containers.reduce((sum, c) => sum + c.memory_usage, 0);
+  const totalRss = containers.reduce((sum, c) => sum + c.memory_rss, 0);
+  const totalCache = containers.reduce((sum, c) => sum + c.memory_cache, 0);
   const totalMemoryLimit = containers.reduce((sum, c) => sum + c.memory_limit, 0);
   const avgCpu = containers.reduce((sum, c) => sum + c.cpu_percent, 0) / containers.length;
   const maxCpu = Math.max(...containers.map((c) => c.cpu_percent));
+
   const warningCount = containers.filter(
-    (c) => c.cpu_percent >= 70 || c.memory_percent >= 70
+    (c) => c.cpu_percent >= 70 || getRssPercent(c) >= 70
   ).length;
   const dangerCount = containers.filter(
-    (c) => c.cpu_percent >= 90 || c.memory_percent >= 90
+    (c) => c.cpu_percent >= 90 || getRssPercent(c) >= 90
   ).length;
 
   return (
@@ -122,12 +135,12 @@ const SummaryBar: React.FC<{ containers: ContainerStats[] }> = ({ containers }) 
         </div>
         <div>
           <p className={cn('text-sm font-semibold tabular-nums', theme.text.strong)}>
-            {formatBytes(totalMemory)}
-            <span className={cn('text-xs font-normal ml-1', theme.text.subtle)}>
-              / {formatBytes(totalMemoryLimit)}
+            {formatBytes(totalRss)}
+            <span className={cn('text-xs font-normal ml-1', theme.text.muted)}>
+              + {formatBytes(totalCache)} cache
             </span>
           </p>
-          <p className={cn('text-xs', theme.text.subtle)}>total memory</p>
+          <p className={cn('text-xs', theme.text.subtle)}>used / {formatBytes(totalMemoryLimit)}</p>
         </div>
       </div>
 
@@ -206,10 +219,13 @@ const ContainerRow: React.FC<{
   isExpanded: boolean;
   onToggle: () => void;
 }> = ({ container, isExpanded, onToggle }) => {
+  const rssPercent = getRssPercent(container);
+  const cachePercent = getCachePercent(container);
   const cpuSeverity = resolveSeverity(container.cpu_percent);
-  const memorySeverity = resolveSeverity(container.memory_percent);
-  const hasWarning = container.cpu_percent >= 70 || container.memory_percent >= 70;
-  const hasDanger = container.cpu_percent >= 90 || container.memory_percent >= 90;
+  const memorySeverity = resolveSeverity(rssPercent);
+
+  const hasWarning = container.cpu_percent >= 70 || rssPercent >= 70;
+  const hasDanger = container.cpu_percent >= 90 || rssPercent >= 90;
 
   return (
     <div
@@ -269,17 +285,30 @@ const ContainerRow: React.FC<{
         {/* Memory */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className={cn('text-xs', theme.text.subtle)}>Memory</span>
+            <span className={cn('text-xs', theme.text.subtle)}>
+              Memory
+              {cachePercent > 5 && (
+                <span className={cn('ml-1', theme.text.muted)}>
+                  (+{formatPercent(cachePercent)} cache)
+                </span>
+              )}
+            </span>
             <span
               className={cn(
                 'text-xs font-medium tabular-nums',
                 severityColors[memorySeverity].text
               )}
             >
-              {formatPercent(container.memory_percent)}
+              {formatPercent(rssPercent)}
             </span>
           </div>
-          <CompactProgressBar percent={container.memory_percent} />
+          <MemoryProgressBar
+            rssPercent={rssPercent}
+            cachePercent={cachePercent}
+            rssBytes={container.memory_rss}
+            cacheBytes={container.memory_cache}
+            limitBytes={container.memory_limit}
+          />
         </div>
 
         {/* Quick stats */}
@@ -310,14 +339,8 @@ const ContainerRow: React.FC<{
               </h4>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className={theme.text.subtle}>Usage</span>
-                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
-                    {formatBytes(container.memory_usage)} / {formatBytes(container.memory_limit)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
                   <span className={theme.text.subtle}>RSS</span>
-                  <span className={cn('tabular-nums', theme.text.muted)}>
+                  <span className={cn('font-medium tabular-nums', theme.text.strong)}>
                     {formatBytes(container.memory_rss)}
                   </span>
                 </div>
@@ -325,6 +348,12 @@ const ContainerRow: React.FC<{
                   <span className={theme.text.subtle}>Cache</span>
                   <span className={cn('tabular-nums', theme.text.muted)}>
                     {formatBytes(container.memory_cache)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                  <span className={theme.text.subtle}>Total</span>
+                  <span className={cn('tabular-nums', theme.text.muted)}>
+                    {formatBytes(container.memory_usage)} / {formatBytes(container.memory_limit)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
@@ -497,12 +526,12 @@ export const StackStats = ({ containers, isLoading, error }: StackStatsProps) =>
   }
 
   const sortedContainers = [...containers].sort((a, b) => {
+    const aRss = getRssPercent(a);
+    const bRss = getRssPercent(b);
     const aScore =
-      (a.cpu_percent >= 90 || a.memory_percent >= 90 ? 2 : 0) +
-      (a.cpu_percent >= 70 || a.memory_percent >= 70 ? 1 : 0);
+      (a.cpu_percent >= 90 || aRss >= 90 ? 2 : 0) + (a.cpu_percent >= 70 || aRss >= 70 ? 1 : 0);
     const bScore =
-      (b.cpu_percent >= 90 || b.memory_percent >= 90 ? 2 : 0) +
-      (b.cpu_percent >= 70 || b.memory_percent >= 70 ? 1 : 0);
+      (b.cpu_percent >= 90 || bRss >= 90 ? 2 : 0) + (b.cpu_percent >= 70 || bRss >= 70 ? 1 : 0);
     if (aScore !== bScore) return bScore - aScore;
     return a.service_name.localeCompare(b.service_name);
   });

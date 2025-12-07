@@ -1,4 +1,5 @@
 export { default as StackStats } from './StackStats';
+export { MemoryProgressBar } from './MemoryProgressBar';
 
 export { default as ServiceQuickActions } from './services/ServiceQuickActions';
 export { default as StackQuickActions } from './services/StackQuickActions';
