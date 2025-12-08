@@ -236,12 +236,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.overview);
 
-  const getAccessLevel = () => {
-    const isAdmin = userRoles.includes('admin');
-    if (isAdmin) return 'Full';
-    if (userRoles.length === 0) return 'Limited';
-    return userRoles.join(', ');
-  };
+  const isAdmin = userRoles.includes('admin');
+  const accessLevel = isAdmin ? 'Full' : 'Limited';
 
   const onlineServers = servers.filter((s) => s.is_active);
   const offlineServers = servers.filter((s) => !s.is_active);
@@ -328,13 +324,38 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               }
               color={healthSummary.totalOfflineServers > 0 ? 'red' : 'emerald'}
             />
-            <StatCard
-              icon={ShieldCheckIcon}
-              label="Your Access"
-              value={getAccessLevel()}
-              sublabel={`${userRoles.length} role${userRoles.length !== 1 ? 's' : ''}`}
-              color="blue"
-            />
+            <div className="relative group">
+              <StatCard
+                icon={ShieldCheckIcon}
+                label="Your Access"
+                value={accessLevel}
+                sublabel={`${userRoles.length} role${userRoles.length !== 1 ? 's' : ''}`}
+                color="blue"
+              />
+              {userRoles.length > 0 && (
+                <div
+                  className={cn(
+                    'absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 rounded-lg shadow-lg',
+                    'bg-zinc-900 dark:bg-zinc-700 text-white text-xs',
+                    'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+                    'pointer-events-none z-10 whitespace-nowrap'
+                  )}
+                >
+                  <div className="font-medium mb-1">Roles:</div>
+                  <div className="space-y-0.5">
+                    {userRoles.map((role) => (
+                      <div key={role}>{role}</div>
+                    ))}
+                  </div>
+                  <div
+                    className={cn(
+                      'absolute left-1/2 -translate-x-1/2 top-full',
+                      'border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-700'
+                    )}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
