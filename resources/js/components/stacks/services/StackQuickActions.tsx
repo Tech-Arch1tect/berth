@@ -109,45 +109,52 @@ export const StackQuickActions = ({
     },
   ];
 
+  const colorClasses: Record<ActionKey, string> = {
+    up: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-500/30 dark:text-teal-100 dark:hover:bg-teal-500/45',
+    start:
+      'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/25 dark:text-emerald-100 dark:hover:bg-emerald-500/40',
+    stop: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/25 dark:text-rose-100 dark:hover:bg-rose-500/40',
+    restart:
+      'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/30 dark:text-blue-100 dark:hover:bg-blue-500/45',
+    pull: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/25 dark:text-indigo-100 dark:hover:bg-indigo-500/40',
+    down: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/25 dark:text-amber-100 dark:hover:bg-amber-500/40',
+  };
+
+  const visibleActions = actions.filter((action) => action.visible);
+
   return (
-    <>
-      {actions
-        .filter((action) => action.visible)
-        .map((action) => {
-          const Icon = iconMap[action.command];
-          return (
-            <button
-              key={action.command}
-              type="button"
-              onClick={() => handleAction(action.command)}
-              disabled={isDisabled}
-              className={cn(
-                'p-2 rounded-md transition-colors relative',
-                isDisabled && 'opacity-50 cursor-not-allowed',
-                action.command === 'up' &&
-                  'hover:bg-teal-100 text-teal-700 dark:hover:bg-teal-900/30 dark:text-teal-400',
-                action.command === 'start' &&
-                  'hover:bg-emerald-100 text-emerald-700 dark:hover:bg-emerald-900/30 dark:text-emerald-400',
-                action.command === 'stop' &&
-                  'hover:bg-rose-100 text-rose-700 dark:hover:bg-rose-900/30 dark:text-rose-400',
-                action.command === 'restart' &&
-                  'hover:bg-blue-100 text-blue-700 dark:hover:bg-blue-900/30 dark:text-blue-400',
-                action.command === 'pull' &&
-                  'hover:bg-indigo-100 text-indigo-700 dark:hover:bg-indigo-900/30 dark:text-indigo-400',
-                action.command === 'down' &&
-                  'hover:bg-amber-100 text-amber-700 dark:hover:bg-amber-900/30 dark:text-amber-400'
-              )}
-              title={`${action.title}${isBusy(action.command) ? ' (running…)' : ''}`}
-            >
-              {isBusy(action.command) ? (
-                <span className={cn(theme.effects.spinnerSm, 'border-current')} />
-              ) : (
-                <Icon className="w-4 h-4" />
-              )}
-            </button>
-          );
-        })}
-    </>
+    <div className="flex items-center">
+      {visibleActions.map((action) => {
+        const Icon = iconMap[action.command];
+        const busy = isBusy(action.command);
+        const label = busy ? `${action.label}…` : action.label;
+
+        return (
+          <button
+            key={action.command}
+            type="button"
+            onClick={() => handleAction(action.command)}
+            disabled={isDisabled}
+            className={cn(
+              'inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors',
+              'lg:min-w-[4.5rem] lg:px-2.5',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              colorClasses[action.command],
+              isDisabled && 'cursor-not-allowed opacity-50'
+            )}
+            title={`${action.title}${busy ? ' (running…)' : ''}`}
+          >
+            {busy ? (
+              <span className={cn(theme.effects.spinnerSm, 'border-current')} />
+            ) : (
+              <Icon className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden lg:inline">{label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 };
 
