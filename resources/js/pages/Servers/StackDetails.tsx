@@ -134,10 +134,9 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                     environment={stack.environmentVariables || {}}
                     statsContainers={stack.stackStats?.containers || []}
                     logContainers={
-                      stack.stackStats?.containers?.map((c) => ({
-                        name: c.name,
-                        service_name: c.service_name,
-                      })) || []
+                      stack.stackDetails.services?.flatMap((s) =>
+                        s.containers.map((c) => ({ name: c.name, service_name: s.name }))
+                      ) || []
                     }
                     permissions={{
                       canManage: canManageStack,
