@@ -102,6 +102,7 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                     isOperationRunning={stack.quickOperationState.isRunning}
                     runningOperation={stack.quickOperationState.operation}
                     isRefreshing={stack.isFetching}
+                    selection={selection}
                     onQuickOperation={stack.handleQuickOperation}
                     onRefresh={handleRefresh}
                     onGenerateDocs={stack.handleGenerateDocumentation}

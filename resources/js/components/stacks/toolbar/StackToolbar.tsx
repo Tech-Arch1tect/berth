@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
+import { SidebarSelection } from '../sidebar/types';
 
 interface StackToolbarProps {
   stackName: string;
@@ -27,6 +28,7 @@ interface StackToolbarProps {
   isOperationRunning: boolean;
   runningOperation?: string;
   isRefreshing: boolean;
+  selection?: SidebarSelection | null;
   onQuickOperation: (operation: OperationRequest) => void;
   onRefresh: () => void;
   onGenerateDocs: () => void;
@@ -44,12 +46,14 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
   isOperationRunning,
   runningOperation,
   isRefreshing,
+  selection,
   onQuickOperation,
   onRefresh,
   onGenerateDocs,
   onEditCompose,
   onAdvancedOperations,
 }) => {
+  const showStackActions = canManage && selection?.type !== 'service';
   const statusConfig: Record<
     WebSocketConnectionStatus,
     { icon: typeof SignalIcon; color: string; bg: string; label: string }
@@ -122,7 +126,7 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
       </nav>
 
       {/* Center: Stack quick actions */}
-      {canManage && (
+      {showStackActions && (
         <div
           className={cn(
             'flex items-center rounded-lg overflow-hidden',
