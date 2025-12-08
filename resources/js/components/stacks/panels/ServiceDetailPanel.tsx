@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ComposeService, Container } from '../../../types/stack';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import { OperationRequest } from '../../../types/operations';
@@ -10,10 +10,14 @@ import {
   UserIcon,
   FolderIcon,
   GlobeAltIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { getContainerStatus } from '../../../utils/statusHelpers';
+import LogViewer from '../../logs/LogViewer';
 
 interface ServiceDetailPanelProps {
   service: ComposeService;
@@ -21,6 +25,7 @@ interface ServiceDetailPanelProps {
   isOperationRunning: boolean;
   runningOperation?: string;
   canManage: boolean;
+  canViewLogs?: boolean;
 }
 
 const formatUptime = (startedAt?: string) => {
@@ -49,19 +54,94 @@ const formatDateTime = (dateStr?: string) => {
   return date.toLocaleString();
 };
 
+const LOGS_MIN_HEIGHT = 150;
+const LOGS_MAX_HEIGHT_PERCENT = 70;
+const LOGS_DEFAULT_HEIGHT = 300;
+const LOGS_STORAGE_KEY = 'berth-service-logs-height';
+
 export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
   service,
   onQuickOperation,
   isOperationRunning,
   runningOperation,
   canManage,
+  canViewLogs = false,
 }) => {
+  const [logsExpanded, setLogsExpanded] = useState(true);
+  const [logsHeight, setLogsHeight] = useState(() => {
+    const stored = localStorage.getItem(LOGS_STORAGE_KEY);
+    return stored ? parseInt(stored, 10) : LOGS_DEFAULT_HEIGHT;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   const runningContainers =
     service.containers?.filter((c) => c.state?.toLowerCase() === 'running') || [];
   const totalContainers = service.containers?.length || 0;
+  const containerNames =
+    service.containers?.map((c) => ({ name: c.name, service_name: service.name })) || [];
+
+  useEffect(() => {
+    const updateContainerHeight = () => {
+      if (containerRef.current) {
+        setContainerHeight(containerRef.current.offsetHeight);
+      }
+    };
+
+    updateContainerHeight();
+    window.addEventListener('resize', updateContainerHeight);
+    return () => window.removeEventListener('resize', updateContainerHeight);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(LOGS_STORAGE_KEY, String(logsHeight));
+  }, [logsHeight]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setStartY(e.clientY);
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const delta = startY - e.clientY;
+      setLogsHeight((prev) => {
+        const maxHeight = containerHeight * (LOGS_MAX_HEIGHT_PERCENT / 100);
+        const newHeight = prev + delta;
+        return Math.min(Math.max(newHeight, LOGS_MIN_HEIGHT), maxHeight);
+      });
+      setStartY(e.clientY);
+    },
+    [isDragging, startY, containerHeight]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'row-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div ref={containerRef} className="h-full flex flex-col overflow-hidden">
       {/* Service Header */}
       <div
         className={cn(
@@ -118,7 +198,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className={cn('flex-1 overflow-auto p-6', logsExpanded && 'pb-0')}>
         {service.containers && service.containers.length > 0 ? (
           <div className="space-y-6">
             {service.containers.map((container, index) => (
@@ -135,6 +215,60 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Collapsible Logs Section */}
+      {canViewLogs && (
+        <div
+          className={cn('flex-shrink-0 flex flex-col', 'border-zinc-200 dark:border-zinc-800')}
+          style={logsExpanded ? { height: `${logsHeight}px` } : undefined}
+        >
+          {/* Resize Handle */}
+          {logsExpanded && (
+            <div
+              className={cn(
+                'flex-shrink-0 h-1 cursor-row-resize relative group',
+                'bg-zinc-200 dark:bg-zinc-700',
+                'hover:bg-teal-400 dark:hover:bg-teal-600',
+                'transition-colors duration-150',
+                isDragging && 'bg-teal-500 dark:bg-teal-500'
+              )}
+              onMouseDown={handleMouseDown}
+            >
+              <div className="absolute -top-1 -bottom-1 inset-x-0" />
+            </div>
+          )}
+
+          {/* Header */}
+          <button
+            onClick={() => setLogsExpanded(!logsExpanded)}
+            className={cn(
+              'flex-shrink-0 w-full px-4 py-2 flex items-center gap-2 text-sm font-medium transition-colors',
+              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+              'border-t border-zinc-200 dark:border-zinc-800',
+              theme.text.muted
+            )}
+          >
+            {logsExpanded ? (
+              <ChevronDownIcon className="w-4 h-4" />
+            ) : (
+              <ChevronRightIcon className="w-4 h-4" />
+            )}
+            <DocumentTextIcon className="w-4 h-4" />
+            <span>Service Logs</span>
+          </button>
+
+          {/* Logs Content */}
+          {logsExpanded && (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <LogViewer
+                containers={containerNames}
+                containerName={containerNames[0]?.name}
+                compact
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

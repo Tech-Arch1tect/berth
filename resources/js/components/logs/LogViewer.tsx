@@ -15,7 +15,12 @@ import { theme } from '../../theme';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useServerStack } from '../../contexts/ServerStackContext';
 
-const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, containers = [] }) => {
+const LogViewer: React.FC<LogViewerProps> = ({
+  serviceName,
+  containerName,
+  containers = [],
+  compact = false,
+}) => {
   const { serverId, stackName } = useServerStack();
 
   const {
@@ -81,7 +86,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ serviceName, containerName, conta
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[600px]">
+    <div className={cn('flex flex-col h-full', !compact && 'min-h-[600px]')}>
       <div
         className={cn(
           'flex items-center justify-between px-4 py-2 border-b',

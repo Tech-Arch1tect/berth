@@ -110,6 +110,7 @@ export const StackContent: React.FC<StackContentProps> = ({
         <ServiceDetailPanel
           service={service}
           canManage={permissions.canManage}
+          canViewLogs={permissions.canViewLogs}
           onQuickOperation={onQuickOperation}
           isOperationRunning={isOperationRunning}
           runningOperation={runningOperation}

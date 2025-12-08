@@ -13,6 +13,7 @@ export interface LogViewerProps {
   serviceName?: string;
   containerName?: string;
   containers?: Container[];
+  compact?: boolean;
 }
 
 export interface Container {
