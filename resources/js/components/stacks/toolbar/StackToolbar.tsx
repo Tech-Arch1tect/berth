@@ -121,9 +121,21 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         </div>
       </nav>
 
-      {/* Center: Quick actions */}
+      {/* Center: Stack quick actions */}
       {canManage && (
-        <div className="flex items-center gap-1">
+        <div
+          className={cn(
+            'flex items-center gap-1.5 px-2 py-1 rounded-full',
+            'bg-zinc-100 dark:bg-zinc-800',
+            'border border-zinc-200 dark:border-zinc-700'
+          )}
+        >
+          <span
+            className={cn('text-xs font-semibold uppercase tracking-wide px-1.5', theme.text.muted)}
+          >
+            Stack
+          </span>
+          <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600" />
           <StackQuickActions
             services={services}
             onQuickOperation={onQuickOperation}
