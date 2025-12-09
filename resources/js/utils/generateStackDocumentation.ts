@@ -87,3 +87,7 @@ export const downloadMarkdown = (content: string, filename: string): void => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
+
+export const copyToClipboard = async (content: string): Promise<void> => {
+  await navigator.clipboard.writeText(content);
+};

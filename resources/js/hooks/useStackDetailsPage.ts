@@ -11,7 +11,11 @@ import { useComposeUpdate } from './useComposeUpdate';
 import { showToast } from '../utils/toast';
 import { OperationRequest } from '../types/operations';
 import { ComposeChanges } from '../components/compose';
-import { generateStackDocumentation, downloadMarkdown } from '../utils/generateStackDocumentation';
+import {
+  generateStackDocumentation,
+  downloadMarkdown,
+  copyToClipboard,
+} from '../utils/generateStackDocumentation';
 
 export type StackTab =
   | 'services'
@@ -187,7 +191,20 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
     });
   }, []);
 
-  const handleGenerateDocumentation = useCallback(() => {
+  const handleCopyDocumentation = useCallback(async () => {
+    if (!stackDetailsQuery.data) return;
+
+    try {
+      const documentation = generateStackDocumentation(stackDetailsQuery.data);
+      await copyToClipboard(documentation);
+      showToast.success('Documentation copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy documentation:', error);
+      showToast.error('Failed to copy documentation');
+    }
+  }, [stackDetailsQuery.data]);
+
+  const handleDownloadDocumentation = useCallback(() => {
     if (!stackDetailsQuery.data) return;
 
     try {
@@ -195,8 +212,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
       downloadMarkdown(documentation, `${stackDetailsQuery.data.name}-documentation.md`);
       showToast.success('Documentation downloaded successfully');
     } catch (error) {
-      console.error('Failed to generate documentation:', error);
-      showToast.error('Failed to generate documentation');
+      console.error('Failed to download documentation:', error);
+      showToast.error('Failed to download documentation');
     }
   }, [stackDetailsQuery.data]);
 
@@ -251,7 +268,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
     handleExpandAll,
     handleCollapseAll,
     toggleServiceExpanded,
-    handleGenerateDocumentation,
+    handleCopyDocumentation,
+    handleDownloadDocumentation,
     handleComposeUpdate,
     refetch: stackDetailsQuery.refetch,
   };

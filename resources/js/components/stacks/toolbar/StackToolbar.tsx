@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { ComposeService } from '../../../types/stack';
 import { WebSocketConnectionStatus } from '../../../types/websocket';
@@ -13,6 +13,9 @@ import {
   CodeBracketIcon,
   HomeIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  ClipboardDocumentIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
@@ -31,7 +34,8 @@ interface StackToolbarProps {
   selection?: SidebarSelection | null;
   onQuickOperation: (operation: OperationRequest) => void;
   onRefresh: () => void;
-  onGenerateDocs: () => void;
+  onCopyDocs: () => void;
+  onDownloadDocs: () => void;
   onEditCompose: () => void;
   onAdvancedOperations: () => void;
 }
@@ -49,10 +53,29 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
   selection,
   onQuickOperation,
   onRefresh,
-  onGenerateDocs,
+  onCopyDocs,
+  onDownloadDocs,
   onEditCompose,
   onAdvancedOperations,
 }) => {
+  const [docsMenuOpen, setDocsMenuOpen] = useState(false);
+  const docsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (docsMenuRef.current && !docsMenuRef.current.contains(event.target as Node)) {
+        setDocsMenuOpen(false);
+      }
+    };
+
+    if (docsMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [docsMenuOpen]);
   const showStackActions = canManage && selection?.type !== 'service';
   const statusConfig: Record<
     WebSocketConnectionStatus,
@@ -182,17 +205,71 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
           </button>
         )}
 
-        <button
-          onClick={onGenerateDocs}
-          className={cn(
-            'p-2 rounded-md transition-colors',
-            'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-            theme.text.muted
+        {/* Documentation split button */}
+        <div ref={docsMenuRef} className="relative flex">
+          <button
+            onClick={onCopyDocs}
+            className={cn(
+              'p-2 rounded-l-md transition-colors',
+              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+              'border-r border-zinc-200 dark:border-zinc-700',
+              theme.text.muted
+            )}
+            title="Copy documentation to clipboard"
+          >
+            <DocumentTextIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setDocsMenuOpen(!docsMenuOpen)}
+            className={cn(
+              'px-1 rounded-r-md transition-colors',
+              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+              theme.text.muted
+            )}
+            title="More documentation options"
+          >
+            <ChevronDownIcon className="w-3 h-3" />
+          </button>
+
+          {docsMenuOpen && (
+            <div
+              className={cn(
+                'absolute right-0 top-full mt-1 py-1 rounded-md shadow-lg z-50 min-w-[160px]',
+                'bg-white dark:bg-zinc-800',
+                'border border-zinc-200 dark:border-zinc-700'
+              )}
+            >
+              <button
+                onClick={() => {
+                  onCopyDocs();
+                  setDocsMenuOpen(false);
+                }}
+                className={cn(
+                  'w-full px-3 py-1.5 text-left text-sm flex items-center gap-2',
+                  'hover:bg-zinc-100 dark:hover:bg-zinc-700',
+                  theme.text.muted
+                )}
+              >
+                <ClipboardDocumentIcon className="w-4 h-4" />
+                Copy to clipboard
+              </button>
+              <button
+                onClick={() => {
+                  onDownloadDocs();
+                  setDocsMenuOpen(false);
+                }}
+                className={cn(
+                  'w-full px-3 py-1.5 text-left text-sm flex items-center gap-2',
+                  'hover:bg-zinc-100 dark:hover:bg-zinc-700',
+                  theme.text.muted
+                )}
+              >
+                <ArrowDownTrayIcon className="w-4 h-4" />
+                Download as file
+              </button>
+            </div>
           )}
-          title="Generate documentation"
-        >
-          <DocumentTextIcon className="w-4 h-4" />
-        </button>
+        </div>
 
         {canManage && (
           <button

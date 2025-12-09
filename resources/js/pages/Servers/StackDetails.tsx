@@ -105,7 +105,8 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                     selection={selection}
                     onQuickOperation={stack.handleQuickOperation}
                     onRefresh={handleRefresh}
-                    onGenerateDocs={stack.handleGenerateDocumentation}
+                    onCopyDocs={stack.handleCopyDocumentation}
+                    onDownloadDocs={stack.handleDownloadDocumentation}
                     onEditCompose={() => stack.setShowComposeEditor(true)}
                     onAdvancedOperations={() => stack.setAdvancedOperationsOpen(true)}
                   />
