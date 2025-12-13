@@ -32,9 +32,17 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
   const [outputPath, setOutputPath] = useState('archive.tar.gz');
   const [includePaths, setIncludePaths] = useState('');
   const [excludePatterns, setExcludePatterns] = useState('');
-  const [destinationPath, setDestinationPath] = useState('');
+  const [destinationPath, setDestinationPath] = useState('extracted/');
   const [overwrite, setOverwrite] = useState(false);
   const [createDirs, setCreateDirs] = useState(true);
+
+  React.useEffect(() => {
+    if (isOpen && operation === 'extract' && selectedFile) {
+      const archiveDirectory = selectedFile.path.substring(0, selectedFile.path.lastIndexOf('/'));
+      const defaultDestination = archiveDirectory ? `${archiveDirectory}/extracted/` : 'extracted/';
+      setDestinationPath(defaultDestination);
+    }
+  }, [isOpen, operation, selectedFile]);
 
   const handleFormatChange = (newFormat: ArchiveFormat) => {
     setFormat(newFormat);
@@ -68,7 +76,7 @@ export const ArchiveOperationModal: React.FC<ArchiveOperationModalProps> = ({
       });
     } else {
       onExtractArchive({
-        archive_path: selectedFile?.name || '',
+        archive_path: selectedFile?.path || '',
         destination_path: destinationPath || undefined,
         overwrite,
         create_dirs: createDirs,
