@@ -249,6 +249,13 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     [fm]
   );
 
+  const handleUpload = useCallback(
+    (folder: FileEntry) => {
+      fm.handleFileOperation('upload', undefined, folder.path);
+    },
+    [fm]
+  );
+
   const handleNewFileInRoot = useCallback(() => {
     fm.handleFileOperation('create', undefined, '');
   }, [fm]);
@@ -440,6 +447,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         onClose={folderMenu.close}
         onNewFile={handleNewFile}
         onNewFolder={handleNewFolder}
+        onUpload={handleUpload}
         onRename={handleFileRename}
         onChmod={handleFileChmod}
         onChown={handleFileChown}
