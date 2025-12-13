@@ -15,7 +15,6 @@ interface UseTabsReturn {
   getActiveTab: () => OpenTab | null;
   hasUnsavedChanges: () => boolean;
   getDirtyTabs: () => OpenTab[];
-  hasExternalChanges: (tabId: string) => boolean;
 }
 
 export function useTabs(): UseTabsReturn {
@@ -149,15 +148,6 @@ export function useTabs(): UseTabsReturn {
     return tabs.filter((t) => t.isDirty);
   }, [tabs]);
 
-  const hasExternalChanges = useCallback(
-    (tabId: string) => {
-      const tab = tabs.find((t) => t.id === tabId);
-      if (!tab) return false;
-      return tab.isDirty && tab.content !== tab.originalContent;
-    },
-    [tabs]
-  );
-
   return {
     tabs,
     activeTabId,
@@ -172,6 +162,5 @@ export function useTabs(): UseTabsReturn {
     getActiveTab,
     hasUnsavedChanges,
     getDirtyTabs,
-    hasExternalChanges,
   };
 }
