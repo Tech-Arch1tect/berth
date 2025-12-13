@@ -3,7 +3,6 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
 interface FileManagerToolbarProps {
-  currentPath: string;
   canRead: boolean;
   canWrite: boolean;
   onCreateFolder: () => void;
@@ -12,7 +11,6 @@ interface FileManagerToolbarProps {
 }
 
 export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
-  currentPath,
   canRead,
   canWrite,
   onCreateFolder,
@@ -22,7 +20,7 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
   return (
     <div className={cn('backdrop-blur-xl border-b px-6 py-4', theme.surface.panel)}>
       <div className="flex items-center justify-between">
-        {/* Breadcrumb Navigation */}
+        {/* Header */}
         <div className="flex items-center space-x-2 flex-1 min-w-0">
           <div className={cn('flex items-center space-x-1 text-sm', theme.text.muted)}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,12 +34,6 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 1v4" />
             </svg>
             <span className="font-medium">Stack Files</span>
-            {currentPath && (
-              <>
-                <span className={theme.text.subtle}>/</span>
-                <span className="truncate max-w-xs">{currentPath}</span>
-              </>
-            )}
           </div>
         </div>
 

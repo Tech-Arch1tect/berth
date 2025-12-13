@@ -6,7 +6,7 @@ import { Modal } from '../../common/Modal';
 
 interface FileUploadModalProps {
   isOpen: boolean;
-  currentPath: string;
+  targetDirectory: string;
   onClose: () => void;
   onUpload: (
     file: File,
@@ -18,7 +18,7 @@ interface FileUploadModalProps {
 
 export const FileUploadModal: React.FC<FileUploadModalProps> = ({
   isOpen,
-  currentPath,
+  targetDirectory,
   onClose,
   onUpload,
   getDirectoryStats,
@@ -38,7 +38,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
       try {
         if (getDirectoryStats) {
-          const stats = await getDirectoryStats(currentPath || '.');
+          const stats = await getDirectoryStats(targetDirectory || '.');
 
           const defaultMode =
             stats.most_common_mode === '755' ? '644' : stats.most_common_mode || '644';
@@ -63,7 +63,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       setShowAdvanced(false);
       loadSmartDefaults();
     }
-  }, [isOpen, currentPath, getDirectoryStats]);
+  }, [isOpen, targetDirectory, getDirectoryStats]);
 
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (files) {
@@ -103,7 +103,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       if (groupId.trim()) options.group_id = parseInt(groupId.trim());
 
       for (const file of selectedFiles) {
-        const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
+        const filePath = targetDirectory ? `${targetDirectory}/${file.name}` : file.name;
         await onUpload(file, filePath, options);
       }
       setSelectedFiles([]);
@@ -174,7 +174,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Upload Files"
-      subtitle={`Add files to ${currentPath || 'root directory'}`}
+      subtitle={`Add files to ${targetDirectory || 'root directory'}`}
       size="lg"
       footer={footer}
     >
@@ -281,9 +281,9 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           </div>
         )}
 
-        {currentPath && (
+        {targetDirectory && (
           <div className={cn('text-sm', theme.text.muted)}>
-            <strong>Upload to:</strong> /{currentPath}
+            <strong>Upload to:</strong> /{targetDirectory}
           </div>
         )}
 

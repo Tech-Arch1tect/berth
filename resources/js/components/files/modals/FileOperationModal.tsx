@@ -17,7 +17,7 @@ interface FileOperationModalProps {
   isOpen: boolean;
   operation: FileOperation | null;
   selectedFile: FileEntry | null;
-  currentPath: string;
+  targetDirectory: string;
   onClose: () => void;
   onConfirm: (
     data: CreateDirectoryRequest | WriteFileRequest | RenameRequest | CopyRequest | DeleteRequest
@@ -29,7 +29,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
   isOpen,
   operation,
   selectedFile,
-  currentPath,
+  targetDirectory,
   onClose,
   onConfirm,
   getDirectoryStats,
@@ -50,7 +50,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
       try {
         if (getDirectoryStats) {
-          const stats = await getDirectoryStats(currentPath || '.');
+          const stats = await getDirectoryStats(targetDirectory || '.');
 
           let defaultMode: string;
           if (operation === 'mkdir') {
@@ -124,7 +124,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
           setShowAdvanced(false);
       }
     }
-  }, [isOpen, operation, selectedFile, currentPath, getDirectoryStats]);
+  }, [isOpen, operation, selectedFile, targetDirectory, getDirectoryStats]);
 
   const handleConfirm = async () => {
     if (!operation) return;
@@ -134,7 +134,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
       switch (operation) {
         case 'mkdir': {
-          const dirPath = currentPath ? `${currentPath}/${inputValue}` : inputValue;
+          const dirPath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
           const request: CreateDirectoryRequest = { path: dirPath };
           if (mode.trim()) request.mode = mode.trim();
           if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
@@ -144,7 +144,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         }
 
         case 'create': {
-          const filePath = currentPath ? `${currentPath}/${inputValue}` : inputValue;
+          const filePath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
           const request: WriteFileRequest = { path: filePath, content: '', encoding: 'utf-8' };
           if (mode.trim()) request.mode = mode.trim();
           if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
@@ -163,7 +163,11 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         case 'copy': {
           if (!selectedFile) return;
           const copyTarget = targetValue || `${selectedFile.name}_copy`;
-          const copyPath = currentPath ? `${currentPath}/${copyTarget}` : copyTarget;
+          const sourceDirectory = selectedFile.path.substring(
+            0,
+            selectedFile.path.lastIndexOf('/')
+          );
+          const copyPath = sourceDirectory ? `${sourceDirectory}/${copyTarget}` : copyTarget;
           await onConfirm({ source_path: selectedFile.path, target_path: copyPath } as CopyRequest);
           break;
         }
@@ -314,9 +318,9 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
               </div>
             )}
 
-            {currentPath && (
+            {targetDirectory && (
               <div className={cn('text-sm', theme.text.muted)}>
-                <strong>Location:</strong> /{currentPath}
+                <strong>Location:</strong> /{targetDirectory}
               </div>
             )}
 

@@ -25,7 +25,7 @@ export interface UseFileManagerOptions {
 }
 
 export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFileManagerOptions) {
-  const [currentPath, setCurrentPath] = useState('');
+  const [targetDirectory, setTargetDirectory] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
@@ -62,7 +62,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   });
 
   const handleFileOperation = useCallback(
-    (operation: FileOperation, entry?: FileEntry) => {
+    (operation: FileOperation, entry?: FileEntry, directory?: string) => {
       if (
         !canWrite &&
         [
@@ -84,6 +84,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
       setCurrentOperation(operation);
       setSelectedFile(entry || null);
+      setTargetDirectory(directory || '');
 
       if (operation === 'upload') {
         setIsUploadModalOpen(true);
@@ -248,7 +249,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
             options.push('--include', path);
           });
         } else {
-          const includePath = currentPath || '.';
+          const includePath = selectedFile?.path || targetDirectory || '.';
           options.push('--include', includePath);
         }
 
@@ -276,7 +277,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         showToast.error('Failed to start archive creation');
       }
     },
-    [operations.clearLogs, operations.startOperation, currentPath]
+    [operations.clearLogs, operations.startOperation, selectedFile, targetDirectory]
   );
 
   const handleExtractArchive = useCallback(
@@ -343,8 +344,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   }, []);
 
   return {
-    currentPath,
-    setCurrentPath,
+    targetDirectory,
     loading,
     selectedFile,
     currentOperation,

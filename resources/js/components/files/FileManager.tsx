@@ -237,55 +237,52 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
 
   const handleNewFile = useCallback(
     (folder: FileEntry) => {
-      fm.setCurrentPath(folder.path);
-      fm.handleFileOperation('create');
+      fm.handleFileOperation('create', undefined, folder.path);
     },
     [fm]
   );
 
   const handleNewFolder = useCallback(
     (folder: FileEntry) => {
-      fm.setCurrentPath(folder.path);
-      fm.handleFileOperation('mkdir');
+      fm.handleFileOperation('mkdir', undefined, folder.path);
     },
     [fm]
   );
 
   const handleNewFileInRoot = useCallback(() => {
-    fm.setCurrentPath('');
-    fm.handleFileOperation('create');
+    fm.handleFileOperation('create', undefined, '');
   }, [fm]);
 
   const handleNewFolderInRoot = useCallback(() => {
-    fm.setCurrentPath('');
-    fm.handleFileOperation('mkdir');
+    fm.handleFileOperation('mkdir', undefined, '');
   }, [fm]);
 
   const handleUploadToRoot = useCallback(() => {
-    fm.setCurrentPath('');
-    fm.handleFileOperation('upload');
+    fm.handleFileOperation('upload', undefined, '');
   }, [fm]);
 
   const handleCreateArchive = useCallback(
     (entry: FileEntry) => {
-      fm.setCurrentPath(entry.path);
-      fm.handleFileOperation('create_archive', entry);
+      fm.handleFileOperation('create_archive', entry, entry.path);
     },
     [fm]
   );
 
   const handleCreateArchiveOfRoot = useCallback(() => {
-    fm.setCurrentPath('');
-    fm.handleFileOperation('create_archive', {
-      name: '.',
-      path: '',
-      is_directory: true,
-      size: 0,
-      mode: '',
-      mod_time: '',
-      owner: '',
-      group: '',
-    });
+    fm.handleFileOperation(
+      'create_archive',
+      {
+        name: '.',
+        path: '',
+        is_directory: true,
+        size: 0,
+        mode: '',
+        mod_time: '',
+        owner: '',
+        group: '',
+      },
+      ''
+    );
   }, [fm]);
 
   const handleExtractArchive = useCallback(
@@ -401,12 +398,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
 
   const toolbar = (
     <FileManagerToolbar
-      currentPath={fm.currentPath}
       canRead={canRead}
       canWrite={canWrite}
-      onCreateFolder={() => fm.handleFileOperation('mkdir')}
-      onCreateFile={() => fm.handleFileOperation('create')}
-      onUpload={() => fm.handleFileOperation('upload')}
+      onCreateFolder={() => fm.handleFileOperation('mkdir', undefined, '')}
+      onCreateFile={() => fm.handleFileOperation('create', undefined, '')}
+      onUpload={() => fm.handleFileOperation('upload', undefined, '')}
     />
   );
 
@@ -477,7 +473,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         isOpen={fm.isOperationModalOpen}
         operation={fm.currentOperation}
         selectedFile={fm.selectedFile}
-        currentPath={fm.currentPath}
+        targetDirectory={fm.targetDirectory}
         onClose={fm.closeOperationModal}
         onConfirm={fm.handleOperationConfirm}
         getDirectoryStats={fm.getDirectoryStats}
@@ -485,7 +481,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
 
       <FileUploadModal
         isOpen={fm.isUploadModalOpen}
-        currentPath={fm.currentPath}
+        targetDirectory={fm.targetDirectory}
         onClose={fm.closeUploadModal}
         onUpload={fm.handleFileUpload}
         getDirectoryStats={fm.getDirectoryStats}
