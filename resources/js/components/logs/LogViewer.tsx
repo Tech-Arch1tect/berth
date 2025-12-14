@@ -64,13 +64,13 @@ const LogViewer: React.FC<LogViewerProps> = ({
   const getLogLevelColor = (level?: string) => {
     switch (level) {
       case 'error':
-        return 'text-red-400';
+        return 'text-red-600 dark:text-red-400';
       case 'warn':
-        return 'text-yellow-400';
+        return 'text-amber-600 dark:text-amber-400';
       case 'info':
-        return 'text-blue-400';
+        return 'text-blue-600 dark:text-blue-400';
       default:
-        return 'text-slate-500';
+        return 'text-zinc-500 dark:text-zinc-400';
     }
   };
 
@@ -114,7 +114,12 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
         <div className="flex items-center gap-2">
           <div className="relative hidden md:block">
-            <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <MagnifyingGlassIcon
+              className={cn(
+                'absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5',
+                theme.text.muted
+              )}
+            />
             <input
               type="text"
               value={searchTerm}
@@ -251,7 +256,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
       <div className="flex-1 relative overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center z-10">
             <LoadingSpinner size="md" text="Loading logs..." />
           </div>
         )}
@@ -259,11 +264,14 @@ const LogViewer: React.FC<LogViewerProps> = ({
         <div
           ref={logContainerRef}
           onScroll={handleScroll}
-          className="absolute inset-0 overflow-y-auto bg-slate-950 font-mono text-xs leading-tight"
+          className={cn(
+            'absolute inset-0 overflow-y-auto font-mono text-xs leading-tight',
+            'bg-zinc-50 dark:bg-zinc-950'
+          )}
         >
           {filteredLogs.length === 0 && !loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center text-slate-500">
+              <div className={cn('text-center', theme.text.muted)}>
                 <p className="mb-1">No logs to display</p>
                 <p className="text-xs">Try adjusting your filters or refresh</p>
                 <p className="text-xs mt-2">
@@ -280,10 +288,18 @@ const LogViewer: React.FC<LogViewerProps> = ({
                 return (
                   <div
                     key={index}
-                    className="flex items-start gap-2 py-0.5 px-1 hover:bg-slate-900/50 transition-colors group"
+                    className={cn(
+                      'flex items-start gap-2 py-0.5 px-1 transition-colors group',
+                      'hover:bg-zinc-200 dark:hover:bg-zinc-900/50'
+                    )}
                   >
                     {showTimestamps && (
-                      <span className="text-slate-600 shrink-0 select-none w-20 text-right">
+                      <span
+                        className={cn(
+                          'shrink-0 select-none w-20 text-right',
+                          'text-zinc-500 dark:text-zinc-600'
+                        )}
+                      >
                         {timestamp}
                       </span>
                     )}
@@ -297,12 +313,21 @@ const LogViewer: React.FC<LogViewerProps> = ({
                     )}
 
                     {log.source && (
-                      <span className="text-slate-500 shrink-0 text-xs select-none">
+                      <span
+                        className={cn(
+                          'shrink-0 text-xs select-none',
+                          'text-zinc-500 dark:text-zinc-500'
+                        )}
+                      >
                         [{log.source}]
                       </span>
                     )}
 
-                    <span className="text-slate-300 break-all flex-1 min-w-0">{log.message}</span>
+                    <span
+                      className={cn('break-all flex-1 min-w-0', 'text-zinc-900 dark:text-zinc-300')}
+                    >
+                      {log.message}
+                    </span>
                   </div>
                 );
               })}
