@@ -57,7 +57,9 @@ export const TerminalPanel: React.FC = () => {
     <div
       ref={panelRef}
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 border-t bg-slate-900 shadow-2xl',
+        'fixed bottom-0 left-0 right-0 z-40 shadow-2xl',
+        'border-t border-zinc-200 dark:border-zinc-700',
+        'bg-white dark:bg-zinc-900',
         sidebarCollapsed ? 'lg:left-16' : 'lg:left-72'
       )}
       style={{
@@ -74,14 +76,20 @@ export const TerminalPanel: React.FC = () => {
       )}
 
       {/* Panel header with tabs */}
-      <div className="flex h-10 items-center justify-between border-b border-slate-700 bg-slate-800 px-4">
+      <div
+        className={cn(
+          'flex h-10 items-center justify-between px-4',
+          'border-b border-zinc-200 dark:border-zinc-700',
+          'bg-zinc-50 dark:bg-zinc-800'
+        )}
+      >
         <div className="flex flex-1 items-center space-x-2 overflow-hidden">
           <button
             onClick={togglePanel}
             className={cn(
               'flex items-center space-x-2 rounded px-2 py-1 text-sm font-medium transition-colors',
               theme.text.standard,
-              'hover:bg-slate-700'
+              'hover:bg-zinc-100 dark:hover:bg-zinc-700'
             )}
           >
             {state.isOpen ? (
@@ -105,8 +113,8 @@ export const TerminalPanel: React.FC = () => {
                 className={cn(
                   'group flex items-center space-x-2 whitespace-nowrap rounded px-3 py-1 text-xs font-medium transition-colors',
                   tab.id === state.activeTabId
-                    ? 'bg-slate-700 text-white'
-                    : 'bg-slate-900/50 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+                    ? 'bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-300'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 dark:bg-zinc-800/50 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
                 )}
               >
                 <span className="max-w-[150px] truncate" title={`${tab.stackname}/${tab.label}`}>
@@ -119,7 +127,7 @@ export const TerminalPanel: React.FC = () => {
                   }}
                   className={cn(
                     'rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100',
-                    'hover:bg-slate-600'
+                    'hover:bg-zinc-200 dark:hover:bg-zinc-600'
                   )}
                   aria-label={`Close ${tab.label}`}
                 >

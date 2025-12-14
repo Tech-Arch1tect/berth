@@ -3,6 +3,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useTerminal } from '../../hooks/useTerminal';
+import { useDarkMode } from '../../hooks/useDarkMode';
 import toast from 'react-hot-toast';
 import '@xterm/xterm/css/xterm.css';
 import { cn } from '../../utils/cn';
@@ -23,6 +24,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   containerName,
   className = '',
 }) => {
+  const { isDark } = useDarkMode();
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -121,12 +123,19 @@ export const Terminal: React.FC<TerminalProps> = ({
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       fontSize: 14,
       lineHeight: 1.2,
-      theme: {
-        background: '#1a1a1a',
-        foreground: '#ffffff',
-        cursor: '#ffffff',
-        selectionBackground: '#444444',
-      },
+      theme: isDark
+        ? {
+            background: '#18181b',
+            foreground: '#fafafa',
+            cursor: '#fafafa',
+            selectionBackground: '#52525b',
+          }
+        : {
+            background: '#ffffff',
+            foreground: '#18181b',
+            cursor: '#18181b',
+            selectionBackground: '#d4d4d8',
+          },
       scrollback: 1000,
     });
 
@@ -174,6 +183,26 @@ export const Terminal: React.FC<TerminalProps> = ({
       setIsInitialised(false);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!xtermRef.current) return;
+
+    const themeColors = isDark
+      ? {
+          background: '#18181b',
+          foreground: '#fafafa',
+          cursor: '#fafafa',
+          selectionBackground: '#52525b',
+        }
+      : {
+          background: '#ffffff',
+          foreground: '#18181b',
+          cursor: '#18181b',
+          selectionBackground: '#d4d4d8',
+        };
+
+    xtermRef.current.options.theme = themeColors;
+  }, [isDark]);
 
   useEffect(() => {
     const handleWindowResize = () => {
@@ -236,8 +265,20 @@ export const Terminal: React.FC<TerminalProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-slate-900 rounded-lg overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+    <div
+      className={cn(
+        'flex flex-col h-full rounded-lg overflow-hidden',
+        'bg-white dark:bg-zinc-900',
+        className
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center justify-between px-4 py-2',
+          'bg-zinc-50 dark:bg-zinc-800',
+          'border-b border-zinc-200 dark:border-zinc-700'
+        )}
+      >
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2">
             <div className={cn('w-2 h-2 rounded-full', getStatusColor())} />
