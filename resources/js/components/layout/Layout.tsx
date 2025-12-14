@@ -1,5 +1,5 @@
 import { Link, usePage, router } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import {
   SunIcon,
   MoonIcon,
@@ -43,7 +43,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
     StorageManager.sidebar.isCollapsed()
   );
+  const [appVersion, setAppVersion] = useState<string>('dev');
   const terminalPanel = useTerminalPanel();
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then((res) => res.json())
+      .then((data) => setAppVersion(data.version))
+      .catch(() => setAppVersion('dev'));
+  }, []);
 
   const toggleSidebarCollapse = () => {
     const newValue = !sidebarCollapsed;
@@ -176,7 +184,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               </div>
               <div className={cn(sidebarCollapsed && 'lg:hidden')}>
                 <h1 className={cn('text-xl font-bold', theme.brand.titleColor)}>Berth</h1>
-                <p className={cn('text-xs', theme.text.subtle)}>v1.0.0</p>
+                <p className={cn('text-xs', theme.text.subtle)}>{appVersion}</p>
               </div>
             </div>
             <button

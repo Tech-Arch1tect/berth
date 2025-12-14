@@ -32,6 +32,7 @@ jobs:
             TAG=${GITHUB_REF#refs/tags/}
             echo "TAG=$TAG" >> $GITHUB_ENV
             echo "IS_TAG=true" >> $GITHUB_ENV
+            echo "VERSION=$TAG" >> $GITHUB_ENV
 
             # Extract semver components (e.g., v0.1.1 -> 0, 0.1, 0.1.1)
             if [[ "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
@@ -44,6 +45,7 @@ jobs:
             fi
           else
             echo "IS_TAG=false" >> $GITHUB_ENV
+            echo "VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
           fi
 
       - name: Set up Docker Buildx
@@ -97,8 +99,8 @@ jobs:
       - name: Cross-compile Go binaries
         run: |
           mkdir -p ./bin
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags='-w -s' -o ./bin/berth-amd64 .
-          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags='-w -s' -o ./bin/berth-arm64 .
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o ./bin/berth-amd64 .
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o ./bin/berth-arm64 .
 
       - name: Build and push Docker image (with tag)
         if: env.IS_TAG == 'true'

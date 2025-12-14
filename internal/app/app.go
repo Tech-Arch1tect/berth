@@ -175,6 +175,7 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(handlers.NewMobileAuthHandler),
 		fx.Provide(handlers.NewSessionHandler),
 		fx.Provide(handlers.NewTOTPHandler),
+		fx.Provide(handlers.NewVersionHandler),
 		fx.Provide(fx.Annotate(
 			providers.NewUserProvider,
 			fx.As(new(inertiashared.UserProvider)),

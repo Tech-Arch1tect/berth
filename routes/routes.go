@@ -41,7 +41,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
 	if rbacMiddleware != nil && apiKeySvc != nil {
 		rbacMiddleware.SetAPIKeyService(apiKeySvc)
 	}
@@ -92,7 +92,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	registerAuthRoutes(web, authHandler, totpHandler, rateLimitStore)
 	registerProtectedWebRoutes(web,
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
-		stackHandler, maintenanceHandler, registryHandler, filesHandler,
+		versionHandler, stackHandler, maintenanceHandler, registryHandler, filesHandler,
 		operationLogsHandler, serverUserAPIHandler, apiKeyHandler,
 		stackAPIHandler, maintenanceAPIHandler, registryAPIHandler,
 		filesAPIHandler, logsHandler, operationsHandler,
@@ -182,7 +182,7 @@ func registerAuthRoutes(web *echo.Group, authHandler *handlers.AuthHandler, totp
 
 func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
-	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, stackHandler *stack.Handler,
+	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler, filesHandler *files.Handler,
 	operationLogsHandler *operationlogs.Handler, serverUserAPIHandler *server.UserAPIHandler, apiKeyHandler *apikey.Handler,
 	stackAPIHandler *stack.APIHandler, maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
@@ -192,6 +192,11 @@ func registerProtectedWebRoutes(web *echo.Group,
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
 	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
+
+	// API Endpoints
+	if versionHandler != nil {
+		protected.GET("/api/version", versionHandler.GetVersion)
+	}
 
 	// Inertia Pages
 	protected.GET("/", dashboardHandler.Dashboard)
