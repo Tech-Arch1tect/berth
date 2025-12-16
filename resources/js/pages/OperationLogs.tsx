@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { FullWidthLayout } from '../components/layout/Layout';
+import Layout from '../components/layout/Layout';
 import {
   OperationLogsLayout,
   OperationLogsSidebar,
@@ -165,6 +165,6 @@ function OperationLogs({ title }: Props) {
   );
 }
 
-OperationLogs.layout = (page: React.ReactElement) => <FullWidthLayout>{page}</FullWidthLayout>;
+OperationLogs.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
 
 export default OperationLogs;

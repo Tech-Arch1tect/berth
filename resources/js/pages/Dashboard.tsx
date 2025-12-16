@@ -9,7 +9,7 @@ import { DashboardSidebar } from '../components/dashboard/sidebar/DashboardSideb
 import { DashboardPage, SECTION_IDS } from '../components/dashboard/content/DashboardPage';
 import { DashboardToolbar } from '../components/dashboard/toolbar/DashboardToolbar';
 import { DashboardStatusBar } from '../components/dashboard/statusbar/DashboardStatusBar';
-import { FullWidthLayout } from '../components/layout/Layout';
+import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
@@ -163,6 +163,6 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
   );
 };
 
-Dashboard.layout = (page: React.ReactElement) => <FullWidthLayout>{page}</FullWidthLayout>;
+Dashboard.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
 
 export default Dashboard;

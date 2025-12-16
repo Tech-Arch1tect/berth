@@ -31,10 +31,9 @@ import { StorageManager } from '../../utils/storage';
 
 interface LayoutProps {
   children: ReactNode;
-  fullWidth?: boolean;
 }
 
-export default function Layout({ children, fullWidth = false }: LayoutProps) {
+export default function Layout({ children }: LayoutProps) {
   const { url, props } = usePage();
   const user = props.currentUser as User | undefined;
   const csrfToken = props.csrfToken as string | undefined;
@@ -310,6 +309,25 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                 );
               })}
               <button
+                onClick={toggleDarkMode}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-center',
+                  theme.text.muted,
+                  'hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                )}
+                title={sidebarCollapsed ? (isDark ? 'Dark mode' : 'Light mode') : undefined}
+              >
+                {isDark ? (
+                  <MoonIcon className={cn('h-5 w-5', sidebarCollapsed && 'lg:mr-0')} />
+                ) : (
+                  <SunIcon className={cn('h-5 w-5', sidebarCollapsed && 'lg:mr-0')} />
+                )}
+                <span className={cn(sidebarCollapsed && 'lg:hidden')}>
+                  {isDark ? 'Dark' : 'Light'}
+                </span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -332,96 +350,30 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       {/* Main content area */}
       <div
         className={cn(
-          'transition-[padding-left] duration-300',
-          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-72',
-          fullWidth && 'flex flex-col'
+          'transition-[padding-left] duration-300 flex flex-col',
+          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-72'
         )}
         style={{
-          height: fullWidth
-            ? terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0
+          height:
+            terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0
               ? `calc(100vh - ${terminalPanel.state.height}px)`
-              : '100vh'
-            : undefined,
+              : '100vh',
         }}
       >
-        {/* Header - hidden for full-width layouts which have their own toolbar */}
-        {fullWidth ? (
-          /* Mobile menu button only for full-width layouts */
-          <button
-            className={cn(
-              'lg:hidden fixed top-3 left-3 z-40 p-2 rounded-lg',
-              'bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700',
-              theme.buttons.ghost
-            )}
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Bars3Icon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
-          </button>
-        ) : (
-          <div className="sticky top-0 z-30 flex-shrink-0 border-b bg-white px-4 py-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <button
-                  className={cn('lg:hidden', theme.buttons.ghost)}
-                  onClick={() => setSidebarOpen(true)}
-                  aria-label="Open navigation"
-                >
-                  <Bars3Icon className={cn('h-6 w-6 text-slate-500 dark:text-slate-300')} />
-                </button>
-                <div>
-                  <p className={cn('text-sm', theme.text.subtle)}>Welcome back</p>
-                  <h2 className={cn('text-xl font-semibold', theme.text.strong)}>
-                    {user.username}
-                  </h2>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={toggleDarkMode}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-                    isDark
-                      ? 'border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700'
-                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100'
-                  )}
-                >
-                  {isDark ? (
-                    <>
-                      <MoonIcon className="h-5 w-5" />
-                      Dark
-                    </>
-                  ) : (
-                    <>
-                      <SunIcon className="h-5 w-5" />
-                      Light
-                    </>
-                  )}
-                </button>
-                <div className="hidden sm:block">
-                  <div className={cn('flex items-center space-x-2 text-sm', theme.text.subtle)}>
-                    <div
-                      className={cn('h-2 w-2 animate-pulse rounded-full', theme.badges.dot.success)}
-                    />
-                    <span>All systems operational</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <main
-          className={cn(fullWidth ? 'flex-1 overflow-hidden' : 'px-4 py-8 sm:px-6 lg:px-10')}
-          style={{
-            paddingBottom:
-              !fullWidth && terminalPanel.state.isOpen && terminalPanel.state.tabs.length > 0
-                ? `${terminalPanel.state.height + 32}px`
-                : undefined,
-          }}
+        {/* Mobile menu button */}
+        <button
+          className={cn(
+            'lg:hidden fixed top-3 left-3 z-40 p-2 rounded-lg',
+            'bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700',
+            theme.buttons.ghost
+          )}
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open navigation"
         >
-          {fullWidth ? children : <div className="space-y-6">{children}</div>}
-        </main>
+          <Bars3Icon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
+        </button>
+
+        <main className="flex-1 overflow-hidden">{children}</main>
       </div>
 
       <GlobalOperationsTracker />
@@ -434,8 +386,4 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       />
     </div>
   );
-}
-
-export function FullWidthLayout({ children }: { children: ReactNode }) {
-  return <Layout fullWidth>{children}</Layout>;
 }

@@ -10,7 +10,7 @@ import { ServerStackProvider } from '../../contexts/ServerStackContext';
 import { ImageUpdateBanner } from '../../components/image-updates';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { FullWidthLayout } from '../../components/layout/Layout';
+import Layout from '../../components/layout/Layout';
 
 import { StackDetailsLayout } from '../../components/stacks/layout/StackDetailsLayout';
 import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
@@ -208,6 +208,6 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
   );
 };
 
-StackDetails.layout = (page: React.ReactElement) => <FullWidthLayout>{page}</FullWidthLayout>;
+StackDetails.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
 
 export default StackDetails;

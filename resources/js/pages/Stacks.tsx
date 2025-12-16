@@ -120,11 +120,11 @@ export default function Stacks({ title, servers }: StacksProps) {
           <div className="flex items-center space-x-4">
             <div
               className={cn(
-                'w-16 h-16 rounded-2xl flex items-center justify-center',
+                'w-12 h-12 rounded-xl flex items-center justify-center',
                 theme.brand.accent
               )}
             >
-              <CircleStackIcon className="w-8 h-8 text-white" />
+              <CircleStackIcon className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-3">
