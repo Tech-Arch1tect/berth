@@ -11,6 +11,7 @@ import { DashboardToolbar } from '../components/dashboard/toolbar/DashboardToolb
 import { DashboardStatusBar } from '../components/dashboard/statusbar/DashboardStatusBar';
 import { FullWidthLayout } from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
 interface DashboardProps {
   title: string;
@@ -98,6 +99,23 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
   }, []);
 
   const isLoading = statisticsQueries.some((q) => q.isLoading) || healthSummary.serversLoading > 0;
+
+  const isInitialLoad = isLoading && statisticsQueries.every((q) => !q.data);
+
+  if (isInitialLoad) {
+    return (
+      <>
+        <Head title={title} />
+        <FlashMessages className="fixed top-4 right-4 z-50" />
+        <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Loading dashboard...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
