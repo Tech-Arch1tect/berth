@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Server } from '../../types/server';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { Tabs } from '../../components/common/Tabs';
+import { PanelLayout } from '../../components/common/PanelLayout';
 import {
   useMaintenanceInfo,
   useDockerPrune,
@@ -18,21 +16,19 @@ import {
 } from '../../hooks/useDockerMaintenance';
 import { showToast } from '../../utils/toast';
 import { formatBytes } from '../../utils/formatters';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
-  DocumentDuplicateIcon,
-  CircleStackIcon,
-  FolderIcon,
-  GlobeAltIcon,
-  TrashIcon,
-  ExclamationTriangleIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
-import { MaintenanceOverview } from '../../components/maintenance/MaintenanceOverview';
-import { MaintenanceImagesTab } from '../../components/maintenance/MaintenanceImagesTab';
-import { MaintenanceContainersTab } from '../../components/maintenance/MaintenanceContainersTab';
-import { MaintenanceVolumesTab } from '../../components/maintenance/MaintenanceVolumesTab';
-import { MaintenanceNetworksTab } from '../../components/maintenance/MaintenanceNetworksTab';
-import { MaintenanceActionsTab } from '../../components/maintenance/MaintenanceActionsTab';
+  MaintenanceToolbar,
+  MaintenanceSidebar,
+  MaintenanceContent,
+  MaintenanceStatusBar,
+  MaintenanceOverview,
+  MaintenanceImagesTab,
+  MaintenanceContainersTab,
+  MaintenanceVolumesTab,
+  MaintenanceNetworksTab,
+  MaintenanceActionsTab,
+} from '../../components/maintenance';
 
 interface MaintenanceProps {
   title: string;
@@ -164,6 +160,16 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
     );
   }
 
+  const summary = maintenanceInfo
+    ? {
+        totalImages: maintenanceInfo.image_summary.total_count,
+        totalContainers: maintenanceInfo.container_summary.total_count,
+        totalVolumes: maintenanceInfo.volume_summary.total_count,
+        totalNetworks: maintenanceInfo.network_summary.total_count,
+        spaceUsed: maintenanceInfo.image_summary.total_size,
+      }
+    : undefined;
+
   return (
     <>
       <Head title={title} />
@@ -182,80 +188,86 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       />
 
       {/* Server Navigation */}
-      <div className="mb-8">
-        <ServerNavigation serverId={serverid} serverName={server.name} />
-      </div>
+      <ServerNavigation serverId={serverid} serverName={server.name} />
 
-      <div className="mb-8">
-        <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Docker Maintenance</h1>
-        <p className={cn('mt-2', theme.text.muted)}>Manage Docker resources on {server.name}</p>
-      </div>
+      <PanelLayout
+        storageKey="maintenance"
+        sidebarTitle="Resources"
+        defaultWidth={260}
+        maxWidthPercent={35}
+        toolbar={
+          <MaintenanceToolbar
+            serverName={server.name}
+            onRefresh={refetch}
+            isRefreshing={isLoading}
+          />
+        }
+        sidebar={
+          <MaintenanceSidebar
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+            summary={summary}
+          />
+        }
+        content={
+          <MaintenanceContent>
+            {maintenanceInfo && (
+              <>
+                {activeTab === 'overview' && (
+                  <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
+                )}
 
-      {/* Tabs */}
-      {maintenanceInfo && (
-        <Tabs
-          tabs={[
-            { id: 'overview', label: 'Overview', icon: ChartBarIcon },
-            { id: 'images', label: 'Images', icon: DocumentDuplicateIcon },
-            { id: 'containers', label: 'Containers', icon: CircleStackIcon },
-            { id: 'volumes', label: 'Volumes', icon: FolderIcon },
-            { id: 'networks', label: 'Networks', icon: GlobeAltIcon },
-            { id: 'actions', label: 'Cleanup Actions', icon: TrashIcon },
-          ]}
-          activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as TabType)}
-        >
-          <div>
-            {activeTab === 'overview' && <MaintenanceOverview maintenanceInfo={maintenanceInfo} />}
+                {activeTab === 'images' && (
+                  <MaintenanceImagesTab
+                    images={maintenanceInfo.image_summary.images}
+                    onDelete={setDeleteConfirm}
+                    isDeleting={deleteMutation.isPending}
+                  />
+                )}
 
-            {activeTab === 'images' && (
-              <MaintenanceImagesTab
-                images={maintenanceInfo.image_summary.images}
-                onDelete={setDeleteConfirm}
-                isDeleting={deleteMutation.isPending}
-              />
+                {activeTab === 'containers' && (
+                  <MaintenanceContainersTab
+                    containers={maintenanceInfo.container_summary.containers}
+                    onDelete={setDeleteConfirm}
+                    isDeleting={deleteMutation.isPending}
+                  />
+                )}
+
+                {activeTab === 'volumes' && (
+                  <MaintenanceVolumesTab
+                    volumes={maintenanceInfo.volume_summary.volumes}
+                    onDelete={setDeleteConfirm}
+                    isDeleting={deleteMutation.isPending}
+                  />
+                )}
+
+                {activeTab === 'networks' && (
+                  <MaintenanceNetworksTab
+                    networks={maintenanceInfo.network_summary.networks}
+                    onDelete={setDeleteConfirm}
+                    isDeleting={deleteMutation.isPending}
+                  />
+                )}
+
+                {activeTab === 'actions' && (
+                  <MaintenanceActionsTab
+                    maintenanceInfo={maintenanceInfo}
+                    selectedPruneType={selectedPruneType}
+                    pruneAll={pruneAll}
+                    isPruning={pruneMutation.isPending}
+                    isLoading={isLoading}
+                    onPruneTypeChange={setSelectedPruneType}
+                    onPruneAllChange={setPruneAll}
+                    onStartPrune={() => setShowConfirm(true)}
+                    onRefresh={refetch}
+                  />
+                )}
+              </>
             )}
-
-            {activeTab === 'containers' && (
-              <MaintenanceContainersTab
-                containers={maintenanceInfo.container_summary.containers}
-                onDelete={setDeleteConfirm}
-                isDeleting={deleteMutation.isPending}
-              />
-            )}
-
-            {activeTab === 'volumes' && (
-              <MaintenanceVolumesTab
-                volumes={maintenanceInfo.volume_summary.volumes}
-                onDelete={setDeleteConfirm}
-                isDeleting={deleteMutation.isPending}
-              />
-            )}
-
-            {activeTab === 'networks' && (
-              <MaintenanceNetworksTab
-                networks={maintenanceInfo.network_summary.networks}
-                onDelete={setDeleteConfirm}
-                isDeleting={deleteMutation.isPending}
-              />
-            )}
-
-            {activeTab === 'actions' && (
-              <MaintenanceActionsTab
-                maintenanceInfo={maintenanceInfo}
-                selectedPruneType={selectedPruneType}
-                pruneAll={pruneAll}
-                isPruning={pruneMutation.isPending}
-                isLoading={isLoading}
-                onPruneTypeChange={setSelectedPruneType}
-                onPruneAllChange={setPruneAll}
-                onStartPrune={() => setShowConfirm(true)}
-                onRefresh={refetch}
-              />
-            )}
-          </div>
-        </Tabs>
-      )}
+          </MaintenanceContent>
+        }
+        statusBar={<MaintenanceStatusBar summary={summary} />}
+      />
 
       {/* Prune Confirmation Modal */}
       <ConfirmationModal

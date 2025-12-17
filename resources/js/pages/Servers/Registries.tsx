@@ -1,24 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { KeyIcon, TrashIcon, PencilIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-
-interface RegistryCredential {
-  id: number;
-  server_id: number;
-  stack_pattern: string;
-  registry_url: string;
-  image_pattern?: string;
-  username: string;
-  created_at: string;
-  updated_at: string;
-}
+import { PanelLayout } from '../../components/common/PanelLayout';
+import {
+  RegistriesToolbar,
+  RegistriesSidebar,
+  RegistriesContent,
+  RegistriesStatusBar,
+  type RegistryCredential,
+} from '../../components/registries';
 
 interface Props {
   title?: string;
@@ -120,7 +115,7 @@ export default function Registries({
 
   const handleEdit = (credential: RegistryCredential) => {
     setEditingCredential(credential);
-    setShowAddForm(false);
+    setShowAddForm(true);
     setFormData({
       stack_pattern: credential.stack_pattern,
       registry_url: credential.registry_url,
@@ -167,6 +162,10 @@ export default function Registries({
     reset();
   };
 
+  const handleRefresh = () => {
+    router.reload();
+  };
+
   return (
     <>
       <Head title={title} />
@@ -180,232 +179,49 @@ export default function Registries({
       />
 
       {/* Server Navigation */}
-      <div className="mb-8">
-        <ServerNavigation serverId={server_id} serverName={server_name} />
-      </div>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Registry Credentials</h1>
-            <p className={cn('mt-2', theme.text.muted)}>
-              Manage private registry credentials for {server_name}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            disabled={editingCredential !== null}
-            className={cn(theme.buttons.primary, 'rounded-lg')}
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Add Credential
-          </button>
-        </div>
-      </div>
+      <ServerNavigation serverId={server_id} serverName={server_name} />
 
       <FlashMessages />
 
-      {/* Add/Edit Form */}
-      {(showAddForm || editingCredential) && (
-        <div className={cn(theme.containers.panel, 'mb-6')}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={cn('text-xl font-semibold', theme.text.strong)}>
-              {editingCredential ? 'Edit Credential' : 'Add Credential'}
-            </h2>
-            <button onClick={handleCancel} className={cn(theme.buttons.ghost, theme.text.subtle)}>
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Stack Pattern *</label>
-                <input
-                  type="text"
-                  value={data.stack_pattern}
-                  onChange={(e) => setData('stack_pattern', e.target.value)}
-                  placeholder="* (all stacks) or pattern like *dev*"
-                  className={cn(theme.forms.input, 'rounded-xl')}
-                  required
-                />
-                <p className={cn('mt-1 text-xs', theme.text.subtle)}>
-                  Pattern to match stack names (e.g., "*", "*dev*", "production_*")
-                </p>
-              </div>
-
-              <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Registry URL *</label>
-                <input
-                  type="text"
-                  value={data.registry_url}
-                  onChange={(e) => setData('registry_url', e.target.value)}
-                  placeholder="ghcr.io or registry.company.com"
-                  className={cn(theme.forms.input, 'rounded-xl')}
-                  required
-                />
-                <p className={cn('mt-1 text-xs', theme.text.subtle)}>
-                  Registry hostname (e.g., "ghcr.io", "docker.io", "registry.gitlab.com")
-                </p>
-              </div>
-
-              <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Image Pattern (optional)</label>
-                <input
-                  type="text"
-                  value={data.image_pattern}
-                  onChange={(e) => setData('image_pattern', e.target.value)}
-                  placeholder="ghcr.io/myorg/*"
-                  className={cn(theme.forms.input, 'rounded-xl')}
-                />
-                <p className={cn('mt-1 text-xs', theme.text.subtle)}>
-                  Specific image pattern for more granular control
-                </p>
-              </div>
-
-              <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Username *</label>
-                <input
-                  type="text"
-                  value={data.username}
-                  onChange={(e) => setData('username', e.target.value)}
-                  placeholder="registry username"
-                  className={cn(theme.forms.input, 'rounded-xl')}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className={cn(theme.forms.label, 'mb-2')}>Password / Token *</label>
-              <input
-                type="password"
-                value={data.password}
-                onChange={(e) => setData('password', e.target.value)}
-                placeholder={
-                  editingCredential
-                    ? 'Leave blank to keep current password'
-                    : 'registry password or token'
-                }
-                className={cn(theme.forms.input, 'rounded-xl')}
-                required={!editingCredential}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className={cn(theme.buttons.secondary, 'rounded-xl')}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={processing}
-                className={cn(theme.buttons.primary, 'rounded-xl')}
-              >
-                {processing ? 'Saving...' : editingCredential ? 'Update' : 'Add'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Credentials List */}
-      <div className={cn(theme.containers.panel, 'overflow-hidden')}>
-        <div className={cn(theme.containers.sectionHeader, 'p-6')}>
-          <h2 className={cn('text-lg font-semibold flex items-center', theme.text.strong)}>
-            <KeyIcon className={cn('w-5 h-5 mr-2', theme.text.info)} />
-            Configured Credentials ({credentials.length})
-          </h2>
-        </div>
-
-        {credentials.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className={theme.icon.emptyState}>
-              <KeyIcon className="w-8 h-8" />
-            </div>
-            <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>
-              No credentials configured
-            </h3>
-            <p className={cn('mb-4', theme.text.muted)}>
-              Add registry credentials to enable pulling from private registries
-            </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className={cn(theme.buttons.primary, 'rounded-xl')}
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add First Credential
-            </button>
-          </div>
-        ) : (
-          <div className={cn('divide-y', theme.intent.neutral.border)}>
-            {credentials.map((credential) => (
-              <div
-                key={credential.id}
-                className={cn(
-                  'p-6 transition-colors',
-                  theme.surface.muted,
-                  'hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
-                )}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
-                        {credential.registry_url}
-                      </h3>
-                      <span
-                        className={cn(theme.badges.tag.base, theme.badges.tag.info, 'rounded-full')}
-                      >
-                        {credential.stack_pattern}
-                      </span>
-                    </div>
-                    <div className={cn('space-y-1 text-sm', theme.text.muted)}>
-                      <p>
-                        <span className="font-medium">Username:</span> {credential.username}
-                      </p>
-                      {credential.image_pattern && (
-                        <p>
-                          <span className="font-medium">Image Pattern:</span>{' '}
-                          {credential.image_pattern}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => handleEdit(credential)}
-                      className={cn(
-                        'p-2 rounded-lg transition-colors',
-                        theme.text.info,
-                        'hover:bg-blue-50 dark:hover:bg-blue-900/30'
-                      )}
-                      title="Edit"
-                    >
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(credential.id, credential.registry_url)}
-                      className={cn(
-                        'p-2 rounded-lg transition-colors',
-                        theme.text.danger,
-                        'hover:bg-red-50 dark:hover:bg-red-900/30'
-                      )}
-                      title="Delete"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <PanelLayout
+        storageKey="registries"
+        sidebarTitle="Summary"
+        defaultWidth={260}
+        maxWidthPercent={35}
+        toolbar={
+          <RegistriesToolbar
+            serverName={server_name}
+            onAddCredential={() => {
+              setEditingCredential(null);
+              reset();
+              setShowAddForm(true);
+            }}
+            onRefresh={handleRefresh}
+            disableAdd={showAddForm}
+          />
+        }
+        sidebar={<RegistriesSidebar credentials={credentials} />}
+        content={
+          <RegistriesContent
+            credentials={credentials}
+            showForm={showAddForm || editingCredential !== null}
+            isEditing={editingCredential !== null}
+            processing={processing}
+            formData={data}
+            onFormDataChange={setData}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            onShowAddForm={() => {
+              setEditingCredential(null);
+              reset();
+              setShowAddForm(true);
+            }}
+          />
+        }
+        statusBar={<RegistriesStatusBar credentialCount={credentials.length} />}
+      />
 
       {/* Error Modal */}
       <Modal

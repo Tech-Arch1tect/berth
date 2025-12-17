@@ -135,9 +135,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
       />
 
       {/* Server Navigation */}
-      <div className="mb-4">
-        <ServerNavigation serverId={serverid} serverName={server.name} />
-      </div>
+      <ServerNavigation serverId={serverid} serverName={server.name} />
 
       {/* Panel-Based Layout */}
       <div className="h-full flex flex-col">
