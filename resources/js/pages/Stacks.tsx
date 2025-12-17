@@ -4,7 +4,7 @@ import { SortOption } from '../types/stack';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { StorageManager } from '../utils/storage';
-import { StacksLayout } from '../components/stacks/layout/StacksLayout';
+import { PanelLayout } from '../components/common/PanelLayout';
 import { StacksToolbar } from '../components/stacks/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/stacks/sidebar/StacksSidebar';
 import { StacksContent } from '../components/stacks/content/StacksContent';
@@ -132,7 +132,9 @@ export default function Stacks({ title, servers }: StacksProps) {
       <Head title={title} />
 
       <div className="h-full flex flex-col">
-        <StacksLayout
+        <PanelLayout
+          storageKey="stacks"
+          sidebarTitle="Filters"
           toolbar={
             <StacksToolbar
               title={title}

@@ -1,6 +1,3 @@
-// Layout
-export { DashboardLayout } from './layout/DashboardLayout';
-
 // Sidebar
 export { DashboardSidebar } from './sidebar/DashboardSidebar';
 

@@ -6,7 +6,7 @@ import { SortOption } from '../../types/stack';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 import { StorageManager } from '../../utils/storage';
-import { StacksLayout } from '../../components/stacks/layout/StacksLayout';
+import { PanelLayout } from '../../components/common/PanelLayout';
 import { StacksToolbar } from '../../components/stacks/toolbar/StacksToolbar';
 import { StacksSidebar } from '../../components/stacks/sidebar/StacksSidebar';
 import { StacksContent } from '../../components/stacks/content/StacksContent';
@@ -141,7 +141,9 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
 
       {/* Panel-Based Layout */}
       <div className="h-full flex flex-col">
-        <StacksLayout
+        <PanelLayout
+          storageKey="stacks"
+          sidebarTitle="Filters"
           toolbar={
             <StacksToolbar
               title={`${server.name} - Docker Stacks`}

@@ -12,7 +12,7 @@ import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Layout from '../../components/layout/Layout';
 
-import { StackDetailsLayout } from '../../components/stacks/layout/StackDetailsLayout';
+import { PanelLayout } from '../../components/common/PanelLayout';
 import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
 import { SidebarSelection } from '../../components/stacks/sidebar/types';
 import { StackToolbar } from '../../components/stacks/toolbar/StackToolbar';
@@ -90,7 +90,10 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
             )}
 
             <div className="flex-1 min-h-0">
-              <StackDetailsLayout
+              <PanelLayout
+                storageKey="stack-details"
+                sidebarTitle="Stack"
+                defaultWidth={260}
                 toolbar={
                   <StackToolbar
                     stackName={stackname}

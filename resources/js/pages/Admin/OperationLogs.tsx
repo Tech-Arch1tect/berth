@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
+import { PanelLayout } from '../../components/common/PanelLayout';
 import {
-  OperationLogsLayout,
   OperationLogsSidebar,
   OperationLogsToolbar,
   OperationLogsStatusBar,
@@ -120,7 +120,11 @@ export default function OperationLogs({ title }: Props) {
   return (
     <>
       <Head title={title} />
-      <OperationLogsLayout
+      <PanelLayout
+        storageKey="operation-logs"
+        sidebarTitle="Filters"
+        defaultWidth={260}
+        maxWidthPercent={35}
         toolbar={
           <OperationLogsToolbar
             searchTerm={searchTerm}

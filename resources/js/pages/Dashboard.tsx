@@ -4,7 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import { Server } from '../types/server';
 import { StackStatistics } from '../types/server';
 import { useDashboardHealth, useDashboardActivity } from '../components/dashboard';
-import { DashboardLayout } from '../components/dashboard/layout/DashboardLayout';
+import { PanelLayout } from '../components/common/PanelLayout';
 import { DashboardSidebar } from '../components/dashboard/sidebar/DashboardSidebar';
 import { DashboardPage, SECTION_IDS } from '../components/dashboard/content/DashboardPage';
 import { DashboardToolbar } from '../components/dashboard/toolbar/DashboardToolbar';
@@ -123,7 +123,9 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
       <FlashMessages className="fixed top-4 right-4 z-50" />
 
       <div className="h-full flex flex-col">
-        <DashboardLayout
+        <PanelLayout
+          storageKey="dashboard"
+          sidebarTitle="Servers"
           toolbar={
             <DashboardToolbar
               title={title}

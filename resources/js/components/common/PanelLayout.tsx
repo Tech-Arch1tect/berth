@@ -1,31 +1,46 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type FC,
+  type ReactNode,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
-const SIDEBAR_MIN_WIDTH = 200;
-const SIDEBAR_MAX_WIDTH_PERCENT = 35;
-const SIDEBAR_DEFAULT_WIDTH = 260;
-const SIDEBAR_STORAGE_KEY = 'berth-operation-logs-sidebar-width';
-const SIDEBAR_COLLAPSED_STORAGE_KEY = 'berth-operation-logs-sidebar-collapsed';
+interface PanelLayoutProps {
+  toolbar: ReactNode;
+  sidebar: ReactNode;
+  content: ReactNode;
+  statusBar?: ReactNode;
 
-interface OperationLogsLayoutProps {
-  toolbar: React.ReactNode;
-  sidebar: React.ReactNode;
-  content: React.ReactNode;
-  statusBar: React.ReactNode;
+  storageKey: string;
   sidebarTitle?: string;
+
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidthPercent?: number;
 }
 
-export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
+export const PanelLayout: FC<PanelLayoutProps> = ({
   toolbar,
   sidebar,
   content,
   statusBar,
-  sidebarTitle = 'Filters',
+  storageKey,
+  sidebarTitle,
+  defaultWidth = 280,
+  minWidth = 200,
+  maxWidthPercent = 40,
 }) => {
+  const SIDEBAR_STORAGE_KEY = `berth-${storageKey}-sidebar-width`;
+  const SIDEBAR_COLLAPSED_STORAGE_KEY = `berth-${storageKey}-sidebar-collapsed`;
+
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    return stored ? parseInt(stored, 10) : SIDEBAR_DEFAULT_WIDTH;
+    return stored ? parseInt(stored, 10) : defaultWidth;
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -36,7 +51,7 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateContainerWidth = () => {
@@ -52,13 +67,13 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
-  }, [sidebarWidth]);
+  }, [sidebarWidth, SIDEBAR_STORAGE_KEY]);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(sidebarCollapsed));
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed, SIDEBAR_COLLAPSED_STORAGE_KEY]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: ReactMouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
     setStartX(e.clientX);
@@ -70,13 +85,13 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
 
       const delta = e.clientX - startX;
       setSidebarWidth((prev) => {
-        const maxWidth = containerWidth * (SIDEBAR_MAX_WIDTH_PERCENT / 100);
+        const maxWidth = containerWidth * (maxWidthPercent / 100);
         const newWidth = prev + delta;
-        return Math.min(Math.max(newWidth, SIDEBAR_MIN_WIDTH), maxWidth);
+        return Math.min(Math.max(newWidth, minWidth), maxWidth);
       });
       setStartX(e.clientX);
     },
-    [isDragging, startX, containerWidth]
+    [isDragging, startX, containerWidth, maxWidthPercent, minWidth]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -110,12 +125,9 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
       ref={containerRef}
       className={cn('h-full flex flex-col overflow-hidden', theme.surface.panel)}
     >
-      {/* Toolbar */}
       <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">{toolbar}</div>
 
-      {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
         {!sidebarCollapsed && (
           <div
             className={cn(
@@ -125,19 +137,39 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
             )}
             style={{ width: `${effectiveSidebarWidth}px` }}
           >
-            <div
-              className={cn(
-                'flex-shrink-0 flex items-center justify-between px-3 py-2.5',
-                'border-b border-zinc-200 dark:border-zinc-800',
-                theme.surface.muted
-              )}
-            >
-              <span className={cn('text-xs font-bold uppercase tracking-wider', theme.text.muted)}>
-                {sidebarTitle}
-              </span>
+            {sidebarTitle && (
+              <div
+                className={cn(
+                  'flex-shrink-0 flex items-center justify-between px-3 py-2.5',
+                  'border-b border-zinc-200 dark:border-zinc-800',
+                  theme.surface.muted
+                )}
+              >
+                <span
+                  className={cn('text-xs font-bold uppercase tracking-wider', theme.text.muted)}
+                >
+                  {sidebarTitle}
+                </span>
+                <button
+                  onClick={toggleSidebar}
+                  className={cn(theme.buttons.icon, 'p-1')}
+                  title="Collapse sidebar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {!sidebarTitle && (
               <button
                 onClick={toggleSidebar}
-                className={cn(theme.buttons.icon, 'p-1')}
+                className={cn('absolute top-2 right-2 z-10', theme.buttons.icon, 'p-1')}
                 title="Collapse sidebar"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,12 +181,11 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
                   />
                 </svg>
               </button>
-            </div>
+            )}
             <div className="flex-1 overflow-auto">{sidebar}</div>
           </div>
         )}
 
-        {/* Resizable divider */}
         {!sidebarCollapsed && (
           <div
             className={cn(
@@ -170,7 +201,6 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
           </div>
         )}
 
-        {/* Collapse button when sidebar is collapsed */}
         {sidebarCollapsed && (
           <button
             onClick={toggleSidebar}
@@ -194,7 +224,6 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
           </button>
         )}
 
-        {/* Content panel */}
         <div
           className={cn(
             'flex-1 flex flex-col overflow-hidden min-w-0',
@@ -205,8 +234,11 @@ export const OperationLogsLayout: React.FC<OperationLogsLayoutProps> = ({
         </div>
       </div>
 
-      {/* Status bar */}
-      <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800">{statusBar}</div>
+      {statusBar && (
+        <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800">
+          {statusBar}
+        </div>
+      )}
     </div>
   );
 };
