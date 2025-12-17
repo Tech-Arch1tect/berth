@@ -8,16 +8,16 @@ import { SidebarSection } from './SidebarSection';
 import { ServerListItem } from './ServerListItem';
 import { NegativeFilters } from '../../common/NegativeFilters';
 import { Server } from '../../../types/server';
-import { SortOption } from '../../common/StacksFilterBar';
+import { SortOption } from '../../../types/stack';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface StacksSidebarProps {
-  servers: Server[];
+  servers?: Server[];
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  serverFilter: number | 'all';
-  onServerFilterChange: (value: number | 'all') => void;
+  serverFilter?: number | 'all';
+  onServerFilterChange?: (value: number | 'all') => void;
   healthFilter: 'all' | 'healthy' | 'unhealthy';
   onHealthFilterChange: (value: 'all' | 'healthy' | 'unhealthy') => void;
   sortBy: SortOption;
@@ -26,7 +26,8 @@ interface StacksSidebarProps {
   onNegativeFiltersChange: (filters: string[]) => void;
   showExclusionFilter: boolean;
   onToggleExclusionFilter: () => void;
-  serverStackCounts: Map<number, { total: number; healthy: number }>;
+  serverStackCounts?: Map<number, { total: number; healthy: number }>;
+  showServersSection?: boolean;
 }
 
 export const StacksSidebar: React.FC<StacksSidebarProps> = ({
@@ -44,64 +45,66 @@ export const StacksSidebar: React.FC<StacksSidebarProps> = ({
   showExclusionFilter,
   onToggleExclusionFilter,
   serverStackCounts,
+  showServersSection = true,
 }) => {
-  const totalStacks = Array.from(serverStackCounts.values()).reduce(
-    (sum, counts) => sum + counts.total,
-    0
-  );
+  const totalStacks = serverStackCounts
+    ? Array.from(serverStackCounts.values()).reduce((sum, counts) => sum + counts.total, 0)
+    : 0;
 
   return (
     <div className="flex flex-col h-full">
       {/* Servers Section */}
-      <SidebarSection
-        title="Servers"
-        icon={<ServerIcon className="w-4 h-4 text-zinc-400" />}
-        defaultExpanded={true}
-      >
-        <div className="space-y-0.5">
-          {/* All Servers Option */}
-          <button
-            onClick={() => onServerFilterChange('all')}
-            className={cn(
-              'w-full px-3 py-2 text-left transition-colors',
-              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-              serverFilter === 'all' && 'bg-teal-50 dark:bg-teal-950/30'
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div
-                className={cn(
-                  'text-sm font-medium',
-                  serverFilter === 'all' ? 'text-teal-700 dark:text-teal-400' : theme.text.strong
-                )}
-              >
-                All Servers
+      {showServersSection && servers && serverStackCounts && onServerFilterChange && (
+        <SidebarSection
+          title="Servers"
+          icon={<ServerIcon className="w-4 h-4 text-zinc-400" />}
+          defaultExpanded={true}
+        >
+          <div className="space-y-0.5">
+            {/* All Servers Option */}
+            <button
+              onClick={() => onServerFilterChange('all')}
+              className={cn(
+                'w-full px-3 py-2 text-left transition-colors',
+                'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                serverFilter === 'all' && 'bg-teal-50 dark:bg-teal-950/30'
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div
+                  className={cn(
+                    'text-sm font-medium',
+                    serverFilter === 'all' ? 'text-teal-700 dark:text-teal-400' : theme.text.strong
+                  )}
+                >
+                  All Servers
+                </div>
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded-md text-xs font-medium tabular-nums',
+                    serverFilter === 'all'
+                      ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300'
+                      : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                  )}
+                >
+                  {totalStacks}
+                </span>
               </div>
-              <span
-                className={cn(
-                  'px-2 py-0.5 rounded-md text-xs font-medium tabular-nums',
-                  serverFilter === 'all'
-                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300'
-                    : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-                )}
-              >
-                {totalStacks}
-              </span>
-            </div>
-          </button>
+            </button>
 
-          {/* Individual Servers */}
-          {servers.map((server) => (
-            <ServerListItem
-              key={server.id}
-              server={server}
-              isActive={serverFilter === server.id}
-              onClick={() => onServerFilterChange(server.id)}
-              stackCount={serverStackCounts.get(server.id)}
-            />
-          ))}
-        </div>
-      </SidebarSection>
+            {/* Individual Servers */}
+            {servers.map((server) => (
+              <ServerListItem
+                key={server.id}
+                server={server}
+                isActive={serverFilter === server.id}
+                onClick={() => onServerFilterChange(server.id)}
+                stackCount={serverStackCounts.get(server.id)}
+              />
+            ))}
+          </div>
+        </SidebarSection>
+      )}
 
       {/* Filters Section */}
       <SidebarSection

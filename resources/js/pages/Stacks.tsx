@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { SortOption } from '../components/common/StacksFilterBar';
+import { SortOption } from '../types/stack';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { StorageManager } from '../utils/storage';
