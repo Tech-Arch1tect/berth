@@ -1,24 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import {
-  ArrowPathIcon,
-  CircleStackIcon,
-  ServerIcon,
-  ExclamationTriangleIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
-import { StackCard } from '../components/dashboard/StackCard';
-import { EmptyState } from '../components/common/EmptyState';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { StatCard } from '../components/common/StatCard';
-import { StacksFilterBar, SortOption } from '../components/common/StacksFilterBar';
+import { SortOption } from '../components/common/StacksFilterBar';
 import { Server } from '../types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
-import { cn } from '../utils/cn';
-import { theme } from '../theme';
 import { StorageManager } from '../utils/storage';
+import { StacksLayout } from '../components/stacks/layout/StacksLayout';
+import { StacksToolbar } from '../components/stacks/toolbar/StacksToolbar';
+import { StacksSidebar } from '../components/stacks/sidebar/StacksSidebar';
+import { StacksContent } from '../components/stacks/content/StacksContent';
+import { StacksStatusBar } from '../components/stacks/statusbar/StacksStatusBar';
 
 interface StacksProps {
   title: string;
@@ -35,21 +25,27 @@ export default function Stacks({ title, servers }: StacksProps) {
   const [sortBy, setSortBy] = useState<SortOption>(() => StorageManager.stacksSort.get());
   const [negativeFilters, setNegativeFilters] = useState<string[]>([]);
   const [showExclusionFilter, setShowExclusionFilter] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
 
   const { stacks, isLoading, isFetching, hasError, errors, refetchAll } = useAllStacks({
     servers,
   });
 
-  const toggleLayout = () => {
+  const toggleLayout = useCallback(() => {
     const newLayout = layoutMode === 'compact' ? 'normal' : 'compact';
     setLayoutMode(newLayout);
     StorageManager.stacksLayout.set(newLayout);
-  };
+  }, [layoutMode]);
 
-  const handleSortChange = (newSort: SortOption) => {
+  const handleSortChange = useCallback((newSort: SortOption) => {
     setSortBy(newSort);
     StorageManager.stacksSort.set(newSort);
-  };
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetchAll();
+    setLastUpdated(new Date());
+  }, [refetchAll]);
 
   const filteredAndSortedStacks = useMemo(() => {
     const filtered = stacks.filter((stack) => {
@@ -111,195 +107,80 @@ export default function Stacks({ title, servers }: StacksProps) {
     };
   }, [stacks]);
 
+  const serverStackCounts = useMemo(() => {
+    const counts = new Map<number, { total: number; healthy: number }>();
+    servers.forEach((server) => {
+      const serverStacks = stacks.filter((s) => s.server_id === server.id);
+      counts.set(server.id, {
+        total: serverStacks.length,
+        healthy: serverStacks.filter((s) => s.is_healthy).length,
+      });
+    });
+    return counts;
+  }, [stacks, servers]);
+
+  const hasActiveFilters = searchTerm !== '' || healthFilter !== 'all' || serverFilter !== 'all';
+
+  const activeFilterCount =
+    (searchTerm !== '' ? 1 : 0) +
+    (healthFilter !== 'all' ? 1 : 0) +
+    (serverFilter !== 'all' ? 1 : 0) +
+    negativeFilters.length;
+
   return (
     <>
       <Head title={title} />
 
-      <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="flex items-center space-x-4">
-            <div
-              className={cn(
-                'w-12 h-12 rounded-xl flex items-center justify-center',
-                theme.brand.accent
-              )}
-            >
-              <CircleStackIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1
-                  className={cn(
-                    'text-3xl font-bold bg-clip-text text-transparent',
-                    theme.brand.titleColor
-                  )}
-                >
-                  {title}
-                </h1>
-                {isFetching && !isLoading && (
-                  <div className={cn('flex items-center text-sm', theme.text.subtle)}>
-                    <ArrowPathIcon className="animate-spin h-4 w-4 mr-2" />
-                    Refreshing...
-                  </div>
-                )}
-              </div>
-              <p className={cn('mt-2', theme.text.muted)}>
-                Browse and search all stacks across all servers
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleLayout}
-              className={cn(
-                'inline-flex items-center px-4 py-2 rounded-xl transition-all duration-200',
-                theme.buttons.secondary
-              )}
-              title={layoutMode === 'compact' ? 'Switch to normal view' : 'Switch to compact view'}
-            >
-              {layoutMode === 'compact' ? (
-                <>
-                  <Squares2X2Icon className="w-4 h-4 mr-2" />
-                  Normal View
-                </>
-              ) : (
-                <>
-                  <ListBulletIcon className="w-4 h-4 mr-2" />
-                  Compact View
-                </>
-              )}
-            </button>
-            <button
-              onClick={refetchAll}
-              disabled={isFetching}
-              className={cn(
-                'inline-flex items-center px-4 py-2 rounded-xl transition-all duration-200',
-                theme.buttons.secondary
-              )}
-            >
-              <ArrowPathIcon className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh All
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {hasError && errors.length > 0 && (
-        <div className={cn('mb-6 rounded-xl p-4', theme.intent.danger.surface)}>
-          <div className="flex items-start space-x-3">
-            <ExclamationTriangleIcon
-              className={cn('w-5 h-5 flex-shrink-0 mt-0.5', theme.intent.danger.icon)}
+      <div className="h-full flex flex-col">
+        <StacksLayout
+          toolbar={
+            <StacksToolbar
+              title={title}
+              isRefreshing={isFetching}
+              onRefresh={handleRefresh}
+              layoutMode={layoutMode}
+              onLayoutToggle={toggleLayout}
             />
-            <div className="flex-1">
-              <h3 className={cn('text-sm font-semibold mb-2', theme.intent.danger.textStrong)}>
-                Failed to load stacks from some servers
-              </h3>
-              <ul className="space-y-1">
-                {errors.map(({ server, error }) => (
-                  <li key={server.id} className={cn('text-sm', theme.intent.danger.textMuted)}>
-                    {server.name}: {error.message}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          label="Total Stacks"
-          value={statistics.total}
-          icon={CircleStackIcon}
-          iconColor={theme.text.info}
-          iconBg={theme.intent.info.surface}
-          className="rounded-2xl"
-        />
-        <StatCard
-          label="Healthy"
-          value={statistics.healthy}
-          icon={CircleStackIcon}
-          iconColor={theme.text.success}
-          iconBg={theme.intent.success.surface}
-          className="rounded-2xl"
-        />
-        <StatCard
-          label="Unhealthy"
-          value={statistics.unhealthy}
-          icon={ExclamationTriangleIcon}
-          iconColor={theme.text.danger}
-          iconBg={theme.intent.danger.surface}
-          className="rounded-2xl"
-        />
-        <StatCard
-          label="Containers"
-          value={`${statistics.running}/${statistics.totalContainers}`}
-          icon={ServerIcon}
-          iconColor={theme.text.info}
-          iconBg={theme.intent.info.surface}
-          className="rounded-2xl"
+          }
+          sidebar={
+            <StacksSidebar
+              servers={servers}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              serverFilter={serverFilter}
+              onServerFilterChange={setServerFilter}
+              healthFilter={healthFilter}
+              onHealthFilterChange={setHealthFilter}
+              sortBy={sortBy}
+              onSortChange={handleSortChange}
+              negativeFilters={negativeFilters}
+              onNegativeFiltersChange={setNegativeFilters}
+              showExclusionFilter={showExclusionFilter}
+              onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
+              serverStackCounts={serverStackCounts}
+            />
+          }
+          content={
+            <StacksContent
+              stacks={filteredAndSortedStacks}
+              statistics={statistics}
+              layoutMode={layoutMode}
+              isLoading={isLoading}
+              hasError={hasError}
+              errors={errors}
+              hasActiveFilters={hasActiveFilters}
+            />
+          }
+          statusBar={
+            <StacksStatusBar
+              filteredCount={filteredAndSortedStacks.length}
+              totalCount={stacks.length}
+              lastUpdated={lastUpdated}
+              activeFilterCount={activeFilterCount}
+            />
+          }
         />
       </div>
-
-      {isLoading ? (
-        <LoadingSpinner size="lg" text="Loading stacks from all servers..." fullScreen />
-      ) : (
-        <>
-          <StacksFilterBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            sortBy={sortBy}
-            onSortChange={handleSortChange}
-            healthFilter={healthFilter}
-            onHealthFilterChange={setHealthFilter}
-            serverFilter={serverFilter}
-            onServerFilterChange={setServerFilter}
-            servers={servers}
-            negativeFilters={negativeFilters}
-            onNegativeFiltersChange={setNegativeFilters}
-            showExclusionFilter={showExclusionFilter}
-            onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
-            filteredCount={filteredAndSortedStacks.length}
-            totalCount={stacks.length}
-            searchPlaceholder="Search stacks by name, server, compose file, or path..."
-            rounded="2xl"
-          />
-
-          {filteredAndSortedStacks.length === 0 ? (
-            <EmptyState
-              icon={
-                searchTerm || healthFilter !== 'all' || serverFilter !== 'all'
-                  ? MagnifyingGlassIcon
-                  : CircleStackIcon
-              }
-              title="No stacks found"
-              description={
-                searchTerm || healthFilter !== 'all' || serverFilter !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'There are no Docker Compose stacks configured on any server.'
-              }
-            />
-          ) : (
-            <div
-              className={cn(
-                'grid gap-6',
-                layoutMode === 'compact'
-                  ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                  : 'md:grid-cols-2 lg:grid-cols-3'
-              )}
-            >
-              {filteredAndSortedStacks.map((stack) => (
-                <StackCard
-                  key={`${stack.server_id}-${stack.name}`}
-                  stack={stack}
-                  compact={layoutMode === 'compact'}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
     </>
   );
 }
