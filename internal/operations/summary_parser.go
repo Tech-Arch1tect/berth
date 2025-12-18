@@ -220,7 +220,86 @@ func (p *SummaryParser) formatResourceList(resourceType string, resources []stri
 }
 
 func (p *SummaryParser) parseDownSummary(messages []models.OperationLogMessage) string {
-	return "Operation 'down' completed successfully"
+	containersStopped := make(map[string]bool)
+	containersRemoved := make(map[string]bool)
+	networksRemoved := make(map[string]bool)
+	volumesRemoved := make(map[string]bool)
+
+	for _, msg := range messages {
+		data := strings.TrimSpace(msg.MessageData)
+
+		if strings.HasPrefix(data, "Container ") && strings.HasSuffix(data, " Stopped") {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Stopped")
+			name = strings.TrimSpace(name)
+			containersStopped[name] = true
+		}
+
+		if strings.HasPrefix(data, "Container ") && strings.HasSuffix(data, " Removed") {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Removed")
+			name = strings.TrimSpace(name)
+			containersRemoved[name] = true
+		}
+
+		if strings.HasPrefix(data, "Network ") && strings.HasSuffix(data, " Removed") {
+			name := strings.TrimPrefix(data, "Network ")
+			name = strings.TrimSuffix(name, " Removed")
+			name = strings.TrimSpace(name)
+			networksRemoved[name] = true
+		}
+
+		if strings.HasPrefix(data, "Volume ") && strings.HasSuffix(data, " Removed") {
+			name := strings.TrimPrefix(data, "Volume ")
+			name = strings.TrimSuffix(name, " Removed")
+			name = strings.TrimSpace(name)
+			volumesRemoved[name] = true
+		}
+	}
+
+	var stoppedList []string
+	for name := range containersStopped {
+		stoppedList = append(stoppedList, name)
+	}
+
+	var removedList []string
+	for name := range containersRemoved {
+		removedList = append(removedList, name)
+	}
+
+	var networkList []string
+	for name := range networksRemoved {
+		networkList = append(networkList, name)
+	}
+
+	var volumeList []string
+	for name := range volumesRemoved {
+		volumeList = append(volumeList, name)
+	}
+
+	var parts []string
+
+	if len(stoppedList) > 0 {
+		parts = append(parts, fmt.Sprintf("Stopped %s", p.formatServiceList(stoppedList)))
+	}
+
+	if len(removedList) > 0 {
+		parts = append(parts, fmt.Sprintf("removed %s", p.formatServiceList(removedList)))
+	}
+
+	if len(networkList) > 0 {
+		parts = append(parts, fmt.Sprintf("removed %s", p.formatResourceList("network", networkList)))
+	}
+
+	if len(volumeList) > 0 {
+		parts = append(parts, fmt.Sprintf("removed %s", p.formatResourceList("volume", volumeList)))
+	}
+
+	if len(parts) == 0 {
+		return "Stack stopped"
+	}
+
+	return strings.Join(parts, "; ")
 }
 
 func (p *SummaryParser) parseRestartSummary(messages []models.OperationLogMessage) string {
