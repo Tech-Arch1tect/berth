@@ -484,6 +484,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	if operationLogsHandler != nil {
 		apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
 		apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
+		apiProtected.GET("/operation-logs/by-operation-id/:operationId", operationLogsHandler.GetOperationLogDetailsByOperationID, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
 		apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
 		apiProtected.GET("/running-operations", operationLogsHandler.GetRunningOperations, rbacMiddleware.RequireUserScopeJWT("logs.operations.read"))
 	}

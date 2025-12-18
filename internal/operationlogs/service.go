@@ -205,6 +205,61 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.Operati
 	}, nil
 }
 
+func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID *uint) (*dto.OperationLogDetail, error) {
+	query := s.db.Preload("User").Preload("Server").Where("operation_id = ?", operationID)
+
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+
+	var log models.OperationLog
+	if err := query.First(&log).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, gorm.ErrRecordNotFound
+		}
+		s.logger.Error("failed to fetch operation log details by operation_id", zap.Error(err), zap.String("operation_id", operationID))
+		return nil, err
+	}
+
+	var messages []models.OperationLogMessage
+	if err := s.db.Where("operation_log_id = ?", log.ID).
+		Order("sequence_number ASC, timestamp ASC").
+		Find(&messages).Error; err != nil {
+		s.logger.Error("failed to fetch operation log messages", zap.Error(err), zap.Uint("log_id", log.ID))
+		return nil, err
+	}
+
+	userName := "Unknown"
+	if log.User.Username != "" {
+		userName = log.User.Username
+	} else if log.User.Email != "" {
+		userName = log.User.Email
+	}
+
+	serverName := "Unknown"
+	if log.Server.Name != "" {
+		serverName = log.Server.Name
+	}
+
+	triggerSource := "manual"
+
+	partialDuration := s.calculatePartialDuration(log)
+
+	return &dto.OperationLogDetail{
+		Log: dto.OperationLogResponse{
+			OperationLog:    log,
+			UserName:        userName,
+			ServerName:      serverName,
+			TriggerSource:   triggerSource,
+			IsIncomplete:    log.EndTime == nil,
+			FormattedDate:   log.CreatedAt.Format("2006-01-02 15:04:05"),
+			MessageCount:    int64(len(messages)),
+			PartialDuration: partialDuration,
+		},
+		Messages: messages,
+	}, nil
+}
+
 func (s *Service) GetOperationLogsStats() (*dto.OperationLogStats, error) {
 	var stats dto.OperationLogStats
 

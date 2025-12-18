@@ -183,3 +183,26 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 
 	return common.SendSuccess(c, operations)
 }
+
+func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	operationID := c.Param("operationId")
+	if operationID == "" {
+		return common.SendBadRequest(c, "Operation ID is required")
+	}
+
+	result, err := h.service.GetOperationLogDetailsByOperationID(operationID, &userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return common.SendNotFound(c, "Operation log not found")
+		}
+		h.logger.Error("failed to get operation log details by operation_id", zap.Error(err), zap.String("operation_id", operationID), zap.Uint("user_id", userID))
+		return common.SendInternalError(c, "Failed to retrieve operation log details")
+	}
+
+	return common.SendSuccess(c, result)
+}
