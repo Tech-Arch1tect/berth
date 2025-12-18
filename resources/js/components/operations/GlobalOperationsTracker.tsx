@@ -21,6 +21,7 @@ interface OperationTrackerProps {
   command: string;
   startTime: string;
   isIncomplete: boolean;
+  summary: string | null;
   onDismiss: () => void;
 }
 
@@ -30,6 +31,7 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
   command,
   startTime,
   isIncomplete,
+  summary,
   onDismiss,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -116,6 +118,13 @@ const OperationTracker: React.FC<OperationTrackerProps> = ({
                 </>
               )}
             </div>
+            {summary && (
+              <div className="mt-1">
+                <span className={cn('text-xs italic truncate block', theme.text.muted)}>
+                  {summary}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -285,6 +294,7 @@ const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
                   command={op.command}
                   startTime={op.start_time}
                   isIncomplete={op.is_incomplete}
+                  summary={op.summary}
                   onDismiss={() => removeOperation(op.operation_id)}
                 />
               ))
@@ -497,6 +507,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                 command={op.command}
                 startTime={op.start_time}
                 isIncomplete={op.is_incomplete}
+                summary={op.summary}
                 onDismiss={() => removeOperation(op.operation_id)}
               />
             ))

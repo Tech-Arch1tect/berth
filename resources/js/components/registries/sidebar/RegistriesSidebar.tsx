@@ -14,7 +14,6 @@ interface RegistriesSidebarProps {
 }
 
 export const RegistriesSidebar: FC<RegistriesSidebarProps> = ({ credentials }) => {
-  
   const credentialsByRegistry = credentials.reduce(
     (acc, cred) => {
       acc[cred.registry_url] = (acc[cred.registry_url] || 0) + 1;

@@ -12,4 +12,5 @@ export interface RunningOperation {
   is_incomplete: boolean;
   partial_duration: number | null;
   message_count: number;
+  summary: string | null;
 }

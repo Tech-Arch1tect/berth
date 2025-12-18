@@ -11,14 +11,16 @@ import (
 )
 
 type AuditService struct {
-	db     *gorm.DB
-	logger *logging.Service
+	db            *gorm.DB
+	logger        *logging.Service
+	summaryParser *SummaryParser
 }
 
-func NewAuditService(db *gorm.DB, logger *logging.Service) *AuditService {
+func NewAuditService(db *gorm.DB, logger *logging.Service, summaryParser *SummaryParser) *AuditService {
 	return &AuditService{
-		db:     db,
-		logger: logger,
+		db:            db,
+		logger:        logger,
+		summaryParser: summaryParser,
 	}
 }
 
@@ -210,6 +212,19 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 			zap.Uint("operation_log_id", operationLogID),
 			zap.Time("invalid_end_time", endTime),
 		)
+	}
+
+	var messages []models.OperationLogMessage
+	if err := s.db.Where("operation_log_id = ?", operationLogID).
+		Order("sequence_number ASC").
+		Find(&messages).Error; err != nil {
+		s.logger.Warn("failed to fetch messages for summary generation",
+			zap.Error(err),
+			zap.Uint("operation_log_id", operationLogID),
+		)
+	} else {
+		summary := s.summaryParser.GenerateSummary(log.Command, success, exitCode, messages)
+		updates["summary"] = summary
 	}
 
 	if err := s.db.Model(log).Updates(updates).Error; err != nil {

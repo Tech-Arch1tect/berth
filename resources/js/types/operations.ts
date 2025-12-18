@@ -78,6 +78,7 @@ export interface OperationLog {
   formatted_date: string;
   message_count: number;
   partial_duration_ms: number | null;
+  summary: string | null;
 }
 
 export interface PaginationInfo {

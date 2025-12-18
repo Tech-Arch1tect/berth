@@ -94,6 +94,7 @@ export const useOperations = ({
               is_incomplete: false,
               partial_duration: null,
               message_count: 0,
+              summary: null,
             };
 
             addOperation(runningOp);

@@ -184,6 +184,15 @@ const OperationRow: React.FC<{
     <td className="px-4 py-3">
       <span className={cn('text-sm', theme.text.muted)}>{getOperationDuration(log)}</span>
     </td>
+    <td className="px-4 py-3 max-w-xs">
+      {log.summary ? (
+        <span className={cn('text-sm italic truncate block', theme.text.muted)} title={log.summary}>
+          {log.summary}
+        </span>
+      ) : (
+        <span className={cn('text-sm', theme.text.subtle)}>-</span>
+      )}
+    </td>
     <td className="px-4 py-3">
       <span className={cn('text-sm', theme.text.muted)}>{log.formatted_date}</span>
     </td>
@@ -372,6 +381,14 @@ export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
                     )}
                   >
                     Duration
+                  </th>
+                  <th
+                    className={cn(
+                      'px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider',
+                      theme.text.muted
+                    )}
+                  >
+                    Summary
                   </th>
                   <th
                     className={cn(

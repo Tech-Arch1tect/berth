@@ -32,6 +32,7 @@ type OperationLog struct {
 	Success       *bool           `json:"success"`
 	ExitCode      *int            `json:"exit_code"`
 	Duration      *int            `json:"duration_ms"`
+	Summary       string          `json:"summary" gorm:"type:text"`
 }
 
 func (o *OperationLog) AfterCreate(tx *gorm.DB) error {
