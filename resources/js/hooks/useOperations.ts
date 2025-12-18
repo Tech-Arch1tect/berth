@@ -12,7 +12,7 @@ import { RunningOperation } from '../types/running-operation';
 interface UseOperationsOptions {
   serverid: string;
   stackname: string;
-  onOperationComplete?: (success: boolean, exitCode?: number) => void;
+  onOperationComplete?: (success: boolean, exitCode?: number, summary?: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -136,7 +136,20 @@ export const useOperations = ({
             isRunning: false,
           }));
 
-          if (onOperationComplete) {
+          if (onOperationComplete && currentOperationIdRef.current) {
+            fetch(`/api/v1/operation-logs/by-operation-id/${currentOperationIdRef.current}`)
+              .then((res) => res.json())
+              .then((data) => {
+                onOperationComplete(
+                  message.success || false,
+                  message.exitCode,
+                  data.log?.summary || undefined
+                );
+              })
+              .catch(() => {
+                onOperationComplete(message.success || false, message.exitCode);
+              });
+          } else if (onOperationComplete) {
             onOperationComplete(message.success || false, message.exitCode);
           }
         }

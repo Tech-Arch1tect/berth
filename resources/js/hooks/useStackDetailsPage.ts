@@ -56,11 +56,11 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
   const operations = useOperations({
     serverid: String(serverid),
     stackname,
-    onOperationComplete: (success, _exitCode) => {
+    onOperationComplete: (success, _exitCode, summary) => {
       setQuickOperationState({ isRunning: false });
 
       if (success) {
-        showToast.operation.completed('Operation completed successfully');
+        showToast.operation.completed(summary || 'Operation completed successfully');
       } else {
         showToast.error('Operation failed');
       }
