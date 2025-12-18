@@ -303,15 +303,82 @@ func (p *SummaryParser) parseDownSummary(messages []models.OperationLogMessage) 
 }
 
 func (p *SummaryParser) parseRestartSummary(messages []models.OperationLogMessage) string {
-	return "Operation 'restart' completed successfully"
+	containersRestarted := make(map[string]bool)
+
+	for _, msg := range messages {
+		data := strings.TrimSpace(msg.MessageData)
+
+		if strings.HasPrefix(data, "Container ") && (strings.HasSuffix(data, " Restarted") || strings.HasSuffix(data, " Started")) {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Restarted")
+			name = strings.TrimSuffix(name, " Started")
+			name = strings.TrimSpace(name)
+			containersRestarted[name] = true
+		}
+	}
+
+	var restartedList []string
+	for name := range containersRestarted {
+		restartedList = append(restartedList, name)
+	}
+
+	if len(restartedList) == 0 {
+		return "Containers restarted"
+	}
+
+	return fmt.Sprintf("Restarted %s", p.formatServiceList(restartedList))
 }
 
 func (p *SummaryParser) parseStartSummary(messages []models.OperationLogMessage) string {
-	return "Operation 'start' completed successfully"
+	containersStarted := make(map[string]bool)
+
+	for _, msg := range messages {
+		data := strings.TrimSpace(msg.MessageData)
+
+		if strings.HasPrefix(data, "Container ") && strings.HasSuffix(data, " Started") {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Started")
+			name = strings.TrimSpace(name)
+			containersStarted[name] = true
+		}
+	}
+
+	var startedList []string
+	for name := range containersStarted {
+		startedList = append(startedList, name)
+	}
+
+	if len(startedList) == 0 {
+		return "Containers started"
+	}
+
+	return fmt.Sprintf("Started %s", p.formatServiceList(startedList))
 }
 
 func (p *SummaryParser) parseStopSummary(messages []models.OperationLogMessage) string {
-	return "Operation 'stop' completed successfully"
+	containersStopped := make(map[string]bool)
+
+	for _, msg := range messages {
+		data := strings.TrimSpace(msg.MessageData)
+
+		if strings.HasPrefix(data, "Container ") && strings.HasSuffix(data, " Stopped") {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Stopped")
+			name = strings.TrimSpace(name)
+			containersStopped[name] = true
+		}
+	}
+
+	var stoppedList []string
+	for name := range containersStopped {
+		stoppedList = append(stoppedList, name)
+	}
+
+	if len(stoppedList) == 0 {
+		return "Containers stopped"
+	}
+
+	return fmt.Sprintf("Stopped %s", p.formatServiceList(stoppedList))
 }
 
 func (p *SummaryParser) parseGenericSummary(command string) string {
