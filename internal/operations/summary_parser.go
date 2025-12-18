@@ -134,7 +134,89 @@ func (p *SummaryParser) formatServiceList(services []string) string {
 }
 
 func (p *SummaryParser) parseUpSummary(messages []models.OperationLogMessage) string {
-	return "Operation 'up' completed successfully"
+	containersStarted := make(map[string]bool)
+	networksCreated := make(map[string]bool)
+	volumesCreated := make(map[string]bool)
+
+	for _, msg := range messages {
+		data := strings.TrimSpace(msg.MessageData)
+
+		if strings.HasPrefix(data, "Container ") && strings.HasSuffix(data, " Started") {
+			name := strings.TrimPrefix(data, "Container ")
+			name = strings.TrimSuffix(name, " Started")
+			name = strings.TrimSpace(name)
+			containersStarted[name] = true
+		}
+
+		if strings.HasPrefix(data, "Network ") && strings.HasSuffix(data, " Created") {
+			name := strings.TrimPrefix(data, "Network ")
+			name = strings.TrimSuffix(name, " Created")
+			name = strings.TrimSpace(name)
+			networksCreated[name] = true
+		}
+
+		if strings.HasPrefix(data, "Volume ") && strings.HasSuffix(data, " Created") {
+			name := strings.TrimPrefix(data, "Volume ")
+			name = strings.TrimSuffix(name, " Created")
+			name = strings.TrimSpace(name)
+			volumesCreated[name] = true
+		}
+	}
+
+	var containerList []string
+	for name := range containersStarted {
+		containerList = append(containerList, name)
+	}
+
+	var networkList []string
+	for name := range networksCreated {
+		networkList = append(networkList, name)
+	}
+
+	var volumeList []string
+	for name := range volumesCreated {
+		volumeList = append(volumeList, name)
+	}
+
+	var parts []string
+
+	if len(containerList) > 0 {
+		parts = append(parts, fmt.Sprintf("Started %s", p.formatServiceList(containerList)))
+	}
+
+	if len(networkList) > 0 {
+		parts = append(parts, fmt.Sprintf("created %s", p.formatResourceList("network", networkList)))
+	}
+
+	if len(volumeList) > 0 {
+		parts = append(parts, fmt.Sprintf("created %s", p.formatResourceList("volume", volumeList)))
+	}
+
+	if len(parts) == 0 {
+		return "Stack started"
+	}
+
+	return strings.Join(parts, "; ")
+}
+
+func (p *SummaryParser) formatResourceList(resourceType string, resources []string) string {
+	if len(resources) == 0 {
+		return ""
+	}
+	if len(resources) == 1 {
+		return fmt.Sprintf("1 %s (%s)", resourceType, resources[0])
+	}
+	if len(resources) == 2 {
+		return fmt.Sprintf("2 %ss (%s and %s)", resourceType, resources[0], resources[1])
+	}
+	if len(resources) <= 4 {
+		last := resources[len(resources)-1]
+		rest := strings.Join(resources[:len(resources)-1], ", ")
+		return fmt.Sprintf("%d %ss (%s and %s)", len(resources), resourceType, rest, last)
+	}
+	first := strings.Join(resources[:3], ", ")
+	remaining := len(resources) - 3
+	return fmt.Sprintf("%d %ss (%s and %d others)", len(resources), resourceType, first, remaining)
 }
 
 func (p *SummaryParser) parseDownSummary(messages []models.OperationLogMessage) string {
