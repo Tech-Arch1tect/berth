@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -171,6 +173,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 				fx.Provide(handlers.NewMobileAuthHandler),
 				fx.Provide(handlers.NewSessionHandler),
 				fx.Provide(handlers.NewTOTPHandler),
+				fx.Provide(handlers.NewVersionHandler),
 				fx.Provide(func() auth.MailService {
 					mockSvc := &testutils.MockMailService{}
 					mockSvc.On("SendTemplate", mockpkg.Anything, mockpkg.Anything, mockpkg.Anything, mockpkg.Anything).Return(nil)
@@ -248,4 +251,47 @@ func (app *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 	require.NoError(t, err, "failed to verify test user email")
 
 	return user
+}
+
+func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
+	crypto := utils.NewCrypto("test-encryption-secret-key-32chars!!")
+	encryptedToken, err := crypto.Encrypt("test-access-token")
+	require.NoError(t, err, "failed to encrypt access token")
+
+	host := mockAgentURL
+	port := 443
+
+	if strings.HasPrefix(mockAgentURL, "https://") {
+		hostPort := strings.TrimPrefix(mockAgentURL, "https://")
+		parts := strings.Split(hostPort, ":")
+		if len(parts) == 2 {
+			host = "https://" + parts[0]
+			if p, err := strconv.Atoi(parts[1]); err == nil {
+				port = p
+			}
+		}
+	}
+
+	skipSSL := true
+	server := &models.Server{
+		Name:                name,
+		Host:                host,
+		Port:                port,
+		AccessToken:         encryptedToken,
+		SkipSSLVerification: &skipSSL,
+		IsActive:            true,
+	}
+
+	err = app.E2EApp.DB.Create(server).Error
+	require.NoError(t, err, "failed to create test server")
+
+	return server
+}
+
+func (app *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAgent, *models.Server) {
+	mockAgent := NewMockAgent()
+	t.Cleanup(mockAgent.Close)
+
+	server := app.CreateTestServer(t, name, mockAgent.URL)
+	return mockAgent, server
 }
