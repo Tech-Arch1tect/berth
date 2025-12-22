@@ -85,6 +85,16 @@ func SetupTestApp(t *testing.T) *TestApp {
 			cfg.Session.Store = "memory"
 			cfg.CSRF.Enabled = false
 
+			cfg.JWT.AccessExpiry = 15 * time.Minute
+			cfg.RefreshToken.TokenLength = 32
+			cfg.RefreshToken.Expiry = 30 * 24 * time.Hour
+			cfg.RefreshToken.RotationMode = "always"
+			cfg.RefreshToken.CleanupInterval = time.Hour
+
+			cfg.Revocation.Enabled = true
+			cfg.Revocation.Store = "memory"
+			cfg.Revocation.CleanupPeriod = time.Hour
+
 			cfg.Inertia.RootView = "../app.html"
 			cfg.Mail.TemplatesDir = filepath.Join("..", "testdata", "mail")
 			return cfg
@@ -187,6 +197,9 @@ func SetupTestApp(t *testing.T) *TestApp {
 					providers.NewUserProvider,
 					fx.As(new(jwtshared.UserProvider)),
 				)),
+				fx.Provide(func(svc refreshtoken.RefreshTokenService) session.RefreshTokenRevocationService {
+					return svc
+				}),
 				fx.Invoke(routes.RegisterRoutes),
 				fx.Invoke(func(db *gorm.DB) {
 					if err := seeds.SeedRBACData(db); err != nil {

@@ -184,6 +184,9 @@ func NewApp(opts *AppOptions) *app.App {
 			providers.NewUserProvider,
 			fx.As(new(jwtshared.UserProvider)),
 		)),
+		fx.Provide(func(svc refreshtoken.RefreshTokenService) session.RefreshTokenRevocationService {
+			return svc
+		}),
 		fx.Invoke(routes.RegisterRoutes),
 		fx.Invoke(func(db *gorm.DB) {
 			if err := seeds.SeedRBACData(db); err != nil {
