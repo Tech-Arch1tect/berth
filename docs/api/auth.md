@@ -4,7 +4,61 @@
 
 Authentication endpoints handle user login, token management, two-factor authentication (TOTP), and session management.
 
-**API Key Access:** All endpoints in this section require JWT authentication. API keys cannot access these endpoints.
+## Authentication Methods
+
+Berth supports two authentication methods for accessing API endpoints:
+
+### 1. JWT Token Authentication (API Clients)
+
+For mobile apps, CLI tools, and programmatic API access:
+
+1. Call `POST /api/v1/auth/login` with credentials
+2. Receive `access_token` and `refresh_token`
+3. Include `Authorization: Bearer <access_token>` in subsequent requests
+4. Use `POST /api/v1/auth/refresh` to obtain new tokens before expiry
+5. Use `POST /api/v1/auth/logout` to revoke tokens
+
+### 2. Session Cookie Authentication (Web UI)
+
+For browser-based access via the web interface:
+
+1. Login via web form at `POST /auth/login` (sets `berth` session cookie)
+2. Browser automatically includes cookie in subsequent requests
+3. Include `X-CSRF-Token` header for POST/PUT/DELETE requests (if CSRF enabled)
+4. Logout via `POST /auth/logout` (clears session)
+
+**Using session auth with API endpoints:**
+
+Once logged in via web UI, you can access API endpoints using the session cookie:
+
+```bash
+# After web login, the berth cookie authenticates API requests
+curl https://berth.example.com/api/v1/profile \
+  -b "berth=<session-cookie-value>"
+
+# POST requests need CSRF token when using session auth
+curl -X POST https://berth.example.com/api/v1/totp/enable \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: <csrf-token>" \
+  -b "berth=<session-cookie-value>" \
+  -d '{"code": "123456"}'
+```
+
+## API Key Restrictions
+
+| Method | Supported | Notes |
+|--------|-----------|-------|
+| JWT Token | ✅ | Primary method for API clients and mobile apps |
+| Session Cookie | ✅ | Automatically used by web UI |
+| API Key | ❌ | Not permitted for authentication endpoints |
+
+**Why API keys are restricted:** Authentication endpoints manage user identity and session state. API keys are designed for programmatic access to resources, not identity management.
+
+---
+
+## JWT Authentication Endpoints
+
+The following endpoints are designed for JWT-based authentication flows (mobile apps, CLI tools, API clients).
 
 ---
 
@@ -142,9 +196,11 @@ Missing or invalid token (401):
 
 ## POST /api/v1/auth/logout
 
-Revoke the current access and refresh tokens.
+Revoke the current access and refresh tokens. This endpoint is for JWT authentication only.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
+
+**Note:** For session-based logout (web UI), use `POST /auth/logout` instead.
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/auth/logout \
@@ -166,11 +222,17 @@ curl -X POST https://berth.example.com/api/v1/auth/logout \
 
 ---
 
+## Protected Endpoints
+
+The following endpoints require authentication and support both JWT and session cookie authentication.
+
+---
+
 ## GET /api/v1/profile
 
 Retrieve the authenticated user's profile.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
 
 ```bash
 curl https://berth.example.com/api/v1/profile \
@@ -205,7 +267,7 @@ curl https://berth.example.com/api/v1/profile \
 
 Check whether TOTP is enabled for the authenticated user.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
 
 ```bash
 curl https://berth.example.com/api/v1/totp/status \
@@ -225,7 +287,7 @@ curl https://berth.example.com/api/v1/totp/status \
 
 Generate TOTP setup data for enabling two-factor authentication.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
 
 ```bash
 curl https://berth.example.com/api/v1/totp/setup \
@@ -254,7 +316,7 @@ curl https://berth.example.com/api/v1/totp/setup \
 
 Enable TOTP two-factor authentication after verifying setup.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/totp/enable \
@@ -284,7 +346,7 @@ curl -X POST https://berth.example.com/api/v1/totp/enable \
 
 Disable TOTP two-factor authentication.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token or session cookie
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/totp/disable \
@@ -310,11 +372,22 @@ curl -X POST https://berth.example.com/api/v1/totp/disable \
 
 ---
 
+## Session Management Endpoints
+
+The following endpoints manage sessions for mobile apps, CLI tools, and API clients. They require the `refresh_token` from your login response to identify the current session.
+
+**Web UI vs API Session Management:**
+- **Web UI users** manage sessions via the browser at `/sessions` (not documented here as it's a web interface, not an API endpoint)
+- **API clients** (mobile apps, CLI tools) use the endpoints below with JWT authentication and refresh tokens
+- Web UI logout uses `POST /auth/logout`; API logout uses `POST /api/v1/auth/logout`
+
+---
+
 ## POST /api/v1/sessions
 
 List all active sessions for the authenticated user.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token (requires `refresh_token` in request body)
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/sessions \
@@ -358,7 +431,7 @@ curl -X POST https://berth.example.com/api/v1/sessions \
 
 Revoke a specific session by ID.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token (requires `refresh_token` in request body)
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/sessions/revoke \
@@ -380,7 +453,7 @@ curl -X POST https://berth.example.com/api/v1/sessions/revoke \
 
 Revoke all sessions except the current one.
 
-**Authentication:** Bearer token (JWT only)
+**Authentication:** JWT token (requires `refresh_token` in request body)
 
 ```bash
 curl -X POST https://berth.example.com/api/v1/sessions/revoke-all-others \
