@@ -278,7 +278,7 @@ func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL str
 		hostPort := strings.TrimPrefix(mockAgentURL, "https://")
 		parts := strings.Split(hostPort, ":")
 		if len(parts) == 2 {
-			host = "https://" + parts[0]
+			host = parts[0]
 			if p, err := strconv.Atoi(parts[1]); err == nil {
 				port = p
 			}
@@ -307,4 +307,15 @@ func (app *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockA
 
 	server := app.CreateTestServer(t, name, mockAgent.URL)
 	return mockAgent, server
+}
+
+func (app *TestApp) CreateAdminTestUser(t *testing.T, user *e2etesting.TestUser) {
+	app.AuthHelper.CreateTestUser(t, user)
+
+	var adminRole models.Role
+	err := app.E2EApp.DB.Where("name = ?", "admin").First(&adminRole).Error
+	require.NoError(t, err, "failed to find admin role")
+
+	err = app.E2EApp.DB.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", user.ID, adminRole.ID).Error
+	require.NoError(t, err, "failed to assign admin role to user")
 }
