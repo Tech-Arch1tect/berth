@@ -166,6 +166,12 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 	return userID, serverID, nil
 }
 
+const (
+	terminalPingInterval = 30 * time.Second
+	terminalPongWait     = 60 * time.Second
+	terminalWriteWait    = 10 * time.Second
+)
+
 func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientType string, userID int) error {
 
 	server, err := h.serverService.GetServer(uint(serverID))
@@ -207,15 +213,52 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	}
 	defer func() { _ = clientConn.Close() }()
 
-	done := make(chan bool, 2)
+	done := make(chan struct{})
 	sessionStackName := ""
 	var operationLogID *uint
 	sessionStartTime := time.Now()
 
+	_ = clientConn.SetReadDeadline(time.Now().Add(terminalPongWait))
+	clientConn.SetPongHandler(func(string) error {
+		_ = clientConn.SetReadDeadline(time.Now().Add(terminalPongWait))
+		return nil
+	})
+
+	_ = agentConn.SetReadDeadline(time.Now().Add(terminalPongWait))
+	agentConn.SetPongHandler(func(string) error {
+		_ = agentConn.SetReadDeadline(time.Now().Add(terminalPongWait))
+		return nil
+	})
+
+	go func() {
+		ticker := time.NewTicker(terminalPingInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				_ = clientConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
+				if err := clientConn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					return
+				}
+
+				_ = agentConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
+				if err := agentConn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					return
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	go func() {
 		defer func() {
-
-			done <- true
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
 		}()
 		for {
 			messageType, message, err := clientConn.ReadMessage()
@@ -229,6 +272,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 				}
 			}
 
+			_ = agentConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
 			if err := agentConn.WriteMessage(messageType, message); err != nil {
 				break
 			}
@@ -237,13 +281,18 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 
 	go func() {
 		defer func() {
-			done <- true
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
 		}()
 		for {
 			messageType, message, err := agentConn.ReadMessage()
 			if err != nil {
 				break
 			}
+			_ = clientConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
 			if err := clientConn.WriteMessage(messageType, message); err != nil {
 				break
 			}
