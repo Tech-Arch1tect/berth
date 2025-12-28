@@ -2,6 +2,10 @@
 
 Berth provides a REST API for managing Docker stacks across multiple remote agents.
 
+**These documents are created with heavy AI assistance**. A best-effort approach is being taken. I am trying to test and verify all documents however it is inevitable that mistakes will make there way in. Do not expect this to be a source of truth, instead please use this as a general idea of the API. For example, the LLM-assisted documentation has real issues identifying which endpoints allow for what authentication (cookie-based session auth vs jwt vs api key's, etc).
+
+In a perfect world I would be creating this documentation from scratch however Berth doesn't have a team or company behind it, and documentation isn't a priority currently.
+
 ## Base URL
 
 All API endpoints are prefixed with `/api/v1/` for REST endpoints and `/ws/api/` for WebSocket endpoints.
