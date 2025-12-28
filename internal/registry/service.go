@@ -186,20 +186,27 @@ func (s *Service) DeleteCredential(credID uint) error {
 		zap.Uint("credential_id", credID),
 	)
 
-	result := s.db.Delete(&models.ServerRegistryCredential{}, credID)
-	if result.Error != nil {
-		s.logger.Error("failed to delete registry credential",
-			zap.Error(result.Error),
+	var credential models.ServerRegistryCredential
+	if err := s.db.First(&credential, credID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("no credential found to delete",
+				zap.Uint("credential_id", credID),
+			)
+			return gorm.ErrRecordNotFound
+		}
+		s.logger.Error("failed to fetch registry credential for deletion",
+			zap.Error(err),
 			zap.Uint("credential_id", credID),
 		)
-		return result.Error
+		return err
 	}
 
-	if result.RowsAffected == 0 {
-		s.logger.Warn("no credential found to delete",
+	if err := s.db.Delete(&credential).Error; err != nil {
+		s.logger.Error("failed to delete registry credential",
+			zap.Error(err),
 			zap.Uint("credential_id", credID),
 		)
-		return gorm.ErrRecordNotFound
+		return err
 	}
 
 	s.logger.Info("registry credential deleted successfully",
