@@ -336,9 +336,24 @@ func TestStackEndpointsSessionAuth(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]interface{}{
 		{"name": "session-test-stack", "is_healthy": true},
 	})
+	mockAgent.RegisterJSONHandler("/api/compose", map[string]string{
+		"message": "Compose file updated successfully",
+	})
 
 	t.Run("GET /api/v1/servers/:id/stacks works with session auth", func(t *testing.T) {
 		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+	})
+
+	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose works with session auth", func(t *testing.T) {
+		resp, err := sessionClient.Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/session-test-stack/compose", map[string]interface{}{
+			"changes": map[string]interface{}{
+				"service_image_updates": []map[string]interface{}{
+					{"service_name": "web", "new_tag": "1.25"},
+				},
+			},
+		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
@@ -354,5 +369,21 @@ func TestStackEndpointsNoAuth(t *testing.T) {
 		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose requires authentication", func(t *testing.T) {
+		resp, err := app.HTTPClient.Patch("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
+			"changes": map[string]interface{}{},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose redirects without auth", func(t *testing.T) {
+		resp, err := app.HTTPClient.WithoutRedirects().Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
+			"changes": map[string]interface{}{},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 302, resp.StatusCode)
 	})
 }
