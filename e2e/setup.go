@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -56,6 +57,35 @@ import (
 
 	"github.com/tech-arch1tect/brx/testutils"
 )
+
+var (
+	globalCoverageTracker     *e2etesting.CoverageTracker
+	globalCoverageTrackerOnce sync.Once
+	routesRegisteredOnce      sync.Once
+)
+
+func GetGlobalCoverageTracker() *e2etesting.CoverageTracker {
+	globalCoverageTrackerOnce.Do(func() {
+		globalCoverageTracker = e2etesting.NewCoverageTracker()
+
+		globalCoverageTracker.AddExcludePattern("static")
+		globalCoverageTracker.AddExcludePattern("assets")
+	})
+	return globalCoverageTracker
+}
+
+func PrintCoverageReport() {
+	if globalCoverageTracker != nil {
+		globalCoverageTracker.PrintReport()
+	}
+}
+
+func GetCoverageStats() e2etesting.CoverageStats {
+	if globalCoverageTracker == nil {
+		return e2etesting.CoverageStats{}
+	}
+	return globalCoverageTracker.GetStats()
+}
 
 type TestApp struct {
 	E2EApp        *e2etesting.E2EApp
@@ -219,6 +249,15 @@ func SetupTestApp(t *testing.T) *TestApp {
 	ctx := context.Background()
 	err = e2eApp.Start(ctx)
 	require.NoError(t, err, "failed to start test app")
+
+	tracker := GetGlobalCoverageTracker()
+	if echoServer := e2eApp.App.Server(); echoServer != nil {
+		echoServer.Use(tracker.TrackingMiddleware())
+
+		routesRegisteredOnce.Do(func() {
+			tracker.RegisterRoutes(echoServer)
+		})
+	}
 
 	httpClient := &e2etesting.HTTPClient{
 		Client:  http.DefaultClient,
