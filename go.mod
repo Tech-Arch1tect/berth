@@ -9,7 +9,7 @@ require (
 	github.com/romsar/gonertia/v2 v2.0.7
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
-	github.com/tech-arch1tect/brx v0.0.14
+	github.com/tech-arch1tect/brx v0.0.15
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.43.0
