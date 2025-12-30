@@ -524,6 +524,52 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 		assert.Equal(t, 404, resp.StatusCode)
 	})
 
+	t.Run("PUT /api/servers/:server_id/registries/:id updates credential", func(t *testing.T) {
+		require.NotZero(t, createdCredentialID, "credential must be created first")
+
+		resp, err := sessionClient.Put("/api/servers/"+itoa(testServer.ID)+"/registries/"+itoa(createdCredentialID), map[string]interface{}{
+			"registry_url":  "ghcr.io",
+			"username":      "updateduser",
+			"password":      "updatedtoken",
+			"stack_pattern": "staging-*",
+			"image_pattern": "myorg/*",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+
+		var credResp SingleRegistryCredentialResponse
+		require.NoError(t, resp.GetJSON(&credResp))
+		assert.Equal(t, createdCredentialID, credResp.Credential.ID)
+		assert.Equal(t, "updateduser", credResp.Credential.Username)
+		assert.Equal(t, "staging-*", credResp.Credential.StackPattern)
+	})
+
+	t.Run("PUT /api/servers/:server_id/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
+		resp, err := sessionClient.Put("/api/servers/"+itoa(testServer.ID)+"/registries/99999", map[string]interface{}{
+			"username": "testuser",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/servers/:server_id/registries/:id deletes credential", func(t *testing.T) {
+		require.NotZero(t, createdCredentialID, "credential must be created first")
+
+		resp, err := sessionClient.Delete("/api/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+
+		getResp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		require.NoError(t, err)
+		assert.Equal(t, 404, getResp.StatusCode)
+	})
+
+	t.Run("DELETE /api/servers/:server_id/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
+		resp, err := sessionClient.Delete("/api/servers/" + itoa(testServer.ID) + "/registries/99999")
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode)
+	})
+
 }
 
 func TestRegistryEndpointsNoAuth(t *testing.T) {
