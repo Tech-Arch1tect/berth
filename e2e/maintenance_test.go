@@ -398,6 +398,34 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 	})
 }
 
+func TestMaintenanceEndpointsSessionAuth(t *testing.T) {
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "maintenancesessionuser",
+		Email:    "maintenancesessionuser@example.com",
+		Password: "password123",
+	}
+	app.CreateAdminTestUser(t, user)
+
+	sessionClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
+	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-maintenance-session")
+
+	mockAgent.RegisterJSONHandler("/api/maintenance/resource", map[string]interface{}{
+		"success": true,
+		"message": "Resource deleted successfully",
+	})
+
+	t.Run("DELETE /api/servers/:serverid/maintenance/resource works with session auth", func(t *testing.T) {
+		resp, err := sessionClient.DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/maintenance/resource", map[string]interface{}{
+			"type": "image",
+			"id":   "test-image-id",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+	})
+}
+
 func TestMaintenanceEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
@@ -435,6 +463,15 @@ func TestMaintenanceEndpointsNoAuth(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/servers/:serverid/maintenance/resource redirects without auth", func(t *testing.T) {
+		resp, err := app.HTTPClient.WithoutRedirects().DeleteWithBody("/api/servers/1/maintenance/resource", map[string]interface{}{
+			"type": "image",
+			"id":   "test",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 302, resp.StatusCode)
 	})
 }
 
