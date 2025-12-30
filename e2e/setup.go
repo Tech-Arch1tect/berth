@@ -87,6 +87,18 @@ func GetCoverageStats() e2etesting.CoverageStats {
 	return globalCoverageTracker.GetStats()
 }
 
+func TagTest(t interface{ Name() string }, method, path, category, value string) {
+	e2etesting.TagTest(t, method, path, category, value)
+}
+
+func GetTestQualityStats() e2etesting.TestQualityStats {
+	return e2etesting.GetTestTagTracker().GetStats()
+}
+
+func PrintTestQualityReport() {
+	e2etesting.GetTestTagTracker().PrintReport()
+}
+
 type TestApp struct {
 	E2EApp        *e2etesting.E2EApp
 	HTTPClient    *e2etesting.HTTPClient
@@ -308,7 +320,7 @@ func (app *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
 	crypto := utils.NewCrypto("test-encryption-secret-key-32chars!!")
 	encryptedToken, err := crypto.Encrypt("test-access-token")
-	require.NoError(t, err, "failed to encrypt access token")
+	require.NoError(t, err, "failed to encrypt access tokene")
 
 	host := mockAgentURL
 	port := 443

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
 // TestMain runs before/after all tests in this package
@@ -46,6 +48,31 @@ func TestMain(m *testing.M) {
 
 		fmt.Printf("\nAPI Coverage: %d/%d endpoints (%.1f%%) - see %s for details\n",
 			stats.CoveredRoutes, stats.TotalRoutes, stats.Coverage, textFile)
+	}
+
+	qualityStats := GetTestQualityStats()
+	if qualityStats.TotalTests > 0 {
+		qualityTracker := e2etesting.GetTestTagTracker()
+		coverageTracker := GetGlobalCoverageTracker()
+
+		qualityJSONFile := os.Getenv("E2E_QUALITY_JSON")
+		if qualityJSONFile == "" {
+			qualityJSONFile = "quality-report.json"
+		}
+		if err := qualityTracker.WriteJSONReportWithCoverage(qualityJSONFile, coverageTracker); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to write JSON quality report: %v\n", err)
+		}
+
+		qualityTextFile := os.Getenv("E2E_QUALITY_FILE")
+		if qualityTextFile == "" {
+			qualityTextFile = "quality-report.txt"
+		}
+		if err := qualityTracker.WriteReportToFileWithCoverage(qualityTextFile, coverageTracker); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to write quality report file: %v\n", err)
+		}
+
+		fmt.Printf("Test Quality: %d tagged tests, avg score: %.1f - see %s for details\n",
+			qualityStats.TotalTests, qualityStats.AverageScore, qualityTextFile)
 	}
 
 	os.Exit(code)
