@@ -321,9 +321,20 @@ func TestFileEndpointsSessionAuth(t *testing.T) {
 		"path":    ".",
 		"entries": []map[string]interface{}{},
 	})
+	mockAgent.RegisterJSONHandler("/api/stacks/test-stack/files/delete", map[string]string{
+		"message": "File deleted successfully",
+	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files works with session auth", func(t *testing.T) {
 		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files")
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete works with session auth", func(t *testing.T) {
+		resp, err := sessionClient.DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
+			"path": "test-file.txt",
+		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
@@ -339,5 +350,21 @@ func TestFileEndpointsNoAuth(t *testing.T) {
 		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/v1/servers/:serverid/stacks/:stackname/files/delete requires authentication", func(t *testing.T) {
+		resp, err := app.HTTPClient.DeleteWithBody("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
+			"path": "test-file.txt",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete redirects without auth", func(t *testing.T) {
+		resp, err := app.HTTPClient.WithoutRedirects().DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
+			"path": "test-file.txt",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 302, resp.StatusCode)
 	})
 }
