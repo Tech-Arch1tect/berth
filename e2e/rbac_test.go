@@ -309,7 +309,6 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.AccessToken
 
-	// Create a test user to assign roles to
 	createResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
 		Path:   "/api/v1/admin/users",
@@ -330,7 +329,6 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	var createdUser UserInfo
 	require.NoError(t, createResp.GetJSON(&createdUser))
 
-	// Create a test role
 	roleResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
 		Path:   "/api/v1/admin/roles",
@@ -405,7 +403,6 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.AccessToken
 
-	// Create a non-admin role for testing stack permissions
 	roleResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
 		Path:   "/api/v1/admin/roles",
@@ -442,7 +439,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/roles/:roleId/stack-permissions returns 400 for admin role", func(t *testing.T) {
-		// Find admin role ID
+
 		rolesResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/roles",
@@ -473,6 +470,129 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
+	})
+
+	mockAgent, testServer := app.CreateTestServerWithAgent(t, "rbac-stackperm-server")
+	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
+
+	permResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+		Method: "GET",
+		Path:   "/api/v1/admin/permissions",
+		Headers: map[string]string{
+			"Authorization": "Bearer " + token,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, permResp.StatusCode)
+
+	var permList struct {
+		Permissions []struct {
+			ID   uint   `json:"id"`
+			Name string `json:"name"`
+		} `json:"permissions"`
+	}
+	require.NoError(t, permResp.GetJSON(&permList))
+	require.NotEmpty(t, permList.Permissions, "should have permissions")
+	testPermissionID := permList.Permissions[0].ID
+
+	var createdStackPermissionID uint
+
+	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions creates stack permission", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+				"Content-Type":  "application/json",
+			},
+			Body: map[string]interface{}{
+				"server_id":     testServer.ID,
+				"permission_id": testPermissionID,
+				"stack_pattern": "test-*",
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 201, resp.StatusCode)
+
+		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, getResp.StatusCode)
+
+		var stackPermResp StackPermissionsResponse
+		require.NoError(t, getResp.GetJSON(&stackPermResp))
+		require.NotEmpty(t, stackPermResp.PermissionRules, "should have permission rules")
+
+		idVal, ok := stackPermResp.PermissionRules[0]["id"].(float64)
+		require.True(t, ok, "id should be a number")
+		createdStackPermissionID = uint(idVal)
+	})
+
+	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions requires server_id and permission_id", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+				"Content-Type":  "application/json",
+			},
+			Body: map[string]interface{}{
+				"stack_pattern": "test-*",
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+
+	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions rejects duplicate", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+				"Content-Type":  "application/json",
+			},
+			Body: map[string]interface{}{
+				"server_id":     testServer.ID,
+				"permission_id": testPermissionID,
+				"stack_pattern": "test-*",
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+
+	t.Run("DELETE /api/v1/admin/roles/:roleId/stack-permissions/:permissionId deletes permission", func(t *testing.T) {
+		require.NotZero(t, createdStackPermissionID, "stack permission must be created first")
+
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "DELETE",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions/" + itoa(createdStackPermissionID),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+
+		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, getResp.StatusCode)
+
+		var stackPermResp StackPermissionsResponse
+		require.NoError(t, getResp.GetJSON(&stackPermResp))
+		assert.Empty(t, stackPermResp.PermissionRules)
 	})
 }
 
@@ -526,7 +646,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 
 		var permResp PermissionsListResponse
 		require.NoError(t, resp.GetJSON(&permResp))
-		// All returned permissions should not be API-key-only
+
 		for _, perm := range permResp.Permissions {
 			assert.False(t, perm.IsAPIKeyOnly, "role type filter should exclude API-key-only permissions")
 		}
@@ -558,7 +678,6 @@ func TestRBACEndpointsNoAuth(t *testing.T) {
 func TestRBACEndpointsNonAdmin(t *testing.T) {
 	app := SetupTestApp(t)
 
-	// Create a regular user (not admin)
 	user := &e2etesting.TestUser{
 		Username: "rbacregularuser",
 		Email:    "rbacregularuser@example.com",
