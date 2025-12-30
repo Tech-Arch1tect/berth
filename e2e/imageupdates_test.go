@@ -31,12 +31,14 @@ func TestImageUpdatesNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/image-updates redirects to login when unauthenticated", func(t *testing.T) {
+		TagTest(t, "GET", "/api/image-updates", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Get("/api/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 302, resp.StatusCode)
 	})
 
 	t.Run("GET /api/servers/:id/image-updates redirects to login when unauthenticated", func(t *testing.T) {
+		TagTest(t, "GET", "/api/servers/:id/image-updates", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Get("/api/servers/1/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 302, resp.StatusCode)
@@ -55,6 +57,7 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 	sessionClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
 
 	t.Run("GET /api/image-updates returns empty list when no updates", func(t *testing.T) {
+		TagTest(t, "GET", "/api/image-updates", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -65,12 +68,14 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/servers/1/image-updates returns 403 when server doesn't exist", func(t *testing.T) {
+		TagTest(t, "GET", "/api/servers/:id/image-updates", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/servers/1/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode)
 	})
 
 	t.Run("GET /api/servers/invalid/image-updates returns 400 for invalid server ID", func(t *testing.T) {
+		TagTest(t, "GET", "/api/servers/:id/image-updates", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/servers/invalid/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
@@ -89,12 +94,14 @@ func TestImageUpdatesNonAdmin(t *testing.T) {
 	sessionClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
 
 	t.Run("GET /api/image-updates returns 200 for user without server access", func(t *testing.T) {
+		TagTest(t, "GET", "/api/image-updates", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
 	t.Run("GET /api/servers/1/image-updates returns 403 for user without server access", func(t *testing.T) {
+		TagTest(t, "GET", "/api/servers/:id/image-updates", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/servers/1/image-updates")
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode)

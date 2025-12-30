@@ -90,6 +90,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/users returns users list", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/users", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/users",
@@ -108,6 +109,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	var createdUserID uint
 
 	t.Run("POST /api/v1/admin/users creates new user", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/users", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/users",
@@ -133,6 +135,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/users returns 400 for duplicate user", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/users", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/users",
@@ -152,6 +155,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/users/:id/roles returns user roles", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/users/:id/roles", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/users/" + itoa(createdUserID) + "/roles",
@@ -169,6 +173,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/users/:id/roles returns 404 for non-existent user", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/users/:id/roles", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/users/99999/roles",
@@ -203,6 +208,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/roles returns roles list", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/roles", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/roles",
@@ -230,6 +236,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	var createdRoleID uint
 
 	t.Run("POST /api/v1/admin/roles creates new role", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/roles", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/roles",
@@ -254,6 +261,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("PUT /api/v1/admin/roles/:id updates role", func(t *testing.T) {
+		TagTest(t, "PUT", "/api/v1/admin/roles/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "PUT",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRoleID),
@@ -276,6 +284,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/v1/admin/roles/:id deletes role", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/admin/roles/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRoleID),
@@ -348,6 +357,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	require.NoError(t, roleResp.GetJSON(&createdRole))
 
 	t.Run("POST /api/v1/admin/users/assign-role assigns role to user", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/users/assign-role", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/users/assign-role",
@@ -365,6 +375,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/users/revoke-role revokes role from user", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/users/revoke-role", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/users/revoke-role",
@@ -422,6 +433,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	require.NoError(t, roleResp.GetJSON(&createdRole))
 
 	t.Run("GET /api/v1/admin/roles/:roleId/stack-permissions returns stack permissions", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
@@ -439,7 +451,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/roles/:roleId/stack-permissions returns 400 for admin role", func(t *testing.T) {
-
+		TagTest(t, "GET", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		rolesResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/roles",
@@ -498,6 +510,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	var createdStackPermissionID uint
 
 	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions creates stack permission", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
@@ -534,6 +547,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions requires server_id and permission_id", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
@@ -550,6 +564,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/roles/:roleId/stack-permissions rejects duplicate", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
@@ -568,6 +583,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/v1/admin/roles/:roleId/stack-permissions/:permissionId deletes permission", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/admin/roles/:roleId/stack-permissions/:permissionId", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdStackPermissionID, "stack permission must be created first")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -618,6 +634,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/permissions returns all permissions", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/permissions",
@@ -634,6 +651,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/permissions?type=role filters permissions", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/permissions?type=role",
@@ -657,18 +675,21 @@ func TestRBACEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/admin/users requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/users", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/users")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("GET /api/v1/admin/roles requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/roles", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/roles")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("GET /api/v1/admin/permissions requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/permissions", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/permissions")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
@@ -697,6 +718,7 @@ func TestRBACEndpointsNonAdmin(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/users returns 403 for non-admin", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/users", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/users",
@@ -709,6 +731,7 @@ func TestRBACEndpointsNonAdmin(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/roles returns 403 for non-admin", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/roles", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/roles",

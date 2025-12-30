@@ -69,6 +69,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs returns paginated logs", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs",
@@ -87,6 +88,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports pagination", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs?page=1&per_page=5",
@@ -104,6 +106,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports filtering by event_type", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs?event_type=api.token.issued",
@@ -122,6 +125,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports filtering by success", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs?success=true",
@@ -162,6 +166,7 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs/stats returns statistics", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs/stats",
@@ -218,6 +223,7 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	logID := logsResp.Logs[0].ID
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id returns log details", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs/" + itoa(logID),
@@ -236,6 +242,7 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id returns 404 for non-existent log", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs/99999",
@@ -275,6 +282,7 @@ func TestMigrationExportJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("POST /api/v1/admin/migration/export requires password", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/export",
@@ -289,6 +297,7 @@ func TestMigrationExportJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/migration/export requires minimum password length", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/export",
@@ -305,6 +314,7 @@ func TestMigrationExportJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/migration/export returns encrypted backup", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/export",
@@ -348,6 +358,7 @@ func TestMigrationImportJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("POST /api/v1/admin/migration/import requires password", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/import", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/import",
@@ -362,6 +373,7 @@ func TestMigrationImportJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/migration/import requires backup_file", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/import", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/import",
@@ -398,6 +410,7 @@ func TestAdminOperationLogDetailJWT(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/operation-logs/:id returns 404 for non-existent log", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/operation-logs/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/operation-logs/99999",
@@ -414,24 +427,28 @@ func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/admin/security-audit-logs requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/security-audit-logs")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs/stats requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/stats", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/security-audit-logs/stats")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/security-audit-logs/1")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("POST /api/v1/admin/migration/export requires authentication", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Post("/api/v1/admin/migration/export", map[string]interface{}{
 			"password": "secure-password-123",
 		})
@@ -440,6 +457,7 @@ func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/migration/import requires authentication", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/import", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/import",
@@ -475,6 +493,7 @@ func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs returns 403 for non-admin", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/security-audit-logs",
@@ -487,6 +506,7 @@ func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/migration/export returns 403 for non-admin", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/migration/export",

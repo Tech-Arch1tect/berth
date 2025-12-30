@@ -14,7 +14,7 @@ func TestUserLogin(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("successful login", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/login", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		user := &e2etesting.TestUser{
 			Username: "loginuser1",
 			Email:    "loginuser1@example.com",
@@ -34,7 +34,7 @@ func TestUserLogin(t *testing.T) {
 	})
 
 	t.Run("invalid credentials", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "loginuser2",
 			Email:    "loginuser2@example.com",
@@ -51,7 +51,7 @@ func TestUserLogin(t *testing.T) {
 	})
 
 	t.Run("nonexistent user", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.AuthHelper.Login("nonexistent", "password")
 		require.NoError(t, err)
 
@@ -61,6 +61,7 @@ func TestUserLogin(t *testing.T) {
 
 func TestUserLogout(t *testing.T) {
 	app := SetupTestApp(t)
+	TagTest(t, "POST", "/auth/logout", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 
 	user := app.CreateVerifiedTestUser(t)
 	authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
@@ -83,7 +84,7 @@ func TestRememberMe(t *testing.T) {
 	user := app.CreateVerifiedTestUser(t)
 
 	t.Run("remember me login creates token", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/login", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.AuthHelper.LoginWithRememberMe(user.Username, user.Password)
 		require.NoError(t, err)
 
@@ -107,6 +108,7 @@ func TestRememberMe(t *testing.T) {
 	})
 
 	t.Run("remember me restores session after expiry", func(t *testing.T) {
+		TagTest(t, "GET", "/", e2etesting.CategoryIntegration, e2etesting.ValueHigh)
 		resp, err := app.AuthHelper.LoginWithRememberMe(user.Username, user.Password)
 		require.NoError(t, err)
 
@@ -143,7 +145,7 @@ func TestPasswordReset(t *testing.T) {
 	user := app.CreateVerifiedTestUser(t)
 
 	t.Run("password reset flow", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/password-reset", e2etesting.CategoryIntegration, e2etesting.ValueHigh)
 		resp, err := app.AuthHelper.RequestPasswordReset(user.Email)
 		require.NoError(t, err)
 
@@ -168,7 +170,7 @@ func TestPasswordReset(t *testing.T) {
 	})
 
 	t.Run("invalid token", func(t *testing.T) {
-
+		TagTest(t, "POST", "/auth/password-reset/confirm", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.AuthHelper.ResetPassword("invalid-token", "newpassword")
 		require.NoError(t, err)
 
@@ -180,7 +182,7 @@ func TestProtectedRoutes(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("unauthenticated access redirects to login", func(t *testing.T) {
-
+		TagTest(t, "GET", "/", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Get("/")
 		require.NoError(t, err)
 
@@ -188,7 +190,7 @@ func TestProtectedRoutes(t *testing.T) {
 	})
 
 	t.Run("authenticated access works", func(t *testing.T) {
-
+		TagTest(t, "GET", "/", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		user := app.CreateVerifiedTestUser(t)
 		authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
 
@@ -206,13 +208,14 @@ func TestSessionManagement(t *testing.T) {
 	authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
 
 	t.Run("view sessions page", func(t *testing.T) {
+		TagTest(t, "GET", "/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := authenticatedClient.Get("/sessions")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
 	t.Run("revoke all other sessions", func(t *testing.T) {
-
+		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		app.SessionHelper.CreateTestSession(t, user.ID, "another-session-token")
 
 		app.SessionHelper.AssertSessionCount(t, user.ID, 2)

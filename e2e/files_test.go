@@ -121,6 +121,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files returns directory listing", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files",
@@ -138,6 +139,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read returns file content", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files/read", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/read?path=docker-compose.yml",
@@ -155,6 +157,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read without path returns 400", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files/read", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/read",
@@ -167,6 +170,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/write creates file", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/write",
@@ -184,6 +188,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/mkdir creates directory", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/mkdir", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/mkdir",
@@ -201,6 +206,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/v1/servers/:serverid/stacks/:stackname/files/delete removes file", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/delete",
@@ -217,6 +223,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/rename moves file", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/rename", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/rename",
@@ -234,6 +241,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/copy copies file", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/copy", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/copy",
@@ -251,6 +259,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/chmod changes permissions", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/chmod", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/chmod",
@@ -269,6 +278,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/files/chown changes ownership", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/chown", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/chown",
@@ -288,6 +298,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/stats returns directory stats", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/stats",
@@ -326,12 +337,14 @@ func TestFileEndpointsSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files works with session auth", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
 	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete works with session auth", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
 			"path": "test-file.txt",
 		})
@@ -347,12 +360,14 @@ func TestFileEndpointsNoAuth(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks/test-stack/files", map[string]interface{}{})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("DELETE /api/v1/servers/:serverid/stacks/:stackname/files/delete requires authentication", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.DeleteWithBody("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
 			"path": "test-file.txt",
 		})
@@ -361,6 +376,7 @@ func TestFileEndpointsNoAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete redirects without auth", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
 			"path": "test-file.txt",
 		})

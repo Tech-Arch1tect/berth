@@ -68,6 +68,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers returns servers list", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers",
@@ -94,6 +95,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:id/statistics returns statistics", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/statistics", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/statistics",
@@ -109,6 +111,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/servers returns all servers", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/servers", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/servers",
@@ -125,6 +128,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/servers/:id returns single server", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/servers/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/servers/" + itoa(testServer.ID),
@@ -142,6 +146,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/servers/:id returns 404 for non-existent server", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/servers/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/servers/99999",
@@ -178,6 +183,7 @@ func TestServerCRUDOperations(t *testing.T) {
 	var createdServerID uint
 
 	t.Run("POST /api/v1/admin/servers creates a new server", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/servers", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/admin/servers",
@@ -206,6 +212,7 @@ func TestServerCRUDOperations(t *testing.T) {
 	})
 
 	t.Run("PUT /api/v1/admin/servers/:id updates a server", func(t *testing.T) {
+		TagTest(t, "PUT", "/api/v1/admin/servers/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdServerID, "server must be created first")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -235,6 +242,7 @@ func TestServerCRUDOperations(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/v1/admin/servers/:id deletes a server", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/admin/servers/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdServerID, "server must be created first")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -279,6 +287,7 @@ func TestServerTestConnection(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("POST /api/v1/admin/servers/:id/test succeeds with healthy agent", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/servers/:id/test", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-connection-server")
 		mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
@@ -294,6 +303,7 @@ func TestServerTestConnection(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/servers/:id/test fails with unhealthy agent", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/admin/servers/:id/test", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-connection-fail-server")
 		mockAgent.SetError(500, "Internal Server Error")
 
@@ -323,6 +333,7 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 	app.CreateTestServerWithAgent(t, "test-server-session")
 
 	t.Run("GET /api/v1/servers works with session auth", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/servers")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -333,6 +344,7 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/servers works with session auth", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/servers", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/admin/servers")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -347,12 +359,14 @@ func TestServerEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/servers requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/servers")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("GET /api/v1/admin/servers requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/servers", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/servers")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)

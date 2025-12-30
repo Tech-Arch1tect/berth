@@ -93,6 +93,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/operations starts operation", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/operations",
@@ -114,6 +115,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/operation-logs returns user operation logs", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/operation-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/operation-logs",
@@ -130,6 +132,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/operation-logs/stats returns user stats", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/operation-logs/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/operation-logs/stats",
@@ -146,6 +149,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/running-operations returns running operations", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/running-operations", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/running-operations",
@@ -158,6 +162,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/logs returns stack logs", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs?tail=50",
@@ -174,6 +179,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs returns container logs", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
@@ -208,6 +214,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/admin/operation-logs returns all operation logs", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/operation-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/operation-logs",
@@ -224,6 +231,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/operation-logs/stats returns global stats", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/admin/operation-logs/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/admin/operation-logs/stats",
@@ -262,6 +270,7 @@ func TestOperationLogsDetailEndpoints(t *testing.T) {
 	token := login.AccessToken
 
 	t.Run("GET /api/v1/operation-logs/:id returns 404 for non-existent log", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/operation-logs/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/operation-logs/99999",
@@ -274,6 +283,7 @@ func TestOperationLogsDetailEndpoints(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/operation-logs/by-operation-id/:operationId returns 404 for non-existent operation", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/operation-logs/by-operation-id/:operationId", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/operation-logs/by-operation-id/non-existent-uuid",
@@ -293,6 +303,7 @@ func TestOperationsEndpointsNoAuth(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks/test-stack/operations", map[string]interface{}{})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/operations requires authentication", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/operations",
@@ -308,6 +319,7 @@ func TestOperationsEndpointsNoAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/operation-logs requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/operation-logs", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/operation-logs")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)

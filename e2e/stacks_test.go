@@ -133,6 +133,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:id/stacks returns stacks list", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks",
@@ -150,6 +151,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname returns stack details", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack",
@@ -162,6 +164,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/permissions returns permissions", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/permissions",
@@ -178,6 +181,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/networks returns networks", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/networks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/networks",
@@ -190,6 +194,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/volumes returns volumes", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/volumes", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/volumes",
@@ -202,6 +207,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/environment returns environment", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/environment", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/environment",
@@ -214,6 +220,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/images returns images", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/images", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/images",
@@ -226,6 +233,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/stats returns stats", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/stats",
@@ -275,6 +283,7 @@ func TestStackComposeEndpoints(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/compose/preview returns preview", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/compose/preview", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/compose/preview",
@@ -300,6 +309,7 @@ func TestStackComposeEndpoints(t *testing.T) {
 	})
 
 	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose updates compose", func(t *testing.T) {
+		TagTest(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "PATCH",
 			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/compose",
@@ -341,12 +351,14 @@ func TestStackEndpointsSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/servers/:id/stacks works with session auth", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
 	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose works with session auth", func(t *testing.T) {
+		TagTest(t, "PATCH", "/api/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/session-test-stack/compose", map[string]interface{}{
 			"changes": map[string]interface{}{
 				"service_image_updates": []map[string]interface{}{
@@ -366,12 +378,14 @@ func TestStackEndpointsNoAuth(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]interface{}{})
 
 	t.Run("GET /api/v1/servers/:id/stacks requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
 	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose requires authentication", func(t *testing.T) {
+		TagTest(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Patch("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
 			"changes": map[string]interface{}{},
 		})
@@ -380,6 +394,7 @@ func TestStackEndpointsNoAuth(t *testing.T) {
 	})
 
 	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose redirects without auth", func(t *testing.T) {
+		TagTest(t, "PATCH", "/api/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
 			"changes": map[string]interface{}{},
 		})

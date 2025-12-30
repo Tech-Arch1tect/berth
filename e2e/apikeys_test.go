@@ -72,6 +72,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	var createdScopeID uint
 
 	t.Run("GET /api/api-keys returns empty list initially", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/api-keys")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -83,6 +84,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/api-keys creates new API key", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := sessionClient.Post("/api/api-keys", map[string]interface{}{
 			"name": "Test API Key",
 		})
@@ -99,12 +101,14 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/api-keys requires name", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := sessionClient.Post("/api/api-keys", map[string]interface{}{})
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 	})
 
 	t.Run("GET /api/api-keys returns created key", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/api-keys")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -117,6 +121,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/api-keys/:id returns single key", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Get("/api/api-keys/" + itoa(createdAPIKeyID))
@@ -131,12 +136,14 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/api-keys/:id returns 404 for non-existent key", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/api-keys/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})
 
 	t.Run("GET /api/api-keys/:id/scopes returns empty list initially", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys/:id/scopes", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Get("/api/api-keys/" + itoa(createdAPIKeyID) + "/scopes")
@@ -150,6 +157,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/api-keys/:id/scopes adds scope", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys/:id/scopes", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Post("/api/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
@@ -166,6 +174,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/api-keys/:id/scopes requires stack_pattern", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys/:id/scopes", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Post("/api/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
@@ -176,6 +185,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/api-keys/:id/scopes requires permission", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys/:id/scopes", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Post("/api/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
@@ -186,6 +196,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("GET /api/api-keys/:id/scopes returns added scope", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys/:id/scopes", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Get("/api/api-keys/" + itoa(createdAPIKeyID) + "/scopes")
@@ -202,6 +213,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/api-keys/:id/scopes/:scopeId removes scope", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/api-keys/:id/scopes/:scopeId", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 		require.NotZero(t, createdScopeID, "Scope must be created first")
 
@@ -217,6 +229,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/api-keys/:id/scopes/:scopeId returns 404 for non-existent scope", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/api-keys/:id/scopes/:scopeId", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Delete("/api/api-keys/" + itoa(createdAPIKeyID) + "/scopes/99999")
@@ -225,6 +238,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/api-keys/:id revokes key", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/api-keys/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Delete("/api/api-keys/" + itoa(createdAPIKeyID))
@@ -237,6 +251,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/api-keys/:id returns 404 for non-existent key", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/api-keys/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := sessionClient.Delete("/api/api-keys/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
@@ -247,12 +262,14 @@ func TestAPIKeysNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/api-keys redirects without auth", func(t *testing.T) {
+		TagTest(t, "GET", "/api/api-keys", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Get("/api/api-keys")
 		require.NoError(t, err)
 		assert.Equal(t, 302, resp.StatusCode)
 	})
 
 	t.Run("POST /api/api-keys redirects without auth", func(t *testing.T) {
+		TagTest(t, "POST", "/api/api-keys", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Post("/api/api-keys", map[string]interface{}{
 			"name": "Test Key",
 		})
@@ -261,6 +278,7 @@ func TestAPIKeysNoAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/api-keys/:id redirects without auth", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/api-keys/:id", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.WithoutRedirects().Delete("/api/api-keys/1")
 		require.NoError(t, err)
 		assert.Equal(t, 302, resp.StatusCode)

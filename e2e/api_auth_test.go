@@ -91,6 +91,7 @@ func TestAPILogin(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("successful login returns tokens", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		user := &e2etesting.TestUser{
 			Username: "apiloginuser1",
 			Email:    "apiloginuser1@example.com",
@@ -118,6 +119,7 @@ func TestAPILogin(t *testing.T) {
 	})
 
 	t.Run("invalid credentials returns error", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "apiloginuser2",
 			Email:    "apiloginuser2@example.com",
@@ -138,6 +140,7 @@ func TestAPILogin(t *testing.T) {
 	})
 
 	t.Run("nonexistent user returns error", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
 			Username: "nonexistent",
 			Password: "password",
@@ -155,6 +158,7 @@ func TestAPIRefresh(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("valid refresh token returns new tokens", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		user := &e2etesting.TestUser{
 			Username: "apirefreshuser1",
 			Email:    "apirefreshuser1@example.com",
@@ -188,6 +192,7 @@ func TestAPIRefresh(t *testing.T) {
 	})
 
 	t.Run("invalid refresh token returns error", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
 			RefreshToken: "invalid-token",
 		})
@@ -204,6 +209,7 @@ func TestAPILogout(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("logout revokes tokens", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/logout", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		user := &e2etesting.TestUser{
 			Username: "apilogoutuser1",
 			Email:    "apilogoutuser1@example.com",
@@ -250,6 +256,7 @@ func TestAPIProfile(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("authenticated user can get profile", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/profile", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "apiprofileuser1",
 			Email:    "apiprofileuser1@example.com",
@@ -284,6 +291,7 @@ func TestAPIProfile(t *testing.T) {
 	})
 
 	t.Run("unauthenticated request returns error", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/profile", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/profile",
@@ -297,6 +305,7 @@ func TestAPITOTPStatus(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("new user has TOTP disabled", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/totp/status", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "apitotpuser1",
 			Email:    "apitotpuser1@example.com",
@@ -334,6 +343,7 @@ func TestAPISessions(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("list sessions returns current session", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "apisessionsuser1",
 			Email:    "apisessionsuser1@example.com",
@@ -379,6 +389,7 @@ func TestAPISessions(t *testing.T) {
 	})
 
 	t.Run("revoke all other sessions", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		user := &e2etesting.TestUser{
 			Username: "apisessionsuser2",
 			Email:    "apisessionsuser2@example.com",
@@ -433,6 +444,7 @@ func TestAPITOTPVerify(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("POST /api/v1/auth/totp/verify requires code", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/totp/verify",
@@ -447,6 +459,7 @@ func TestAPITOTPVerify(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/auth/totp/verify requires authorization header", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/totp/verify",
@@ -462,6 +475,7 @@ func TestAPITOTPVerify(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/auth/totp/verify with invalid token returns 401", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/totp/verify",
