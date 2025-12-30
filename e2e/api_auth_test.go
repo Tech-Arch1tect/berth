@@ -428,3 +428,52 @@ func TestAPISessions(t *testing.T) {
 		assert.Equal(t, 200, refreshResp2.StatusCode)
 	})
 }
+
+func TestAPITOTPVerify(t *testing.T) {
+	app := SetupTestApp(t)
+
+	t.Run("POST /api/v1/auth/totp/verify requires code", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/auth/totp/verify",
+			Headers: map[string]string{
+				"Authorization": "Bearer some-temp-token",
+				"Content-Type":  "application/json",
+			},
+			Body: map[string]interface{}{},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+
+	t.Run("POST /api/v1/auth/totp/verify requires authorization header", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/auth/totp/verify",
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: map[string]interface{}{
+				"code": "123456",
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("POST /api/v1/auth/totp/verify with invalid token returns 401", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/auth/totp/verify",
+			Headers: map[string]string{
+				"Authorization": "Bearer invalid-token",
+				"Content-Type":  "application/json",
+			},
+			Body: map[string]interface{}{
+				"code": "123456",
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+}

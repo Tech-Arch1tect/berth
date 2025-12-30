@@ -612,8 +612,8 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 func TestRegistryEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
-	t.Run("POST /api/servers/:server_id/registries is protected", func(t *testing.T) {
-		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+	t.Run("POST /api/servers/:server_id/registries redirects without auth", func(t *testing.T) {
+		resp, err := app.HTTPClient.WithoutRedirects().Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/servers/1/registries",
 			Headers: map[string]string{
@@ -626,7 +626,6 @@ func TestRegistryEndpointsNoAuth(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-
-		assert.NotEqual(t, 201, resp.StatusCode, "should not create credential for unauthenticated request")
+		assert.Equal(t, 302, resp.StatusCode)
 	})
 }

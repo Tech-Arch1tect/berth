@@ -321,6 +321,95 @@ func TestMigrationExportJWT(t *testing.T) {
 	})
 }
 
+func TestMigrationImportJWT(t *testing.T) {
+	app := SetupTestApp(t)
+
+	os.Setenv("ENCRYPTION_SECRET", "test-encryption-secret-key-32chars!!")
+	t.Cleanup(func() {
+		os.Unsetenv("ENCRYPTION_SECRET")
+	})
+
+	user := &e2etesting.TestUser{
+		Username: "migrationimportuser",
+		Email:    "migrationimportuser@example.com",
+		Password: "password123",
+	}
+	app.CreateAdminTestUser(t, user)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, loginResp.StatusCode)
+
+	var login LoginResponse
+	require.NoError(t, loginResp.GetJSON(&login))
+	token := login.AccessToken
+
+	t.Run("POST /api/v1/admin/migration/import requires password", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/migration/import",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+				"Content-Type":  "application/x-www-form-urlencoded",
+			},
+			Body: "backup_file=invalid",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+
+	t.Run("POST /api/v1/admin/migration/import requires backup_file", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/migration/import",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+				"Content-Type":  "application/x-www-form-urlencoded",
+			},
+			Body: "password=secure-password-123",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+}
+
+func TestAdminOperationLogDetailJWT(t *testing.T) {
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "adminoplogdetail",
+		Email:    "adminoplogdetail@example.com",
+		Password: "password123",
+	}
+	app.CreateAdminTestUser(t, user)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, loginResp.StatusCode)
+
+	var login LoginResponse
+	require.NoError(t, loginResp.GetJSON(&login))
+	token := login.AccessToken
+
+	t.Run("GET /api/v1/admin/operation-logs/:id returns 404 for non-existent log", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/admin/operation-logs/99999",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode)
+	})
+}
+
 func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
@@ -345,6 +434,19 @@ func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
 	t.Run("POST /api/v1/admin/migration/export requires authentication", func(t *testing.T) {
 		resp, err := app.HTTPClient.Post("/api/v1/admin/migration/export", map[string]interface{}{
 			"password": "secure-password-123",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("POST /api/v1/admin/migration/import requires authentication", func(t *testing.T) {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/admin/migration/import",
+			Headers: map[string]string{
+				"Content-Type": "application/x-www-form-urlencoded",
+			},
+			Body: "password=test",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
