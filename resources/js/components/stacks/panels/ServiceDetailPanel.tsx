@@ -217,7 +217,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
       </div>
 
       {/* Collapsible Logs Section */}
-      {canViewLogs && (
+      {canViewLogs && containerNames.length > 0 && (
         <div
           className={cn('flex-shrink-0 flex flex-col', 'border-zinc-200 dark:border-zinc-800')}
           style={logsExpanded ? { height: `${logsHeight}px` } : undefined}
