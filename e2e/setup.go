@@ -137,6 +137,9 @@ func SetupTestApp(t *testing.T) *TestApp {
 			cfg.Revocation.Store = "memory"
 			cfg.Revocation.CleanupPeriod = time.Hour
 
+			cfg.TOTP.Enabled = true
+			cfg.TOTP.Issuer = "Test App"
+
 			cfg.Inertia.RootView = "../app.html"
 			cfg.Mail.TemplatesDir = filepath.Join("..", "testdata", "mail")
 			return cfg
