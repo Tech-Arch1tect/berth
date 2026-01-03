@@ -10,7 +10,6 @@ export interface LogsResponse {
 }
 
 export interface LogViewerProps {
-  serviceName?: string;
   containerName?: string;
   containers?: Container[];
   compact?: boolean;

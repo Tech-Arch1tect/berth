@@ -16,7 +16,6 @@ import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useServerStack } from '../../contexts/ServerStackContext';
 
 const LogViewer: React.FC<LogViewerProps> = ({
-  serviceName,
   containerName,
   containers = [],
   compact = false,
@@ -57,7 +56,6 @@ const LogViewer: React.FC<LogViewerProps> = ({
   } = useLogViewerState({
     serverid: serverId,
     stackname: stackName,
-    serviceName,
     containerName,
   });
 

@@ -4,14 +4,12 @@ import { useLogs } from './useLogs';
 interface UseLogViewerStateOptions {
   serverid: number;
   stackname: string;
-  serviceName?: string;
   containerName?: string;
 }
 
 export function useLogViewerState({
   serverid,
   stackname,
-  serviceName,
   containerName,
 }: UseLogViewerStateOptions) {
   const [selectedContainer, setSelectedContainer] = useState<string>('');
@@ -41,7 +39,6 @@ export function useLogViewerState({
   } = useLogs({
     serverid,
     stackname,
-    serviceName: serviceName,
     containerName: selectedContainer || containerName,
   });
 
@@ -132,8 +129,8 @@ export function useLogViewerState({
     return stats;
   }, [logs]);
 
-  const title = containerName ? containerName : serviceName ? serviceName : stackname;
-  const subtitle = containerName ? 'Container Logs' : serviceName ? 'Service Logs' : 'Stack Logs';
+  const title = containerName || stackname;
+  const subtitle = containerName ? 'Container Logs' : 'Stack Logs';
 
   return {
     selectedContainer,

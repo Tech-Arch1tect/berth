@@ -4,7 +4,6 @@ import { LogEntry, LogsResponse, LogFilterOptions } from '../types/logs';
 interface UseLogsOptions {
   serverid: number;
   stackname: string;
-  serviceName?: string;
   containerName?: string;
 }
 
@@ -21,12 +20,7 @@ interface UseLogsReturn {
   resetLogs: () => void;
 }
 
-export const useLogs = ({
-  serverid,
-  stackname,
-  serviceName,
-  containerName,
-}: UseLogsOptions): UseLogsReturn => {
+export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions): UseLogsReturn => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +32,8 @@ export const useLogs = ({
     if (containerName) {
       return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/containers/${encodeURIComponent(containerName)}/logs`;
     }
-    if (serviceName) {
-      return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/services/${encodeURIComponent(serviceName)}/logs`;
-    }
     return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/logs`;
-  }, [serverid, stackname, serviceName, containerName]);
+  }, [serverid, stackname, containerName]);
 
   const fetchLogs = useCallback(
     async (options: Partial<LogFilterOptions>, silent = false) => {
