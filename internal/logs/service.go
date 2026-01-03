@@ -44,7 +44,6 @@ type LogRequest struct {
 	UserID        uint
 	ServerID      uint
 	StackName     string
-	ServiceName   string
 	ContainerName string
 	Tail          int
 	Since         string
