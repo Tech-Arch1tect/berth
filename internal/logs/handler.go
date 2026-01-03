@@ -3,6 +3,7 @@ package logs
 import (
 	"berth/internal/common"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -39,6 +40,12 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 
 	logs, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
+		if strings.Contains(err.Error(), "insufficient permissions") {
+			return common.SendForbidden(c, err.Error())
+		}
+		if strings.Contains(err.Error(), "record not found") {
+			return common.SendNotFound(c, "Server not found")
+		}
 		return common.SendInternalError(c, err.Error())
 	}
 
@@ -73,7 +80,12 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 
 	logs, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
-		c.Logger().Error("Container logs error: ", err)
+		if strings.Contains(err.Error(), "insufficient permissions") {
+			return common.SendForbidden(c, err.Error())
+		}
+		if strings.Contains(err.Error(), "record not found") {
+			return common.SendNotFound(c, "Server not found")
+		}
 		return common.SendInternalError(c, err.Error())
 	}
 
