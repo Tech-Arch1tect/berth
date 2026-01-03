@@ -10,7 +10,6 @@ import {
   Cog6ToothIcon,
   SignalIcon,
   SignalSlashIcon,
-  CodeBracketIcon,
   HomeIcon,
   ChevronRightIcon,
   ChevronDownIcon,
@@ -36,7 +35,6 @@ interface StackToolbarProps {
   onRefresh: () => void;
   onCopyDocs: () => void;
   onDownloadDocs: () => void;
-  onEditCompose: () => void;
   onAdvancedOperations: () => void;
 }
 
@@ -55,7 +53,6 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
   onRefresh,
   onCopyDocs,
   onDownloadDocs,
-  onEditCompose,
   onAdvancedOperations,
 }) => {
   const [docsMenuOpen, setDocsMenuOpen] = useState(false);
@@ -190,20 +187,6 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         >
           <ArrowPathIcon className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
         </button>
-
-        {canManage && (
-          <button
-            onClick={onEditCompose}
-            className={cn(
-              'p-2 rounded-md transition-colors',
-              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-              theme.text.muted
-            )}
-            title="Edit compose file"
-          >
-            <CodeBracketIcon className="w-4 h-4" />
-          </button>
-        )}
 
         {/* Documentation split button */}
         <div ref={docsMenuRef} className="relative flex">

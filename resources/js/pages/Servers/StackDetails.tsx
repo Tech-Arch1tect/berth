@@ -5,7 +5,6 @@ import { useStackDetailsPage } from '../../hooks/useStackDetailsPage';
 import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { ComposeEditor } from '../../components/compose';
 import { ServerStackProvider } from '../../contexts/ServerStackContext';
 import { ImageUpdateBanner } from '../../components/image-updates';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
@@ -110,7 +109,6 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                     onRefresh={handleRefresh}
                     onCopyDocs={stack.handleCopyDocumentation}
                     onDownloadDocs={stack.handleDownloadDocumentation}
-                    onEditCompose={() => stack.setShowComposeEditor(true)}
                     onAdvancedOperations={() => stack.setAdvancedOperationsOpen(true)}
                   />
                 }
@@ -193,17 +191,6 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                 })) || [],
               onClose: () => stack.setAdvancedOperationsOpen(false),
             }}
-          />
-        )}
-
-        {/* Compose Editor Modal */}
-        {stack.showComposeEditor && stack.stackDetails && stack.stackDetails.services && (
-          <ComposeEditor
-            services={stack.stackDetails.services}
-            serverId={serverid}
-            stackName={stackname}
-            onUpdate={stack.handleComposeUpdate}
-            onClose={() => stack.setShowComposeEditor(false)}
           />
         )}
       </ServerStackProvider>
