@@ -38,11 +38,6 @@ type StackStatsResponse struct {
 	} `json:"containers"`
 }
 
-type ComposePreviewResponse struct {
-	Original string `json:"original"`
-	Preview  string `json:"preview"`
-}
-
 func TestStackEndpointsJWT(t *testing.T) {
 	app := SetupTestApp(t)
 
@@ -250,86 +245,6 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 }
 
-func TestStackComposeEndpoints(t *testing.T) {
-	app := SetupTestApp(t)
-
-	user := &e2etesting.TestUser{
-		Username: "stackscomposeuser",
-		Email:    "stackscomposeuser@example.com",
-		Password: "password123",
-	}
-	app.CreateAdminTestUser(t, user)
-
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
-		Username: user.Username,
-		Password: user.Password,
-	})
-	require.NoError(t, err)
-	var login LoginResponse
-	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
-
-	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-compose")
-
-	mockAgent.RegisterJSONHandler("/api/compose/preview", map[string]interface{}{
-		"data": map[string]interface{}{
-			"original": "version: '3'\nservices:\n  web:\n    image: nginx:latest\n",
-			"preview":  "version: '3'\nservices:\n  web:\n    image: nginx:1.25\n",
-		},
-	})
-
-	mockAgent.RegisterJSONHandler("/api/compose", map[string]string{
-		"message": "Compose file updated successfully",
-	})
-
-	t.Run("POST /api/v1/servers/:serverid/stacks/:stackname/compose/preview returns preview", func(t *testing.T) {
-		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/compose/preview", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/compose/preview",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + token,
-				"Content-Type":  "application/json",
-			},
-			Body: map[string]interface{}{
-				"changes": map[string]interface{}{
-					"service_image_updates": []map[string]interface{}{
-						{"service_name": "web", "new_tag": "1.25"},
-					},
-				},
-			},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 200, resp.StatusCode)
-
-		var previewResp ComposePreviewResponse
-		require.NoError(t, resp.GetJSON(&previewResp))
-		assert.NotEmpty(t, previewResp.Original)
-		assert.NotEmpty(t, previewResp.Preview)
-	})
-
-	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose updates compose", func(t *testing.T) {
-		TagTest(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
-		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "PATCH",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/compose",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + token,
-				"Content-Type":  "application/json",
-			},
-			Body: map[string]interface{}{
-				"changes": map[string]interface{}{
-					"service_image_updates": []map[string]interface{}{
-						{"service_name": "web", "new_tag": "1.25"},
-					},
-				},
-			},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 200, resp.StatusCode)
-	})
-}
-
 func TestStackEndpointsSessionAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
@@ -346,26 +261,10 @@ func TestStackEndpointsSessionAuth(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]interface{}{
 		{"name": "session-test-stack", "is_healthy": true},
 	})
-	mockAgent.RegisterJSONHandler("/api/compose", map[string]string{
-		"message": "Compose file updated successfully",
-	})
 
 	t.Run("GET /api/v1/servers/:id/stacks works with session auth", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
-		require.NoError(t, err)
-		assert.Equal(t, 200, resp.StatusCode)
-	})
-
-	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose works with session auth", func(t *testing.T) {
-		TagTest(t, "PATCH", "/api/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/session-test-stack/compose", map[string]interface{}{
-			"changes": map[string]interface{}{
-				"service_image_updates": []map[string]interface{}{
-					{"service_name": "web", "new_tag": "1.25"},
-				},
-			},
-		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
@@ -382,23 +281,5 @@ func TestStackEndpointsNoAuth(t *testing.T) {
 		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
-	})
-
-	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose requires authentication", func(t *testing.T) {
-		TagTest(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.Patch("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
-			"changes": map[string]interface{}{},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
-	})
-
-	t.Run("PATCH /api/servers/:serverid/stacks/:stackname/compose redirects without auth", func(t *testing.T) {
-		TagTest(t, "PATCH", "/api/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().Patch("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/compose", map[string]interface{}{
-			"changes": map[string]interface{}{},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
 	})
 }

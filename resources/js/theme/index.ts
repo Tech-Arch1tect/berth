@@ -33,12 +33,6 @@ export const theme = {
     gradient: 'bg-gradient-to-br from-teal-500 to-emerald-500',
     gradientHorizontal: 'bg-gradient-to-r from-teal-500 to-emerald-500',
     gradientAccent: 'h-1 bg-gradient-to-r from-teal-500 to-emerald-500',
-    // Compose Editor
-    composeHeader: 'bg-teal-600',
-    composeButton: 'bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors',
-    composePreview: 'bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800',
-    composeAccent: 'bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors',
-    composeSelected: 'border-teal-500 bg-teal-50 dark:bg-teal-900/20',
   },
   navigation: {
     itemBase:

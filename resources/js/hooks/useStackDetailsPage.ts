@@ -7,10 +7,8 @@ import { useStackStats } from './useStackStats';
 import { useStackWebSocket } from './useStackWebSocket';
 import { useOperations } from './useOperations';
 import { useStackPermissions } from './useStackPermissions';
-import { useComposeUpdate } from './useComposeUpdate';
 import { showToast } from '../utils/toast';
 import { OperationRequest } from '../types/operations';
-import { ComposeChanges } from '../components/compose';
 import {
   generateStackDocumentation,
   downloadMarkdown,
@@ -41,7 +39,6 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
   }>({ isRunning: false });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
-  const [showComposeEditor, setShowComposeEditor] = useState(false);
 
   const stackDetailsQuery = useStackDetails({ serverid, stackname });
   const networksQuery = useStackNetworks({ serverid, stackname });
@@ -78,8 +75,6 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
       showToast.error(error || 'Operation failed to start');
     },
   });
-
-  const composeUpdateMutation = useComposeUpdate({ serverid, stackname });
 
   if (stackPermissionsQuery.data !== prevPermissions) {
     setPrevPermissions(stackPermissionsQuery.data);
@@ -217,13 +212,6 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
     }
   }, [stackDetailsQuery.data]);
 
-  const handleComposeUpdate = useCallback(
-    async (changes: ComposeChanges) => {
-      await composeUpdateMutation.mutateAsync(changes);
-    },
-    [composeUpdateMutation]
-  );
-
   return {
     activeTab,
     setActiveTab,
@@ -232,8 +220,6 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
     quickOperationState,
     isRefreshing,
     expandedServices,
-    showComposeEditor,
-    setShowComposeEditor,
 
     stackDetails: stackDetailsQuery.data,
     networks: networksQuery.data,
@@ -270,7 +256,6 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
     toggleServiceExpanded,
     handleCopyDocumentation,
     handleDownloadDocumentation,
-    handleComposeUpdate,
     refetch: stackDetailsQuery.refetch,
   };
 }

@@ -12,7 +12,7 @@ Stack endpoints provide access to Docker Compose stacks running on berth-agent s
 | Session Cookie | ✅ | Automatically used by web UI |
 | API Key | ✅ | Requires `stacks.read` scope for read endpoints |
 
-**Write endpoints** (compose preview/update) require `stacks.manage` permission.
+All endpoints listed below are read-only. Stack modifications are performed via the operations API.
 
 ---
 
@@ -295,92 +295,3 @@ curl https://berth.example.com/api/v1/servers/1/stacks/my-app/stats \
 }
 ```
 
----
-
-## POST /api/v1/servers/:serverid/stacks/:stackname/compose/preview
-
-Preview changes to a stack's docker-compose.yml without applying them.
-
-**Authentication:** Bearer token (JWT, Session, or API Key with `stacks.manage` scope)
-
-```bash
-curl -X POST https://berth.example.com/api/v1/servers/1/stacks/my-app/compose/preview \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{
-    "changes": {
-      "service_image_updates": [
-        {"service_name": "web", "new_tag": "1.25"}
-      ]
-    }
-  }'
-```
-
-**Request Body:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| changes.service_image_updates | array | Image/tag changes per service |
-| changes.service_port_updates | array | Port mapping changes per service |
-| changes.service_env_updates | array | Environment variable changes per service |
-
-**Service Image Update:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| service_name | string | Name of the service to update |
-| new_image | string | New image name (optional) |
-| new_tag | string | New image tag (optional) |
-
-**Success Response (200):**
-```json
-{
-  "original": "version: '3'\nservices:\n  web:\n    image: nginx:latest\n",
-  "preview": "version: '3'\nservices:\n  web:\n    image: nginx:1.25\n"
-}
-```
-
----
-
-## PATCH /api/v1/servers/:serverid/stacks/:stackname/compose
-
-Apply changes to a stack's docker-compose.yml.
-
-**Authentication:** Bearer token (JWT, Session, or API Key with `stacks.manage` scope)
-
-```bash
-curl -X PATCH https://berth.example.com/api/v1/servers/1/stacks/my-app/compose \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{
-    "changes": {
-      "service_image_updates": [
-        {"service_name": "web", "new_tag": "1.25"}
-      ],
-      "service_env_updates": [
-        {
-          "service_name": "web",
-          "environment": [
-            {"key": "LOG_LEVEL", "value": "debug"}
-          ]
-        }
-      ]
-    }
-  }'
-```
-
-**Request Body:** Same as preview endpoint.
-
-**Success Response (200):**
-```json
-{
-  "message": "Compose file updated successfully"
-}
-```
-
-**Error Response (403):**
-```json
-{
-  "error": "Insufficient permissions to modify this stack"
-}
-```

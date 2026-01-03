@@ -237,7 +237,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
-		protected.PATCH("/api/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.UpdateCompose)
 	}
 	if maintenanceAPIHandler != nil {
 		protected.GET("/api/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
@@ -451,8 +450,6 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/compose/preview", stackAPIHandler.PreviewComposeChanges)
-		apiProtected.PATCH("/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.UpdateCompose)
 	}
 
 	// Files
