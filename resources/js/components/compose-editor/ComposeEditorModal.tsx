@@ -74,7 +74,7 @@ const ComposeEditorContent: React.FC<{
               className={cn(
                 'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                 state.selectedSection === tab.key
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                   : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
               )}
             >
@@ -97,7 +97,7 @@ const ComposeEditorContent: React.FC<{
                     className={cn(
                       'w-full text-left px-3 py-2 text-sm rounded-lg transition-colors',
                       state.selectedService === name
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                         : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
                     )}
                   >

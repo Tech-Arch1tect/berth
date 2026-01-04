@@ -64,7 +64,14 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="flex items-center gap-3">
             {headerExtra}
             {showCloseButton && (
-              <button onClick={onClose} className={theme.buttons.ghost} aria-label="Close modal">
+              <button
+                onClick={onClose}
+                className={cn(
+                  theme.buttons.ghost,
+                  'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                )}
+                aria-label="Close modal"
+              >
                 <XMarkIcon className="w-6 h-6" />
               </button>
             )}
