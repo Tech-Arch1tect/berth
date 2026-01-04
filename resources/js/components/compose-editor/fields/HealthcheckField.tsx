@@ -113,9 +113,7 @@ export const HealthcheckField: React.FC<HealthcheckFieldProps> = ({
       )}
 
       {isEnabled && healthcheck && (
-        <div
-          className={cn('p-3 rounded-lg space-y-3', 'bg-zinc-50 dark:bg-zinc-800/50')}
-        >
+        <div className={cn('p-3 rounded-lg space-y-3', 'bg-zinc-50 dark:bg-zinc-800/50')}>
           <div>
             <label className={cn('block text-xs mb-1', theme.text.subtle)}>
               Test Command (shell syntax)

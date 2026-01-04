@@ -9,7 +9,14 @@ import { theme } from '../../theme';
 import { PortsField } from './fields/PortsField';
 import { VolumeMountsField } from './fields/VolumeMountsField';
 import { HealthcheckField } from './fields/HealthcheckField';
-import { PortMappingChange, VolumeMountChange, HealthcheckChange } from '../../types/compose';
+import { DependsOnField } from './fields/DependsOnField';
+import { CommandField } from './fields/CommandField';
+import {
+  PortMappingChange,
+  VolumeMountChange,
+  HealthcheckChange,
+  DependsOnChange,
+} from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
 interface ComposeEditorModalProps {
@@ -166,14 +173,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 }) => {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
-  const { getServiceConfig } = useComposeEditor();
+  const { state, getServiceConfig } = useComposeEditor();
   const config = getServiceConfig(serviceName);
+  const availableServices = state.composeData ? Object.keys(state.composeData.services) : [];
 
   const [editedPorts, setEditedPorts] = useState<PortMappingChange[] | null>(null);
   const [editedVolumes, setEditedVolumes] = useState<VolumeMountChange[] | null>(null);
   const [editedHealthcheck, setEditedHealthcheck] = useState<HealthcheckChange | null | undefined>(
     undefined
   );
+  const [editedDependsOn, setEditedDependsOn] = useState<Record<string, DependsOnChange> | null>(
+    null
+  );
+  const [editedCommand, setEditedCommand] = useState<string[] | null | undefined>(undefined);
+  const [editedEntrypoint, setEditedEntrypoint] = useState<string[] | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -212,8 +225,30 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           }
         : null;
 
+  const currentDependsOn: Record<string, DependsOnChange> =
+    editedDependsOn ??
+    (config?.depends_on
+      ? Object.fromEntries(
+          Object.entries(config.depends_on).map(([name, dep]) => [
+            name,
+            { condition: dep.condition, restart: dep.restart, required: dep.required },
+          ])
+        )
+      : {});
+
+  const currentCommand: string[] | null =
+    editedCommand !== undefined ? editedCommand : (config?.command ?? null);
+
+  const currentEntrypoint: string[] | null =
+    editedEntrypoint !== undefined ? editedEntrypoint : (config?.entrypoint ?? null);
+
   const hasChanges =
-    editedPorts !== null || editedVolumes !== null || editedHealthcheck !== undefined;
+    editedPorts !== null ||
+    editedVolumes !== null ||
+    editedHealthcheck !== undefined ||
+    editedDependsOn !== null ||
+    editedCommand !== undefined ||
+    editedEntrypoint !== undefined;
 
   const handleSave = useCallback(async () => {
     if (!hasChanges) return;
@@ -231,7 +266,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
               [serviceName]: {
                 ports: editedPorts || undefined,
                 volumes: editedVolumes || undefined,
-                healthcheck: editedHealthcheck !== undefined ? editedHealthcheck ?? undefined : undefined,
+                healthcheck:
+                  editedHealthcheck !== undefined ? (editedHealthcheck ?? undefined) : undefined,
+                depends_on: editedDependsOn || undefined,
+                command: editedCommand !== undefined ? { values: editedCommand || [] } : undefined,
+                entrypoint:
+                  editedEntrypoint !== undefined ? { values: editedEntrypoint || [] } : undefined,
               },
             },
           },
@@ -241,6 +281,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       setEditedPorts(null);
       setEditedVolumes(null);
       setEditedHealthcheck(undefined);
+      setEditedDependsOn(null);
+      setEditedCommand(undefined);
+      setEditedEntrypoint(undefined);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save changes');
@@ -254,6 +297,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     editedPorts,
     editedVolumes,
     editedHealthcheck,
+    editedDependsOn,
+    editedCommand,
+    editedEntrypoint,
     hasChanges,
     onSaved,
     csrfToken,
@@ -263,6 +309,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setEditedPorts(null);
     setEditedVolumes(null);
     setEditedHealthcheck(undefined);
+    setEditedDependsOn(null);
+    setEditedCommand(undefined);
+    setEditedEntrypoint(undefined);
     setError(null);
   }, []);
 
@@ -312,6 +361,30 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           healthcheck={currentHealthcheck}
           onChange={setEditedHealthcheck}
           disabled={saving}
+        />
+
+        <DependsOnField
+          dependsOn={currentDependsOn}
+          availableServices={availableServices}
+          currentService={serviceName}
+          onChange={setEditedDependsOn}
+          disabled={saving}
+        />
+
+        <CommandField
+          label="Command"
+          values={currentCommand}
+          onChange={setEditedCommand}
+          disabled={saving}
+          placeholder="e.g., npm start"
+        />
+
+        <CommandField
+          label="Entrypoint"
+          values={currentEntrypoint}
+          onChange={setEditedEntrypoint}
+          disabled={saving}
+          placeholder="e.g., /docker-entrypoint.sh"
         />
 
         {config.environment && Object.keys(config.environment).length > 0 && (
