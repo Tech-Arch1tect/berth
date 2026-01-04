@@ -8,7 +8,8 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { PortsField } from './fields/PortsField';
 import { VolumeMountsField } from './fields/VolumeMountsField';
-import { PortMappingChange, VolumeMountChange } from '../../types/compose';
+import { HealthcheckField } from './fields/HealthcheckField';
+import { PortMappingChange, VolumeMountChange, HealthcheckChange } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
 interface ComposeEditorModalProps {
@@ -170,6 +171,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   const [editedPorts, setEditedPorts] = useState<PortMappingChange[] | null>(null);
   const [editedVolumes, setEditedVolumes] = useState<VolumeMountChange[] | null>(null);
+  const [editedHealthcheck, setEditedHealthcheck] = useState<HealthcheckChange | null | undefined>(
+    undefined
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -193,7 +197,23 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     })) ||
       []);
 
-  const hasChanges = editedPorts !== null || editedVolumes !== null;
+  const currentHealthcheck: HealthcheckChange | null =
+    editedHealthcheck !== undefined
+      ? editedHealthcheck
+      : config?.healthcheck
+        ? {
+            test: config.healthcheck.test,
+            interval: config.healthcheck.interval,
+            timeout: config.healthcheck.timeout,
+            retries: config.healthcheck.retries,
+            start_period: config.healthcheck.start_period,
+            start_interval: config.healthcheck.start_interval,
+            disable: config.healthcheck.disable,
+          }
+        : null;
+
+  const hasChanges =
+    editedPorts !== null || editedVolumes !== null || editedHealthcheck !== undefined;
 
   const handleSave = useCallback(async () => {
     if (!hasChanges) return;
@@ -211,6 +231,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
               [serviceName]: {
                 ports: editedPorts || undefined,
                 volumes: editedVolumes || undefined,
+                healthcheck: editedHealthcheck !== undefined ? editedHealthcheck ?? undefined : undefined,
               },
             },
           },
@@ -219,6 +240,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       );
       setEditedPorts(null);
       setEditedVolumes(null);
+      setEditedHealthcheck(undefined);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save changes');
@@ -231,6 +253,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     serviceName,
     editedPorts,
     editedVolumes,
+    editedHealthcheck,
     hasChanges,
     onSaved,
     csrfToken,
@@ -239,6 +262,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const handleDiscard = useCallback(() => {
     setEditedPorts(null);
     setEditedVolumes(null);
+    setEditedHealthcheck(undefined);
     setError(null);
   }, []);
 
@@ -283,6 +307,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         <PortsField ports={currentPorts} onChange={setEditedPorts} disabled={saving} />
 
         <VolumeMountsField volumes={currentVolumes} onChange={setEditedVolumes} disabled={saving} />
+
+        <HealthcheckField
+          healthcheck={currentHealthcheck}
+          onChange={setEditedHealthcheck}
+          disabled={saving}
+        />
 
         {config.environment && Object.keys(config.environment).length > 0 && (
           <div>
