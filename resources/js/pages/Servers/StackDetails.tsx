@@ -10,6 +10,7 @@ import { ImageUpdateBanner } from '../../components/image-updates';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Layout from '../../components/layout/Layout';
+import { ComposeEditorModal } from '../../components/compose-editor/ComposeEditorModal';
 
 import { PanelLayout } from '../../components/common/PanelLayout';
 import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
@@ -33,6 +34,7 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
   const stack = useStackDetailsPage({ serverid, stackname });
   const [selection, setSelection] = useState<SidebarSelection | null>({ type: 'overview' });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [composeEditorOpen, setComposeEditorOpen] = useState(false);
 
   const canManageStack = stack.stackPermissions?.permissions?.includes('stacks.manage') ?? false;
   const canViewLogs = stack.stackPermissions?.permissions?.includes('logs.read') ?? false;
@@ -110,6 +112,7 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                     onCopyDocs={stack.handleCopyDocumentation}
                     onDownloadDocs={stack.handleDownloadDocumentation}
                     onAdvancedOperations={() => stack.setAdvancedOperationsOpen(true)}
+                    onOpenComposeEditor={() => setComposeEditorOpen(true)}
                   />
                 }
                 sidebar={
@@ -193,6 +196,15 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
             }}
           />
         )}
+
+        {/* Compose Editor Modal */}
+        <ComposeEditorModal
+          isOpen={composeEditorOpen}
+          onClose={() => setComposeEditorOpen(false)}
+          serverId={serverid}
+          stackName={stackname}
+          composeFile={stack.stackDetails?.compose_file || 'compose.yaml'}
+        />
       </ServerStackProvider>
     </>
   );

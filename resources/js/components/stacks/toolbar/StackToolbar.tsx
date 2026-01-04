@@ -15,6 +15,7 @@ import {
   ChevronDownIcon,
   ClipboardDocumentIcon,
   ArrowDownTrayIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
@@ -36,6 +37,7 @@ interface StackToolbarProps {
   onCopyDocs: () => void;
   onDownloadDocs: () => void;
   onAdvancedOperations: () => void;
+  onOpenComposeEditor: () => void;
 }
 
 export const StackToolbar: React.FC<StackToolbarProps> = ({
@@ -54,6 +56,7 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
   onCopyDocs,
   onDownloadDocs,
   onAdvancedOperations,
+  onOpenComposeEditor,
 }) => {
   const [docsMenuOpen, setDocsMenuOpen] = useState(false);
   const docsMenuRef = useRef<HTMLDivElement>(null);
@@ -255,17 +258,30 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         </div>
 
         {canManage && (
-          <button
-            onClick={onAdvancedOperations}
-            className={cn(
-              'p-2 rounded-md transition-colors',
-              'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-              theme.text.muted
-            )}
-            title="Advanced operations"
-          >
-            <Cog6ToothIcon className="w-4 h-4" />
-          </button>
+          <>
+            <button
+              onClick={onOpenComposeEditor}
+              className={cn(
+                'p-2 rounded-md transition-colors',
+                'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                theme.text.muted
+              )}
+              title="Compose Editor"
+            >
+              <PencilSquareIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onAdvancedOperations}
+              className={cn(
+                'p-2 rounded-md transition-colors',
+                'hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                theme.text.muted
+              )}
+              title="Advanced operations"
+            >
+              <Cog6ToothIcon className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
     </div>
