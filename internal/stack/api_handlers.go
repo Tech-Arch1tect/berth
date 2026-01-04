@@ -198,3 +198,22 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		"permissions": permissions,
 	})
 }
+
+func (h *APIHandler) GetComposeConfig(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), userID, serverID, stackname)
+	if err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, composeConfig)
+}
