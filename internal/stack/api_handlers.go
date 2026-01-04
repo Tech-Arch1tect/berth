@@ -217,3 +217,29 @@ func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 
 	return common.SendSuccess(c, composeConfig)
 }
+
+func (h *APIHandler) UpdateCompose(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	var changes map[string]any
+	if err := c.Bind(&changes); err != nil {
+		return common.SendBadRequest(c, "invalid request body")
+	}
+
+	if err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, changes); err != nil {
+		return common.SendInternalError(c, err.Error())
+	}
+
+	return common.SendSuccess(c, map[string]any{
+		"success": true,
+		"message": "Compose file updated successfully",
+	})
+}

@@ -541,3 +541,52 @@ func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *model
 
 	return composeConfig, nil
 }
+
+func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, changes map[string]any) error {
+	s.logger.Debug("updating compose config",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", stackname),
+	)
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
+	if err != nil {
+		return fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		return fmt.Errorf("user does not have permission to manage this stack")
+	}
+
+	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get server: %w", err)
+	}
+
+	return s.updateComposeOnAgent(ctx, server, stackname, changes)
+}
+
+func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, changes map[string]any) error {
+	body, err := json.Marshal(changes)
+	if err != nil {
+		return fmt.Errorf("failed to marshal changes: %w", err)
+	}
+
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), body)
+	if err != nil {
+		return fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]string
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err == nil {
+			if msg, ok := errResp["error"]; ok {
+				return fmt.Errorf("agent error: %s", msg)
+			}
+		}
+		return fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}
