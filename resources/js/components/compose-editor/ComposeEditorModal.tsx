@@ -7,7 +7,8 @@ import { useComposeEditorData } from './hooks/useComposeEditorData';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { PortsField } from './fields/PortsField';
-import { PortMappingChange } from '../../types/compose';
+import { VolumeMountsField } from './fields/VolumeMountsField';
+import { PortMappingChange, VolumeMountChange } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
 interface ComposeEditorModalProps {
@@ -168,6 +169,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const config = getServiceConfig(serviceName);
 
   const [editedPorts, setEditedPorts] = useState<PortMappingChange[] | null>(null);
+  const [editedVolumes, setEditedVolumes] = useState<VolumeMountChange[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -181,7 +183,17 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     })) ||
       []);
 
-  const hasChanges = editedPorts !== null;
+  const currentVolumes: VolumeMountChange[] =
+    editedVolumes ??
+    (config?.volumes?.map((v) => ({
+      type: v.type || 'bind',
+      source: v.source,
+      target: v.target,
+      read_only: v.read_only,
+    })) ||
+      []);
+
+  const hasChanges = editedPorts !== null || editedVolumes !== null;
 
   const handleSave = useCallback(async () => {
     if (!hasChanges) return;
@@ -198,6 +210,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             service_changes: {
               [serviceName]: {
                 ports: editedPorts || undefined,
+                volumes: editedVolumes || undefined,
               },
             },
           },
@@ -205,16 +218,27 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         csrfToken
       );
       setEditedPorts(null);
+      setEditedVolumes(null);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save changes');
     } finally {
       setSaving(false);
     }
-  }, [serverId, stackName, serviceName, editedPorts, hasChanges, onSaved, csrfToken]);
+  }, [
+    serverId,
+    stackName,
+    serviceName,
+    editedPorts,
+    editedVolumes,
+    hasChanges,
+    onSaved,
+    csrfToken,
+  ]);
 
   const handleDiscard = useCallback(() => {
     setEditedPorts(null);
+    setEditedVolumes(null);
     setError(null);
   }, []);
 
@@ -258,6 +282,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
         <PortsField ports={currentPorts} onChange={setEditedPorts} disabled={saving} />
 
+        <VolumeMountsField volumes={currentVolumes} onChange={setEditedVolumes} disabled={saving} />
+
         {config.environment && Object.keys(config.environment).length > 0 && (
           <div>
             <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>
@@ -267,22 +293,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
               {Object.entries(config.environment).map(([key, value]) => (
                 <p key={key} className={cn('text-sm font-mono', theme.text.standard)}>
                   {key}={value}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {config.volumes && config.volumes.length > 0 && (
-          <div>
-            <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>
-              Volumes
-            </label>
-            <div className="space-y-1">
-              {config.volumes.map((vol, idx) => (
-                <p key={idx} className={cn('text-sm font-mono', theme.text.standard)}>
-                  {vol.source}:{vol.target}
-                  {vol.read_only ? ' (ro)' : ''}
                 </p>
               ))}
             </div>
