@@ -15,6 +15,7 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   footer?: React.ReactNode;
   headerExtra?: React.ReactNode;
+  childrenHandleScroll?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -28,6 +29,7 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   footer,
   headerExtra,
+  childrenHandleScroll = false,
 }) => {
   if (!isOpen) return null;
 
@@ -51,6 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={cn(
           'w-full mx-4 flex flex-col rounded-2xl border bg-white shadow-2xl dark:bg-zinc-900',
+          'max-h-[90vh]',
           theme.containers.panel.split(' ').slice(1).join(' '),
           sizeClasses[size]
         )}
@@ -78,7 +81,14 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div
+          className={cn(
+            'flex-1 px-6 py-4',
+            childrenHandleScroll ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+          )}
+        >
+          {children}
+        </div>
 
         {footer && <div className={theme.modal.footer}>{footer}</div>}
       </div>

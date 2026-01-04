@@ -77,8 +77,8 @@ const ComposeEditorContent: React.FC<{
   }
 
   return (
-    <div className="flex flex-col h-full min-h-[500px]">
-      <div className="flex items-center mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-700 shrink-0">
         <div className="flex space-x-1">
           {SECTION_TABS.map((tab) => (
             <button
@@ -97,10 +97,10 @@ const ComposeEditorContent: React.FC<{
         </div>
       </div>
 
-      <div className="flex flex-1 gap-4">
+      <div className="flex flex-1 gap-4 min-h-0">
         {state.selectedSection === 'services' && (
           <>
-            <div className="w-48 shrink-0">
+            <div className="w-48 shrink-0 overflow-y-auto">
               <h4 className={cn('text-sm font-medium mb-2', theme.text.muted)}>Services</h4>
               <div className="space-y-1">
                 {serviceNames.map((name) => (
@@ -119,7 +119,7 @@ const ComposeEditorContent: React.FC<{
                 ))}
               </div>
             </div>
-            <div className="flex-1 border-l border-zinc-200 dark:border-zinc-700 pl-4">
+            <div className="flex-1 border-l border-zinc-200 dark:border-zinc-700 pl-4 overflow-y-auto">
               {state.selectedService ? (
                 <ServiceEditor
                   serviceName={state.selectedService}
@@ -457,6 +457,7 @@ export const ComposeEditorModal: React.FC<ComposeEditorModalProps> = ({
       subtitle={composeFile}
       size="2xl"
       closeOnOverlayClick={false}
+      childrenHandleScroll
     >
       <ComposeEditorProvider>
         <ComposeEditorContent serverId={serverId} stackName={stackName} />
