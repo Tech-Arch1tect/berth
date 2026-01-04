@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import { usePage } from '@inertiajs/react';
 import { Modal } from '../common/Modal';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ComposeEditorProvider, useComposeEditor, EditorSection } from './ComposeEditorProvider';
 import { useComposeEditorData } from './hooks/useComposeEditorData';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { PortsField } from './fields/PortsField';
+import { PortMappingChange } from '../../types/compose';
+import { StackService } from '../../services/stackService';
 
 interface ComposeEditorModalProps {
   isOpen: boolean;
@@ -25,11 +29,13 @@ const SECTION_TABS: { key: EditorSection; label: string }[] = [
 const ComposeEditorContent: React.FC<{
   serverId: number;
   stackName: string;
-  composeFile: string;
-  onClose: () => void;
-}> = ({ serverId, stackName, composeFile, onClose }) => {
+}> = ({ serverId, stackName }) => {
   const { state, selectSection, selectService } = useComposeEditor();
-  useComposeEditorData({ serverId, stackName });
+  const { refetch } = useComposeEditorData({ serverId, stackName });
+
+  const handleSaved = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const serviceNames = state.composeData ? Object.keys(state.composeData.services) : [];
 
@@ -102,7 +108,12 @@ const ComposeEditorContent: React.FC<{
             </div>
             <div className="flex-1 border-l border-zinc-200 dark:border-zinc-700 pl-4">
               {state.selectedService ? (
-                <ServiceEditor serviceName={state.selectedService} />
+                <ServiceEditor
+                  serviceName={state.selectedService}
+                  serverId={serverId}
+                  stackName={stackName}
+                  onSaved={handleSaved}
+                />
               ) : (
                 <p className={theme.text.muted}>Select a service to edit</p>
               )}
@@ -138,9 +149,74 @@ const ComposeEditorContent: React.FC<{
   );
 };
 
-const ServiceEditor: React.FC<{ serviceName: string }> = ({ serviceName }) => {
+interface ServiceEditorProps {
+  serviceName: string;
+  serverId: number;
+  stackName: string;
+  onSaved: () => void;
+}
+
+const ServiceEditor: React.FC<ServiceEditorProps> = ({
+  serviceName,
+  serverId,
+  stackName,
+  onSaved,
+}) => {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
   const { getServiceConfig } = useComposeEditor();
   const config = getServiceConfig(serviceName);
+
+  const [editedPorts, setEditedPorts] = useState<PortMappingChange[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentPorts: PortMappingChange[] =
+    editedPorts ??
+    (config?.ports?.map((p) => ({
+      target: p.target,
+      published: p.published,
+      host_ip: undefined,
+      protocol: p.protocol,
+    })) ||
+      []);
+
+  const hasChanges = editedPorts !== null;
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await StackService.updateCompose(
+        serverId,
+        stackName,
+        {
+          changes: {
+            service_changes: {
+              [serviceName]: {
+                ports: editedPorts || undefined,
+              },
+            },
+          },
+        },
+        csrfToken
+      );
+      setEditedPorts(null);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  }, [serverId, stackName, serviceName, editedPorts, hasChanges, onSaved, csrfToken]);
+
+  const handleDiscard = useCallback(() => {
+    setEditedPorts(null);
+    setError(null);
+  }, []);
 
   if (!config) {
     return <p className={theme.text.muted}>Service not found</p>;
@@ -148,26 +224,39 @@ const ServiceEditor: React.FC<{ serviceName: string }> = ({ serviceName }) => {
 
   return (
     <div className="space-y-4">
-      <h3 className={cn('text-lg font-semibold', theme.text.strong)}>{serviceName}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>{serviceName}</h3>
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscard}
+              disabled={saving}
+              className={cn(theme.buttons.secondary, 'text-sm py-1.5 px-3')}
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid gap-4">
+      {error && (
+        <div className={cn('p-3 rounded-lg text-sm', theme.alerts.variants.error)}>{error}</div>
+      )}
+
+      <div className="grid gap-6">
         <div>
           <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>Image</label>
           <p className={theme.text.standard}>{config.image || 'Not specified'}</p>
         </div>
 
-        {config.ports && config.ports.length > 0 && (
-          <div>
-            <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>Ports</label>
-            <div className="space-y-1">
-              {config.ports.map((port, idx) => (
-                <p key={idx} className={theme.text.standard}>
-                  {port.published}:{port.target}/{port.protocol}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        <PortsField ports={currentPorts} onChange={setEditedPorts} disabled={saving} />
 
         {config.environment && Object.keys(config.environment).length > 0 && (
           <div>
@@ -199,10 +288,6 @@ const ServiceEditor: React.FC<{ serviceName: string }> = ({ serviceName }) => {
             </div>
           </div>
         )}
-
-        <p className={cn('text-sm italic mt-4', theme.text.muted)}>
-          Field editors coming soon
-        </p>
       </div>
     </div>
   );
@@ -225,12 +310,7 @@ export const ComposeEditorModal: React.FC<ComposeEditorModalProps> = ({
       closeOnOverlayClick={false}
     >
       <ComposeEditorProvider>
-        <ComposeEditorContent
-          serverId={serverId}
-          stackName={stackName}
-          composeFile={composeFile}
-          onClose={onClose}
-        />
+        <ComposeEditorContent serverId={serverId} stackName={stackName} />
       </ComposeEditorProvider>
     </Modal>
   );

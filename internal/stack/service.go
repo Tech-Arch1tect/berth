@@ -567,12 +567,7 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 }
 
 func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, changes map[string]any) error {
-	body, err := json.Marshal(changes)
-	if err != nil {
-		return fmt.Errorf("failed to marshal changes: %w", err)
-	}
-
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), body)
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), changes)
 	if err != nil {
 		return fmt.Errorf("failed to communicate with agent: %w", err)
 	}

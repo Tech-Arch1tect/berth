@@ -6,7 +6,7 @@ import {
   StackEnvironmentResponse,
   ContainerImageDetails,
 } from '../types/stack';
-import { ComposeConfig } from '../types/compose';
+import { ComposeConfig, UpdateComposeRequest } from '../types/compose';
 
 export interface StackPermissions {
   permissions: string[];
@@ -217,6 +217,35 @@ export class StackService {
           throw new Error('Stack not found');
         }
         throw new Error(error.response?.data?.error || 'Failed to fetch compose configuration');
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
+  static async updateCompose(
+    serverid: number,
+    stackname: string,
+    request: UpdateComposeRequest,
+    csrfToken?: string
+  ): Promise<void> {
+    try {
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      await api.patch(`/api/v1/servers/${serverid}/stacks/${stackname}/compose`, request, {
+        headers,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error('You do not have permission to modify this stack');
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Stack not found');
+        }
+        throw new Error(error.response?.data?.error || 'Failed to update compose configuration');
       }
       throw new Error('Network error occurred');
     }

@@ -127,3 +127,54 @@ export interface ComposeConfig {
   secrets?: Record<string, ComposeSecretConfig>;
   configs?: Record<string, ComposeConfigConfig>;
 }
+
+export interface PortMappingChange {
+  target: number;
+  published?: string;
+  host_ip?: string;
+  protocol?: string;
+}
+
+export interface VolumeMountChange {
+  type: string;
+  source: string;
+  target: string;
+  read_only?: boolean;
+}
+
+export interface HealthcheckChange {
+  test?: string[];
+  interval?: string;
+  timeout?: string;
+  retries?: number;
+  start_period?: string;
+  start_interval?: string;
+  disable?: boolean;
+}
+
+export interface DependsOnChange {
+  condition?: string;
+  restart?: boolean;
+  required?: boolean;
+}
+
+export interface ServiceChanges {
+  image?: string;
+  ports?: PortMappingChange[];
+  environment?: Record<string, string | null>;
+  volumes?: VolumeMountChange[];
+  command?: { values: string[] };
+  entrypoint?: { values: string[] };
+  depends_on?: Record<string, DependsOnChange>;
+  healthcheck?: HealthcheckChange;
+  restart?: string;
+  labels?: Record<string, string | null>;
+}
+
+export interface ComposeChanges {
+  service_changes?: Record<string, ServiceChanges>;
+}
+
+export interface UpdateComposeRequest {
+  changes: ComposeChanges;
+}
