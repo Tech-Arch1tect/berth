@@ -11,11 +11,15 @@ import { VolumeMountsField } from './fields/VolumeMountsField';
 import { HealthcheckField } from './fields/HealthcheckField';
 import { DependsOnField } from './fields/DependsOnField';
 import { CommandField } from './fields/CommandField';
+import { DeployField } from './fields/DeployField';
+import { BuildField } from './fields/BuildField';
 import {
   PortMappingChange,
   VolumeMountChange,
   HealthcheckChange,
   DependsOnChange,
+  DeployChange,
+  BuildChange,
 } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
@@ -187,6 +191,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   );
   const [editedCommand, setEditedCommand] = useState<string[] | null | undefined>(undefined);
   const [editedEntrypoint, setEditedEntrypoint] = useState<string[] | null | undefined>(undefined);
+  const [editedDeploy, setEditedDeploy] = useState<DeployChange | null | undefined>(undefined);
+  const [editedBuild, setEditedBuild] = useState<BuildChange | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -242,13 +248,31 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const currentEntrypoint: string[] | null =
     editedEntrypoint !== undefined ? editedEntrypoint : (config?.entrypoint ?? null);
 
+  const currentDeploy: DeployChange | null =
+    editedDeploy !== undefined ? editedDeploy : (config?.deploy ?? null);
+
+  const currentBuild: BuildChange | null =
+    editedBuild !== undefined
+      ? editedBuild
+      : config?.build
+        ? {
+            context: config.build.context,
+            dockerfile: config.build.dockerfile,
+            args: config.build.args,
+            target: config.build.target,
+            cache_from: config.build.cache_from,
+          }
+        : null;
+
   const hasChanges =
     editedPorts !== null ||
     editedVolumes !== null ||
     editedHealthcheck !== undefined ||
     editedDependsOn !== null ||
     editedCommand !== undefined ||
-    editedEntrypoint !== undefined;
+    editedEntrypoint !== undefined ||
+    editedDeploy !== undefined ||
+    editedBuild !== undefined;
 
   const handleSave = useCallback(async () => {
     if (!hasChanges) return;
@@ -272,6 +296,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 command: editedCommand !== undefined ? { values: editedCommand || [] } : undefined,
                 entrypoint:
                   editedEntrypoint !== undefined ? { values: editedEntrypoint || [] } : undefined,
+                deploy: editedDeploy !== undefined ? (editedDeploy ?? undefined) : undefined,
+                build: editedBuild !== undefined ? (editedBuild ?? undefined) : undefined,
               },
             },
           },
@@ -284,6 +310,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       setEditedDependsOn(null);
       setEditedCommand(undefined);
       setEditedEntrypoint(undefined);
+      setEditedDeploy(undefined);
+      setEditedBuild(undefined);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save changes');
@@ -300,6 +328,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     editedDependsOn,
     editedCommand,
     editedEntrypoint,
+    editedDeploy,
+    editedBuild,
     hasChanges,
     onSaved,
     csrfToken,
@@ -312,6 +342,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setEditedDependsOn(null);
     setEditedCommand(undefined);
     setEditedEntrypoint(undefined);
+    setEditedDeploy(undefined);
+    setEditedBuild(undefined);
     setError(null);
   }, []);
 
@@ -386,6 +418,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           disabled={saving}
           placeholder="e.g., /docker-entrypoint.sh"
         />
+
+        <DeployField deploy={currentDeploy} onChange={setEditedDeploy} disabled={saving} />
+
+        <BuildField build={currentBuild} onChange={setEditedBuild} disabled={saving} />
 
         {config.environment && Object.keys(config.environment).length > 0 && (
           <div>

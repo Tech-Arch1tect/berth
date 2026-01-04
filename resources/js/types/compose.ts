@@ -158,6 +158,32 @@ export interface DependsOnChange {
   required?: boolean;
 }
 
+export interface DeployChange {
+  mode?: string;
+  replicas?: number;
+  resources?: {
+    limits?: { cpus?: string; memory?: string };
+    reservations?: { cpus?: string; memory?: string };
+  };
+  restart_policy?: {
+    condition?: string;
+    delay?: string;
+    max_attempts?: number;
+    window?: string;
+  };
+  placement?: {
+    constraints?: string[];
+  };
+}
+
+export interface BuildChange {
+  context?: string;
+  dockerfile?: string;
+  args?: Record<string, string>;
+  target?: string;
+  cache_from?: string[];
+}
+
 export interface ServiceChanges {
   image?: string;
   ports?: PortMappingChange[];
@@ -169,6 +195,8 @@ export interface ServiceChanges {
   healthcheck?: HealthcheckChange;
   restart?: string;
   labels?: Record<string, string | null>;
+  deploy?: DeployChange;
+  build?: BuildChange;
 }
 
 export interface ComposeChanges {
