@@ -7,7 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import { DeployChange } from '../../../types/compose';
+import { DeployChange, UpdateRollbackConfig } from '../../../types/compose';
 import { DurationInput } from '../primitives/DurationInput';
 import { MemorySizeInput } from '../primitives/MemorySizeInput';
 
@@ -26,6 +26,17 @@ const RESTART_CONDITIONS = [
   { value: 'none', label: 'None' },
   { value: 'on-failure', label: 'On Failure' },
   { value: 'any', label: 'Any' },
+];
+
+const FAILURE_ACTIONS = [
+  { value: 'pause', label: 'Pause' },
+  { value: 'continue', label: 'Continue' },
+  { value: 'rollback', label: 'Rollback' },
+];
+
+const UPDATE_ORDERS = [
+  { value: 'stop-first', label: 'Stop First' },
+  { value: 'start-first', label: 'Start First' },
 ];
 
 export const DeployField: React.FC<DeployFieldProps> = ({ deploy, onChange, disabled }) => {
@@ -334,8 +345,61 @@ export const DeployField: React.FC<DeployFieldProps> = ({ deploy, onChange, disa
             constraints={deploy?.placement?.constraints || []}
             onChange={(constraints) =>
               handleUpdate({
-                placement: { constraints: constraints.length > 0 ? constraints : undefined },
+                placement: {
+                  ...deploy?.placement,
+                  constraints: constraints.length > 0 ? constraints : undefined,
+                },
               })
+            }
+            disabled={disabled}
+          />
+        </CollapsibleSection>
+
+        {/* Placement Preferences Section */}
+        <CollapsibleSection
+          title="Placement Preferences"
+          expanded={expandedSections.has('preferences')}
+          onToggle={() => toggleSection('preferences')}
+        >
+          <PreferencesList
+            preferences={deploy?.placement?.preferences || []}
+            onChange={(preferences) =>
+              handleUpdate({
+                placement: {
+                  ...deploy?.placement,
+                  preferences: preferences.length > 0 ? preferences : undefined,
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </CollapsibleSection>
+
+        {/* Update Config Section */}
+        <CollapsibleSection
+          title="Update Config"
+          expanded={expandedSections.has('update')}
+          onToggle={() => toggleSection('update')}
+        >
+          <UpdateRollbackConfigEditor
+            config={deploy?.update_config || null}
+            onChange={(update_config) =>
+              handleUpdate({ update_config: update_config || undefined })
+            }
+            disabled={disabled}
+          />
+        </CollapsibleSection>
+
+        {/* Rollback Config Section */}
+        <CollapsibleSection
+          title="Rollback Config"
+          expanded={expandedSections.has('rollback')}
+          onToggle={() => toggleSection('rollback')}
+        >
+          <UpdateRollbackConfigEditor
+            config={deploy?.rollback_config || null}
+            onChange={(rollback_config) =>
+              handleUpdate({ rollback_config: rollback_config || undefined })
             }
             disabled={disabled}
           />
@@ -453,6 +517,215 @@ const ConstraintsList: React.FC<ConstraintsListProps> = ({ constraints, onChange
         <PlusIcon className="w-3 h-3" />
         Add Constraint
       </button>
+    </div>
+  );
+};
+
+interface PreferencesListProps {
+  preferences: { spread: string }[];
+  onChange: (preferences: { spread: string }[]) => void;
+  disabled?: boolean;
+}
+
+const PreferencesList: React.FC<PreferencesListProps> = ({ preferences, onChange, disabled }) => {
+  const handleAdd = () => {
+    onChange([...preferences, { spread: '' }]);
+  };
+
+  const handleRemove = (index: number) => {
+    onChange(preferences.filter((_, i) => i !== index));
+  };
+
+  const handleUpdate = (index: number, value: string) => {
+    const updated = [...preferences];
+    updated[index] = { spread: value };
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-2">
+      {preferences.length === 0 ? (
+        <p className={cn('text-sm italic', theme.text.muted)}>No placement preferences</p>
+      ) : (
+        preferences.map((pref, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <span className={cn('text-xs shrink-0', theme.text.subtle)}>spread:</span>
+            <input
+              type="text"
+              value={pref.spread}
+              onChange={(e) => handleUpdate(index, e.target.value)}
+              disabled={disabled}
+              placeholder="node.labels.zone"
+              className={cn(
+                'flex-1 px-2 py-1.5 text-sm rounded border font-mono',
+                'bg-white text-zinc-900 placeholder:text-zinc-400',
+                'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+                'border-zinc-200 dark:border-zinc-700',
+                'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+            />
+            <button
+              type="button"
+              onClick={() => handleRemove(index)}
+              disabled={disabled}
+              className={cn(
+                'p-1.5 rounded',
+                'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+                'dark:hover:bg-rose-900/20',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          </div>
+        ))
+      )}
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={disabled}
+        className={cn(
+          'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
+          'bg-teal-100 text-teal-700 hover:bg-teal-200',
+          'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
+          'disabled:opacity-50 disabled:cursor-not-allowed'
+        )}
+      >
+        <PlusIcon className="w-3 h-3" />
+        Add Preference
+      </button>
+    </div>
+  );
+};
+
+interface UpdateRollbackConfigEditorProps {
+  config: UpdateRollbackConfig | null;
+  onChange: (config: UpdateRollbackConfig | null) => void;
+  disabled?: boolean;
+}
+
+const UpdateRollbackConfigEditor: React.FC<UpdateRollbackConfigEditorProps> = ({
+  config,
+  onChange,
+  disabled,
+}) => {
+  const handleUpdate = (updates: Partial<UpdateRollbackConfig>) => {
+    const newConfig = { ...config, ...updates };
+    const hasValues = Object.values(newConfig).some((v) => v !== undefined);
+    onChange(hasValues ? newConfig : null);
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className={cn('block text-xs mb-1', theme.text.subtle)}>Parallelism</label>
+        <input
+          type="number"
+          value={config?.parallelism ?? ''}
+          onChange={(e) =>
+            handleUpdate({
+              parallelism: e.target.value ? parseInt(e.target.value) : undefined,
+            })
+          }
+          disabled={disabled}
+          placeholder="1"
+          min={0}
+          className={cn(
+            'w-full px-2 py-1.5 text-sm rounded border',
+            'bg-white text-zinc-900 placeholder:text-zinc-400',
+            'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+            'border-zinc-200 dark:border-zinc-700',
+            'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        />
+      </div>
+      <DurationInput
+        label="Delay"
+        value={config?.delay}
+        onChange={(delay) => handleUpdate({ delay })}
+        disabled={disabled}
+        allowedUnits={['ms', 's', 'm']}
+      />
+      <div>
+        <label className={cn('block text-xs mb-1', theme.text.subtle)}>Failure Action</label>
+        <select
+          value={config?.failure_action || ''}
+          onChange={(e) => handleUpdate({ failure_action: e.target.value || undefined })}
+          disabled={disabled}
+          className={cn(
+            'w-full px-2 py-1.5 text-sm rounded border',
+            'bg-white text-zinc-900',
+            'dark:bg-zinc-900 dark:text-white',
+            'border-zinc-200 dark:border-zinc-700',
+            'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        >
+          <option value="">Default</option>
+          {FAILURE_ACTIONS.map((a) => (
+            <option key={a.value} value={a.value}>
+              {a.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <DurationInput
+        label="Monitor"
+        value={config?.monitor}
+        onChange={(monitor) => handleUpdate({ monitor })}
+        disabled={disabled}
+        allowedUnits={['s', 'm']}
+      />
+      <div>
+        <label className={cn('block text-xs mb-1', theme.text.subtle)}>Max Failure Ratio</label>
+        <input
+          type="number"
+          value={config?.max_failure_ratio ?? ''}
+          onChange={(e) =>
+            handleUpdate({
+              max_failure_ratio: e.target.value ? parseFloat(e.target.value) : undefined,
+            })
+          }
+          disabled={disabled}
+          placeholder="0"
+          min={0}
+          max={1}
+          step={0.1}
+          className={cn(
+            'w-full px-2 py-1.5 text-sm rounded border',
+            'bg-white text-zinc-900 placeholder:text-zinc-400',
+            'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+            'border-zinc-200 dark:border-zinc-700',
+            'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        />
+      </div>
+      <div>
+        <label className={cn('block text-xs mb-1', theme.text.subtle)}>Order</label>
+        <select
+          value={config?.order || ''}
+          onChange={(e) => handleUpdate({ order: e.target.value || undefined })}
+          disabled={disabled}
+          className={cn(
+            'w-full px-2 py-1.5 text-sm rounded border',
+            'bg-white text-zinc-900',
+            'dark:bg-zinc-900 dark:text-white',
+            'border-zinc-200 dark:border-zinc-700',
+            'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        >
+          <option value="">Default</option>
+          {UPDATE_ORDERS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 };

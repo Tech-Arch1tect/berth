@@ -158,6 +158,15 @@ export interface DependsOnChange {
   required?: boolean;
 }
 
+export interface UpdateRollbackConfig {
+  parallelism?: number;
+  delay?: string;
+  failure_action?: string;
+  monitor?: string;
+  max_failure_ratio?: number;
+  order?: string;
+}
+
 export interface DeployChange {
   mode?: string;
   replicas?: number;
@@ -173,7 +182,10 @@ export interface DeployChange {
   };
   placement?: {
     constraints?: string[];
+    preferences?: { spread: string }[];
   };
+  update_config?: UpdateRollbackConfig;
+  rollback_config?: UpdateRollbackConfig;
 }
 
 export interface BuildChange {
@@ -182,6 +194,8 @@ export interface BuildChange {
   args?: Record<string, string>;
   target?: string;
   cache_from?: string[];
+  cache_to?: string[];
+  platforms?: string[];
 }
 
 export interface ServiceChanges {

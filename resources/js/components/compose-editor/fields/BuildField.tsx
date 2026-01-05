@@ -68,6 +68,44 @@ export const BuildField: React.FC<BuildFieldProps> = ({ build, onChange, disable
     handleUpdate({ cache_from: updated });
   };
 
+  const handleAddCacheTo = () => {
+    handleUpdate({
+      cache_to: [...(build?.cache_to || []), ''],
+    });
+  };
+
+  const handleRemoveCacheTo = (index: number) => {
+    if (!build?.cache_to) return;
+    const updated = build.cache_to.filter((_, i) => i !== index);
+    handleUpdate({ cache_to: updated.length > 0 ? updated : undefined });
+  };
+
+  const handleUpdateCacheTo = (index: number, value: string) => {
+    if (!build?.cache_to) return;
+    const updated = [...build.cache_to];
+    updated[index] = value;
+    handleUpdate({ cache_to: updated });
+  };
+
+  const handleAddPlatform = () => {
+    handleUpdate({
+      platforms: [...(build?.platforms || []), ''],
+    });
+  };
+
+  const handleRemovePlatform = (index: number) => {
+    if (!build?.platforms) return;
+    const updated = build.platforms.filter((_, i) => i !== index);
+    handleUpdate({ platforms: updated.length > 0 ? updated : undefined });
+  };
+
+  const handleUpdatePlatform = (index: number, value: string) => {
+    if (!build?.platforms) return;
+    const updated = [...build.platforms];
+    updated[index] = value;
+    handleUpdate({ platforms: updated });
+  };
+
   const hasAnyConfig = build !== null && Object.keys(build).length > 0;
 
   return (
@@ -288,6 +326,127 @@ export const BuildField: React.FC<BuildFieldProps> = ({ build, onChange, disable
               ))}
             </div>
           )}
+        </div>
+
+        {/* Cache To */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className={cn('text-xs font-medium', theme.text.subtle)}>Cache To</label>
+            <button
+              type="button"
+              onClick={handleAddCacheTo}
+              disabled={disabled}
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
+                'bg-teal-100 text-teal-700 hover:bg-teal-200',
+                'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+            >
+              <PlusIcon className="w-3 h-3" />
+              Add
+            </button>
+          </div>
+          {!build?.cache_to || build.cache_to.length === 0 ? (
+            <p className={cn('text-sm italic', theme.text.muted)}>No cache destinations</p>
+          ) : (
+            <div className="space-y-2">
+              {build.cache_to.map((dest, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={dest}
+                    onChange={(e) => handleUpdateCacheTo(index, e.target.value)}
+                    disabled={disabled}
+                    placeholder="type=local,dest=path/to/cache"
+                    className={cn(
+                      'flex-1 px-2 py-1.5 text-sm rounded border font-mono',
+                      'bg-white text-zinc-900 placeholder:text-zinc-400',
+                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+                      'border-zinc-200 dark:border-zinc-700',
+                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCacheTo(index)}
+                    disabled={disabled}
+                    className={cn(
+                      'p-1.5 rounded',
+                      'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+                      'dark:hover:bg-rose-900/20',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Platforms */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className={cn('text-xs font-medium', theme.text.subtle)}>Platforms</label>
+            <button
+              type="button"
+              onClick={handleAddPlatform}
+              disabled={disabled}
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
+                'bg-teal-100 text-teal-700 hover:bg-teal-200',
+                'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+            >
+              <PlusIcon className="w-3 h-3" />
+              Add
+            </button>
+          </div>
+          {!build?.platforms || build.platforms.length === 0 ? (
+            <p className={cn('text-sm italic', theme.text.muted)}>No target platforms</p>
+          ) : (
+            <div className="space-y-2">
+              {build.platforms.map((platform, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={platform}
+                    onChange={(e) => handleUpdatePlatform(index, e.target.value)}
+                    disabled={disabled}
+                    placeholder="linux/amd64"
+                    className={cn(
+                      'flex-1 px-2 py-1.5 text-sm rounded border font-mono',
+                      'bg-white text-zinc-900 placeholder:text-zinc-400',
+                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+                      'border-zinc-200 dark:border-zinc-700',
+                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePlatform(index)}
+                    disabled={disabled}
+                    className={cn(
+                      'p-1.5 rounded',
+                      'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+                      'dark:hover:bg-rose-900/20',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className={cn('text-xs mt-1', theme.text.subtle)}>
+            e.g., linux/amd64, linux/arm64, linux/arm/v7
+          </p>
         </div>
       </div>
     </div>
