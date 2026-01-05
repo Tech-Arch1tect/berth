@@ -213,12 +213,23 @@ export interface ServiceChanges {
   build?: BuildChange;
 }
 
+export interface NewServiceConfig {
+  image: string;
+  ports?: PortMappingChange[];
+  environment?: Record<string, string>;
+  volumes?: VolumeMountChange[];
+  restart?: string;
+}
+
 export interface ComposeChanges {
   service_changes?: Record<string, ServiceChanges>;
   network_changes?: Record<string, ComposeNetworkConfig | null>;
   volume_changes?: Record<string, ComposeVolumeConfig | null>;
   secret_changes?: Record<string, ComposeSecretConfig | null>;
   config_changes?: Record<string, ComposeConfigConfig | null>;
+  add_services?: Record<string, NewServiceConfig>;
+  delete_services?: string[];
+  rename_services?: Record<string, string>;
 }
 
 export interface UpdateComposeRequest {

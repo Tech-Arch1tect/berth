@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Modal } from '../common/Modal';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ComposeEditorProvider, useComposeEditor, EditorSection } from './ComposeEditorProvider';
@@ -16,6 +17,9 @@ import { BuildField } from './fields/BuildField';
 import { NetworksEditor } from './sections/NetworksEditor';
 import { VolumesEditor } from './sections/VolumesEditor';
 import { SecretsConfigsEditor } from './sections/SecretsConfigsEditor';
+import { AddServiceDialog } from './dialogs/AddServiceDialog';
+import { RemoveServiceDialog } from './dialogs/RemoveServiceDialog';
+import { RenameServiceDialog } from './dialogs/RenameServiceDialog';
 import {
   PortMappingChange,
   VolumeMountChange,
@@ -27,6 +31,7 @@ import {
   ComposeVolumeConfig,
   ComposeSecretConfig,
   ComposeConfigConfig,
+  NewServiceConfig,
 } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
@@ -52,12 +57,66 @@ const ComposeEditorContent: React.FC<{
 }> = ({ serverId, stackName }) => {
   const { state, selectSection, selectService } = useComposeEditor();
   const { refetch } = useComposeEditorData({ serverId, stackName });
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [serviceToModify, setServiceToModify] = useState<string | null>(null);
 
   const handleSaved = useCallback(() => {
     refetch();
   }, [refetch]);
 
   const serviceNames = state.composeData ? Object.keys(state.composeData.services) : [];
+
+  const handleAddService = async (name: string, config: NewServiceConfig) => {
+    await StackService.updateCompose(
+      serverId,
+      stackName,
+      { changes: { add_services: { [name]: config } } },
+      csrfToken
+    );
+    refetch();
+    selectService(name);
+  };
+
+  const handleRemoveService = async (name: string) => {
+    await StackService.updateCompose(
+      serverId,
+      stackName,
+      { changes: { delete_services: [name] } },
+      csrfToken
+    );
+    refetch();
+    if (state.selectedService === name) {
+      selectService(serviceNames.find((n) => n !== name) || null);
+    }
+  };
+
+  const handleRenameService = async (oldName: string, newName: string) => {
+    await StackService.updateCompose(
+      serverId,
+      stackName,
+      { changes: { rename_services: { [oldName]: newName } } },
+      csrfToken
+    );
+    refetch();
+    if (state.selectedService === oldName) {
+      selectService(newName);
+    }
+  };
+
+  const openRemoveDialog = (name: string) => {
+    setServiceToModify(name);
+    setShowRemoveDialog(true);
+  };
+
+  const openRenameDialog = (name: string) => {
+    setServiceToModify(name);
+    setShowRenameDialog(true);
+  };
 
   if (state.isLoading) {
     return (
@@ -107,22 +166,81 @@ const ComposeEditorContent: React.FC<{
       <div className="flex flex-1 gap-4 min-h-0">
         {state.selectedSection === 'services' && (
           <>
-            <div className="w-48 shrink-0 overflow-y-auto">
-              <h4 className={cn('text-sm font-medium mb-2', theme.text.muted)}>Services</h4>
+            <div className="w-56 shrink-0 overflow-y-auto">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className={cn('text-sm font-medium', theme.text.muted)}>Services</h4>
+                <button
+                  type="button"
+                  onClick={() => setShowAddDialog(true)}
+                  className={cn(
+                    'p-1 rounded',
+                    'text-teal-600 hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-900/20'
+                  )}
+                  title="Add service"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                </button>
+              </div>
               <div className="space-y-1">
                 {serviceNames.map((name) => (
-                  <button
+                  <div
                     key={name}
-                    onClick={() => selectService(name)}
                     className={cn(
-                      'w-full text-left px-3 py-2 text-sm rounded-lg transition-colors',
+                      'group flex items-center rounded-lg transition-colors',
                       state.selectedService === name
-                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
-                        : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                        ? 'bg-teal-100 dark:bg-teal-900/30'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
                     )}
                   >
-                    {name}
-                  </button>
+                    <button
+                      onClick={() => selectService(name)}
+                      className={cn(
+                        'flex-1 text-left px-3 py-2 text-sm',
+                        state.selectedService === name
+                          ? 'text-teal-700 dark:text-teal-400'
+                          : 'text-zinc-600 dark:text-zinc-400'
+                      )}
+                    >
+                      {name}
+                    </button>
+                    <div
+                      className={cn(
+                        'flex items-center pr-1 opacity-0 group-hover:opacity-100 transition-opacity',
+                        state.selectedService === name && 'opacity-100'
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRenameDialog(name);
+                        }}
+                        className={cn(
+                          'p-1 rounded',
+                          'text-zinc-400 hover:text-teal-600 hover:bg-teal-50',
+                          'dark:hover:text-teal-400 dark:hover:bg-teal-900/30'
+                        )}
+                        title="Rename service"
+                      >
+                        <PencilIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRemoveDialog(name);
+                        }}
+                        className={cn(
+                          'p-1 rounded',
+                          'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+                          'dark:hover:bg-rose-900/20'
+                        )}
+                        title="Remove service"
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -169,6 +287,39 @@ const ComposeEditorContent: React.FC<{
           </div>
         )}
       </div>
+
+      {/* Service lifecycle dialogs */}
+      <AddServiceDialog
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onAdd={handleAddService}
+        existingServices={serviceNames}
+      />
+
+      {serviceToModify && (
+        <>
+          <RemoveServiceDialog
+            isOpen={showRemoveDialog}
+            onClose={() => {
+              setShowRemoveDialog(false);
+              setServiceToModify(null);
+            }}
+            onRemove={handleRemoveService}
+            serviceName={serviceToModify}
+            services={state.composeData?.services || {}}
+          />
+          <RenameServiceDialog
+            isOpen={showRenameDialog}
+            onClose={() => {
+              setShowRenameDialog(false);
+              setServiceToModify(null);
+            }}
+            onRename={handleRenameService}
+            serviceName={serviceToModify}
+            services={state.composeData?.services || {}}
+          />
+        </>
+      )}
     </div>
   );
 };
