@@ -13,6 +13,9 @@ import { DependsOnField } from './fields/DependsOnField';
 import { CommandField } from './fields/CommandField';
 import { DeployField } from './fields/DeployField';
 import { BuildField } from './fields/BuildField';
+import { NetworksEditor } from './sections/NetworksEditor';
+import { VolumesEditor } from './sections/VolumesEditor';
+import { SecretsConfigsEditor } from './sections/SecretsConfigsEditor';
 import {
   PortMappingChange,
   VolumeMountChange,
@@ -20,6 +23,10 @@ import {
   DependsOnChange,
   DeployChange,
   BuildChange,
+  ComposeNetworkConfig,
+  ComposeVolumeConfig,
+  ComposeSecretConfig,
+  ComposeConfigConfig,
 } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
@@ -135,29 +142,406 @@ const ComposeEditorContent: React.FC<{
         )}
 
         {state.selectedSection === 'networks' && (
-          <div className="flex-1">
-            <p className={theme.text.muted}>Networks editor coming soon</p>
+          <div className="flex-1 overflow-y-auto">
+            <NetworksSectionEditor
+              serverId={serverId}
+              stackName={stackName}
+              onSaved={handleSaved}
+            />
           </div>
         )}
 
         {state.selectedSection === 'volumes' && (
-          <div className="flex-1">
-            <p className={theme.text.muted}>Volumes editor coming soon</p>
+          <div className="flex-1 overflow-y-auto">
+            <VolumesSectionEditor serverId={serverId} stackName={stackName} onSaved={handleSaved} />
           </div>
         )}
 
         {state.selectedSection === 'secrets' && (
-          <div className="flex-1">
-            <p className={theme.text.muted}>Secrets editor coming soon</p>
+          <div className="flex-1 overflow-y-auto">
+            <SecretsSectionEditor serverId={serverId} stackName={stackName} onSaved={handleSaved} />
           </div>
         )}
 
         {state.selectedSection === 'configs' && (
-          <div className="flex-1">
-            <p className={theme.text.muted}>Configs editor coming soon</p>
+          <div className="flex-1 overflow-y-auto">
+            <ConfigsSectionEditor serverId={serverId} stackName={stackName} onSaved={handleSaved} />
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+interface SectionEditorProps {
+  serverId: number;
+  stackName: string;
+  onSaved: () => void;
+}
+
+const NetworksSectionEditor: React.FC<SectionEditorProps> = ({ serverId, stackName, onSaved }) => {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+  const { state } = useComposeEditor();
+  const [editedNetworks, setEditedNetworks] = useState<Record<string, ComposeNetworkConfig> | null>(
+    null
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentNetworks = editedNetworks ?? (state.composeData?.networks || {});
+  const hasChanges = editedNetworks !== null;
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges || !editedNetworks) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const originalNetworks = state.composeData?.networks || {};
+      const networkChanges: Record<string, ComposeNetworkConfig | null> = {};
+
+      for (const [name, config] of Object.entries(editedNetworks)) {
+        networkChanges[name] = config;
+      }
+
+      for (const name of Object.keys(originalNetworks)) {
+        if (!(name in editedNetworks)) {
+          networkChanges[name] = null;
+        }
+      }
+
+      await StackService.updateCompose(
+        serverId,
+        stackName,
+        { changes: { network_changes: networkChanges } },
+        csrfToken
+      );
+      setEditedNetworks(null);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    serverId,
+    stackName,
+    editedNetworks,
+    state.composeData?.networks,
+    hasChanges,
+    onSaved,
+    csrfToken,
+  ]);
+
+  const handleDiscard = useCallback(() => {
+    setEditedNetworks(null);
+    setError(null);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Networks</h3>
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscard}
+              disabled={saving}
+              className={cn(theme.buttons.secondary, 'text-sm py-1.5 px-3')}
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className={cn('p-3 rounded-lg text-sm', theme.alerts.variants.error)}>{error}</div>
+      )}
+      <NetworksEditor networks={currentNetworks} onChange={setEditedNetworks} disabled={saving} />
+    </div>
+  );
+};
+
+const VolumesSectionEditor: React.FC<SectionEditorProps> = ({ serverId, stackName, onSaved }) => {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+  const { state } = useComposeEditor();
+  const [editedVolumes, setEditedVolumes] = useState<Record<string, ComposeVolumeConfig> | null>(
+    null
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentVolumes = editedVolumes ?? (state.composeData?.volumes || {});
+  const hasChanges = editedVolumes !== null;
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges || !editedVolumes) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const originalVolumes = state.composeData?.volumes || {};
+      const volumeChanges: Record<string, ComposeVolumeConfig | null> = {};
+
+      for (const [name, config] of Object.entries(editedVolumes)) {
+        volumeChanges[name] = config;
+      }
+      for (const name of Object.keys(originalVolumes)) {
+        if (!(name in editedVolumes)) {
+          volumeChanges[name] = null;
+        }
+      }
+
+      await StackService.updateCompose(
+        serverId,
+        stackName,
+        { changes: { volume_changes: volumeChanges } },
+        csrfToken
+      );
+      setEditedVolumes(null);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    serverId,
+    stackName,
+    editedVolumes,
+    state.composeData?.volumes,
+    hasChanges,
+    onSaved,
+    csrfToken,
+  ]);
+
+  const handleDiscard = useCallback(() => {
+    setEditedVolumes(null);
+    setError(null);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Volumes</h3>
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscard}
+              disabled={saving}
+              className={cn(theme.buttons.secondary, 'text-sm py-1.5 px-3')}
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className={cn('p-3 rounded-lg text-sm', theme.alerts.variants.error)}>{error}</div>
+      )}
+      <VolumesEditor volumes={currentVolumes} onChange={setEditedVolumes} disabled={saving} />
+    </div>
+  );
+};
+
+const SecretsSectionEditor: React.FC<SectionEditorProps> = ({ serverId, stackName, onSaved }) => {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+  const { state } = useComposeEditor();
+  const [editedSecrets, setEditedSecrets] = useState<Record<string, ComposeSecretConfig> | null>(
+    null
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentSecrets = editedSecrets ?? (state.composeData?.secrets || {});
+  const hasChanges = editedSecrets !== null;
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges || !editedSecrets) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const originalSecrets = state.composeData?.secrets || {};
+      const secretChanges: Record<string, ComposeSecretConfig | null> = {};
+
+      for (const [name, config] of Object.entries(editedSecrets)) {
+        secretChanges[name] = config;
+      }
+      for (const name of Object.keys(originalSecrets)) {
+        if (!(name in editedSecrets)) {
+          secretChanges[name] = null;
+        }
+      }
+
+      await StackService.updateCompose(
+        serverId,
+        stackName,
+        { changes: { secret_changes: secretChanges } },
+        csrfToken
+      );
+      setEditedSecrets(null);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    serverId,
+    stackName,
+    editedSecrets,
+    state.composeData?.secrets,
+    hasChanges,
+    onSaved,
+    csrfToken,
+  ]);
+
+  const handleDiscard = useCallback(() => {
+    setEditedSecrets(null);
+    setError(null);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Secrets</h3>
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscard}
+              disabled={saving}
+              className={cn(theme.buttons.secondary, 'text-sm py-1.5 px-3')}
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className={cn('p-3 rounded-lg text-sm', theme.alerts.variants.error)}>{error}</div>
+      )}
+      <SecretsConfigsEditor
+        resources={currentSecrets}
+        onChange={setEditedSecrets}
+        resourceType="secrets"
+        disabled={saving}
+      />
+    </div>
+  );
+};
+
+const ConfigsSectionEditor: React.FC<SectionEditorProps> = ({ serverId, stackName, onSaved }) => {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+  const { state } = useComposeEditor();
+  const [editedConfigs, setEditedConfigs] = useState<Record<string, ComposeConfigConfig> | null>(
+    null
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentConfigs = editedConfigs ?? (state.composeData?.configs || {});
+  const hasChanges = editedConfigs !== null;
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges || !editedConfigs) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const originalConfigs = state.composeData?.configs || {};
+      const configChanges: Record<string, ComposeConfigConfig | null> = {};
+
+      for (const [name, config] of Object.entries(editedConfigs)) {
+        configChanges[name] = config;
+      }
+      for (const name of Object.keys(originalConfigs)) {
+        if (!(name in editedConfigs)) {
+          configChanges[name] = null;
+        }
+      }
+
+      await StackService.updateCompose(
+        serverId,
+        stackName,
+        { changes: { config_changes: configChanges } },
+        csrfToken
+      );
+      setEditedConfigs(null);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    serverId,
+    stackName,
+    editedConfigs,
+    state.composeData?.configs,
+    hasChanges,
+    onSaved,
+    csrfToken,
+  ]);
+
+  const handleDiscard = useCallback(() => {
+    setEditedConfigs(null);
+    setError(null);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold', theme.text.strong)}>Configs</h3>
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscard}
+              disabled={saving}
+              className={cn(theme.buttons.secondary, 'text-sm py-1.5 px-3')}
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className={cn('p-3 rounded-lg text-sm', theme.alerts.variants.error)}>{error}</div>
+      )}
+      <SecretsConfigsEditor
+        resources={currentConfigs}
+        onChange={setEditedConfigs}
+        resourceType="configs"
+        disabled={saving}
+      />
     </div>
   );
 };

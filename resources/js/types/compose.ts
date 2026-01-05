@@ -215,6 +215,10 @@ export interface ServiceChanges {
 
 export interface ComposeChanges {
   service_changes?: Record<string, ServiceChanges>;
+  network_changes?: Record<string, ComposeNetworkConfig | null>;
+  volume_changes?: Record<string, ComposeVolumeConfig | null>;
+  secret_changes?: Record<string, ComposeSecretConfig | null>;
+  config_changes?: Record<string, ComposeConfigConfig | null>;
 }
 
 export interface UpdateComposeRequest {

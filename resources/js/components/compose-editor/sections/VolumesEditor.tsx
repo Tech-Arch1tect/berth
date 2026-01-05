@@ -1,0 +1,436 @@
+import React, { useState } from 'react';
+import {
+  PlusIcon,
+  TrashIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
+import { cn } from '../../../utils/cn';
+import { theme } from '../../../theme';
+import { ComposeVolumeConfig } from '../../../types/compose';
+
+interface VolumesEditorProps {
+  volumes: Record<string, ComposeVolumeConfig>;
+  onChange: (volumes: Record<string, ComposeVolumeConfig>) => void;
+  disabled?: boolean;
+}
+
+const VOLUME_DRIVERS = [
+  { value: 'local', label: 'Local' },
+  { value: 'nfs', label: 'NFS' },
+  { value: 'cifs', label: 'CIFS' },
+];
+
+export const VolumesEditor: React.FC<VolumesEditorProps> = ({ volumes, onChange, disabled }) => {
+  const [expandedVolumes, setExpandedVolumes] = useState<Set<string>>(new Set());
+  const [newVolumeName, setNewVolumeName] = useState('');
+
+  const volumeNames = Object.keys(volumes);
+
+  const toggleExpand = (name: string) => {
+    const next = new Set(expandedVolumes);
+    if (next.has(name)) {
+      next.delete(name);
+    } else {
+      next.add(name);
+    }
+    setExpandedVolumes(next);
+  };
+
+  const handleAddVolume = () => {
+    if (!newVolumeName.trim()) return;
+    if (volumes[newVolumeName]) return;
+
+    onChange({
+      ...volumes,
+      [newVolumeName]: {},
+    });
+    setExpandedVolumes(new Set([...expandedVolumes, newVolumeName]));
+    setNewVolumeName('');
+  };
+
+  const handleRemoveVolume = (name: string) => {
+    const { [name]: _, ...rest } = volumes;
+    onChange(rest);
+    const next = new Set(expandedVolumes);
+    next.delete(name);
+    setExpandedVolumes(next);
+  };
+
+  const handleUpdateVolume = (name: string, updates: Partial<ComposeVolumeConfig>) => {
+    onChange({
+      ...volumes,
+      [name]: { ...volumes[name], ...updates },
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={newVolumeName}
+          onChange={(e) => setNewVolumeName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddVolume()}
+          disabled={disabled}
+          placeholder="New volume name"
+          className={cn(
+            'flex-1 px-3 py-2 text-sm rounded-lg border',
+            'bg-white text-zinc-900 placeholder:text-zinc-400',
+            'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+            'border-zinc-200 dark:border-zinc-700',
+            'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        />
+        <button
+          type="button"
+          onClick={handleAddVolume}
+          disabled={disabled || !newVolumeName.trim()}
+          className={cn(
+            'inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg',
+            'bg-teal-600 text-white hover:bg-teal-700',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        >
+          <PlusIcon className="w-4 h-4" />
+          Add Volume
+        </button>
+      </div>
+
+      {volumeNames.length === 0 ? (
+        <p className={cn('text-sm italic py-4', theme.text.muted)}>
+          No volumes defined. Add a volume above.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {volumeNames.map((name) => (
+            <VolumeItem
+              key={name}
+              name={name}
+              config={volumes[name]}
+              expanded={expandedVolumes.has(name)}
+              onToggle={() => toggleExpand(name)}
+              onChange={(updates) => handleUpdateVolume(name, updates)}
+              onRemove={() => handleRemoveVolume(name)}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface VolumeItemProps {
+  name: string;
+  config: ComposeVolumeConfig;
+  expanded: boolean;
+  onToggle: () => void;
+  onChange: (updates: Partial<ComposeVolumeConfig>) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+}
+
+const VolumeItem: React.FC<VolumeItemProps> = ({
+  name,
+  config,
+  expanded,
+  onToggle,
+  onChange,
+  onRemove,
+  disabled,
+}) => {
+  const handleAddDriverOpt = () => {
+    const opts = config.driver_opts || {};
+    let newKey = 'option';
+    let i = 1;
+    while (Object.prototype.hasOwnProperty.call(opts, newKey)) {
+      newKey = `option_${i++}`;
+    }
+    onChange({ driver_opts: { ...opts, [newKey]: '' } });
+  };
+
+  const handleUpdateDriverOpt = (oldKey: string, newKey: string, value: string) => {
+    const opts = config.driver_opts || {};
+    const updated: Record<string, string> = {};
+    for (const [k, v] of Object.entries(opts)) {
+      if (k === oldKey) {
+        updated[newKey] = value;
+      } else {
+        updated[k] = v;
+      }
+    }
+    onChange({ driver_opts: Object.keys(updated).length > 0 ? updated : undefined });
+  };
+
+  const handleRemoveDriverOpt = (key: string) => {
+    const { [key]: _, ...rest } = config.driver_opts || {};
+    onChange({ driver_opts: Object.keys(rest).length > 0 ? rest : undefined });
+  };
+
+  const handleAddLabel = () => {
+    const labels = config.labels || {};
+    let newKey = 'label';
+    let i = 1;
+    while (Object.prototype.hasOwnProperty.call(labels, newKey)) {
+      newKey = `label_${i++}`;
+    }
+    onChange({ labels: { ...labels, [newKey]: '' } });
+  };
+
+  const handleUpdateLabel = (oldKey: string, newKey: string, value: string) => {
+    const labels = config.labels || {};
+    const updated: Record<string, string> = {};
+    for (const [k, v] of Object.entries(labels)) {
+      if (k === oldKey) {
+        updated[newKey] = value;
+      } else {
+        updated[k] = v;
+      }
+    }
+    onChange({ labels: Object.keys(updated).length > 0 ? updated : undefined });
+  };
+
+  const handleRemoveLabel = (key: string) => {
+    const { [key]: _, ...rest } = config.labels || {};
+    onChange({ labels: Object.keys(rest).length > 0 ? rest : undefined });
+  };
+
+  return (
+    <div className={cn('rounded-lg border', 'border-zinc-200 dark:border-zinc-700')}>
+      <div className="flex items-center justify-between px-3 py-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            'flex items-center gap-2 text-sm font-medium',
+            'text-zinc-700 dark:text-zinc-300',
+            'hover:text-zinc-900 dark:hover:text-white'
+          )}
+        >
+          {expanded ? (
+            <ChevronDownIcon className="w-4 h-4" />
+          ) : (
+            <ChevronRightIcon className="w-4 h-4" />
+          )}
+          <span className="font-mono">{name}</span>
+          {config.external && (
+            <span
+              className={cn(
+                'text-xs px-1.5 py-0.5 rounded',
+                'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+              )}
+            >
+              external
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={disabled}
+          className={cn(
+            'p-1.5 rounded',
+            'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+            'dark:hover:bg-rose-900/20',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
+          )}
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 space-y-4 border-t border-zinc-200 dark:border-zinc-700">
+          {/* External Toggle */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={config.external || false}
+              onChange={(e) => onChange({ external: e.target.checked || undefined })}
+              disabled={disabled}
+              className="rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
+            />
+            <span className={cn('text-sm', theme.text.standard)}>External volume</span>
+          </label>
+
+          {!config.external && (
+            <>
+              {/* Driver */}
+              <div>
+                <label className={cn('block text-xs mb-1', theme.text.subtle)}>Driver</label>
+                <select
+                  value={config.driver || ''}
+                  onChange={(e) => onChange({ driver: e.target.value || undefined })}
+                  disabled={disabled}
+                  className={cn(
+                    'w-full px-2 py-1.5 text-sm rounded border',
+                    'bg-white text-zinc-900',
+                    'dark:bg-zinc-900 dark:text-white',
+                    'border-zinc-200 dark:border-zinc-700',
+                    'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                >
+                  <option value="">Default (local)</option>
+                  {VOLUME_DRIVERS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Driver Options */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={cn('text-xs font-medium', theme.text.subtle)}>
+                    Driver Options
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddDriverOpt}
+                    disabled={disabled}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
+                      'bg-teal-100 text-teal-700 hover:bg-teal-200',
+                      'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  >
+                    <PlusIcon className="w-3 h-3" />
+                    Add
+                  </button>
+                </div>
+                {!config.driver_opts || Object.keys(config.driver_opts).length === 0 ? (
+                  <p className={cn('text-sm italic', theme.text.muted)}>No driver options</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(config.driver_opts).map(([key, value]) => (
+                      <KeyValueRow
+                        key={key}
+                        keyValue={key}
+                        value={value}
+                        onUpdate={(newKey, newValue) =>
+                          handleUpdateDriverOpt(key, newKey, newValue)
+                        }
+                        onRemove={() => handleRemoveDriverOpt(key)}
+                        disabled={disabled}
+                      />
+                    ))}
+                  </div>
+                )}
+                {config.driver === 'nfs' && (
+                  <p className={cn('text-xs mt-2', theme.text.subtle)}>
+                    Common NFS options: type=nfs, o=addr=server,rw, device=:/path/to/share
+                  </p>
+                )}
+              </div>
+
+              {/* Labels */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={cn('text-xs font-medium', theme.text.subtle)}>Labels</label>
+                  <button
+                    type="button"
+                    onClick={handleAddLabel}
+                    disabled={disabled}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
+                      'bg-teal-100 text-teal-700 hover:bg-teal-200',
+                      'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  >
+                    <PlusIcon className="w-3 h-3" />
+                    Add
+                  </button>
+                </div>
+                {!config.labels || Object.keys(config.labels).length === 0 ? (
+                  <p className={cn('text-sm italic', theme.text.muted)}>No labels</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(config.labels).map(([key, value]) => (
+                      <KeyValueRow
+                        key={key}
+                        keyValue={key}
+                        value={value}
+                        onUpdate={(newKey, newValue) => handleUpdateLabel(key, newKey, newValue)}
+                        onRemove={() => handleRemoveLabel(key)}
+                        disabled={disabled}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface KeyValueRowProps {
+  keyValue: string;
+  value: string;
+  onUpdate: (key: string, value: string) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+}
+
+const KeyValueRow: React.FC<KeyValueRowProps> = ({
+  keyValue,
+  value,
+  onUpdate,
+  onRemove,
+  disabled,
+}) => (
+  <div className="flex items-center gap-2">
+    <input
+      type="text"
+      value={keyValue}
+      onChange={(e) => onUpdate(e.target.value, value)}
+      disabled={disabled}
+      placeholder="key"
+      className={cn(
+        'w-1/3 px-2 py-1.5 text-sm rounded border font-mono',
+        'bg-white text-zinc-900 placeholder:text-zinc-400',
+        'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+        'border-zinc-200 dark:border-zinc-700',
+        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+        'disabled:opacity-50 disabled:cursor-not-allowed'
+      )}
+    />
+    <span className={theme.text.muted}>=</span>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onUpdate(keyValue, e.target.value)}
+      disabled={disabled}
+      placeholder="value"
+      className={cn(
+        'flex-1 px-2 py-1.5 text-sm rounded border font-mono',
+        'bg-white text-zinc-900 placeholder:text-zinc-400',
+        'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+        'border-zinc-200 dark:border-zinc-700',
+        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+        'disabled:opacity-50 disabled:cursor-not-allowed'
+      )}
+    />
+    <button
+      type="button"
+      onClick={onRemove}
+      disabled={disabled}
+      className={cn(
+        'p-1.5 rounded',
+        'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
+        'dark:hover:bg-rose-900/20',
+        'disabled:opacity-50 disabled:cursor-not-allowed'
+      )}
+    >
+      <TrashIcon className="w-4 h-4" />
+    </button>
+  </div>
+);
