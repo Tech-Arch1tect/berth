@@ -4,7 +4,7 @@ import { Modal } from '../../common/Modal';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import { NewServiceConfig, PortMappingChange, VolumeMountChange } from '../../../types/compose';
+import { NewServiceConfig, PortMappingChange } from '../../../types/compose';
 
 interface AddServiceDialogProps {
   isOpen: boolean;

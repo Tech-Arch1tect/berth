@@ -198,6 +198,13 @@ export interface BuildChange {
   platforms?: string[];
 }
 
+export interface ServiceNetworkConfig {
+  aliases?: string[];
+  ipv4_address?: string;
+  ipv6_address?: string;
+  priority?: number;
+}
+
 export interface ServiceChanges {
   image?: string;
   ports?: PortMappingChange[];
@@ -211,6 +218,7 @@ export interface ServiceChanges {
   labels?: Record<string, string | null>;
   deploy?: DeployChange;
   build?: BuildChange;
+  networks?: Record<string, ServiceNetworkConfig | null>;
 }
 
 export interface NewServiceConfig {

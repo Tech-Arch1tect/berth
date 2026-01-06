@@ -14,6 +14,11 @@ import { DependsOnField } from './fields/DependsOnField';
 import { CommandField } from './fields/CommandField';
 import { DeployField } from './fields/DeployField';
 import { BuildField } from './fields/BuildField';
+import { ImageField } from './fields/ImageField';
+import { EnvironmentField } from './fields/EnvironmentField';
+import { LabelsField } from './fields/LabelsField';
+import { RestartField } from './fields/RestartField';
+import { NetworksField } from './fields/NetworksField';
 import { NetworksEditor } from './sections/NetworksEditor';
 import { VolumesEditor } from './sections/VolumesEditor';
 import { SecretsConfigsEditor } from './sections/SecretsConfigsEditor';
@@ -32,6 +37,7 @@ import {
   ComposeSecretConfig,
   ComposeConfigConfig,
   NewServiceConfig,
+  ServiceNetworkConfig,
 } from '../../types/compose';
 import { StackService } from '../../services/stackService';
 
@@ -728,8 +734,18 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const [editedEntrypoint, setEditedEntrypoint] = useState<string[] | null | undefined>(undefined);
   const [editedDeploy, setEditedDeploy] = useState<DeployChange | null | undefined>(undefined);
   const [editedBuild, setEditedBuild] = useState<BuildChange | null | undefined>(undefined);
+  const [editedImage, setEditedImage] = useState<string | undefined>(undefined);
+  const [editedEnvironment, setEditedEnvironment] = useState<Record<string, string> | null>(null);
+  const [editedLabels, setEditedLabels] = useState<Record<string, string> | null>(null);
+  const [editedRestart, setEditedRestart] = useState<string | undefined>(undefined);
+  const [editedNetworks, setEditedNetworks] = useState<Record<
+    string,
+    ServiceNetworkConfig | null
+  > | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableNetworks = state.composeData ? Object.keys(state.composeData.networks || {}) : [];
 
   const currentPorts: PortMappingChange[] =
     editedPorts ??
@@ -799,6 +815,27 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           }
         : null;
 
+  const currentImage: string | undefined = editedImage !== undefined ? editedImage : config?.image;
+
+  const currentEnvironment: Record<string, string> =
+    editedEnvironment ?? (config?.environment || {});
+
+  const currentLabels: Record<string, string> = editedLabels ?? (config?.labels || {});
+
+  const currentRestart: string | undefined =
+    editedRestart !== undefined ? editedRestart : config?.restart;
+
+  const currentNetworks: Record<string, ServiceNetworkConfig | null> =
+    editedNetworks ??
+    (config?.networks
+      ? Object.fromEntries(
+          Object.entries(config.networks).map(([name, net]) => [
+            name,
+            net ? { aliases: net.aliases, ipv4_address: net.ipv4_address } : null,
+          ])
+        )
+      : {});
+
   const hasChanges =
     editedPorts !== null ||
     editedVolumes !== null ||
@@ -806,6 +843,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     editedDependsOn !== null ||
     editedCommand !== undefined ||
     editedEntrypoint !== undefined ||
+    editedImage !== undefined ||
+    editedEnvironment !== null ||
+    editedLabels !== null ||
+    editedRestart !== undefined ||
+    editedNetworks !== null ||
     editedDeploy !== undefined ||
     editedBuild !== undefined;
 
@@ -816,6 +858,36 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setError(null);
 
     try {
+      let environmentChanges: Record<string, string | null> | undefined = undefined;
+      if (editedEnvironment !== null) {
+        const originalEnv = config?.environment || {};
+        environmentChanges = {};
+
+        for (const [key, value] of Object.entries(editedEnvironment)) {
+          environmentChanges[key] = value;
+        }
+
+        for (const key of Object.keys(originalEnv)) {
+          if (!(key in editedEnvironment)) {
+            environmentChanges[key] = null;
+          }
+        }
+      }
+
+      let labelsChanges: Record<string, string | null> | undefined = undefined;
+      if (editedLabels !== null) {
+        const originalLabels = config?.labels || {};
+        labelsChanges = {};
+        for (const [key, value] of Object.entries(editedLabels)) {
+          labelsChanges[key] = value;
+        }
+        for (const key of Object.keys(originalLabels)) {
+          if (!(key in editedLabels)) {
+            labelsChanges[key] = null;
+          }
+        }
+      }
+
       await StackService.updateCompose(
         serverId,
         stackName,
@@ -823,8 +895,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           changes: {
             service_changes: {
               [serviceName]: {
+                image: editedImage,
                 ports: editedPorts || undefined,
                 volumes: editedVolumes || undefined,
+                environment: environmentChanges,
+                labels: labelsChanges,
+                restart: editedRestart,
+                networks: editedNetworks || undefined,
                 healthcheck:
                   editedHealthcheck !== undefined ? (editedHealthcheck ?? undefined) : undefined,
                 depends_on: editedDependsOn || undefined,
@@ -847,6 +924,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       setEditedEntrypoint(undefined);
       setEditedDeploy(undefined);
       setEditedBuild(undefined);
+      setEditedImage(undefined);
+      setEditedEnvironment(null);
+      setEditedLabels(null);
+      setEditedRestart(undefined);
+      setEditedNetworks(null);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save changes');
@@ -857,6 +939,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     serverId,
     stackName,
     serviceName,
+    config,
     editedPorts,
     editedVolumes,
     editedHealthcheck,
@@ -865,6 +948,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     editedEntrypoint,
     editedDeploy,
     editedBuild,
+    editedImage,
+    editedEnvironment,
+    editedLabels,
+    editedRestart,
+    editedNetworks,
     hasChanges,
     onSaved,
     csrfToken,
@@ -879,6 +967,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setEditedEntrypoint(undefined);
     setEditedDeploy(undefined);
     setEditedBuild(undefined);
+    setEditedImage(undefined);
+    setEditedEnvironment(null);
+    setEditedLabels(null);
+    setEditedRestart(undefined);
+    setEditedNetworks(null);
     setError(null);
   }, []);
 
@@ -915,14 +1008,28 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       )}
 
       <div className="grid gap-6">
-        <div>
-          <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>Image</label>
-          <p className={theme.text.standard}>{config.image || 'Not specified'}</p>
-        </div>
+        <ImageField image={currentImage} onChange={setEditedImage} disabled={saving} />
+
+        <RestartField restart={currentRestart} onChange={setEditedRestart} disabled={saving} />
 
         <PortsField ports={currentPorts} onChange={setEditedPorts} disabled={saving} />
 
         <VolumeMountsField volumes={currentVolumes} onChange={setEditedVolumes} disabled={saving} />
+
+        <EnvironmentField
+          environment={currentEnvironment}
+          onChange={setEditedEnvironment}
+          disabled={saving}
+        />
+
+        <LabelsField labels={currentLabels} onChange={setEditedLabels} disabled={saving} />
+
+        <NetworksField
+          networks={currentNetworks}
+          availableNetworks={availableNetworks}
+          onChange={setEditedNetworks}
+          disabled={saving}
+        />
 
         <HealthcheckField
           healthcheck={currentHealthcheck}
@@ -957,21 +1064,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         <DeployField deploy={currentDeploy} onChange={setEditedDeploy} disabled={saving} />
 
         <BuildField build={currentBuild} onChange={setEditedBuild} disabled={saving} />
-
-        {config.environment && Object.keys(config.environment).length > 0 && (
-          <div>
-            <label className={cn('block text-sm font-medium mb-1', theme.text.muted)}>
-              Environment
-            </label>
-            <div className="space-y-1">
-              {Object.entries(config.environment).map(([key, value]) => (
-                <p key={key} className={cn('text-sm font-mono', theme.text.standard)}>
-                  {key}={value}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
