@@ -746,6 +746,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const availableNetworks = state.composeData ? Object.keys(state.composeData.networks || {}) : [];
+  const availableVolumes = state.composeData ? Object.keys(state.composeData.volumes || {}) : [];
 
   const currentPorts: PortMappingChange[] =
     editedPorts ??
@@ -1014,7 +1015,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
         <PortsField ports={currentPorts} onChange={setEditedPorts} disabled={saving} />
 
-        <VolumeMountsField volumes={currentVolumes} onChange={setEditedVolumes} disabled={saving} />
+        <VolumeMountsField
+          volumes={currentVolumes}
+          availableVolumes={availableVolumes}
+          onChange={setEditedVolumes}
+          disabled={saving}
+        />
 
         <EnvironmentField
           environment={currentEnvironment}

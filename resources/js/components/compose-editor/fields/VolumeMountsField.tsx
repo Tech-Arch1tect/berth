@@ -6,6 +6,7 @@ import { VolumeMountChange } from '../../../types/compose';
 
 interface VolumeMountsFieldProps {
   volumes: VolumeMountChange[];
+  availableVolumes: string[];
   onChange: (volumes: VolumeMountChange[]) => void;
   disabled?: boolean;
 }
@@ -18,6 +19,7 @@ const VOLUME_TYPES = [
 
 export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
   volumes,
+  availableVolumes,
   onChange,
   disabled,
 }) => {
@@ -92,27 +94,53 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                   <label className={cn('block text-xs mb-1', theme.text.subtle)}>
                     {volume.type === 'tmpfs' ? 'Size (optional)' : 'Source'}
                   </label>
-                  <input
-                    type="text"
-                    value={volume.source}
-                    onChange={(e) => handleUpdateVolume(index, { source: e.target.value })}
-                    disabled={disabled || volume.type === 'tmpfs'}
-                    placeholder={
-                      volume.type === 'bind'
-                        ? './data'
-                        : volume.type === 'volume'
-                          ? 'volume-name'
-                          : ''
-                    }
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
-                  />
+                  {volume.type === 'volume' ? (
+                    <select
+                      value={volume.source}
+                      onChange={(e) => handleUpdateVolume(index, { source: e.target.value })}
+                      disabled={disabled || availableVolumes.length === 0}
+                      className={cn(
+                        'w-full px-2 py-1.5 text-sm rounded border',
+                        'bg-white text-zinc-900',
+                        'dark:bg-zinc-900 dark:text-white',
+                        'border-zinc-200 dark:border-zinc-700',
+                        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                        'disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                    >
+                      <option value="">
+                        {availableVolumes.length === 0
+                          ? 'No volumes defined'
+                          : 'Select a volume...'}
+                      </option>
+                      {availableVolumes.map((vol) => (
+                        <option key={vol} value={vol}>
+                          {vol}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={volume.source}
+                      onChange={(e) => handleUpdateVolume(index, { source: e.target.value })}
+                      disabled={disabled || volume.type === 'tmpfs'}
+                      placeholder={volume.type === 'bind' ? './data' : ''}
+                      className={cn(
+                        'w-full px-2 py-1.5 text-sm rounded border',
+                        'bg-white text-zinc-900 placeholder:text-zinc-400',
+                        'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
+                        'border-zinc-200 dark:border-zinc-700',
+                        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
+                        'disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                    />
+                  )}
+                  {volume.type === 'volume' && availableVolumes.length === 0 && (
+                    <p className={cn('text-xs mt-1', theme.text.subtle)}>
+                      Create volumes in the Volumes tab first
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={cn('block text-xs mb-1', theme.text.subtle)}>Target</label>
