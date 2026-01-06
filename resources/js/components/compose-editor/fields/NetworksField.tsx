@@ -81,33 +81,26 @@ export const NetworksField: React.FC<NetworksFieldProps> = ({
       <div className="flex items-center justify-between">
         <label className={cn('text-sm font-medium', theme.text.muted)}>Networks</label>
         {disconnectedNetworks.length > 0 && (
-          <div className="relative">
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleConnect(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-              disabled={disabled}
-              className={cn(
-                'pl-2 pr-6 py-1 text-xs font-medium rounded appearance-none cursor-pointer',
-                'bg-teal-100 text-teal-700 hover:bg-teal-200',
-                'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                + Connect
+          <select
+            onChange={(e) => {
+              if (e.target.value) {
+                handleConnect(e.target.value);
+                e.target.value = '';
+              }
+            }}
+            disabled={disabled}
+            className={cn(theme.forms.compact.selectSmall)}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              + Connect network
+            </option>
+            {disconnectedNetworks.map((name) => (
+              <option key={name} value={name}>
+                {name}
               </option>
-              {disconnectedNetworks.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+            ))}
+          </select>
         )}
       </div>
 

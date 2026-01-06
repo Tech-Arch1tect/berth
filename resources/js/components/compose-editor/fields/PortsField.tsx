@@ -31,12 +31,7 @@ export const PortsField: React.FC<PortsFieldProps> = ({ ports, onChange, disable
           type="button"
           onClick={handleAddPort}
           disabled={disabled}
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
-            'bg-teal-100 text-teal-700 hover:bg-teal-200',
-            'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
-          )}
+          className={cn(theme.forms.compact.addButton)}
         >
           <PlusIcon className="w-3 h-3" />
           Add Port
@@ -66,14 +61,7 @@ export const PortsField: React.FC<PortsFieldProps> = ({ ports, onChange, disable
                     }
                     disabled={disabled}
                     placeholder="0.0.0.0"
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.input)}
                   />
                 </div>
                 <div>
@@ -84,14 +72,7 @@ export const PortsField: React.FC<PortsFieldProps> = ({ ports, onChange, disable
                     onChange={(e) => handleUpdatePort(index, { published: e.target.value })}
                     disabled={disabled}
                     placeholder="8080"
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.input)}
                   />
                 </div>
                 <div>
@@ -106,14 +87,7 @@ export const PortsField: React.FC<PortsFieldProps> = ({ ports, onChange, disable
                     placeholder="80"
                     min={1}
                     max={65535}
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.input)}
                   />
                 </div>
                 <div>
@@ -124,14 +98,7 @@ export const PortsField: React.FC<PortsFieldProps> = ({ ports, onChange, disable
                       handleUpdatePort(index, { protocol: e.target.value || undefined })
                     }
                     disabled={disabled}
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900',
-                      'dark:bg-zinc-900 dark:text-white',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.select)}
                   >
                     <option value="">Default (tcp)</option>
                     <option value="tcp">TCP</option>

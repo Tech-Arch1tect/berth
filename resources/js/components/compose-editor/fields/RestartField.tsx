@@ -47,14 +47,7 @@ export const RestartField: React.FC<RestartFieldProps> = ({ restart, onChange, d
         value={restart || ''}
         onChange={(e) => onChange(e.target.value || undefined)}
         disabled={disabled}
-        className={cn(
-          'w-full px-3 py-2 text-sm rounded-lg border',
-          'bg-white text-zinc-900',
-          'dark:bg-zinc-900 dark:text-white',
-          'border-zinc-200 dark:border-zinc-700',
-          'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-          'disabled:opacity-50 disabled:cursor-not-allowed'
-        )}
+        className={cn(theme.forms.compact.select)}
       >
         {RESTART_POLICIES.map((policy) => (
           <option key={policy.value} value={policy.value}>

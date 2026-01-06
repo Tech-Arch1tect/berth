@@ -74,14 +74,7 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                     value={volume.type}
                     onChange={(e) => handleUpdateVolume(index, { type: e.target.value })}
                     disabled={disabled}
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900',
-                      'dark:bg-zinc-900 dark:text-white',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.select)}
                   >
                     {VOLUME_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -99,14 +92,7 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                       value={volume.source}
                       onChange={(e) => handleUpdateVolume(index, { source: e.target.value })}
                       disabled={disabled || availableVolumes.length === 0}
-                      className={cn(
-                        'w-full px-2 py-1.5 text-sm rounded border',
-                        'bg-white text-zinc-900',
-                        'dark:bg-zinc-900 dark:text-white',
-                        'border-zinc-200 dark:border-zinc-700',
-                        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                        'disabled:opacity-50 disabled:cursor-not-allowed'
-                      )}
+                      className={cn(theme.forms.compact.select)}
                     >
                       <option value="">
                         {availableVolumes.length === 0
@@ -126,14 +112,7 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                       onChange={(e) => handleUpdateVolume(index, { source: e.target.value })}
                       disabled={disabled || volume.type === 'tmpfs'}
                       placeholder={volume.type === 'bind' ? './data' : ''}
-                      className={cn(
-                        'w-full px-2 py-1.5 text-sm rounded border',
-                        'bg-white text-zinc-900 placeholder:text-zinc-400',
-                        'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                        'border-zinc-200 dark:border-zinc-700',
-                        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                        'disabled:opacity-50 disabled:cursor-not-allowed'
-                      )}
+                      className={cn(theme.forms.compact.input)}
                     />
                   )}
                   {volume.type === 'volume' && availableVolumes.length === 0 && (
@@ -150,14 +129,7 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                     onChange={(e) => handleUpdateVolume(index, { target: e.target.value })}
                     disabled={disabled}
                     placeholder="/app/data"
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.input)}
                   />
                 </div>
                 <div>
@@ -168,14 +140,7 @@ export const VolumeMountsField: React.FC<VolumeMountsFieldProps> = ({
                       handleUpdateVolume(index, { read_only: e.target.value === 'ro' })
                     }
                     disabled={disabled}
-                    className={cn(
-                      'w-full px-2 py-1.5 text-sm rounded border',
-                      'bg-white text-zinc-900',
-                      'dark:bg-zinc-900 dark:text-white',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.select)}
                   >
                     <option value="rw">Read/Write</option>
                     <option value="ro">Read Only</option>

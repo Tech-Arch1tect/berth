@@ -100,12 +100,7 @@ export const EnvironmentField: React.FC<EnvironmentFieldProps> = ({
           type="button"
           onClick={handleAdd}
           disabled={disabled}
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded',
-            'bg-teal-100 text-teal-700 hover:bg-teal-200',
-            'dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
-          )}
+          className={cn(theme.forms.compact.addButton)}
         >
           <PlusIcon className="w-3 h-3" />
           Add
@@ -128,14 +123,7 @@ export const EnvironmentField: React.FC<EnvironmentFieldProps> = ({
                   onChange={(e) => handleUpdate(key, e.target.value, value)}
                   disabled={disabled}
                   placeholder="KEY"
-                  className={cn(
-                    'w-1/3 px-2 py-1.5 text-sm rounded border font-mono',
-                    'bg-white text-zinc-900 placeholder:text-zinc-400',
-                    'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                    'border-zinc-200 dark:border-zinc-700',
-                    'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
+                  className={cn(theme.forms.compact.input, 'w-1/3 font-mono')}
                 />
                 <span className={theme.text.muted}>=</span>
                 <div className="flex-1 relative">
@@ -145,14 +133,7 @@ export const EnvironmentField: React.FC<EnvironmentFieldProps> = ({
                     onChange={(e) => handleUpdate(key, key, e.target.value)}
                     disabled={disabled}
                     placeholder="value"
-                    className={cn(
-                      'w-full px-2 py-1.5 pr-8 text-sm rounded border font-mono',
-                      'bg-white text-zinc-900 placeholder:text-zinc-400',
-                      'dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500',
-                      'border-zinc-200 dark:border-zinc-700',
-                      'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
+                    className={cn(theme.forms.compact.input, 'pr-8 font-mono')}
                   />
                   <button
                     type="button"

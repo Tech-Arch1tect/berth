@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { DependsOnChange } from '../../../types/compose';
@@ -53,41 +53,26 @@ export const DependsOnField: React.FC<DependsOnFieldProps> = ({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className={cn('text-sm font-medium', theme.text.muted)}>Dependencies</label>
-        <div className="flex items-center gap-2">
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                handleAddDependency(e.target.value);
-                e.target.value = '';
-              }
-            }}
-            disabled={disabled || availableToAdd.length === 0}
-            className={cn(
-              'px-2 py-1 text-xs font-medium rounded border',
-              'bg-white text-zinc-900',
-              'dark:bg-zinc-900 dark:text-white',
-              'border-zinc-200 dark:border-zinc-700',
-              'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              {availableToAdd.length === 0 ? 'No services available' : 'Add dependency...'}
+        <select
+          onChange={(e) => {
+            if (e.target.value) {
+              handleAddDependency(e.target.value);
+              e.target.value = '';
+            }
+          }}
+          disabled={disabled || availableToAdd.length === 0}
+          className={cn(theme.forms.compact.selectSmall)}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            {availableToAdd.length === 0 ? 'No services available' : '+ Add dependency'}
+          </option>
+          {availableToAdd.map((service) => (
+            <option key={service} value={service}>
+              {service}
             </option>
-            {availableToAdd.map((service) => (
-              <option key={service} value={service}>
-                {service}
-              </option>
-            ))}
-          </select>
-          <PlusIcon
-            className={cn(
-              'w-3 h-3',
-              availableToAdd.length > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-zinc-400'
-            )}
-          />
-        </div>
+          ))}
+        </select>
       </div>
 
       {dependencyNames.length === 0 ? (
@@ -115,14 +100,7 @@ export const DependsOnField: React.FC<DependsOnFieldProps> = ({
                       value={dep.condition || 'service_started'}
                       onChange={(e) => handleUpdateCondition(serviceName, e.target.value)}
                       disabled={disabled}
-                      className={cn(
-                        'w-full px-2 py-1.5 text-sm rounded border',
-                        'bg-white text-zinc-900',
-                        'dark:bg-zinc-900 dark:text-white',
-                        'border-zinc-200 dark:border-zinc-700',
-                        'focus:border-teal-500 focus:ring-1 focus:ring-teal-500',
-                        'disabled:opacity-50 disabled:cursor-not-allowed'
-                      )}
+                      className={cn(theme.forms.compact.select)}
                     >
                       {CONDITIONS.map((cond) => (
                         <option key={cond.value} value={cond.value}>

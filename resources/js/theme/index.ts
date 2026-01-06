@@ -242,6 +242,18 @@ export const theme = {
       'w-full rounded-lg border-2 border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-teal-500',
     checkbox:
       'h-4 w-4 rounded border-2 border-zinc-300 text-teal-600 transition-colors focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-800',
+    compact: {
+      input:
+        'w-full px-2 py-1.5 text-sm rounded border bg-white text-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500 border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
+      select:
+        'w-full px-2 py-1.5 text-sm rounded border bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
+      selectSmall:
+        'px-2 py-1 text-xs rounded border bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
+      unitSelect:
+        'px-2 py-1.5 text-sm rounded-r border bg-zinc-50 text-zinc-900 dark:bg-zinc-800 dark:text-white border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed border-l-0',
+      addButton:
+        'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400 dark:hover:bg-teal-900/50 disabled:opacity-50 disabled:cursor-not-allowed',
+    },
   },
   table: {
     outer: 'mt-8 flex flex-col',
