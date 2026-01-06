@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
@@ -22,6 +22,25 @@ const UNIT_LABELS: Record<string, string> = {
 
 const DEFAULT_UNITS: ('ns' | 'us' | 'ms' | 's' | 'm' | 'h')[] = ['ms', 's', 'm', 'h'];
 
+function parseDuration(duration: string): { value: number | null; unit: string | null } {
+  if (!duration) return { value: null, unit: null };
+
+  const match = duration.match(/^(\d+\.?\d*)(ns|us|µs|ms|s|m|h)$/);
+  if (match) {
+    return {
+      value: parseFloat(match[1]),
+      unit: match[2] === 'µs' ? 'us' : match[2],
+    };
+  }
+
+  const num = parseFloat(duration);
+  if (!isNaN(num)) {
+    return { value: num, unit: 's' };
+  }
+
+  return { value: null, unit: null };
+}
+
 export const DurationInput: React.FC<DurationInputProps> = ({
   value,
   onChange,
@@ -30,45 +49,67 @@ export const DurationInput: React.FC<DurationInputProps> = ({
   label,
   allowedUnits = DEFAULT_UNITS,
 }) => {
-  const parsed = parseDuration(value || '');
-  const [numValue, setNumValue] = useState<string>(parsed.value?.toString() || '');
-  const [unit, setUnit] = useState<string>(
-    parsed.unit || allowedUnits[allowedUnits.length > 2 ? 1 : 0]
+  const [isEditing, setIsEditing] = useState(false);
+  const [localNumValue, setLocalNumValue] = useState<string>('');
+  const [localUnit, setLocalUnit] = useState<string>(allowedUnits[allowedUnits.length > 2 ? 1 : 0]);
+
+  const { displayNum, displayUnit } = useMemo(() => {
+    if (isEditing) {
+      return { displayNum: localNumValue, displayUnit: localUnit };
+    }
+    const parsed = parseDuration(value || '');
+    return {
+      displayNum: parsed.value?.toString() || '',
+      displayUnit:
+        parsed.unit && allowedUnits.includes(parsed.unit as (typeof allowedUnits)[number])
+          ? parsed.unit
+          : allowedUnits[allowedUnits.length > 2 ? 1 : 0],
+    };
+  }, [value, isEditing, localNumValue, localUnit, allowedUnits]);
+
+  const handleNumChange = useCallback(
+    (newNum: string) => {
+      setLocalNumValue(newNum);
+      if (newNum === '' || newNum === '0') {
+        onChange(undefined);
+      } else {
+        const num = parseFloat(newNum);
+        if (!isNaN(num) && num >= 0) {
+          onChange(`${num}${isEditing ? localUnit : displayUnit}`);
+        }
+      }
+    },
+    [onChange, isEditing, localUnit, displayUnit]
   );
 
-  useEffect(() => {
-    const parsed = parseDuration(value || '');
-    if (parsed.value !== null) {
-      setNumValue(parsed.value.toString());
-      if (parsed.unit && allowedUnits.includes(parsed.unit as (typeof allowedUnits)[number])) {
-        setUnit(parsed.unit);
+  const handleUnitChange = useCallback(
+    (newUnit: string) => {
+      setLocalUnit(newUnit);
+      const currentNum = isEditing ? localNumValue : displayNum;
+      if (currentNum && currentNum !== '0') {
+        const num = parseFloat(currentNum);
+        if (!isNaN(num) && num >= 0) {
+          onChange(`${num}${newUnit}`);
+        }
       }
-    } else if (!value) {
-      setNumValue('');
-    }
+    },
+    [onChange, isEditing, localNumValue, displayNum]
+  );
+
+  const handleFocus = useCallback(() => {
+    const parsed = parseDuration(value || '');
+    setLocalNumValue(parsed.value?.toString() || '');
+    setLocalUnit(
+      parsed.unit && allowedUnits.includes(parsed.unit as (typeof allowedUnits)[number])
+        ? parsed.unit
+        : allowedUnits[allowedUnits.length > 2 ? 1 : 0]
+    );
+    setIsEditing(true);
   }, [value, allowedUnits]);
 
-  const handleNumChange = (newNum: string) => {
-    setNumValue(newNum);
-    if (newNum === '' || newNum === '0') {
-      onChange(undefined);
-    } else {
-      const num = parseFloat(newNum);
-      if (!isNaN(num) && num >= 0) {
-        onChange(`${num}${unit}`);
-      }
-    }
-  };
-
-  const handleUnitChange = (newUnit: string) => {
-    setUnit(newUnit);
-    if (numValue && numValue !== '0') {
-      const num = parseFloat(numValue);
-      if (!isNaN(num) && num >= 0) {
-        onChange(`${num}${newUnit}`);
-      }
-    }
-  };
+  const handleBlur = useCallback(() => {
+    setIsEditing(false);
+  }, []);
 
   return (
     <div className="flex flex-col gap-1">
@@ -76,8 +117,10 @@ export const DurationInput: React.FC<DurationInputProps> = ({
       <div className="flex">
         <input
           type="number"
-          value={numValue}
+          value={displayNum}
           onChange={(e) => handleNumChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           disabled={disabled}
           placeholder={placeholder}
           min={0}
@@ -92,7 +135,7 @@ export const DurationInput: React.FC<DurationInputProps> = ({
           )}
         />
         <select
-          value={unit}
+          value={displayUnit}
           onChange={(e) => handleUnitChange(e.target.value)}
           disabled={disabled}
           className={cn(
@@ -115,22 +158,3 @@ export const DurationInput: React.FC<DurationInputProps> = ({
     </div>
   );
 };
-
-function parseDuration(duration: string): { value: number | null; unit: string | null } {
-  if (!duration) return { value: null, unit: null };
-
-  const match = duration.match(/^(\d+\.?\d*)(ns|us|µs|ms|s|m|h)$/);
-  if (match) {
-    return {
-      value: parseFloat(match[1]),
-      unit: match[2] === 'µs' ? 'us' : match[2],
-    };
-  }
-
-  const num = parseFloat(duration);
-  if (!isNaN(num)) {
-    return { value: num, unit: 's' };
-  }
-
-  return { value: null, unit: null };
-}

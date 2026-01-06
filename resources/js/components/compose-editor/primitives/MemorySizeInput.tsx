@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
@@ -18,6 +18,24 @@ const UNIT_LABELS: Record<string, string> = {
   g: 'GB',
 };
 
+function parseMemorySize(size: string): { value: number | null; unit: string | null } {
+  if (!size) return { value: null, unit: null };
+
+  const match = size.toLowerCase().match(/^(\d+\.?\d*)(b|k|kb|m|mb|g|gb)?$/);
+  if (match) {
+    let unit = match[2] || 'b';
+    if (unit === 'kb') unit = 'k';
+    if (unit === 'mb') unit = 'm';
+    if (unit === 'gb') unit = 'g';
+    return {
+      value: parseFloat(match[1]),
+      unit,
+    };
+  }
+
+  return { value: null, unit: null };
+}
+
 export const MemorySizeInput: React.FC<MemorySizeInputProps> = ({
   value,
   onChange,
@@ -25,43 +43,60 @@ export const MemorySizeInput: React.FC<MemorySizeInputProps> = ({
   placeholder = '0',
   label,
 }) => {
-  const parsed = parseMemorySize(value || '');
-  const [numValue, setNumValue] = useState<string>(parsed.value?.toString() || '');
-  const [unit, setUnit] = useState<string>(parsed.unit || 'm');
+  const [isEditing, setIsEditing] = useState(false);
+  const [localNumValue, setLocalNumValue] = useState<string>('');
+  const [localUnit, setLocalUnit] = useState<string>('m');
 
-  useEffect(() => {
-    const parsed = parseMemorySize(value || '');
-    if (parsed.value !== null) {
-      setNumValue(parsed.value.toString());
-      if (parsed.unit) {
-        setUnit(parsed.unit);
-      }
-    } else if (!value) {
-      setNumValue('');
+  const { displayNum, displayUnit } = useMemo(() => {
+    if (isEditing) {
+      return { displayNum: localNumValue, displayUnit: localUnit };
     }
+    const parsed = parseMemorySize(value || '');
+    return {
+      displayNum: parsed.value?.toString() || '',
+      displayUnit: parsed.unit || 'm',
+    };
+  }, [value, isEditing, localNumValue, localUnit]);
+
+  const handleNumChange = useCallback(
+    (newNum: string) => {
+      setLocalNumValue(newNum);
+      if (newNum === '' || newNum === '0') {
+        onChange(undefined);
+      } else {
+        const num = parseFloat(newNum);
+        if (!isNaN(num) && num >= 0) {
+          onChange(`${num}${isEditing ? localUnit : displayUnit}`);
+        }
+      }
+    },
+    [onChange, isEditing, localUnit, displayUnit]
+  );
+
+  const handleUnitChange = useCallback(
+    (newUnit: string) => {
+      setLocalUnit(newUnit);
+      const currentNum = isEditing ? localNumValue : displayNum;
+      if (currentNum && currentNum !== '0') {
+        const num = parseFloat(currentNum);
+        if (!isNaN(num) && num >= 0) {
+          onChange(`${num}${newUnit}`);
+        }
+      }
+    },
+    [onChange, isEditing, localNumValue, displayNum]
+  );
+
+  const handleFocus = useCallback(() => {
+    const parsed = parseMemorySize(value || '');
+    setLocalNumValue(parsed.value?.toString() || '');
+    setLocalUnit(parsed.unit || 'm');
+    setIsEditing(true);
   }, [value]);
 
-  const handleNumChange = (newNum: string) => {
-    setNumValue(newNum);
-    if (newNum === '' || newNum === '0') {
-      onChange(undefined);
-    } else {
-      const num = parseFloat(newNum);
-      if (!isNaN(num) && num >= 0) {
-        onChange(`${num}${unit}`);
-      }
-    }
-  };
-
-  const handleUnitChange = (newUnit: string) => {
-    setUnit(newUnit);
-    if (numValue && numValue !== '0') {
-      const num = parseFloat(numValue);
-      if (!isNaN(num) && num >= 0) {
-        onChange(`${num}${newUnit}`);
-      }
-    }
-  };
+  const handleBlur = useCallback(() => {
+    setIsEditing(false);
+  }, []);
 
   return (
     <div className="flex flex-col gap-1">
@@ -69,8 +104,10 @@ export const MemorySizeInput: React.FC<MemorySizeInputProps> = ({
       <div className="flex">
         <input
           type="number"
-          value={numValue}
+          value={displayNum}
           onChange={(e) => handleNumChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           disabled={disabled}
           placeholder={placeholder}
           min={0}
@@ -85,7 +122,7 @@ export const MemorySizeInput: React.FC<MemorySizeInputProps> = ({
           )}
         />
         <select
-          value={unit}
+          value={displayUnit}
           onChange={(e) => handleUnitChange(e.target.value)}
           disabled={disabled}
           className={cn(
@@ -108,21 +145,3 @@ export const MemorySizeInput: React.FC<MemorySizeInputProps> = ({
     </div>
   );
 };
-
-function parseMemorySize(size: string): { value: number | null; unit: string | null } {
-  if (!size) return { value: null, unit: null };
-
-  const match = size.toLowerCase().match(/^(\d+\.?\d*)(b|k|kb|m|mb|g|gb)?$/);
-  if (match) {
-    let unit = match[2] || 'b';
-    if (unit === 'kb') unit = 'k';
-    if (unit === 'mb') unit = 'm';
-    if (unit === 'gb') unit = 'g';
-    return {
-      value: parseFloat(match[1]),
-      unit,
-    };
-  }
-
-  return { value: null, unit: null };
-}
