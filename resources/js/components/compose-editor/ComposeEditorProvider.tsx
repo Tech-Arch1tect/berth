@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback, useMemo } from 'react';
 import {
   ComposeConfig,
   ComposeServiceConfig,
@@ -387,7 +387,7 @@ export const ComposeEditorProvider: React.FC<ComposeEditorProviderProps> = ({ ch
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const isDirty = hasAnyChanges(state.pendingChanges);
-  const apiChanges = toApiChanges(state.pendingChanges);
+  const apiChanges = useMemo(() => toApiChanges(state.pendingChanges), [state.pendingChanges]);
 
   const setComposeData = useCallback((data: ComposeConfig) => {
     dispatch({ type: 'SET_COMPOSE_DATA', payload: data });

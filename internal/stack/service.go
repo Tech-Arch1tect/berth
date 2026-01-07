@@ -542,7 +542,7 @@ func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *model
 	return composeConfig, nil
 }
 
-func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, changes map[string]any) error {
+func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, changes map[string]any) (map[string]any, error) {
 	s.logger.Debug("updating compose config",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -551,37 +551,39 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
 	if err != nil {
-		return fmt.Errorf("failed to check permissions: %w", err)
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return fmt.Errorf("user does not have permission to manage this stack")
+		return nil, fmt.Errorf("user does not have permission to manage this stack")
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to get server: %w", err)
+		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
 	return s.updateComposeOnAgent(ctx, server, stackname, changes)
 }
 
-func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, changes map[string]any) error {
+func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, changes map[string]any) (map[string]any, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), changes)
 	if err != nil {
-		return fmt.Errorf("failed to communicate with agent: %w", err)
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		var errResp map[string]string
-		if err := json.NewDecoder(resp.Body).Decode(&errResp); err == nil {
-			if msg, ok := errResp["error"]; ok {
-				return fmt.Errorf("agent error: %s", msg)
-			}
-		}
-		return fmt.Errorf("agent returned status %d", resp.StatusCode)
+	var result map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
 
-	return nil
+	if resp.StatusCode != http.StatusOK {
+		if msg, ok := result["error"].(string); ok {
+			return nil, fmt.Errorf("agent error: %s", msg)
+		}
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	return result, nil
 }

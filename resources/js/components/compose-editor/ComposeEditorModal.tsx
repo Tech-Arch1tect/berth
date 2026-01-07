@@ -25,6 +25,7 @@ import { SecretsConfigsEditor } from './sections/SecretsConfigsEditor';
 import { AddServiceDialog } from './dialogs/AddServiceDialog';
 import { RemoveServiceDialog } from './dialogs/RemoveServiceDialog';
 import { RenameServiceDialog } from './dialogs/RenameServiceDialog';
+import { DiffPreviewView } from './views/DiffPreviewView';
 import {
   PortMappingChange,
   VolumeMountChange,
@@ -51,6 +52,7 @@ const SECTION_TABS: { key: EditorSection; label: string }[] = [
   { key: 'volumes', label: 'Volumes' },
   { key: 'secrets', label: 'Secrets' },
   { key: 'configs', label: 'Configs' },
+  { key: 'preview', label: 'Preview' },
 ];
 
 const ComposeEditorContent: React.FC<{
@@ -371,6 +373,18 @@ const ComposeEditorContent: React.FC<{
         {state.selectedSection === 'configs' && (
           <div className="flex-1 overflow-y-auto">
             <ConfigsSectionEditor disabled={saving} />
+          </div>
+        )}
+
+        {state.selectedSection === 'preview' && (
+          <div className="flex-1 overflow-y-auto">
+            <DiffPreviewView
+              serverId={serverId}
+              stackName={stackName}
+              changes={apiChanges}
+              csrfToken={csrfToken}
+              hasChanges={isDirty}
+            />
           </div>
         )}
       </div>

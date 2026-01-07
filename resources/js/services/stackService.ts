@@ -6,7 +6,7 @@ import {
   StackEnvironmentResponse,
   ContainerImageDetails,
 } from '../types/stack';
-import { ComposeConfig, UpdateComposeRequest } from '../types/compose';
+import { ComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
 
 export interface StackPermissions {
   permissions: string[];
@@ -227,16 +227,19 @@ export class StackService {
     stackname: string,
     request: UpdateComposeRequest,
     csrfToken?: string
-  ): Promise<void> {
+  ): Promise<UpdateComposeResponse> {
     try {
       const headers: Record<string, string> = {};
       if (csrfToken) {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      await api.patch(`/api/v1/servers/${serverid}/stacks/${stackname}/compose`, request, {
-        headers,
-      });
+      const response = await api.patch<UpdateComposeResponse>(
+        `/api/v1/servers/${serverid}/stacks/${stackname}/compose`,
+        request,
+        { headers }
+      );
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {

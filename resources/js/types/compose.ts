@@ -242,4 +242,12 @@ export interface ComposeChanges {
 
 export interface UpdateComposeRequest {
   changes: ComposeChanges;
+  preview?: boolean;
+}
+
+export interface UpdateComposeResponse {
+  success: boolean;
+  message?: string;
+  original_yaml?: string;
+  modified_yaml?: string;
 }

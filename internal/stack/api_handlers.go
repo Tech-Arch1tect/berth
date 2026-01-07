@@ -234,12 +234,10 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 		return common.SendBadRequest(c, "invalid request body")
 	}
 
-	if err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, changes); err != nil {
+	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, changes)
+	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"success": true,
-		"message": "Compose file updated successfully",
-	})
+	return common.SendSuccess(c, result)
 }
