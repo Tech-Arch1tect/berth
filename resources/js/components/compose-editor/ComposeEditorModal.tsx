@@ -224,13 +224,23 @@ const ComposeEditorContent: React.FC<{
               </button>
             </>
           )}
-          <button
-            onClick={handleSaveAll}
-            disabled={saving || !isDirty}
-            className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
-          >
-            {saving ? 'Saving...' : 'Save All Changes'}
-          </button>
+          {isDirty && !state.previewViewed ? (
+            <button
+              onClick={() => selectSection('preview')}
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              Preview Changes
+            </button>
+          ) : (
+            <button
+              onClick={handleSaveAll}
+              disabled={saving || !isDirty}
+              className={cn(theme.buttons.primary, 'text-sm py-1.5 px-3')}
+            >
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useReducer, ReactNode, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   ComposeConfig,
   ComposeServiceConfig,
@@ -49,6 +56,7 @@ interface ComposeEditorState {
   selectedSection: EditorSection;
   isLoading: boolean;
   error: string | null;
+  previewViewed: boolean;
 }
 
 type Action =
@@ -86,6 +94,7 @@ const initialState: ComposeEditorState = {
   selectedSection: 'services',
   isLoading: false,
   error: null,
+  previewViewed: false,
 };
 
 function reducer(state: ComposeEditorState, action: Action): ComposeEditorState {
@@ -109,13 +118,18 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
     case 'SELECT_SERVICE':
       return { ...state, selectedService: action.payload };
     case 'SELECT_SECTION':
-      return { ...state, selectedSection: action.payload };
+      return {
+        ...state,
+        selectedSection: action.payload,
+        previewViewed: action.payload === 'preview' ? true : state.previewViewed,
+      };
 
     case 'UPDATE_SERVICE': {
       const { serviceName, changes } = action.payload;
       const existingChanges = state.pendingChanges.serviceChanges[serviceName] || {};
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           serviceChanges: {
@@ -130,6 +144,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { serviceName, config } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           addServices: {
@@ -147,6 +162,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
         const { [serviceName]: _, ...remainingAdded } = state.pendingChanges.addServices;
         return {
           ...state,
+          previewViewed: false,
           pendingChanges: {
             ...state.pendingChanges,
             addServices: remainingAdded,
@@ -156,6 +172,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
 
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           deleteServices: [...state.pendingChanges.deleteServices, serviceName],
@@ -171,6 +188,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { oldName, newName } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           renameServices: {
@@ -185,6 +203,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { networkName, config } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           networkChanges: {
@@ -199,6 +218,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { volumeName, config } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           volumeChanges: {
@@ -213,6 +233,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { secretName, config } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           secretChanges: {
@@ -227,6 +248,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
       const { configName, config } = action.payload;
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           configChanges: {
@@ -240,6 +262,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
     case 'SET_NETWORKS': {
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           networkChanges: action.payload,
@@ -250,6 +273,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
     case 'SET_VOLUMES': {
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           volumeChanges: action.payload,
@@ -260,6 +284,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
     case 'SET_SECRETS': {
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           secretChanges: action.payload,
@@ -270,6 +295,7 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
     case 'SET_CONFIGS': {
       return {
         ...state,
+        previewViewed: false,
         pendingChanges: {
           ...state.pendingChanges,
           configChanges: action.payload,
@@ -289,12 +315,14 @@ function reducer(state: ComposeEditorState, action: Action): ComposeEditorState 
         ...state,
         pendingChanges: { ...emptyChanges },
         validationErrors: [],
+        previewViewed: false,
       };
     case 'CLEAR_CHANGES_AFTER_SAVE':
       return {
         ...state,
         pendingChanges: { ...emptyChanges },
         validationErrors: [],
+        previewViewed: false,
       };
     default:
       return state;
