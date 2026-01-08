@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -136,14 +137,49 @@ func updateComposeConfig(cmd *cobra.Command, serverID, stackName string, changes
 }
 
 func displayDiff(original, modified string) {
-	fmt.Println("\n--- Original")
-	fmt.Println("+++ Modified")
+	origLines := strings.Split(strings.TrimSpace(original), "\n")
+	modLines := strings.Split(strings.TrimSpace(modified), "\n")
+
+	origSet := make(map[string]bool)
+	modSet := make(map[string]bool)
+	for _, line := range origLines {
+		origSet[line] = true
+	}
+	for _, line := range modLines {
+		modSet[line] = true
+	}
+
 	fmt.Println()
-	fmt.Println("Original:")
-	fmt.Println(original)
+
+	hasChanges := false
+	for i := 0; i < len(origLines) || i < len(modLines); i++ {
+		origLine, modLine := "", ""
+		if i < len(origLines) {
+			origLine = origLines[i]
+		}
+		if i < len(modLines) {
+			modLine = modLines[i]
+		}
+
+		if origLine == modLine {
+			continue
+		}
+
+		if origLine != "" && !modSet[origLine] {
+			fmt.Printf("- %s\n", origLine)
+			hasChanges = true
+		}
+
+		if modLine != "" && !origSet[modLine] {
+			fmt.Printf("+ %s\n", modLine)
+			hasChanges = true
+		}
+	}
+
+	if !hasChanges {
+		fmt.Println("No changes detected.")
+	}
 	fmt.Println()
-	fmt.Println("Modified:")
-	fmt.Println(modified)
 }
 
 func confirmApply() bool {
