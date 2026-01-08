@@ -34,7 +34,8 @@ func (h *DashboardHandler) Dashboard(c echo.Context) error {
 	)
 
 	userID := session.GetUserIDAsUint(c)
-	servers, err := h.serverSvc.ListServersForUser(userID)
+	ctx := c.Request().Context()
+	servers, err := h.serverSvc.ListServersForUser(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to fetch servers",
 			zap.Error(err),

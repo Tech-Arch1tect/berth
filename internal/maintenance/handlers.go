@@ -31,12 +31,13 @@ func (h *Handler) ShowMaintenance(c echo.Context) error {
 		return err
 	}
 
-	server, err := h.service.serverSvc.GetActiveServerForUser(serverID, userID)
+	ctx := c.Request().Context()
+	server, err := h.service.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
 
-	hasPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.read")
+	hasPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.read")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}

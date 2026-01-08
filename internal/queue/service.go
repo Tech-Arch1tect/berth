@@ -59,7 +59,7 @@ func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Ser
 	return service
 }
 
-func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string, req operations.OperationRequest) (*models.QueuedOperationResponse, error) {
+func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID uint, stackName string, req operations.OperationRequest) (*models.QueuedOperationResponse, error) {
 	s.logger.Debug("enqueuing single operation",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -67,7 +67,7 @@ func (s *Service) EnqueueOperation(userID uint, serverID uint, stackName string,
 		zap.String("command", req.Command),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackName, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, "stacks.manage")
 	if err != nil {
 		s.logger.Error("failed to check permissions for operation",
 			zap.Error(err),

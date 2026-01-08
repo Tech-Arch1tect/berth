@@ -38,7 +38,8 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 		return common.SendBadRequest(c, "Invalid server ID")
 	}
 
-	_, err = h.service.serverSvc.GetActiveServerForUser(uint(serverID), userID)
+	ctx := c.Request().Context()
+	_, err = h.service.serverSvc.GetActiveServerForUser(ctx, uint(serverID), userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
@@ -66,8 +67,9 @@ func (h *Handler) ShowStackDetails(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	_, err = h.service.serverSvc.GetActiveServerForUser(uint(serverID), userID)
+	_, err = h.service.serverSvc.GetActiveServerForUser(ctx, uint(serverID), userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
@@ -77,7 +79,7 @@ func (h *Handler) ShowStackDetails(c echo.Context) error {
 		return common.SendNotFound(c, "Server not found")
 	}
 
-	permissions, err := h.rbacSvc.GetUserStackPermissions(userID, uint(serverID), stackname)
+	permissions, err := h.rbacSvc.GetUserStackPermissions(ctx, userID, uint(serverID), stackname)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to get user permissions")
 	}

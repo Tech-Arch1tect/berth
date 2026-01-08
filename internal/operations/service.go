@@ -52,7 +52,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 		zap.String("operation_command", req.Command),
 	)
 
-	serverModel, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	serverModel, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		s.logger.Error("failed to get server for operation",
 			zap.Error(err),
@@ -69,7 +69,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 		requiredPermission = "stacks.manage"
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, requiredPermission)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
 	if err != nil {
 		s.logger.Error("failed to check operation permission",
 			zap.Error(err),
@@ -229,7 +229,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.manage")
 	if err != nil {
 		s.logger.Error("failed to check stream permission",
 			zap.Error(err),

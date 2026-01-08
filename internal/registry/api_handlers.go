@@ -50,8 +50,9 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}
@@ -81,8 +82,9 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}
@@ -114,8 +116,9 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}
@@ -190,8 +193,9 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}
@@ -270,8 +274,9 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}

@@ -189,7 +189,7 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return err
 	}
 
-	permissions, err := h.service.rbacSvc.GetUserStackPermissions(userID, serverID, stackname)
+	permissions, err := h.service.rbacSvc.GetUserStackPermissions(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to get user permissions")
 	}

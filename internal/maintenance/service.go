@@ -36,7 +36,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 		zap.Uint("server_id", serverID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.read")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.read")
 	if err != nil {
 		s.logger.Error("failed to check system info permission",
 			zap.Error(err),
@@ -54,7 +54,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 		return nil, fmt.Errorf("insufficient permissions to view Docker system information")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		s.logger.Error("failed to get server for system info",
 			zap.Error(err),
@@ -112,7 +112,7 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 		zap.Bool("all", request.All),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.write")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.write")
 	if err != nil {
 		s.logger.Error("failed to check Docker prune permission",
 			zap.Error(err),
@@ -130,7 +130,7 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 		return nil, fmt.Errorf("insufficient permissions to perform Docker maintenance operations")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		s.logger.Error("failed to get server for Docker prune",
 			zap.Error(err),
@@ -188,7 +188,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 		zap.String("resource_id", request.ID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(userID, serverID, "docker.maintenance.write")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.write")
 	if err != nil {
 		s.logger.Error("failed to check Docker resource deletion permission",
 			zap.Error(err),
@@ -208,7 +208,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 		return nil, fmt.Errorf("insufficient permissions to delete Docker resources")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		s.logger.Error("failed to get server for resource deletion",
 			zap.Error(err),

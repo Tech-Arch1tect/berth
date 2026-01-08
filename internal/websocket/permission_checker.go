@@ -1,6 +1,10 @@
 package websocket
 
-import "berth/internal/rbac"
+import (
+	"context"
+
+	"berth/internal/rbac"
+)
 
 type RBACPermissionChecker struct {
 	rbacService *rbac.Service
@@ -12,15 +16,15 @@ func NewRBACPermissionChecker(rbacService *rbac.Service) *RBACPermissionChecker 
 	}
 }
 
-func (r *RBACPermissionChecker) CanUserAccessServer(userID int, serverID int) bool {
-	hasAccess, err := r.rbacService.UserHasServerAccess(uint(userID), uint(serverID))
+func (r *RBACPermissionChecker) CanUserAccessServer(ctx context.Context, userID int, serverID int) bool {
+	hasAccess, err := r.rbacService.UserHasServerAccess(ctx, uint(userID), uint(serverID))
 	if err != nil {
 		return false
 	}
 	return hasAccess
 }
 
-func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(userID int, serverID int, permission string) bool {
+func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(ctx context.Context, userID int, serverID int, permission string) bool {
 	var permissionName string
 
 	switch permission {
@@ -32,14 +36,14 @@ func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(userID int, 
 		return false
 	}
 
-	hasPermission, err := r.rbacService.UserHasAnyStackPermission(uint(userID), uint(serverID), permissionName)
+	hasPermission, err := r.rbacService.UserHasAnyStackPermission(ctx, uint(userID), uint(serverID), permissionName)
 	if err != nil {
 		return false
 	}
 	return hasPermission
 }
 
-func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, stackname string, permission string) bool {
+func (r *RBACPermissionChecker) HasStackPermission(ctx context.Context, userID int, serverID int, stackname string, permission string) bool {
 	var permissionName string
 
 	switch permission {
@@ -51,7 +55,7 @@ func (r *RBACPermissionChecker) HasStackPermission(userID int, serverID int, sta
 		return false
 	}
 
-	hasPermission, err := r.rbacService.UserHasStackPermission(uint(userID), uint(serverID), stackname, permissionName)
+	hasPermission, err := r.rbacService.UserHasStackPermission(ctx, uint(userID), uint(serverID), stackname, permissionName)
 	if err != nil {
 		return false
 	}

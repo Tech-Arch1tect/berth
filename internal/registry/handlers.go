@@ -31,13 +31,13 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 	}
 
 	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
 
-	server, err := h.service.serverSvc.GetActiveServerForUser(serverID, userID)
+	server, err := h.service.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
 	if err != nil {
 		return h.inertiaSvc.Render(c, "Errors/Generic", map[string]any{
 			"title":   "Error",

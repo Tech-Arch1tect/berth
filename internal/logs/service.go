@@ -63,7 +63,7 @@ func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsRespon
 		zap.String("since", req.Since),
 	)
 
-	if err := s.validateAccess(req.UserID, req.ServerID, req.StackName); err != nil {
+	if err := s.validateAccess(ctx, req.UserID, req.ServerID, req.StackName); err != nil {
 		s.logger.Warn("stack logs access denied",
 			zap.Error(err),
 			zap.Uint("user_id", req.UserID),
@@ -72,7 +72,7 @@ func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsRespon
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(req.ServerID, req.UserID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, req.ServerID, req.UserID)
 	if err != nil {
 		s.logger.Error("failed to get server for stack logs",
 			zap.Error(err),
@@ -110,7 +110,7 @@ func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsRe
 		zap.Int("tail", req.Tail),
 	)
 
-	if err := s.validateAccess(req.UserID, req.ServerID, req.StackName); err != nil {
+	if err := s.validateAccess(ctx, req.UserID, req.ServerID, req.StackName); err != nil {
 		s.logger.Warn("container logs access denied",
 			zap.Error(err),
 			zap.Uint("user_id", req.UserID),
@@ -128,7 +128,7 @@ func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsRe
 		return nil, fmt.Errorf("container name is required")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(req.ServerID, req.UserID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, req.ServerID, req.UserID)
 	if err != nil {
 		s.logger.Error("failed to get server for container logs",
 			zap.Error(err),
@@ -161,14 +161,14 @@ func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsRe
 	return response, nil
 }
 
-func (s *Service) validateAccess(userID, serverID uint, stackname string) error {
+func (s *Service) validateAccess(ctx context.Context, userID, serverID uint, stackname string) error {
 	s.logger.Debug("validating logs access",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(userID, serverID, stackname, "logs.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "logs.read")
 	if err != nil {
 		s.logger.Error("failed to check logs permission",
 			zap.Error(err),

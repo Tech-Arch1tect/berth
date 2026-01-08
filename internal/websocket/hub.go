@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"sync"
@@ -42,9 +43,9 @@ type UserConnection struct {
 }
 
 type PermissionChecker interface {
-	CanUserAccessServer(userID int, serverID int) bool
-	CanUserAccessAnyStackWithPermission(userID int, serverID int, permission string) bool
-	HasStackPermission(userID int, serverID int, stackname string, permission string) bool
+	CanUserAccessServer(ctx context.Context, userID int, serverID int) bool
+	CanUserAccessAnyStackWithPermission(ctx context.Context, userID int, serverID int, permission string) bool
+	HasStackPermission(ctx context.Context, userID int, serverID int, stackname string, permission string) bool
 }
 
 func NewHub(permissionChecker PermissionChecker, logger *logging.Service) *Hub {
@@ -97,9 +98,10 @@ func (h *Hub) BroadcastContainerStatus(event ContainerStatusEvent) {
 		return
 	}
 
+	ctx := context.Background()
 	for _, client := range subscribers {
-		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, event.StackName, "view") {
+		if h.permissionChecker.CanUserAccessServer(ctx, client.user.ID, event.ServerID) {
+			if h.permissionChecker.HasStackPermission(ctx, client.user.ID, event.ServerID, event.StackName, "view") {
 				select {
 				case client.send <- data:
 				default:
@@ -129,9 +131,10 @@ func (h *Hub) BroadcastOperationProgress(event OperationProgressEvent) {
 		return
 	}
 
+	ctx := context.Background()
 	for _, client := range subscribers {
-		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.CanUserAccessAnyStackWithPermission(client.user.ID, event.ServerID, "manage") {
+		if h.permissionChecker.CanUserAccessServer(ctx, client.user.ID, event.ServerID) {
+			if h.permissionChecker.CanUserAccessAnyStackWithPermission(ctx, client.user.ID, event.ServerID, "manage") {
 				select {
 				case client.send <- data:
 				default:
@@ -161,9 +164,10 @@ func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 		return
 	}
 
+	ctx := context.Background()
 	for _, client := range subscribers {
-		if h.permissionChecker.CanUserAccessServer(client.user.ID, event.ServerID) {
-			if h.permissionChecker.HasStackPermission(client.user.ID, event.ServerID, event.StackName, "view") {
+		if h.permissionChecker.CanUserAccessServer(ctx, client.user.ID, event.ServerID) {
+			if h.permissionChecker.HasStackPermission(ctx, client.user.ID, event.ServerID, event.StackName, "view") {
 				select {
 				case client.send <- data:
 				default:
@@ -298,32 +302,34 @@ func (c *UserConnection) handleMessage(message []byte) {
 }
 
 func (c *UserConnection) handleSubscribe(msg SubscribeMessage) {
-	if !c.hub.permissionChecker.CanUserAccessServer(c.user.ID, msg.ServerID) {
+	ctx := context.Background()
+
+	if !c.hub.permissionChecker.CanUserAccessServer(ctx, c.user.ID, msg.ServerID) {
 		c.sendError("Access denied to server")
 		return
 	}
 
-	if msg.Resource == "stack_status" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, msg.StackName, "view") {
+	if msg.Resource == "stack_status" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(ctx, c.user.ID, msg.ServerID, msg.StackName, "view") {
 		c.sendError("Permission denied for stack viewing")
 		return
 	}
 
-	if msg.Resource == "stack_status" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "view") {
+	if msg.Resource == "stack_status" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(ctx, c.user.ID, msg.ServerID, "view") {
 		c.sendError("Permission denied for stack viewing")
 		return
 	}
 
-	if msg.Resource == "operations" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "manage") {
+	if msg.Resource == "operations" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(ctx, c.user.ID, msg.ServerID, "manage") {
 		c.sendError("Permission denied for stack operations")
 		return
 	}
 
-	if msg.Resource == "logs" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(c.user.ID, msg.ServerID, msg.StackName, "view") {
+	if msg.Resource == "logs" && msg.StackName != "" && !c.hub.permissionChecker.HasStackPermission(ctx, c.user.ID, msg.ServerID, msg.StackName, "view") {
 		c.sendError("Permission denied for log viewing")
 		return
 	}
 
-	if msg.Resource == "logs" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(c.user.ID, msg.ServerID, "view") {
+	if msg.Resource == "logs" && msg.StackName == "" && !c.hub.permissionChecker.CanUserAccessAnyStackWithPermission(ctx, c.user.ID, msg.ServerID, "view") {
 		c.sendError("Permission denied for log viewing")
 		return
 	}

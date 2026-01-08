@@ -1,8 +1,10 @@
 package rbac
 
 import (
+	"berth/internal/auth"
 	"berth/models"
 	"berth/utils"
+	"context"
 	"errors"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -388,11 +390,25 @@ func (s *Service) DeleteRole(roleID uint) error {
 	return nil
 }
 
-func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
+func (s *Service) GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error) {
 	s.logger.Debug("getting user accessible server IDs",
 		zap.Uint("user_id", userID),
 	)
 
+	serverIDs, err := s.getUserAccessibleServerIDsRBAC(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return serverIDs, nil
+	}
+
+	return s.filterServerIDsByAPIKeyScopes(apiKey, serverIDs), nil
+}
+
+func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -462,7 +478,31 @@ func (s *Service) GetUserAccessibleServerIDs(userID uint) ([]uint, error) {
 	return serverIDs, nil
 }
 
-func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
+func (s *Service) filterServerIDsByAPIKeyScopes(apiKey *models.APIKey, serverIDs []uint) []uint {
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID == nil {
+			return serverIDs
+		}
+	}
+
+	scopeServerMap := make(map[uint]bool)
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID != nil {
+			scopeServerMap[*scope.ServerID] = true
+		}
+	}
+
+	filteredIDs := []uint{}
+	for _, serverID := range serverIDs {
+		if scopeServerMap[serverID] {
+			filteredIDs = append(filteredIDs, serverID)
+		}
+	}
+
+	return filteredIDs
+}
+
+func (s *Service) UserHasStackPermission(ctx context.Context, userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
 	s.logger.Debug("checking user stack permission",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -470,6 +510,46 @@ func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname s
 		zap.String("permission_name", permissionName),
 	)
 
+	userHasPermission, err := s.checkUserStackPermission(userID, serverID, stackname, permissionName)
+	if err != nil {
+		return false, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return userHasPermission, nil
+	}
+
+	if !userHasPermission {
+		s.logger.Debug("API key denied - user lacks permission",
+			zap.Uint("user_id", userID),
+			zap.Uint("api_key_id", apiKey.ID),
+			zap.String("permission_name", permissionName),
+		)
+		return false, nil
+	}
+
+	hasScope := s.checkAPIKeyStackScope(apiKey, serverID, stackname, permissionName)
+	if !hasScope {
+		s.logger.Debug("API key denied - lacks required scope",
+			zap.Uint("user_id", userID),
+			zap.Uint("api_key_id", apiKey.ID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackname),
+			zap.String("permission_name", permissionName),
+		)
+		return false, nil
+	}
+
+	s.logger.Debug("API key permission granted",
+		zap.Uint("user_id", userID),
+		zap.Uint("api_key_id", apiKey.ID),
+		zap.String("permission_name", permissionName),
+	)
+	return true, nil
+}
+
+func (s *Service) checkUserStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -534,7 +614,38 @@ func (s *Service) UserHasStackPermission(userID uint, serverID uint, stackname s
 	return false, nil
 }
 
-func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackname string) ([]string, error) {
+func (s *Service) checkAPIKeyStackScope(apiKey *models.APIKey, serverID uint, stackname string, permissionName string) bool {
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID != nil && *scope.ServerID != serverID {
+			continue
+		}
+
+		if !utils.MatchesPattern(stackname, scope.StackPattern) {
+			continue
+		}
+
+		if scope.Permission.Name == permissionName {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) GetUserStackPermissions(ctx context.Context, userID uint, serverID uint, stackname string) ([]string, error) {
+	userPermissions, err := s.getUserStackPermissionsRBAC(userID, serverID, stackname)
+	if err != nil {
+		return nil, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return userPermissions, nil
+	}
+
+	return s.filterPermissionsByAPIKeyScopes(apiKey, serverID, stackname, userPermissions), nil
+}
+
+func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackname string) ([]string, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -574,7 +685,50 @@ func (s *Service) GetUserStackPermissions(userID uint, serverID uint, stackname 
 	return permissions, nil
 }
 
-func (s *Service) UserHasServerAccess(userID uint, serverID uint) (bool, error) {
+func (s *Service) filterPermissionsByAPIKeyScopes(apiKey *models.APIKey, serverID uint, stackname string, userPermissions []string) []string {
+	apiKeyPermissions := make(map[string]bool)
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID != nil && *scope.ServerID != serverID {
+			continue
+		}
+
+		if !utils.MatchesPattern(stackname, scope.StackPattern) {
+			continue
+		}
+
+		apiKeyPermissions[scope.Permission.Name] = true
+	}
+
+	filteredPermissions := []string{}
+	for _, perm := range userPermissions {
+		if apiKeyPermissions[perm] {
+			filteredPermissions = append(filteredPermissions, perm)
+		}
+	}
+
+	return filteredPermissions
+}
+
+func (s *Service) UserHasServerAccess(ctx context.Context, userID uint, serverID uint) (bool, error) {
+	userHasAccess, err := s.checkUserServerAccess(userID, serverID)
+	if err != nil {
+		return false, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return userHasAccess, nil
+	}
+
+	if !userHasAccess {
+		return false, nil
+	}
+
+	hasServerScope := s.checkAPIKeyServerAccess(apiKey, serverID)
+	return hasServerScope, nil
+}
+
+func (s *Service) checkUserServerAccess(userID uint, serverID uint) (bool, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -602,7 +756,35 @@ func (s *Service) UserHasServerAccess(userID uint, serverID uint) (bool, error) 
 	return count > 0, nil
 }
 
-func (s *Service) UserHasAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error) {
+func (s *Service) checkAPIKeyServerAccess(apiKey *models.APIKey, serverID uint) bool {
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID == nil || *scope.ServerID == serverID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) UserHasAnyStackPermission(ctx context.Context, userID uint, serverID uint, permissionName string) (bool, error) {
+	userHasPermission, err := s.checkUserAnyStackPermission(userID, serverID, permissionName)
+	if err != nil {
+		return false, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return userHasPermission, nil
+	}
+
+	if !userHasPermission {
+		return false, nil
+	}
+
+	hasScope := s.checkAPIKeyServerPermission(apiKey, serverID, permissionName)
+	return hasScope, nil
+}
+
+func (s *Service) checkUserAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error) {
 	var user models.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -631,8 +813,21 @@ func (s *Service) UserHasAnyStackPermission(userID uint, serverID uint, permissi
 	return count > 0, nil
 }
 
-func (s *Service) CheckUserStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
-	return s.UserHasStackPermission(userID, serverID, stackname, permissionName)
+func (s *Service) checkAPIKeyServerPermission(apiKey *models.APIKey, serverID uint, permissionName string) bool {
+	for _, scope := range apiKey.Scopes {
+		if scope.ServerID != nil && *scope.ServerID != serverID {
+			continue
+		}
+
+		if scope.Permission.Name == permissionName {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) CheckUserStackPermission(ctx context.Context, userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
+	return s.UserHasStackPermission(ctx, userID, serverID, stackname, permissionName)
 }
 
 func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]models.ServerRoleStackPermission, error) {

@@ -3,6 +3,7 @@ package auth
 import (
 	"berth/internal/apikey"
 	"berth/models"
+	"context"
 	"net/http"
 	"strings"
 
@@ -18,6 +19,10 @@ const (
 	AuthTypeKey = "_auth_type"
 	APIKeyKey   = "_api_key"
 )
+
+type contextKey string
+
+const APIKeyContextKey contextKey = "api_key"
 
 type AuthType string
 
@@ -64,6 +69,9 @@ func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apik
 	c.Set(APIKeyKey, apiKey)
 
 	c.Set("currentUser", *user)
+
+	ctx := context.WithValue(c.Request().Context(), APIKeyContextKey, apiKey)
+	c.SetRequest(c.Request().WithContext(ctx))
 
 	return next(c)
 }
@@ -128,6 +136,13 @@ func IsJWTAuth(c echo.Context) bool {
 
 func IsSessionAuth(c echo.Context) bool {
 	return GetAuthType(c) == AuthTypeSession
+}
+
+func GetAPIKeyFromContext(ctx context.Context) *models.APIKey {
+	if apiKey, ok := ctx.Value(APIKeyContextKey).(*models.APIKey); ok {
+		return apiKey
+	}
+	return nil
 }
 
 func RequireHybridAuth(jwtService *jwtservice.Service, apiKeyService *apikey.Service, userProvider jwtshared.UserProvider) echo.MiddlewareFunc {

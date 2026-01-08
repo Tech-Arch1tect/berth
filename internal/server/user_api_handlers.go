@@ -24,7 +24,8 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 		return err
 	}
 
-	servers, err := h.service.ListServersForUser(userID)
+	ctx := c.Request().Context()
+	servers, err := h.service.ListServersForUser(ctx, userID)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to fetch servers")
 	}
@@ -45,7 +46,8 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 		return err
 	}
 
-	statistics, err := h.service.GetServerStatistics(userID, serverID)
+	ctx := c.Request().Context()
+	statistics, err := h.service.GetServerStatistics(ctx, userID, serverID)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to fetch server statistics")
 	}

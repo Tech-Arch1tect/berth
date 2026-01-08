@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -114,7 +115,7 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 		return 0, 0, common.SendBadRequest(c, "Invalid server ID")
 	}
 
-	if !h.permChecker.CanUserAccessServer(userID, serverID) {
+	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
 		return 0, 0, common.SendForbidden(c, "Insufficient permissions to access this server")
 	}
 
@@ -158,7 +159,7 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 		return 0, 0, common.SendBadRequest(c, "Invalid server ID")
 	}
 
-	if !h.permChecker.CanUserAccessServer(userID, serverID) {
+	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
 
 		return 0, 0, common.SendForbidden(c, "Insufficient permissions to access this server")
 	}
@@ -354,7 +355,7 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 			return false
 		}
 
-		if !h.permChecker.HasStackPermission(userID, serverID, startMsg.StackName, "manage") {
+		if !h.permChecker.HasStackPermission(context.Background(), userID, serverID, startMsg.StackName, "manage") {
 
 			h.sendTerminalError(clientConn, fmt.Sprintf("Insufficient permissions: stacks.manage required for stack '%s'", startMsg.StackName), clientType)
 			return false
@@ -395,7 +396,7 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 			return false
 		}
 
-		if !h.permChecker.HasStackPermission(userID, serverID, *sessionStackName, "manage") {
+		if !h.permChecker.HasStackPermission(context.Background(), userID, serverID, *sessionStackName, "manage") {
 
 			h.sendTerminalError(clientConn, fmt.Sprintf("Insufficient permissions: stacks.manage required for stack '%s'", *sessionStackName), clientType)
 			return false

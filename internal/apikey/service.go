@@ -3,6 +3,7 @@ package apikey
 import (
 	"berth/models"
 	"berth/utils"
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -22,9 +23,9 @@ const (
 )
 
 type RBACService interface {
-	UserHasServerAccess(userID uint, serverID uint) (bool, error)
-	UserHasAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error)
-	GetUserAccessibleServerIDs(userID uint) ([]uint, error)
+	UserHasServerAccess(ctx context.Context, userID uint, serverID uint) (bool, error)
+	UserHasAnyStackPermission(ctx context.Context, userID uint, serverID uint, permissionName string) (bool, error)
+	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
 }
 
 type Service struct {
@@ -223,7 +224,7 @@ func (s *Service) RevokeAPIKey(apiKeyID uint, userID uint) error {
 	return nil
 }
 
-func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPattern string, permissionName string) error {
+func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serverID *uint, stackPattern string, permissionName string) error {
 	s.logger.Info("adding scope to API key",
 		zap.Uint("api_key_id", apiKeyID),
 		zap.Uint("user_id", userID),
@@ -289,7 +290,7 @@ func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPatt
 			return err
 		}
 
-		hasAccess, err := s.rbacService.UserHasServerAccess(userID, *serverID)
+		hasAccess, err := s.rbacService.UserHasServerAccess(ctx, userID, *serverID)
 		if err != nil {
 			s.logger.Error("failed to check user server access",
 				zap.Error(err),
@@ -306,7 +307,7 @@ func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPatt
 			return errors.New("you do not have access to this server")
 		}
 
-		hasPermission, err := s.rbacService.UserHasAnyStackPermission(userID, *serverID, permissionName)
+		hasPermission, err := s.rbacService.UserHasAnyStackPermission(ctx, userID, *serverID, permissionName)
 		if err != nil {
 			s.logger.Error("failed to check user permission",
 				zap.Error(err),
@@ -326,7 +327,7 @@ func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPatt
 		}
 	} else {
 
-		accessibleServers, err := s.rbacService.GetUserAccessibleServerIDs(userID)
+		accessibleServers, err := s.rbacService.GetUserAccessibleServerIDs(ctx, userID)
 		if err != nil {
 			s.logger.Error("failed to get user accessible servers",
 				zap.Error(err),
@@ -344,7 +345,7 @@ func (s *Service) AddScope(apiKeyID uint, userID uint, serverID *uint, stackPatt
 
 		hasPermissionAnywhere := false
 		for _, srvID := range accessibleServers {
-			hasPermission, err := s.rbacService.UserHasAnyStackPermission(userID, srvID, permissionName)
+			hasPermission, err := s.rbacService.UserHasAnyStackPermission(ctx, userID, srvID, permissionName)
 			if err != nil {
 				continue
 			}

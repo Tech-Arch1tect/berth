@@ -211,7 +211,8 @@ func (h *Handler) AddScope(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusBadRequest, "Permission is required", nil)
 	}
 
-	err = h.service.AddScope(uint(apiKeyID), userID, req.ServerID, req.StackPattern, req.Permission)
+	ctx := c.Request().Context()
+	err = h.service.AddScope(ctx, uint(apiKeyID), userID, req.ServerID, req.StackPattern, req.Permission)
 	if err != nil {
 		return common.ErrorResponse(c, http.StatusBadRequest, err.Error(), err)
 	}

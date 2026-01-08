@@ -67,7 +67,7 @@ func (s *Service) GetServer(id uint) (*models.Server, error) {
 	return &server, nil
 }
 
-func (s *Service) GetActiveServerForUser(id uint, userID uint) (*models.Server, error) {
+func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID uint) (*models.Server, error) {
 	s.logger.Debug("getting active server for user",
 		zap.Uint("server_id", id),
 		zap.Uint("user_id", userID),
@@ -92,7 +92,7 @@ func (s *Service) GetActiveServerForUser(id uint, userID uint) (*models.Server, 
 		return nil, fmt.Errorf("server is not active")
 	}
 
-	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to check user server access",
 			zap.Error(err),
@@ -335,12 +335,12 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 	return nil
 }
 
-func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, error) {
+func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models.ServerResponse, error) {
 	s.logger.Debug("listing servers for user",
 		zap.Uint("user_id", userID),
 	)
 
-	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to get user accessible servers",
 			zap.Error(err),
@@ -380,9 +380,9 @@ func (s *Service) ListServersForUser(userID uint) ([]models.ServerResponse, erro
 	return responses, nil
 }
 
-func (s *Service) GetServerStatistics(userID uint, serverID uint) (*models.StackStatistics, error) {
+func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID uint) (*models.StackStatistics, error) {
 
-	accessibleServerIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(userID)
+	accessibleServerIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +414,7 @@ func (s *Service) GetServerStatistics(userID uint, serverID uint) (*models.Stack
 	patternsParam := strings.Join(patterns, ",")
 	endpoint := fmt.Sprintf("/stacks/summary?patterns=%s", url.QueryEscape(patternsParam))
 
-	resp, err := s.agentSvc.MakeRequest(context.Background(), server, "GET", endpoint, nil)
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to agent: %w", err)
 	}

@@ -24,6 +24,7 @@ func NewAPIHandler(service *Service, rbacSvc *rbac.Service, logger *logging.Serv
 }
 
 func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
+	ctx := c.Request().Context()
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
 		return common.SendUnauthorized(c, "Authentication required")
@@ -38,7 +39,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		return common.SendError(c, 500, "Failed to fetch updates")
 	}
 
-	accessibleServerIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(userID)
+	accessibleServerIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to get user accessible servers",
 			zap.Error(err),
@@ -59,6 +60,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		}
 
 		hasPermission, err := h.rbacSvc.UserHasStackPermission(
+			ctx,
 			userID,
 			update.ServerID,
 			update.StackName,
@@ -104,6 +106,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 }
 
 func (h *APIHandler) ListServerUpdates(c echo.Context) error {
+	ctx := c.Request().Context()
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
 		return common.SendUnauthorized(c, "Authentication required")
@@ -114,7 +117,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		return common.SendBadRequest(c, "Invalid server ID")
 	}
 
-	serverIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(userID)
+	serverIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to get user accessible servers",
 			zap.Error(err),
@@ -151,6 +154,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 	accessibleUpdates := make([]map[string]any, 0)
 	for _, update := range allUpdates {
 		hasPermission, err := h.rbacSvc.UserHasStackPermission(
+			ctx,
 			userID,
 			serverID,
 			update.StackName,
