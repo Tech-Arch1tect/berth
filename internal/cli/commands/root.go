@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"berth/internal/cli/commands/compose"
+
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +30,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&apiKey, "api-key", "", "Berth API key (or set BERTH_API_KEY)")
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "Berth server URL (or set BERTH_SERVER_URL)")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "Skip TLS certificate verification (for development)")
+	rootCmd.AddCommand(compose.ComposeCmd)
 }
 
 func GetAPIKey() string {
