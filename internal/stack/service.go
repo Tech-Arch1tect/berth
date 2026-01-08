@@ -506,13 +506,13 @@ func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID ui
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "files.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("user does not have permission to read files in this stack")
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
@@ -549,13 +549,13 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "files.write")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to manage this stack")
+		return nil, fmt.Errorf("user does not have permission to write files in this stack")
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
