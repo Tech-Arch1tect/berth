@@ -244,6 +244,27 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 	})
 }
 
+func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, err := common.ParseUintParam(c, "serverid")
+	if err != nil {
+		return err
+	}
+
+	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, "stacks.create")
+	if err != nil {
+		return common.SendInternalError(c, "Failed to check permissions")
+	}
+
+	return common.SendSuccess(c, map[string]any{
+		"canCreate": canCreate,
+	})
+}
+
 func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {

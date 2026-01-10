@@ -276,4 +276,24 @@ export class StackService {
       throw new Error('Network error occurred');
     }
   }
+
+  static async canCreateStack(serverid: number, csrfToken?: string): Promise<boolean> {
+    try {
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await api.get(`/api/v1/servers/${serverid}/stacks/can-create`, { headers });
+      return response.data.canCreate ?? false;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          return false;
+        }
+        throw new Error(error.response?.data?.error || 'Failed to check permissions');
+      }
+      throw new Error('Network error occurred');
+    }
+  }
 }

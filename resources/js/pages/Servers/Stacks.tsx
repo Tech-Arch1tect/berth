@@ -5,6 +5,7 @@ import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { SortOption } from '../../types/stack';
 import { Server } from '../../types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
+import { useCanCreateStack } from '../../hooks/useCanCreateStack';
 import { StorageManager } from '../../utils/storage';
 import { PanelLayout } from '../../components/common/PanelLayout';
 import { StacksToolbar } from '../../components/stacks/toolbar/StacksToolbar';
@@ -42,6 +43,8 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     refetch,
     isFetching,
   } = useServerStacks({ serverid });
+
+  const { data: canCreateStack = false } = useCanCreateStack({ serverid });
 
   const toggleLayout = useCallback(() => {
     const newLayout = layoutMode === 'compact' ? 'normal' : 'compact';
@@ -164,7 +167,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
               onRefresh={handleRefresh}
               layoutMode={layoutMode}
               onLayoutToggle={toggleLayout}
-              onCreateStack={() => setShowCreateModal(true)}
+              onCreateStack={canCreateStack ? () => setShowCreateModal(true) : undefined}
             />
           }
           sidebar={
