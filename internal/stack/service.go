@@ -4,6 +4,7 @@ import (
 	"berth/internal/agent"
 	"berth/internal/rbac"
 	"berth/internal/server"
+	"berth/internal/validation"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -96,6 +97,15 @@ func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, n
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", name),
 	)
+
+	if err := validation.ValidateStackName(name); err != nil {
+		s.logger.Warn("invalid stack name rejected",
+			zap.Uint("user_id", userID),
+			zap.String("stack_name", name),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("invalid stack name: %w", err)
+	}
 
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, name, "stacks.create")
 	if err != nil {
