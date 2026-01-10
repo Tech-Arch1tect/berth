@@ -90,6 +90,101 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 	return accessibleStacks, nil
 }
 
+func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, name string) (*Stack, error) {
+	s.logger.Debug("creating new stack",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", name),
+	)
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, name, "stacks.create")
+	if err != nil {
+		s.logger.Error("failed to check create permission",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", name),
+		)
+		return nil, fmt.Errorf("failed to check permissions: %w", err)
+	}
+
+	if !hasPermission {
+		s.logger.Warn("user denied create stack permission",
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", name),
+		)
+		return nil, fmt.Errorf("permission denied: stacks.create required for pattern matching '%s'", name)
+	}
+
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	if err != nil {
+		s.logger.Error("failed to get server for stack creation",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+		)
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	stack, err := s.createStackOnAgent(ctx, server, name)
+	if err != nil {
+		s.logger.Error("failed to create stack on agent",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("server_name", server.Name),
+			zap.String("stack_name", name),
+		)
+		return nil, err
+	}
+
+	stack.ServerID = server.ID
+	stack.ServerName = server.Name
+
+	s.logger.Info("stack created successfully",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("server_name", server.Name),
+		zap.String("stack_name", name),
+	)
+
+	return stack, nil
+}
+
+func (s *Service) createStackOnAgent(ctx context.Context, server *models.Server, name string) (*Stack, error) {
+	s.logger.Debug("creating stack on agent",
+		zap.Uint("server_id", server.ID),
+		zap.String("server_name", server.Name),
+		zap.String("stack_name", name),
+	)
+
+	reqBody := map[string]string{"name": name}
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "POST", "/stacks", reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var result struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+		Error   string `json:"error"`
+		Stack   *Stack `json:"stack"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		if result.Error != "" {
+			return nil, fmt.Errorf("agent error: %s", result.Error)
+		}
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
+	return result.Stack, nil
+}
+
 func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackname string) (*StackDetails, error) {
 	s.logger.Debug("getting stack details",
 		zap.Uint("user_id", userID),

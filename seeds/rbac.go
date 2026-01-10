@@ -11,6 +11,7 @@ func SeedRBACData(db *gorm.DB) error {
 		// stack/server-level permissions
 		{Name: "stacks.read", Resource: "stacks", Action: "read", Description: "View stacks and containers", IsAPIKeyOnly: false},
 		{Name: "stacks.manage", Resource: "stacks", Action: "manage", Description: "Start/stop/deploy/remove stacks", IsAPIKeyOnly: false},
+		{Name: "stacks.create", Resource: "stacks", Action: "create", Description: "Create new stacks", IsAPIKeyOnly: false},
 		{Name: "files.read", Resource: "files", Action: "read", Description: "Read files within stacks", IsAPIKeyOnly: false},
 		{Name: "files.write", Resource: "files", Action: "write", Description: "Modify files within stacks", IsAPIKeyOnly: false},
 		{Name: "logs.read", Resource: "logs", Action: "read", Description: "View container logs", IsAPIKeyOnly: false},

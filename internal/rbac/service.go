@@ -656,7 +656,7 @@ func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackn
 
 	for _, role := range user.Roles {
 		if role.IsAdmin {
-			return []string{"stacks.read", "stacks.manage", "files.read", "files.write", "logs.read"}, nil
+			return []string{"stacks.read", "stacks.manage", "stacks.create", "files.read", "files.write", "logs.read"}, nil
 		}
 	}
 

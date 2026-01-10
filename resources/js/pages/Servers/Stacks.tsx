@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { SortOption } from '../../types/stack';
@@ -11,6 +11,8 @@ import { StacksToolbar } from '../../components/stacks/toolbar/StacksToolbar';
 import { StacksSidebar } from '../../components/stacks/sidebar/StacksSidebar';
 import { StacksContent } from '../../components/stacks/content/StacksContent';
 import { StacksStatusBar } from '../../components/stacks/statusbar/StacksStatusBar';
+import { CreateStackModal } from '../../components/stacks/CreateStackModal';
+import { StackService } from '../../services/stackService';
 
 interface ServerStacksProps {
   title: string;
@@ -19,6 +21,9 @@ interface ServerStacksProps {
 }
 
 export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
+  const { props } = usePage();
+  const csrfToken = props.csrfToken as string | undefined;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>(() =>
@@ -28,6 +33,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
   const [negativeFilters, setNegativeFilters] = useState<string[]>([]);
   const [showExclusionFilter, setShowExclusionFilter] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const {
     data: stacks = [],
@@ -52,6 +58,15 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     refetch();
     setLastUpdated(new Date());
   }, [refetch]);
+
+  const handleCreateStack = useCallback(
+    async (name: string) => {
+      await StackService.createStack(serverid, name, csrfToken);
+      refetch();
+      setLastUpdated(new Date());
+    },
+    [serverid, csrfToken, refetch]
+  );
 
   const filteredAndSortedStacks = useMemo(() => {
     const filtered = stacks.filter((stack) => {
@@ -149,6 +164,7 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
               onRefresh={handleRefresh}
               layoutMode={layoutMode}
               onLayoutToggle={toggleLayout}
+              onCreateStack={() => setShowCreateModal(true)}
             />
           }
           sidebar={
@@ -187,6 +203,12 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
           }
         />
       </div>
+
+      <CreateStackModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onConfirm={handleCreateStack}
+      />
     </>
   );
 }

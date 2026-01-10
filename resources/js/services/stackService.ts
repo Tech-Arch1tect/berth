@@ -253,4 +253,27 @@ export class StackService {
       throw new Error('Network error occurred');
     }
   }
+
+  static async createStack(serverid: number, name: string, csrfToken?: string): Promise<Stack> {
+    try {
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const response = await api.post(`/api/v1/servers/${serverid}/stacks`, { name }, { headers });
+      return response.data.stack;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error('You do not have permission to create stacks on this server');
+        }
+        if (error.response?.status === 409) {
+          throw new Error('A stack with this name already exists');
+        }
+        throw new Error(error.response?.data?.error || 'Failed to create stack');
+      }
+      throw new Error('Network error occurred');
+    }
+  }
 }

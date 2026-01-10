@@ -42,6 +42,10 @@ func SendNotFound(c echo.Context, message string) error {
 	return SendError(c, http.StatusNotFound, message)
 }
 
+func SendConflict(c echo.Context, message string) error {
+	return SendError(c, http.StatusConflict, message)
+}
+
 func SendInternalError(c echo.Context, message string) error {
 	return SendError(c, http.StatusInternalServerError, message)
 }

@@ -241,3 +241,7 @@ type ServiceEnvironment struct {
 	ServiceName string                `json:"service_name,omitempty"`
 	Variables   []EnvironmentVariable `json:"variables"`
 }
+
+type CreateStackRequest struct {
+	Name string `json:"name"`
+}

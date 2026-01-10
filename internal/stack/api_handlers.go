@@ -3,6 +3,7 @@ package stack
 import (
 	"berth/internal/agent"
 	"berth/internal/common"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -41,6 +42,50 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 
 	return common.SendSuccess(c, map[string]any{
 		"stacks": stacks,
+	})
+}
+
+func (h *APIHandler) CreateStack(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, err := common.ParseUintParam(c, "serverid")
+	if err != nil {
+		return err
+	}
+
+	var req CreateStackRequest
+	if err := c.Bind(&req); err != nil {
+		return common.SendBadRequest(c, "invalid request body")
+	}
+
+	if req.Name == "" {
+		return common.SendBadRequest(c, "stack name is required")
+	}
+
+	h.logger.Debug("creating stack via API",
+		zap.Uint("user_id", userID),
+		zap.Uint("server_id", serverID),
+		zap.String("stack_name", req.Name),
+	)
+
+	stack, err := h.service.CreateStack(c.Request().Context(), userID, serverID, req.Name)
+	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "permission denied") {
+			return common.SendForbidden(c, errMsg)
+		}
+		if strings.Contains(errMsg, "already exists") {
+			return common.SendConflict(c, errMsg)
+		}
+		return common.SendBadRequest(c, errMsg)
+	}
+
+	return common.SendCreated(c, map[string]any{
+		"stack":   stack,
+		"message": "Stack created successfully",
 	})
 }
 

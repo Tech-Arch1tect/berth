@@ -3,6 +3,7 @@ import {
   CircleStackIcon,
   Squares2X2Icon,
   ListBulletIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
@@ -13,6 +14,7 @@ interface StacksToolbarProps {
   onRefresh: () => void;
   layoutMode: 'compact' | 'normal';
   onLayoutToggle: () => void;
+  onCreateStack?: () => void;
 }
 
 export const StacksToolbar: React.FC<StacksToolbarProps> = ({
@@ -21,6 +23,7 @@ export const StacksToolbar: React.FC<StacksToolbarProps> = ({
   onRefresh,
   layoutMode,
   onLayoutToggle,
+  onCreateStack,
 }) => {
   return (
     <div className={cn('px-4 py-3 flex items-center justify-between gap-4', theme.surface.muted)}>
@@ -39,6 +42,20 @@ export const StacksToolbar: React.FC<StacksToolbarProps> = ({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1">
+        {onCreateStack && (
+          <button
+            onClick={onCreateStack}
+            className={cn(
+              'px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5',
+              theme.buttons.primary
+            )}
+            title="Create new stack"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Create Stack</span>
+          </button>
+        )}
+
         <button
           onClick={onLayoutToggle}
           className={cn(

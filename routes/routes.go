@@ -443,6 +443,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	// Stacks
 	if stackAPIHandler != nil {
 		apiProtected.GET("/servers/:id/stacks", stackAPIHandler.ListServerStacks)
+		apiProtected.POST("/servers/:serverid/stacks", stackAPIHandler.CreateStack)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/permissions", stackAPIHandler.CheckPermissions)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)

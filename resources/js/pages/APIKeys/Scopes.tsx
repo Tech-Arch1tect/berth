@@ -43,6 +43,7 @@ interface NewScopeForm {
 const PERMISSIONS = [
   { value: 'stacks.read', label: 'View stacks and containers' },
   { value: 'stacks.manage', label: 'Start/stop/deploy/remove stacks' },
+  { value: 'stacks.create', label: 'Create new stacks' },
   { value: 'files.read', label: 'Read files within stacks' },
   { value: 'files.write', label: 'Modify files within stacks' },
   { value: 'logs.read', label: 'View container logs' },
