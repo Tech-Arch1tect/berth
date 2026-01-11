@@ -131,6 +131,8 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
                 content={
                   <StackContent
                     selection={selection}
+                    serverid={serverid}
+                    stackname={stackname}
                     stackPath={stack.stackDetails.path || ''}
                     composeFile={stack.stackDetails.compose_file || ''}
                     services={stack.stackDetails.services || []}

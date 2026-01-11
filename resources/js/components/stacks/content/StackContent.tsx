@@ -11,12 +11,15 @@ import { ContainerStats } from '../../../hooks/useStackStats';
 import StackStats from '../StackStats';
 import LogViewer from '../../logs/LogViewer';
 import { FileManager } from '../../files/FileManager';
+import { VulnerabilityScanPanel } from '../../vulnerability-scan';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { CubeIcon } from '@heroicons/react/24/outline';
 
 interface StackContentProps {
   selection: SidebarSelection | null;
+  serverid: number;
+  stackname: string;
   stackPath: string;
   composeFile: string;
   services: ComposeService[];
@@ -41,6 +44,8 @@ interface StackContentProps {
 
 export const StackContent: React.FC<StackContentProps> = ({
   selection,
+  serverid,
+  stackname,
   stackPath,
   composeFile,
   services,
@@ -191,6 +196,18 @@ export const StackContent: React.FC<StackContentProps> = ({
       return (
         <div className="h-full">
           <FileManager canRead={permissions.canViewFiles} canWrite={permissions.canWriteFiles} />
+        </div>
+      );
+
+    case 'security':
+      return (
+        <div className="h-full">
+          <VulnerabilityScanPanel
+            serverid={serverid}
+            stackname={stackname}
+            canManage={permissions.canManage}
+            services={services.map((s) => s.name)}
+          />
         </div>
       );
 

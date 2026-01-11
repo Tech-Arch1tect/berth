@@ -6,7 +6,8 @@ export type SidebarSelection =
   | { type: 'overview' }
   | { type: 'logs' }
   | { type: 'files' }
-  | { type: 'stats' };
+  | { type: 'stats' }
+  | { type: 'security' };
 
 export const isSameSelection = (
   a: SidebarSelection | null,
