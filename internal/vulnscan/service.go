@@ -2,6 +2,7 @@ package vulnscan
 
 import (
 	"berth/internal/agent"
+	"berth/internal/rbac"
 	"berth/internal/server"
 	"berth/models"
 	"context"
@@ -20,14 +21,16 @@ type Service struct {
 	db        *gorm.DB
 	serverSvc *server.Service
 	agentSvc  *agent.Service
+	rbacSvc   *rbac.Service
 	logger    *logging.Service
 }
 
-func NewService(db *gorm.DB, serverSvc *server.Service, agentSvc *agent.Service, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, serverSvc *server.Service, agentSvc *agent.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
 	return &Service{
 		db:        db,
 		serverSvc: serverSvc,
 		agentSvc:  agentSvc,
+		rbacSvc:   rbacSvc,
 		logger:    logger,
 	}
 }
@@ -69,6 +72,20 @@ func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackNam
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 	)
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, "stacks.read")
+	if err != nil {
+		s.logger.Error("failed to check permission",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackName),
+		)
+		return nil, fmt.Errorf("failed to check permission: %w", err)
+	}
+	if !hasPermission {
+		return nil, fmt.Errorf("permission denied: stacks.read required")
+	}
 
 	srv, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
@@ -168,15 +185,32 @@ func (s *Service) markScanFailed(scan *models.ImageScan, errorMsg string) {
 	}
 }
 
-func (s *Service) GetScan(scanID uint) (*models.ImageScan, error) {
+func (s *Service) GetScan(ctx context.Context, userID, scanID uint) (*models.ImageScan, error) {
 	var scan models.ImageScan
 	if err := s.db.Preload("Vulnerabilities").First(&scan, scanID).Error; err != nil {
 		return nil, err
 	}
+
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, scan.ServerID, scan.StackName, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permission: %w", err)
+	}
+	if !hasPermission {
+		return nil, fmt.Errorf("permission denied: stacks.read required")
+	}
+
 	return &scan, nil
 }
 
-func (s *Service) GetScansForStack(serverID uint, stackName string) ([]models.ImageScan, error) {
+func (s *Service) GetScansForStack(ctx context.Context, userID, serverID uint, stackName string) ([]models.ImageScan, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permission: %w", err)
+	}
+	if !hasPermission {
+		return nil, fmt.Errorf("permission denied: stacks.read required")
+	}
+
 	var scans []models.ImageScan
 	if err := s.db.Where("server_id = ? AND stack_name = ?", serverID, stackName).
 		Order("created_at DESC").
@@ -365,7 +399,15 @@ func (s *Service) CleanupStaleScans() error {
 	return nil
 }
 
-func (s *Service) GetLatestScanForStack(serverID uint, stackName string) (*models.ImageScan, error) {
+func (s *Service) GetLatestScanForStack(ctx context.Context, userID, serverID uint, stackName string) (*models.ImageScan, error) {
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, "stacks.read")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check permission: %w", err)
+	}
+	if !hasPermission {
+		return nil, fmt.Errorf("permission denied: stacks.read required")
+	}
+
 	var scan models.ImageScan
 	if err := s.db.Preload("Vulnerabilities").
 		Where("server_id = ? AND stack_name = ?", serverID, stackName).

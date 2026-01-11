@@ -53,12 +53,17 @@ func (h *Handler) StartScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScan(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
 	scanID, err := common.ParseUintParam(c, "scanid")
 	if err != nil {
 		return err
 	}
 
-	scan, err := h.service.GetScan(scanID)
+	scan, err := h.service.GetScan(c.Request().Context(), userID, scanID)
 	if err != nil {
 		return common.SendNotFound(c, "scan not found")
 	}
@@ -67,12 +72,17 @@ func (h *Handler) GetScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScansForStack(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
 	serverID, stackName, err := common.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	scans, err := h.service.GetScansForStack(serverID, stackName)
+	scans, err := h.service.GetScansForStack(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
@@ -83,12 +93,17 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetLatestScanForStack(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
 	serverID, stackName, err := common.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	scan, err := h.service.GetLatestScanForStack(serverID, stackName)
+	scan, err := h.service.GetLatestScanForStack(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
 		return common.SendNotFound(c, "no scans found for stack")
 	}
@@ -105,9 +120,19 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetScanSummary(c echo.Context) error {
+	userID, err := common.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
 	scanID, err := common.ParseUintParam(c, "scanid")
 	if err != nil {
 		return err
+	}
+
+	_, err = h.service.GetScan(c.Request().Context(), userID, scanID)
+	if err != nil {
+		return common.SendNotFound(c, "scan not found")
 	}
 
 	summary, err := h.service.GetVulnerabilitySummary(scanID)
