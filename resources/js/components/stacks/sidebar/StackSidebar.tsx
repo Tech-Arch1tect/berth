@@ -14,6 +14,7 @@ import {
   FolderIcon,
   Cog6ToothIcon,
   ViewColumnsIcon,
+  ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 
 interface StackSidebarProps {
@@ -154,6 +155,13 @@ export const StackSidebar: React.FC<StackSidebarProps> = ({
           icon={<ChartBarIcon className="w-4 h-4" />}
           isSelected={selection?.type === 'stats'}
           onSelect={() => onSelect({ type: 'stats' })}
+        />
+
+        <ToolItem
+          label="Security"
+          icon={<ShieldExclamationIcon className="w-4 h-4" />}
+          isSelected={selection?.type === 'security'}
+          onSelect={() => onSelect({ type: 'security' })}
         />
       </div>
     </div>
