@@ -364,3 +364,60 @@ func (s *Service) CleanupStaleScans() error {
 
 	return nil
 }
+
+func (s *Service) GetLatestScanForStack(serverID uint, stackName string) (*models.ImageScan, error) {
+	var scan models.ImageScan
+	if err := s.db.Preload("Vulnerabilities").
+		Where("server_id = ? AND stack_name = ?", serverID, stackName).
+		Order("created_at DESC").
+		First(&scan).Error; err != nil {
+		return nil, err
+	}
+	return &scan, nil
+}
+
+type VulnerabilitySummary struct {
+	Critical   int `json:"critical"`
+	High       int `json:"high"`
+	Medium     int `json:"medium"`
+	Low        int `json:"low"`
+	Negligible int `json:"negligible"`
+	Unknown    int `json:"unknown"`
+	Total      int `json:"total"`
+}
+
+func (s *Service) GetVulnerabilitySummary(scanID uint) (*VulnerabilitySummary, error) {
+	var results []struct {
+		Severity string
+		Count    int
+	}
+
+	if err := s.db.Model(&models.ImageVulnerability{}).
+		Select("severity, COUNT(*) as count").
+		Where("scan_id = ?", scanID).
+		Group("severity").
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	summary := &VulnerabilitySummary{}
+	for _, r := range results {
+		switch r.Severity {
+		case models.VulnSeverityCritical:
+			summary.Critical = r.Count
+		case models.VulnSeverityHigh:
+			summary.High = r.Count
+		case models.VulnSeverityMedium:
+			summary.Medium = r.Count
+		case models.VulnSeverityLow:
+			summary.Low = r.Count
+		case models.VulnSeverityNegligible:
+			summary.Negligible = r.Count
+		default:
+			summary.Unknown += r.Count
+		}
+		summary.Total += r.Count
+	}
+
+	return summary, nil
+}

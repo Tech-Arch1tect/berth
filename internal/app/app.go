@@ -23,6 +23,7 @@ import (
 	"berth/internal/setup"
 	"berth/internal/ssl"
 	"berth/internal/stack"
+	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 	"berth/models"
 	"berth/providers"
@@ -168,6 +169,7 @@ func NewApp(opts *AppOptions) *app.App {
 		migration.Module,
 		queue.Module(),
 		imageupdates.Module,
+		vulnscan.Module,
 		fx.Provide(security.NewHandler),
 		fx.Provide(handlers.NewDashboardHandler),
 		fx.Provide(handlers.NewStacksHandler),
@@ -200,6 +202,7 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Invoke(StartWebSocketHub),
 		fx.Invoke(websocket.StartWebSocketServiceManager),
 		fx.Invoke(func(svc *imageupdates.Service) {}),
+		fx.Invoke(vulnscan.StartPoller),
 		fx.Invoke(RegisterOperationAuditLoggerShutdown),
 		fx.Invoke(RegisterSecurityAuditLoggerShutdown),
 	)

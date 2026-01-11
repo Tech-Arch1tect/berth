@@ -21,6 +21,7 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
+	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 
 	"github.com/labstack/echo/v4"
@@ -41,7 +42,7 @@ import (
 	"github.com/tech-arch1tect/brx/session"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
+func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesHandler *files.Handler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, vulnscanHandler *vulnscan.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
 	if rbacMiddleware != nil && apiKeySvc != nil {
 		rbacMiddleware.SetAPIKeyService(apiKeySvc)
 	}
@@ -136,7 +137,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		registerProtectedAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
 			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
-			operationLogsHandler, maintenanceAPIHandler)
+			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler)
 		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
 			serverAPIHandler, migrationHandler, securityHandler)
@@ -413,7 +414,8 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *jwtservice.Service, apiKeySvc *apikey.Service, userProvider jwtshared.UserProvider,
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
-	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler) {
+	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
+	vulnscanHandler *vulnscan.Handler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
@@ -454,6 +456,15 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.GetComposeConfig)
 		apiProtected.PATCH("/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.UpdateCompose)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
+	}
+
+	// Vulnerability Scanning
+	if vulnscanHandler != nil {
+		apiProtected.POST("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.StartScan)
+		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.GetLatestScanForStack)
+		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan/history", vulnscanHandler.GetScansForStack)
+		apiProtected.GET("/vulnscan/:scanid", vulnscanHandler.GetScan)
+		apiProtected.GET("/vulnscan/:scanid/summary", vulnscanHandler.GetScanSummary)
 	}
 
 	// Files
