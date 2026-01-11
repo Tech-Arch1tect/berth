@@ -44,7 +44,7 @@ export function useLogViewerState({
 
   useEffect(() => {
     resetLogs();
-    fetchLogs({ tail, since, timestamps: showTimestamps });
+    fetchLogs({ options: { tail, since, timestamps: showTimestamps } });
   }, [tail, since, showTimestamps, selectedContainer, resetLogs, fetchLogs]);
 
   useEffect(() => {
@@ -52,7 +52,11 @@ export function useLogViewerState({
       intervalRef.current = window.setInterval(async () => {
         setSilentLoading(true);
         try {
-          await fetchLogs({ tail, since, timestamps: showTimestamps }, true);
+          await fetchLogs({
+            options: { tail, since, timestamps: showTimestamps },
+            silent: true,
+            incremental: true,
+          });
         } finally {
           setSilentLoading(false);
         }
@@ -76,7 +80,7 @@ export function useLogViewerState({
   }, [filteredLogs, followMode]);
 
   const handleRefresh = useCallback(() => {
-    fetchLogs({ tail, since, timestamps: showTimestamps });
+    fetchLogs({ options: { tail, since, timestamps: showTimestamps } });
   }, [fetchLogs, tail, since, showTimestamps]);
 
   const scrollToBottom = useCallback(() => {

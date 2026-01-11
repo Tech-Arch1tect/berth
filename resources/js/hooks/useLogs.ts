@@ -7,11 +7,17 @@ interface UseLogsOptions {
   containerName?: string;
 }
 
+interface FetchLogsOptions {
+  options: Partial<LogFilterOptions>;
+  silent?: boolean;
+  incremental?: boolean;
+}
+
 interface UseLogsReturn {
   logs: LogEntry[];
   loading: boolean;
   error: string | null;
-  fetchLogs: (options: Partial<LogFilterOptions>, silent?: boolean) => Promise<void>;
+  fetchLogs: (fetchOptions: FetchLogsOptions) => Promise<void>;
   filteredLogs: LogEntry[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -36,7 +42,7 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
   }, [serverid, stackname, containerName]);
 
   const fetchLogs = useCallback(
-    async (options: Partial<LogFilterOptions>, silent = false) => {
+    async ({ options, silent = false, incremental = false }: FetchLogsOptions) => {
       if (!silent) {
         setLoading(true);
       }
@@ -46,7 +52,13 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
         const params = new URLSearchParams();
 
         if (options.tail) params.set('tail', options.tail.toString());
-        if (options.since) params.set('since', options.since);
+
+        if (incremental && lastFetchTimeRef.current) {
+          params.set('since', lastFetchTimeRef.current);
+        } else if (options.since) {
+          params.set('since', options.since);
+        }
+
         if (options.timestamps !== undefined)
           params.set('timestamps', options.timestamps.toString());
 
@@ -72,24 +84,11 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
         const newLogs = data.logs || [];
 
         setLogs((prevLogs) => {
-          if (silent && prevLogs.length > 0 && lastFetchTimeRef.current) {
-            const lastTimestamp = lastFetchTimeRef.current;
-            const uniqueNewLogs = newLogs.filter((log) => {
-              try {
-                const logTime = new Date(log.timestamp).getTime();
-                const lastTime = new Date(lastTimestamp).getTime();
-                return logTime > lastTime;
-              } catch {
-                return true;
-              }
-            });
-
-            if (uniqueNewLogs.length > 0) {
-              const combinedLogs = [...prevLogs, ...uniqueNewLogs];
-
+          if (incremental && prevLogs.length > 0) {
+            if (newLogs.length > 0) {
+              const combinedLogs = [...prevLogs, ...newLogs];
               return combinedLogs.slice(-2000);
             }
-
             return prevLogs;
           } else {
             return newLogs;
@@ -98,8 +97,14 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
 
         if (newLogs.length > 0) {
           const mostRecentLog = newLogs[newLogs.length - 1];
-          lastFetchTimeRef.current = mostRecentLog.timestamp;
-        } else if (!silent) {
+          const lastTime = new Date(mostRecentLog.timestamp);
+          if (!isNaN(lastTime.getTime())) {
+            lastTime.setMilliseconds(lastTime.getMilliseconds() + 1);
+            lastFetchTimeRef.current = lastTime.toISOString();
+          } else {
+            lastFetchTimeRef.current = new Date().toISOString();
+          }
+        } else if (!incremental) {
           lastFetchTimeRef.current = new Date().toISOString();
         }
       } catch (err) {
