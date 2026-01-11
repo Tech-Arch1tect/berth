@@ -299,3 +299,68 @@ func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentIm
 
 	return nil
 }
+
+func (s *Service) CleanupStaleScans() error {
+	now := time.Now()
+	staleThreshold := now.Add(-1 * time.Hour)
+	maxPollFailures := 10
+
+	var staleScans []models.ImageScan
+	if err := s.db.Where("status IN ? AND started_at < ?",
+		[]string{models.ScanStatusPending, models.ScanStatusRunning},
+		staleThreshold).
+		Find(&staleScans).Error; err != nil {
+		return fmt.Errorf("failed to query stale scans: %w", err)
+	}
+
+	for i := range staleScans {
+		scan := &staleScans[i]
+		scan.Status = models.ScanStatusTimeout
+		scan.ErrorMessage = "scan timed out after 1 hour"
+		scan.CompletedAt = &now
+
+		if err := s.db.Save(scan).Error; err != nil {
+			s.logger.Error("failed to mark scan as timed out",
+				zap.Error(err),
+				zap.Uint("scan_id", scan.ID),
+			)
+			continue
+		}
+
+		s.logger.Info("marked stale scan as timed out",
+			zap.Uint("scan_id", scan.ID),
+			zap.String("stack_name", scan.StackName),
+		)
+	}
+
+	var failedPollingScans []models.ImageScan
+	if err := s.db.Where("status IN ? AND poll_failures >= ?",
+		[]string{models.ScanStatusPending, models.ScanStatusRunning},
+		maxPollFailures).
+		Find(&failedPollingScans).Error; err != nil {
+		return fmt.Errorf("failed to query failed polling scans: %w", err)
+	}
+
+	for i := range failedPollingScans {
+		scan := &failedPollingScans[i]
+		scan.Status = models.ScanStatusFailed
+		scan.ErrorMessage = fmt.Sprintf("exceeded maximum poll failures (%d)", maxPollFailures)
+		scan.CompletedAt = &now
+
+		if err := s.db.Save(scan).Error; err != nil {
+			s.logger.Error("failed to mark scan as failed due to poll failures",
+				zap.Error(err),
+				zap.Uint("scan_id", scan.ID),
+			)
+			continue
+		}
+
+		s.logger.Info("marked scan as failed due to poll failures",
+			zap.Uint("scan_id", scan.ID),
+			zap.String("stack_name", scan.StackName),
+			zap.Int("poll_failures", scan.PollFailures),
+		)
+	}
+
+	return nil
+}

@@ -61,6 +61,10 @@ func (p *Poller) pollLoop() {
 }
 
 func (p *Poller) pollActiveScans() {
+	if err := p.service.CleanupStaleScans(); err != nil {
+		p.logger.Error("failed to cleanup stale scans", zap.Error(err))
+	}
+
 	var scans []models.ImageScan
 	if err := p.db.Where("status IN ?", []string{models.ScanStatusPending, models.ScanStatusRunning}).
 		Find(&scans).Error; err != nil {
