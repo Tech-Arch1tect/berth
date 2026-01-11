@@ -223,7 +223,7 @@ func NewApp(opts *AppOptions) *app.App {
 			&models.SeedTracker{},
 			&models.QueuedOperation{}, &session.UserSession{},
 			&models.ContainerImageUpdate{},
-			&models.ImageScan{}, &models.ImageVulnerability{},
+			&models.ImageScan{}, &models.ImageVulnerability{}, &models.ScanScope{},
 			&totp.TOTPSecret{}, &totp.UsedCode{},
 			&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
 			&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},

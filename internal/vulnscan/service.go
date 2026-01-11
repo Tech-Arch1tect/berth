@@ -115,11 +115,17 @@ func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackNam
 		return &existingScan, nil
 	}
 
+	var serviceFilter string
+	if opts != nil && len(opts.Services) > 0 {
+		serviceFilter = strings.Join(opts.Services, ",")
+	}
+
 	scan := &models.ImageScan{
-		ServerID:  serverID,
-		StackName: stackName,
-		Status:    models.ScanStatusPending,
-		StartedAt: time.Now(),
+		ServerID:      serverID,
+		StackName:     stackName,
+		Status:        models.ScanStatusPending,
+		StartedAt:     time.Now(),
+		ServiceFilter: serviceFilter,
 	}
 
 	if err := s.db.Create(scan).Error; err != nil {
@@ -335,8 +341,19 @@ func (s *Service) recordPollFailure(scan *models.ImageScan, errMsg string) {
 
 func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentImageResult) error {
 	var vulns []models.ImageVulnerability
+	var scopes []models.ScanScope
+	seenImages := make(map[string]bool)
 
 	for _, result := range results {
+
+		if !seenImages[result.ImageName] {
+			seenImages[result.ImageName] = true
+			scopes = append(scopes, models.ScanScope{
+				ScanID:    scan.ID,
+				ImageName: result.ImageName,
+			})
+		}
+
 		for _, v := range result.Vulnerabilities {
 			vulns = append(vulns, models.ImageVulnerability{
 				ScanID:           scan.ID,
@@ -350,6 +367,20 @@ func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentIm
 				DataSource:       v.DataSource,
 				CVSS:             v.CVSS,
 			})
+		}
+	}
+
+	if len(scopes) > 0 {
+		if err := s.db.CreateInBatches(scopes, 100).Error; err != nil {
+			s.logger.Warn("failed to store scan scopes",
+				zap.Uint("scan_id", scan.ID),
+				zap.Error(err),
+			)
+		} else {
+			s.logger.Debug("stored scan scopes",
+				zap.Uint("scan_id", scan.ID),
+				zap.Int("count", len(scopes)),
+			)
 		}
 	}
 
@@ -464,11 +495,15 @@ type VulnerabilitySummary struct {
 }
 
 type ScanComparison struct {
-	BaseScan       *models.ImageScan           `json:"base_scan"`
-	CompareScan    *models.ImageScan           `json:"compare_scan"`
-	NewVulns       []models.ImageVulnerability `json:"new_vulnerabilities"`
-	FixedVulns     []models.ImageVulnerability `json:"fixed_vulnerabilities"`
-	UnchangedCount int                         `json:"unchanged_count"`
+	BaseScan          *models.ImageScan           `json:"base_scan"`
+	CompareScan       *models.ImageScan           `json:"compare_scan"`
+	NewVulns          []models.ImageVulnerability `json:"new_vulnerabilities"`
+	FixedVulns        []models.ImageVulnerability `json:"fixed_vulnerabilities"`
+	UnchangedCount    int                         `json:"unchanged_count"`
+	SameScope         bool                        `json:"same_scope"`
+	BaseOnlyImages    []string                    `json:"base_only_images"`
+	CompareOnlyImages []string                    `json:"compare_only_images"`
+	CommonImages      []string                    `json:"common_images"`
 }
 
 func (s *Service) CompareScans(ctx context.Context, userID, baseScanID, compareScanID uint) (*ScanComparison, error) {
@@ -486,14 +521,56 @@ func (s *Service) CompareScans(ctx context.Context, userID, baseScanID, compareS
 		return nil, fmt.Errorf("scans must be from the same stack")
 	}
 
+	var baseScopes, compareScopes []models.ScanScope
+	s.db.Where("scan_id = ?", baseScanID).Find(&baseScopes)
+	s.db.Where("scan_id = ?", compareScanID).Find(&compareScopes)
+
+	baseImageSet := make(map[string]bool)
+	for _, scope := range baseScopes {
+		baseImageSet[scope.ImageName] = true
+	}
+	compareImageSet := make(map[string]bool)
+	for _, scope := range compareScopes {
+		compareImageSet[scope.ImageName] = true
+	}
+
+	var commonImages, baseOnlyImages, compareOnlyImages []string
+	for img := range baseImageSet {
+		if compareImageSet[img] {
+			commonImages = append(commonImages, img)
+		} else {
+			baseOnlyImages = append(baseOnlyImages, img)
+		}
+	}
+	for img := range compareImageSet {
+		if !baseImageSet[img] {
+			compareOnlyImages = append(compareOnlyImages, img)
+		}
+	}
+
+	sameScope := len(baseOnlyImages) == 0 && len(compareOnlyImages) == 0
+
+	commonImageSet := make(map[string]bool)
+	for _, img := range commonImages {
+		commonImageSet[img] = true
+	}
+
 	baseVulnMap := make(map[string]models.ImageVulnerability)
 	for _, v := range baseScan.Vulnerabilities {
+
+		if len(baseScopes) > 0 && !commonImageSet[v.ImageName] {
+			continue
+		}
 		key := fmt.Sprintf("%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package)
 		baseVulnMap[key] = v
 	}
 
 	compareVulnMap := make(map[string]models.ImageVulnerability)
 	for _, v := range compareScan.Vulnerabilities {
+
+		if len(compareScopes) > 0 && !commonImageSet[v.ImageName] {
+			continue
+		}
 		key := fmt.Sprintf("%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package)
 		compareVulnMap[key] = v
 	}
@@ -517,11 +594,15 @@ func (s *Service) CompareScans(ctx context.Context, userID, baseScanID, compareS
 	}
 
 	return &ScanComparison{
-		BaseScan:       baseScan,
-		CompareScan:    compareScan,
-		NewVulns:       newVulns,
-		FixedVulns:     fixedVulns,
-		UnchangedCount: unchangedCount,
+		BaseScan:          baseScan,
+		CompareScan:       compareScan,
+		NewVulns:          newVulns,
+		FixedVulns:        fixedVulns,
+		UnchangedCount:    unchangedCount,
+		SameScope:         sameScope,
+		BaseOnlyImages:    baseOnlyImages,
+		CompareOnlyImages: compareOnlyImages,
+		CommonImages:      commonImages,
 	}, nil
 }
 
@@ -531,7 +612,24 @@ type ScanTrendPoint struct {
 	Summary *VulnerabilitySummary `json:"summary"`
 }
 
-func (s *Service) GetScanTrend(ctx context.Context, userID, serverID uint, stackName string, limit int) ([]ScanTrendPoint, error) {
+type ImageTrendPoint struct {
+	ScanID  uint                  `json:"scan_id"`
+	Date    time.Time             `json:"date"`
+	Summary *VulnerabilitySummary `json:"summary"`
+}
+
+type PerImageTrend struct {
+	ImageName   string            `json:"image_name"`
+	TrendPoints []ImageTrendPoint `json:"trend_points"`
+}
+
+type ScanTrendResponse struct {
+	StackTrend    []ScanTrendPoint `json:"stack_trend"`
+	PerImageTrend []PerImageTrend  `json:"per_image_trend"`
+	ScopeWarning  string           `json:"scope_warning,omitempty"`
+}
+
+func (s *Service) GetScanTrend(ctx context.Context, userID, serverID uint, stackName string, limit int) (*ScanTrendResponse, error) {
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, "stacks.read")
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
@@ -545,28 +643,101 @@ func (s *Service) GetScanTrend(ctx context.Context, userID, serverID uint, stack
 	}
 
 	var scans []models.ImageScan
-	if err := s.db.Where("server_id = ? AND stack_name = ? AND status = ?", serverID, stackName, models.ScanStatusCompleted).
+	if err := s.db.Preload("Scopes").
+		Where("server_id = ? AND stack_name = ? AND status = ?", serverID, stackName, models.ScanStatusCompleted).
 		Order("started_at DESC").
 		Limit(limit).
 		Find(&scans).Error; err != nil {
 		return nil, err
 	}
 
-	trendPoints := make([]ScanTrendPoint, 0, len(scans))
+	stackTrend := make([]ScanTrendPoint, 0, len(scans))
 	for i := len(scans) - 1; i >= 0; i-- {
 		scan := scans[i]
+
+		if scan.ServiceFilter != "" {
+			continue
+		}
 		summary, err := s.GetVulnerabilitySummary(scan.ID)
 		if err != nil {
 			continue
 		}
-		trendPoints = append(trendPoints, ScanTrendPoint{
+		stackTrend = append(stackTrend, ScanTrendPoint{
 			ScanID:  scan.ID,
 			Date:    scan.StartedAt,
 			Summary: summary,
 		})
 	}
 
-	return trendPoints, nil
+	imageScans := make(map[string][]struct {
+		scanID    uint
+		startedAt time.Time
+	})
+
+	var firstScopeSet map[string]bool
+	allSameScope := true
+
+	for i, scan := range scans {
+		scopeSet := make(map[string]bool)
+		for _, scope := range scan.Scopes {
+			scopeSet[scope.ImageName] = true
+			imageScans[scope.ImageName] = append(imageScans[scope.ImageName], struct {
+				scanID    uint
+				startedAt time.Time
+			}{scan.ID, scan.StartedAt})
+		}
+
+		if i == 0 {
+			firstScopeSet = scopeSet
+		} else if allSameScope && len(scan.Scopes) > 0 {
+			if len(scopeSet) != len(firstScopeSet) {
+				allSameScope = false
+			} else {
+				for img := range scopeSet {
+					if !firstScopeSet[img] {
+						allSameScope = false
+						break
+					}
+				}
+			}
+		}
+	}
+
+	perImageTrend := make([]PerImageTrend, 0)
+	for imageName, scanInfos := range imageScans {
+		trendPoints := make([]ImageTrendPoint, 0, len(scanInfos))
+
+		for i := len(scanInfos) - 1; i >= 0; i-- {
+			info := scanInfos[i]
+			summary, err := s.GetVulnerabilitySummaryForImage(info.scanID, imageName)
+			if err != nil {
+				continue
+			}
+			trendPoints = append(trendPoints, ImageTrendPoint{
+				ScanID:  info.scanID,
+				Date:    info.startedAt,
+				Summary: summary,
+			})
+		}
+
+		if len(trendPoints) >= 2 {
+			perImageTrend = append(perImageTrend, PerImageTrend{
+				ImageName:   imageName,
+				TrendPoints: trendPoints,
+			})
+		}
+	}
+
+	var scopeWarning string
+	if !allSameScope && len(scans) >= 2 && len(perImageTrend) > 0 {
+		scopeWarning = "Some scans covered different sets of images. Per-image trends show only scans that included each image."
+	}
+
+	return &ScanTrendResponse{
+		StackTrend:    stackTrend,
+		PerImageTrend: perImageTrend,
+		ScopeWarning:  scopeWarning,
+	}, nil
 }
 
 func (s *Service) GetVulnerabilitySummary(scanID uint) (*VulnerabilitySummary, error) {
@@ -578,6 +749,42 @@ func (s *Service) GetVulnerabilitySummary(scanID uint) (*VulnerabilitySummary, e
 	if err := s.db.Model(&models.ImageVulnerability{}).
 		Select("severity, COUNT(*) as count").
 		Where("scan_id = ?", scanID).
+		Group("severity").
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	summary := &VulnerabilitySummary{}
+	for _, r := range results {
+		switch r.Severity {
+		case models.VulnSeverityCritical:
+			summary.Critical = r.Count
+		case models.VulnSeverityHigh:
+			summary.High = r.Count
+		case models.VulnSeverityMedium:
+			summary.Medium = r.Count
+		case models.VulnSeverityLow:
+			summary.Low = r.Count
+		case models.VulnSeverityNegligible:
+			summary.Negligible = r.Count
+		default:
+			summary.Unknown += r.Count
+		}
+		summary.Total += r.Count
+	}
+
+	return summary, nil
+}
+
+func (s *Service) GetVulnerabilitySummaryForImage(scanID uint, imageName string) (*VulnerabilitySummary, error) {
+	var results []struct {
+		Severity string
+		Count    int
+	}
+
+	if err := s.db.Model(&models.ImageVulnerability{}).
+		Select("severity, COUNT(*) as count").
+		Where("scan_id = ? AND image_name = ?", scanID, imageName).
 		Group("severity").
 		Scan(&results).Error; err != nil {
 		return nil, err

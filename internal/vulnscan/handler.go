@@ -213,7 +213,5 @@ func (h *Handler) GetScanTrend(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"trend": trend,
-	})
+	return c.JSON(http.StatusOK, trend)
 }

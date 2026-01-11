@@ -26,8 +26,12 @@ type ImageScan struct {
 	PollFailures  int        `json:"poll_failures"`
 	LastPollError string     `json:"last_poll_error,omitempty" gorm:"type:text"`
 
+	ServiceFilter string `json:"service_filter,omitempty" gorm:"type:text"`
+
 	Server          Server               `json:"-" gorm:"foreignKey:ServerID"`
 	Vulnerabilities []ImageVulnerability `json:"vulnerabilities,omitempty" gorm:"foreignKey:ScanID"`
+
+	Scopes []ScanScope `json:"scopes,omitempty" gorm:"foreignKey:ScanID"`
 }
 
 func (ImageScan) TableName() string {
