@@ -463,8 +463,10 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiProtected.POST("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.StartScan)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.GetLatestScanForStack)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan/history", vulnscanHandler.GetScansForStack)
+		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan/trend", vulnscanHandler.GetScanTrend)
 		apiProtected.GET("/vulnscan/:scanid", vulnscanHandler.GetScan)
 		apiProtected.GET("/vulnscan/:scanid/summary", vulnscanHandler.GetScanSummary)
+		apiProtected.GET("/vulnscan/compare/:baseScanId/:compareScanId", vulnscanHandler.CompareScans)
 	}
 
 	// Files
