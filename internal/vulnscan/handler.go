@@ -22,6 +22,10 @@ func NewHandler(service *Service, logger *logging.Service) *Handler {
 	}
 }
 
+type StartScanRequest struct {
+	Services []string `json:"services,omitempty"`
+}
+
 func (h *Handler) StartScan(c echo.Context) error {
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
@@ -33,13 +37,19 @@ func (h *Handler) StartScan(c echo.Context) error {
 		return err
 	}
 
+	var req StartScanRequest
+	var opts *StartScanOptions
+	if err := c.Bind(&req); err == nil && len(req.Services) > 0 {
+		opts = &StartScanOptions{Services: req.Services}
+	}
+
 	h.logger.Debug("starting vulnerability scan",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 	)
 
-	scan, err := h.service.StartScan(c.Request().Context(), userID, serverID, stackName)
+	scan, err := h.service.StartScan(c.Request().Context(), userID, serverID, stackName, opts)
 	if err != nil {
 		h.logger.Error("failed to start scan",
 			zap.Error(err),

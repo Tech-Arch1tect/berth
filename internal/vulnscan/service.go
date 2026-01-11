@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -66,7 +68,11 @@ type AgentVulnerability struct {
 	CVSS             float64 `json:"cvss,omitempty"`
 }
 
-func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackName string) (*models.ImageScan, error) {
+type StartScanOptions struct {
+	Services []string
+}
+
+func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackName string, opts *StartScanOptions) (*models.ImageScan, error) {
 	s.logger.Info("starting vulnerability scan",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -126,6 +132,10 @@ func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackNam
 	}
 
 	endpoint := fmt.Sprintf("/stacks/%s/scan", stackName)
+
+	if opts != nil && len(opts.Services) > 0 {
+		endpoint += "?services=" + url.QueryEscape(strings.Join(opts.Services, ","))
+	}
 	resp, err := s.agentSvc.MakeRequest(ctx, srv, http.MethodPost, endpoint, nil)
 	if err != nil {
 		s.markScanFailed(scan, fmt.Sprintf("failed to contact agent: %v", err))

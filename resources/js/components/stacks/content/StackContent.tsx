@@ -206,6 +206,7 @@ export const StackContent: React.FC<StackContentProps> = ({
             serverid={serverid}
             stackname={stackname}
             canManage={permissions.canManage}
+            services={services.map((s) => s.name)}
           />
         </div>
       );
