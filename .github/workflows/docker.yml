@@ -72,36 +72,6 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install cross-compilation tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-
-      - name: Download Go dependencies
-        run: go mod download
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Cross-compile Go binaries
-        run: |
-          mkdir -p ./bin
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o ./bin/berth-amd64 .
-          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o ./bin/berth-arm64 .
-
       - name: Build and push Docker image (with tag)
         if: env.IS_TAG == 'true'
         uses: docker/build-push-action@v6
@@ -109,6 +79,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: VERSION=${{ env.VERSION }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ env.SEMVER_MAJOR }}.${{ env.SEMVER_MINOR }}.${{ env.SEMVER_PATCH }}
@@ -126,6 +97,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: VERSION=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -138,6 +110,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: false
+          build-args: VERSION=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
