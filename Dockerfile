@@ -9,12 +9,9 @@ COPY resources ./resources
 COPY vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js vite-env.d.ts ./
 RUN npm run build
 
-FROM golang:1.25-bookworm AS go-builder
+FROM golang:1.25-alpine AS go-builder
 
-RUN apt-get update && apt-get install -y \
-    gcc-aarch64-linux-gnu \
-    libc6-dev-arm64-cross \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache zig
 
 WORKDIR /app
 
@@ -27,19 +24,20 @@ ARG VERSION=dev
 ARG TARGETARCH
 
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-      CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
+      CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
+      CC="zig cc -target aarch64-linux-musl" \
+      CXX="zig c++ -target aarch64-linux-musl" \
       go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o berth .; \
     else \
       CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+      CC="zig cc -target x86_64-linux-musl" \
+      CXX="zig c++ -target x86_64-linux-musl" \
       go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o berth .; \
     fi
 
-FROM debian:bookworm-slim
+FROM alpine:3
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    tzdata \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
