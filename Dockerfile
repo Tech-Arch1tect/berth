@@ -35,17 +35,11 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
       go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o berth .; \
     fi
 
-FROM alpine:3
+FROM docker.io/techarchitect/berth-base:latest
 
-RUN apk add --no-cache ca-certificates tzdata
-
-WORKDIR /app
-
-COPY --from=go-builder /app/berth ./berth
-COPY --from=frontend-builder /app/public/build ./public/build
-COPY app.html ./app.html
-COPY templates ./templates
+COPY --from=go-builder --chown=65532:65532 /app/berth ./berth
+COPY --from=frontend-builder --chown=65532:65532 /app/public/build ./public/build
+COPY --chown=65532:65532 app.html ./app.html
+COPY --chown=65532:65532 templates ./templates
 
 EXPOSE 8080
-
-CMD ["./berth"]
