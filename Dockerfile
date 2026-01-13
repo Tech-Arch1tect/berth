@@ -25,13 +25,13 @@ ARG TARGETARCH
 
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
       CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
-      CC="zig cc -target aarch64-linux-musl" \
-      CXX="zig c++ -target aarch64-linux-musl" \
+      CC="zig cc -target aarch64-linux-gnu" \
+      CXX="zig c++ -target aarch64-linux-gnu" \
       go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o berth .; \
     else \
       CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
-      CC="zig cc -target x86_64-linux-musl" \
-      CXX="zig c++ -target x86_64-linux-musl" \
+      CC="zig cc -target x86_64-linux-gnu" \
+      CXX="zig c++ -target x86_64-linux-gnu" \
       go build -ldflags="-w -s -X berth/version.Version=${VERSION}" -o berth .; \
     fi
 
