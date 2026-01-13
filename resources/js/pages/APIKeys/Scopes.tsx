@@ -91,7 +91,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   } = useForm<NewScopeForm>({
     server_id: '',
     stack_pattern: '*',
-    permissions: ['stacks.read'],
+    permissions: [],
   });
 
   const loadScopes = async () => {
