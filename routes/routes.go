@@ -421,8 +421,8 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(berthauth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
 
-	// Profile & Session (JWT/Session only, API Key denied)
-	apiProtected.GET("/profile", mobileAuthHandler.Profile, rbacMiddleware.RequireAPIKeyDenied())
+	// Profile (accessible via JWT, Session, or API Key)
+	apiProtected.GET("/profile", mobileAuthHandler.Profile)
 	apiProtected.POST("/auth/logout", mobileAuthHandler.Logout, rbacMiddleware.RequireAPIKeyDenied())
 
 	// TOTP (JWT/Session only, API Key denied)
