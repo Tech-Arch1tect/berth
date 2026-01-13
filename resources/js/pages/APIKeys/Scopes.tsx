@@ -41,37 +41,35 @@ interface NewScopeForm {
 }
 
 const PERMISSIONS = [
+  { value: 'servers.read', label: 'View accessible servers' },
   { value: 'stacks.read', label: 'View stacks and containers' },
   { value: 'stacks.manage', label: 'Start/stop/deploy/remove stacks' },
   { value: 'stacks.create', label: 'Create new stacks' },
   { value: 'files.read', label: 'Read files within stacks' },
   { value: 'files.write', label: 'Modify files within stacks' },
   { value: 'logs.read', label: 'View container logs' },
+  { value: 'logs.operations.read', label: 'View own operation logs' },
+  { value: 'registries.manage', label: 'Create, update, and delete registry credentials' },
   {
     value: 'docker.maintenance.read',
-    label: 'View Docker usage statistics and system information (server-wide, not stack-specific)',
+    label: 'View Docker usage statistics and system information (server-wide)',
   },
   {
     value: 'docker.maintenance.write',
-    label:
-      'Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)',
+    label: 'Run Docker maintenance tasks like pruning images and containers (server-wide)',
   },
-  { value: 'registries.manage', label: 'Create, update, and delete registry credentials' },
 
-  { value: 'admin.users.read', label: 'View users and their roles' },
-  { value: 'admin.users.write', label: 'Create users, assign/revoke roles' },
-  { value: 'admin.roles.read', label: 'View roles and permissions' },
-  { value: 'admin.roles.write', label: 'Create/modify/delete roles and permissions' },
-  { value: 'admin.permissions.read', label: 'List available permissions' },
-  { value: 'admin.servers.read', label: 'View server configurations' },
-  { value: 'admin.servers.write', label: 'Create/modify/delete servers' },
-  { value: 'admin.logs.read', label: 'View all operation logs' },
-  { value: 'admin.audit.read', label: 'View security audit logs' },
-  { value: 'admin.system.export', label: 'Export system configuration' },
-  { value: 'admin.system.import', label: 'Import system configuration' },
-
-  { value: 'servers.read', label: 'View accessible servers' },
-  { value: 'logs.operations.read', label: 'View own operation logs' },
+  { value: 'admin.servers.read', label: 'View server configurations (admin)' },
+  { value: 'admin.servers.write', label: 'Create/modify/delete servers (admin)' },
+  { value: 'admin.users.read', label: 'View users and their roles (admin)' },
+  { value: 'admin.users.write', label: 'Create users, assign/revoke roles (admin)' },
+  { value: 'admin.roles.read', label: 'View roles and permissions (admin)' },
+  { value: 'admin.roles.write', label: 'Create/modify/delete roles and permissions (admin)' },
+  { value: 'admin.permissions.read', label: 'List available permissions (admin)' },
+  { value: 'admin.logs.read', label: 'View all operation logs (admin)' },
+  { value: 'admin.audit.read', label: 'View security audit logs (admin)' },
+  { value: 'admin.system.export', label: 'Export system configuration (admin)' },
+  { value: 'admin.system.import', label: 'Import system configuration (admin)' },
 ];
 
 export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
