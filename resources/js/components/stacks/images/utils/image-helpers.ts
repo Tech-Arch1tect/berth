@@ -69,28 +69,3 @@ export const getCommandType = (command: string): string => {
   if (cmd.startsWith('ARG')) return 'ARG';
   return 'UNKNOWN';
 };
-
-export const getCommandColor = (commandType: string): string => {
-  switch (commandType) {
-    case 'FROM':
-      return 'text-blue-600 dark:text-blue-400';
-    case 'RUN':
-      return 'text-emerald-600 dark:text-emerald-400';
-    case 'COPY':
-    case 'ADD':
-      return 'text-amber-600 dark:text-amber-400';
-    case 'CMD':
-    case 'ENTRYPOINT':
-      return 'text-purple-600 dark:text-purple-400';
-    case 'EXPOSE':
-      return 'text-pink-600 dark:text-pink-400';
-    case 'ENV':
-    case 'ARG':
-      return 'text-yellow-600 dark:text-yellow-400';
-    case 'WORKDIR':
-    case 'USER':
-      return 'text-blue-600 dark:text-blue-400';
-    default:
-      return 'text-slate-600 dark:text-slate-400';
-  }
-};

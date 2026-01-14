@@ -15,6 +15,7 @@ import {
   Cog6ToothIcon,
   ViewColumnsIcon,
   ShieldExclamationIcon,
+  Square2StackIcon,
 } from '@heroicons/react/24/outline';
 
 interface StackSidebarProps {
@@ -162,6 +163,13 @@ export const StackSidebar: React.FC<StackSidebarProps> = ({
           icon={<ShieldExclamationIcon className="w-4 h-4" />}
           isSelected={selection?.type === 'security'}
           onSelect={() => onSelect({ type: 'security' })}
+        />
+
+        <ToolItem
+          label="Images"
+          icon={<Square2StackIcon className="w-4 h-4" />}
+          isSelected={selection?.type === 'images'}
+          onSelect={() => onSelect({ type: 'images' })}
         />
       </div>
     </div>

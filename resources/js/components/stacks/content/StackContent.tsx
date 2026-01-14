@@ -12,6 +12,7 @@ import StackStats from '../StackStats';
 import LogViewer from '../../logs/LogViewer';
 import { FileManager } from '../../files/FileManager';
 import { VulnerabilityScanPanel } from '../../vulnerability-scan';
+import { StackImagesTab } from '../images';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { CubeIcon } from '@heroicons/react/24/outline';
@@ -208,6 +209,13 @@ export const StackContent: React.FC<StackContentProps> = ({
             canManage={permissions.canManage}
             services={services.map((s) => s.name)}
           />
+        </div>
+      );
+
+    case 'images':
+      return (
+        <div className="h-full overflow-auto p-6">
+          <StackImagesTab />
         </div>
       );
 

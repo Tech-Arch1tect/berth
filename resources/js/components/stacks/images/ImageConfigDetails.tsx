@@ -21,14 +21,14 @@ export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }
   }
 
   return (
-    <div className={cn('rounded-lg p-4 space-y-3', theme.surface.muted)}>
+    <div className="rounded-lg p-4 space-y-3 bg-zinc-50 dark:bg-zinc-800/50">
       <h4 className={cn('text-sm font-medium', theme.text.strong)}>Configuration</h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         {config.user && (
           <div>
             <span className={theme.text.muted}>User: </span>
-            <code className={cn('font-mono px-1.5 py-0.5 rounded', theme.surface.code)}>
+            <code className="font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
               {config.user}
             </code>
           </div>
@@ -37,7 +37,7 @@ export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }
         {config.working_dir && (
           <div>
             <span className={theme.text.muted}>Working Dir: </span>
-            <code className={cn('font-mono px-1.5 py-0.5 rounded', theme.surface.code)}>
+            <code className="font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
               {config.working_dir}
             </code>
           </div>
@@ -50,7 +50,7 @@ export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }
               {exposedPorts.map((port) => (
                 <span
                   key={port}
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300"
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
                 >
                   {port}
                 </span>
@@ -62,7 +62,7 @@ export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }
         {config.entrypoint && config.entrypoint.length > 0 && (
           <div className="md:col-span-2">
             <span className={theme.text.muted}>Entrypoint: </span>
-            <code className={cn('font-mono px-1.5 py-0.5 rounded block mt-1', theme.surface.code)}>
+            <code className="font-mono px-1.5 py-0.5 rounded block mt-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
               {config.entrypoint.join(' ')}
             </code>
           </div>
@@ -71,7 +71,7 @@ export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }
         {config.cmd && config.cmd.length > 0 && (
           <div className="md:col-span-2">
             <span className={theme.text.muted}>Command: </span>
-            <code className={cn('font-mono px-1.5 py-0.5 rounded block mt-1', theme.surface.code)}>
+            <code className="font-mono px-1.5 py-0.5 rounded block mt-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
               {config.cmd.join(' ')}
             </code>
           </div>
