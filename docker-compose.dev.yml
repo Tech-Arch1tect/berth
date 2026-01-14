@@ -1,0 +1,32 @@
+services:
+  berth-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: berth-dev
+    env_file: .env
+    environment:
+      - INERTIA_DEVELOPMENT=true
+      - SERVER_HOST=0.0.0.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - ./app.db:/app/app.db
+      - ./ssl:/app/ssl
+      - ./storage/logs:/app/storage/logs
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+      - node-modules:/app/node_modules
+      - berth-tmp:/app/tmp
+    entrypoint: []
+    command: ["/bin/sh", "-c", "npm run dev & air -c .air.toml"]
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
+  node-modules:
+  berth-tmp:

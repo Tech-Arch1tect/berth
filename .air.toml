@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  bin = "./tmp/berth"
+  cmd = "go build -buildvcs=false -o ./tmp/berth ."
+  delay = 1000
+  exclude_dir = ["tmp", "vendor", ".git", "node_modules", "public", "resources", "storage"]
+  include_ext = ["go", "html"]
+  exclude_regex = ["_test.go"]
+
+[misc]
+  clean_on_exit = true
