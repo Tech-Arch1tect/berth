@@ -21,7 +21,6 @@ func NewAPIHandlerWithDeps(deps APIHandlerDeps) *APIHandler {
 var Module = fx.Options(
 	fx.Provide(
 		NewService,
-		NewHandler,
 		NewAPIHandlerWithDeps,
 	),
 )
