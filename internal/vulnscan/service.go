@@ -66,6 +66,8 @@ type AgentVulnerability struct {
 	Description      string  `json:"description,omitempty"`
 	DataSource       string  `json:"data_source,omitempty"`
 	CVSS             float64 `json:"cvss,omitempty"`
+	Location         string  `json:"location,omitempty"`
+	LayerID          string  `json:"layer_id,omitempty"`
 }
 
 type StartScanOptions struct {
@@ -366,6 +368,8 @@ func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentIm
 				Description:      v.Description,
 				DataSource:       v.DataSource,
 				CVSS:             v.CVSS,
+				Location:         v.Location,
+				LayerID:          v.LayerID,
 			})
 		}
 	}
