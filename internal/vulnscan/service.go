@@ -58,16 +58,17 @@ type AgentImageResult struct {
 }
 
 type AgentVulnerability struct {
-	ID               string  `json:"id"`
-	Severity         string  `json:"severity"`
-	Package          string  `json:"package"`
-	InstalledVersion string  `json:"installed_version"`
-	FixedVersion     string  `json:"fixed_version,omitempty"`
-	Description      string  `json:"description,omitempty"`
-	DataSource       string  `json:"data_source,omitempty"`
-	CVSS             float64 `json:"cvss,omitempty"`
-	Location         string  `json:"location,omitempty"`
-	LayerID          string  `json:"layer_id,omitempty"`
+	ID               string          `json:"id"`
+	Severity         string          `json:"severity"`
+	Package          string          `json:"package"`
+	InstalledVersion string          `json:"installed_version"`
+	FixedVersion     string          `json:"fixed_version,omitempty"`
+	Description      string          `json:"description,omitempty"`
+	DataSource       string          `json:"data_source,omitempty"`
+	CVSS             float64         `json:"cvss,omitempty"`
+	Location         string          `json:"location,omitempty"`
+	LayerID          string          `json:"layer_id,omitempty"`
+	RawMatch         json.RawMessage `json:"raw_match,omitempty"`
 }
 
 type StartScanOptions struct {
@@ -357,7 +358,7 @@ func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentIm
 		}
 
 		for _, v := range result.Vulnerabilities {
-			vulns = append(vulns, models.ImageVulnerability{
+			vuln := models.ImageVulnerability{
 				ScanID:           scan.ID,
 				ImageName:        result.ImageName,
 				VulnerabilityID:  v.ID,
@@ -370,7 +371,11 @@ func (s *Service) storeVulnerabilities(scan *models.ImageScan, results []AgentIm
 				CVSS:             v.CVSS,
 				Location:         v.Location,
 				LayerID:          v.LayerID,
-			})
+			}
+			if len(v.RawMatch) > 0 {
+				vuln.RawMatch = string(v.RawMatch)
+			}
+			vulns = append(vulns, vuln)
 		}
 	}
 
