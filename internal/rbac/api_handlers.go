@@ -3,6 +3,7 @@ package rbac
 import (
 	"berth/internal/common"
 	"berth/internal/dto"
+	"berth/internal/security"
 	"berth/models"
 	"strings"
 
@@ -13,18 +14,20 @@ import (
 )
 
 type APIHandler struct {
-	db      *gorm.DB
-	rbacSvc *Service
-	totpSvc *totp.Service
-	authSvc *auth.Service
+	db           *gorm.DB
+	rbacSvc      *Service
+	totpSvc      *totp.Service
+	authSvc      *auth.Service
+	auditService *security.AuditService
 }
 
-func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service) *APIHandler {
+func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service, auditService *security.AuditService) *APIHandler {
 	return &APIHandler{
-		db:      db,
-		rbacSvc: rbacSvc,
-		totpSvc: totpSvc,
-		authSvc: authSvc,
+		db:           db,
+		rbacSvc:      rbacSvc,
+		totpSvc:      totpSvc,
+		authSvc:      authSvc,
+		auditService: auditService,
 	}
 }
 
@@ -98,6 +101,25 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 		return common.SendInternalError(c, "failed to load created user")
 	}
 
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogUserManagementEvent(
+		security.EventUserCreated,
+		actorUserID,
+		actorUsername,
+		user.ID,
+		user.Email,
+		c.RealIP(),
+		map[string]any{
+			"username": user.Username,
+		},
+	)
+
 	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
 	return common.SendCreated(c, userInfo)
@@ -146,9 +168,35 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 		return err
 	}
 
+	var targetUser models.User
+	h.db.First(&targetUser, req.UserID)
+
+	var role models.Role
+	h.db.First(&role, req.RoleID)
+
 	if err := h.rbacSvc.AssignRole(req.UserID, req.RoleID); err != nil {
 		return common.SendInternalError(c, "Failed to assign role")
 	}
+
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogUserManagementEvent(
+		security.EventUserRoleAssigned,
+		actorUserID,
+		actorUsername,
+		req.UserID,
+		targetUser.Email,
+		c.RealIP(),
+		map[string]any{
+			"role_id":   req.RoleID,
+			"role_name": role.Name,
+		},
+	)
 
 	return common.SendMessage(c, "Role assigned successfully")
 }
@@ -163,9 +211,35 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 		return err
 	}
 
+	var targetUser models.User
+	h.db.First(&targetUser, req.UserID)
+
+	var role models.Role
+	h.db.First(&role, req.RoleID)
+
 	if err := h.rbacSvc.RevokeRole(req.UserID, req.RoleID); err != nil {
 		return common.SendInternalError(c, "Failed to revoke role")
 	}
+
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogUserManagementEvent(
+		security.EventUserRoleRevoked,
+		actorUserID,
+		actorUsername,
+		req.UserID,
+		targetUser.Email,
+		c.RealIP(),
+		map[string]any{
+			"role_id":   req.RoleID,
+			"role_name": role.Name,
+		},
+	)
 
 	return common.SendMessage(c, "Role revoked successfully")
 }
@@ -205,6 +279,26 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to create role")
 	}
 
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogRBACEvent(
+		security.EventRoleCreated,
+		actorUserID,
+		actorUsername,
+		models.TargetTypeRole,
+		role.ID,
+		role.Name,
+		c.RealIP(),
+		map[string]any{
+			"description": role.Description,
+		},
+	)
+
 	return common.SendCreated(c, dto.ConvertRoleToRoleWithPermissions(*role))
 }
 
@@ -232,6 +326,26 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to update role")
 	}
 
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogRBACEvent(
+		security.EventRoleUpdated,
+		actorUserID,
+		actorUsername,
+		models.TargetTypeRole,
+		role.ID,
+		role.Name,
+		c.RealIP(),
+		map[string]any{
+			"description": role.Description,
+		},
+	)
+
 	return common.SendSuccess(c, dto.ConvertRoleToRoleWithPermissions(*role))
 }
 
@@ -241,9 +355,31 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 		return err
 	}
 
+	var role models.Role
+	h.db.First(&role, roleID)
+	roleName := role.Name
+
 	if err := h.rbacSvc.DeleteRole(roleID); err != nil {
 		return common.SendInternalError(c, "Failed to delete role")
 	}
+
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogRBACEvent(
+		security.EventRoleDeleted,
+		actorUserID,
+		actorUsername,
+		models.TargetTypeRole,
+		roleID,
+		roleName,
+		c.RealIP(),
+		nil,
+	)
 
 	return common.SendMessage(c, "Role deleted successfully")
 }
@@ -349,6 +485,39 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to create role stack permission")
 	}
 
+	var role models.Role
+	h.db.First(&role, roleID)
+
+	var perm models.Permission
+	h.db.First(&perm, req.PermissionID)
+
+	var server models.Server
+	h.db.First(&server, req.ServerID)
+
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogRBACEvent(
+		security.EventPermissionAdded,
+		actorUserID,
+		actorUsername,
+		models.TargetTypePermission,
+		permission.ID,
+		perm.Name,
+		c.RealIP(),
+		map[string]any{
+			"role_id":       roleID,
+			"role_name":     role.Name,
+			"server_id":     req.ServerID,
+			"server_name":   server.Name,
+			"stack_pattern": req.StackPattern,
+		},
+	)
+
 	return common.SendCreated(c, map[string]string{
 		"message": "Role stack permission created successfully",
 	})
@@ -360,9 +529,41 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 		return err
 	}
 
+	var stackPerm models.ServerRoleStackPermission
+	h.db.Preload("Role").Preload("Permission").Preload("Server").First(&stackPerm, permissionID)
+
 	if err := h.rbacSvc.DeleteRoleStackPermission(permissionID); err != nil {
 		return common.SendInternalError(c, "Failed to delete role stack permission")
 	}
+
+	actorUserID, _ := common.GetCurrentUserID(c)
+	actorUser, _ := common.GetCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	permName := ""
+	if stackPerm.Permission.Name != "" {
+		permName = stackPerm.Permission.Name
+	}
+
+	h.auditService.LogRBACEvent(
+		security.EventPermissionRemoved,
+		actorUserID,
+		actorUsername,
+		models.TargetTypePermission,
+		permissionID,
+		permName,
+		c.RealIP(),
+		map[string]any{
+			"role_id":       stackPerm.RoleID,
+			"role_name":     stackPerm.Role.Name,
+			"server_id":     stackPerm.ServerID,
+			"server_name":   stackPerm.Server.Name,
+			"stack_pattern": stackPerm.StackPattern,
+		},
+	)
 
 	return common.SendMessage(c, "Role stack permission deleted successfully")
 }

@@ -55,6 +55,29 @@ const (
 )
 
 const (
+	EventAPIKeyCreated          = "apikey.created"
+	EventAPIKeyRevoked          = "apikey.revoked"
+	EventAPIKeyScopeAdded       = "apikey.scope.added"
+	EventAPIKeyScopeRemoved     = "apikey.scope.removed"
+	EventAPIKeyValidationFailed = "apikey.validation.failed"
+)
+
+const (
+	EventStackCreated       = "stack.created"
+	EventStackDeleted       = "stack.deleted"
+	EventStackSecretsViewed = "stack.secrets.viewed"
+)
+
+const (
+	EventDockerPruneExecuted   = "docker.prune.executed"
+	EventDockerResourceDeleted = "docker.resource.deleted"
+)
+
+const (
+	EventAuthorizationDenied = "authorization.denied"
+)
+
+const (
 	EventFileUploaded   = "file.uploaded"
 	EventFileDownloaded = "file.downloaded"
 	EventFileDeleted    = "file.deleted"
@@ -90,6 +113,19 @@ func GetEventCategory(eventType string) string {
 		EventAPIAuthFailed:
 		return "api"
 
+	case EventAPIKeyCreated, EventAPIKeyRevoked, EventAPIKeyScopeAdded,
+		EventAPIKeyScopeRemoved, EventAPIKeyValidationFailed:
+		return "apikey"
+
+	case EventStackCreated, EventStackDeleted, EventStackSecretsViewed:
+		return "stack"
+
+	case EventDockerPruneExecuted, EventDockerResourceDeleted:
+		return "docker"
+
+	case EventAuthorizationDenied:
+		return "authorization"
+
 	case EventFileUploaded, EventFileDownloaded, EventFileDeleted, EventFileRenamed:
 		return "file"
 
@@ -102,18 +138,23 @@ func GetEventSeverity(eventType string) string {
 	switch eventType {
 
 	case EventUserDeleted, EventRoleDeleted, EventServerDeleted,
-		EventServerAccessTokenRegenerated:
+		EventServerAccessTokenRegenerated,
+		EventAPIKeyRevoked, EventStackDeleted, EventDockerPruneExecuted:
 		return "critical"
 
 	case EventAuthLoginFailure, EventTOTPVerificationFailure, EventAPIAuthFailed,
 		EventUserCreated, EventUserRoleAssigned, EventUserRoleRevoked,
 		EventRoleCreated, EventRoleUpdated, EventPermissionAdded, EventPermissionRemoved,
-		EventServerCreated, EventServerUpdated, EventTOTPEnabled, EventTOTPDisabled:
+		EventServerCreated, EventServerUpdated, EventTOTPEnabled, EventTOTPDisabled,
+		EventAPIKeyCreated, EventAPIKeyScopeAdded, EventAPIKeyScopeRemoved,
+		EventStackCreated, EventStackSecretsViewed, EventDockerResourceDeleted,
+		EventAuthorizationDenied:
 		return "high"
 
 	case EventAuthPasswordResetRequested, EventAuthPasswordResetCompleted,
 		EventUserPasswordChanged, EventUserEmailChanged,
-		EventServerConnectionTestFailure, EventFileDeleted, EventFileRenamed:
+		EventServerConnectionTestFailure, EventFileDeleted, EventFileRenamed,
+		EventAPIKeyValidationFailed:
 		return "medium"
 
 	case EventAuthLoginSuccess, EventAuthLogout, EventAuthEmailVerified,

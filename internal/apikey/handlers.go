@@ -2,6 +2,7 @@ package apikey
 
 import (
 	"berth/internal/common"
+	"berth/internal/security"
 	"berth/models"
 	"net/http"
 	"strconv"
@@ -9,17 +10,22 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/inertia"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	service *Service
-	inertia *inertia.Service
+	service      *Service
+	inertia      *inertia.Service
+	auditService *security.AuditService
+	db           *gorm.DB
 }
 
-func NewHandler(service *Service, inertia *inertia.Service) *Handler {
+func NewHandler(service *Service, inertia *inertia.Service, auditService *security.AuditService, db *gorm.DB) *Handler {
 	return &Handler{
-		service: service,
-		inertia: inertia,
+		service:      service,
+		inertia:      inertia,
+		auditService: auditService,
+		db:           db,
 	}
 }
 
@@ -116,6 +122,24 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create API key", err)
 	}
 
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.LogAPIKeyEvent(
+		security.EventAPIKeyCreated,
+		userID,
+		username,
+		apiKey.ID,
+		apiKey.Name,
+		c.RealIP(),
+		map[string]any{
+			"key_prefix": apiKey.KeyPrefix,
+		},
+	)
+
 	return c.JSON(http.StatusCreated, common.Response{
 		Success: true,
 		Message: "API key created successfully. Save this key securely - it won't be shown again!",
@@ -137,10 +161,32 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
 	}
 
+	apiKey, _ := h.service.GetAPIKey(uint(apiKeyID), userID)
+	apiKeyName := ""
+	if apiKey != nil {
+		apiKeyName = apiKey.Name
+	}
+
 	err = h.service.RevokeAPIKey(uint(apiKeyID), userID)
 	if err != nil {
 		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
+
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.LogAPIKeyEvent(
+		security.EventAPIKeyRevoked,
+		userID,
+		username,
+		uint(apiKeyID),
+		apiKeyName,
+		c.RealIP(),
+		nil,
+	)
 
 	return c.JSON(http.StatusOK, common.Response{
 		Success: true,
@@ -217,6 +263,26 @@ func (h *Handler) AddScope(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusBadRequest, err.Error(), err)
 	}
 
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.LogAPIKeyScopeEvent(
+		security.EventAPIKeyScopeAdded,
+		userID,
+		username,
+		uint(apiKeyID),
+		0,
+		c.RealIP(),
+		map[string]any{
+			"server_id":     req.ServerID,
+			"stack_pattern": req.StackPattern,
+			"permission":    req.Permission,
+		},
+	)
+
 	return c.JSON(http.StatusCreated, common.Response{
 		Success: true,
 		Message: "Scope added successfully",
@@ -234,10 +300,28 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid scope ID", err)
 	}
 
+	apiKeyID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+
 	err = h.service.RemoveScope(uint(scopeID), userID)
 	if err != nil {
 		return common.ErrorResponse(c, http.StatusNotFound, "Scope not found", err)
 	}
+
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.LogAPIKeyScopeEvent(
+		security.EventAPIKeyScopeRemoved,
+		userID,
+		username,
+		uint(apiKeyID),
+		uint(scopeID),
+		c.RealIP(),
+		nil,
+	)
 
 	return c.JSON(http.StatusOK, common.Response{
 		Success: true,

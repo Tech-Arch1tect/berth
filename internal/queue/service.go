@@ -3,6 +3,7 @@ package queue
 import (
 	"berth/internal/operations"
 	"berth/internal/rbac"
+	"berth/internal/security"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -21,6 +22,7 @@ type Service struct {
 	operationSvc *operations.Service
 	rbacSvc      *rbac.Service
 	logger       *logging.Service
+	auditService *security.AuditService
 
 	operationTimeoutSeconds int
 
@@ -40,7 +42,7 @@ type StackWorker struct {
 	service  *Service
 }
 
-func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service, operationTimeoutSeconds int) *Service {
+func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service, auditService *security.AuditService, operationTimeoutSeconds int) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &Service{
@@ -48,6 +50,7 @@ func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Ser
 		operationSvc:            operationSvc,
 		rbacSvc:                 rbacSvc,
 		logger:                  logger,
+		auditService:            auditService,
 		operationTimeoutSeconds: operationTimeoutSeconds,
 		stackWorkers:            make(map[string]*StackWorker),
 		ctx:                     ctx,
@@ -85,6 +88,19 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 			zap.String("stack_name", stackName),
 			zap.String("command", req.Command),
 		)
+
+		s.auditService.LogAuthorizationDenied(
+			&userID,
+			"",
+			"",
+			fmt.Sprintf("stack:%s", stackName),
+			"stacks.manage",
+			map[string]any{
+				"server_id": serverID,
+				"command":   req.Command,
+			},
+		)
+
 		return nil, fmt.Errorf("insufficient permissions for operation '%s' on stack '%s'", req.Command, stackName)
 	}
 

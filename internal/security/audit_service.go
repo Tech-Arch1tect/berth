@@ -193,6 +193,66 @@ func (s *AuditService) LogFileEvent(eventType string, actorUserID uint, actorUse
 	})
 }
 
+func (s *AuditService) LogAPIKeyEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID uint, apiKeyName string, ip string, metadata map[string]any) error {
+	return s.Log(LogEvent{
+		EventType:     eventType,
+		Success:       true,
+		ActorUserID:   &actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		TargetType:    models.TargetTypeAPIKey,
+		TargetID:      &apiKeyID,
+		TargetName:    apiKeyName,
+		Metadata:      metadata,
+	})
+}
+
+func (s *AuditService) LogAPIKeyScopeEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID uint, scopeID uint, ip string, metadata map[string]any) error {
+	return s.Log(LogEvent{
+		EventType:     eventType,
+		Success:       true,
+		ActorUserID:   &actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		TargetType:    models.TargetTypeAPIKeyScope,
+		TargetID:      &scopeID,
+		Metadata:      metadata,
+	})
+}
+
+func (s *AuditService) LogStackEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName string, ip string, metadata map[string]any) error {
+	return s.Log(LogEvent{
+		EventType:     eventType,
+		Success:       true,
+		ActorUserID:   &actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		TargetType:    models.TargetTypeStack,
+		TargetName:    stackName,
+		ServerID:      &serverID,
+		StackName:     stackName,
+		Metadata:      metadata,
+	})
+}
+
+func (s *AuditService) LogAuthorizationDenied(actorUserID *uint, actorUsername string, ip string, resource string, permission string, metadata map[string]any) error {
+	if metadata == nil {
+		metadata = make(map[string]any)
+	}
+	metadata["resource"] = resource
+	metadata["permission"] = permission
+
+	return s.Log(LogEvent{
+		EventType:     EventAuthorizationDenied,
+		Success:       false,
+		ActorUserID:   actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		FailureReason: "permission denied",
+		Metadata:      metadata,
+	})
+}
+
 func (s *AuditService) GetLogs(filters AuditLogFilters) ([]models.SecurityAuditLog, error) {
 	query := s.db.Model(&models.SecurityAuditLog{})
 

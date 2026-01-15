@@ -3,24 +3,30 @@ package stack
 import (
 	"berth/internal/agent"
 	"berth/internal/common"
+	"berth/internal/security"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type APIHandler struct {
-	service  *Service
-	agentSvc *agent.Service
-	logger   *logging.Service
+	service      *Service
+	agentSvc     *agent.Service
+	logger       *logging.Service
+	auditService *security.AuditService
+	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, agentSvc *agent.Service, logger *logging.Service) *APIHandler {
+func NewAPIHandler(service *Service, agentSvc *agent.Service, logger *logging.Service, auditService *security.AuditService, db *gorm.DB) *APIHandler {
 	return &APIHandler{
-		service:  service,
-		agentSvc: agentSvc,
-		logger:   logger,
+		service:      service,
+		agentSvc:     agentSvc,
+		logger:       logger,
+		auditService: auditService,
+		db:           db,
 	}
 }
 
@@ -82,6 +88,22 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 		}
 		return common.SendBadRequest(c, errMsg)
 	}
+
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.LogStackEvent(
+		security.EventStackCreated,
+		userID,
+		username,
+		serverID,
+		req.Name,
+		c.RealIP(),
+		nil,
+	)
 
 	return common.SendCreated(c, map[string]any{
 		"stack":   stack,
@@ -188,6 +210,26 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname, unmask)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
+	}
+
+	if unmask {
+		user, _ := common.GetCurrentUser(c, h.db)
+		username := ""
+		if user != nil {
+			username = user.Username
+		}
+
+		h.auditService.LogStackEvent(
+			security.EventStackSecretsViewed,
+			userID,
+			username,
+			serverID,
+			stackname,
+			c.RealIP(),
+			map[string]any{
+				"unmasked": true,
+			},
+		)
 	}
 
 	h.logger.Debug("returning environment variables",

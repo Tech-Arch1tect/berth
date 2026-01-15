@@ -68,6 +68,8 @@ const (
 	TargetTypeSession            = "session"
 	TargetTypeStack              = "stack"
 	TargetTypeRegistryCredential = "registry_credential"
+	TargetTypeAPIKey             = "api_key"
+	TargetTypeAPIKeyScope        = "api_key_scope"
 )
 
 func (l *SecurityAuditLog) BeforeCreate(tx *gorm.DB) error {

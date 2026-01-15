@@ -2,17 +2,23 @@ package maintenance
 
 import (
 	"berth/internal/common"
+	"berth/internal/security"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type APIHandler struct {
-	service *Service
+	service      *Service
+	auditService *security.AuditService
+	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service) *APIHandler {
+func NewAPIHandler(service *Service, auditService *security.AuditService, db *gorm.DB) *APIHandler {
 	return &APIHandler{
-		service: service,
+		service:      service,
+		auditService: auditService,
+		db:           db,
 	}
 }
 
@@ -73,6 +79,26 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.Log(security.LogEvent{
+		EventType:     security.EventDockerPruneExecuted,
+		Success:       true,
+		ActorUserID:   &userID,
+		ActorUsername: username,
+		ActorIP:       c.RealIP(),
+		ServerID:      &serverID,
+		Metadata: map[string]any{
+			"prune_type": request.Type,
+			"force":      request.Force,
+			"all":        request.All,
+		},
+	})
+
 	return common.SendSuccess(c, result)
 }
 
@@ -115,6 +141,25 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
+
+	user, _ := common.GetCurrentUser(c, h.db)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.auditService.Log(security.LogEvent{
+		EventType:     security.EventDockerResourceDeleted,
+		Success:       true,
+		ActorUserID:   &userID,
+		ActorUsername: username,
+		ActorIP:       c.RealIP(),
+		ServerID:      &serverID,
+		Metadata: map[string]any{
+			"resource_type": request.Type,
+			"resource_id":   request.ID,
+		},
+	})
 
 	return common.SendSuccess(c, result)
 }
