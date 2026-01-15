@@ -113,10 +113,12 @@ func NewApp(opts *AppOptions) *app.App {
 		}),
 		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
 			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")
+			maxSizeBytes := int64(cfg.Custom.LogFileSizeLimitMB) * 1024 * 1024
 			return operations.NewAuditLogger(
 				cfg.Custom.OperationLogLogToFile,
 				operationLogDir,
 				logger,
+				maxSizeBytes,
 			)
 		}),
 		fx.Invoke(func(auditLogger *operations.AuditLogger) {
@@ -124,10 +126,12 @@ func NewApp(opts *AppOptions) *app.App {
 		}),
 		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
 			securityLogDir := filepath.Join(cfg.Custom.LogDir, "security")
+			maxSizeBytes := int64(cfg.Custom.LogFileSizeLimitMB) * 1024 * 1024
 			return security.NewAuditLogger(
 				cfg.Custom.SecurityAuditLogLogToFile,
 				securityLogDir,
 				logger,
+				maxSizeBytes,
 			)
 		}),
 		fx.Invoke(func(auditLogger *security.AuditLogger) {

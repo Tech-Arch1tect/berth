@@ -28,8 +28,8 @@ type AuditLogEntry struct {
 	Duration    *int   `json:"duration_ms,omitempty"`
 }
 
-func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service) (*AuditLogger, error) {
-	fileLogger, err := logging.NewFileLogger(enabled, logDir, "operations", logger)
+func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service, maxSizeBytes int64) (*AuditLogger, error) {
+	fileLogger, err := logging.NewFileLogger(enabled, logDir, "operations", logger, maxSizeBytes)
 	if err != nil {
 		return nil, err
 	}

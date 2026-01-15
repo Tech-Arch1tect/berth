@@ -33,8 +33,8 @@ type AuditLogEntry struct {
 	SessionID     string `json:"session_id,omitempty"`
 }
 
-func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service) (*AuditLogger, error) {
-	fileLogger, err := logging.NewFileLogger(enabled, logDir, "security", logger)
+func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service, maxSizeBytes int64) (*AuditLogger, error) {
+	fileLogger, err := logging.NewFileLogger(enabled, logDir, "security", logger, maxSizeBytes)
 	if err != nil {
 		return nil, err
 	}
