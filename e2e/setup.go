@@ -51,6 +51,7 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
+	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 	"berth/routes"
 	"berth/seeds"
@@ -157,6 +158,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 				&models.SeedTracker{},
 				&models.QueuedOperation{}, &session.UserSession{},
 				&models.ContainerImageUpdate{},
+				&models.ImageScan{}, &models.ImageVulnerability{}, &models.ScanScope{},
 				&totp.TOTPSecret{}, &totp.UsedCode{},
 				&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
 				&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
@@ -220,6 +222,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 				migration.Module,
 				queue.Module(),
 				imageupdates.Module,
+				vulnscan.Module,
 				fx.Provide(security.NewAuditService),
 				fx.Provide(security.NewHandler),
 				fx.Provide(handlers.NewDashboardHandler),
