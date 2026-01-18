@@ -317,6 +317,11 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 	if migrationHandler != nil {
 		admin.GET("/migration", migrationHandler.Index)
 	}
+	admin.GET("/agent-update", func(c echo.Context) error {
+		return inertiaService.Render(c, "Admin/AgentUpdate", map[string]any{
+			"title": "Agent Updates",
+		})
+	})
 	if operationLogsHandler != nil {
 		admin.GET("/operation-logs", operationLogsHandler.ShowOperationLogs)
 	}

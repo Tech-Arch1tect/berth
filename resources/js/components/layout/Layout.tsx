@@ -14,6 +14,7 @@ import {
   XMarkIcon,
   ClipboardDocumentListIcon,
   ArrowUpTrayIcon,
+  ArrowPathIcon,
   ShieldExclamationIcon,
   CircleStackIcon,
   KeyIcon,
@@ -71,6 +72,7 @@ export default function Layout({ children }: LayoutProps) {
     ...(isAdmin
       ? [
           { name: 'Servers', href: '/admin/servers', icon: ServerIcon },
+          { name: 'Agent Updates', href: '/admin/agent-update', icon: ArrowPathIcon },
           { name: 'Users', href: '/admin/users', icon: UsersIcon },
           { name: 'Roles', href: '/admin/roles', icon: ShieldCheckIcon },
           { name: 'Migration', href: '/admin/migration', icon: ArrowUpTrayIcon },
