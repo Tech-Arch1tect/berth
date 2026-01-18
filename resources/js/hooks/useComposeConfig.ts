@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import { ComposeConfig } from '../types/compose';
+import { RawComposeConfig } from '../types/compose';
 
 interface UseComposeConfigOptions {
   serverId: number;
@@ -13,7 +13,7 @@ export const useComposeConfig = ({
   stackName,
   enabled = true,
 }: UseComposeConfigOptions) => {
-  return useQuery<ComposeConfig, Error>({
+  return useQuery<RawComposeConfig, Error>({
     queryKey: ['composeConfig', serverId, stackName],
     queryFn: () => StackService.getComposeConfig(serverId, stackName),
     enabled: enabled && !!serverId && !!stackName,

@@ -2,8 +2,12 @@ export interface ComposePort {
   mode: string;
   protocol: string;
   published: string;
-  target: number;
+  target: string;
+  host_ip?: string;
+  rawValue?: string;
 }
+
+export type RawComposePort = string | number | ComposePort;
 
 export interface ComposeVolumeMount {
   type: string;
@@ -13,7 +17,10 @@ export interface ComposeVolumeMount {
   bind?: Record<string, unknown>;
   volume?: Record<string, unknown>;
   tmpfs?: Record<string, unknown>;
+  rawValue?: string;
 }
+
+export type RawComposeVolumeMount = string | ComposeVolumeMount;
 
 export interface ComposeHealthcheck {
   test?: string[];
@@ -30,6 +37,10 @@ export interface ComposeDependsOn {
   required?: boolean;
   restart?: boolean;
 }
+
+export type RawComposeEnvironment = string[] | Record<string, string | null>;
+
+export type RawComposeDependsOn = string[] | Record<string, ComposeDependsOn>;
 
 export interface ComposeDeploy {
   mode?: string;
@@ -85,6 +96,32 @@ export interface ComposeServiceConfig {
   logging?: { driver?: string; options?: Record<string, string> };
 }
 
+export interface RawComposeServiceConfig {
+  image?: string;
+  build?: ComposeBuild | string;
+  command?: string[] | string | null;
+  entrypoint?: string[] | string | null;
+  ports?: RawComposePort[];
+  volumes?: RawComposeVolumeMount[];
+  environment?: RawComposeEnvironment;
+  env_file?: string[] | string;
+  depends_on?: RawComposeDependsOn;
+  healthcheck?: ComposeHealthcheck;
+  deploy?: ComposeDeploy;
+  networks?: Record<string, { aliases?: string[]; ipv4_address?: string } | null> | string[];
+  labels?: Record<string, string> | string[];
+  restart?: string;
+  working_dir?: string;
+  user?: string;
+  privileged?: boolean;
+  cap_add?: string[];
+  cap_drop?: string[];
+  devices?: string[];
+  dns?: string[] | string;
+  extra_hosts?: string[];
+  logging?: { driver?: string; options?: Record<string, string> };
+}
+
 export interface ComposeNetworkConfig {
   name?: string;
   driver?: string;
@@ -128,8 +165,17 @@ export interface ComposeConfig {
   configs?: Record<string, ComposeConfigConfig>;
 }
 
+export interface RawComposeConfig {
+  compose_file: string;
+  services: Record<string, RawComposeServiceConfig>;
+  networks?: Record<string, ComposeNetworkConfig>;
+  volumes?: Record<string, ComposeVolumeConfig>;
+  secrets?: Record<string, ComposeSecretConfig>;
+  configs?: Record<string, ComposeConfigConfig>;
+}
+
 export interface PortMappingChange {
-  target: number;
+  target: string;
   published?: string;
   host_ip?: string;
   protocol?: string;

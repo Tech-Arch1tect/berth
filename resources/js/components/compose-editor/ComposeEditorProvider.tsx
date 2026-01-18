@@ -16,7 +16,9 @@ import {
   ServiceChanges,
   NewServiceConfig,
   ComposeChanges as ApiComposeChanges,
+  RawComposeConfig,
 } from '../../types/compose';
+import { normaliseComposeConfig } from '../../utils/composeNormaliser';
 
 export type EditorSection = 'services' | 'networks' | 'volumes' | 'secrets' | 'configs' | 'preview';
 
@@ -377,7 +379,7 @@ interface ComposeEditorContextType {
   state: ComposeEditorState;
   isDirty: boolean;
   apiChanges: ApiComposeChanges;
-  setComposeData: (data: ComposeConfig) => void;
+  setComposeData: (data: RawComposeConfig | ComposeConfig) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   selectService: (serviceName: string | null) => void;
@@ -417,8 +419,9 @@ export const ComposeEditorProvider: React.FC<ComposeEditorProviderProps> = ({ ch
   const isDirty = hasAnyChanges(state.pendingChanges);
   const apiChanges = useMemo(() => toApiChanges(state.pendingChanges), [state.pendingChanges]);
 
-  const setComposeData = useCallback((data: ComposeConfig) => {
-    dispatch({ type: 'SET_COMPOSE_DATA', payload: data });
+  const setComposeData = useCallback((data: RawComposeConfig | ComposeConfig) => {
+    const normalised = normaliseComposeConfig(data);
+    dispatch({ type: 'SET_COMPOSE_DATA', payload: normalised });
   }, []);
 
   const setLoading = useCallback((loading: boolean) => {

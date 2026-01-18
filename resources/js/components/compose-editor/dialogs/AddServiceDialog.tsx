@@ -137,7 +137,7 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
   };
 
   const handleAddPort = () => {
-    setPorts([...ports, { target: 80, published: '80' }]);
+    setPorts([...ports, { target: '80', published: '80' }]);
   };
 
   const handleUpdatePort = (index: number, updates: Partial<PortMappingChange>) => {
@@ -323,12 +323,10 @@ export const AddServiceDialog: React.FC<AddServiceDialogProps> = ({
               />
               <span className={theme.text.muted}>:</span>
               <input
-                type="number"
+                type="text"
                 value={port.target}
-                onChange={(e) => handleUpdatePort(index, { target: parseInt(e.target.value) || 0 })}
+                onChange={(e) => handleUpdatePort(index, { target: e.target.value })}
                 placeholder="Container"
-                min={1}
-                max={65535}
                 className={cn(
                   'w-24 px-2 py-1.5 text-sm rounded border font-mono',
                   'bg-white text-zinc-900 placeholder:text-zinc-400',

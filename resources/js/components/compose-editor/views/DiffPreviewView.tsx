@@ -117,7 +117,7 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
         </div>
       </div>
 
-      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 [&_pre]:whitespace-pre [&_td]:whitespace-pre [&_span]:whitespace-pre [&_span]:!inline">
         <ReactDiffViewer
           oldValue={originalYaml}
           newValue={modifiedYaml}
@@ -185,6 +185,7 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               fontSize: '13px',
               lineHeight: '1.5',
+              whiteSpace: 'pre',
             },
           }}
         />

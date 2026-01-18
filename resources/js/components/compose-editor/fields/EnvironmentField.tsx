@@ -133,7 +133,7 @@ export const EnvironmentField: React.FC<EnvironmentFieldProps> = ({
                     onChange={(e) => handleUpdate(key, key, e.target.value)}
                     disabled={disabled}
                     placeholder="value"
-                    className={cn(theme.forms.compact.input, 'pr-8 font-mono')}
+                    className={cn(theme.forms.compact.input, 'w-full pr-8 font-mono')}
                   />
                   <button
                     type="button"

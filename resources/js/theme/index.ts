@@ -244,7 +244,7 @@ export const theme = {
       'h-4 w-4 rounded border-2 border-zinc-300 text-teal-600 transition-colors focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-800',
     compact: {
       input:
-        'w-full px-2 py-1.5 text-sm rounded border bg-white text-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500 border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
+        'px-2 py-1.5 text-sm rounded border bg-white text-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500 border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
       select:
         'w-full px-2 py-1.5 text-sm rounded border bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-700 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed',
       selectSmall:

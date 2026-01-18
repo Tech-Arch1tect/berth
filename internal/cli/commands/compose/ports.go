@@ -59,7 +59,7 @@ func init() {
 type portMapping struct {
 	HostIP    string
 	Published string
-	Target    uint32
+	Target    string
 	Protocol  string
 }
 
@@ -74,22 +74,12 @@ func parsePortMapping(s string) (*portMapping, error) {
 	parts := strings.Split(s, ":")
 	switch len(parts) {
 	case 2:
-
 		pm.Published = parts[0]
-		target, err := strconv.ParseUint(parts[1], 10, 32)
-		if err != nil {
-			return nil, fmt.Errorf("invalid target port: %s", parts[1])
-		}
-		pm.Target = uint32(target)
+		pm.Target = parts[1]
 	case 3:
-
 		pm.HostIP = parts[0]
 		pm.Published = parts[1]
-		target, err := strconv.ParseUint(parts[2], 10, 32)
-		if err != nil {
-			return nil, fmt.Errorf("invalid target port: %s", parts[2])
-		}
-		pm.Target = uint32(target)
+		pm.Target = parts[2]
 	default:
 		return nil, fmt.Errorf("invalid port format: %s (expected [host_ip:]published:target[/protocol])", s)
 	}
@@ -111,16 +101,16 @@ func portToMap(pm *portMapping) map[string]any {
 	return m
 }
 
-func getTargetPort(m map[string]any) uint32 {
+func getTargetPort(m map[string]any) string {
 	switch v := m["target"].(type) {
-	case float64:
-		return uint32(v)
-	case uint32:
+	case string:
 		return v
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
 	case int:
-		return uint32(v)
+		return strconv.Itoa(v)
 	default:
-		return 0
+		return ""
 	}
 }
 
@@ -133,6 +123,31 @@ func portsMatch(a, b map[string]any) bool {
 	bPublished, _ := b["published"].(string)
 
 	return aTarget == bTarget && aPublished == bPublished
+}
+
+func normalisePortEntry(p any) (map[string]any, error) {
+	switch v := p.(type) {
+	case map[string]any:
+		return v, nil
+	case string:
+		pm, err := parsePortMapping(v)
+		if err != nil {
+			return nil, err
+		}
+		return portToMap(pm), nil
+	case float64:
+		return map[string]any{
+			"target":    strconv.FormatFloat(v, 'f', -1, 64),
+			"published": "",
+		}, nil
+	case int:
+		return map[string]any{
+			"target":    strconv.Itoa(v),
+			"published": "",
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported port format: %T", p)
+	}
 }
 
 func getCurrentPorts(config map[string]any, serviceName string) ([]map[string]any, error) {
@@ -158,9 +173,11 @@ func getCurrentPorts(config map[string]any, serviceName string) ([]map[string]an
 
 	var ports []map[string]any
 	for _, p := range portsSlice {
-		if pm, ok := p.(map[string]any); ok {
-			ports = append(ports, pm)
+		normalised, err := normalisePortEntry(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid port entry: %v", err)
 		}
+		ports = append(ports, normalised)
 	}
 
 	return ports, nil

@@ -27,6 +27,8 @@ import { RemoveServiceDialog } from './dialogs/RemoveServiceDialog';
 import { RenameServiceDialog } from './dialogs/RenameServiceDialog';
 import { DiffPreviewView } from './views/DiffPreviewView';
 import {
+  ComposePort,
+  ComposeVolumeMount,
   PortMappingChange,
   VolumeMountChange,
   HealthcheckChange,
@@ -595,21 +597,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceName, disabled }) 
   const availableNetworks = Object.keys(getEffectiveNetworks());
   const availableVolumes = Object.keys(getEffectiveVolumes());
 
-  const currentPorts: PortMappingChange[] =
-    config?.ports?.map((p) => ({
-      target: p.target,
-      published: p.published,
-      host_ip: undefined,
-      protocol: p.protocol,
-    })) || [];
+  const currentPorts: ComposePort[] = config?.ports || [];
 
-  const currentVolumes: VolumeMountChange[] =
-    config?.volumes?.map((v) => ({
-      type: v.type || 'bind',
-      source: v.source,
-      target: v.target,
-      read_only: v.read_only,
-    })) || [];
+  const currentVolumes: ComposeVolumeMount[] = config?.volumes || [];
 
   const currentHealthcheck: HealthcheckChange | null = config?.healthcheck
     ? {
@@ -668,18 +658,30 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceName, disabled }) 
   );
 
   const handlePortsChange = useCallback(
-    (ports: PortMappingChange[] | null) => {
+    (ports: ComposePort[] | null) => {
       if (ports !== null) {
-        updateService(serviceName, { ports });
+        const portChanges: PortMappingChange[] = ports.map((p) => ({
+          target: p.target,
+          published: p.published,
+          host_ip: p.host_ip,
+          protocol: p.protocol,
+        }));
+        updateService(serviceName, { ports: portChanges });
       }
     },
     [serviceName, updateService]
   );
 
   const handleVolumesChange = useCallback(
-    (volumes: VolumeMountChange[] | null) => {
+    (volumes: ComposeVolumeMount[] | null) => {
       if (volumes !== null) {
-        updateService(serviceName, { volumes });
+        const volumeChanges: VolumeMountChange[] = volumes.map((v) => ({
+          type: v.type || 'bind',
+          source: v.source,
+          target: v.target,
+          read_only: v.read_only,
+        }));
+        updateService(serviceName, { volumes: volumeChanges });
       }
     },
     [serviceName, updateService]

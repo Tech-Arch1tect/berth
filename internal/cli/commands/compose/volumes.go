@@ -104,6 +104,21 @@ func volumeToMap(vm *volumeMount) map[string]any {
 	return m
 }
 
+func normaliseVolumeEntry(v any) (map[string]any, error) {
+	switch val := v.(type) {
+	case map[string]any:
+		return val, nil
+	case string:
+		vm, err := parseVolumeMount(val)
+		if err != nil {
+			return nil, err
+		}
+		return volumeToMap(vm), nil
+	default:
+		return nil, fmt.Errorf("unsupported volume format: %T", v)
+	}
+}
+
 func getCurrentVolumes(config map[string]any, serviceName string) ([]map[string]any, error) {
 	services, ok := config["services"].(map[string]any)
 	if !ok {
@@ -127,9 +142,11 @@ func getCurrentVolumes(config map[string]any, serviceName string) ([]map[string]
 
 	var volumes []map[string]any
 	for _, v := range volumesSlice {
-		if vm, ok := v.(map[string]any); ok {
-			volumes = append(volumes, vm)
+		normalised, err := normaliseVolumeEntry(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid volume entry: %v", err)
 		}
+		volumes = append(volumes, normalised)
 	}
 
 	return volumes, nil

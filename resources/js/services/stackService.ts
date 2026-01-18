@@ -6,7 +6,7 @@ import {
   StackEnvironmentResponse,
   ContainerImageDetails,
 } from '../types/stack';
-import { ComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
+import { RawComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
 
 export interface StackPermissions {
   permissions: string[];
@@ -197,7 +197,7 @@ export class StackService {
     serverid: number,
     stackname: string,
     csrfToken?: string
-  ): Promise<ComposeConfig> {
+  ): Promise<RawComposeConfig> {
     try {
       const headers: Record<string, string> = {};
       if (csrfToken) {
