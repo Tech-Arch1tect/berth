@@ -18,7 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { GetApiV1Servers200, GetApiV1Servers401 } from '.././models';
+import type { GetApiV1Servers200, GetApiV1Servers401, GetApiV1Servers500 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
 
@@ -36,7 +36,7 @@ export const getGetApiV1ServersQueryKey = () => {
 
 export const getGetApiV1ServersQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = GetApiV1Servers401 | void,
+  TError = GetApiV1Servers401 | GetApiV1Servers500 | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;
 }) => {
@@ -55,11 +55,11 @@ export const getGetApiV1ServersQueryOptions = <
 };
 
 export type GetApiV1ServersQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Servers>>>;
-export type GetApiV1ServersQueryError = GetApiV1Servers401 | void;
+export type GetApiV1ServersQueryError = GetApiV1Servers401 | GetApiV1Servers500 | void;
 
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = GetApiV1Servers401 | void,
+  TError = GetApiV1Servers401 | GetApiV1Servers500 | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>> &
@@ -76,7 +76,7 @@ export function useGetApiV1Servers<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = GetApiV1Servers401 | void,
+  TError = GetApiV1Servers401 | GetApiV1Servers500 | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>> &
@@ -93,7 +93,7 @@ export function useGetApiV1Servers<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = GetApiV1Servers401 | void,
+  TError = GetApiV1Servers401 | GetApiV1Servers500 | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;
@@ -106,7 +106,7 @@ export function useGetApiV1Servers<
 
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = GetApiV1Servers401 | void,
+  TError = GetApiV1Servers401 | GetApiV1Servers500 | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;

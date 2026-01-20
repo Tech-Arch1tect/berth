@@ -31,6 +31,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Returns all servers the authenticated user has permission to access").
 		Response(http.StatusOK, server.ListServersResponse{}, "List of servers").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 }

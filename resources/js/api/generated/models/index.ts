@@ -9,3 +9,4 @@
 export * from './getApiV1Servers200';
 export * from './getApiV1Servers200ServersItem';
 export * from './getApiV1Servers401';
+export * from './getApiV1Servers500';

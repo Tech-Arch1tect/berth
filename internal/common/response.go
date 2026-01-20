@@ -21,8 +21,9 @@ func SendCreated(c echo.Context, data any) error {
 }
 
 func SendError(c echo.Context, statusCode int, message string) error {
-	return c.JSON(statusCode, map[string]string{
+	return c.JSON(statusCode, map[string]any{
 		"error": message,
+		"code":  statusCode,
 	})
 }
 

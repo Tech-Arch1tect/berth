@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetApiV1Servers401 = {
+export type GetApiV1Servers500 = {
   code: number;
   error: string;
 };
