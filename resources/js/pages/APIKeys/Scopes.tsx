@@ -15,6 +15,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { useGetApiV1Servers } from '../../api/generated/servers/servers';
 
 interface Scope {
   id: number;
@@ -23,11 +24,6 @@ interface Scope {
   stack_pattern: string;
   permission: string;
   created_at: string;
-}
-
-interface Server {
-  id: number;
-  name: string;
 }
 
 interface ScopesProps {
@@ -76,12 +72,14 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
   const [scopes, setScopes] = useState<Scope[]>([]);
-  const [servers, setServers] = useState<Server[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [scopesLoading, setScopesLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
+  const servers = serversResponse?.data?.servers ?? [];
 
   const {
     data: formData,
@@ -102,28 +100,13 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
       }
     } catch (error) {
       console.error('Failed to load scopes:', error);
-    }
-  };
-
-  const loadServers = async () => {
-    try {
-      const response = await axios.get('/api/servers');
-
-      if (response.data.success) {
-        setServers(response.data.data);
-      } else if (response.data.servers) {
-        setServers(response.data.servers);
-      }
-    } catch (error) {
-      console.error('Failed to load servers:', error);
     } finally {
-      setLoading(false);
+      setScopesLoading(false);
     }
   };
 
   useEffect(() => {
     loadScopes();
-    loadServers();
   }, []);
 
   const addScope = async (e: React.FormEvent) => {
@@ -335,7 +318,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           </Modal>
 
           {/* Scopes List */}
-          {loading ? (
+          {scopesLoading || serversLoading ? (
             <LoadingSpinner size="lg" text="Loading scopes..." />
           ) : scopes.length === 0 ? (
             <EmptyState
