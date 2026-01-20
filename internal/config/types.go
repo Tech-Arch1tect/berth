@@ -19,4 +19,5 @@ type AppCustomConfig struct {
 	ImageUpdateCheckEnabled            bool   `env:"IMAGE_UPDATE_CHECK_ENABLED" envDefault:"true"`
 	ImageUpdateCheckInterval           string `env:"IMAGE_UPDATE_CHECK_INTERVAL" envDefault:"6h"`
 	ImageUpdateCheckDisabledRegistries string `env:"IMAGE_UPDATE_CHECK_DISABLED_REGISTRIES" envDefault:""`
+	OpenAPIEnabled                     bool   `env:"OPENAPI_ENABLED" envDefault:"true"`
 }

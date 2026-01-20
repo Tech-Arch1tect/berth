@@ -2,6 +2,8 @@ package server
 
 import (
 	"berth/internal/common"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -9,6 +11,10 @@ import (
 type UserAPIHandler struct {
 	service *Service
 	db      *gorm.DB
+}
+
+type ListServersResponse struct {
+	Servers []models.ServerResponse `json:"servers"`
 }
 
 func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {
@@ -30,8 +36,8 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch servers")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"servers": servers,
+	return common.SendSuccess(c, ListServersResponse{
+		Servers: servers,
 	})
 }
 

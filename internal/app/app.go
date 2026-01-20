@@ -6,6 +6,7 @@ import (
 
 	"berth/handlers"
 	"berth/internal/agent"
+	"berth/internal/apidocs"
 	"berth/internal/apikey"
 	berthconfig "berth/internal/config"
 	"berth/internal/files"
@@ -35,6 +36,8 @@ import (
 	"github.com/tech-arch1tect/brx/config"
 	"github.com/tech-arch1tect/brx/middleware/inertiashared"
 	"github.com/tech-arch1tect/brx/middleware/jwtshared"
+	"github.com/tech-arch1tect/brx/openapi"
+	brxserver "github.com/tech-arch1tect/brx/server"
 	"github.com/tech-arch1tect/brx/services/auth"
 	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/jwt"
@@ -182,6 +185,11 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(handlers.NewSessionHandler),
 		fx.Provide(handlers.NewTOTPHandler),
 		fx.Provide(handlers.NewVersionHandler),
+		fx.Provide(apidocs.NewOpenAPI),
+		fx.Invoke(routes.RegisterAPIDocs),
+		fx.Invoke(func(srv *brxserver.Server, apiDoc *openapi.OpenAPI, cfg *berthconfig.BerthConfig) {
+			routes.RegisterOpenAPIEndpoints(srv.Echo(), apiDoc, cfg)
+		}),
 		fx.Provide(fx.Annotate(
 			providers.NewUserProvider,
 			fx.As(new(inertiashared.UserProvider)),
