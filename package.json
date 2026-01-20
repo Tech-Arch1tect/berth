@@ -10,7 +10,9 @@
     "format": "prettier --write \"resources/**/*.{js,ts,tsx,jsx}\"",
     "format:check": "prettier --check \"resources/**/*.{js,ts,tsx,jsx}\"",
     "lint": "eslint resources/",
-    "lint:fix": "eslint resources/ --fix"
+    "lint:fix": "eslint resources/ --fix",
+    "api:generate": "go build -o berth-tmp && ./berth-tmp openapi > openapi.json && orval && rm berth-tmp",
+    "api:generate-only": "orval"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -40,6 +42,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "orval": "^8.0.2",
     "postcss": "^8.4.49",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.17",

@@ -22,6 +22,7 @@ import {
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { User } from '../../types';
+import { setCsrfToken } from '../../lib/api';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { Toaster } from '../../utils/toast';
 import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
@@ -45,6 +46,10 @@ export default function Layout({ children }: LayoutProps) {
   );
   const [appVersion, setAppVersion] = useState<string>('dev');
   const terminalPanel = useTerminalPanel();
+
+  useEffect(() => {
+    setCsrfToken(csrfToken);
+  }, [csrfToken]);
 
   useEffect(() => {
     fetch('/api/version')
