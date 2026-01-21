@@ -1,31 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
-import { StackStatistics } from '../types/server';
+import { useGetApiV1ServersServeridStatistics } from '../api/generated/servers/servers';
+import type { GetApiV1ServersServeridStatistics200Statistics } from '../api/generated/models';
 
-interface ServerStatisticsResponse {
-  statistics: StackStatistics;
-}
+export type StackStatistics = GetApiV1ServersServeridStatistics200Statistics;
 
-const fetchServerStatistics = async (serverId: number): Promise<StackStatistics> => {
-  const response = await fetch(`/api/servers/${serverId}/statistics`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
+export const useServerStatistics = (serverId: number) => {
+  const { data, isLoading, error, refetch } = useGetApiV1ServersServeridStatistics(serverId, {
+    query: {
+      staleTime: 1 * 1000,
+      gcTime: 5 * 60 * 1000,
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch server statistics');
-  }
-
-  const data: ServerStatisticsResponse = await response.json();
-  return data.statistics;
-};
-
-export const useServerStatistics = (serverId: number) => {
-  return useQuery({
-    queryKey: ['server-statistics', serverId],
-    queryFn: () => fetchServerStatistics(serverId),
-    staleTime: 1 * 1000,
-    gcTime: 5 * 60 * 1000,
-  });
+  return {
+    data: data?.data?.statistics,
+    isLoading,
+    error,
+    refetch,
+  };
 };

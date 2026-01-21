@@ -17,6 +17,10 @@ type ListServersResponse struct {
 	Servers []models.ServerResponse `json:"servers"`
 }
 
+type ServerStatisticsResponse struct {
+	Statistics models.StackStatistics `json:"statistics"`
+}
+
 func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {
 	return &UserAPIHandler{
 		service: service,
@@ -58,7 +62,7 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch server statistics")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"statistics": statistics,
+	return common.SendSuccess(c, ServerStatisticsResponse{
+		Statistics: *statistics,
 	})
 }

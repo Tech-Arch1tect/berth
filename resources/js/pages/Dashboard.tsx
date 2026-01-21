@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
 import { useQueries } from '@tanstack/react-query';
 import { Server } from '../types/server';
-import { StackStatistics } from '../types/server';
 import { useDashboardHealth, useDashboardActivity } from '../components/dashboard';
 import { PanelLayout } from '../components/common/PanelLayout';
 import { DashboardSidebar } from '../components/dashboard/sidebar/DashboardSidebar';
@@ -12,6 +11,10 @@ import { DashboardStatusBar } from '../components/dashboard/statusbar/DashboardS
 import Layout from '../components/layout/Layout';
 import FlashMessages from '../components/FlashMessages';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import {
+  getApiV1ServersServeridStatistics,
+  getGetApiV1ServersServeridStatisticsQueryKey,
+} from '../api/generated/servers/servers';
 
 interface DashboardProps {
   title: string;
@@ -23,24 +26,6 @@ interface DashboardProps {
     roles?: Array<{ name: string }>;
   };
 }
-
-interface ServerStatisticsResponse {
-  statistics: StackStatistics;
-}
-
-const fetchServerStatistics = async (serverId: number): Promise<StackStatistics> => {
-  const response = await fetch(`/api/servers/${serverId}/statistics`, {
-    credentials: 'include',
-    headers: { Accept: 'application/json' },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch server statistics');
-  }
-
-  const data: ServerStatisticsResponse = await response.json();
-  return data.statistics;
-};
 
 type DashboardComponent = React.FC<DashboardProps> & {
   layout?: (page: React.ReactElement) => React.ReactElement;
@@ -60,8 +45,8 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
   const activeServers = servers.filter((s) => s.is_active);
   const statisticsQueries = useQueries({
     queries: activeServers.map((server) => ({
-      queryKey: ['server-statistics', server.id],
-      queryFn: () => fetchServerStatistics(server.id),
+      queryKey: getGetApiV1ServersServeridStatisticsQueryKey(server.id),
+      queryFn: () => getApiV1ServersServeridStatistics(server.id),
       staleTime: 30 * 1000,
       gcTime: 5 * 60 * 1000,
     })),
@@ -71,11 +56,12 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
     const map = new Map<number, { total: number; healthy: number; unhealthy: number }>();
     activeServers.forEach((server, index) => {
       const query = statisticsQueries[index];
-      if (query?.data) {
+      const stats = query?.data?.data?.statistics;
+      if (stats) {
         map.set(server.id, {
-          total: query.data.total_stacks,
-          healthy: query.data.healthy_stacks,
-          unhealthy: query.data.unhealthy_stacks,
+          total: stats.total_stacks,
+          healthy: stats.healthy_stacks,
+          unhealthy: stats.unhealthy_stacks,
         });
       }
     });

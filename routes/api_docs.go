@@ -36,6 +36,19 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/statistics").
+		Tags("servers").
+		Summary("Get server statistics").
+		Description("Returns stack statistics for a specific server").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, server.ServerStatisticsResponse{}, "Server statistics").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid server ID").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// Admin Operation Logs
 	apiDoc.Document("GET", "/api/v1/admin/operation-logs").
 		Tags("admin", "operation-logs").

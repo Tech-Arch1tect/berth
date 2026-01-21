@@ -1,35 +1,17 @@
 import { useQueries } from '@tanstack/react-query';
-import { Server } from '../../../types/server';
-import { StackStatistics } from '../../../types/server';
-import { HealthSummary } from '../types/dashboard';
+import { HealthSummary, DashboardServer } from '../types/dashboard';
+import {
+  getApiV1ServersServeridStatistics,
+  getGetApiV1ServersServeridStatisticsQueryKey,
+} from '../../../api/generated/servers/servers';
 
-interface ServerStatisticsResponse {
-  statistics: StackStatistics;
-}
-
-const fetchServerStatistics = async (serverId: number): Promise<StackStatistics> => {
-  const response = await fetch(`/api/servers/${serverId}/statistics`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch server statistics');
-  }
-
-  const data: ServerStatisticsResponse = await response.json();
-  return data.statistics;
-};
-
-export const useDashboardHealth = (servers: Server[]): HealthSummary => {
+export const useDashboardHealth = (servers: DashboardServer[]): HealthSummary => {
   const activeServers = servers.filter((server) => server.is_active);
 
   const statisticsQueries = useQueries({
     queries: activeServers.map((server) => ({
-      queryKey: ['server-statistics', server.id],
-      queryFn: () => fetchServerStatistics(server.id),
+      queryKey: getGetApiV1ServersServeridStatisticsQueryKey(server.id),
+      queryFn: () => getApiV1ServersServeridStatistics(server.id),
       staleTime: 1 * 1000,
       gcTime: 5 * 60 * 1000,
     })),
@@ -47,11 +29,11 @@ export const useDashboardHealth = (servers: Server[]): HealthSummary => {
       serversLoading++;
     } else if (query.error) {
       serversWithErrors++;
-    } else if (query.data) {
+    } else if (query.data?.data?.statistics) {
       serversOnline++;
-      totalStacks += query.data.total_stacks;
-      healthyStacks += query.data.healthy_stacks;
-      unhealthyStacks += query.data.unhealthy_stacks;
+      totalStacks += query.data.data.statistics.total_stacks;
+      healthyStacks += query.data.data.statistics.healthy_stacks;
+      unhealthyStacks += query.data.data.statistics.unhealthy_stacks;
     }
   });
 

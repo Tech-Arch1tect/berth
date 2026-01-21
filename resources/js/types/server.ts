@@ -1,9 +1,3 @@
-export interface StackStatistics {
-  total_stacks: number;
-  healthy_stacks: number;
-  unhealthy_stacks: number;
-}
-
 export interface Server {
   id: number;
   name: string;

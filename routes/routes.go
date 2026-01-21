@@ -94,7 +94,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 	registerProtectedWebRoutes(web,
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
-		operationLogsHandler, serverUserAPIHandler, apiKeyHandler,
+		operationLogsHandler, apiKeyHandler,
 		stackAPIHandler, maintenanceAPIHandler, registryAPIHandler,
 		filesAPIHandler, logsHandler, operationsHandler,
 		imageUpdatesAPIHandler)
@@ -185,7 +185,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
-	operationLogsHandler *operationlogs.Handler, serverUserAPIHandler *server.UserAPIHandler, apiKeyHandler *apikey.Handler,
+	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	stackAPIHandler *stack.APIHandler, maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
 	filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler,
 	imageUpdatesAPIHandler *imageupdates.APIHandler) {
@@ -269,9 +269,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
-	}
-	if serverUserAPIHandler != nil {
-		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}
 	if imageUpdatesAPIHandler != nil {
 		protected.GET("/api/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)

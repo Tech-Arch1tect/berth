@@ -1,3 +1,8 @@
+export interface DashboardServer {
+  id: number;
+  is_active: boolean;
+}
+
 export interface HealthSummary {
   totalStacks: number;
   healthyStacks: number;
