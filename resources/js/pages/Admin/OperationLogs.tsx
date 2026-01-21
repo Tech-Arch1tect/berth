@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { PanelLayout } from '../../components/common/PanelLayout';
 import {
   OperationLogsSidebar,
@@ -8,71 +9,46 @@ import {
   OperationLogsContent,
 } from '../../components/operation-logs';
 import {
-  OperationLog,
-  OperationLogDetail,
-  OperationLogStatsSummary,
-  PaginationInfo,
-} from '../../types/operations';
+  useGetApiV1AdminOperationLogs,
+  useGetApiV1AdminOperationLogsStats,
+  getApiV1AdminOperationLogsId,
+  getGetApiV1AdminOperationLogsQueryKey,
+  getGetApiV1AdminOperationLogsStatsQueryKey,
+} from '../../api/generated/admin/admin';
+import type { GetApiV1AdminOperationLogsStatus } from '../../api/generated/models';
 
 interface Props {
   title: string;
 }
 
 export default function OperationLogs({ title }: Props) {
-  const [logs, setLogs] = useState<OperationLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [stats, setStats] = useState<OperationLogStatsSummary | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCommand, setSelectedCommand] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchLogs = useCallback(
-    async (page = 1) => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          page_size: '25',
-          ...(searchTerm && { search: searchTerm }),
-          ...(selectedStatus && { status: selectedStatus }),
-          ...(selectedCommand && { command: selectedCommand }),
-        });
+  const logsParams = {
+    page: currentPage,
+    page_size: 25,
+    ...(searchTerm && { search: searchTerm }),
+    ...(selectedStatus && { status: selectedStatus as GetApiV1AdminOperationLogsStatus }),
+    ...(selectedCommand && { command: selectedCommand }),
+  };
 
-        const response = await fetch(`/admin/api/operation-logs?${params}`);
-        const data = await response.json();
+  const { data: logsResponse, isLoading: logsLoading } = useGetApiV1AdminOperationLogs(logsParams);
+  const { data: statsResponse, isLoading: statsLoading } = useGetApiV1AdminOperationLogsStats();
 
-        setLogs(data.data || []);
-        setPagination(data.pagination);
-        setLastUpdated(new Date());
-      } catch (error) {
-        console.error('Failed to fetch operation logs:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [searchTerm, selectedStatus, selectedCommand]
-  );
+  const logs = logsResponse?.data?.data ?? [];
+  const pagination = logsResponse?.data?.pagination ?? null;
+  const stats = statsResponse?.data ?? null;
 
-  const fetchStats = useCallback(async () => {
+  const fetchLogDetail = useCallback(async (logId: number) => {
     try {
-      const response = await fetch('/admin/api/operation-logs/stats');
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to fetch operation logs stats:', error);
-    }
-  }, []);
-
-  const fetchLogDetail = useCallback(async (logId: number): Promise<OperationLogDetail | null> => {
-    try {
-      const response = await fetch(`/admin/api/operation-logs/${logId}`);
-      const data = await response.json();
-      return data;
+      const response = await getApiV1AdminOperationLogsId(logId);
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch operation log details:', error);
       return null;
@@ -81,17 +57,15 @@ export default function OperationLogs({ title }: Props) {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await Promise.all([fetchLogs(currentPage), fetchStats()]);
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: getGetApiV1AdminOperationLogsQueryKey(logsParams),
+      }),
+      queryClient.invalidateQueries({ queryKey: getGetApiV1AdminOperationLogsStatsQueryKey() }),
+    ]);
+    setLastUpdated(new Date());
     setIsRefreshing(false);
-  }, [fetchLogs, fetchStats, currentPage]);
-
-  useEffect(() => {
-    fetchLogs(currentPage);
-  }, [currentPage, fetchLogs]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  }, [queryClient, logsParams]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -147,7 +121,7 @@ export default function OperationLogs({ title }: Props) {
         content={
           <OperationLogsContent
             logs={logs}
-            loading={loading}
+            loading={logsLoading || statsLoading}
             pagination={pagination}
             currentPage={currentPage}
             showUser={true}

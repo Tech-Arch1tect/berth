@@ -14,6 +14,12 @@ import {
   OperationLogStatsSummary,
   PaginationInfo,
 } from '../types/operations';
+import type {
+  GetApiV1AdminOperationLogs200DataItem,
+  GetApiV1AdminOperationLogs200Pagination,
+  GetApiV1AdminOperationLogsId200,
+  GetApiV1AdminOperationLogsStats200,
+} from '../api/generated/models';
 
 interface Props {
   title: string;
@@ -136,7 +142,7 @@ function OperationLogs({ title }: Props) {
         }
         sidebar={
           <OperationLogsSidebar
-            stats={stats}
+            stats={stats as GetApiV1AdminOperationLogsStats200 | null}
             selectedStatus={selectedStatus}
             selectedCommand={selectedCommand}
             onStatusChange={handleStatusChange}
@@ -147,18 +153,20 @@ function OperationLogs({ title }: Props) {
         }
         content={
           <OperationLogsContent
-            logs={logs}
+            logs={logs as GetApiV1AdminOperationLogs200DataItem[]}
             loading={loading}
-            pagination={pagination}
+            pagination={pagination as GetApiV1AdminOperationLogs200Pagination | null}
             currentPage={currentPage}
             showUser={false}
             onPageChange={handlePageChange}
-            onFetchDetail={fetchLogDetail}
+            onFetchDetail={
+              fetchLogDetail as (logId: number) => Promise<GetApiV1AdminOperationLogsId200 | null>
+            }
           />
         }
         statusBar={
           <OperationLogsStatusBar
-            pagination={pagination}
+            pagination={pagination as GetApiV1AdminOperationLogs200Pagination | null}
             hasActiveFilters={hasActiveFilters}
             activeFilterCount={activeFilterCount}
             lastUpdated={lastUpdated}

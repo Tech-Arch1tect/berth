@@ -333,11 +333,6 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 	}
 
 	// API Endpoints (legacy, admin UI should migrate to /api/v1/admin/*)
-	if operationLogsHandler != nil {
-		admin.GET("/api/operation-logs", operationLogsHandler.ListOperationLogs)
-		admin.GET("/api/operation-logs/stats", operationLogsHandler.GetOperationLogsStats)
-		admin.GET("/api/operation-logs/:id", operationLogsHandler.GetOperationLogDetails)
-	}
 	if securityHandler != nil {
 		admin.GET("/api/security-audit-logs", securityHandler.ListLogs)
 		admin.GET("/api/security-audit-logs/stats", securityHandler.GetStats)
