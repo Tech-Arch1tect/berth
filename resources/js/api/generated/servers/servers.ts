@@ -18,7 +18,16 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { GetApiV1Servers200, GetApiV1Servers401, GetApiV1Servers500 } from '.././models';
+import type {
+  GetApiV1Servers200,
+  GetApiV1Servers401,
+  GetApiV1Servers500,
+  GetApiV1ServersServeridStatistics200,
+  GetApiV1ServersServeridStatistics400,
+  GetApiV1ServersServeridStatistics401,
+  GetApiV1ServersServeridStatistics403,
+  GetApiV1ServersServeridStatistics500,
+} from '.././models';
 
 import { apiClient } from '../../../lib/api';
 
@@ -114,6 +123,160 @@ export function useGetApiV1Servers<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetApiV1ServersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns stack statistics for a specific server
+ * @summary Get server statistics
+ */
+export const getApiV1ServersServeridStatistics = (serverid: number, signal?: AbortSignal) => {
+  return apiClient<GetApiV1ServersServeridStatistics200>({
+    url: `/api/v1/servers/${serverid}/statistics`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1ServersServeridStatisticsQueryKey = (serverid?: number) => {
+  return [`/api/v1/servers/${serverid}/statistics`] as const;
+};
+
+export const getGetApiV1ServersServeridStatisticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+  TError =
+    | GetApiV1ServersServeridStatistics400
+    | GetApiV1ServersServeridStatistics401
+    | GetApiV1ServersServeridStatistics403
+    | GetApiV1ServersServeridStatistics500
+    | void,
+>(
+  serverid: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1ServersServeridStatisticsQueryKey(serverid);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>> = ({
+    signal,
+  }) => getApiV1ServersServeridStatistics(serverid, signal);
+
+  return { queryKey, queryFn, enabled: !!serverid, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1ServersServeridStatisticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>
+>;
+export type GetApiV1ServersServeridStatisticsQueryError =
+  | GetApiV1ServersServeridStatistics400
+  | GetApiV1ServersServeridStatistics401
+  | GetApiV1ServersServeridStatistics403
+  | GetApiV1ServersServeridStatistics500
+  | void;
+
+export function useGetApiV1ServersServeridStatistics<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+  TError =
+    | GetApiV1ServersServeridStatistics400
+    | GetApiV1ServersServeridStatistics401
+    | GetApiV1ServersServeridStatistics403
+    | GetApiV1ServersServeridStatistics500
+    | void,
+>(
+  serverid: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStatistics<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+  TError =
+    | GetApiV1ServersServeridStatistics400
+    | GetApiV1ServersServeridStatistics401
+    | GetApiV1ServersServeridStatistics403
+    | GetApiV1ServersServeridStatistics500
+    | void,
+>(
+  serverid: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStatistics<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+  TError =
+    | GetApiV1ServersServeridStatistics400
+    | GetApiV1ServersServeridStatistics401
+    | GetApiV1ServersServeridStatistics403
+    | GetApiV1ServersServeridStatistics500
+    | void,
+>(
+  serverid: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get server statistics
+ */
+
+export function useGetApiV1ServersServeridStatistics<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
+  TError =
+    | GetApiV1ServersServeridStatistics400
+    | GetApiV1ServersServeridStatistics401
+    | GetApiV1ServersServeridStatistics403
+    | GetApiV1ServersServeridStatistics500
+    | void,
+>(
+  serverid: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1ServersServeridStatisticsQueryOptions(serverid, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
