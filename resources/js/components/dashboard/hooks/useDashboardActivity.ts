@@ -1,21 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useGetApiV1OperationLogs } from '../../../api/generated/operation-logs/operation-logs';
+import type { GetApiV1OperationLogs200DataItem } from '../../../api/generated/models';
 
-export interface RecentActivity {
-  id: number;
-  operation_id: string;
-  command: string;
-  stack_name: string;
-  server_name: string;
-  user_name: string;
-  start_time: string;
-  end_time: string | null;
-  success: boolean | null;
-  exit_code: number | null;
-  duration_ms: number | null;
-  is_incomplete: boolean;
-  formatted_date: string;
-  partial_duration_ms: number | null;
-}
+export type RecentActivity = GetApiV1OperationLogs200DataItem;
 
 export interface ActivitySummary {
   recentOperations: RecentActivity[];
@@ -25,36 +11,31 @@ export interface ActivitySummary {
 }
 
 export const useDashboardActivity = (): ActivitySummary => {
-  const [recentOperations, setRecentOperations] = useState<RecentActivity[]>([]);
-  const [failedOperations, setFailedOperations] = useState<RecentActivity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: recentResponse,
+    isLoading: recentLoading,
+    error: recentError,
+  } = useGetApiV1OperationLogs({
+    page: 1,
+    page_size: 10,
+    days_back: 7,
+  });
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const {
+    data: failedResponse,
+    isLoading: failedLoading,
+    error: failedError,
+  } = useGetApiV1OperationLogs({
+    page: 1,
+    page_size: 5,
+    status: 'failed',
+    days_back: 7,
+  });
 
-        const recentResponse = await fetch('/api/operation-logs?page=1&page_size=10&days_back=7');
-        const recentData = await recentResponse.json();
-        setRecentOperations(recentData.data || []);
-
-        const failedResponse = await fetch(
-          '/api/operation-logs?page=1&page_size=5&status=failed&days_back=7'
-        );
-        const failedData = await failedResponse.json();
-        setFailedOperations(failedData.data || []);
-      } catch (err) {
-        setError('Failed to load activity data');
-        console.error('Error fetching dashboard activity:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActivity();
-  }, []);
+  const recentOperations = recentResponse?.data?.data ?? [];
+  const failedOperations = failedResponse?.data?.data ?? [];
+  const loading = recentLoading || failedLoading;
+  const error = recentError || failedError ? 'Failed to load activity data' : null;
 
   return {
     recentOperations,

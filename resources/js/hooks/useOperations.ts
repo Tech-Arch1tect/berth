@@ -6,8 +6,8 @@ import {
   StreamMessage,
   WebSocketMessage,
 } from '../types/operations';
-import { useOperationsContext } from '../contexts/OperationsContext';
-import { RunningOperation } from '../types/running-operation';
+import { useOperationsContext, NewOperationInput } from '../contexts/OperationsContext';
+import { getApiV1OperationLogsByOperationIdOperationId } from '../api/generated/operation-logs/operation-logs';
 
 interface UseOperationsOptions {
   serverid: string;
@@ -80,24 +80,15 @@ export const useOperations = ({
           }));
 
           if (pendingOperationRef.current) {
-            const runningOp: RunningOperation = {
-              id: 0,
-              user_id: 0,
+            const newOp: NewOperationInput = {
               server_id: parseInt(serverid),
               stack_name: stackname,
               operation_id: opResponse.operationId,
               command: pendingOperationRef.current.command,
-              start_time: new Date().toISOString(),
-              last_message_at: new Date().toISOString(),
-              user_name: '',
-              server_name: '',
-              is_incomplete: false,
-              partial_duration: null,
-              message_count: 0,
-              summary: null,
+              is_incomplete: true,
             };
 
-            addOperation(runningOp);
+            addOperation(newOp);
             pendingOperationRef.current = null;
           }
           return;
@@ -137,13 +128,12 @@ export const useOperations = ({
           }));
 
           if (onOperationComplete && currentOperationIdRef.current) {
-            fetch(`/api/v1/operation-logs/by-operation-id/${currentOperationIdRef.current}`)
-              .then((res) => res.json())
-              .then((data) => {
+            getApiV1OperationLogsByOperationIdOperationId(currentOperationIdRef.current)
+              .then((response) => {
                 onOperationComplete(
                   message.success || false,
                   message.exitCode,
-                  data.log?.summary || undefined
+                  response.data?.log?.summary || undefined
                 );
               })
               .catch(() => {

@@ -270,11 +270,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 	}
-	if operationLogsHandler != nil {
-		protected.GET("/api/operation-logs", operationLogsHandler.ListUserOperationLogs)
-		protected.GET("/api/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats)
-		protected.GET("/api/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails)
-	}
 	if serverUserAPIHandler != nil {
 		protected.GET("/api/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics)
 	}

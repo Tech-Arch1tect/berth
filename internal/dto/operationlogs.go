@@ -39,3 +39,7 @@ type PaginatedOperationLogs struct {
 	Data       []OperationLogResponse `json:"data"`
 	Pagination PaginationInfo         `json:"pagination"`
 }
+
+type RunningOperationsResponse struct {
+	Operations []OperationLogResponse `json:"operations"`
+}

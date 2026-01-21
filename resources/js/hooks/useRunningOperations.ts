@@ -1,47 +1,57 @@
-import { useState, useEffect, useCallback } from 'react';
-import { RunningOperation } from '../types/running-operation';
+import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetApiV1RunningOperations,
+  getGetApiV1RunningOperationsQueryKey,
+} from '../api/generated/operation-logs/operation-logs';
+import type {
+  GetApiV1RunningOperations200,
+  GetApiV1RunningOperations200OperationsItem,
+} from '../api/generated/models';
+
+export type RunningOperation = GetApiV1RunningOperations200OperationsItem;
 
 export const useRunningOperations = () => {
-  const [operations, setOperations] = useState<RunningOperation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchRunningOperations = useCallback(async () => {
-    try {
-      const response = await fetch('/api/v1/running-operations');
-      if (!response.ok) {
-        throw new Error('Failed to fetch running operations');
-      }
-      const data = await response.json();
-      console.log('Running operations:', data);
+  const {
+    data: response,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useGetApiV1RunningOperations({
+    query: {
+      refetchInterval: 10000,
+    },
+  });
 
-      setOperations(Array.isArray(data) ? data : []);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      console.error('Failed to fetch running operations:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const operations = response?.data?.operations ?? [];
+  const error = queryError ? 'Failed to fetch running operations' : null;
 
-  useEffect(() => {
-    fetchRunningOperations();
+  const removeOperation = useCallback(
+    (operationId: string) => {
+      const queryKey = getGetApiV1RunningOperationsQueryKey();
 
-    const interval = setInterval(fetchRunningOperations, 10000);
+      queryClient.setQueryData<{ data: GetApiV1RunningOperations200 }>(queryKey, (oldData) => {
+        if (!oldData?.data?.operations) return oldData;
 
-    return () => clearInterval(interval);
-  }, [fetchRunningOperations]);
-
-  const removeOperation = useCallback((operationId: string) => {
-    setOperations((prev) => prev.filter((op) => op.operation_id !== operationId));
-  }, []);
+        return {
+          ...oldData,
+          data: {
+            ...oldData.data,
+            operations: oldData.data.operations.filter((op) => op.operation_id !== operationId),
+          },
+        };
+      });
+    },
+    [queryClient]
+  );
 
   return {
     operations,
     loading,
     error,
-    refresh: fetchRunningOperations,
+    refresh: refetch,
     removeOperation,
   };
 };

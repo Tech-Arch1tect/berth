@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { PanelLayout } from '../components/common/PanelLayout';
 import {
@@ -9,16 +10,15 @@ import {
   OperationLogsContent,
 } from '../components/operation-logs';
 import {
-  OperationLog,
-  OperationLogDetail,
-  OperationLogStatsSummary,
-  PaginationInfo,
-} from '../types/operations';
+  useGetApiV1OperationLogs,
+  useGetApiV1OperationLogsStats,
+  getApiV1OperationLogsId,
+  getGetApiV1OperationLogsQueryKey,
+  getGetApiV1OperationLogsStatsQueryKey,
+} from '../api/generated/operation-logs/operation-logs';
 import type {
-  GetApiV1AdminOperationLogs200DataItem,
-  GetApiV1AdminOperationLogs200Pagination,
-  GetApiV1AdminOperationLogsId200,
-  GetApiV1AdminOperationLogsStats200,
+  GetApiV1OperationLogsParams,
+  GetApiV1OperationLogsStatus,
 } from '../api/generated/models';
 
 interface Props {
@@ -26,60 +26,33 @@ interface Props {
 }
 
 function OperationLogs({ title }: Props) {
-  const [logs, setLogs] = useState<OperationLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [stats, setStats] = useState<OperationLogStatsSummary | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCommand, setSelectedCommand] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchLogs = useCallback(
-    async (page = 1) => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          page_size: '25',
-          ...(searchTerm && { search: searchTerm }),
-          ...(selectedStatus && { status: selectedStatus }),
-          ...(selectedCommand && { command: selectedCommand }),
-        });
+  const logsParams: GetApiV1OperationLogsParams = {
+    page: currentPage,
+    page_size: 25,
+    ...(searchTerm && { search: searchTerm }),
+    ...(selectedStatus && { status: selectedStatus as GetApiV1OperationLogsStatus }),
+    ...(selectedCommand && { command: selectedCommand }),
+  };
 
-        const response = await fetch(`/api/operation-logs?${params}`);
-        const data = await response.json();
+  const { data: logsResponse, isLoading: logsLoading } = useGetApiV1OperationLogs(logsParams);
+  const { data: statsResponse, isLoading: statsLoading } = useGetApiV1OperationLogsStats();
 
-        setLogs(data.data || []);
-        setPagination(data.pagination);
-        setLastUpdated(new Date());
-      } catch (error) {
-        console.error('Failed to fetch operation logs:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [searchTerm, selectedStatus, selectedCommand]
-  );
+  const logs = logsResponse?.data?.data ?? [];
+  const pagination = logsResponse?.data?.pagination ?? null;
+  const stats = statsResponse?.data ?? null;
 
-  const fetchStats = useCallback(async () => {
+  const fetchLogDetail = useCallback(async (logId: number) => {
     try {
-      const response = await fetch('/api/operation-logs/stats');
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to fetch operation logs stats:', error);
-    }
-  }, []);
-
-  const fetchLogDetail = useCallback(async (logId: number): Promise<OperationLogDetail | null> => {
-    try {
-      const response = await fetch(`/api/operation-logs/${logId}`);
-      const data = await response.json();
-      return data;
+      const response = await getApiV1OperationLogsId(logId);
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch operation log details:', error);
       return null;
@@ -88,17 +61,13 @@ function OperationLogs({ title }: Props) {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await Promise.all([fetchLogs(currentPage), fetchStats()]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getGetApiV1OperationLogsQueryKey(logsParams) }),
+      queryClient.invalidateQueries({ queryKey: getGetApiV1OperationLogsStatsQueryKey() }),
+    ]);
+    setLastUpdated(new Date());
     setIsRefreshing(false);
-  }, [fetchLogs, fetchStats, currentPage]);
-
-  useEffect(() => {
-    fetchLogs(currentPage);
-  }, [currentPage, fetchLogs]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  }, [queryClient, logsParams]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -142,7 +111,7 @@ function OperationLogs({ title }: Props) {
         }
         sidebar={
           <OperationLogsSidebar
-            stats={stats as GetApiV1AdminOperationLogsStats200 | null}
+            stats={stats}
             selectedStatus={selectedStatus}
             selectedCommand={selectedCommand}
             onStatusChange={handleStatusChange}
@@ -153,20 +122,18 @@ function OperationLogs({ title }: Props) {
         }
         content={
           <OperationLogsContent
-            logs={logs as GetApiV1AdminOperationLogs200DataItem[]}
-            loading={loading}
-            pagination={pagination as GetApiV1AdminOperationLogs200Pagination | null}
+            logs={logs}
+            loading={logsLoading || statsLoading}
+            pagination={pagination}
             currentPage={currentPage}
             showUser={false}
             onPageChange={handlePageChange}
-            onFetchDetail={
-              fetchLogDetail as (logId: number) => Promise<GetApiV1AdminOperationLogsId200 | null>
-            }
+            onFetchDetail={fetchLogDetail}
           />
         }
         statusBar={
           <OperationLogsStatusBar
-            pagination={pagination as GetApiV1AdminOperationLogs200Pagination | null}
+            pagination={pagination}
             hasActiveFilters={hasActiveFilters}
             activeFilterCount={activeFilterCount}
             lastUpdated={lastUpdated}

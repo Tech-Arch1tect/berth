@@ -2,6 +2,7 @@ package operationlogs
 
 import (
 	"berth/internal/common"
+	"berth/internal/dto"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
@@ -181,7 +182,7 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve running operations")
 	}
 
-	return common.SendSuccess(c, operations)
+	return common.SendSuccess(c, dto.RunningOperationsResponse{Operations: operations})
 }
 
 func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {

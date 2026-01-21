@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { RunningOperation } from '../types/running-operation';
 import { StreamMessage } from '../types/operations';
 import StorageManager from '../utils/storage';
+import { getApiV1RunningOperations } from '../api/generated/operation-logs/operation-logs';
+import type { GetApiV1RunningOperations200OperationsItem } from '../api/generated/models';
+
+type RunningOperation = GetApiV1RunningOperations200OperationsItem;
+
+export interface NewOperationInput {
+  operation_id: string;
+  server_id: number;
+  stack_name: string;
+  command: string;
+  is_incomplete: boolean;
+}
 
 interface OperationState {
   operation: RunningOperation;
@@ -12,7 +23,7 @@ interface OperationState {
 interface OperationsContextType {
   operations: RunningOperation[];
   getOperationLogs: (operationId: string) => StreamMessage[];
-  addOperation: (operation: RunningOperation) => void;
+  addOperation: (operation: NewOperationInput) => void;
   addOperationLog: (operationId: string, message: StreamMessage) => void;
   removeOperation: (operationId: string) => void;
   updateOperation: (operationId: string, updates: Partial<RunningOperation>) => void;
@@ -142,48 +153,43 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchRunningOperations = useCallback(async () => {
     try {
-      const response = await fetch('/api/v1/running-operations');
-      if (!response.ok) {
-        return;
-      }
-      const data = await response.json();
+      const response = await getApiV1RunningOperations();
+      const operations = response.data?.operations ?? [];
 
-      if (Array.isArray(data)) {
-        setOperationStates((prev) => {
-          const newMap = new Map(prev);
+      setOperationStates((prev) => {
+        const newMap = new Map(prev);
 
-          const serverOperationIds = new Set(data.map((op: RunningOperation) => op.operation_id));
+        const serverOperationIds = new Set(operations.map((op) => op.operation_id));
 
-          for (const [opId, state] of newMap.entries()) {
-            if (!serverOperationIds.has(opId) && state.operation.is_incomplete) {
-              state.operation.is_incomplete = false;
-              cleanupWebSocket(state.ws);
-              state.ws = null;
-            }
+        for (const [opId, state] of newMap.entries()) {
+          if (!serverOperationIds.has(opId) && state.operation.is_incomplete) {
+            state.operation.is_incomplete = false;
+            cleanupWebSocket(state.ws);
+            state.ws = null;
           }
+        }
 
-          data.forEach((serverOp: RunningOperation) => {
-            const existing = newMap.get(serverOp.operation_id);
+        operations.forEach((serverOp) => {
+          const existing = newMap.get(serverOp.operation_id);
 
-            if (existing) {
-              existing.operation = {
-                ...existing.operation,
-                ...serverOp,
-                is_incomplete: serverOp.is_incomplete,
-              };
-            } else if (serverOp.is_incomplete) {
-              const ws = createWebSocketForOperation(serverOp);
-              newMap.set(serverOp.operation_id, {
-                operation: serverOp,
-                logs: [],
-                ws,
-              });
-            }
-          });
-
-          return newMap;
+          if (existing) {
+            existing.operation = {
+              ...existing.operation,
+              ...serverOp,
+              is_incomplete: serverOp.is_incomplete,
+            };
+          } else if (serverOp.is_incomplete) {
+            const ws = createWebSocketForOperation(serverOp);
+            newMap.set(serverOp.operation_id, {
+              operation: serverOp,
+              logs: [],
+              ws,
+            });
+          }
         });
-      }
+
+        return newMap;
+      });
     } catch (err) {
       console.error('Failed to fetch running operations:', err);
     }
@@ -205,11 +211,44 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [fetchRunningOperations, cleanupWebSocket]);
 
   const addOperation = useCallback(
-    (operation: RunningOperation) => {
+    (input: NewOperationInput) => {
       setOperationStates((prev) => {
-        if (prev.has(operation.operation_id)) {
+        if (prev.has(input.operation_id)) {
           return prev;
         }
+
+        const now = new Date().toISOString();
+        const operation: RunningOperation = {
+          id: 0,
+          user_id: 0,
+          server_id: input.server_id,
+          stack_name: input.stack_name,
+          operation_id: input.operation_id,
+          command: input.command,
+          start_time: now,
+          end_time: '',
+          last_message_at: now,
+          user_name: '',
+          server_name: '',
+          is_incomplete: input.is_incomplete,
+          duration_ms: 0,
+          partial_duration_ms: 0,
+          message_count: 0,
+          summary: '',
+          exit_code: 0,
+          success: false,
+          options: '',
+          services: '',
+          trigger_source: 'manual',
+          status: 'running',
+          formatted_date: '',
+          created_at: now,
+          updated_at: now,
+          queued_at: '',
+          deleted_at: { Time: '', Valid: false },
+          server: {} as RunningOperation['server'],
+          user: {} as RunningOperation['user'],
+        };
 
         const newMap = new Map(prev);
         const ws = operation.is_incomplete ? createWebSocketForOperation(operation) : null;
