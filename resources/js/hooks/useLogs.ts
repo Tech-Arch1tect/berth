@@ -1,5 +1,10 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { LogEntry, LogsResponse, LogFilterOptions } from '../types/logs';
+import type { LogFilterOptions } from '../types/logs';
+import type { GetApiV1ServersServeridStacksStacknameLogs200LogsItem } from '../api/generated/models';
+import {
+  getApiV1ServersServeridStacksStacknameLogs,
+  getApiV1ServersServeridStacksStacknameContainersContainerNameLogs,
+} from '../api/generated/logs/logs';
 
 interface UseLogsOptions {
   serverid: number;
@@ -14,11 +19,11 @@ interface FetchLogsOptions {
 }
 
 interface UseLogsReturn {
-  logs: LogEntry[];
+  logs: GetApiV1ServersServeridStacksStacknameLogs200LogsItem[];
   loading: boolean;
   error: string | null;
   fetchLogs: (fetchOptions: FetchLogsOptions) => Promise<void>;
-  filteredLogs: LogEntry[];
+  filteredLogs: GetApiV1ServersServeridStacksStacknameLogs200LogsItem[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   levelFilter: string;
@@ -27,19 +32,12 @@ interface UseLogsReturn {
 }
 
 export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions): UseLogsReturn => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<GetApiV1ServersServeridStacksStacknameLogs200LogsItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
   const lastFetchTimeRef = useRef<string | null>(null);
-
-  const buildEndpoint = useCallback(() => {
-    if (containerName) {
-      return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/containers/${encodeURIComponent(containerName)}/logs`;
-    }
-    return `/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/logs`;
-  }, [serverid, stackname, containerName]);
 
   const fetchLogs = useCallback(
     async ({ options, silent = false, incremental = false }: FetchLogsOptions) => {
@@ -49,39 +47,28 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
       setError(null);
 
       try {
-        const params = new URLSearchParams();
+        const params: { tail?: number; since?: string; timestamps?: boolean } = {};
 
-        if (options.tail) params.set('tail', options.tail.toString());
+        if (options.tail) params.tail = options.tail;
 
         if (incremental && lastFetchTimeRef.current) {
-          params.set('since', lastFetchTimeRef.current);
+          params.since = lastFetchTimeRef.current;
         } else if (options.since) {
-          params.set('since', options.since);
+          params.since = options.since;
         }
 
-        if (options.timestamps !== undefined)
-          params.set('timestamps', options.timestamps.toString());
+        if (options.timestamps !== undefined) params.timestamps = options.timestamps;
 
-        const endpoint = buildEndpoint();
-        const queryString = params.toString();
-        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+        const response = containerName
+          ? await getApiV1ServersServeridStacksStacknameContainersContainerNameLogs(
+              serverid,
+              stackname,
+              containerName,
+              params
+            )
+          : await getApiV1ServersServeridStacksStacknameLogs(serverid, stackname, params);
 
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data: LogsResponse = await response.json();
-        const newLogs = data.logs || [];
+        const newLogs = response.data.logs || [];
 
         setLogs((prevLogs) => {
           if (incremental && prevLogs.length > 0) {
@@ -118,7 +105,7 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
         }
       }
     },
-    [buildEndpoint]
+    [serverid, stackname, containerName]
   );
 
   const filteredLogs = useMemo(() => {

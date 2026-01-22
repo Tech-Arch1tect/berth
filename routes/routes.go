@@ -96,7 +96,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
 		maintenanceAPIHandler, registryAPIHandler,
-		filesAPIHandler, logsHandler, operationsHandler,
+		filesAPIHandler, operationsHandler,
 		imageUpdatesAPIHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
 		rbacHandler, operationLogsHandler, serverHandler,
@@ -187,7 +187,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
-	filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler,
+	filesAPIHandler *files.APIHandler, operationsHandler *operations.Handler,
 	imageUpdatesAPIHandler *imageupdates.APIHandler) {
 
 	protected := web.Group("")
@@ -252,10 +252,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.POST("/api/servers/:serverid/stacks/:stackname/files/chown", filesAPIHandler.Chown)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
 		protected.GET("/api/servers/:serverid/stacks/:stackname/files/stats", filesAPIHandler.GetDirectoryStats)
-	}
-	if logsHandler != nil {
-		protected.GET("/api/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/containers/:containerName/logs", logsHandler.GetContainerLogs)
 	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)

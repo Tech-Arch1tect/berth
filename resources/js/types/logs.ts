@@ -1,25 +1,11 @@
-export interface LogEntry {
-  timestamp: string;
-  message: string;
-  source: string;
-  level?: 'info' | 'warn' | 'error';
-}
-
-export interface LogsResponse {
-  logs: LogEntry[];
+interface LogViewerContainer {
+  name: string;
 }
 
 export interface LogViewerProps {
   containerName?: string;
-  containers?: Container[];
+  containers?: LogViewerContainer[];
   compact?: boolean;
-}
-
-export interface Container {
-  name: string;
-  service_name?: string;
-  status?: string;
-  image?: string;
 }
 
 export interface LogFilterOptions {

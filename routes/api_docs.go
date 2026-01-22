@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/config"
 	"berth/internal/dto"
+	"berth/internal/logs"
 	"berth/internal/server"
 	"berth/internal/stack"
 
@@ -149,6 +150,43 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusOK, stack.StackStatsResponse{}, "Stack statistics").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Logs
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/logs").
+		Tags("logs").
+		Summary("Get stack logs").
+		Description("Returns logs for all containers in a stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("tail", "Number of log lines to return").TypeInt().Default(100).Optional().
+		QueryParam("since", "Only return logs since this timestamp (RFC3339 format)").Optional().
+		QueryParam("timestamps", "Include timestamps in log output").TypeBool().Default(true).Optional().
+		Response(http.StatusOK, logs.LogsResponse{}, "Stack logs").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/containers/{containerName}/logs").
+		Tags("logs").
+		Summary("Get container logs").
+		Description("Returns logs for a specific container in a stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("containerName", "Container name").Required().
+		QueryParam("tail", "Number of log lines to return").TypeInt().Default(100).Optional().
+		QueryParam("since", "Only return logs since this timestamp (RFC3339 format)").Optional().
+		QueryParam("timestamps", "Include timestamps in log output").TypeBool().Default(true).Optional().
+		Response(http.StatusOK, logs.LogsResponse{}, "Container logs").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Container name is required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
