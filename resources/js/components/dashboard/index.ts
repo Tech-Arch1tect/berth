@@ -25,4 +25,4 @@ export { useDashboardActivity } from './hooks/useDashboardActivity';
 
 // Types
 export type { HealthSummary, DashboardStat } from './types/dashboard';
-export type { ActivitySummary, RecentActivity } from './hooks/useDashboardActivity';
+export type { ActivitySummary } from './hooks/useDashboardActivity';

@@ -1,4 +1,12 @@
 import axios from 'axios';
+import {
+  getApiV1ServersServeridStacks,
+  getApiV1ServersServeridStacksStackname,
+} from '../api/generated/stacks/stacks';
+import type {
+  GetApiV1ServersServeridStacks200StacksItem,
+  GetApiV1ServersServeridStacksStackname200,
+} from '../api/generated/models';
 
 interface Server {
   id: number;
@@ -6,16 +14,6 @@ interface Server {
   host: string;
   port: number;
   is_active: boolean;
-}
-
-interface Stack {
-  name: string;
-  services?: { name: string; image: string }[];
-}
-
-interface StackDetails {
-  stack?: { services?: { name: string; image: string }[] };
-  services?: { name: string; image: string }[];
 }
 
 const api = axios.create({
@@ -36,27 +34,18 @@ export class AgentUpdateService {
     return response.data.servers || [];
   }
 
-  static async getServerStacks(serverId: number, csrfToken?: string): Promise<Stack[]> {
-    const headers: Record<string, string> = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
-    const response = await api.get(`/api/v1/servers/${serverId}/stacks`, { headers });
+  static async getServerStacks(
+    serverId: number
+  ): Promise<GetApiV1ServersServeridStacks200StacksItem[]> {
+    const response = await getApiV1ServersServeridStacks(serverId);
     return response.data.stacks || [];
   }
 
   static async getStackDetails(
     serverId: number,
-    stackName: string,
-    csrfToken?: string
-  ): Promise<StackDetails> {
-    const headers: Record<string, string> = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
-    const response = await api.get(`/api/v1/servers/${serverId}/stacks/${stackName}`, { headers });
+    stackName: string
+  ): Promise<GetApiV1ServersServeridStacksStackname200> {
+    const response = await getApiV1ServersServeridStacksStackname(serverId, stackName);
     return response.data;
   }
 

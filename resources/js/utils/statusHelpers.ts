@@ -1,6 +1,12 @@
 import { cn } from './cn';
 import { theme } from '../theme';
-import type { Container, ComposeService } from '../types/stack';
+import type {
+  GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem,
+  GetApiV1ServersServeridStacksStackname200ServicesItem,
+} from '../api/generated/models';
+
+type Container = GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem;
+type ComposeService = GetApiV1ServersServeridStacksStackname200ServicesItem;
 import type { ComponentType, SVGProps } from 'react';
 import {
   CheckCircleIcon,

@@ -1,6 +1,8 @@
-import { StackDetails } from '../types/stack';
+import type { GetApiV1ServersServeridStacksStackname200 } from '../api/generated/models';
 
-export const generateStackDocumentation = (stackDetails: StackDetails): string => {
+export const generateStackDocumentation = (
+  stackDetails: GetApiV1ServersServeridStacksStackname200
+): string => {
   const { name, path, compose_file, services, server_name } = stackDetails;
 
   let doc = `# ${name} Stack Documentation\n\n`;
@@ -21,34 +23,6 @@ export const generateStackDocumentation = (stackDetails: StackDetails): string =
 
     if (service.image) {
       doc += `- **Image**: ${service.image}\n`;
-    }
-
-    if (service.scale) {
-      doc += `- **Scale**: ${service.scale} replicas\n`;
-    }
-
-    if (service.restart) {
-      doc += `- **Restart Policy**: ${service.restart}\n`;
-    }
-
-    if (service.command && service.command.length > 0) {
-      doc += `- **Command**: ${service.command.join(' ')}\n`;
-    }
-
-    if (service.environment && Object.keys(service.environment).length > 0) {
-      doc += `- **Environment Variables**: ${Object.keys(service.environment).length} defined\n`;
-    }
-
-    if (service.labels && Object.keys(service.labels).length > 0) {
-      doc += `- **Labels**: ${Object.keys(service.labels).length} defined\n`;
-    }
-
-    if (service.depends_on && service.depends_on.length > 0) {
-      doc += `- **Depends On**: ${service.depends_on.join(', ')}\n`;
-    }
-
-    if (service.profiles && service.profiles.length > 0) {
-      doc += `- **Profiles**: ${service.profiles.join(', ')}\n`;
     }
 
     // Container status

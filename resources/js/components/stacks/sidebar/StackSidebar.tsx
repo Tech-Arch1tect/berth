@@ -4,7 +4,11 @@ import { ServiceItem } from './ServiceItem';
 import { ResourceItem } from './ResourceItem';
 import { ToolItem } from './ToolItem';
 import { SidebarSelection } from './types';
-import { ComposeService, Network, Volume } from '../../../types/stack';
+import type {
+  GetApiV1ServersServeridStacksStackname200ServicesItem,
+  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
+  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
+} from '../../../api/generated/models';
 import {
   CubeIcon,
   CircleStackIcon,
@@ -19,9 +23,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface StackSidebarProps {
-  services: ComposeService[];
-  networks: Network[];
-  volumes: Volume[];
+  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
+  networks: GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[];
+  volumes: GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[];
   selection: SidebarSelection | null;
   onSelect: (selection: SidebarSelection) => void;
   permissions: {

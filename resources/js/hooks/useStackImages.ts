@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import { ContainerImageDetails } from '../types/stack';
+import type { GetApiV1ServersServeridStacksStacknameImages200ImagesItem } from '../api/generated/models';
 
 interface UseStackImagesOptions {
   serverid: number;
@@ -9,7 +9,7 @@ interface UseStackImagesOptions {
 }
 
 export const useStackImages = ({ serverid, stackname, enabled = true }: UseStackImagesOptions) => {
-  return useQuery<ContainerImageDetails[], Error>({
+  return useQuery<GetApiV1ServersServeridStacksStacknameImages200ImagesItem[], Error>({
     queryKey: ['stackImages', serverid, stackname],
     queryFn: () => StackService.getStackImages(serverid, stackname),
     enabled: enabled && !!serverid && !!stackname,

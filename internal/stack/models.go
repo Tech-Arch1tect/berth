@@ -203,6 +203,9 @@ type ImageInspectInfo struct {
 	DockerVersion string      `json:"docker_version"`
 	Config        ImageConfig `json:"config"`
 	RootFS        RootFS      `json:"rootfs"`
+	Parent        string      `json:"parent,omitempty"`
+	RepoTags      []string    `json:"repo_tags,omitempty"`
+	RepoDigests   []string    `json:"repo_digests,omitempty"`
 }
 
 type ImageConfig struct {
@@ -244,4 +247,39 @@ type ServiceEnvironment struct {
 
 type CreateStackRequest struct {
 	Name string `json:"name"`
+}
+
+type ListStacksResponse struct {
+	Stacks []Stack `json:"stacks"`
+}
+
+type StackPermissionsResponse struct {
+	Permissions []string `json:"permissions"`
+}
+
+type StackNetworksResponse struct {
+	Networks []Network `json:"networks"`
+}
+
+type StackVolumesResponse struct {
+	Volumes []Volume `json:"volumes"`
+}
+
+type StackEnvironmentResponse map[string][]ServiceEnvironment
+
+type StackImagesResponse struct {
+	Images []ContainerImageDetails `json:"images"`
+}
+
+type StackStatsResponse struct {
+	StackStats
+}
+
+type CanCreateStackResponse struct {
+	CanCreate bool `json:"canCreate"`
+}
+
+type CreateStackResponse struct {
+	Stack   *Stack `json:"stack"`
+	Message string `json:"message"`
 }

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { usePage } from '@inertiajs/react';
-import { StackService, StackPermissions } from '../services/stackService';
+import { StackService } from '../services/stackService';
+import type { GetApiV1ServersServeridStacksStacknamePermissions200 } from '../api/generated/models';
 
 interface UseStackPermissionsOptions {
   serverid: number;
@@ -13,12 +13,9 @@ export function useStackPermissions({
   stackname,
   enabled = true,
 }: UseStackPermissionsOptions) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-
-  return useQuery<StackPermissions, Error>({
+  return useQuery<GetApiV1ServersServeridStacksStacknamePermissions200, Error>({
     queryKey: ['stack-permissions', serverid, stackname],
-    queryFn: () => StackService.getStackPermissions(serverid, stackname, csrfToken),
+    queryFn: () => StackService.getStackPermissions(serverid, stackname),
     enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,

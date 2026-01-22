@@ -36,7 +36,7 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -46,9 +46,7 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"stacks": stacks,
-	})
+	return common.SendSuccess(c, ListStacksResponse{Stacks: stacks})
 }
 
 func (h *APIHandler) CreateStack(c echo.Context) error {
@@ -105,9 +103,9 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 		nil,
 	)
 
-	return common.SendCreated(c, map[string]any{
-		"stack":   stack,
-		"message": "Stack created successfully",
+	return common.SendCreated(c, CreateStackResponse{
+		Stack:   stack,
+		Message: "Stack created successfully",
 	})
 }
 
@@ -146,7 +144,7 @@ func (h *APIHandler) GetStackNetworks(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, networks)
+	return common.SendSuccess(c, StackNetworksResponse{Networks: networks})
 }
 
 func (h *APIHandler) GetStackVolumes(c echo.Context) error {
@@ -165,7 +163,7 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, volumes)
+	return common.SendSuccess(c, StackVolumesResponse{Volumes: volumes})
 }
 
 func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
@@ -184,7 +182,7 @@ func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, imageDetails)
+	return common.SendSuccess(c, StackImagesResponse{Images: imageDetails})
 }
 
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
@@ -243,7 +241,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 		}()),
 	)
 
-	return common.SendSuccess(c, environmentVariables)
+	return common.SendSuccess(c, StackEnvironmentResponse(environmentVariables))
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {
@@ -262,7 +260,7 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, stackStats)
+	return common.SendSuccess(c, StackStatsResponse{StackStats: *stackStats})
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
@@ -281,9 +279,7 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to get user permissions")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"permissions": permissions,
-	})
+	return common.SendSuccess(c, StackPermissionsResponse{Permissions: permissions})
 }
 
 func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
@@ -302,9 +298,7 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"canCreate": canCreate,
-	})
+	return common.SendSuccess(c, CanCreateStackResponse{CanCreate: canCreate})
 }
 
 func (h *APIHandler) GetComposeConfig(c echo.Context) error {

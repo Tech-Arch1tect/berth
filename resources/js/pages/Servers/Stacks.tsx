@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ServerNavigation } from '../../components/layout/ServerNavigation';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { SortOption } from '../../types/stack';
@@ -22,9 +22,6 @@ interface ServerStacksProps {
 }
 
 export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>(() =>
@@ -64,11 +61,11 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
 
   const handleCreateStack = useCallback(
     async (name: string) => {
-      await StackService.createStack(serverid, name, csrfToken);
+      await StackService.createStack(serverid, name);
       refetch();
       setLastUpdated(new Date());
     },
-    [serverid, csrfToken, refetch]
+    [serverid, refetch]
   );
 
   const filteredAndSortedStacks = useMemo(() => {

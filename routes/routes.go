@@ -95,7 +95,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
-		stackAPIHandler, maintenanceAPIHandler, registryAPIHandler,
+		maintenanceAPIHandler, registryAPIHandler,
 		filesAPIHandler, logsHandler, operationsHandler,
 		imageUpdatesAPIHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
@@ -186,7 +186,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
-	stackAPIHandler *stack.APIHandler, maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
+	maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
 	filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler,
 	imageUpdatesAPIHandler *imageupdates.APIHandler) {
 
@@ -226,16 +226,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
 
 	// API Endpoints (legacy, web UI should migrate to /api/v1/*)
-	if stackAPIHandler != nil {
-		protected.GET("/api/servers/:id/stacks", stackAPIHandler.ListServerStacks)
-		protected.GET("/api/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/permissions", stackAPIHandler.CheckPermissions)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
-	}
 	if maintenanceAPIHandler != nil {
 		protected.GET("/api/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
 		protected.GET("/api/servers/:serverid/maintenance/info", maintenanceAPIHandler.GetSystemInfo)
@@ -432,7 +422,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 	// Stacks
 	if stackAPIHandler != nil {
-		apiProtected.GET("/servers/:id/stacks", stackAPIHandler.ListServerStacks)
+		apiProtected.GET("/servers/:serverid/stacks", stackAPIHandler.ListServerStacks)
 		apiProtected.POST("/servers/:serverid/stacks", stackAPIHandler.CreateStack)
 		apiProtected.GET("/servers/:serverid/stacks/can-create", stackAPIHandler.CheckCanCreateStack)
 		apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)

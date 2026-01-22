@@ -1,7 +1,4 @@
 import { useGetApiV1ServersServeridStatistics } from '../api/generated/servers/servers';
-import type { GetApiV1ServersServeridStatistics200Statistics } from '../api/generated/models';
-
-export type StackStatistics = GetApiV1ServersServeridStatistics200Statistics;
 
 export const useServerStatistics = (serverId: number) => {
   const { data, isLoading, error, refetch } = useGetApiV1ServersServeridStatistics(serverId, {

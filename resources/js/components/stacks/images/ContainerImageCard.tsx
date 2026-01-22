@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ContainerImageDetails } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStacknameImages200ImagesItem } from '../../../api/generated/models';
 import { ImageHistoryLayer } from './ImageHistoryLayer';
 import { ImageConfigDetails } from './ImageConfigDetails';
 import { formatImageSize, formatCreatedTime } from './utils/image-helpers';
@@ -15,7 +15,7 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface ContainerImageCardProps {
-  imageDetails: ContainerImageDetails;
+  imageDetails: GetApiV1ServersServeridStacksStacknameImages200ImagesItem;
 }
 
 export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDetails }) => {

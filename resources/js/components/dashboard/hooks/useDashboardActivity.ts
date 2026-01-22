@@ -1,11 +1,9 @@
 import { useGetApiV1OperationLogs } from '../../../api/generated/operation-logs/operation-logs';
 import type { GetApiV1OperationLogs200DataItem } from '../../../api/generated/models';
 
-export type RecentActivity = GetApiV1OperationLogs200DataItem;
-
 export interface ActivitySummary {
-  recentOperations: RecentActivity[];
-  failedOperations: RecentActivity[];
+  recentOperations: GetApiV1OperationLogs200DataItem[];
+  failedOperations: GetApiV1OperationLogs200DataItem[];
   loading: boolean;
   error: string | null;
 }

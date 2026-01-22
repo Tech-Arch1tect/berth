@@ -1,11 +1,11 @@
 import React from 'react';
-import { ComposeService } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStackname200ServicesItem } from '../../../api/generated/models';
 import { WebSocketConnectionStatus } from '../../../types/websocket';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface StackStatusBarProps {
-  services: ComposeService[];
+  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
   connectionStatus: WebSocketConnectionStatus;
   lastUpdated: Date | null;
   isOperationRunning: boolean;

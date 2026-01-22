@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import { Volume } from '../types/stack';
+import type { GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem } from '../api/generated/models';
 
 interface UseStackVolumesOptions {
   serverid: number;
@@ -13,7 +13,7 @@ export const useStackVolumes = ({
   stackname,
   enabled = true,
 }: UseStackVolumesOptions) => {
-  return useQuery<Volume[], Error>({
+  return useQuery<GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[], Error>({
     queryKey: ['stackVolumes', serverid, stackname],
     queryFn: () => StackService.getStackVolumes(serverid, stackname),
     enabled: enabled && !!serverid && !!stackname,

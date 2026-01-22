@@ -1,11 +1,11 @@
 import React from 'react';
-import { Network } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem } from '../../../api/generated/models';
 import { GlobeAltIcon, ServerIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface NetworkDetailPanelProps {
-  network: Network;
+  network: GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem;
 }
 
 export const NetworkDetailPanel: React.FC<NetworkDetailPanelProps> = ({ network }) => {

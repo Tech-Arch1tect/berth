@@ -4,12 +4,7 @@ import {
   useGetApiV1RunningOperations,
   getGetApiV1RunningOperationsQueryKey,
 } from '../api/generated/operation-logs/operation-logs';
-import type {
-  GetApiV1RunningOperations200,
-  GetApiV1RunningOperations200OperationsItem,
-} from '../api/generated/models';
-
-export type RunningOperation = GetApiV1RunningOperations200OperationsItem;
+import type { GetApiV1RunningOperations200 } from '../api/generated/models';
 
 export const useRunningOperations = () => {
   const queryClient = useQueryClient();

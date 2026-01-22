@@ -6,6 +6,7 @@ import (
 	"berth/internal/config"
 	"berth/internal/dto"
 	"berth/internal/server"
+	"berth/internal/stack"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/openapi"
@@ -45,6 +46,135 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid server ID").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Stacks
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks").
+		Tags("stacks").
+		Summary("List server stacks").
+		Description("Returns all stacks on a server that the authenticated user has permission to access").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, stack.ListStacksResponse{}, "List of stacks").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}").
+		Tags("stacks").
+		Summary("Get stack details").
+		Description("Returns detailed information about a specific stack including services and containers").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackDetails{}, "Stack details").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/permissions").
+		Tags("stacks").
+		Summary("Check stack permissions").
+		Description("Returns the list of permissions the authenticated user has for a specific stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackPermissionsResponse{}, "User permissions for the stack").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/networks").
+		Tags("stacks").
+		Summary("Get stack networks").
+		Description("Returns network information for a specific stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackNetworksResponse{}, "Stack networks").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/volumes").
+		Tags("stacks").
+		Summary("Get stack volumes").
+		Description("Returns volume information for a specific stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackVolumesResponse{}, "Stack volumes").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/environment").
+		Tags("stacks").
+		Summary("Get stack environment variables").
+		Description("Returns environment variables for all services in a stack. Use unmask=true to see sensitive values.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("unmask", "Set to true to unmask sensitive values").Optional().
+		Response(http.StatusOK, stack.StackEnvironmentResponse{}, "Stack environment variables").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/images").
+		Tags("stacks").
+		Summary("Get container image details").
+		Description("Returns detailed image information for all containers in a stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackImagesResponse{}, "Container image details").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/stats").
+		Tags("stacks").
+		Summary("Get stack statistics").
+		Description("Returns resource usage statistics for all containers in a stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.StackStatsResponse{}, "Stack statistics").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/can-create").
+		Tags("stacks").
+		Summary("Check if user can create stacks").
+		Description("Returns whether the authenticated user has permission to create stacks on the server").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, stack.CanCreateStackResponse{}, "Can create response").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks").
+		Tags("stacks").
+		Summary("Create a new stack").
+		Description("Creates a new stack on the server").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Body(stack.CreateStackRequest{}, "Stack creation request").
+		Response(http.StatusCreated, stack.CreateStackResponse{}, "Stack created successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Permission denied").
+		Response(http.StatusConflict, ErrorResponse{}, "Stack already exists").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

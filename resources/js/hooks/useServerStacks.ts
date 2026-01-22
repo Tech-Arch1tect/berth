@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { usePage } from '@inertiajs/react';
 import { StackService } from '../services/stackService';
-import { Stack } from '../types/stack';
+import type { GetApiV1ServersServeridStacks200StacksItem } from '../api/generated/models';
 
 interface UseServerStacksOptions {
   serverid: number;
@@ -9,12 +8,9 @@ interface UseServerStacksOptions {
 }
 
 export function useServerStacks({ serverid, enabled = true }: UseServerStacksOptions) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-
-  return useQuery<Stack[], Error>({
+  return useQuery<GetApiV1ServersServeridStacks200StacksItem[], Error>({
     queryKey: ['server-stacks', serverid],
-    queryFn: () => StackService.getServerStacks(serverid, csrfToken),
+    queryFn: () => StackService.getServerStacks(serverid),
     enabled,
     staleTime: 1 * 1000,
     gcTime: 15 * 60 * 1000,

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { usePage } from '@inertiajs/react';
 import { StackService } from '../services/stackService';
 
 interface UseCanCreateStackOptions {
@@ -8,12 +7,9 @@ interface UseCanCreateStackOptions {
 }
 
 export function useCanCreateStack({ serverid, enabled = true }: UseCanCreateStackOptions) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-
   return useQuery<boolean, Error>({
     queryKey: ['can-create-stack', serverid],
-    queryFn: () => StackService.canCreateStack(serverid, csrfToken),
+    queryFn: () => StackService.canCreateStack(serverid),
     enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,

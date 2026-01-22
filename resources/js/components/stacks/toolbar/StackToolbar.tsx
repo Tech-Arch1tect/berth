@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { ComposeService } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStackname200ServicesItem } from '../../../api/generated/models';
 import { WebSocketConnectionStatus } from '../../../types/websocket';
 import { OperationRequest } from '../../../types/operations';
 import { StackQuickActions } from '../services/StackQuickActions';
@@ -25,7 +25,7 @@ interface StackToolbarProps {
   stackName: string;
   serverName: string;
   serverId: number;
-  services: ComposeService[];
+  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
   connectionStatus: WebSocketConnectionStatus;
   canManage: boolean;
   isOperationRunning: boolean;

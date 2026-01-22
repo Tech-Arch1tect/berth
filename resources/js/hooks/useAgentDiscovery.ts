@@ -43,19 +43,15 @@ export function useAgentDiscovery({
         }
 
         try {
-          const stacks = await AgentUpdateService.getServerStacks(server.id, csrfToken);
+          const stacks = await AgentUpdateService.getServerStacks(server.id);
           const agentStack = stacks.find((s) => s.name === 'berth-agent');
 
           let currentImages: ServerWithAgentStack['currentImages'];
 
           if (agentStack) {
             try {
-              const details = await AgentUpdateService.getStackDetails(
-                server.id,
-                'berth-agent',
-                csrfToken
-              );
-              const services = details.stack?.services || details.services || [];
+              const details = await AgentUpdateService.getStackDetails(server.id, 'berth-agent');
+              const services = details.services || [];
               const images: Record<string, string> = {};
               for (const svc of services) {
                 if (svc.name && svc.image) {

@@ -1,15 +1,15 @@
 import React from 'react';
 import { cn } from '../../../utils/cn';
-import { ComposeService } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStackname200ServicesItem } from '../../../api/generated/models';
 
 interface ServiceItemProps {
-  service: ComposeService;
+  service: GetApiV1ServersServeridStacksStackname200ServicesItem;
   isSelected: boolean;
   onSelect: () => void;
 }
 
 const getServiceStatus = (
-  service: ComposeService
+  service: GetApiV1ServersServeridStacksStackname200ServicesItem
 ): 'running' | 'partial' | 'stopped' | 'unknown' => {
   if (!service.containers || service.containers.length === 0) {
     return 'stopped';

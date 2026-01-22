@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { StackService } from '../services/stackService';
-import { StackEnvironmentResponse } from '../types/stack';
+import { useGetApiV1ServersServeridStacksStacknameEnvironment } from '../api/generated/stacks/stacks';
 
 interface UseStackEnvironmentVariablesOptions {
   serverid: number;
@@ -15,14 +13,20 @@ export const useStackEnvironmentVariables = ({
   unmask = false,
   enabled = true,
 }: UseStackEnvironmentVariablesOptions) => {
-  return useQuery<StackEnvironmentResponse, Error>({
-    queryKey: ['stackEnvironment', serverid, stackname, unmask],
-    queryFn: async () => {
-      const data = await StackService.getStackEnvironmentVariables(serverid, stackname, unmask);
-      return data;
+  const params = unmask ? { unmask: 'true' } : undefined;
+  const query = useGetApiV1ServersServeridStacksStacknameEnvironment(serverid, stackname, params, {
+    query: {
+      enabled: enabled && !!serverid && !!stackname,
+      staleTime: 30000,
+      gcTime: 300000,
     },
-    enabled: enabled && !!serverid && !!stackname,
-    staleTime: 30000,
-    gcTime: 300000,
   });
+
+  return {
+    ...query,
+
+    data: query.data?.data,
+
+    error: query.error ? new Error(String(query.error)) : null,
+  };
 };

@@ -13,14 +13,14 @@ import {
   ServerIcon,
 } from '@heroicons/react/24/outline';
 import { theme } from '../../theme';
-import { ContainerStats } from '../../hooks/useStackStats';
+import type { GetApiV1ServersServeridStacksStacknameStats200ContainersItem } from '../../api/generated/models';
 import { cn } from '../../utils/cn';
 import { formatBytes, formatNumber } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { MemoryProgressBar } from './MemoryProgressBar';
 
 interface StackStatsProps {
-  containers: ContainerStats[];
+  containers: GetApiV1ServersServeridStacksStacknameStats200ContainersItem[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -40,12 +40,16 @@ const resolveSeverity = (value?: number): Severity => {
   return 'success';
 };
 
-const getRssPercent = (container: ContainerStats): number => {
+const getRssPercent = (
+  container: GetApiV1ServersServeridStacksStacknameStats200ContainersItem
+): number => {
   if (container.memory_limit <= 0) return 0;
   return (container.memory_rss / container.memory_limit) * 100;
 };
 
-const getCachePercent = (container: ContainerStats): number => {
+const getCachePercent = (
+  container: GetApiV1ServersServeridStacksStacknameStats200ContainersItem
+): number => {
   if (container.memory_limit <= 0) return 0;
   return (container.memory_cache / container.memory_limit) * 100;
 };
@@ -73,7 +77,9 @@ const severityColors: Record<Severity, { bar: string; text: string }> = {
   },
 };
 
-const SummaryBar: React.FC<{ containers: ContainerStats[] }> = ({ containers }) => {
+const SummaryBar: React.FC<{
+  containers: GetApiV1ServersServeridStacksStacknameStats200ContainersItem[];
+}> = ({ containers }) => {
   const totalRss = containers.reduce((sum, c) => sum + c.memory_rss, 0);
   const totalCache = containers.reduce((sum, c) => sum + c.memory_cache, 0);
   const totalMemoryLimit = containers.reduce((sum, c) => sum + c.memory_limit, 0);
@@ -215,7 +221,7 @@ const CompactProgressBar: React.FC<{ percent: number; className?: string }> = ({
 };
 
 const ContainerRow: React.FC<{
-  container: ContainerStats;
+  container: GetApiV1ServersServeridStacksStacknameStats200ContainersItem;
   isExpanded: boolean;
   onToggle: () => void;
 }> = ({ container, isExpanded, onToggle }) => {

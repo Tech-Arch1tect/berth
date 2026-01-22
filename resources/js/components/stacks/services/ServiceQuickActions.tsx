@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 import { theme } from '../../../theme';
-import { ComposeService } from '../../../types/stack';
+import type { GetApiV1ServersServeridStacksStackname200ServicesItem } from '../../../api/generated/models';
 import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../utils/cn';
 import { useServerStack } from '../../../contexts/ServerStackContext';
@@ -22,7 +22,7 @@ import {
 } from '../../../utils/statusHelpers';
 
 interface ServiceQuickActionsProps {
-  service: ComposeService;
+  service: GetApiV1ServersServeridStacksStackname200ServicesItem;
   onQuickOperation: (operation: OperationRequest) => void;
   disabled?: boolean;
   isOperationRunning?: boolean;

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { ServiceEnvironment } from '../../../types/stack';
+import type {
+  GetApiV1ServersServeridStacksStacknameEnvironment200,
+  GetApiV1ServersServeridStacksStacknameEnvironment200ItemVariablesItem,
+} from '../../../api/generated/models';
 import { Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface EnvironmentPanelProps {
-  environment: Record<string, ServiceEnvironment[]>;
+  environment: GetApiV1ServersServeridStacksStacknameEnvironment200;
 }
 
 export const EnvironmentPanel: React.FC<EnvironmentPanelProps> = ({ environment }) => {
@@ -17,7 +20,9 @@ export const EnvironmentPanel: React.FC<EnvironmentPanelProps> = ({ environment 
     0
   );
 
-  const filterVariables = (variables: ServiceEnvironment['variables']) => {
+  const filterVariables = (
+    variables: GetApiV1ServersServeridStacksStacknameEnvironment200ItemVariablesItem[]
+  ) => {
     if (!searchQuery) return variables;
     const query = searchQuery.toLowerCase();
     return variables.filter(

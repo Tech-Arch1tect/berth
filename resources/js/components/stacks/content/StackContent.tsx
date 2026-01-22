@@ -1,13 +1,18 @@
 import React from 'react';
 import { SidebarSelection } from '../sidebar/types';
-import { ComposeService, Network, Volume, ServiceEnvironment } from '../../../types/stack';
+import type {
+  GetApiV1ServersServeridStacksStackname200ServicesItem,
+  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
+  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
+  GetApiV1ServersServeridStacksStacknameEnvironment200,
+  GetApiV1ServersServeridStacksStacknameStats200ContainersItem,
+} from '../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
 import { ServiceDetailPanel } from '../panels/ServiceDetailPanel';
 import { NetworkDetailPanel } from '../panels/NetworkDetailPanel';
 import { VolumeDetailPanel } from '../panels/VolumeDetailPanel';
 import { EnvironmentPanel } from '../panels/EnvironmentPanel';
 import { OperationRequest } from '../../../types/operations';
-import { ContainerStats } from '../../../hooks/useStackStats';
 import StackStats from '../StackStats';
 import LogViewer from '../../logs/LogViewer';
 import { FileManager } from '../../files/FileManager';
@@ -23,11 +28,11 @@ interface StackContentProps {
   stackname: string;
   stackPath: string;
   composeFile: string;
-  services: ComposeService[];
-  networks: Network[];
-  volumes: Volume[];
-  environment: Record<string, ServiceEnvironment[]>;
-  statsContainers: ContainerStats[];
+  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
+  networks: GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[];
+  volumes: GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[];
+  environment: GetApiV1ServersServeridStacksStacknameEnvironment200;
+  statsContainers: GetApiV1ServersServeridStacksStacknameStats200ContainersItem[];
   logContainers: Array<{ name: string; service_name: string }>;
   permissions: {
     canManage: boolean;

@@ -1,16 +1,23 @@
 import axios from 'axios';
 import {
-  Stack,
-  Network,
-  Volume,
-  StackEnvironmentResponse,
-  ContainerImageDetails,
-} from '../types/stack';
+  getApiV1ServersServeridStacks,
+  getApiV1ServersServeridStacksStacknameNetworks,
+  getApiV1ServersServeridStacksStacknameVolumes,
+  getApiV1ServersServeridStacksStacknameEnvironment,
+  getApiV1ServersServeridStacksStacknamePermissions,
+  getApiV1ServersServeridStacksStacknameImages,
+  getApiV1ServersServeridStacksCanCreate,
+  postApiV1ServersServeridStacks,
+} from '../api/generated/stacks/stacks';
+import type {
+  GetApiV1ServersServeridStacks200StacksItem,
+  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
+  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
+  GetApiV1ServersServeridStacksStacknameEnvironment200,
+  GetApiV1ServersServeridStacksStacknameImages200ImagesItem,
+  GetApiV1ServersServeridStacksStacknamePermissions200,
+} from '../api/generated/models';
 import { RawComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
-
-export interface StackPermissions {
-  permissions: string[];
-}
 
 const api = axios.create({
   headers: {
@@ -20,16 +27,12 @@ const api = axios.create({
 });
 
 export class StackService {
-  static async getServerStacks(serverid: number, csrfToken?: string): Promise<Stack[]> {
+  static async getServerStacks(
+    serverid: number
+  ): Promise<GetApiV1ServersServeridStacks200StacksItem[]> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/servers/${serverid}/stacks`, { headers });
-      const stacks: Stack[] = response.data.stacks || [];
-
+      const response = await getApiV1ServersServeridStacks(serverid);
+      const stacks = response.data.stacks || [];
       return stacks.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -47,19 +50,11 @@ export class StackService {
 
   static async getStackNetworks(
     serverid: number,
-    stackname: string,
-    csrfToken?: string
-  ): Promise<Network[]> {
+    stackname: string
+  ): Promise<GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[]> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/networks`, {
-        headers,
-      });
-      return response.data || [];
+      const response = await getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname);
+      return response.data.networks || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -76,19 +71,11 @@ export class StackService {
 
   static async getStackVolumes(
     serverid: number,
-    stackname: string,
-    csrfToken?: string
-  ): Promise<Volume[]> {
+    stackname: string
+  ): Promise<GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[]> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/volumes`, {
-        headers,
-      });
-      return response.data || [];
+      const response = await getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname);
+      return response.data.volumes || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -106,20 +93,15 @@ export class StackService {
   static async getStackEnvironmentVariables(
     serverid: number,
     stackname: string,
-    unmask: boolean = false,
-    csrfToken?: string
-  ): Promise<StackEnvironmentResponse> {
+    unmask: boolean = false
+  ): Promise<GetApiV1ServersServeridStacksStacknameEnvironment200> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const params = unmask ? { unmask: 'true' } : {};
-      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/environment`, {
-        headers,
-        params,
-      });
+      const params = unmask ? { unmask: 'true' } : undefined;
+      const response = await getApiV1ServersServeridStacksStacknameEnvironment(
+        serverid,
+        stackname,
+        params
+      );
       return response.data || {};
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -137,18 +119,10 @@ export class StackService {
 
   static async getStackPermissions(
     serverid: number,
-    stackname: string,
-    csrfToken?: string
-  ): Promise<StackPermissions> {
+    stackname: string
+  ): Promise<GetApiV1ServersServeridStacksStacknamePermissions200> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/permissions`, {
-        headers,
-      });
+      const response = await getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -166,19 +140,11 @@ export class StackService {
 
   static async getStackImages(
     serverid: number,
-    stackname: string,
-    csrfToken?: string
-  ): Promise<ContainerImageDetails[]> {
+    stackname: string
+  ): Promise<GetApiV1ServersServeridStacksStacknameImages200ImagesItem[]> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/servers/${serverid}/stacks/${stackname}/images`, {
-        headers,
-      });
-      return response.data || [];
+      const response = await getApiV1ServersServeridStacksStacknameImages(serverid, stackname);
+      return response.data.images || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -254,14 +220,12 @@ export class StackService {
     }
   }
 
-  static async createStack(serverid: number, name: string, csrfToken?: string): Promise<Stack> {
+  static async createStack(
+    serverid: number,
+    name: string
+  ): Promise<GetApiV1ServersServeridStacks200StacksItem> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.post(`/api/v1/servers/${serverid}/stacks`, { name }, { headers });
+      const response = await postApiV1ServersServeridStacks(serverid, { name });
       return response.data.stack;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -277,14 +241,9 @@ export class StackService {
     }
   }
 
-  static async canCreateStack(serverid: number, csrfToken?: string): Promise<boolean> {
+  static async canCreateStack(serverid: number): Promise<boolean> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/v1/servers/${serverid}/stacks/can-create`, { headers });
+      const response = await getApiV1ServersServeridStacksCanCreate(serverid);
       return response.data.canCreate ?? false;
     } catch (error) {
       if (axios.isAxiosError(error)) {
