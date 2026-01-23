@@ -3,11 +3,31 @@ package imageupdates
 import (
 	"berth/internal/common"
 	"berth/internal/rbac"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
+
+type ImageUpdate struct {
+	ID                uint       `json:"id"`
+	ServerID          uint       `json:"server_id"`
+	StackName         string     `json:"stack_name"`
+	ContainerName     string     `json:"container_name"`
+	CurrentImageName  string     `json:"current_image_name"`
+	CurrentRepoDigest string     `json:"current_repo_digest"`
+	LatestRepoDigest  string     `json:"latest_repo_digest"`
+	UpdateAvailable   bool       `json:"update_available"`
+	LastCheckedAt     *time.Time `json:"last_checked_at"`
+	CheckError        string     `json:"check_error"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
+type ImageUpdatesResponse struct {
+	Updates []ImageUpdate `json:"updates"`
+}
 
 type APIHandler struct {
 	service *Service
@@ -53,7 +73,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		serverIDMap[id] = true
 	}
 
-	accessibleUpdates := make([]map[string]any, 0)
+	accessibleUpdates := make([]ImageUpdate, 0)
 	for _, update := range allUpdates {
 		if !serverIDMap[update.ServerID] {
 			continue
@@ -80,19 +100,19 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 			continue
 		}
 
-		accessibleUpdates = append(accessibleUpdates, map[string]any{
-			"id":                  update.ID,
-			"server_id":           update.ServerID,
-			"stack_name":          update.StackName,
-			"container_name":      update.ContainerName,
-			"current_image_name":  update.CurrentImageName,
-			"current_repo_digest": update.CurrentRepoDigest,
-			"latest_repo_digest":  update.LatestRepoDigest,
-			"update_available":    update.UpdateAvailable,
-			"last_checked_at":     update.LastCheckedAt,
-			"check_error":         update.CheckError,
-			"created_at":          update.CreatedAt,
-			"updated_at":          update.UpdatedAt,
+		accessibleUpdates = append(accessibleUpdates, ImageUpdate{
+			ID:                update.ID,
+			ServerID:          update.ServerID,
+			StackName:         update.StackName,
+			ContainerName:     update.ContainerName,
+			CurrentImageName:  update.CurrentImageName,
+			CurrentRepoDigest: update.CurrentRepoDigest,
+			LatestRepoDigest:  update.LatestRepoDigest,
+			UpdateAvailable:   update.UpdateAvailable,
+			LastCheckedAt:     update.LastCheckedAt,
+			CheckError:        update.CheckError,
+			CreatedAt:         update.CreatedAt,
+			UpdatedAt:         update.UpdatedAt,
 		})
 	}
 
@@ -102,7 +122,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return common.SendSuccess(c, map[string]any{"updates": accessibleUpdates})
+	return common.SendSuccess(c, ImageUpdatesResponse{Updates: accessibleUpdates})
 }
 
 func (h *APIHandler) ListServerUpdates(c echo.Context) error {
@@ -112,7 +132,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		return common.SendUnauthorized(c, "Authentication required")
 	}
 
-	serverID, err := common.ParseUintParam(c, "id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return common.SendBadRequest(c, "Invalid server ID")
 	}
@@ -151,7 +171,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		return common.SendError(c, 500, "Failed to fetch updates")
 	}
 
-	accessibleUpdates := make([]map[string]any, 0)
+	accessibleUpdates := make([]ImageUpdate, 0)
 	for _, update := range allUpdates {
 		hasPermission, err := h.rbacSvc.UserHasStackPermission(
 			ctx,
@@ -170,19 +190,19 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		}
 
 		if hasPermission {
-			accessibleUpdates = append(accessibleUpdates, map[string]any{
-				"id":                  update.ID,
-				"server_id":           update.ServerID,
-				"stack_name":          update.StackName,
-				"container_name":      update.ContainerName,
-				"current_image_name":  update.CurrentImageName,
-				"current_repo_digest": update.CurrentRepoDigest,
-				"latest_repo_digest":  update.LatestRepoDigest,
-				"update_available":    update.UpdateAvailable,
-				"last_checked_at":     update.LastCheckedAt,
-				"check_error":         update.CheckError,
-				"created_at":          update.CreatedAt,
-				"updated_at":          update.UpdatedAt,
+			accessibleUpdates = append(accessibleUpdates, ImageUpdate{
+				ID:                update.ID,
+				ServerID:          update.ServerID,
+				StackName:         update.StackName,
+				ContainerName:     update.ContainerName,
+				CurrentImageName:  update.CurrentImageName,
+				CurrentRepoDigest: update.CurrentRepoDigest,
+				LatestRepoDigest:  update.LatestRepoDigest,
+				UpdateAvailable:   update.UpdateAvailable,
+				LastCheckedAt:     update.LastCheckedAt,
+				CheckError:        update.CheckError,
+				CreatedAt:         update.CreatedAt,
+				UpdatedAt:         update.UpdatedAt,
 			})
 		}
 	}
@@ -194,5 +214,5 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return common.SendSuccess(c, map[string]any{"updates": accessibleUpdates})
+	return common.SendSuccess(c, ImageUpdatesResponse{Updates: accessibleUpdates})
 }

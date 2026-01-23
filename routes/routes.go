@@ -96,8 +96,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
 		maintenanceAPIHandler, registryAPIHandler,
-		filesAPIHandler, operationsHandler,
-		imageUpdatesAPIHandler)
+		filesAPIHandler, operationsHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
 		rbacHandler, operationLogsHandler, serverHandler,
 		migrationHandler, securityHandler)
@@ -137,7 +136,8 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		registerProtectedAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
 			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
-			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler)
+			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler,
+			imageUpdatesAPIHandler)
 		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
 			serverAPIHandler, migrationHandler, securityHandler)
@@ -187,8 +187,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
-	filesAPIHandler *files.APIHandler, operationsHandler *operations.Handler,
-	imageUpdatesAPIHandler *imageupdates.APIHandler) {
+	filesAPIHandler *files.APIHandler, operationsHandler *operations.Handler) {
 
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
@@ -255,10 +254,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
-	}
-	if imageUpdatesAPIHandler != nil {
-		protected.GET("/api/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)
-		protected.GET("/api/servers/:id/image-updates", imageUpdatesAPIHandler.ListServerUpdates)
 	}
 	if apiKeyHandler != nil {
 		protected.GET("/api/api-keys", apiKeyHandler.ListAPIKeys)
@@ -389,7 +384,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
-	vulnscanHandler *vulnscan.Handler) {
+	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
@@ -483,6 +478,12 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiProtected.GET("/servers/:serverid/maintenance/info", maintenanceAPIHandler.GetSystemInfo)
 		apiProtected.POST("/servers/:serverid/maintenance/prune", maintenanceAPIHandler.PruneDocker)
 		apiProtected.DELETE("/servers/:serverid/maintenance/resource", maintenanceAPIHandler.DeleteResource)
+	}
+
+	// Image Updates
+	if imageUpdatesAPIHandler != nil {
+		apiProtected.GET("/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)
+		apiProtected.GET("/servers/:serverid/image-updates", imageUpdatesAPIHandler.ListServerUpdates)
 	}
 }
 
