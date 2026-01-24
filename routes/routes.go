@@ -262,13 +262,6 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 			})
 		})
 	}
-
-	// API Endpoints (legacy, admin UI should migrate to /api/v1/admin/*)
-	if securityHandler != nil {
-		admin.GET("/api/security-audit-logs", securityHandler.ListLogs)
-		admin.GET("/api/security-audit-logs/stats", securityHandler.GetStats)
-		admin.GET("/api/security-audit-logs/:id", securityHandler.GetLog)
-	}
 }
 
 func registerWebUIWebSocketRoutes(srv *brxserver.Server, sessionManager *session.Manager, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
