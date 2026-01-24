@@ -2,15 +2,10 @@ import type { FC } from 'react';
 import { KeyIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-
-interface RegistryCredential {
-  id: number;
-  registry_url: string;
-  stack_pattern: string;
-}
+import type { GetApiV1ServersServeridRegistries200DataCredentialsItem } from '../../../api/generated/models';
 
 interface RegistriesSidebarProps {
-  credentials: RegistryCredential[];
+  credentials: GetApiV1ServersServeridRegistries200DataCredentialsItem[];
 }
 
 export const RegistriesSidebar: FC<RegistriesSidebarProps> = ({ credentials }) => {

@@ -137,7 +137,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
 			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
 			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler,
-			imageUpdatesAPIHandler, apiKeyHandler, versionHandler)
+			imageUpdatesAPIHandler, apiKeyHandler, versionHandler, registryAPIHandler)
 		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
 			serverAPIHandler, migrationHandler, securityHandler)
@@ -219,14 +219,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	}
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
 
-	// API Endpoints (legacy, web UI should migrate to /api/v1/*)
-	if registryAPIHandler != nil {
-		protected.GET("/api/servers/:server_id/registries", registryAPIHandler.ListCredentials)
-		protected.GET("/api/servers/:server_id/registries/:id", registryAPIHandler.GetCredential)
-		protected.POST("/api/servers/:server_id/registries", registryAPIHandler.CreateCredential)
-		protected.PUT("/api/servers/:server_id/registries/:id", registryAPIHandler.UpdateCredential)
-		protected.DELETE("/api/servers/:server_id/registries/:id", registryAPIHandler.DeleteCredential)
-	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
 	}
@@ -351,7 +343,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
-	versionHandler *handlers.VersionHandler) {
+	versionHandler *handlers.VersionHandler, registryAPIHandler *registry.APIHandler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
@@ -467,6 +459,15 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiProtected.GET("/api-keys/:id/scopes", apiKeyHandler.ListScopes, rbacMiddleware.RequireAPIKeyDenied())
 		apiProtected.POST("/api-keys/:id/scopes", apiKeyHandler.AddScope, rbacMiddleware.RequireAPIKeyDenied())
 		apiProtected.DELETE("/api-keys/:id/scopes/:scopeId", apiKeyHandler.RemoveScope, rbacMiddleware.RequireAPIKeyDenied())
+	}
+
+	// Registry Credentials
+	if registryAPIHandler != nil {
+		apiProtected.GET("/servers/:serverid/registries", registryAPIHandler.ListCredentials)
+		apiProtected.GET("/servers/:serverid/registries/:id", registryAPIHandler.GetCredential)
+		apiProtected.POST("/servers/:serverid/registries", registryAPIHandler.CreateCredential)
+		apiProtected.PUT("/servers/:serverid/registries/:id", registryAPIHandler.UpdateCredential)
+		apiProtected.DELETE("/servers/:serverid/registries/:id", registryAPIHandler.DeleteCredential)
 	}
 }
 

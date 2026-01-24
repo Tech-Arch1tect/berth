@@ -12,15 +12,19 @@ import {
   RegistriesSidebar,
   RegistriesContent,
   RegistriesStatusBar,
-  type RegistryCredential,
 } from '../../components/registries';
+import {
+  usePostApiV1ServersServeridRegistries,
+  usePutApiV1ServersServeridRegistriesId,
+  useDeleteApiV1ServersServeridRegistriesId,
+} from '../../api/generated/registries/registries';
+import type { GetApiV1ServersServeridRegistries200DataCredentialsItem } from '../../api/generated/models';
 
 interface Props {
   title?: string;
   server_id: number;
   server_name: string;
-  credentials: RegistryCredential[];
-  csrfToken?: string;
+  credentials: GetApiV1ServersServeridRegistries200DataCredentialsItem[];
 }
 
 export default function Registries({
@@ -28,10 +32,10 @@ export default function Registries({
   server_id,
   server_name,
   credentials,
-  csrfToken,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCredential, setEditingCredential] = useState<RegistryCredential | null>(null);
+  const [editingCredential, setEditingCredential] =
+    useState<GetApiV1ServersServeridRegistries200DataCredentialsItem | null>(null);
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; url: string } | null>(null);
@@ -43,6 +47,10 @@ export default function Registries({
     username: '',
     password: '',
   });
+
+  const createMutation = usePostApiV1ServersServeridRegistries();
+  const updateMutation = usePutApiV1ServersServeridRegistriesId();
+  const deleteMutation = useDeleteApiV1ServersServeridRegistriesId();
 
   const setData = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -64,42 +72,32 @@ export default function Registries({
 
     try {
       if (editingCredential) {
-        const response = await fetch(
-          `/api/servers/${server_id}/registries/${editingCredential.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken || '',
-            },
-            credentials: 'include',
-            body: JSON.stringify(data),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Update failed');
-        }
+        await updateMutation.mutateAsync({
+          serverid: server_id,
+          id: editingCredential.id,
+          data: {
+            stack_pattern: data.stack_pattern,
+            registry_url: data.registry_url,
+            image_pattern: data.image_pattern,
+            username: data.username,
+            password: data.password,
+          },
+        });
 
         setEditingCredential(null);
         reset();
         router.reload();
       } else {
-        const response = await fetch(`/api/servers/${server_id}/registries`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || '',
+        await createMutation.mutateAsync({
+          serverid: server_id,
+          data: {
+            stack_pattern: data.stack_pattern,
+            registry_url: data.registry_url,
+            image_pattern: data.image_pattern,
+            username: data.username,
+            password: data.password,
           },
-          credentials: 'include',
-          body: JSON.stringify(data),
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Creation failed');
-        }
 
         setShowAddForm(false);
         reset();
@@ -113,7 +111,7 @@ export default function Registries({
     }
   };
 
-  const handleEdit = (credential: RegistryCredential) => {
+  const handleEdit = (credential: GetApiV1ServersServeridRegistries200DataCredentialsItem) => {
     setEditingCredential(credential);
     setShowAddForm(true);
     setFormData({
@@ -133,19 +131,10 @@ export default function Registries({
     if (!deleteConfirm) return;
 
     try {
-      const response = await fetch(`/api/servers/${server_id}/registries/${deleteConfirm.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
+      await deleteMutation.mutateAsync({
+        serverid: server_id,
+        id: deleteConfirm.id,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Delete failed');
-      }
 
       setDeleteConfirm(null);
       router.reload();

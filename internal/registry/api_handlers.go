@@ -6,6 +6,7 @@ import (
 	"berth/models"
 	"encoding/json"
 	"errors"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/session"
@@ -44,7 +45,7 @@ type UpdateCredentialRequest struct {
 }
 
 func (h *APIHandler) ListCredentials(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "server_id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -65,13 +66,16 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch registry credentials")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"credentials": credentials,
+	return c.JSON(http.StatusOK, ListCredentialsResponse{
+		Success: true,
+		Data: ListCredentialsData{
+			Credentials: ToResponseList(credentials),
+		},
 	})
 }
 
 func (h *APIHandler) GetCredential(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "server_id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -104,13 +108,16 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 		return common.SendNotFound(c, "Registry credential not found")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"credential": credential,
+	return c.JSON(http.StatusOK, GetCredentialResponse{
+		Success: true,
+		Data: GetCredentialData{
+			Credential: ToResponse(credential),
+		},
 	})
 }
 
 func (h *APIHandler) CreateCredential(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "server_id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -176,13 +183,16 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return common.SendCreated(c, map[string]any{
-		"credential": credential,
+	return c.JSON(http.StatusCreated, CreateCredentialResponse{
+		Success: true,
+		Data: GetCredentialData{
+			Credential: ToResponse(credential),
+		},
 	})
 }
 
 func (h *APIHandler) UpdateCredential(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "server_id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -257,13 +267,16 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return common.SendSuccess(c, map[string]any{
-		"credential": credential,
+	return c.JSON(http.StatusOK, UpdateCredentialResponse{
+		Success: true,
+		Data: GetCredentialData{
+			Credential: ToResponse(credential),
+		},
 	})
 }
 
 func (h *APIHandler) DeleteCredential(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "server_id")
+	serverID, err := common.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -355,7 +368,8 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return common.SendSuccess(c, map[string]any{
-		"message": "Registry credential deleted successfully",
+	return c.JSON(http.StatusOK, DeleteCredentialResponse{
+		Success: true,
+		Message: "Registry credential deleted successfully",
 	})
 }

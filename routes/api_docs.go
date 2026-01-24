@@ -11,6 +11,7 @@ import (
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
+	"berth/internal/registry"
 	"berth/internal/server"
 	"berth/internal/stack"
 
@@ -39,6 +40,77 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Summary("Get application version").
 		Description("Returns the current version of the Berth application.").
 		Response(http.StatusOK, handlers.GetVersionResponse{}, "Application version").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Registry Credentials
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/registries").
+		Tags("registries").
+		Summary("List registry credentials").
+		Description("Returns all registry credentials for a server. Requires registries.manage permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, registry.ListCredentialsResponse{}, "List of registry credentials").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/registries/{id}").
+		Tags("registries").
+		Summary("Get registry credential").
+		Description("Returns a specific registry credential by ID. Requires registries.manage permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("id", "Credential ID").TypeInt().Required().
+		Response(http.StatusOK, registry.GetCredentialResponse{}, "Registry credential details").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/registries").
+		Tags("registries").
+		Summary("Create registry credential").
+		Description("Creates a new registry credential for a server. Requires registries.manage permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Body(registry.CreateCredentialRequest{}, "Registry credential details").
+		Response(http.StatusCreated, registry.CreateCredentialResponse{}, "Created registry credential").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("PUT", "/api/v1/servers/{serverid}/registries/{id}").
+		Tags("registries").
+		Summary("Update registry credential").
+		Description("Updates an existing registry credential. Requires registries.manage permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("id", "Credential ID").TypeInt().Required().
+		Body(registry.UpdateCredentialRequest{}, "Updated registry credential details").
+		Response(http.StatusOK, registry.UpdateCredentialResponse{}, "Updated registry credential").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/servers/{serverid}/registries/{id}").
+		Tags("registries").
+		Summary("Delete registry credential").
+		Description("Deletes a registry credential. Requires registries.manage permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("id", "Credential ID").TypeInt().Required().
+		Response(http.StatusOK, registry.DeleteCredentialResponse{}, "Credential deleted successfully").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
