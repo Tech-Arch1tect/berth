@@ -315,6 +315,8 @@ export * from './getApiV1ServersServeridStatistics400';
 export * from './getApiV1ServersServeridStatistics401';
 export * from './getApiV1ServersServeridStatistics403';
 export * from './getApiV1ServersServeridStatistics500';
+export * from './getApiV1Version200';
+export * from './getApiV1Version200Data';
 export * from './postApiV1ApiKeys201';
 export * from './postApiV1ApiKeys201Data';
 export * from './postApiV1ApiKeys201DataApiKey';
