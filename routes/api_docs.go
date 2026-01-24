@@ -802,4 +802,50 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusNotFound, ErrorResponse{}, "Scope not found").
 		Security("bearerAuth", "session").
 		Build()
+
+	// TOTP Management
+	apiDoc.Document("GET", "/api/v1/totp/status").
+		Tags("totp").
+		Summary("Get TOTP status").
+		Description("Returns whether two-factor authentication is enabled for the authenticated user.").
+		Response(http.StatusOK, handlers.TOTPStatusResponse{}, "TOTP status").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/totp/setup").
+		Tags("totp").
+		Summary("Get TOTP setup information").
+		Description("Returns the QR code URI and secret for setting up two-factor authentication. Only available if TOTP is not already enabled.").
+		Response(http.StatusOK, handlers.TOTPSetupResponse{}, "TOTP setup information").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusConflict, ErrorResponse{}, "TOTP already enabled").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/totp/enable").
+		Tags("totp").
+		Summary("Enable TOTP").
+		Description("Enables two-factor authentication after verifying the TOTP code from the authenticator app.").
+		Body(handlers.TOTPEnableRequest{}, "TOTP verification code").
+		Response(http.StatusOK, handlers.TOTPMessageResponse{}, "TOTP enabled successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid TOTP code").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/totp/disable").
+		Tags("totp").
+		Summary("Disable TOTP").
+		Description("Disables two-factor authentication. Requires both the current TOTP code and password for security.").
+		Body(handlers.TOTPDisableRequest{}, "TOTP code and password").
+		Response(http.StatusOK, handlers.TOTPMessageResponse{}, "TOTP disabled successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Invalid TOTP code or password").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
 }

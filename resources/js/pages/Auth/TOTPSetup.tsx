@@ -3,48 +3,33 @@ import { useState } from 'react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import { usePostApiV1TotpEnable } from '../../api/generated/totp/totp';
 
 interface Props {
   title: string;
   qrCodeURI: string;
   secret: string;
-  csrfToken?: string;
 }
 
-export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props) {
+export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
   const [code, setCode] = useState('');
-  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+
+  const enableMutation = usePostApiV1TotpEnable();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProcessing(true);
     setError('');
 
     try {
-      const response = await fetch('/api/v1/totp/enable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        body: JSON.stringify({ code }),
-        credentials: 'include',
+      await enableMutation.mutateAsync({
+        data: { code },
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        router.visit('/profile', {
-          onSuccess: () => {},
-        });
-      } else {
-        setError(data.message || 'Failed to enable two-factor authentication');
-      }
-    } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setProcessing(false);
+      router.visit('/profile');
+    } catch (err) {
+      const message =
+        (err as { message?: string })?.message || 'Failed to enable two-factor authentication';
+      setError(message);
     }
   };
 
@@ -116,10 +101,10 @@ export default function TOTPSetup({ title, qrCodeURI, secret, csrfToken }: Props
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  disabled={processing}
+                  disabled={enableMutation.isPending}
                   className={cn('flex-1', theme.buttons.primary)}
                 >
-                  {processing ? 'Verifying...' : 'Enable Two-Factor Auth'}
+                  {enableMutation.isPending ? 'Verifying...' : 'Enable Two-Factor Auth'}
                 </button>
 
                 <Link

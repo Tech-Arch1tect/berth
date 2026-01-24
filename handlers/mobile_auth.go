@@ -95,24 +95,6 @@ type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
-type TOTPSetupResponse struct {
-	QRCodeURI string `json:"qr_code_uri"`
-	Secret    string `json:"secret"`
-}
-
-type TOTPStatusResponse struct {
-	Enabled bool `json:"enabled"`
-}
-
-type TOTPEnableRequest struct {
-	Code string `json:"code" validate:"required"`
-}
-
-type TOTPDisableRequest struct {
-	Code     string `json:"code" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
 func (h *MobileAuthHandler) Login(c echo.Context) error {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
@@ -692,8 +674,11 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, TOTPSetupResponse{
-		QRCodeURI: qrCodeURI,
-		Secret:    secret.Secret,
+		Success: true,
+		Data: TOTPSetupData{
+			QRCodeURI: qrCodeURI,
+			Secret:    secret.Secret,
+		},
 	})
 }
 
@@ -757,8 +742,9 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, true)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Two-factor authentication has been enabled successfully",
+	return c.JSON(http.StatusOK, TOTPMessageResponse{
+		Success: true,
+		Message: "Two-factor authentication has been enabled successfully",
 	})
 }
 
@@ -830,8 +816,9 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, false)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Two-factor authentication has been disabled",
+	return c.JSON(http.StatusOK, TOTPMessageResponse{
+		Success: true,
+		Message: "Two-factor authentication has been disabled",
 	})
 }
 
@@ -855,7 +842,10 @@ func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 	enabled := h.totpSvc.IsUserTOTPEnabled(userModel.ID)
 
 	return c.JSON(http.StatusOK, TOTPStatusResponse{
-		Enabled: enabled,
+		Success: true,
+		Data: TOTPStatusData{
+			Enabled: enabled,
+		},
 	})
 }
 

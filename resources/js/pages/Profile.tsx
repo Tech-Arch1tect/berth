@@ -1,66 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import FlashMessages from '../components/FlashMessages';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { User } from '../types';
 import { cn } from '../utils/cn';
 import { theme } from '../theme';
 import { Modal } from '../components/common/Modal';
+import { useGetApiV1TotpStatus, usePostApiV1TotpDisable } from '../api/generated/totp/totp';
 
 interface ProfileProps {
   title: string;
-  csrfToken?: string;
 }
 
-export default function Profile({ title, csrfToken }: ProfileProps) {
+export default function Profile({ title }: ProfileProps) {
   const { props } = usePage();
   const user = props.currentUser as User;
-  const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
   const [showDisableForm, setShowDisableForm] = useState(false);
   const [disableData, setDisableDataState] = useState({ password: '', code: '' });
-  const [disableProcessing, setDisableProcessing] = useState(false);
   const [disableError, setDisableError] = useState('');
+
+  const {
+    data: totpStatusResponse,
+    isLoading: totpLoading,
+    refetch: refetchTotpStatus,
+  } = useGetApiV1TotpStatus();
+  const totpEnabled = totpStatusResponse?.data?.data?.enabled ?? null;
+
+  const disableMutation = usePostApiV1TotpDisable();
 
   const setDisableData = (field: string, value: string) => {
     setDisableDataState((prev) => ({ ...prev, [field]: value }));
   };
 
-  useEffect(() => {
-    // Fetch TOTP status
-    fetch('/api/v1/totp/status', { credentials: 'include' })
-      .then((response) => response.json())
-      .then((data) => setTotpEnabled(data.enabled))
-      .catch((error) => console.error('Failed to fetch TOTP status:', error));
-  }, []);
-
   const disableTOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setDisableProcessing(true);
     setDisableError('');
 
     try {
-      const response = await fetch('/api/v1/totp/disable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        body: JSON.stringify(disableData),
-        credentials: 'include',
+      await disableMutation.mutateAsync({
+        data: disableData,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setShowDisableForm(false);
-        setDisableDataState({ password: '', code: '' });
-        setTotpEnabled(false);
-      } else {
-        setDisableError(data.message || 'Failed to disable two-factor authentication');
-      }
-    } catch {
-      setDisableError('Network error. Please try again.');
-    } finally {
-      setDisableProcessing(false);
+      setShowDisableForm(false);
+      setDisableDataState({ password: '', code: '' });
+      refetchTotpStatus();
+    } catch (error) {
+      const message =
+        (error as { message?: string })?.message || 'Failed to disable two-factor authentication';
+      setDisableError(message);
     }
   };
 
@@ -149,7 +134,7 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                       Add an extra layer of security to your account with TOTP authentication.
                     </p>
                     <div className="mt-2">
-                      {totpEnabled === null ? (
+                      {totpLoading ? (
                         <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
                           Loading...
                         </span>
@@ -207,10 +192,10 @@ export default function Profile({ title, csrfToken }: ProfileProps) {
                 <button
                   type="submit"
                   form="disable-2fa-form"
-                  disabled={disableProcessing}
+                  disabled={disableMutation.isPending}
                   className={cn('flex-1', theme.buttons.danger)}
                 >
-                  {disableProcessing ? 'Disabling...' : 'Disable 2FA'}
+                  {disableMutation.isPending ? 'Disabling...' : 'Disable 2FA'}
                 </button>
                 <button
                   type="button"
