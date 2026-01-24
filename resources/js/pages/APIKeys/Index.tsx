@@ -1,7 +1,7 @@
 import FlashMessages from '../../components/FlashMessages';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   KeyIcon,
   PlusIcon,
@@ -13,24 +13,20 @@ import {
   ClockIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-
-interface APIKey {
-  id: number;
-  name: string;
-  key_prefix: string;
-  last_used_at: string | null;
-  expires_at: string | null;
-  is_active: boolean;
-  created_at: string;
-  scope_count: number;
-}
+import {
+  useGetApiV1ApiKeys,
+  usePostApiV1ApiKeys,
+  useDeleteApiV1ApiKeysId,
+  getGetApiV1ApiKeysQueryKey,
+} from '../../api/generated/api-keys/api-keys';
+import { useQueryClient } from '@tanstack/react-query';
+import type { GetApiV1ApiKeys200DataItem } from '../../api/generated/models';
 
 interface NewAPIKeyModal {
   name: string;
@@ -38,15 +34,11 @@ interface NewAPIKeyModal {
 }
 
 export default function APIKeysIndex() {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyData, setNewKeyData] = useState<{ key: string; name: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [keyToRevoke, setKeyToRevoke] = useState<{ id: number; name: string } | null>(null);
-  const [isRevoking, setIsRevoking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
@@ -60,51 +52,54 @@ export default function APIKeysIndex() {
     expires_at: '',
   });
 
-  const loadAPIKeys = async () => {
-    try {
-      const response = await axios.get('/api/api-keys');
-      if (response.data.success) {
-        setApiKeys(response.data.data);
-      }
-    } catch (error) {
-      console.error('Failed to load API keys:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: apiKeysResponse, isLoading: loading } = useGetApiV1ApiKeys({
+    query: {
+      select: (response) => response.data,
+    },
+  });
+  const apiKeys = apiKeysResponse?.data ?? [];
 
-  useEffect(() => {
-    loadAPIKeys();
-  }, []);
-
-  const createAPIKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const payload: any = { name: formData.name };
-      if (formData.expires_at) {
-        payload.expires_at = new Date(formData.expires_at).toISOString();
-      }
-
-      const response = await axios.post('/api/api-keys', payload, {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-      });
-
-      if (response.data.success) {
+  const createMutation = usePostApiV1ApiKeys({
+    mutation: {
+      onSuccess: (response) => {
         setNewKeyData({
           key: response.data.data.plain_key,
           name: response.data.data.api_key.name,
         });
         setShowCreateModal(false);
         reset();
-        loadAPIKeys();
-      }
-    } catch (error: any) {
-      console.error('Failed to create API key:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to create API key');
+        queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
+      },
+      onError: (error: any) => {
+        console.error('Failed to create API key:', error);
+        setErrorMessage(error.response?.data?.message || 'Failed to create API key');
+      },
+    },
+  });
+
+  const revokeMutation = useDeleteApiV1ApiKeysId({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
+        router.reload({ only: ['flash'] });
+        setKeyToRevoke(null);
+      },
+      onError: (error) => {
+        console.error('Failed to revoke API key:', error);
+        setErrorMessage('Failed to revoke API key');
+      },
+    },
+  });
+
+  const createAPIKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const payload: { name: string; expires_at?: string } = { name: formData.name };
+    if (formData.expires_at) {
+      payload.expires_at = new Date(formData.expires_at).toISOString();
     }
+
+    createMutation.mutate({ data: payload });
   };
 
   const handleRevokeClick = (id: number, name: string) => {
@@ -113,23 +108,7 @@ export default function APIKeysIndex() {
 
   const confirmRevoke = async () => {
     if (!keyToRevoke) return;
-
-    try {
-      setIsRevoking(true);
-      await axios.delete(`/api/api-keys/${keyToRevoke.id}`, {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-      });
-      loadAPIKeys();
-      router.reload({ only: ['flash'] });
-      setKeyToRevoke(null);
-    } catch (error) {
-      console.error('Failed to revoke API key:', error);
-      setErrorMessage('Failed to revoke API key');
-    } finally {
-      setIsRevoking(false);
-    }
+    revokeMutation.mutate({ id: keyToRevoke.id });
   };
 
   const copyToClipboard = (text: string) => {
@@ -138,7 +117,7 @@ export default function APIKeysIndex() {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'Never';
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
@@ -235,8 +214,11 @@ export default function APIKeysIndex() {
                 <button
                   type="submit"
                   form="create-api-key-form"
-                  disabled={processing}
-                  className={cn(theme.buttons.primary, processing && 'opacity-50')}
+                  disabled={processing || createMutation.isPending}
+                  className={cn(
+                    theme.buttons.primary,
+                    (processing || createMutation.isPending) && 'opacity-50'
+                  )}
                 >
                   Create
                 </button>
@@ -290,7 +272,7 @@ export default function APIKeysIndex() {
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                {apiKeys.map((apiKey) => (
+                {apiKeys.map((apiKey: GetApiV1ApiKeys200DataItem) => (
                   <li key={apiKey.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">
@@ -396,7 +378,7 @@ export default function APIKeysIndex() {
         message={`Are you sure you want to revoke the API key "${keyToRevoke?.name}"?`}
         confirmText="Revoke"
         variant="danger"
-        isLoading={isRevoking}
+        isLoading={revokeMutation.isPending}
       />
 
       {/* Error Modal */}

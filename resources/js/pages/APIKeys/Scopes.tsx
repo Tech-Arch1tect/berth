@@ -1,6 +1,6 @@
 import FlashMessages from '../../components/FlashMessages';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
   PlusIcon,
   TrashIcon,
@@ -8,7 +8,6 @@ import {
   ShieldCheckIcon,
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -16,15 +15,14 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useGetApiV1Servers } from '../../api/generated/servers/servers';
-
-interface Scope {
-  id: number;
-  server_id: number | null;
-  server_name?: string;
-  stack_pattern: string;
-  permission: string;
-  created_at: string;
-}
+import {
+  useGetApiV1ApiKeysIdScopes,
+  usePostApiV1ApiKeysIdScopes,
+  useDeleteApiV1ApiKeysIdScopesScopeId,
+  getGetApiV1ApiKeysIdScopesQueryKey,
+} from '../../api/generated/api-keys/api-keys';
+import { useQueryClient } from '@tanstack/react-query';
+import type { GetApiV1ApiKeysIdScopes200DataItem } from '../../api/generated/models';
 
 interface ScopesProps {
   api_key_id: string;
@@ -69,17 +67,28 @@ const PERMISSIONS = [
 ];
 
 export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-  const [scopes, setScopes] = useState<Scope[]>([]);
-  const [scopesLoading, setScopesLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const apiKeyIdNum = parseInt(api_key_id, 10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
-  const servers = serversResponse?.data?.servers ?? [];
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers({
+    query: {
+      select: (response) => response.data,
+    },
+  });
+  const servers = serversResponse?.servers ?? [];
+
+  const { data: scopesResponse, isLoading: scopesLoading } = useGetApiV1ApiKeysIdScopes(
+    apiKeyIdNum,
+    {
+      query: {
+        select: (response) => response.data,
+      },
+    }
+  );
+  const scopes = scopesResponse?.data ?? [];
 
   const {
     data: formData,
@@ -92,22 +101,38 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
     permissions: [],
   });
 
-  const loadScopes = async () => {
-    try {
-      const response = await axios.get(`/api/api-keys/${api_key_id}/scopes`);
-      if (response.data.success) {
-        setScopes(response.data.data);
-      }
-    } catch (error) {
-      console.error('Failed to load scopes:', error);
-    } finally {
-      setScopesLoading(false);
-    }
-  };
+  const addScopeMutation = usePostApiV1ApiKeysIdScopes({
+    mutation: {
+      onSuccess: () => {
+        setShowAddModal(false);
+        reset();
+        queryClient.invalidateQueries({
+          queryKey: getGetApiV1ApiKeysIdScopesQueryKey(apiKeyIdNum),
+        });
+        router.reload({ only: ['flash'] });
+      },
+      onError: (error: any) => {
+        console.error('Failed to add scope:', error);
+        setErrorMessage(error.response?.data?.message || 'Failed to add scopes');
+      },
+    },
+  });
 
-  useEffect(() => {
-    loadScopes();
-  }, []);
+  const removeScopeMutation = useDeleteApiV1ApiKeysIdScopesScopeId({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: getGetApiV1ApiKeysIdScopesQueryKey(apiKeyIdNum),
+        });
+        router.reload({ only: ['flash'] });
+        setScopeToRemove(null);
+      },
+      onError: (error) => {
+        console.error('Failed to remove scope:', error);
+        setErrorMessage('Failed to remove scope');
+      },
+    },
+  });
 
   const addScope = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,34 +142,20 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
       return;
     }
 
-    try {
-      const promises = formData.permissions.map((permission) => {
-        const payload: any = {
-          stack_pattern: formData.stack_pattern,
-          permission: permission,
-        };
+    const promises = formData.permissions.map((permission) => {
+      const payload: { stack_pattern: string; permission: string; server_id?: number } = {
+        stack_pattern: formData.stack_pattern,
+        permission: permission,
+      };
 
-        if (formData.server_id && formData.server_id !== 'all') {
-          payload.server_id = parseInt(formData.server_id);
-        }
+      if (formData.server_id && formData.server_id !== 'all') {
+        payload.server_id = parseInt(formData.server_id);
+      }
 
-        return axios.post(`/api/api-keys/${api_key_id}/scopes`, payload, {
-          headers: {
-            'X-CSRF-Token': csrfToken || '',
-          },
-        });
-      });
+      return addScopeMutation.mutateAsync({ id: apiKeyIdNum, data: payload });
+    });
 
-      await Promise.all(promises);
-
-      setShowAddModal(false);
-      reset();
-      loadScopes();
-      router.reload({ only: ['flash'] });
-    } catch (error: any) {
-      console.error('Failed to add scope:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to add scopes');
-    }
+    await Promise.all(promises);
   };
 
   const handleRemoveClick = (scopeId: number) => {
@@ -153,24 +164,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
   const confirmRemove = async () => {
     if (!scopeToRemove) return;
-
-    try {
-      setIsRemoving(true);
-      await axios.delete(`/api/api-keys/${api_key_id}/scopes/${scopeToRemove}`, {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-      });
-
-      loadScopes();
-      router.reload({ only: ['flash'] });
-      setScopeToRemove(null);
-    } catch (error) {
-      console.error('Failed to remove scope:', error);
-      setErrorMessage('Failed to remove scope');
-    } finally {
-      setIsRemoving(false);
-    }
+    removeScopeMutation.mutate({ id: apiKeyIdNum, scopeId: scopeToRemove });
   };
 
   return (
@@ -229,8 +223,11 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                 <button
                   type="submit"
                   form="add-scope-form"
-                  disabled={processing}
-                  className={cn(theme.buttons.primary, processing && 'opacity-50')}
+                  disabled={processing || addScopeMutation.isPending}
+                  className={cn(
+                    theme.buttons.primary,
+                    (processing || addScopeMutation.isPending) && 'opacity-50'
+                  )}
                 >
                   Add Scope
                 </button>
@@ -334,7 +331,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                {scopes.map((scope) => (
+                {scopes.map((scope: GetApiV1ApiKeysIdScopes200DataItem) => (
                   <li key={scope.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">
@@ -420,7 +417,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
         message="Are you sure you want to remove this scope? The API key will lose these permissions."
         confirmText="Remove"
         variant="warning"
-        isLoading={isRemoving}
+        isLoading={removeScopeMutation.isPending}
       />
 
       {/* Error Modal */}

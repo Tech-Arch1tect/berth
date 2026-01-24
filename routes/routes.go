@@ -137,7 +137,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
 			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
 			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler,
-			imageUpdatesAPIHandler)
+			imageUpdatesAPIHandler, apiKeyHandler)
 		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
 			serverAPIHandler, migrationHandler, securityHandler)
@@ -234,15 +234,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
-	}
-	if apiKeyHandler != nil {
-		protected.GET("/api/api-keys", apiKeyHandler.ListAPIKeys)
-		protected.GET("/api/api-keys/:id", apiKeyHandler.GetAPIKey)
-		protected.POST("/api/api-keys", apiKeyHandler.CreateAPIKey)
-		protected.DELETE("/api/api-keys/:id", apiKeyHandler.RevokeAPIKey)
-		protected.GET("/api/api-keys/:id/scopes", apiKeyHandler.ListScopes)
-		protected.POST("/api/api-keys/:id/scopes", apiKeyHandler.AddScope)
-		protected.DELETE("/api/api-keys/:id/scopes/:scopeId", apiKeyHandler.RemoveScope)
 	}
 }
 
@@ -364,7 +355,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
-	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler) {
+	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
@@ -464,6 +455,17 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	if imageUpdatesAPIHandler != nil {
 		apiProtected.GET("/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)
 		apiProtected.GET("/servers/:serverid/image-updates", imageUpdatesAPIHandler.ListServerUpdates)
+	}
+
+	// API Keys
+	if apiKeyHandler != nil {
+		apiProtected.GET("/api-keys", apiKeyHandler.ListAPIKeys, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.GET("/api-keys/:id", apiKeyHandler.GetAPIKey, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/api-keys", apiKeyHandler.CreateAPIKey, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.DELETE("/api-keys/:id", apiKeyHandler.RevokeAPIKey, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.GET("/api-keys/:id/scopes", apiKeyHandler.ListScopes, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.POST("/api-keys/:id/scopes", apiKeyHandler.AddScope, rbacMiddleware.RequireAPIKeyDenied())
+		apiProtected.DELETE("/api-keys/:id/scopes/:scopeId", apiKeyHandler.RemoveScope, rbacMiddleware.RequireAPIKeyDenied())
 	}
 }
 

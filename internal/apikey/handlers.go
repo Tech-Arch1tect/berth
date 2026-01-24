@@ -58,7 +58,10 @@ func (h *Handler) ListAPIKeys(c echo.Context) error {
 		responses[i] = key.ToResponse()
 	}
 
-	return common.SuccessResponse(c, responses)
+	return c.JSON(http.StatusOK, ListAPIKeysResponse{
+		Success: true,
+		Data:    responses,
+	})
 }
 
 func (h *Handler) GetAPIKey(c echo.Context) error {
@@ -77,17 +80,10 @@ func (h *Handler) GetAPIKey(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
-	return common.SuccessResponse(c, apiKey.ToResponse())
-}
-
-type CreateAPIKeyRequest struct {
-	Name      string  `json:"name"`
-	ExpiresAt *string `json:"expires_at"`
-}
-
-type CreateAPIKeyResponse struct {
-	APIKey   models.APIKeyResponse `json:"api_key"`
-	PlainKey string                `json:"plain_key"`
+	return c.JSON(http.StatusOK, GetAPIKeyResponse{
+		Success: true,
+		Data:    apiKey.ToResponse(),
+	})
 }
 
 func (h *Handler) CreateAPIKey(c echo.Context) error {
@@ -140,10 +136,10 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusCreated, common.Response{
+	return c.JSON(http.StatusCreated, CreateAPIKeyResponse{
 		Success: true,
 		Message: "API key created successfully. Save this key securely - it won't be shown again!",
-		Data: CreateAPIKeyResponse{
+		Data: CreateAPIKeyResponseData{
 			APIKey:   apiKey.ToResponse(),
 			PlainKey: plainKey,
 		},
@@ -188,7 +184,7 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, common.Response{
+	return c.JSON(http.StatusOK, MessageResponse{
 		Success: true,
 		Message: "API key revoked successfully",
 	})
@@ -215,13 +211,10 @@ func (h *Handler) ListScopes(c echo.Context) error {
 		responses[i] = scope.ToResponse()
 	}
 
-	return common.SuccessResponse(c, responses)
-}
-
-type AddScopeRequest struct {
-	ServerID     *uint  `json:"server_id"`
-	StackPattern string `json:"stack_pattern"`
-	Permission   string `json:"permission"`
+	return c.JSON(http.StatusOK, ListScopesResponse{
+		Success: true,
+		Data:    responses,
+	})
 }
 
 func (h *Handler) AddScope(c echo.Context) error {
@@ -283,7 +276,7 @@ func (h *Handler) AddScope(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusCreated, common.Response{
+	return c.JSON(http.StatusCreated, MessageResponse{
 		Success: true,
 		Message: "Scope added successfully",
 	})
@@ -323,7 +316,7 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, common.Response{
+	return c.JSON(http.StatusOK, MessageResponse{
 		Success: true,
 		Message: "Scope removed successfully",
 	})
