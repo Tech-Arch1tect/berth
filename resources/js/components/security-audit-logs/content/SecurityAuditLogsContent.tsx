@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { SecurityAuditLog } from '../../../hooks/useSecurityAuditLogs';
+import type { GetApiV1AdminSecurityAuditLogs200DataLogsItem } from '../../../api/generated/models';
 import { SecurityAuditDetailPanel } from '../panels/SecurityAuditDetailPanel';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../../utils/securityAuditHelpers';
 
@@ -19,12 +19,12 @@ interface PaginationInfo {
 }
 
 interface SecurityAuditLogsContentProps {
-  logs: SecurityAuditLog[];
+  logs: GetApiV1AdminSecurityAuditLogs200DataLogsItem[];
   loading: boolean;
   pagination: PaginationInfo | null;
   currentPage: number;
   onPageChange: (page: number) => void;
-  onFetchDetail: (logId: number) => Promise<SecurityAuditLog | null>;
+  onFetchDetail: (logId: number) => Promise<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>;
 }
 
 const StatusBadge: React.FC<{ success: boolean }> = ({ success }) => {
@@ -55,7 +55,7 @@ const StatusBadge: React.FC<{ success: boolean }> = ({ success }) => {
 };
 
 const AuditLogRow: React.FC<{
-  log: SecurityAuditLog;
+  log: GetApiV1AdminSecurityAuditLogs200DataLogsItem;
   isSelected: boolean;
   onClick: () => void;
 }> = ({ log, isSelected, onClick }) => (
@@ -115,7 +115,7 @@ export const SecurityAuditLogsContent: React.FC<SecurityAuditLogsContentProps> =
   onFetchDetail,
 }) => {
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<SecurityAuditLog | null>(null);
+  const [detail, setDetail] = useState<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailPanelWidth, setDetailPanelWidth] = useState(() => {
     const stored = localStorage.getItem(DETAIL_PANEL_STORAGE_KEY);

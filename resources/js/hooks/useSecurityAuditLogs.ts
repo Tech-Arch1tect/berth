@@ -1,42 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { AuditLogFilters } from './useAuditLogFilters';
-import type { PaginationState } from './usePagination';
-
-export interface SecurityAuditLog {
-  id: number;
-  event_type: string;
-  event_category: string;
-  severity: string;
-  actor_user_id: number | null;
-  actor_username: string;
-  actor_ip: string;
-  actor_user_agent: string;
-  target_user_id: number | null;
-  target_type: string;
-  target_id: number | null;
-  target_name: string;
-  success: boolean;
-  failure_reason: string;
-  metadata: string;
-  server_id: number | null;
-  stack_name: string;
-  session_id: string;
-  created_at: string;
-}
-
-export interface SecurityAuditStats {
-  total_events: number;
-  events_by_category: Record<string, number>;
-  events_by_severity: Record<string, number>;
-  failed_events: number;
-  recent_event_types: Array<{ event_type: string; count: number }>;
-  events_last_24_hours: number;
-  events_last_7_days: number;
-}
+import { useCallback, useState } from 'react';
+import {
+  useGetApiV1AdminSecurityAuditLogs,
+  useGetApiV1AdminSecurityAuditLogsStats,
+  getApiV1AdminSecurityAuditLogsId,
+} from '../api/generated/admin/admin';
+import type {
+  GetApiV1AdminSecurityAuditLogs200DataLogsItem,
+  GetApiV1AdminSecurityAuditLogsStats200Data,
+} from '../api/generated/models';
 
 interface UseSecurityAuditLogsParams {
-  filters: AuditLogFilters;
-  pagination: PaginationState;
+  page: number;
+  perPage: number;
+  search?: string;
+  eventCategory?: string;
+  severity?: string;
+  success?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface PaginationMetadata {
@@ -46,114 +27,106 @@ interface PaginationMetadata {
 }
 
 interface UseSecurityAuditLogsReturn {
-  logs: SecurityAuditLog[];
-  stats: SecurityAuditStats | null;
-  selectedLog: SecurityAuditLog | null;
+  logs: GetApiV1AdminSecurityAuditLogs200DataLogsItem[];
+  stats: GetApiV1AdminSecurityAuditLogsStats200Data | null;
+  selectedLog: GetApiV1AdminSecurityAuditLogs200DataLogsItem | null;
   loading: boolean;
+  statsLoading: boolean;
   paginationMetadata: PaginationMetadata | null;
-  fetchLogDetails: (id: number) => Promise<void>;
+  fetchLogDetails: (id: number) => Promise<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>;
   clearSelectedLog: () => void;
+  refetch: () => void;
+  refetchStats: () => void;
 }
 
 export function useSecurityAuditLogs({
-  filters,
-  pagination,
+  page,
+  perPage,
+  search,
+  eventCategory,
+  severity,
+  success,
+  startDate,
+  endDate,
 }: UseSecurityAuditLogsParams): UseSecurityAuditLogsReturn {
-  const [logs, setLogs] = useState<SecurityAuditLog[]>([]);
-  const [stats, setStats] = useState<SecurityAuditStats | null>(null);
-  const [selectedLog, setSelectedLog] = useState<SecurityAuditLog | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [paginationMetadata, setPaginationMetadata] = useState<PaginationMetadata | null>(null);
+  const [selectedLog, setSelectedLog] =
+    useState<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>(null);
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        per_page: pagination.pageSize.toString(),
-      });
-
-      if (filters.searchTerm) params.append('search', filters.searchTerm);
-      if (filters.selectedCategory && filters.selectedCategory !== 'all') {
-        params.append('event_category', filters.selectedCategory);
-      }
-      if (filters.selectedSeverity && filters.selectedSeverity !== 'all') {
-        params.append('severity', filters.selectedSeverity);
-      }
-      if (filters.selectedSuccess && filters.selectedSuccess !== 'all') {
-        params.append('success', filters.selectedSuccess);
-      }
-      if (filters.startDate) {
-        params.append('start_date', new Date(filters.startDate).toISOString());
-      }
-      if (filters.endDate) {
-        params.append('end_date', new Date(filters.endDate).toISOString());
-      }
-
-      const response = await fetch(`/admin/api/security-audit-logs?${params}`);
-      const data = await response.json();
-
-      setLogs(data.logs || []);
-      setPaginationMetadata({
-        total: data.total || 0,
-        totalPages: data.total_pages || 1,
-        currentPage: data.page || 1,
-      });
-    } catch (error) {
-      console.error('Failed to fetch security logs:', error);
-    } finally {
-      setLoading(false);
+  const {
+    data: logsResponse,
+    isLoading: loading,
+    refetch,
+  } = useGetApiV1AdminSecurityAuditLogs(
+    {
+      page,
+      per_page: perPage,
+      search: search || undefined,
+      event_category: eventCategory && eventCategory !== 'all' ? eventCategory : undefined,
+      severity: severity && severity !== 'all' ? severity : undefined,
+      success: success && success !== 'all' ? success : undefined,
+      start_date: startDate ? new Date(startDate).toISOString() : undefined,
+      end_date: endDate ? new Date(endDate).toISOString() : undefined,
+    },
+    {
+      query: {
+        staleTime: 30 * 1000,
+      },
     }
-  }, [
-    filters.searchTerm,
-    filters.selectedCategory,
-    filters.selectedSeverity,
-    filters.selectedSuccess,
-    filters.startDate,
-    filters.endDate,
-    pagination.currentPage,
-    pagination.pageSize,
-  ]);
+  );
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch('/admin/api/security-audit-logs/stats');
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  }, []);
+  const {
+    data: statsResponse,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetApiV1AdminSecurityAuditLogsStats({
+    query: {
+      staleTime: 60 * 1000,
+    },
+  });
 
-  const fetchLogDetails = useCallback(async (id: number) => {
-    try {
-      const response = await fetch(`/admin/api/security-audit-logs/${id}`);
-      const data = await response.json();
-      setSelectedLog(data);
-    } catch (error) {
-      console.error('Failed to fetch log details:', error);
-    }
-  }, []);
+  const logs = logsResponse?.data?.data?.logs ?? [];
+  const stats = statsResponse?.data?.data ?? null;
+
+  const paginationMetadata: PaginationMetadata | null = logsResponse?.data?.data
+    ? {
+        total: logsResponse.data.data.total,
+        totalPages: logsResponse.data.data.total_pages,
+        currentPage: logsResponse.data.data.page,
+      }
+    : null;
+
+  const fetchLogDetails = useCallback(
+    async (id: number): Promise<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null> => {
+      try {
+        const response = await getApiV1AdminSecurityAuditLogsId(id);
+        const logData = response.data?.data;
+        if (logData) {
+          setSelectedLog(logData as GetApiV1AdminSecurityAuditLogs200DataLogsItem);
+          return logData as GetApiV1AdminSecurityAuditLogs200DataLogsItem;
+        }
+        return null;
+      } catch (error) {
+        console.error('Failed to fetch log details:', error);
+        return null;
+      }
+    },
+    []
+  );
 
   const clearSelectedLog = useCallback(() => {
     setSelectedLog(null);
   }, []);
-
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
 
   return {
     logs,
     stats,
     selectedLog,
     loading,
+    statsLoading,
     paginationMetadata,
     fetchLogDetails,
     clearSelectedLog,
+    refetch,
+    refetchStats,
   };
 }

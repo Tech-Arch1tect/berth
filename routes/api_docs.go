@@ -12,6 +12,7 @@ import (
 	"berth/internal/logs"
 	"berth/internal/maintenance"
 	"berth/internal/registry"
+	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/stack"
 
@@ -600,6 +601,54 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
 		Response(http.StatusNotFound, ErrorResponse{}, "Operation log not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Admin Security Audit Logs
+	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs").
+		Tags("admin", "security-audit").
+		Summary("List security audit logs").
+		Description("Returns paginated list of security audit logs. Requires admin permissions.").
+		QueryParam("page", "Page number").TypeInt().Default(1).Min(1).
+		QueryParam("per_page", "Number of items per page").TypeInt().Default(50).Min(1).Max(100).
+		QueryParam("event_type", "Filter by event type").Optional().
+		QueryParam("event_category", "Filter by event category").Optional().
+		QueryParam("severity", "Filter by severity").Optional().
+		QueryParam("actor_user_id", "Filter by actor user ID").Optional().
+		QueryParam("success", "Filter by success status (true/false)").Optional().
+		QueryParam("start_date", "Filter by start date (RFC3339 format)").Optional().
+		QueryParam("end_date", "Filter by end date (RFC3339 format)").Optional().
+		QueryParam("search", "Search in actor username, target name, or event type").Optional().
+		Response(http.StatusOK, security.ListLogsAPIResponse{}, "Paginated list of security audit logs").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request parameters").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs/stats").
+		Tags("admin", "security-audit").
+		Summary("Get security audit statistics").
+		Description("Returns aggregated statistics for security audit logs. Requires admin permissions.").
+		Response(http.StatusOK, security.GetStatsAPIResponse{}, "Security audit statistics").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs/{id}").
+		Tags("admin", "security-audit").
+		Summary("Get security audit log details").
+		Description("Returns detailed information about a specific security audit log. Requires admin permissions.").
+		PathParam("id", "Security audit log ID").TypeInt().Required().
+		Response(http.StatusOK, security.GetLogAPIResponse{}, "Security audit log details").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid log ID").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Log not found").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

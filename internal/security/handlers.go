@@ -3,12 +3,46 @@ package security
 import (
 	"berth/internal/common"
 	"berth/models"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
+
+func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogResponse {
+	return SecurityAuditLogResponse{
+		ID:             log.ID,
+		CreatedAt:      log.CreatedAt,
+		UpdatedAt:      log.UpdatedAt,
+		EventType:      log.EventType,
+		EventCategory:  log.EventCategory,
+		Severity:       log.Severity,
+		ActorUserID:    log.ActorUserID,
+		ActorUsername:  log.ActorUsername,
+		ActorIP:        log.ActorIP,
+		ActorUserAgent: log.ActorUserAgent,
+		TargetUserID:   log.TargetUserID,
+		TargetType:     log.TargetType,
+		TargetID:       log.TargetID,
+		TargetName:     log.TargetName,
+		Success:        log.Success,
+		FailureReason:  log.FailureReason,
+		Metadata:       log.Metadata,
+		ServerID:       log.ServerID,
+		StackName:      log.StackName,
+		SessionID:      log.SessionID,
+	}
+}
+
+func toLogResponseList(logs []models.SecurityAuditLog) []SecurityAuditLogResponse {
+	result := make([]SecurityAuditLogResponse, len(logs))
+	for i, log := range logs {
+		result[i] = toLogResponse(&log)
+	}
+	return result
+}
 
 type Handler struct {
 	db *gorm.DB
@@ -29,14 +63,6 @@ type ListLogsRequest struct {
 	Search        string `query:"search"`
 	Page          int    `query:"page"`
 	PerPage       int    `query:"per_page"`
-}
-
-type ListLogsResponse struct {
-	Logs       []models.SecurityAuditLog `json:"logs"`
-	Total      int64                     `json:"total"`
-	Page       int                       `json:"page"`
-	PerPage    int                       `json:"per_page"`
-	TotalPages int                       `json:"total_pages"`
 }
 
 func (h *Handler) ListLogs(c echo.Context) error {
@@ -109,12 +135,15 @@ func (h *Handler) ListLogs(c echo.Context) error {
 		totalPages++
 	}
 
-	return common.SendSuccess(c, ListLogsResponse{
-		Logs:       logs,
-		Total:      total,
-		Page:       req.Page,
-		PerPage:    req.PerPage,
-		TotalPages: totalPages,
+	return c.JSON(http.StatusOK, ListLogsAPIResponse{
+		Success: true,
+		Data: ListLogsResponseData{
+			Logs:       toLogResponseList(logs),
+			Total:      total,
+			Page:       req.Page,
+			PerPage:    req.PerPage,
+			TotalPages: totalPages,
+		},
 	})
 }
 
@@ -132,26 +161,14 @@ func (h *Handler) GetLog(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch log")
 	}
 
-	return common.SendSuccess(c, log)
-}
-
-type StatsResponse struct {
-	TotalEvents       int64            `json:"total_events"`
-	EventsByCategory  map[string]int64 `json:"events_by_category"`
-	EventsBySeverity  map[string]int64 `json:"events_by_severity"`
-	FailedEvents      int64            `json:"failed_events"`
-	RecentEventTypes  []EventTypeCount `json:"recent_event_types"`
-	EventsLast24Hours int64            `json:"events_last_24_hours"`
-	EventsLast7Days   int64            `json:"events_last_7_days"`
-}
-
-type EventTypeCount struct {
-	EventType string `json:"event_type"`
-	Count     int64  `json:"count"`
+	return c.JSON(http.StatusOK, GetLogAPIResponse{
+		Success: true,
+		Data:    toLogResponse(&log),
+	})
 }
 
 func (h *Handler) GetStats(c echo.Context) error {
-	var stats StatsResponse
+	var stats StatsResponseData
 
 	h.db.Model(&models.SecurityAuditLog{}).Count(&stats.TotalEvents)
 
@@ -202,13 +219,16 @@ func (h *Handler) GetStats(c echo.Context) error {
 		Order("count DESC").
 		Limit(10).
 		Scan(&eventTypeRows)
-	stats.RecentEventTypes = make([]EventTypeCount, len(eventTypeRows))
+	stats.RecentEventTypes = make([]EventTypeCountResponse, len(eventTypeRows))
 	for i, row := range eventTypeRows {
-		stats.RecentEventTypes[i] = EventTypeCount{
+		stats.RecentEventTypes[i] = EventTypeCountResponse{
 			EventType: row.EventType,
 			Count:     row.Count,
 		}
 	}
 
-	return common.SendSuccess(c, stats)
+	return c.JSON(http.StatusOK, GetStatsAPIResponse{
+		Success: true,
+		Data:    stats,
+	})
 }
