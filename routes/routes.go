@@ -95,8 +95,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
-		registryAPIHandler,
-		operationsHandler)
+		registryAPIHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
 		rbacHandler, operationLogsHandler, serverHandler,
 		migrationHandler, securityHandler)
@@ -186,8 +185,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
-	registryAPIHandler *registry.APIHandler,
-	operationsHandler *operations.Handler) {
+	registryAPIHandler *registry.APIHandler) {
 
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
@@ -218,10 +216,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.GET("/api-keys/:id/scopes", apiKeyHandler.ShowAPIKeyScopes)
 	}
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
-
-	if operationsHandler != nil {
-		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
-	}
 }
 
 func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, inertiaService *inertia.Service,
