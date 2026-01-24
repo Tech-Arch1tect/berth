@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { FileEntry, ChownRequest } from '../../../types/files';
+import type {
+  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
+  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+} from '../../../api/generated/models';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { Modal } from '../../common/Modal';
@@ -7,8 +10,8 @@ import { Modal } from '../../common/Modal';
 interface ChownModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (request: ChownRequest) => void;
-  entry: FileEntry | null;
+  onConfirm: (request: PostApiV1ServersServeridStacksStacknameFilesChownBody) => void;
+  entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
   loading: boolean;
 }
 

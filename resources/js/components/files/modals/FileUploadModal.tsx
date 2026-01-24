@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { DirectoryStats } from '../../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFilesStats200 } from '../../../api/generated/models';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { Modal } from '../../common/Modal';
@@ -13,7 +13,9 @@ interface FileUploadModalProps {
     path: string,
     options?: { mode?: string; owner_id?: number; group_id?: number }
   ) => Promise<void>;
-  getDirectoryStats?: (path?: string) => Promise<DirectoryStats>;
+  getDirectoryStats?: (
+    path?: string
+  ) => Promise<GetApiV1ServersServeridStacksStacknameFilesStats200>;
 }
 
 export const FileUploadModal: React.FC<FileUploadModalProps> = ({

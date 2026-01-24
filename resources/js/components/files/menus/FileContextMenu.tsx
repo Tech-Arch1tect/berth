@@ -1,22 +1,22 @@
 import React from 'react';
-import { FileEntry } from '../../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
 import { ContextMenu, ContextMenuItem } from './ContextMenu';
 
 interface FileContextMenuProps {
   isOpen: boolean;
   position: { x: number; y: number };
-  file: FileEntry | null;
+  file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
   canWrite: boolean;
   onClose: () => void;
-  onOpen: (file: FileEntry) => void;
-  onRename: (file: FileEntry) => void;
-  onCopy: (file: FileEntry) => void;
-  onCopyPath: (file: FileEntry) => void;
-  onDownload: (file: FileEntry) => void;
-  onChmod: (file: FileEntry) => void;
-  onChown: (file: FileEntry) => void;
-  onExtractArchive: (file: FileEntry) => void;
-  onDelete: (file: FileEntry) => void;
+  onOpen: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onRename: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onCopy: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onCopyPath: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onDownload: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onChmod: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onChown: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onExtractArchive: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onDelete: (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
 }
 
 const ARCHIVE_EXTENSIONS = ['zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', '7z', 'rar'];

@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { FileContent } from '../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFilesRead200 } from '../../api/generated/models';
 import { MonacoEditor } from './editor/MonacoEditor';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
 interface FileViewerProps {
-  file: FileContent;
+  file: GetApiV1ServersServeridStacksStacknameFilesRead200;
   className?: string;
 }
 

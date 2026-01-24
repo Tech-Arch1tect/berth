@@ -96,7 +96,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
 		registryAPIHandler,
-		filesAPIHandler, operationsHandler)
+		operationsHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
 		rbacHandler, operationLogsHandler, serverHandler,
 		migrationHandler, securityHandler)
@@ -187,7 +187,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	registryAPIHandler *registry.APIHandler,
-	filesAPIHandler *files.APIHandler, operationsHandler *operations.Handler) {
+	operationsHandler *operations.Handler) {
 
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
@@ -231,20 +231,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.POST("/api/servers/:server_id/registries", registryAPIHandler.CreateCredential)
 		protected.PUT("/api/servers/:server_id/registries/:id", registryAPIHandler.UpdateCredential)
 		protected.DELETE("/api/servers/:server_id/registries/:id", registryAPIHandler.DeleteCredential)
-	}
-	if filesAPIHandler != nil {
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files", filesAPIHandler.ListDirectory)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files/read", filesAPIHandler.ReadFile)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/write", filesAPIHandler.WriteFile)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/upload", filesAPIHandler.UploadFile)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/mkdir", filesAPIHandler.CreateDirectory)
-		protected.DELETE("/api/servers/:serverid/stacks/:stackname/files/delete", filesAPIHandler.Delete)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/rename", filesAPIHandler.Rename)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/copy", filesAPIHandler.Copy)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/chmod", filesAPIHandler.Chmod)
-		protected.POST("/api/servers/:serverid/stacks/:stackname/files/chown", filesAPIHandler.Chown)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
-		protected.GET("/api/servers/:serverid/stacks/:stackname/files/stats", filesAPIHandler.GetDirectoryStats)
 	}
 	if operationsHandler != nil {
 		protected.POST("/api/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)

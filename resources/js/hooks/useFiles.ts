@@ -1,18 +1,30 @@
 import { useState, useCallback } from 'react';
-import axios from 'axios';
 import { usePage } from '@inertiajs/react';
 import {
-  DirectoryListing,
-  FileContent,
-  WriteFileRequest,
-  CreateDirectoryRequest,
-  DeleteRequest,
-  RenameRequest,
-  CopyRequest,
-  ChmodRequest,
-  ChownRequest,
-  DirectoryStats,
-} from '../types/files';
+  getApiV1ServersServeridStacksStacknameFiles,
+  getApiV1ServersServeridStacksStacknameFilesRead,
+  postApiV1ServersServeridStacksStacknameFilesWrite,
+  postApiV1ServersServeridStacksStacknameFilesMkdir,
+  deleteApiV1ServersServeridStacksStacknameFilesDelete,
+  postApiV1ServersServeridStacksStacknameFilesRename,
+  postApiV1ServersServeridStacksStacknameFilesCopy,
+  postApiV1ServersServeridStacksStacknameFilesChmod,
+  postApiV1ServersServeridStacksStacknameFilesChown,
+  getApiV1ServersServeridStacksStacknameFilesStats,
+} from '../api/generated/files/files';
+import { apiClient } from '../lib/api';
+import type {
+  GetApiV1ServersServeridStacksStacknameFiles200,
+  GetApiV1ServersServeridStacksStacknameFilesRead200,
+  GetApiV1ServersServeridStacksStacknameFilesStats200,
+  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
+  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
+  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
+  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
+  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
+  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
+  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+} from '../api/generated/models';
 
 interface UseFilesOptions {
   serverid: number;
@@ -24,19 +36,6 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   const [loading, setLoading] = useState(false);
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
-
-  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
-
-  const getHeaders = useCallback(() => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-    };
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-    return headers;
-  }, [csrfToken]);
 
   const handleError = useCallback(
     (error: unknown) => {
@@ -54,11 +53,14 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const listDirectory = useCallback(
-    async (path?: string): Promise<DirectoryListing> => {
+    async (path?: string): Promise<GetApiV1ServersServeridStacksStacknameFiles200> => {
       try {
         setLoading(true);
-        const params = path ? { path } : {};
-        const response = await axios.get<DirectoryListing>(baseUrl, { params });
+        const response = await getApiV1ServersServeridStacksStacknameFiles(
+          serverid,
+          stackname,
+          path ? { path } : undefined
+        );
         return response.data;
       } catch (error) {
         handleError(error);
@@ -67,16 +69,18 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [baseUrl, handleError]
+    [serverid, stackname, handleError]
   );
 
   const readFile = useCallback(
-    async (path: string): Promise<FileContent> => {
+    async (path: string): Promise<GetApiV1ServersServeridStacksStacknameFilesRead200> => {
       try {
         setLoading(true);
-        const response = await axios.get<FileContent>(`${baseUrl}/read`, {
-          params: { path },
-        });
+        const response = await getApiV1ServersServeridStacksStacknameFilesRead(
+          serverid,
+          stackname,
+          { path }
+        );
         return response.data;
       } catch (error) {
         handleError(error);
@@ -85,77 +89,77 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [baseUrl, handleError]
+    [serverid, stackname, handleError]
   );
 
   const writeFile = useCallback(
-    async (request: WriteFileRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesWriteBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/write`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesWrite(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const createDirectory = useCallback(
-    async (request: CreateDirectoryRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/mkdir`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesMkdir(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const deleteFile = useCallback(
-    async (request: DeleteRequest): Promise<void> => {
+    async (request: DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.delete(`${baseUrl}/delete`, { data: request, headers: getHeaders() });
+        await deleteApiV1ServersServeridStacksStacknameFilesDelete(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const renameFile = useCallback(
-    async (request: RenameRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesRenameBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/rename`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesRename(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const copyFile = useCallback(
-    async (request: CopyRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesCopyBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/copy`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesCopy(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const uploadFile = useCallback(
@@ -166,16 +170,14 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         formData.append('file', file);
         formData.append('path', path);
 
-        const headers = {
-          'X-Requested-With': 'XMLHttpRequest',
-        } as Record<string, string>;
-
-        if (csrfToken) {
-          headers['X-CSRF-Token'] = csrfToken;
-        }
-
-        await axios.post(`${baseUrl}/upload`, formData, {
-          headers,
+        await apiClient({
+          url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/upload`,
+          method: 'POST',
+          data: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          },
         });
       } catch (error) {
         handleError(error);
@@ -183,16 +185,17 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, csrfToken]
+    [serverid, stackname, handleError, csrfToken]
   );
 
   const downloadFile = useCallback(
     async (path: string, filename?: string): Promise<void> => {
       try {
         setLoading(true);
-        const params = filename ? { path, filename } : { path };
-        const response = await axios.get(`${baseUrl}/download`, {
-          params,
+        const response = await apiClient<Blob>({
+          url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/download`,
+          method: 'GET',
+          params: filename ? { path, filename } : { path },
           responseType: 'blob',
         });
 
@@ -211,43 +214,46 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [baseUrl, handleError]
+    [serverid, stackname, handleError]
   );
 
   const chmodFile = useCallback(
-    async (request: ChmodRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/chmod`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesChmod(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const chownFile = useCallback(
-    async (request: ChownRequest): Promise<void> => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesChownBody): Promise<void> => {
       try {
         setLoading(true);
-        await axios.post(`${baseUrl}/chown`, request, { headers: getHeaders() });
+        await postApiV1ServersServeridStacksStacknameFilesChown(serverid, stackname, request);
       } catch (error) {
         handleError(error);
       } finally {
         setLoading(false);
       }
     },
-    [baseUrl, handleError, getHeaders]
+    [serverid, stackname, handleError]
   );
 
   const getDirectoryStats = useCallback(
-    async (path?: string): Promise<DirectoryStats> => {
+    async (path?: string): Promise<GetApiV1ServersServeridStacksStacknameFilesStats200> => {
       try {
         setLoading(true);
-        const params = path ? { path } : {};
-        const response = await axios.get<DirectoryStats>(`${baseUrl}/stats`, { params });
+        const response = await getApiV1ServersServeridStacksStacknameFilesStats(
+          serverid,
+          stackname,
+          path ? { path } : undefined
+        );
         return response.data;
       } catch (error) {
         handleError(error);
@@ -256,7 +262,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [baseUrl, handleError]
+    [serverid, stackname, handleError]
   );
 
   return {

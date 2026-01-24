@@ -1,17 +1,28 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePage } from '@inertiajs/react';
 import {
-  DirectoryListing,
-  FileContent,
-  WriteFileRequest,
-  CreateDirectoryRequest,
-  DeleteRequest,
-  RenameRequest,
-  CopyRequest,
-  ChmodRequest,
-  ChownRequest,
-} from '../types/files';
+  useGetApiV1ServersServeridStacksStacknameFiles,
+  useGetApiV1ServersServeridStacksStacknameFilesRead,
+  getGetApiV1ServersServeridStacksStacknameFilesQueryKey,
+  getGetApiV1ServersServeridStacksStacknameFilesReadQueryKey,
+  postApiV1ServersServeridStacksStacknameFilesWrite,
+  postApiV1ServersServeridStacksStacknameFilesMkdir,
+  deleteApiV1ServersServeridStacksStacknameFilesDelete,
+  postApiV1ServersServeridStacksStacknameFilesRename,
+  postApiV1ServersServeridStacksStacknameFilesCopy,
+  postApiV1ServersServeridStacksStacknameFilesChmod,
+  postApiV1ServersServeridStacksStacknameFilesChown,
+} from '../api/generated/files/files';
+import type {
+  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
+  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
+  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
+  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
+  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
+  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
+  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+} from '../api/generated/models';
+import { apiClient } from '../lib/api';
 
 interface UseFileQueriesOptions {
   serverid: number;
@@ -21,9 +32,13 @@ interface UseFileQueriesOptions {
 const fileQueryKeys = {
   all: (serverid: number, stackname: string) => ['files', serverid, stackname] as const,
   directory: (serverid: number, stackname: string, path: string) =>
-    [...fileQueryKeys.all(serverid, stackname), 'directory', path] as const,
+    getGetApiV1ServersServeridStacksStacknameFilesQueryKey(
+      serverid,
+      stackname,
+      path ? { path } : undefined
+    ),
   content: (serverid: number, stackname: string, path: string) =>
-    [...fileQueryKeys.all(serverid, stackname), 'content', path] as const,
+    getGetApiV1ServersServeridStacksStacknameFilesReadQueryKey(serverid, stackname, { path }),
 };
 
 export function useDirectoryQuery(
@@ -32,22 +47,22 @@ export function useDirectoryQuery(
   path: string,
   enabled = true
 ) {
-  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
-
-  return useQuery({
-    queryKey: fileQueryKeys.directory(serverid, stackname, path),
-    queryFn: async (): Promise<DirectoryListing> => {
-      const params = path ? { path } : {};
-      const response = await axios.get<DirectoryListing>(baseUrl, { params });
-      return response.data;
-    },
-    enabled,
-    staleTime: 0,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    retry: 1,
-  });
+  return useGetApiV1ServersServeridStacksStacknameFiles(
+    serverid,
+    stackname,
+    path ? { path } : undefined,
+    {
+      query: {
+        enabled,
+        staleTime: 0,
+        gcTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        retry: 1,
+        select: (response) => response.data,
+      },
+    }
+  );
 }
 
 export function useFileContentQuery(
@@ -56,41 +71,28 @@ export function useFileContentQuery(
   path: string,
   enabled = true
 ) {
-  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
-
-  return useQuery({
-    queryKey: fileQueryKeys.content(serverid, stackname, path),
-    queryFn: async (): Promise<FileContent> => {
-      const response = await axios.get<FileContent>(`${baseUrl}/read`, {
-        params: { path },
-      });
-      return response.data;
-    },
-    enabled: enabled && !!path,
-    staleTime: 0,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    retry: 1,
-  });
+  return useGetApiV1ServersServeridStacksStacknameFilesRead(
+    serverid,
+    stackname,
+    { path },
+    {
+      query: {
+        enabled: enabled && !!path,
+        staleTime: 0,
+        gcTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        retry: 1,
+        select: (response) => response.data,
+      },
+    }
+  );
 }
 
 export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions) {
   const queryClient = useQueryClient();
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
-  const baseUrl = `/api/servers/${serverid}/stacks/${stackname}/files`;
-
-  const getHeaders = () => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-    };
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-    return headers;
-  };
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({
@@ -111,8 +113,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   };
 
   const writeFile = useMutation({
-    mutationFn: async (request: WriteFileRequest) => {
-      await axios.post(`${baseUrl}/write`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesWriteBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesWrite(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -124,8 +126,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const createDirectory = useMutation({
-    mutationFn: async (request: CreateDirectoryRequest) => {
-      await axios.post(`${baseUrl}/mkdir`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesMkdir(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const parentPath = variables.path.split('/').slice(0, -1).join('/');
@@ -134,8 +136,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const deleteFile = useMutation({
-    mutationFn: async (request: DeleteRequest) => {
-      await axios.delete(`${baseUrl}/delete`, { data: request, headers: getHeaders() });
+    mutationFn: async (request: DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody) => {
+      await deleteApiV1ServersServeridStacksStacknameFilesDelete(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const parentPath = variables.path.split('/').slice(0, -1).join('/');
@@ -147,8 +149,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const renameFile = useMutation({
-    mutationFn: async (request: RenameRequest) => {
-      await axios.post(`${baseUrl}/rename`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesRenameBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesRename(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const oldParent = variables.old_path.split('/').slice(0, -1).join('/');
@@ -164,8 +166,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const copyFile = useMutation({
-    mutationFn: async (request: CopyRequest) => {
-      await axios.post(`${baseUrl}/copy`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesCopyBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesCopy(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const targetParent = variables.target_path.split('/').slice(0, -1).join('/');
@@ -174,8 +176,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const chmodFile = useMutation({
-    mutationFn: async (request: ChmodRequest) => {
-      await axios.post(`${baseUrl}/chmod`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesChmod(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const parentPath = variables.path.split('/').slice(0, -1).join('/');
@@ -184,8 +186,8 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const chownFile = useMutation({
-    mutationFn: async (request: ChownRequest) => {
-      await axios.post(`${baseUrl}/chown`, request, { headers: getHeaders() });
+    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesChownBody) => {
+      await postApiV1ServersServeridStacksStacknameFilesChown(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
       const parentPath = variables.path.split('/').slice(0, -1).join('/');
@@ -199,14 +201,15 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
       formData.append('file', file);
       formData.append('path', path);
 
-      const headers: Record<string, string> = {
-        'X-Requested-With': 'XMLHttpRequest',
-      };
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      await axios.post(`${baseUrl}/upload`, formData, { headers });
+      await apiClient({
+        url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/upload`,
+        method: 'POST',
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+      });
     },
     onSuccess: (_, variables) => {
       const parentPath = variables.path.split('/').slice(0, -1).join('/');

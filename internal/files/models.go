@@ -86,6 +86,10 @@ type DirectoryStats struct {
 	GroupName       string `json:"group_name,omitempty"`
 }
 
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Code    string `json:"code,omitempty"`

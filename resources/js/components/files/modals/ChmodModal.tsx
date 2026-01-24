@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { FileEntry, ChmodRequest } from '../../../types/files';
+import type {
+  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
+  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
+} from '../../../api/generated/models';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { Modal } from '../../common/Modal';
@@ -7,8 +10,8 @@ import { Modal } from '../../common/Modal';
 interface ChmodModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (request: ChmodRequest) => void;
-  entry: FileEntry | null;
+  onConfirm: (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody) => void;
+  entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
   loading: boolean;
 }
 

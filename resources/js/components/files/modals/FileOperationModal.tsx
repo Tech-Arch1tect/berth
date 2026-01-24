@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import {
-  FileEntry,
-  FileOperation,
-  CreateDirectoryRequest,
-  WriteFileRequest,
-  RenameRequest,
-  CopyRequest,
-  DeleteRequest,
-  DirectoryStats,
-} from '../../../types/files';
+import type {
+  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
+  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
+  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
+  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
+  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
+  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
+  GetApiV1ServersServeridStacksStacknameFilesStats200,
+} from '../../../api/generated/models';
+import { FileOperation } from '../../../types/files';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { Modal } from '../../common/Modal';
@@ -16,13 +16,20 @@ import { Modal } from '../../common/Modal';
 interface FileOperationModalProps {
   isOpen: boolean;
   operation: FileOperation | null;
-  selectedFile: FileEntry | null;
+  selectedFile: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
   targetDirectory: string;
   onClose: () => void;
   onConfirm: (
-    data: CreateDirectoryRequest | WriteFileRequest | RenameRequest | CopyRequest | DeleteRequest
+    data:
+      | PostApiV1ServersServeridStacksStacknameFilesMkdirBody
+      | PostApiV1ServersServeridStacksStacknameFilesWriteBody
+      | PostApiV1ServersServeridStacksStacknameFilesRenameBody
+      | PostApiV1ServersServeridStacksStacknameFilesCopyBody
+      | DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody
   ) => Promise<void>;
-  getDirectoryStats?: (path?: string) => Promise<DirectoryStats>;
+  getDirectoryStats?: (
+    path?: string
+  ) => Promise<GetApiV1ServersServeridStacksStacknameFilesStats200>;
 }
 
 export const FileOperationModal: React.FC<FileOperationModalProps> = ({
@@ -135,7 +142,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
       switch (operation) {
         case 'mkdir': {
           const dirPath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
-          const request: CreateDirectoryRequest = { path: dirPath };
+          const request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody = { path: dirPath };
           if (mode.trim()) request.mode = mode.trim();
           if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
           if (groupId.trim()) request.group_id = parseInt(groupId.trim());
@@ -145,7 +152,11 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
         case 'create': {
           const filePath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
-          const request: WriteFileRequest = { path: filePath, content: '', encoding: 'utf-8' };
+          const request: PostApiV1ServersServeridStacksStacknameFilesWriteBody = {
+            path: filePath,
+            content: '',
+            encoding: 'utf-8',
+          };
           if (mode.trim()) request.mode = mode.trim();
           if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
           if (groupId.trim()) request.group_id = parseInt(groupId.trim());
@@ -156,7 +167,10 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         case 'rename': {
           if (!selectedFile) return;
           const newPath = selectedFile.path.replace(selectedFile.name, inputValue);
-          await onConfirm({ old_path: selectedFile.path, new_path: newPath } as RenameRequest);
+          await onConfirm({
+            old_path: selectedFile.path,
+            new_path: newPath,
+          } as PostApiV1ServersServeridStacksStacknameFilesRenameBody);
           break;
         }
 
@@ -168,7 +182,10 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
             selectedFile.path.lastIndexOf('/')
           );
           const copyPath = sourceDirectory ? `${sourceDirectory}/${copyTarget}` : copyTarget;
-          await onConfirm({ source_path: selectedFile.path, target_path: copyPath } as CopyRequest);
+          await onConfirm({
+            source_path: selectedFile.path,
+            target_path: copyPath,
+          } as PostApiV1ServersServeridStacksStacknameFilesCopyBody);
           break;
         }
 

@@ -3,19 +3,17 @@ import { useFiles } from './useFiles';
 import { useFileMutations } from './useFileQueries';
 import { useOperations } from './useOperations';
 import { showToast } from '../utils/toast';
-import {
-  FileEntry,
-  FileOperation,
-  CreateDirectoryRequest,
-  WriteFileRequest,
-  RenameRequest,
-  CopyRequest,
-  DeleteRequest,
-  ChmodRequest,
-  ChownRequest,
-  CreateArchiveRequest,
-  ExtractArchiveRequest,
-} from '../types/files';
+import type {
+  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
+  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
+  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
+  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
+  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
+  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
+  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
+  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+} from '../api/generated/models';
+import { FileOperation, CreateArchiveRequest, ExtractArchiveRequest } from '../types/files';
 
 export interface UseFileManagerOptions {
   serverid: number;
@@ -27,7 +25,8 @@ export interface UseFileManagerOptions {
 export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFileManagerOptions) {
   const [targetDirectory, setTargetDirectory] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
+  const [selectedFile, setSelectedFile] =
+    useState<GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null>(null);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isChmodModalOpen, setIsChmodModalOpen] = useState(false);
@@ -62,7 +61,11 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   });
 
   const handleFileOperation = useCallback(
-    (operation: FileOperation, entry?: FileEntry, directory?: string) => {
+    (
+      operation: FileOperation,
+      entry?: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
+      directory?: string
+    ) => {
       if (
         !canWrite &&
         [
@@ -107,30 +110,45 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
 
   const handleOperationConfirm = useCallback(
     async (
-      data: CreateDirectoryRequest | WriteFileRequest | RenameRequest | CopyRequest | DeleteRequest
+      data:
+        | PostApiV1ServersServeridStacksStacknameFilesMkdirBody
+        | PostApiV1ServersServeridStacksStacknameFilesWriteBody
+        | PostApiV1ServersServeridStacksStacknameFilesRenameBody
+        | PostApiV1ServersServeridStacksStacknameFilesCopyBody
+        | DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody
     ) => {
       if (!currentOperation) return;
 
       try {
         switch (currentOperation) {
           case 'mkdir':
-            await mutations.createDirectory.mutateAsync(data as CreateDirectoryRequest);
+            await mutations.createDirectory.mutateAsync(
+              data as PostApiV1ServersServeridStacksStacknameFilesMkdirBody
+            );
             showToast.success('Directory created successfully');
             break;
           case 'create':
-            await mutations.writeFile.mutateAsync(data as WriteFileRequest);
+            await mutations.writeFile.mutateAsync(
+              data as PostApiV1ServersServeridStacksStacknameFilesWriteBody
+            );
             showToast.success('File created successfully');
             break;
           case 'rename':
-            await mutations.renameFile.mutateAsync(data as RenameRequest);
+            await mutations.renameFile.mutateAsync(
+              data as PostApiV1ServersServeridStacksStacknameFilesRenameBody
+            );
             showToast.success('File renamed successfully');
             break;
           case 'copy':
-            await mutations.copyFile.mutateAsync(data as CopyRequest);
+            await mutations.copyFile.mutateAsync(
+              data as PostApiV1ServersServeridStacksStacknameFilesCopyBody
+            );
             showToast.success('File copied successfully');
             break;
           case 'delete':
-            await mutations.deleteFile.mutateAsync(data as DeleteRequest);
+            await mutations.deleteFile.mutateAsync(
+              data as DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody
+            );
             showToast.success('File deleted successfully');
             break;
         }
@@ -143,7 +161,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   );
 
   const handleFileSave = useCallback(
-    async (data: WriteFileRequest) => {
+    async (data: PostApiV1ServersServeridStacksStacknameFilesWriteBody) => {
       try {
         await mutations.writeFile.mutateAsync(data);
       } catch (error) {
@@ -155,7 +173,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   );
 
   const handleDownload = useCallback(
-    async (entry: FileEntry) => {
+    async (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
       if (!canRead) {
         showToast.error('You do not have permission to download files from this stack');
         return;
@@ -185,7 +203,10 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
           await mutations.chmodFile.mutateAsync({ path, mode: options.mode, recursive: false });
         }
         if (options?.owner_id || options?.group_id) {
-          const chownRequest: ChownRequest = { path, recursive: false };
+          const chownRequest: PostApiV1ServersServeridStacksStacknameFilesChownBody = {
+            path,
+            recursive: false,
+          };
           if (options.owner_id) chownRequest.owner_id = options.owner_id;
           if (options.group_id) chownRequest.group_id = options.group_id;
           await mutations.chownFile.mutateAsync(chownRequest);
@@ -202,7 +223,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   );
 
   const handleChmodConfirm = useCallback(
-    async (request: ChmodRequest) => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody) => {
       setLoading(true);
       try {
         await mutations.chmodFile.mutateAsync(request);
@@ -221,7 +242,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
   );
 
   const handleChownConfirm = useCallback(
-    async (request: ChownRequest) => {
+    async (request: PostApiV1ServersServeridStacksStacknameFilesChownBody) => {
       setLoading(true);
       try {
         await mutations.chownFile.mutateAsync(request);

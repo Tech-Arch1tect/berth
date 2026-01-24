@@ -1,21 +1,24 @@
 import React, { useState, useCallback } from 'react';
-import { FileEntry } from '../../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
 import { FileTreeNode } from './FileTreeNode';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface FileTreeProps {
-  entries: FileEntry[];
+  entries: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
   rootPath: string;
-  onSelect: (entry: FileEntry) => void;
-  onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void;
+  onSelect: (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onContextMenu: (
+    e: React.MouseEvent,
+    entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem
+  ) => void;
   onBackgroundContextMenu?: (e: React.MouseEvent) => void;
   onMove?: (sourcePath: string, targetDirectory: string) => void;
   canWrite?: boolean;
   isExpanded: (path: string) => boolean;
   isSelected: (path: string) => boolean;
   isLoading: (path: string) => boolean;
-  getChildren: (path: string) => FileEntry[];
+  getChildren: (path: string) => GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
 }
 
 export const FileTree: React.FC<FileTreeProps> = ({

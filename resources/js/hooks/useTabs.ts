@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
-import { OpenTab, FileContent } from '../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFilesRead200 } from '../api/generated/models';
+import { OpenTab } from '../types/files';
 
 interface UseTabsReturn {
   tabs: OpenTab[];
   activeTabId: string | null;
-  openTab: (file: FileContent) => void;
-  refreshTab: (file: FileContent) => void;
+  openTab: (file: GetApiV1ServersServeridStacksStacknameFilesRead200) => void;
+  refreshTab: (file: GetApiV1ServersServeridStacksStacknameFilesRead200) => void;
   closeTab: (tabId: string) => void;
   closeOtherTabs: (tabId: string) => void;
   closeAllTabs: () => void;
@@ -21,7 +22,7 @@ export function useTabs(): UseTabsReturn {
   const [tabs, setTabs] = useState<OpenTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
-  const openTab = useCallback((file: FileContent) => {
+  const openTab = useCallback((file: GetApiV1ServersServeridStacksStacknameFilesRead200) => {
     const tabId = file.path;
     const fileName = file.path.split('/').pop() || file.path;
 
@@ -48,7 +49,7 @@ export function useTabs(): UseTabsReturn {
     setActiveTabId(tabId);
   }, []);
 
-  const refreshTab = useCallback((file: FileContent) => {
+  const refreshTab = useCallback((file: GetApiV1ServersServeridStacksStacknameFilesRead200) => {
     const tabId = file.path;
 
     setTabs((prev) =>

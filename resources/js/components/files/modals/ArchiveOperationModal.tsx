@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-import {
-  CreateArchiveRequest,
-  ExtractArchiveRequest,
-  ArchiveFormat,
-  FileEntry,
-} from '../../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
+import { CreateArchiveRequest, ExtractArchiveRequest, ArchiveFormat } from '../../../types/files';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { Modal } from '../../common/Modal';
@@ -13,7 +9,7 @@ interface ArchiveOperationModalProps {
   isOpen: boolean;
   onClose: () => void;
   operation: 'create' | 'extract';
-  selectedFile?: FileEntry;
+  selectedFile?: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem;
   onCreateArchive: (request: CreateArchiveRequest) => void;
   onExtractArchive: (request: ExtractArchiveRequest) => void;
 }

@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/config"
 	"berth/internal/dto"
+	"berth/internal/files"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
@@ -263,6 +264,186 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Body(maintenance.DeleteRequest{}, "Delete request specifying the resource type and ID").
 		Response(http.StatusOK, maintenance.DeleteResult{}, "Delete operation result").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid resource type or ID").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Files
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files").
+		Tags("files").
+		Summary("List directory contents").
+		Description("Returns the contents of a directory within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("path", "Directory path to list").Optional().
+		Response(http.StatusOK, files.DirectoryListing{}, "Directory listing").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files/read").
+		Tags("files").
+		Summary("Read file contents").
+		Description("Returns the contents of a file within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("path", "File path to read").Required().
+		Response(http.StatusOK, files.FileContent{}, "File contents").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/write").
+		Tags("files").
+		Summary("Write file contents").
+		Description("Writes content to a file within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.WriteFileRequest{}, "File write request").
+		Response(http.StatusOK, files.MessageResponse{}, "File written successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/upload").
+		Tags("files").
+		Summary("Upload a file").
+		Description("Uploads a file to a stack's file system using multipart form data").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, files.MessageResponse{}, "File uploaded successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "File is required").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/mkdir").
+		Tags("files").
+		Summary("Create directory").
+		Description("Creates a new directory within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.CreateDirectoryRequest{}, "Directory creation request").
+		Response(http.StatusOK, files.MessageResponse{}, "Directory created successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/servers/{serverid}/stacks/{stackname}/files/delete").
+		Tags("files").
+		Summary("Delete file or directory").
+		Description("Deletes a file or directory from a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.DeleteRequest{}, "Delete request").
+		Response(http.StatusOK, files.MessageResponse{}, "File or directory deleted successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/rename").
+		Tags("files").
+		Summary("Rename file or directory").
+		Description("Renames or moves a file or directory within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.RenameRequest{}, "Rename request").
+		Response(http.StatusOK, files.MessageResponse{}, "File or directory renamed successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/copy").
+		Tags("files").
+		Summary("Copy file or directory").
+		Description("Copies a file or directory within a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.CopyRequest{}, "Copy request").
+		Response(http.StatusOK, files.MessageResponse{}, "File or directory copied successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/chmod").
+		Tags("files").
+		Summary("Change file permissions").
+		Description("Changes the permissions (mode) of a file or directory").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.ChmodRequest{}, "Chmod request").
+		Response(http.StatusOK, files.MessageResponse{}, "Permissions changed successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/files/chown").
+		Tags("files").
+		Summary("Change file ownership").
+		Description("Changes the owner and/or group of a file or directory").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(files.ChownRequest{}, "Chown request").
+		Response(http.StatusOK, files.MessageResponse{}, "Ownership changed successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files/download").
+		Tags("files").
+		Summary("Download a file").
+		Description("Downloads a file from a stack's file system").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("path", "File path to download").Required().
+		QueryParam("filename", "Optional filename for the downloaded file").Optional().
+		Response(http.StatusOK, nil, "File content (binary)").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files/stats").
+		Tags("files").
+		Summary("Get directory statistics").
+		Description("Returns statistics about a directory including most common owner, group, and mode").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("path", "Directory path").Optional().
+		Response(http.StatusOK, files.DirectoryStats{}, "Directory statistics").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").

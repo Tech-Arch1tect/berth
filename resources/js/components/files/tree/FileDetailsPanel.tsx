@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { FileEntry } from '../../../types/files';
+import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface FileDetailsPanelProps {
-  entry: FileEntry | null;
+  entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
 }
 
 const formatSize = (bytes: number): string => {
