@@ -34,6 +34,22 @@ import type {
   GetApiV1AdminOperationLogsStats401,
   GetApiV1AdminOperationLogsStats403,
   GetApiV1AdminOperationLogsStats500,
+  GetApiV1AdminSecurityAuditLogs200,
+  GetApiV1AdminSecurityAuditLogs400,
+  GetApiV1AdminSecurityAuditLogs401,
+  GetApiV1AdminSecurityAuditLogs403,
+  GetApiV1AdminSecurityAuditLogs500,
+  GetApiV1AdminSecurityAuditLogsId200,
+  GetApiV1AdminSecurityAuditLogsId400,
+  GetApiV1AdminSecurityAuditLogsId401,
+  GetApiV1AdminSecurityAuditLogsId403,
+  GetApiV1AdminSecurityAuditLogsId404,
+  GetApiV1AdminSecurityAuditLogsId500,
+  GetApiV1AdminSecurityAuditLogsParams,
+  GetApiV1AdminSecurityAuditLogsStats200,
+  GetApiV1AdminSecurityAuditLogsStats401,
+  GetApiV1AdminSecurityAuditLogsStats403,
+  GetApiV1AdminSecurityAuditLogsStats500,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -485,6 +501,483 @@ export function useGetApiV1AdminOperationLogsId<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetApiV1AdminOperationLogsIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns paginated list of security audit logs. Requires admin permissions.
+ * @summary List security audit logs
+ */
+export const getApiV1AdminSecurityAuditLogs = (
+  params?: GetApiV1AdminSecurityAuditLogsParams,
+  signal?: AbortSignal
+) => {
+  return apiClient<GetApiV1AdminSecurityAuditLogs200>({
+    url: `/api/v1/admin/security-audit-logs`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetApiV1AdminSecurityAuditLogsQueryKey = (
+  params?: GetApiV1AdminSecurityAuditLogsParams
+) => {
+  return [`/api/v1/admin/security-audit-logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiV1AdminSecurityAuditLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogs400
+    | GetApiV1AdminSecurityAuditLogs401
+    | GetApiV1AdminSecurityAuditLogs403
+    | GetApiV1AdminSecurityAuditLogs500
+    | void,
+>(
+  params?: GetApiV1AdminSecurityAuditLogsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminSecurityAuditLogsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>> = ({
+    signal,
+  }) => getApiV1AdminSecurityAuditLogs(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminSecurityAuditLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>
+>;
+export type GetApiV1AdminSecurityAuditLogsQueryError =
+  | GetApiV1AdminSecurityAuditLogs400
+  | GetApiV1AdminSecurityAuditLogs401
+  | GetApiV1AdminSecurityAuditLogs403
+  | GetApiV1AdminSecurityAuditLogs500
+  | void;
+
+export function useGetApiV1AdminSecurityAuditLogs<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogs400
+    | GetApiV1AdminSecurityAuditLogs401
+    | GetApiV1AdminSecurityAuditLogs403
+    | GetApiV1AdminSecurityAuditLogs500
+    | void,
+>(
+  params: undefined | GetApiV1AdminSecurityAuditLogsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogs<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogs400
+    | GetApiV1AdminSecurityAuditLogs401
+    | GetApiV1AdminSecurityAuditLogs403
+    | GetApiV1AdminSecurityAuditLogs500
+    | void,
+>(
+  params?: GetApiV1AdminSecurityAuditLogsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogs<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogs400
+    | GetApiV1AdminSecurityAuditLogs401
+    | GetApiV1AdminSecurityAuditLogs403
+    | GetApiV1AdminSecurityAuditLogs500
+    | void,
+>(
+  params?: GetApiV1AdminSecurityAuditLogsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List security audit logs
+ */
+
+export function useGetApiV1AdminSecurityAuditLogs<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogs400
+    | GetApiV1AdminSecurityAuditLogs401
+    | GetApiV1AdminSecurityAuditLogs403
+    | GetApiV1AdminSecurityAuditLogs500
+    | void,
+>(
+  params?: GetApiV1AdminSecurityAuditLogsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminSecurityAuditLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns aggregated statistics for security audit logs. Requires admin permissions.
+ * @summary Get security audit statistics
+ */
+export const getApiV1AdminSecurityAuditLogsStats = (signal?: AbortSignal) => {
+  return apiClient<GetApiV1AdminSecurityAuditLogsStats200>({
+    url: `/api/v1/admin/security-audit-logs/stats`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1AdminSecurityAuditLogsStatsQueryKey = () => {
+  return [`/api/v1/admin/security-audit-logs/stats`] as const;
+};
+
+export const getGetApiV1AdminSecurityAuditLogsStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsStats401
+    | GetApiV1AdminSecurityAuditLogsStats403
+    | GetApiV1AdminSecurityAuditLogsStats500
+    | void,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>, TError, TData>
+  >;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminSecurityAuditLogsStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>> = ({
+    signal,
+  }) => getApiV1AdminSecurityAuditLogsStats(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminSecurityAuditLogsStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>
+>;
+export type GetApiV1AdminSecurityAuditLogsStatsQueryError =
+  | GetApiV1AdminSecurityAuditLogsStats401
+  | GetApiV1AdminSecurityAuditLogsStats403
+  | GetApiV1AdminSecurityAuditLogsStats500
+  | void;
+
+export function useGetApiV1AdminSecurityAuditLogsStats<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsStats401
+    | GetApiV1AdminSecurityAuditLogsStats403
+    | GetApiV1AdminSecurityAuditLogsStats500
+    | void,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogsStats<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsStats401
+    | GetApiV1AdminSecurityAuditLogsStats403
+    | GetApiV1AdminSecurityAuditLogsStats500
+    | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogsStats<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsStats401
+    | GetApiV1AdminSecurityAuditLogsStats403
+    | GetApiV1AdminSecurityAuditLogsStats500
+    | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get security audit statistics
+ */
+
+export function useGetApiV1AdminSecurityAuditLogsStats<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsStats401
+    | GetApiV1AdminSecurityAuditLogsStats403
+    | GetApiV1AdminSecurityAuditLogsStats500
+    | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsStats>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminSecurityAuditLogsStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns detailed information about a specific security audit log. Requires admin permissions.
+ * @summary Get security audit log details
+ */
+export const getApiV1AdminSecurityAuditLogsId = (id: number, signal?: AbortSignal) => {
+  return apiClient<GetApiV1AdminSecurityAuditLogsId200>({
+    url: `/api/v1/admin/security-audit-logs/${id}`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1AdminSecurityAuditLogsIdQueryKey = (id?: number) => {
+  return [`/api/v1/admin/security-audit-logs/${id}`] as const;
+};
+
+export const getGetApiV1AdminSecurityAuditLogsIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsId400
+    | GetApiV1AdminSecurityAuditLogsId401
+    | GetApiV1AdminSecurityAuditLogsId403
+    | GetApiV1AdminSecurityAuditLogsId404
+    | GetApiV1AdminSecurityAuditLogsId500
+    | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminSecurityAuditLogsIdQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>> = ({
+    signal,
+  }) => getApiV1AdminSecurityAuditLogsId(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminSecurityAuditLogsIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>
+>;
+export type GetApiV1AdminSecurityAuditLogsIdQueryError =
+  | GetApiV1AdminSecurityAuditLogsId400
+  | GetApiV1AdminSecurityAuditLogsId401
+  | GetApiV1AdminSecurityAuditLogsId403
+  | GetApiV1AdminSecurityAuditLogsId404
+  | GetApiV1AdminSecurityAuditLogsId500
+  | void;
+
+export function useGetApiV1AdminSecurityAuditLogsId<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsId400
+    | GetApiV1AdminSecurityAuditLogsId401
+    | GetApiV1AdminSecurityAuditLogsId403
+    | GetApiV1AdminSecurityAuditLogsId404
+    | GetApiV1AdminSecurityAuditLogsId500
+    | void,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogsId<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsId400
+    | GetApiV1AdminSecurityAuditLogsId401
+    | GetApiV1AdminSecurityAuditLogsId403
+    | GetApiV1AdminSecurityAuditLogsId404
+    | GetApiV1AdminSecurityAuditLogsId500
+    | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminSecurityAuditLogsId<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsId400
+    | GetApiV1AdminSecurityAuditLogsId401
+    | GetApiV1AdminSecurityAuditLogsId403
+    | GetApiV1AdminSecurityAuditLogsId404
+    | GetApiV1AdminSecurityAuditLogsId500
+    | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get security audit log details
+ */
+
+export function useGetApiV1AdminSecurityAuditLogsId<
+  TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>,
+  TError =
+    | GetApiV1AdminSecurityAuditLogsId400
+    | GetApiV1AdminSecurityAuditLogsId401
+    | GetApiV1AdminSecurityAuditLogsId403
+    | GetApiV1AdminSecurityAuditLogsId404
+    | GetApiV1AdminSecurityAuditLogsId500
+    | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogsId>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminSecurityAuditLogsIdQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
