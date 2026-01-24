@@ -5,11 +5,13 @@ import { Table } from '../common/Table';
 import { formatBytes, formatDate } from '../../utils/formatters';
 import { getResourceStatusBadge } from '../../utils/statusHelpers';
 import { DocumentDuplicateIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { ImageInfo, DeleteRequest } from '../../hooks/useDockerMaintenance';
+import type { GetApiV1ServersServeridMaintenanceInfo200ImageSummaryImagesItem } from '../../api/generated/models';
+
+type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 interface MaintenanceImagesTabProps {
-  images: ImageInfo[];
-  onDelete: (deleteRequest: { type: DeleteRequest['type']; id: string; name?: string }) => void;
+  images: GetApiV1ServersServeridMaintenanceInfo200ImageSummaryImagesItem[];
+  onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
 }
 
@@ -38,7 +40,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           Docker Images ({images.length})
         </h3>
       </div>
-      <Table<ImageInfo>
+      <Table<GetApiV1ServersServeridMaintenanceInfo200ImageSummaryImagesItem>
         data={images}
         keyExtractor={(image) => image.id}
         emptyMessage="No Docker images found"

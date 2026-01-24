@@ -95,7 +95,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
 		versionHandler, stackHandler, maintenanceHandler, registryHandler,
 		operationLogsHandler, apiKeyHandler,
-		maintenanceAPIHandler, registryAPIHandler,
+		registryAPIHandler,
 		filesAPIHandler, operationsHandler)
 	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
 		rbacHandler, operationLogsHandler, serverHandler,
@@ -186,7 +186,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
-	maintenanceAPIHandler *maintenance.APIHandler, registryAPIHandler *registry.APIHandler,
+	registryAPIHandler *registry.APIHandler,
 	filesAPIHandler *files.APIHandler, operationsHandler *operations.Handler) {
 
 	protected := web.Group("")
@@ -225,12 +225,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
 
 	// API Endpoints (legacy, web UI should migrate to /api/v1/*)
-	if maintenanceAPIHandler != nil {
-		protected.GET("/api/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
-		protected.GET("/api/servers/:serverid/maintenance/info", maintenanceAPIHandler.GetSystemInfo)
-		protected.POST("/api/servers/:serverid/maintenance/prune", maintenanceAPIHandler.PruneDocker)
-		protected.DELETE("/api/servers/:serverid/maintenance/resource", maintenanceAPIHandler.DeleteResource)
-	}
 	if registryAPIHandler != nil {
 		protected.GET("/api/servers/:server_id/registries", registryAPIHandler.ListCredentials)
 		protected.GET("/api/servers/:server_id/registries/:id", registryAPIHandler.GetCredential)

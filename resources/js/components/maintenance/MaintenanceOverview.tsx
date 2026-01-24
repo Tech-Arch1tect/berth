@@ -11,10 +11,10 @@ import {
   GlobeAltIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import { useMaintenanceInfo } from '../../hooks/useDockerMaintenance';
+import type { GetApiV1ServersServeridMaintenanceInfo200 } from '../../api/generated/models';
 
 interface MaintenanceOverviewProps {
-  maintenanceInfo: ReturnType<typeof useMaintenanceInfo>['data'];
+  maintenanceInfo: GetApiV1ServersServeridMaintenanceInfo200;
 }
 
 export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ maintenanceInfo }) => {

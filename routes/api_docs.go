@@ -7,6 +7,7 @@ import (
 	"berth/internal/dto"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
+	"berth/internal/maintenance"
 	"berth/internal/server"
 	"berth/internal/stack"
 
@@ -212,6 +213,58 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid server ID").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Maintenance
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/maintenance/permissions").
+		Tags("maintenance").
+		Summary("Check maintenance permissions").
+		Description("Returns the user's read and write permissions for Docker maintenance operations on the server").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, maintenance.PermissionsResponse{}, "Maintenance permissions").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/maintenance/info").
+		Tags("maintenance").
+		Summary("Get Docker system information").
+		Description("Returns detailed Docker system information including disk usage, images, containers, volumes, networks, and build cache").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, maintenance.MaintenanceInfo{}, "Docker system information").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/maintenance/prune").
+		Tags("maintenance").
+		Summary("Prune Docker resources").
+		Description("Removes unused Docker resources such as images, containers, volumes, networks, or build cache").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Body(maintenance.PruneRequest{}, "Prune request specifying the resource type to prune").
+		Response(http.StatusOK, maintenance.PruneResult{}, "Prune operation result").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid prune type").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/servers/{serverid}/maintenance/resource").
+		Tags("maintenance").
+		Summary("Delete Docker resource").
+		Description("Deletes a specific Docker resource (image, container, volume, or network) by ID").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Body(maintenance.DeleteRequest{}, "Delete request specifying the resource type and ID").
+		Response(http.StatusOK, maintenance.DeleteResult{}, "Delete operation result").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid resource type or ID").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

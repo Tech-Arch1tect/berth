@@ -11,8 +11,6 @@ import {
   useMaintenanceInfo,
   useDockerPrune,
   useDeleteResource,
-  PruneRequest,
-  DeleteRequest,
 } from '../../hooks/useDockerMaintenance';
 import { showToast } from '../../utils/toast';
 import { formatBytes } from '../../utils/formatters';
@@ -37,14 +35,16 @@ interface MaintenanceProps {
 }
 
 type TabType = 'overview' | 'images' | 'containers' | 'volumes' | 'networks' | 'actions';
+type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
+type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [selectedPruneType, setSelectedPruneType] = useState<PruneRequest['type']>('images');
+  const [selectedPruneType, setSelectedPruneType] = useState<PruneType>('images');
   const [pruneAll, setPruneAll] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: DeleteRequest['type'];
+    type: DeleteResourceType;
     id: string;
     name?: string;
   } | null>(null);
@@ -91,6 +91,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
           type: selectedPruneType,
           all: pruneAll,
           force: false,
+          filters: '',
         },
       });
 
@@ -114,7 +115,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
     }
   };
 
-  const getPruneDescription = (type: PruneRequest['type']): string => {
+  const getPruneDescription = (type: PruneType): string => {
     const descriptions = {
       images: pruneAll
         ? 'Remove all unused images (not just dangling)'

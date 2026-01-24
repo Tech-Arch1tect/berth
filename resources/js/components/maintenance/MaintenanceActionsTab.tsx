@@ -14,15 +14,17 @@ import {
   CubeIcon,
   WrenchIcon,
 } from '@heroicons/react/24/outline';
-import { PruneRequest, useMaintenanceInfo } from '../../hooks/useDockerMaintenance';
+import type { GetApiV1ServersServeridMaintenanceInfo200 } from '../../api/generated/models';
+
+type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 
 interface MaintenanceActionsTabProps {
-  maintenanceInfo: ReturnType<typeof useMaintenanceInfo>['data'];
-  selectedPruneType: PruneRequest['type'];
+  maintenanceInfo: GetApiV1ServersServeridMaintenanceInfo200 | undefined;
+  selectedPruneType: PruneType;
   pruneAll: boolean;
   isPruning: boolean;
   isLoading: boolean;
-  onPruneTypeChange: (type: PruneRequest['type']) => void;
+  onPruneTypeChange: (type: PruneType) => void;
   onPruneAllChange: (pruneAll: boolean) => void;
   onStartPrune: () => void;
   onRefresh: () => void;
@@ -39,7 +41,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
   onStartPrune,
   onRefresh,
 }) => {
-  const getPruneIcon = (type: PruneRequest['type']) => {
+  const getPruneIcon = (type: PruneType) => {
     const icons = {
       images: DocumentDuplicateIcon,
       containers: CircleStackIcon,
@@ -51,7 +53,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
     return icons[type];
   };
 
-  const getPruneDescription = (type: PruneRequest['type']): string => {
+  const getPruneDescription = (type: PruneType): string => {
     const descriptions = {
       images: pruneAll
         ? 'Remove all unused images (not just dangling)'
@@ -69,7 +71,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
     return descriptions[type];
   };
 
-  const getPruneStats = (type: PruneRequest['type']) => {
+  const getPruneStats = (type: PruneType) => {
     if (!maintenanceInfo) return null;
 
     const stats = {

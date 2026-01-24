@@ -8,6 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type MaintenancePermissions struct {
+	Read  bool `json:"read"`
+	Write bool `json:"write"`
+}
+
+type PermissionsResponse struct {
+	Maintenance MaintenancePermissions `json:"maintenance"`
+}
+
 type APIHandler struct {
 	service      *Service
 	auditService *security.AuditService
@@ -38,7 +47,7 @@ func (h *APIHandler) GetSystemInfo(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, info)
+	return common.SendSuccess(c, MaintenanceInfo(*info))
 }
 
 func (h *APIHandler) PruneDocker(c echo.Context) error {
@@ -99,7 +108,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		},
 	})
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, PruneResult(*result))
 }
 
 func (h *APIHandler) DeleteResource(c echo.Context) error {
@@ -161,7 +170,7 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 		},
 	})
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, DeleteResult(*result))
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
@@ -185,10 +194,10 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to check write permissions")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"maintenance": map[string]bool{
-			"read":  hasReadPermission,
-			"write": hasWritePermission,
+	return common.SendSuccess(c, PermissionsResponse{
+		Maintenance: MaintenancePermissions{
+			Read:  hasReadPermission,
+			Write: hasWritePermission,
 		},
 	})
 }

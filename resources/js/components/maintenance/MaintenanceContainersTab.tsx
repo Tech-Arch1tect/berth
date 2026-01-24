@@ -5,11 +5,13 @@ import { Table } from '../common/Table';
 import { formatBytes } from '../../utils/formatters';
 import { getContainerStatusBadge } from '../../utils/statusHelpers';
 import { CircleStackIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { ContainerInfo, DeleteRequest } from '../../hooks/useDockerMaintenance';
+import type { GetApiV1ServersServeridMaintenanceInfo200ContainerSummaryContainersItem } from '../../api/generated/models';
+
+type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 interface MaintenanceContainersTabProps {
-  containers: ContainerInfo[];
-  onDelete: (deleteRequest: { type: DeleteRequest['type']; id: string; name?: string }) => void;
+  containers: GetApiV1ServersServeridMaintenanceInfo200ContainerSummaryContainersItem[];
+  onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
 }
 
@@ -38,7 +40,7 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
           Docker Containers ({containers.length})
         </h3>
       </div>
-      <Table<ContainerInfo>
+      <Table<GetApiV1ServersServeridMaintenanceInfo200ContainerSummaryContainersItem>
         data={containers}
         keyExtractor={(container) => container.id}
         emptyMessage="No Docker containers found"
