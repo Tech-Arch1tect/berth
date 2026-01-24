@@ -137,7 +137,7 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
 			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
 			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler,
-			imageUpdatesAPIHandler, apiKeyHandler)
+			imageUpdatesAPIHandler, apiKeyHandler, versionHandler)
 		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
 			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
 			serverAPIHandler, migrationHandler, securityHandler)
@@ -192,11 +192,6 @@ func registerProtectedWebRoutes(web *echo.Group,
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
 	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
-
-	// API Endpoints
-	if versionHandler != nil {
-		protected.GET("/api/version", versionHandler.GetVersion)
-	}
 
 	// Inertia Pages
 	protected.GET("/", dashboardHandler.Dashboard)
@@ -355,11 +350,17 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
-	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler) {
+	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
+	versionHandler *handlers.VersionHandler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(berthauth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
+
+	// Version
+	if versionHandler != nil {
+		apiProtected.GET("/version", versionHandler.GetVersion)
+	}
 
 	// Profile (accessible via JWT, Session, or API Key)
 	apiProtected.GET("/profile", mobileAuthHandler.Profile)

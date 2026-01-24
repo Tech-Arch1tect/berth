@@ -1,5 +1,6 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { ReactNode, useState, useEffect } from 'react';
+import { useGetApiV1Version } from '../../api/generated/system/system';
 import {
   SunIcon,
   MoonIcon,
@@ -44,19 +45,14 @@ export default function Layout({ children }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
     StorageManager.sidebar.isCollapsed()
   );
-  const [appVersion, setAppVersion] = useState<string>('dev');
   const terminalPanel = useTerminalPanel();
+
+  const { data: versionResponse } = useGetApiV1Version();
+  const appVersion = versionResponse?.data?.data?.version ?? 'dev';
 
   useEffect(() => {
     setCsrfToken(csrfToken);
   }, [csrfToken]);
-
-  useEffect(() => {
-    fetch('/api/version')
-      .then((res) => res.json())
-      .then((data) => setAppVersion(data.version))
-      .catch(() => setAppVersion('dev'));
-  }, []);
 
   const toggleSidebarCollapse = () => {
     const newValue = !sidebarCollapsed;

@@ -14,7 +14,10 @@ func NewVersionHandler() *VersionHandler {
 }
 
 func (h *VersionHandler) GetVersion(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]string{
-		"version": version.Version,
+	return c.JSON(http.StatusOK, GetVersionResponse{
+		Success: true,
+		Data: VersionData{
+			Version: version.Version,
+		},
 	})
 }

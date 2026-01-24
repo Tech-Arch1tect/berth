@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 
+	"berth/handlers"
 	"berth/internal/apikey"
 	"berth/internal/config"
 	"berth/internal/dto"
@@ -31,6 +32,15 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 	if apiDoc == nil {
 		return
 	}
+
+	// Version
+	apiDoc.Document("GET", "/api/v1/version").
+		Tags("system").
+		Summary("Get application version").
+		Description("Returns the current version of the Berth application.").
+		Response(http.StatusOK, handlers.GetVersionResponse{}, "Application version").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
 
 	apiDoc.Document("GET", "/api/v1/servers").
 		Tags("servers").
