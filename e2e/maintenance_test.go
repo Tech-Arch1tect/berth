@@ -59,11 +59,17 @@ type RegistryCredentialResponse struct {
 }
 
 type RegistryCredentialsListResponse struct {
-	Credentials []RegistryCredentialResponse `json:"credentials"`
+	Success bool `json:"success"`
+	Data    struct {
+		Credentials []RegistryCredentialResponse `json:"credentials"`
+	} `json:"data"`
 }
 
 type SingleRegistryCredentialResponse struct {
-	Credential RegistryCredentialResponse `json:"credential"`
+	Success bool `json:"success"`
+	Data    struct {
+		Credential RegistryCredentialResponse `json:"credential"`
+	} `json:"data"`
 }
 
 func TestMaintenancePermissionsJWT(t *testing.T) {
@@ -426,8 +432,8 @@ func TestMaintenanceEndpointsSessionAuth(t *testing.T) {
 	})
 
 	t.Run("DELETE /api/servers/:serverid/maintenance/resource works with session auth", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:serverid/maintenance/resource", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/maintenance/resource", map[string]interface{}{
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/maintenance/resource", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		resp, err := sessionClient.DeleteWithBody("/api/v1/servers/"+itoa(testServer.ID)+"/maintenance/resource", map[string]interface{}{
 			"type": "image",
 			"id":   "test-image-id",
 		})
@@ -478,16 +484,6 @@ func TestMaintenanceEndpointsNoAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
-
-	t.Run("DELETE /api/servers/:serverid/maintenance/resource redirects without auth", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:serverid/maintenance/resource", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().DeleteWithBody("/api/servers/1/maintenance/resource", map[string]interface{}{
-			"type": "image",
-			"id":   "test",
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
-	})
 }
 
 func TestRegistryCredentialsSessionAuth(t *testing.T) {
@@ -507,20 +503,20 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	var createdCredentialID uint
 
-	t.Run("GET /api/servers/:server_id/registries returns empty list initially", func(t *testing.T) {
-		TagTest(t, "GET", "/api/servers/:server_id/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries")
+	t.Run("GET /api/v1/servers/:serverid/registries returns empty list initially", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
 		var credsResp RegistryCredentialsListResponse
 		require.NoError(t, resp.GetJSON(&credsResp))
-		assert.Empty(t, credsResp.Credentials)
+		assert.Empty(t, credsResp.Data.Credentials)
 	})
 
-	t.Run("POST /api/servers/:server_id/registries creates credential", func(t *testing.T) {
-		TagTest(t, "POST", "/api/servers/:server_id/registries", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
-		resp, err := sessionClient.Post("/api/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
+	t.Run("POST /api/v1/servers/:serverid/registries creates credential", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+		resp, err := sessionClient.Post("/api/v1/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
 			"registry_url":  "ghcr.io",
 			"username":      "testuser",
 			"password":      "testtoken",
@@ -532,16 +528,16 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 		var credResp SingleRegistryCredentialResponse
 		require.NoError(t, resp.GetJSON(&credResp))
-		assert.Equal(t, "ghcr.io", credResp.Credential.RegistryURL)
-		assert.Equal(t, "testuser", credResp.Credential.Username)
-		assert.Equal(t, "production-*", credResp.Credential.StackPattern)
-		assert.Equal(t, "myorg/*", credResp.Credential.ImagePattern)
-		createdCredentialID = credResp.Credential.ID
+		assert.Equal(t, "ghcr.io", credResp.Data.Credential.RegistryURL)
+		assert.Equal(t, "testuser", credResp.Data.Credential.Username)
+		assert.Equal(t, "production-*", credResp.Data.Credential.StackPattern)
+		assert.Equal(t, "myorg/*", credResp.Data.Credential.ImagePattern)
+		createdCredentialID = credResp.Data.Credential.ID
 	})
 
-	t.Run("POST /api/servers/:server_id/registries requires registry_url", func(t *testing.T) {
-		TagTest(t, "POST", "/api/servers/:server_id/registries", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		resp, err := sessionClient.Post("/api/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
+	t.Run("POST /api/v1/servers/:serverid/registries requires registry_url", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/registries", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		resp, err := sessionClient.Post("/api/v1/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
 			"username": "testuser",
 			"password": "testtoken",
 		})
@@ -549,44 +545,44 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 		assert.Equal(t, 400, resp.StatusCode)
 	})
 
-	t.Run("GET /api/servers/:server_id/registries returns created credential", func(t *testing.T) {
-		TagTest(t, "GET", "/api/servers/:server_id/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries")
+	t.Run("GET /api/v1/servers/:serverid/registries returns created credential", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
 		var credsResp RegistryCredentialsListResponse
 		require.NoError(t, resp.GetJSON(&credsResp))
-		assert.Len(t, credsResp.Credentials, 1)
-		assert.Equal(t, "ghcr.io", credsResp.Credentials[0].RegistryURL)
+		assert.Len(t, credsResp.Data.Credentials, 1)
+		assert.Equal(t, "ghcr.io", credsResp.Data.Credentials[0].RegistryURL)
 	})
 
-	t.Run("GET /api/servers/:server_id/registries/:id returns single credential", func(t *testing.T) {
-		TagTest(t, "GET", "/api/servers/:server_id/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+	t.Run("GET /api/v1/servers/:serverid/registries/:id returns single credential", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
 		var credResp SingleRegistryCredentialResponse
 		require.NoError(t, resp.GetJSON(&credResp))
-		assert.Equal(t, createdCredentialID, credResp.Credential.ID)
-		assert.Equal(t, "ghcr.io", credResp.Credential.RegistryURL)
+		assert.Equal(t, createdCredentialID, credResp.Data.Credential.ID)
+		assert.Equal(t, "ghcr.io", credResp.Data.Credential.RegistryURL)
 	})
 
-	t.Run("GET /api/servers/:server_id/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
-		TagTest(t, "GET", "/api/servers/:server_id/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries/99999")
+	t.Run("GET /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})
 
-	t.Run("PUT /api/servers/:server_id/registries/:id updates credential", func(t *testing.T) {
-		TagTest(t, "PUT", "/api/servers/:server_id/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+	t.Run("PUT /api/v1/servers/:serverid/registries/:id updates credential", func(t *testing.T) {
+		TagTest(t, "PUT", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Put("/api/servers/"+itoa(testServer.ID)+"/registries/"+itoa(createdCredentialID), map[string]interface{}{
+		resp, err := sessionClient.Put("/api/v1/servers/"+itoa(testServer.ID)+"/registries/"+itoa(createdCredentialID), map[string]interface{}{
 			"registry_url":  "ghcr.io",
 			"username":      "updateduser",
 			"password":      "updatedtoken",
@@ -598,36 +594,36 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 		var credResp SingleRegistryCredentialResponse
 		require.NoError(t, resp.GetJSON(&credResp))
-		assert.Equal(t, createdCredentialID, credResp.Credential.ID)
-		assert.Equal(t, "updateduser", credResp.Credential.Username)
-		assert.Equal(t, "staging-*", credResp.Credential.StackPattern)
+		assert.Equal(t, createdCredentialID, credResp.Data.Credential.ID)
+		assert.Equal(t, "updateduser", credResp.Data.Credential.Username)
+		assert.Equal(t, "staging-*", credResp.Data.Credential.StackPattern)
 	})
 
-	t.Run("PUT /api/servers/:server_id/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
-		TagTest(t, "PUT", "/api/servers/:server_id/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Put("/api/servers/"+itoa(testServer.ID)+"/registries/99999", map[string]interface{}{
+	t.Run("PUT /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
+		TagTest(t, "PUT", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := sessionClient.Put("/api/v1/servers/"+itoa(testServer.ID)+"/registries/99999", map[string]interface{}{
 			"username": "testuser",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})
 
-	t.Run("DELETE /api/servers/:server_id/registries/:id deletes credential", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:server_id/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+	t.Run("DELETE /api/v1/servers/:serverid/registries/:id deletes credential", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Delete("/api/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		resp, err := sessionClient.Delete("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		getResp, err := sessionClient.Get("/api/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		getResp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 404, getResp.StatusCode)
 	})
 
-	t.Run("DELETE /api/servers/:server_id/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:server_id/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Delete("/api/servers/" + itoa(testServer.ID) + "/registries/99999")
+	t.Run("DELETE /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := sessionClient.Delete("/api/v1/servers/" + itoa(testServer.ID) + "/registries/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})
@@ -637,11 +633,11 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 func TestRegistryEndpointsNoAuth(t *testing.T) {
 	app := SetupTestApp(t)
 
-	t.Run("POST /api/servers/:server_id/registries redirects without auth", func(t *testing.T) {
-		TagTest(t, "POST", "/api/servers/:server_id/registries", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().Request(&e2etesting.RequestOptions{
+	t.Run("POST /api/v1/servers/:serverid/registries requires authentication", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/servers/:serverid/registries", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/servers/1/registries",
+			Path:   "/api/v1/servers/1/registries",
 			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
@@ -652,6 +648,6 @@ func TestRegistryEndpointsNoAuth(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
+		assert.Equal(t, 401, resp.StatusCode)
 	})
 }

@@ -3,6 +3,8 @@ package e2e
 import (
 	"testing"
 
+	"berth/internal/apikey"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
@@ -36,13 +38,13 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 	})
 
 	createAPIKey := func(t *testing.T, name string) (uint, string) {
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": name,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
 
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		return result.Data.APIKey.ID, result.Data.PlainKey
 	}
@@ -56,7 +58,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 			payload["server_id"] = *serverID
 		}
 
-		resp, err := sessionClient.Post("/api/api-keys/"+itoa(apiKeyID)+"/scopes", payload)
+		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(apiKeyID)+"/scopes", payload)
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode, "failed to add scope")
 	}
@@ -287,11 +289,11 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 	t.Run("Valid API key with non-matching scope is denied access", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": "mismatched-scope-key",
 		})
 		require.NoError(t, err)
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
@@ -300,7 +302,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 		mockAgent2.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
 		serverID := testServer2.ID
-		resp, err = sessionClient.Post("/api/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "nonexistent-*",
 			"permission":    "stacks.read",
@@ -360,17 +362,17 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 	t.Run("API key with files.read scope can list files", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": "files-read-key",
 		})
 		require.NoError(t, err)
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    "files.read",
@@ -392,17 +394,17 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 	t.Run("API key without files.read scope cannot list files", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": "no-files-key",
 		})
 		require.NoError(t, err)
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    "stacks.read",
@@ -454,17 +456,17 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 	t.Run("API key with logs.read scope can read logs", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": "logs-read-key",
 		})
 		require.NoError(t, err)
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    "logs.read",
@@ -486,17 +488,17 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 	t.Run("API key without logs.read scope cannot read logs", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		resp, err := sessionClient.Post("/api/api-keys", map[string]any{
+		resp, err := sessionClient.Post("/api/v1/api-keys", map[string]any{
 			"name": "no-logs-key",
 		})
 		require.NoError(t, err)
-		var result CreateAPIKeyResponse
+		var result apikey.CreateAPIKeyResponse
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    "stacks.read",

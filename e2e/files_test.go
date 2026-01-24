@@ -343,9 +343,9 @@ func TestFileEndpointsSessionAuth(t *testing.T) {
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete works with session auth", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
+	t.Run("DELETE /api/v1/servers/:serverid/stacks/:stackname/files/delete works with session auth", func(t *testing.T) {
+		TagTest(t, "DELETE", "/api/v1/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		resp, err := sessionClient.DeleteWithBody("/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
 			"path": "test-file.txt",
 		})
 		require.NoError(t, err)
@@ -375,12 +375,4 @@ func TestFileEndpointsNoAuth(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
-	t.Run("DELETE /api/servers/:serverid/stacks/:stackname/files/delete redirects without auth", func(t *testing.T) {
-		TagTest(t, "DELETE", "/api/servers/:serverid/stacks/:stackname/files/delete", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().DeleteWithBody("/api/servers/"+itoa(testServer.ID)+"/stacks/test-stack/files/delete", map[string]interface{}{
-			"path": "test-file.txt",
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
-	})
 }

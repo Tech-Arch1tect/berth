@@ -4,48 +4,12 @@ import (
 	"os"
 	"testing"
 
+	"berth/internal/security"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
-
-type AuditLogsListResponse struct {
-	Logs       []AuditLogEntry `json:"logs"`
-	Total      int64           `json:"total"`
-	Page       int             `json:"page"`
-	PerPage    int             `json:"per_page"`
-	TotalPages int             `json:"total_pages"`
-}
-
-type AuditLogEntry struct {
-	ID            uint   `json:"id"`
-	CreatedAt     string `json:"created_at"`
-	EventType     string `json:"event_type"`
-	EventCategory string `json:"event_category"`
-	Severity      string `json:"severity"`
-	ActorUserID   *uint  `json:"actor_user_id"`
-	ActorUsername string `json:"actor_username"`
-	ActorIP       string `json:"actor_ip"`
-	Success       bool   `json:"success"`
-	FailureReason string `json:"failure_reason"`
-	ServerID      *uint  `json:"server_id"`
-	StackName     string `json:"stack_name"`
-}
-
-type AuditStatsResponse struct {
-	TotalEvents       int64            `json:"total_events"`
-	EventsByCategory  map[string]int64 `json:"events_by_category"`
-	EventsBySeverity  map[string]int64 `json:"events_by_severity"`
-	FailedEvents      int64            `json:"failed_events"`
-	RecentEventTypes  []EventTypeCount `json:"recent_event_types"`
-	EventsLast24Hours int64            `json:"events_last_24_hours"`
-	EventsLast7Days   int64            `json:"events_last_7_days"`
-}
-
-type EventTypeCount struct {
-	EventType string `json:"event_type"`
-	Count     int64  `json:"count"`
-}
 
 func TestSecurityAuditLogsJWT(t *testing.T) {
 	app := SetupTestApp(t)
@@ -80,11 +44,11 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp AuditLogsListResponse
+		var logsResp security.ListLogsAPIResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
-		assert.GreaterOrEqual(t, logsResp.Total, int64(1))
-		assert.Equal(t, 1, logsResp.Page)
-		assert.Equal(t, 50, logsResp.PerPage)
+		assert.GreaterOrEqual(t, logsResp.Data.Total, int64(1))
+		assert.Equal(t, 1, logsResp.Data.Page)
+		assert.Equal(t, 50, logsResp.Data.PerPage)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports pagination", func(t *testing.T) {
@@ -99,10 +63,10 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp AuditLogsListResponse
+		var logsResp security.ListLogsAPIResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
-		assert.Equal(t, 5, logsResp.PerPage)
-		assert.LessOrEqual(t, len(logsResp.Logs), 5)
+		assert.Equal(t, 5, logsResp.Data.PerPage)
+		assert.LessOrEqual(t, len(logsResp.Data.Logs), 5)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports filtering by event_type", func(t *testing.T) {
@@ -117,9 +81,9 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp AuditLogsListResponse
+		var logsResp security.ListLogsAPIResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
-		for _, log := range logsResp.Logs {
+		for _, log := range logsResp.Data.Logs {
 			assert.Equal(t, "api.token.issued", log.EventType)
 		}
 	})
@@ -136,9 +100,9 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp AuditLogsListResponse
+		var logsResp security.ListLogsAPIResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
-		for _, log := range logsResp.Logs {
+		for _, log := range logsResp.Data.Logs {
 			assert.True(t, log.Success)
 		}
 	})
@@ -177,12 +141,12 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp AuditStatsResponse
+		var statsResp security.GetStatsAPIResponse
 		require.NoError(t, resp.GetJSON(&statsResp))
-		assert.GreaterOrEqual(t, statsResp.TotalEvents, int64(1))
-		assert.NotNil(t, statsResp.EventsByCategory)
-		assert.NotNil(t, statsResp.EventsBySeverity)
-		assert.NotNil(t, statsResp.RecentEventTypes)
+		assert.GreaterOrEqual(t, statsResp.Data.TotalEvents, int64(1))
+		assert.NotNil(t, statsResp.Data.EventsByCategory)
+		assert.NotNil(t, statsResp.Data.EventsBySeverity)
+		assert.NotNil(t, statsResp.Data.RecentEventTypes)
 	})
 }
 
@@ -217,10 +181,10 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, listResp.StatusCode)
 
-	var logsResp AuditLogsListResponse
+	var logsResp security.ListLogsAPIResponse
 	require.NoError(t, listResp.GetJSON(&logsResp))
-	require.NotEmpty(t, logsResp.Logs)
-	logID := logsResp.Logs[0].ID
+	require.NotEmpty(t, logsResp.Data.Logs)
+	logID := logsResp.Data.Logs[0].ID
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id returns log details", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -234,11 +198,11 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logEntry AuditLogEntry
-		require.NoError(t, resp.GetJSON(&logEntry))
-		assert.Equal(t, logID, logEntry.ID)
-		assert.NotEmpty(t, logEntry.EventType)
-		assert.NotEmpty(t, logEntry.EventCategory)
+		var logResp security.GetLogAPIResponse
+		require.NoError(t, resp.GetJSON(&logResp))
+		assert.Equal(t, logID, logResp.Data.ID)
+		assert.NotEmpty(t, logResp.Data.EventType)
+		assert.NotEmpty(t, logResp.Data.EventCategory)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id returns 404 for non-existent log", func(t *testing.T) {
