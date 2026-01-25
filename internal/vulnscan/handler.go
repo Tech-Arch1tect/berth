@@ -22,10 +22,6 @@ func NewHandler(service *Service, logger *logging.Service) *Handler {
 	}
 }
 
-type StartScanRequest struct {
-	Services []string `json:"services,omitempty"`
-}
-
 func (h *Handler) StartScan(c echo.Context) error {
 	userID, err := common.GetCurrentUserID(c)
 	if err != nil {
@@ -60,7 +56,10 @@ func (h *Handler) StartScan(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, scan)
+	return c.JSON(http.StatusOK, StartScanResponse{
+		Success: true,
+		Data:    StartScanData{Scan: *scan},
+	})
 }
 
 func (h *Handler) GetScan(c echo.Context) error {
@@ -79,7 +78,10 @@ func (h *Handler) GetScan(c echo.Context) error {
 		return common.SendNotFound(c, "scan not found")
 	}
 
-	return c.JSON(http.StatusOK, scan)
+	return c.JSON(http.StatusOK, GetScanResponse{
+		Success: true,
+		Data:    GetScanData{Scan: *scan},
+	})
 }
 
 func (h *Handler) GetScansForStack(c echo.Context) error {
@@ -98,8 +100,9 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"scans": scans,
+	return c.JSON(http.StatusOK, GetScansHistoryResponse{
+		Success: true,
+		Data:    GetScansHistoryData{Scans: scans},
 	})
 }
 
@@ -124,9 +127,12 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"scan":    scan,
-		"summary": summary,
+	return c.JSON(http.StatusOK, GetLatestScanResponse{
+		Success: true,
+		Data: GetLatestScanData{
+			Scan:    *scan,
+			Summary: summary,
+		},
 	})
 }
 
@@ -151,7 +157,10 @@ func (h *Handler) GetScanSummary(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, summary)
+	return c.JSON(http.StatusOK, GetScanSummaryResponse{
+		Success: true,
+		Data:    GetScanSummaryData{Summary: *summary},
+	})
 }
 
 func (h *Handler) CompareScans(c echo.Context) error {
@@ -181,7 +190,10 @@ func (h *Handler) CompareScans(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, comparison)
+	return c.JSON(http.StatusOK, CompareScanResponse{
+		Success: true,
+		Data:    CompareScanData{Comparison: *comparison},
+	})
 }
 
 func (h *Handler) GetScanTrend(c echo.Context) error {
@@ -213,5 +225,12 @@ func (h *Handler) GetScanTrend(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, trend)
+	return c.JSON(http.StatusOK, GetScanTrendResponse{
+		Success: true,
+		Data: GetScanTrendData{
+			StackTrend:    trend.StackTrend,
+			PerImageTrend: trend.PerImageTrend,
+			ScopeWarning:  trend.ScopeWarning,
+		},
+	})
 }

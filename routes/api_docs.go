@@ -16,6 +16,7 @@ import (
 	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/stack"
+	"berth/internal/vulnscan"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/openapi"
@@ -267,6 +268,102 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request body").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Vulnerability Scanning
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/vulnscan").
+		Tags("vulnscan").
+		Summary("Start vulnerability scan").
+		Description("Starts a vulnerability scan for a stack. Requires stacks.read permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(vulnscan.StartScanRequest{}, "Optional list of services to scan").
+		Response(http.StatusOK, vulnscan.StartScanResponse{}, "Scan started").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/vulnscan").
+		Tags("vulnscan").
+		Summary("Get latest scan for stack").
+		Description("Returns the most recent vulnerability scan and summary for a stack. Requires stacks.read permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, vulnscan.GetLatestScanResponse{}, "Latest scan with summary").
+		Response(http.StatusNotFound, ErrorResponse{}, "No scans found for stack").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/vulnscan/history").
+		Tags("vulnscan").
+		Summary("Get scan history for stack").
+		Description("Returns all vulnerability scans for a stack with summaries. Requires stacks.read permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, vulnscan.GetScansHistoryResponse{}, "Scan history with summaries").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/vulnscan/trend").
+		Tags("vulnscan").
+		Summary("Get scan trend for stack").
+		Description("Returns vulnerability trend data for a stack. Requires stacks.read permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		QueryParam("limit", "Maximum number of scans to include (default 10, max 50)").TypeInt().
+		Response(http.StatusOK, vulnscan.GetScanTrendResponse{}, "Scan trend data").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/vulnscan/{scanid}").
+		Tags("vulnscan").
+		Summary("Get scan by ID").
+		Description("Returns a specific vulnerability scan with all vulnerabilities. Requires stacks.read permission for the scanned stack.").
+		PathParam("scanid", "Scan ID").TypeInt().Required().
+		Response(http.StatusOK, vulnscan.GetScanResponse{}, "Scan details with vulnerabilities").
+		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/vulnscan/{scanid}/summary").
+		Tags("vulnscan").
+		Summary("Get scan summary").
+		Description("Returns vulnerability counts by severity for a scan. Requires stacks.read permission for the scanned stack.").
+		PathParam("scanid", "Scan ID").TypeInt().Required().
+		Response(http.StatusOK, vulnscan.GetScanSummaryResponse{}, "Vulnerability summary").
+		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/vulnscan/compare/{baseScanId}/{compareScanId}").
+		Tags("vulnscan").
+		Summary("Compare two scans").
+		Description("Compares two vulnerability scans and returns new, fixed, and unchanged vulnerabilities. Both scans must be from the same stack. Requires stacks.read permission.").
+		PathParam("baseScanId", "Base scan ID").TypeInt().Required().
+		PathParam("compareScanId", "Comparison scan ID").TypeInt().Required().
+		Response(http.StatusOK, vulnscan.CompareScanResponse{}, "Scan comparison").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid scan ID").
+		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
