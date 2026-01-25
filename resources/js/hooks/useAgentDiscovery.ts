@@ -3,7 +3,6 @@ import { ServerWithAgentStack } from '../types/agent-update';
 import { AgentUpdateService } from '../services/agentUpdateService';
 
 interface UseAgentDiscoveryOptions {
-  csrfToken?: string;
   autoDiscover?: boolean;
 }
 
@@ -16,7 +15,6 @@ interface UseAgentDiscoveryReturn {
 }
 
 export function useAgentDiscovery({
-  csrfToken,
   autoDiscover = true,
 }: UseAgentDiscoveryOptions = {}): UseAgentDiscoveryReturn {
   const [servers, setServers] = useState<ServerWithAgentStack[]>([]);
@@ -28,7 +26,7 @@ export function useAgentDiscovery({
     setError(null);
 
     try {
-      const serversList = await AgentUpdateService.getServers(csrfToken);
+      const serversList = await AgentUpdateService.getServers();
       const serversWithAgent: ServerWithAgentStack[] = [];
 
       for (const server of serversList) {
@@ -89,7 +87,7 @@ export function useAgentDiscovery({
     } finally {
       setLoading(false);
     }
-  }, [csrfToken]);
+  }, []);
 
   useEffect(() => {
     if (autoDiscover) {

@@ -2,7 +2,7 @@ package server
 
 import (
 	"berth/internal/common"
-	"berth/models"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,8 +23,11 @@ func (h *APIHandler) ListServers(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch servers")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"servers": servers,
+	return c.JSON(http.StatusOK, AdminListServersResponse{
+		Success: true,
+		Data: AdminListServersResponseData{
+			Servers: servers,
+		},
 	})
 }
 
@@ -45,7 +48,7 @@ func (h *APIHandler) GetServer(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
-	var req models.ServerCreateRequest
+	var req AdminCreateServerRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -58,9 +61,11 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to create server")
 	}
 
-	response := server.ToResponse()
-	return common.SendCreated(c, map[string]any{
-		"server": response,
+	return c.JSON(http.StatusCreated, AdminCreateServerResponse{
+		Success: true,
+		Data: AdminCreateServerResponseData{
+			Server: server.ToResponse(),
+		},
 	})
 }
 
@@ -70,7 +75,7 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		return err
 	}
 
-	var req models.ServerUpdateRequest
+	var req AdminUpdateServerRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -90,9 +95,11 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to update server")
 	}
 
-	response := server.ToResponse()
-	return common.SendSuccess(c, map[string]any{
-		"server": response,
+	return c.JSON(http.StatusOK, AdminUpdateServerResponse{
+		Success: true,
+		Data: AdminUpdateServerResponseData{
+			Server: server.ToResponse(),
+		},
 	})
 }
 
@@ -106,7 +113,10 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to delete server")
 	}
 
-	return common.SendMessage(c, "Server deleted successfully")
+	return c.JSON(http.StatusOK, AdminDeleteServerResponse{
+		Success: true,
+		Message: "Server deleted successfully",
+	})
 }
 
 func (h *APIHandler) TestConnection(c echo.Context) error {
@@ -124,5 +134,8 @@ func (h *APIHandler) TestConnection(c echo.Context) error {
 		return common.SendError(c, 503, "Connection test failed: "+err.Error())
 	}
 
-	return common.SendMessage(c, "Connection successful")
+	return c.JSON(http.StatusOK, AdminTestConnectionResponse{
+		Success: true,
+		Message: "Connection successful",
+	})
 }

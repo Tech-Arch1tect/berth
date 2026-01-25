@@ -3,15 +3,8 @@ import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStackname,
 } from '../api/generated/stacks/stacks';
-import type { Stack, StackDetails } from '../api/generated/models';
-
-interface Server {
-  id: number;
-  name: string;
-  host: string;
-  port: number;
-  is_active: boolean;
-}
+import { getApiV1AdminServers, postApiV1AdminServersIdTest } from '../api/generated/admin/admin';
+import type { Stack, StackDetails, ServerResponse } from '../api/generated/models';
 
 const api = axios.create({
   headers: {
@@ -21,14 +14,10 @@ const api = axios.create({
 });
 
 export class AgentUpdateService {
-  static async getServers(csrfToken?: string): Promise<Server[]> {
-    const headers: Record<string, string> = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
+  static async getServers(): Promise<ServerResponse[]> {
+    const response = await getApiV1AdminServers();
 
-    const response = await api.get('/api/v1/admin/servers', { headers });
-    return response.data.servers || [];
+    return (response as { data?: { servers?: ServerResponse[] } }).data?.servers || [];
   }
 
   static async getServerStacks(serverId: number): Promise<Stack[]> {
@@ -59,13 +48,8 @@ export class AgentUpdateService {
     );
   }
 
-  static async testServerConnection(serverId: number, csrfToken?: string): Promise<boolean> {
-    const headers: Record<string, string> = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
-    const response = await api.post(`/api/v1/admin/servers/${serverId}/test`, {}, { headers });
-    return response.status === 200;
+  static async testServerConnection(serverId: number): Promise<boolean> {
+    const response = await postApiV1AdminServersIdTest(serverId);
+    return (response as { success?: boolean }).success === true;
   }
 }

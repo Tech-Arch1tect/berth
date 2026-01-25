@@ -807,6 +807,72 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	// Admin Servers
+	apiDoc.Document("GET", "/api/v1/admin/servers").
+		Tags("admin", "servers").
+		Summary("List all servers").
+		Description("Returns list of all servers. Requires admin access.").
+		Response(http.StatusOK, server.AdminListServersResponse{}, "List of servers").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/servers").
+		Tags("admin", "servers").
+		Summary("Create a new server").
+		Description("Create a new server connection. Requires admin access.").
+		Body(server.AdminCreateServerRequest{}, "Server details").
+		Response(http.StatusCreated, server.AdminCreateServerResponse{}, "Server created").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("PUT", "/api/v1/admin/servers/{id}").
+		Tags("admin", "servers").
+		Summary("Update a server").
+		Description("Update an existing server connection. Requires admin access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Body(server.AdminUpdateServerRequest{}, "Server details").
+		Response(http.StatusOK, server.AdminUpdateServerResponse{}, "Server updated").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/admin/servers/{id}").
+		Tags("admin", "servers").
+		Summary("Delete a server").
+		Description("Delete a server connection. Requires admin access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, server.AdminDeleteServerResponse{}, "Server deleted").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/test").
+		Tags("admin", "servers").
+		Summary("Test server connection").
+		Description("Test the connection to a server. Requires admin access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, server.AdminTestConnectionResponse{}, "Connection successful").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
+		Response(http.StatusServiceUnavailable, ErrorResponse{}, "Connection test failed").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// User Operation Logs
 	apiDoc.Document("GET", "/api/v1/operation-logs").
 		Tags("operation-logs").

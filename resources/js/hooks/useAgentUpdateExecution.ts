@@ -214,7 +214,7 @@ export function useAgentUpdateExecution({
 
         log('Running health check...');
         updateProgress('health_check', 'Checking agent health...');
-        const healthOk = await AgentUpdateService.testServerConnection(server.serverId, csrfToken);
+        const healthOk = await AgentUpdateService.testServerConnection(server.serverId);
 
         if (!healthOk) {
           throw new Error('Agent health check failed - agent may not have restarted properly');

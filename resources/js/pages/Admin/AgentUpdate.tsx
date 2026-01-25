@@ -21,7 +21,7 @@ export default function AgentUpdate({ title = 'Agent Updates' }: Props) {
   const { props } = usePage();
   const csrfToken = props.csrfToken as string | undefined;
 
-  const { servers, loading, error, discover, agentServers } = useAgentDiscovery({ csrfToken });
+  const { servers, loading, error, discover, agentServers } = useAgentDiscovery();
 
   const { selectedIds, toggle, selectAll, deselectAll, selectedCount, setSelected } =
     useServerSelection();

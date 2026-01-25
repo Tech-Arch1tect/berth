@@ -6,6 +6,12 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Table } from '../../components/common/Table';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import {
+  usePostApiV1AdminServers,
+  usePutApiV1AdminServersId,
+  useDeleteApiV1AdminServersId,
+  usePostApiV1AdminServersIdTest,
+} from '../../api/generated/admin/admin';
 
 interface Server {
   id: number;
@@ -22,10 +28,9 @@ interface Server {
 interface Props {
   title?: string;
   servers: Server[];
-  csrfToken?: string;
 }
 
-export default function AdminServers({ title = 'Servers', servers, csrfToken }: Props) {
+export default function AdminServers({ title = 'Servers', servers }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
@@ -35,7 +40,15 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     message: string;
   } | null>(null);
 
-  const [processing, setProcessing] = useState(false);
+  const createServerMutation = usePostApiV1AdminServers();
+  const updateServerMutation = usePutApiV1AdminServersId();
+  const deleteServerMutation = useDeleteApiV1AdminServersId();
+  const testConnectionMutation = usePostApiV1AdminServersIdTest();
+
+  const processing =
+    createServerMutation.isPending ||
+    updateServerMutation.isPending ||
+    deleteServerMutation.isPending;
 
   const { data, setData, reset } = useForm({
     name: '',
@@ -57,47 +70,31 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setProcessing(true);
 
-    try {
-      const url = editingServer
-        ? `/api/v1/admin/servers/${editingServer.id}`
-        : '/api/v1/admin/servers';
-
-      const method = editingServer ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        router.reload();
-        if (editingServer) {
-          setEditingServer(null);
-        } else {
-          setShowAddForm(false);
-        }
-        reset();
+    const onSuccess = () => {
+      router.reload();
+      if (editingServer) {
+        setEditingServer(null);
       } else {
-        const errorData = await response.json();
-        console.error('Operation failed:', errorData);
-        alert(
-          `Failed to ${editingServer ? 'update' : 'create'} server: ${errorData.message || errorData.error || 'Unknown error'}`
-        );
+        setShowAddForm(false);
       }
-    } catch (error) {
-      console.error('Request failed:', error);
-      alert(`Failed to ${editingServer ? 'update' : 'create'} server: ${error}`);
-    } finally {
-      setProcessing(false);
+      reset();
+    };
+
+    const onError = (error: unknown) => {
+      const errorData = error as { message?: string; error?: string };
+      console.error('Operation failed:', errorData);
+      alert(
+        `Failed to ${editingServer ? 'update' : 'create'} server: ${errorData.message || errorData.error || 'Unknown error'}`
+      );
+    };
+
+    if (editingServer) {
+      updateServerMutation.mutate({ id: editingServer.id, data }, { onSuccess, onError });
+    } else {
+      createServerMutation.mutate({ data }, { onSuccess, onError });
     }
   };
 
@@ -124,115 +121,87 @@ export default function AdminServers({ title = 'Servers', servers, csrfToken }: 
     setDeleteConfirm({ id: serverId, name: serverName });
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deleteConfirm) return;
 
-    try {
-      const response = await fetch(`/api/v1/admin/servers/${deleteConfirm.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
+    deleteServerMutation.mutate(
+      { id: deleteConfirm.id },
+      {
+        onSuccess: () => {
+          router.reload();
+          setDeleteConfirm(null);
         },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        router.reload();
-        setDeleteConfirm(null);
-      } else {
-        const errorData = await response.json();
-        console.error('Delete failed:', errorData);
-        setTestResultModal({
-          success: false,
-          message: `Failed to delete server: ${errorData.message || errorData.error || 'Unknown error'}`,
-        });
-        setDeleteConfirm(null);
+        onError: (error) => {
+          const errorData = error as { message?: string; error?: string };
+          console.error('Delete failed:', errorData);
+          setTestResultModal({
+            success: false,
+            message: `Failed to delete server: ${errorData.message || errorData.error || 'Unknown error'}`,
+          });
+          setDeleteConfirm(null);
+        },
       }
-    } catch (error) {
-      console.error('Delete request failed:', error);
-      setTestResultModal({
-        success: false,
-        message: `Failed to delete server: ${error}`,
-      });
-      setDeleteConfirm(null);
-    }
+    );
   };
 
-  const handleTestConnection = async (serverid: number) => {
+  const handleTestConnection = (serverid: number) => {
     setTestingConnection(serverid);
-    try {
-      const response = await fetch(`/api/v1/admin/servers/${serverid}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
+    testConnectionMutation.mutate(
+      { id: serverid },
+      {
+        onSuccess: () => {
+          setTestResultModal({
+            success: true,
+            message: 'Connection successful!',
+          });
+          setTestingConnection(null);
         },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        await response.json();
-        setTestResultModal({
-          success: true,
-          message: 'Connection successful!',
-        });
-      } else {
-        const errorData = await response.json();
-        setTestResultModal({
-          success: false,
-          message:
-            'Connection failed: ' + (errorData.error || errorData.details || 'Unknown error'),
-        });
+        onError: (error) => {
+          const errorData = error as { error?: string; details?: string };
+          setTestResultModal({
+            success: false,
+            message:
+              'Connection failed: ' + (errorData.error || errorData.details || 'Unknown error'),
+          });
+          setTestingConnection(null);
+        },
       }
-    } catch (error) {
-      setTestResultModal({
-        success: false,
-        message: 'Connection failed: ' + error,
-      });
-    } finally {
-      setTestingConnection(null);
-    }
+    );
   };
 
-  const toggleServerStatus = async (serverid: number, currentStatus: boolean) => {
+  const toggleServerStatus = (serverid: number, currentStatus: boolean) => {
     const server = servers.find((s) => s.id === serverid);
     if (!server) {
       console.error('Server not found');
       return;
     }
 
-    try {
-      const response = await fetch(`/api/v1/admin/servers/${serverid}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+    updateServerMutation.mutate(
+      {
+        id: serverid,
+        data: {
           name: server.name,
           description: server.description,
           host: server.host,
           port: server.port,
           skip_ssl_verification: server.skip_ssl_verification,
           is_active: !currentStatus,
-        }),
-      });
-
-      if (response.ok) {
-        router.reload();
-      } else {
-        const errorData = await response.json();
-        console.error('Update failed:', errorData);
-        alert(
-          `Failed to update server status: ${errorData.message || errorData.error || 'Unknown error'}`
-        );
+          access_token: '',
+        },
+      },
+      {
+        onSuccess: () => {
+          router.reload();
+        },
+        onError: (error) => {
+          const errorData = error as { message?: string; error?: string };
+          console.error('Update failed:', errorData);
+          alert(
+            `Failed to update server status: ${errorData.message || errorData.error || 'Unknown error'}`
+          );
+        },
       }
-    } catch (error) {
-      console.error('Update request failed:', error);
-      alert(`Failed to update server status: ${error}`);
-    }
+    );
   };
 
   return (
