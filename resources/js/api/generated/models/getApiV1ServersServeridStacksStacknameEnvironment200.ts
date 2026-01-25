@@ -5,8 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { GetApiV1ServersServeridStacksStacknameEnvironment200Item } from './getApiV1ServersServeridStacksStacknameEnvironment200Item';
+import type { ServiceEnvironment } from './serviceEnvironment';
 
 export type GetApiV1ServersServeridStacksStacknameEnvironment200 = {
-  [key: string]: GetApiV1ServersServeridStacksStacknameEnvironment200Item[];
+  [key: string]: ServiceEnvironment[];
 };

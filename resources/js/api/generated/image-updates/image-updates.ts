@@ -18,16 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type {
-  GetApiV1ImageUpdates200,
-  GetApiV1ImageUpdates401,
-  GetApiV1ImageUpdates500,
-  GetApiV1ServersServeridImageUpdates200,
-  GetApiV1ServersServeridImageUpdates400,
-  GetApiV1ServersServeridImageUpdates401,
-  GetApiV1ServersServeridImageUpdates403,
-  GetApiV1ServersServeridImageUpdates500,
-} from '.././models';
+import type { ErrorResponse, ImageUpdatesResponse } from '.././models';
 
 import { apiClient } from '../../../lib/api';
 
@@ -36,11 +27,7 @@ import { apiClient } from '../../../lib/api';
  * @summary List available image updates
  */
 export const getApiV1ImageUpdates = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1ImageUpdates200>({
-    url: `/api/v1/image-updates`,
-    method: 'GET',
-    signal,
-  });
+  return apiClient<ImageUpdatesResponse>({ url: `/api/v1/image-updates`, method: 'GET', signal });
 };
 
 export const getGetApiV1ImageUpdatesQueryKey = () => {
@@ -49,7 +36,7 @@ export const getGetApiV1ImageUpdatesQueryKey = () => {
 
 export const getGetApiV1ImageUpdatesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ImageUpdates>>,
-  TError = GetApiV1ImageUpdates401 | GetApiV1ImageUpdates500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ImageUpdates>>, TError, TData>>;
 }) => {
@@ -70,14 +57,11 @@ export const getGetApiV1ImageUpdatesQueryOptions = <
 export type GetApiV1ImageUpdatesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ImageUpdates>>
 >;
-export type GetApiV1ImageUpdatesQueryError =
-  | GetApiV1ImageUpdates401
-  | GetApiV1ImageUpdates500
-  | void;
+export type GetApiV1ImageUpdatesQueryError = ErrorResponse | void;
 
 export function useGetApiV1ImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ImageUpdates>>,
-  TError = GetApiV1ImageUpdates401 | GetApiV1ImageUpdates500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<
@@ -96,7 +80,7 @@ export function useGetApiV1ImageUpdates<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ImageUpdates>>,
-  TError = GetApiV1ImageUpdates401 | GetApiV1ImageUpdates500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -115,7 +99,7 @@ export function useGetApiV1ImageUpdates<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ImageUpdates>>,
-  TError = GetApiV1ImageUpdates401 | GetApiV1ImageUpdates500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -130,7 +114,7 @@ export function useGetApiV1ImageUpdates<
 
 export function useGetApiV1ImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ImageUpdates>>,
-  TError = GetApiV1ImageUpdates401 | GetApiV1ImageUpdates500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -153,7 +137,7 @@ export function useGetApiV1ImageUpdates<
  * @summary List server image updates
  */
 export const getApiV1ServersServeridImageUpdates = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ServersServeridImageUpdates200>({
+  return apiClient<ImageUpdatesResponse>({
     url: `/api/v1/servers/${serverid}/image-updates`,
     method: 'GET',
     signal,
@@ -166,12 +150,7 @@ export const getGetApiV1ServersServeridImageUpdatesQueryKey = (serverid?: number
 
 export const getGetApiV1ServersServeridImageUpdatesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>,
-  TError =
-    | GetApiV1ServersServeridImageUpdates400
-    | GetApiV1ServersServeridImageUpdates401
-    | GetApiV1ServersServeridImageUpdates403
-    | GetApiV1ServersServeridImageUpdates500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -203,21 +182,11 @@ export const getGetApiV1ServersServeridImageUpdatesQueryOptions = <
 export type GetApiV1ServersServeridImageUpdatesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>
 >;
-export type GetApiV1ServersServeridImageUpdatesQueryError =
-  | GetApiV1ServersServeridImageUpdates400
-  | GetApiV1ServersServeridImageUpdates401
-  | GetApiV1ServersServeridImageUpdates403
-  | GetApiV1ServersServeridImageUpdates500
-  | void;
+export type GetApiV1ServersServeridImageUpdatesQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>,
-  TError =
-    | GetApiV1ServersServeridImageUpdates400
-    | GetApiV1ServersServeridImageUpdates401
-    | GetApiV1ServersServeridImageUpdates403
-    | GetApiV1ServersServeridImageUpdates500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options: {
@@ -241,12 +210,7 @@ export function useGetApiV1ServersServeridImageUpdates<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>,
-  TError =
-    | GetApiV1ServersServeridImageUpdates400
-    | GetApiV1ServersServeridImageUpdates401
-    | GetApiV1ServersServeridImageUpdates403
-    | GetApiV1ServersServeridImageUpdates500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -270,12 +234,7 @@ export function useGetApiV1ServersServeridImageUpdates<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>,
-  TError =
-    | GetApiV1ServersServeridImageUpdates400
-    | GetApiV1ServersServeridImageUpdates401
-    | GetApiV1ServersServeridImageUpdates403
-    | GetApiV1ServersServeridImageUpdates500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -295,12 +254,7 @@ export function useGetApiV1ServersServeridImageUpdates<
 
 export function useGetApiV1ServersServeridImageUpdates<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridImageUpdates>>,
-  TError =
-    | GetApiV1ServersServeridImageUpdates400
-    | GetApiV1ServersServeridImageUpdates401
-    | GetApiV1ServersServeridImageUpdates403
-    | GetApiV1ServersServeridImageUpdates500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {

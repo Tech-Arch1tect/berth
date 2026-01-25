@@ -22,25 +22,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  DeleteApiV1ServersServeridMaintenanceResource200,
-  DeleteApiV1ServersServeridMaintenanceResource400,
-  DeleteApiV1ServersServeridMaintenanceResource401,
-  DeleteApiV1ServersServeridMaintenanceResource403,
-  DeleteApiV1ServersServeridMaintenanceResource500,
-  DeleteApiV1ServersServeridMaintenanceResourceBody,
-  GetApiV1ServersServeridMaintenanceInfo200,
-  GetApiV1ServersServeridMaintenanceInfo401,
-  GetApiV1ServersServeridMaintenanceInfo403,
-  GetApiV1ServersServeridMaintenanceInfo500,
-  GetApiV1ServersServeridMaintenancePermissions200,
-  GetApiV1ServersServeridMaintenancePermissions401,
-  GetApiV1ServersServeridMaintenancePermissions500,
-  PostApiV1ServersServeridMaintenancePrune200,
-  PostApiV1ServersServeridMaintenancePrune400,
-  PostApiV1ServersServeridMaintenancePrune401,
-  PostApiV1ServersServeridMaintenancePrune403,
-  PostApiV1ServersServeridMaintenancePrune500,
-  PostApiV1ServersServeridMaintenancePruneBody,
+  DeleteRequest,
+  DeleteResult,
+  ErrorResponse,
+  MaintenanceInfo,
+  PermissionsResponse,
+  PruneRequest,
+  PruneResult,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -50,7 +38,7 @@ import { apiClient } from '../../../lib/api';
  * @summary Get Docker system information
  */
 export const getApiV1ServersServeridMaintenanceInfo = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ServersServeridMaintenanceInfo200>({
+  return apiClient<MaintenanceInfo>({
     url: `/api/v1/servers/${serverid}/maintenance/info`,
     method: 'GET',
     signal,
@@ -63,11 +51,7 @@ export const getGetApiV1ServersServeridMaintenanceInfoQueryKey = (serverid?: num
 
 export const getGetApiV1ServersServeridMaintenanceInfoQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>,
-  TError =
-    | GetApiV1ServersServeridMaintenanceInfo401
-    | GetApiV1ServersServeridMaintenanceInfo403
-    | GetApiV1ServersServeridMaintenanceInfo500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -99,19 +83,11 @@ export const getGetApiV1ServersServeridMaintenanceInfoQueryOptions = <
 export type GetApiV1ServersServeridMaintenanceInfoQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>
 >;
-export type GetApiV1ServersServeridMaintenanceInfoQueryError =
-  | GetApiV1ServersServeridMaintenanceInfo401
-  | GetApiV1ServersServeridMaintenanceInfo403
-  | GetApiV1ServersServeridMaintenanceInfo500
-  | void;
+export type GetApiV1ServersServeridMaintenanceInfoQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridMaintenanceInfo<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>,
-  TError =
-    | GetApiV1ServersServeridMaintenanceInfo401
-    | GetApiV1ServersServeridMaintenanceInfo403
-    | GetApiV1ServersServeridMaintenanceInfo500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options: {
@@ -135,11 +111,7 @@ export function useGetApiV1ServersServeridMaintenanceInfo<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridMaintenanceInfo<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>,
-  TError =
-    | GetApiV1ServersServeridMaintenanceInfo401
-    | GetApiV1ServersServeridMaintenanceInfo403
-    | GetApiV1ServersServeridMaintenanceInfo500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -163,11 +135,7 @@ export function useGetApiV1ServersServeridMaintenanceInfo<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridMaintenanceInfo<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>,
-  TError =
-    | GetApiV1ServersServeridMaintenanceInfo401
-    | GetApiV1ServersServeridMaintenanceInfo403
-    | GetApiV1ServersServeridMaintenanceInfo500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -187,11 +155,7 @@ export function useGetApiV1ServersServeridMaintenanceInfo<
 
 export function useGetApiV1ServersServeridMaintenanceInfo<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenanceInfo>>,
-  TError =
-    | GetApiV1ServersServeridMaintenanceInfo401
-    | GetApiV1ServersServeridMaintenanceInfo403
-    | GetApiV1ServersServeridMaintenanceInfo500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -222,7 +186,7 @@ export const getApiV1ServersServeridMaintenancePermissions = (
   serverid: number,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridMaintenancePermissions200>({
+  return apiClient<PermissionsResponse>({
     url: `/api/v1/servers/${serverid}/maintenance/permissions`,
     method: 'GET',
     signal,
@@ -235,10 +199,7 @@ export const getGetApiV1ServersServeridMaintenancePermissionsQueryKey = (serveri
 
 export const getGetApiV1ServersServeridMaintenancePermissionsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>,
-  TError =
-    | GetApiV1ServersServeridMaintenancePermissions401
-    | GetApiV1ServersServeridMaintenancePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -270,17 +231,11 @@ export const getGetApiV1ServersServeridMaintenancePermissionsQueryOptions = <
 export type GetApiV1ServersServeridMaintenancePermissionsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>
 >;
-export type GetApiV1ServersServeridMaintenancePermissionsQueryError =
-  | GetApiV1ServersServeridMaintenancePermissions401
-  | GetApiV1ServersServeridMaintenancePermissions500
-  | void;
+export type GetApiV1ServersServeridMaintenancePermissionsQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridMaintenancePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>,
-  TError =
-    | GetApiV1ServersServeridMaintenancePermissions401
-    | GetApiV1ServersServeridMaintenancePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options: {
@@ -304,10 +259,7 @@ export function useGetApiV1ServersServeridMaintenancePermissions<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridMaintenancePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>,
-  TError =
-    | GetApiV1ServersServeridMaintenancePermissions401
-    | GetApiV1ServersServeridMaintenancePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -331,10 +283,7 @@ export function useGetApiV1ServersServeridMaintenancePermissions<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridMaintenancePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>,
-  TError =
-    | GetApiV1ServersServeridMaintenancePermissions401
-    | GetApiV1ServersServeridMaintenancePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -354,10 +303,7 @@ export function useGetApiV1ServersServeridMaintenancePermissions<
 
 export function useGetApiV1ServersServeridMaintenancePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridMaintenancePermissions>>,
-  TError =
-    | GetApiV1ServersServeridMaintenancePermissions401
-    | GetApiV1ServersServeridMaintenancePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -389,37 +335,32 @@ export function useGetApiV1ServersServeridMaintenancePermissions<
  */
 export const postApiV1ServersServeridMaintenancePrune = (
   serverid: number,
-  postApiV1ServersServeridMaintenancePruneBody: PostApiV1ServersServeridMaintenancePruneBody,
+  pruneRequest: PruneRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<PostApiV1ServersServeridMaintenancePrune200>({
+  return apiClient<PruneResult>({
     url: `/api/v1/servers/${serverid}/maintenance/prune`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1ServersServeridMaintenancePruneBody,
+    data: pruneRequest,
     signal,
   });
 };
 
 export const getPostApiV1ServersServeridMaintenancePruneMutationOptions = <
-  TError =
-    | PostApiV1ServersServeridMaintenancePrune400
-    | PostApiV1ServersServeridMaintenancePrune401
-    | PostApiV1ServersServeridMaintenancePrune403
-    | PostApiV1ServersServeridMaintenancePrune500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>,
     TError,
-    { serverid: number; data: PostApiV1ServersServeridMaintenancePruneBody },
+    { serverid: number; data: PruneRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>,
   TError,
-  { serverid: number; data: PostApiV1ServersServeridMaintenancePruneBody },
+  { serverid: number; data: PruneRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1ServersServeridMaintenancePrune'];
@@ -431,7 +372,7 @@ export const getPostApiV1ServersServeridMaintenancePruneMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>,
-    { serverid: number; data: PostApiV1ServersServeridMaintenancePruneBody }
+    { serverid: number; data: PruneRequest }
   > = (props) => {
     const { serverid, data } = props ?? {};
 
@@ -444,32 +385,21 @@ export const getPostApiV1ServersServeridMaintenancePruneMutationOptions = <
 export type PostApiV1ServersServeridMaintenancePruneMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>
 >;
-export type PostApiV1ServersServeridMaintenancePruneMutationBody =
-  PostApiV1ServersServeridMaintenancePruneBody;
-export type PostApiV1ServersServeridMaintenancePruneMutationError =
-  | PostApiV1ServersServeridMaintenancePrune400
-  | PostApiV1ServersServeridMaintenancePrune401
-  | PostApiV1ServersServeridMaintenancePrune403
-  | PostApiV1ServersServeridMaintenancePrune500
-  | void;
+export type PostApiV1ServersServeridMaintenancePruneMutationBody = PruneRequest;
+export type PostApiV1ServersServeridMaintenancePruneMutationError = ErrorResponse | void;
 
 /**
  * @summary Prune Docker resources
  */
 export const usePostApiV1ServersServeridMaintenancePrune = <
-  TError =
-    | PostApiV1ServersServeridMaintenancePrune400
-    | PostApiV1ServersServeridMaintenancePrune401
-    | PostApiV1ServersServeridMaintenancePrune403
-    | PostApiV1ServersServeridMaintenancePrune500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>,
       TError,
-      { serverid: number; data: PostApiV1ServersServeridMaintenancePruneBody },
+      { serverid: number; data: PruneRequest },
       TContext
     >;
   },
@@ -477,7 +407,7 @@ export const usePostApiV1ServersServeridMaintenancePrune = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1ServersServeridMaintenancePrune>>,
   TError,
-  { serverid: number; data: PostApiV1ServersServeridMaintenancePruneBody },
+  { serverid: number; data: PruneRequest },
   TContext
 > => {
   return useMutation(
@@ -491,37 +421,32 @@ export const usePostApiV1ServersServeridMaintenancePrune = <
  */
 export const deleteApiV1ServersServeridMaintenanceResource = (
   serverid: number,
-  deleteApiV1ServersServeridMaintenanceResourceBody: DeleteApiV1ServersServeridMaintenanceResourceBody,
+  deleteRequest: DeleteRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<DeleteApiV1ServersServeridMaintenanceResource200>({
+  return apiClient<DeleteResult>({
     url: `/api/v1/servers/${serverid}/maintenance/resource`,
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    data: deleteApiV1ServersServeridMaintenanceResourceBody,
+    data: deleteRequest,
     signal,
   });
 };
 
 export const getDeleteApiV1ServersServeridMaintenanceResourceMutationOptions = <
-  TError =
-    | DeleteApiV1ServersServeridMaintenanceResource400
-    | DeleteApiV1ServersServeridMaintenanceResource401
-    | DeleteApiV1ServersServeridMaintenanceResource403
-    | DeleteApiV1ServersServeridMaintenanceResource500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>,
     TError,
-    { serverid: number; data: DeleteApiV1ServersServeridMaintenanceResourceBody },
+    { serverid: number; data: DeleteRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>,
   TError,
-  { serverid: number; data: DeleteApiV1ServersServeridMaintenanceResourceBody },
+  { serverid: number; data: DeleteRequest },
   TContext
 > => {
   const mutationKey = ['deleteApiV1ServersServeridMaintenanceResource'];
@@ -533,7 +458,7 @@ export const getDeleteApiV1ServersServeridMaintenanceResourceMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>,
-    { serverid: number; data: DeleteApiV1ServersServeridMaintenanceResourceBody }
+    { serverid: number; data: DeleteRequest }
   > = (props) => {
     const { serverid, data } = props ?? {};
 
@@ -546,32 +471,21 @@ export const getDeleteApiV1ServersServeridMaintenanceResourceMutationOptions = <
 export type DeleteApiV1ServersServeridMaintenanceResourceMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>
 >;
-export type DeleteApiV1ServersServeridMaintenanceResourceMutationBody =
-  DeleteApiV1ServersServeridMaintenanceResourceBody;
-export type DeleteApiV1ServersServeridMaintenanceResourceMutationError =
-  | DeleteApiV1ServersServeridMaintenanceResource400
-  | DeleteApiV1ServersServeridMaintenanceResource401
-  | DeleteApiV1ServersServeridMaintenanceResource403
-  | DeleteApiV1ServersServeridMaintenanceResource500
-  | void;
+export type DeleteApiV1ServersServeridMaintenanceResourceMutationBody = DeleteRequest;
+export type DeleteApiV1ServersServeridMaintenanceResourceMutationError = ErrorResponse | void;
 
 /**
  * @summary Delete Docker resource
  */
 export const useDeleteApiV1ServersServeridMaintenanceResource = <
-  TError =
-    | DeleteApiV1ServersServeridMaintenanceResource400
-    | DeleteApiV1ServersServeridMaintenanceResource401
-    | DeleteApiV1ServersServeridMaintenanceResource403
-    | DeleteApiV1ServersServeridMaintenanceResource500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>,
       TError,
-      { serverid: number; data: DeleteApiV1ServersServeridMaintenanceResourceBody },
+      { serverid: number; data: DeleteRequest },
       TContext
     >;
   },
@@ -579,7 +493,7 @@ export const useDeleteApiV1ServersServeridMaintenanceResource = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteApiV1ServersServeridMaintenanceResource>>,
   TError,
-  { serverid: number; data: DeleteApiV1ServersServeridMaintenanceResourceBody },
+  { serverid: number; data: DeleteRequest },
   TContext
 > => {
   return useMutation(

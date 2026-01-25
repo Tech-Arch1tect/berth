@@ -22,47 +22,19 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GetApiV1ServersServeridStacks200,
-  GetApiV1ServersServeridStacks401,
-  GetApiV1ServersServeridStacks500,
-  GetApiV1ServersServeridStacksCanCreate200,
-  GetApiV1ServersServeridStacksCanCreate401,
-  GetApiV1ServersServeridStacksCanCreate500,
-  GetApiV1ServersServeridStacksStackname200,
-  GetApiV1ServersServeridStacksStackname401,
-  GetApiV1ServersServeridStacksStackname403,
-  GetApiV1ServersServeridStacksStackname500,
+  CanCreateStackResponse,
+  CreateStackRequest,
+  CreateStackResponse,
+  ErrorResponse,
   GetApiV1ServersServeridStacksStacknameEnvironment200,
-  GetApiV1ServersServeridStacksStacknameEnvironment401,
-  GetApiV1ServersServeridStacksStacknameEnvironment403,
-  GetApiV1ServersServeridStacksStacknameEnvironment500,
   GetApiV1ServersServeridStacksStacknameEnvironmentParams,
-  GetApiV1ServersServeridStacksStacknameImages200,
-  GetApiV1ServersServeridStacksStacknameImages401,
-  GetApiV1ServersServeridStacksStacknameImages403,
-  GetApiV1ServersServeridStacksStacknameImages500,
-  GetApiV1ServersServeridStacksStacknameNetworks200,
-  GetApiV1ServersServeridStacksStacknameNetworks401,
-  GetApiV1ServersServeridStacksStacknameNetworks403,
-  GetApiV1ServersServeridStacksStacknameNetworks500,
-  GetApiV1ServersServeridStacksStacknamePermissions200,
-  GetApiV1ServersServeridStacksStacknamePermissions401,
-  GetApiV1ServersServeridStacksStacknamePermissions500,
-  GetApiV1ServersServeridStacksStacknameStats200,
-  GetApiV1ServersServeridStacksStacknameStats401,
-  GetApiV1ServersServeridStacksStacknameStats403,
-  GetApiV1ServersServeridStacksStacknameStats500,
-  GetApiV1ServersServeridStacksStacknameVolumes200,
-  GetApiV1ServersServeridStacksStacknameVolumes401,
-  GetApiV1ServersServeridStacksStacknameVolumes403,
-  GetApiV1ServersServeridStacksStacknameVolumes500,
-  PostApiV1ServersServeridStacks201,
-  PostApiV1ServersServeridStacks400,
-  PostApiV1ServersServeridStacks401,
-  PostApiV1ServersServeridStacks403,
-  PostApiV1ServersServeridStacks409,
-  PostApiV1ServersServeridStacks500,
-  PostApiV1ServersServeridStacksBody,
+  ListStacksResponse,
+  StackDetails,
+  StackImagesResponse,
+  StackNetworksResponse,
+  StackPermissionsResponse,
+  StackStatsResponse,
+  StackVolumesResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -72,7 +44,7 @@ import { apiClient } from '../../../lib/api';
  * @summary List server stacks
  */
 export const getApiV1ServersServeridStacks = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ServersServeridStacks200>({
+  return apiClient<ListStacksResponse>({
     url: `/api/v1/servers/${serverid}/stacks`,
     method: 'GET',
     signal,
@@ -85,7 +57,7 @@ export const getGetApiV1ServersServeridStacksQueryKey = (serverid?: number) => {
 
 export const getGetApiV1ServersServeridStacksQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
-  TError = GetApiV1ServersServeridStacks401 | GetApiV1ServersServeridStacks500 | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -112,14 +84,11 @@ export const getGetApiV1ServersServeridStacksQueryOptions = <
 export type GetApiV1ServersServeridStacksQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>
 >;
-export type GetApiV1ServersServeridStacksQueryError =
-  | GetApiV1ServersServeridStacks401
-  | GetApiV1ServersServeridStacks500
-  | void;
+export type GetApiV1ServersServeridStacksQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
-  TError = GetApiV1ServersServeridStacks401 | GetApiV1ServersServeridStacks500 | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options: {
@@ -139,7 +108,7 @@ export function useGetApiV1ServersServeridStacks<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
-  TError = GetApiV1ServersServeridStacks401 | GetApiV1ServersServeridStacks500 | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -159,7 +128,7 @@ export function useGetApiV1ServersServeridStacks<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
-  TError = GetApiV1ServersServeridStacks401 | GetApiV1ServersServeridStacks500 | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -175,7 +144,7 @@ export function useGetApiV1ServersServeridStacks<
 
 export function useGetApiV1ServersServeridStacks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
-  TError = GetApiV1ServersServeridStacks401 | GetApiV1ServersServeridStacks500 | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -200,38 +169,32 @@ export function useGetApiV1ServersServeridStacks<
  */
 export const postApiV1ServersServeridStacks = (
   serverid: number,
-  postApiV1ServersServeridStacksBody: PostApiV1ServersServeridStacksBody,
+  createStackRequest: CreateStackRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<PostApiV1ServersServeridStacks201>({
+  return apiClient<CreateStackResponse>({
     url: `/api/v1/servers/${serverid}/stacks`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1ServersServeridStacksBody,
+    data: createStackRequest,
     signal,
   });
 };
 
 export const getPostApiV1ServersServeridStacksMutationOptions = <
-  TError =
-    | PostApiV1ServersServeridStacks400
-    | PostApiV1ServersServeridStacks401
-    | PostApiV1ServersServeridStacks403
-    | PostApiV1ServersServeridStacks409
-    | PostApiV1ServersServeridStacks500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
     TError,
-    { serverid: number; data: PostApiV1ServersServeridStacksBody },
+    { serverid: number; data: CreateStackRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
   TError,
-  { serverid: number; data: PostApiV1ServersServeridStacksBody },
+  { serverid: number; data: CreateStackRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1ServersServeridStacks'];
@@ -243,7 +206,7 @@ export const getPostApiV1ServersServeridStacksMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
-    { serverid: number; data: PostApiV1ServersServeridStacksBody }
+    { serverid: number; data: CreateStackRequest }
   > = (props) => {
     const { serverid, data } = props ?? {};
 
@@ -256,33 +219,21 @@ export const getPostApiV1ServersServeridStacksMutationOptions = <
 export type PostApiV1ServersServeridStacksMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>
 >;
-export type PostApiV1ServersServeridStacksMutationBody = PostApiV1ServersServeridStacksBody;
-export type PostApiV1ServersServeridStacksMutationError =
-  | PostApiV1ServersServeridStacks400
-  | PostApiV1ServersServeridStacks401
-  | PostApiV1ServersServeridStacks403
-  | PostApiV1ServersServeridStacks409
-  | PostApiV1ServersServeridStacks500
-  | void;
+export type PostApiV1ServersServeridStacksMutationBody = CreateStackRequest;
+export type PostApiV1ServersServeridStacksMutationError = ErrorResponse | void;
 
 /**
  * @summary Create a new stack
  */
 export const usePostApiV1ServersServeridStacks = <
-  TError =
-    | PostApiV1ServersServeridStacks400
-    | PostApiV1ServersServeridStacks401
-    | PostApiV1ServersServeridStacks403
-    | PostApiV1ServersServeridStacks409
-    | PostApiV1ServersServeridStacks500
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
       TError,
-      { serverid: number; data: PostApiV1ServersServeridStacksBody },
+      { serverid: number; data: CreateStackRequest },
       TContext
     >;
   },
@@ -290,7 +241,7 @@ export const usePostApiV1ServersServeridStacks = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
   TError,
-  { serverid: number; data: PostApiV1ServersServeridStacksBody },
+  { serverid: number; data: CreateStackRequest },
   TContext
 > => {
   return useMutation(getPostApiV1ServersServeridStacksMutationOptions(options), queryClient);
@@ -300,7 +251,7 @@ export const usePostApiV1ServersServeridStacks = <
  * @summary Check if user can create stacks
  */
 export const getApiV1ServersServeridStacksCanCreate = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ServersServeridStacksCanCreate200>({
+  return apiClient<CanCreateStackResponse>({
     url: `/api/v1/servers/${serverid}/stacks/can-create`,
     method: 'GET',
     signal,
@@ -313,10 +264,7 @@ export const getGetApiV1ServersServeridStacksCanCreateQueryKey = (serverid?: num
 
 export const getGetApiV1ServersServeridStacksCanCreateQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
-  TError =
-    | GetApiV1ServersServeridStacksCanCreate401
-    | GetApiV1ServersServeridStacksCanCreate500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -348,17 +296,11 @@ export const getGetApiV1ServersServeridStacksCanCreateQueryOptions = <
 export type GetApiV1ServersServeridStacksCanCreateQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>
 >;
-export type GetApiV1ServersServeridStacksCanCreateQueryError =
-  | GetApiV1ServersServeridStacksCanCreate401
-  | GetApiV1ServersServeridStacksCanCreate500
-  | void;
+export type GetApiV1ServersServeridStacksCanCreateQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksCanCreate<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
-  TError =
-    | GetApiV1ServersServeridStacksCanCreate401
-    | GetApiV1ServersServeridStacksCanCreate500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options: {
@@ -382,10 +324,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksCanCreate<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
-  TError =
-    | GetApiV1ServersServeridStacksCanCreate401
-    | GetApiV1ServersServeridStacksCanCreate500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -409,10 +348,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksCanCreate<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
-  TError =
-    | GetApiV1ServersServeridStacksCanCreate401
-    | GetApiV1ServersServeridStacksCanCreate500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -432,10 +368,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
 
 export function useGetApiV1ServersServeridStacksCanCreate<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
-  TError =
-    | GetApiV1ServersServeridStacksCanCreate401
-    | GetApiV1ServersServeridStacksCanCreate500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   options?: {
@@ -467,7 +400,7 @@ export const getApiV1ServersServeridStacksStackname = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStackname200>({
+  return apiClient<StackDetails>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}`,
     method: 'GET',
     signal,
@@ -483,11 +416,7 @@ export const getGetApiV1ServersServeridStacksStacknameQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>,
-  TError =
-    | GetApiV1ServersServeridStacksStackname401
-    | GetApiV1ServersServeridStacksStackname403
-    | GetApiV1ServersServeridStacksStackname500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -526,19 +455,11 @@ export const getGetApiV1ServersServeridStacksStacknameQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>
 >;
-export type GetApiV1ServersServeridStacksStacknameQueryError =
-  | GetApiV1ServersServeridStacksStackname401
-  | GetApiV1ServersServeridStacksStackname403
-  | GetApiV1ServersServeridStacksStackname500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStackname<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>,
-  TError =
-    | GetApiV1ServersServeridStacksStackname401
-    | GetApiV1ServersServeridStacksStackname403
-    | GetApiV1ServersServeridStacksStackname500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -563,11 +484,7 @@ export function useGetApiV1ServersServeridStacksStackname<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStackname<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>,
-  TError =
-    | GetApiV1ServersServeridStacksStackname401
-    | GetApiV1ServersServeridStacksStackname403
-    | GetApiV1ServersServeridStacksStackname500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -592,11 +509,7 @@ export function useGetApiV1ServersServeridStacksStackname<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStackname<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>,
-  TError =
-    | GetApiV1ServersServeridStacksStackname401
-    | GetApiV1ServersServeridStacksStackname403
-    | GetApiV1ServersServeridStacksStackname500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -617,11 +530,7 @@ export function useGetApiV1ServersServeridStacksStackname<
 
 export function useGetApiV1ServersServeridStacksStackname<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>,
-  TError =
-    | GetApiV1ServersServeridStacksStackname401
-    | GetApiV1ServersServeridStacksStackname403
-    | GetApiV1ServersServeridStacksStackname500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -680,11 +589,7 @@ export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameEnvironment401
-    | GetApiV1ServersServeridStacksStacknameEnvironment403
-    | GetApiV1ServersServeridStacksStacknameEnvironment500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -725,19 +630,11 @@ export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryOptions = 
 export type GetApiV1ServersServeridStacksStacknameEnvironmentQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>
 >;
-export type GetApiV1ServersServeridStacksStacknameEnvironmentQueryError =
-  | GetApiV1ServersServeridStacksStacknameEnvironment401
-  | GetApiV1ServersServeridStacksStacknameEnvironment403
-  | GetApiV1ServersServeridStacksStacknameEnvironment500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameEnvironmentQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameEnvironment<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameEnvironment401
-    | GetApiV1ServersServeridStacksStacknameEnvironment403
-    | GetApiV1ServersServeridStacksStacknameEnvironment500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -763,11 +660,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameEnvironment<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameEnvironment401
-    | GetApiV1ServersServeridStacksStacknameEnvironment403
-    | GetApiV1ServersServeridStacksStacknameEnvironment500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -793,11 +686,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameEnvironment<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameEnvironment401
-    | GetApiV1ServersServeridStacksStacknameEnvironment403
-    | GetApiV1ServersServeridStacksStacknameEnvironment500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -819,11 +708,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
 
 export function useGetApiV1ServersServeridStacksStacknameEnvironment<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameEnvironment401
-    | GetApiV1ServersServeridStacksStacknameEnvironment403
-    | GetApiV1ServersServeridStacksStacknameEnvironment500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -862,7 +747,7 @@ export const getApiV1ServersServeridStacksStacknameImages = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameImages200>({
+  return apiClient<StackImagesResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/images`,
     method: 'GET',
     signal,
@@ -878,11 +763,7 @@ export const getGetApiV1ServersServeridStacksStacknameImagesQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameImagesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameImages401
-    | GetApiV1ServersServeridStacksStacknameImages403
-    | GetApiV1ServersServeridStacksStacknameImages500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -921,19 +802,11 @@ export const getGetApiV1ServersServeridStacksStacknameImagesQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameImagesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>
 >;
-export type GetApiV1ServersServeridStacksStacknameImagesQueryError =
-  | GetApiV1ServersServeridStacksStacknameImages401
-  | GetApiV1ServersServeridStacksStacknameImages403
-  | GetApiV1ServersServeridStacksStacknameImages500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameImagesQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameImages<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameImages401
-    | GetApiV1ServersServeridStacksStacknameImages403
-    | GetApiV1ServersServeridStacksStacknameImages500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -958,11 +831,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameImages<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameImages401
-    | GetApiV1ServersServeridStacksStacknameImages403
-    | GetApiV1ServersServeridStacksStacknameImages500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -987,11 +856,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameImages<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameImages401
-    | GetApiV1ServersServeridStacksStacknameImages403
-    | GetApiV1ServersServeridStacksStacknameImages500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1012,11 +877,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
 
 export function useGetApiV1ServersServeridStacksStacknameImages<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameImages401
-    | GetApiV1ServersServeridStacksStacknameImages403
-    | GetApiV1ServersServeridStacksStacknameImages500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1053,7 +914,7 @@ export const getApiV1ServersServeridStacksStacknameNetworks = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameNetworks200>({
+  return apiClient<StackNetworksResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/networks`,
     method: 'GET',
     signal,
@@ -1069,11 +930,7 @@ export const getGetApiV1ServersServeridStacksStacknameNetworksQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameNetworksQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameNetworks401
-    | GetApiV1ServersServeridStacksStacknameNetworks403
-    | GetApiV1ServersServeridStacksStacknameNetworks500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1112,19 +969,11 @@ export const getGetApiV1ServersServeridStacksStacknameNetworksQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameNetworksQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>
 >;
-export type GetApiV1ServersServeridStacksStacknameNetworksQueryError =
-  | GetApiV1ServersServeridStacksStacknameNetworks401
-  | GetApiV1ServersServeridStacksStacknameNetworks403
-  | GetApiV1ServersServeridStacksStacknameNetworks500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameNetworksQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameNetworks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameNetworks401
-    | GetApiV1ServersServeridStacksStacknameNetworks403
-    | GetApiV1ServersServeridStacksStacknameNetworks500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1149,11 +998,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameNetworks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameNetworks401
-    | GetApiV1ServersServeridStacksStacknameNetworks403
-    | GetApiV1ServersServeridStacksStacknameNetworks500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1178,11 +1023,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameNetworks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameNetworks401
-    | GetApiV1ServersServeridStacksStacknameNetworks403
-    | GetApiV1ServersServeridStacksStacknameNetworks500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1203,11 +1044,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
 
 export function useGetApiV1ServersServeridStacksStacknameNetworks<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameNetworks401
-    | GetApiV1ServersServeridStacksStacknameNetworks403
-    | GetApiV1ServersServeridStacksStacknameNetworks500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1244,7 +1081,7 @@ export const getApiV1ServersServeridStacksStacknamePermissions = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknamePermissions200>({
+  return apiClient<StackPermissionsResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/permissions`,
     method: 'GET',
     signal,
@@ -1260,10 +1097,7 @@ export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknamePermissions401
-    | GetApiV1ServersServeridStacksStacknamePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1303,17 +1137,11 @@ export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryOptions = 
 export type GetApiV1ServersServeridStacksStacknamePermissionsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>
 >;
-export type GetApiV1ServersServeridStacksStacknamePermissionsQueryError =
-  | GetApiV1ServersServeridStacksStacknamePermissions401
-  | GetApiV1ServersServeridStacksStacknamePermissions500
-  | void;
+export type GetApiV1ServersServeridStacksStacknamePermissionsQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknamePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknamePermissions401
-    | GetApiV1ServersServeridStacksStacknamePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1338,10 +1166,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknamePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknamePermissions401
-    | GetApiV1ServersServeridStacksStacknamePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1366,10 +1191,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknamePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknamePermissions401
-    | GetApiV1ServersServeridStacksStacknamePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1390,10 +1212,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
 
 export function useGetApiV1ServersServeridStacksStacknamePermissions<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknamePermissions401
-    | GetApiV1ServersServeridStacksStacknamePermissions500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1430,7 +1249,7 @@ export const getApiV1ServersServeridStacksStacknameStats = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameStats200>({
+  return apiClient<StackStatsResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/stats`,
     method: 'GET',
     signal,
@@ -1446,11 +1265,7 @@ export const getGetApiV1ServersServeridStacksStacknameStatsQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameStatsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameStats401
-    | GetApiV1ServersServeridStacksStacknameStats403
-    | GetApiV1ServersServeridStacksStacknameStats500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1489,19 +1304,11 @@ export const getGetApiV1ServersServeridStacksStacknameStatsQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameStatsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>
 >;
-export type GetApiV1ServersServeridStacksStacknameStatsQueryError =
-  | GetApiV1ServersServeridStacksStacknameStats401
-  | GetApiV1ServersServeridStacksStacknameStats403
-  | GetApiV1ServersServeridStacksStacknameStats500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameStatsQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameStats401
-    | GetApiV1ServersServeridStacksStacknameStats403
-    | GetApiV1ServersServeridStacksStacknameStats500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1526,11 +1333,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameStats401
-    | GetApiV1ServersServeridStacksStacknameStats403
-    | GetApiV1ServersServeridStacksStacknameStats500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1555,11 +1358,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameStats401
-    | GetApiV1ServersServeridStacksStacknameStats403
-    | GetApiV1ServersServeridStacksStacknameStats500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1580,11 +1379,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
 
 export function useGetApiV1ServersServeridStacksStacknameStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameStats401
-    | GetApiV1ServersServeridStacksStacknameStats403
-    | GetApiV1ServersServeridStacksStacknameStats500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1621,7 +1416,7 @@ export const getApiV1ServersServeridStacksStacknameVolumes = (
   stackname: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameVolumes200>({
+  return apiClient<StackVolumesResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/volumes`,
     method: 'GET',
     signal,
@@ -1637,11 +1432,7 @@ export const getGetApiV1ServersServeridStacksStacknameVolumesQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameVolumesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameVolumes401
-    | GetApiV1ServersServeridStacksStacknameVolumes403
-    | GetApiV1ServersServeridStacksStacknameVolumes500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1680,19 +1471,11 @@ export const getGetApiV1ServersServeridStacksStacknameVolumesQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameVolumesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>
 >;
-export type GetApiV1ServersServeridStacksStacknameVolumesQueryError =
-  | GetApiV1ServersServeridStacksStacknameVolumes401
-  | GetApiV1ServersServeridStacksStacknameVolumes403
-  | GetApiV1ServersServeridStacksStacknameVolumes500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameVolumesQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameVolumes<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameVolumes401
-    | GetApiV1ServersServeridStacksStacknameVolumes403
-    | GetApiV1ServersServeridStacksStacknameVolumes500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1717,11 +1500,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVolumes<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameVolumes401
-    | GetApiV1ServersServeridStacksStacknameVolumes403
-    | GetApiV1ServersServeridStacksStacknameVolumes500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1746,11 +1525,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVolumes<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameVolumes401
-    | GetApiV1ServersServeridStacksStacknameVolumes403
-    | GetApiV1ServersServeridStacksStacknameVolumes500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -1771,11 +1546,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
 
 export function useGetApiV1ServersServeridStacksStacknameVolumes<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameVolumes401
-    | GetApiV1ServersServeridStacksStacknameVolumes403
-    | GetApiV1ServersServeridStacksStacknameVolumes500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,

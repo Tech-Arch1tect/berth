@@ -22,23 +22,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GetApiV1TotpSetup200,
-  GetApiV1TotpSetup401,
-  GetApiV1TotpSetup409,
-  GetApiV1TotpSetup500,
-  GetApiV1TotpStatus200,
-  GetApiV1TotpStatus401,
-  GetApiV1TotpStatus500,
-  PostApiV1TotpDisable200,
-  PostApiV1TotpDisable400,
-  PostApiV1TotpDisable401,
-  PostApiV1TotpDisable500,
-  PostApiV1TotpDisableBody,
-  PostApiV1TotpEnable200,
-  PostApiV1TotpEnable400,
-  PostApiV1TotpEnable401,
-  PostApiV1TotpEnable500,
-  PostApiV1TotpEnableBody,
+  ErrorResponse,
+  TOTPDisableRequest,
+  TOTPEnableRequest,
+  TOTPMessageResponse,
+  TOTPSetupResponse,
+  TOTPStatusResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -48,32 +37,32 @@ import { apiClient } from '../../../lib/api';
  * @summary Disable TOTP
  */
 export const postApiV1TotpDisable = (
-  postApiV1TotpDisableBody: PostApiV1TotpDisableBody,
+  tOTPDisableRequest: TOTPDisableRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<PostApiV1TotpDisable200>({
+  return apiClient<TOTPMessageResponse>({
     url: `/api/v1/totp/disable`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1TotpDisableBody,
+    data: tOTPDisableRequest,
     signal,
   });
 };
 
 export const getPostApiV1TotpDisableMutationOptions = <
-  TError = PostApiV1TotpDisable400 | PostApiV1TotpDisable401 | PostApiV1TotpDisable500 | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1TotpDisable>>,
     TError,
-    { data: PostApiV1TotpDisableBody },
+    { data: TOTPDisableRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1TotpDisable>>,
   TError,
-  { data: PostApiV1TotpDisableBody },
+  { data: TOTPDisableRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1TotpDisable'];
@@ -85,7 +74,7 @@ export const getPostApiV1TotpDisableMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1TotpDisable>>,
-    { data: PostApiV1TotpDisableBody }
+    { data: TOTPDisableRequest }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -98,25 +87,18 @@ export const getPostApiV1TotpDisableMutationOptions = <
 export type PostApiV1TotpDisableMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1TotpDisable>>
 >;
-export type PostApiV1TotpDisableMutationBody = PostApiV1TotpDisableBody;
-export type PostApiV1TotpDisableMutationError =
-  | PostApiV1TotpDisable400
-  | PostApiV1TotpDisable401
-  | PostApiV1TotpDisable500
-  | void;
+export type PostApiV1TotpDisableMutationBody = TOTPDisableRequest;
+export type PostApiV1TotpDisableMutationError = ErrorResponse | void;
 
 /**
  * @summary Disable TOTP
  */
-export const usePostApiV1TotpDisable = <
-  TError = PostApiV1TotpDisable400 | PostApiV1TotpDisable401 | PostApiV1TotpDisable500 | void,
-  TContext = unknown,
->(
+export const usePostApiV1TotpDisable = <TError = ErrorResponse | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1TotpDisable>>,
       TError,
-      { data: PostApiV1TotpDisableBody },
+      { data: TOTPDisableRequest },
       TContext
     >;
   },
@@ -124,7 +106,7 @@ export const usePostApiV1TotpDisable = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1TotpDisable>>,
   TError,
-  { data: PostApiV1TotpDisableBody },
+  { data: TOTPDisableRequest },
   TContext
 > => {
   return useMutation(getPostApiV1TotpDisableMutationOptions(options), queryClient);
@@ -133,33 +115,30 @@ export const usePostApiV1TotpDisable = <
  * Enables two-factor authentication after verifying the TOTP code from the authenticator app.
  * @summary Enable TOTP
  */
-export const postApiV1TotpEnable = (
-  postApiV1TotpEnableBody: PostApiV1TotpEnableBody,
-  signal?: AbortSignal
-) => {
-  return apiClient<PostApiV1TotpEnable200>({
+export const postApiV1TotpEnable = (tOTPEnableRequest: TOTPEnableRequest, signal?: AbortSignal) => {
+  return apiClient<TOTPMessageResponse>({
     url: `/api/v1/totp/enable`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1TotpEnableBody,
+    data: tOTPEnableRequest,
     signal,
   });
 };
 
 export const getPostApiV1TotpEnableMutationOptions = <
-  TError = PostApiV1TotpEnable400 | PostApiV1TotpEnable401 | PostApiV1TotpEnable500 | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1TotpEnable>>,
     TError,
-    { data: PostApiV1TotpEnableBody },
+    { data: TOTPEnableRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1TotpEnable>>,
   TError,
-  { data: PostApiV1TotpEnableBody },
+  { data: TOTPEnableRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1TotpEnable'];
@@ -171,7 +150,7 @@ export const getPostApiV1TotpEnableMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1TotpEnable>>,
-    { data: PostApiV1TotpEnableBody }
+    { data: TOTPEnableRequest }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -184,25 +163,18 @@ export const getPostApiV1TotpEnableMutationOptions = <
 export type PostApiV1TotpEnableMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1TotpEnable>>
 >;
-export type PostApiV1TotpEnableMutationBody = PostApiV1TotpEnableBody;
-export type PostApiV1TotpEnableMutationError =
-  | PostApiV1TotpEnable400
-  | PostApiV1TotpEnable401
-  | PostApiV1TotpEnable500
-  | void;
+export type PostApiV1TotpEnableMutationBody = TOTPEnableRequest;
+export type PostApiV1TotpEnableMutationError = ErrorResponse | void;
 
 /**
  * @summary Enable TOTP
  */
-export const usePostApiV1TotpEnable = <
-  TError = PostApiV1TotpEnable400 | PostApiV1TotpEnable401 | PostApiV1TotpEnable500 | void,
-  TContext = unknown,
->(
+export const usePostApiV1TotpEnable = <TError = ErrorResponse | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1TotpEnable>>,
       TError,
-      { data: PostApiV1TotpEnableBody },
+      { data: TOTPEnableRequest },
       TContext
     >;
   },
@@ -210,7 +182,7 @@ export const usePostApiV1TotpEnable = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1TotpEnable>>,
   TError,
-  { data: PostApiV1TotpEnableBody },
+  { data: TOTPEnableRequest },
   TContext
 > => {
   return useMutation(getPostApiV1TotpEnableMutationOptions(options), queryClient);
@@ -220,7 +192,7 @@ export const usePostApiV1TotpEnable = <
  * @summary Get TOTP setup information
  */
 export const getApiV1TotpSetup = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1TotpSetup200>({ url: `/api/v1/totp/setup`, method: 'GET', signal });
+  return apiClient<TOTPSetupResponse>({ url: `/api/v1/totp/setup`, method: 'GET', signal });
 };
 
 export const getGetApiV1TotpSetupQueryKey = () => {
@@ -229,7 +201,7 @@ export const getGetApiV1TotpSetupQueryKey = () => {
 
 export const getGetApiV1TotpSetupQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1TotpSetup>>,
-  TError = GetApiV1TotpSetup401 | GetApiV1TotpSetup409 | GetApiV1TotpSetup500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpSetup>>, TError, TData>>;
 }) => {
@@ -250,15 +222,11 @@ export const getGetApiV1TotpSetupQueryOptions = <
 export type GetApiV1TotpSetupQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1TotpSetup>>
 >;
-export type GetApiV1TotpSetupQueryError =
-  | GetApiV1TotpSetup401
-  | GetApiV1TotpSetup409
-  | GetApiV1TotpSetup500
-  | void;
+export type GetApiV1TotpSetupQueryError = ErrorResponse | void;
 
 export function useGetApiV1TotpSetup<
   TData = Awaited<ReturnType<typeof getApiV1TotpSetup>>,
-  TError = GetApiV1TotpSetup401 | GetApiV1TotpSetup409 | GetApiV1TotpSetup500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpSetup>>, TError, TData>> &
@@ -275,7 +243,7 @@ export function useGetApiV1TotpSetup<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1TotpSetup<
   TData = Awaited<ReturnType<typeof getApiV1TotpSetup>>,
-  TError = GetApiV1TotpSetup401 | GetApiV1TotpSetup409 | GetApiV1TotpSetup500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpSetup>>, TError, TData>> &
@@ -292,7 +260,7 @@ export function useGetApiV1TotpSetup<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1TotpSetup<
   TData = Awaited<ReturnType<typeof getApiV1TotpSetup>>,
-  TError = GetApiV1TotpSetup401 | GetApiV1TotpSetup409 | GetApiV1TotpSetup500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpSetup>>, TError, TData>>;
@@ -305,7 +273,7 @@ export function useGetApiV1TotpSetup<
 
 export function useGetApiV1TotpSetup<
   TData = Awaited<ReturnType<typeof getApiV1TotpSetup>>,
-  TError = GetApiV1TotpSetup401 | GetApiV1TotpSetup409 | GetApiV1TotpSetup500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpSetup>>, TError, TData>>;
@@ -326,7 +294,7 @@ export function useGetApiV1TotpSetup<
  * @summary Get TOTP status
  */
 export const getApiV1TotpStatus = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1TotpStatus200>({ url: `/api/v1/totp/status`, method: 'GET', signal });
+  return apiClient<TOTPStatusResponse>({ url: `/api/v1/totp/status`, method: 'GET', signal });
 };
 
 export const getGetApiV1TotpStatusQueryKey = () => {
@@ -335,7 +303,7 @@ export const getGetApiV1TotpStatusQueryKey = () => {
 
 export const getGetApiV1TotpStatusQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1TotpStatus>>,
-  TError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpStatus>>, TError, TData>>;
 }) => {
@@ -356,11 +324,11 @@ export const getGetApiV1TotpStatusQueryOptions = <
 export type GetApiV1TotpStatusQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1TotpStatus>>
 >;
-export type GetApiV1TotpStatusQueryError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void;
+export type GetApiV1TotpStatusQueryError = ErrorResponse | void;
 
 export function useGetApiV1TotpStatus<
   TData = Awaited<ReturnType<typeof getApiV1TotpStatus>>,
-  TError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpStatus>>, TError, TData>> &
@@ -377,7 +345,7 @@ export function useGetApiV1TotpStatus<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1TotpStatus<
   TData = Awaited<ReturnType<typeof getApiV1TotpStatus>>,
-  TError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -396,7 +364,7 @@ export function useGetApiV1TotpStatus<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1TotpStatus<
   TData = Awaited<ReturnType<typeof getApiV1TotpStatus>>,
-  TError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpStatus>>, TError, TData>>;
@@ -409,7 +377,7 @@ export function useGetApiV1TotpStatus<
 
 export function useGetApiV1TotpStatus<
   TData = Awaited<ReturnType<typeof getApiV1TotpStatus>>,
-  TError = GetApiV1TotpStatus401 | GetApiV1TotpStatus500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1TotpStatus>>, TError, TData>>;

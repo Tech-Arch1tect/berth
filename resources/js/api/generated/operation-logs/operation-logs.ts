@@ -19,26 +19,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GetApiV1OperationLogs200,
-  GetApiV1OperationLogs401,
-  GetApiV1OperationLogs500,
-  GetApiV1OperationLogsByOperationIdOperationId200,
-  GetApiV1OperationLogsByOperationIdOperationId400,
-  GetApiV1OperationLogsByOperationIdOperationId401,
-  GetApiV1OperationLogsByOperationIdOperationId404,
-  GetApiV1OperationLogsByOperationIdOperationId500,
-  GetApiV1OperationLogsId200,
-  GetApiV1OperationLogsId400,
-  GetApiV1OperationLogsId401,
-  GetApiV1OperationLogsId404,
-  GetApiV1OperationLogsId500,
+  ErrorResponse,
   GetApiV1OperationLogsParams,
-  GetApiV1OperationLogsStats200,
-  GetApiV1OperationLogsStats401,
-  GetApiV1OperationLogsStats500,
-  GetApiV1RunningOperations200,
-  GetApiV1RunningOperations401,
-  GetApiV1RunningOperations500,
+  OperationLogDetail,
+  OperationLogStats,
+  PaginatedOperationLogs,
+  RunningOperationsResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -51,7 +37,7 @@ export const getApiV1OperationLogs = (
   params?: GetApiV1OperationLogsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1OperationLogs200>({
+  return apiClient<PaginatedOperationLogs>({
     url: `/api/v1/operation-logs`,
     method: 'GET',
     params,
@@ -65,7 +51,7 @@ export const getGetApiV1OperationLogsQueryKey = (params?: GetApiV1OperationLogsP
 
 export const getGetApiV1OperationLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1OperationLogs>>,
-  TError = GetApiV1OperationLogs401 | GetApiV1OperationLogs500 | void,
+  TError = ErrorResponse | void,
 >(
   params?: GetApiV1OperationLogsParams,
   options?: {
@@ -91,14 +77,11 @@ export const getGetApiV1OperationLogsQueryOptions = <
 export type GetApiV1OperationLogsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1OperationLogs>>
 >;
-export type GetApiV1OperationLogsQueryError =
-  | GetApiV1OperationLogs401
-  | GetApiV1OperationLogs500
-  | void;
+export type GetApiV1OperationLogsQueryError = ErrorResponse | void;
 
 export function useGetApiV1OperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogs>>,
-  TError = GetApiV1OperationLogs401 | GetApiV1OperationLogs500 | void,
+  TError = ErrorResponse | void,
 >(
   params: undefined | GetApiV1OperationLogsParams,
   options: {
@@ -118,7 +101,7 @@ export function useGetApiV1OperationLogs<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogs>>,
-  TError = GetApiV1OperationLogs401 | GetApiV1OperationLogs500 | void,
+  TError = ErrorResponse | void,
 >(
   params?: GetApiV1OperationLogsParams,
   options?: {
@@ -138,7 +121,7 @@ export function useGetApiV1OperationLogs<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogs>>,
-  TError = GetApiV1OperationLogs401 | GetApiV1OperationLogs500 | void,
+  TError = ErrorResponse | void,
 >(
   params?: GetApiV1OperationLogsParams,
   options?: {
@@ -154,7 +137,7 @@ export function useGetApiV1OperationLogs<
 
 export function useGetApiV1OperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogs>>,
-  TError = GetApiV1OperationLogs401 | GetApiV1OperationLogs500 | void,
+  TError = ErrorResponse | void,
 >(
   params?: GetApiV1OperationLogsParams,
   options?: {
@@ -181,7 +164,7 @@ export const getApiV1OperationLogsByOperationIdOperationId = (
   operationId: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1OperationLogsByOperationIdOperationId200>({
+  return apiClient<OperationLogDetail>({
     url: `/api/v1/operation-logs/by-operation-id/${operationId}`,
     method: 'GET',
     signal,
@@ -194,12 +177,7 @@ export const getGetApiV1OperationLogsByOperationIdOperationIdQueryKey = (operati
 
 export const getGetApiV1OperationLogsByOperationIdOperationIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
-  TError =
-    | GetApiV1OperationLogsByOperationIdOperationId400
-    | GetApiV1OperationLogsByOperationIdOperationId401
-    | GetApiV1OperationLogsByOperationIdOperationId404
-    | GetApiV1OperationLogsByOperationIdOperationId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   operationId: string,
   options?: {
@@ -231,21 +209,11 @@ export const getGetApiV1OperationLogsByOperationIdOperationIdQueryOptions = <
 export type GetApiV1OperationLogsByOperationIdOperationIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>
 >;
-export type GetApiV1OperationLogsByOperationIdOperationIdQueryError =
-  | GetApiV1OperationLogsByOperationIdOperationId400
-  | GetApiV1OperationLogsByOperationIdOperationId401
-  | GetApiV1OperationLogsByOperationIdOperationId404
-  | GetApiV1OperationLogsByOperationIdOperationId500
-  | void;
+export type GetApiV1OperationLogsByOperationIdOperationIdQueryError = ErrorResponse | void;
 
 export function useGetApiV1OperationLogsByOperationIdOperationId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
-  TError =
-    | GetApiV1OperationLogsByOperationIdOperationId400
-    | GetApiV1OperationLogsByOperationIdOperationId401
-    | GetApiV1OperationLogsByOperationIdOperationId404
-    | GetApiV1OperationLogsByOperationIdOperationId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   operationId: string,
   options: {
@@ -269,12 +237,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsByOperationIdOperationId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
-  TError =
-    | GetApiV1OperationLogsByOperationIdOperationId400
-    | GetApiV1OperationLogsByOperationIdOperationId401
-    | GetApiV1OperationLogsByOperationIdOperationId404
-    | GetApiV1OperationLogsByOperationIdOperationId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   operationId: string,
   options?: {
@@ -298,12 +261,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsByOperationIdOperationId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
-  TError =
-    | GetApiV1OperationLogsByOperationIdOperationId400
-    | GetApiV1OperationLogsByOperationIdOperationId401
-    | GetApiV1OperationLogsByOperationIdOperationId404
-    | GetApiV1OperationLogsByOperationIdOperationId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   operationId: string,
   options?: {
@@ -323,12 +281,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
 
 export function useGetApiV1OperationLogsByOperationIdOperationId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
-  TError =
-    | GetApiV1OperationLogsByOperationIdOperationId400
-    | GetApiV1OperationLogsByOperationIdOperationId401
-    | GetApiV1OperationLogsByOperationIdOperationId404
-    | GetApiV1OperationLogsByOperationIdOperationId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   operationId: string,
   options?: {
@@ -359,7 +312,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
  * @summary Get user's operation logs statistics
  */
 export const getApiV1OperationLogsStats = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1OperationLogsStats200>({
+  return apiClient<OperationLogStats>({
     url: `/api/v1/operation-logs/stats`,
     method: 'GET',
     signal,
@@ -372,7 +325,7 @@ export const getGetApiV1OperationLogsStatsQueryKey = () => {
 
 export const getGetApiV1OperationLogsStatsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
-  TError = GetApiV1OperationLogsStats401 | GetApiV1OperationLogsStats500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsStats>>, TError, TData>
@@ -396,14 +349,11 @@ export const getGetApiV1OperationLogsStatsQueryOptions = <
 export type GetApiV1OperationLogsStatsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1OperationLogsStats>>
 >;
-export type GetApiV1OperationLogsStatsQueryError =
-  | GetApiV1OperationLogsStats401
-  | GetApiV1OperationLogsStats500
-  | void;
+export type GetApiV1OperationLogsStatsQueryError = ErrorResponse | void;
 
 export function useGetApiV1OperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
-  TError = GetApiV1OperationLogsStats401 | GetApiV1OperationLogsStats500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<
@@ -422,7 +372,7 @@ export function useGetApiV1OperationLogsStats<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
-  TError = GetApiV1OperationLogsStats401 | GetApiV1OperationLogsStats500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -441,7 +391,7 @@ export function useGetApiV1OperationLogsStats<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
-  TError = GetApiV1OperationLogsStats401 | GetApiV1OperationLogsStats500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -456,7 +406,7 @@ export function useGetApiV1OperationLogsStats<
 
 export function useGetApiV1OperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
-  TError = GetApiV1OperationLogsStats401 | GetApiV1OperationLogsStats500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -479,7 +429,7 @@ export function useGetApiV1OperationLogsStats<
  * @summary Get operation log details
  */
 export const getApiV1OperationLogsId = (id: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1OperationLogsId200>({
+  return apiClient<OperationLogDetail>({
     url: `/api/v1/operation-logs/${id}`,
     method: 'GET',
     signal,
@@ -492,12 +442,7 @@ export const getGetApiV1OperationLogsIdQueryKey = (id?: number) => {
 
 export const getGetApiV1OperationLogsIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
-  TError =
-    | GetApiV1OperationLogsId400
-    | GetApiV1OperationLogsId401
-    | GetApiV1OperationLogsId404
-    | GetApiV1OperationLogsId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -524,21 +469,11 @@ export const getGetApiV1OperationLogsIdQueryOptions = <
 export type GetApiV1OperationLogsIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1OperationLogsId>>
 >;
-export type GetApiV1OperationLogsIdQueryError =
-  | GetApiV1OperationLogsId400
-  | GetApiV1OperationLogsId401
-  | GetApiV1OperationLogsId404
-  | GetApiV1OperationLogsId500
-  | void;
+export type GetApiV1OperationLogsIdQueryError = ErrorResponse | void;
 
 export function useGetApiV1OperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
-  TError =
-    | GetApiV1OperationLogsId400
-    | GetApiV1OperationLogsId401
-    | GetApiV1OperationLogsId404
-    | GetApiV1OperationLogsId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options: {
@@ -558,12 +493,7 @@ export function useGetApiV1OperationLogsId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
-  TError =
-    | GetApiV1OperationLogsId400
-    | GetApiV1OperationLogsId401
-    | GetApiV1OperationLogsId404
-    | GetApiV1OperationLogsId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -583,12 +513,7 @@ export function useGetApiV1OperationLogsId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1OperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
-  TError =
-    | GetApiV1OperationLogsId400
-    | GetApiV1OperationLogsId401
-    | GetApiV1OperationLogsId404
-    | GetApiV1OperationLogsId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -604,12 +529,7 @@ export function useGetApiV1OperationLogsId<
 
 export function useGetApiV1OperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
-  TError =
-    | GetApiV1OperationLogsId400
-    | GetApiV1OperationLogsId401
-    | GetApiV1OperationLogsId404
-    | GetApiV1OperationLogsId500
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -633,7 +553,7 @@ export function useGetApiV1OperationLogsId<
  * @summary Get running operations
  */
 export const getApiV1RunningOperations = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1RunningOperations200>({
+  return apiClient<RunningOperationsResponse>({
     url: `/api/v1/running-operations`,
     method: 'GET',
     signal,
@@ -646,7 +566,7 @@ export const getGetApiV1RunningOperationsQueryKey = () => {
 
 export const getGetApiV1RunningOperationsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1RunningOperations>>,
-  TError = GetApiV1RunningOperations401 | GetApiV1RunningOperations500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof getApiV1RunningOperations>>, TError, TData>
@@ -670,14 +590,11 @@ export const getGetApiV1RunningOperationsQueryOptions = <
 export type GetApiV1RunningOperationsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1RunningOperations>>
 >;
-export type GetApiV1RunningOperationsQueryError =
-  | GetApiV1RunningOperations401
-  | GetApiV1RunningOperations500
-  | void;
+export type GetApiV1RunningOperationsQueryError = ErrorResponse | void;
 
 export function useGetApiV1RunningOperations<
   TData = Awaited<ReturnType<typeof getApiV1RunningOperations>>,
-  TError = GetApiV1RunningOperations401 | GetApiV1RunningOperations500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<
@@ -696,7 +613,7 @@ export function useGetApiV1RunningOperations<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1RunningOperations<
   TData = Awaited<ReturnType<typeof getApiV1RunningOperations>>,
-  TError = GetApiV1RunningOperations401 | GetApiV1RunningOperations500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -715,7 +632,7 @@ export function useGetApiV1RunningOperations<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1RunningOperations<
   TData = Awaited<ReturnType<typeof getApiV1RunningOperations>>,
-  TError = GetApiV1RunningOperations401 | GetApiV1RunningOperations500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<
@@ -730,7 +647,7 @@ export function useGetApiV1RunningOperations<
 
 export function useGetApiV1RunningOperations<
   TData = Awaited<ReturnType<typeof getApiV1RunningOperations>>,
-  TError = GetApiV1RunningOperations401 | GetApiV1RunningOperations500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<

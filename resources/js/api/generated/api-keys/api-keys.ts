@@ -22,35 +22,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  DeleteApiV1ApiKeysId200,
-  DeleteApiV1ApiKeysId400,
-  DeleteApiV1ApiKeysId401,
-  DeleteApiV1ApiKeysId404,
-  DeleteApiV1ApiKeysIdScopesScopeId200,
-  DeleteApiV1ApiKeysIdScopesScopeId400,
-  DeleteApiV1ApiKeysIdScopesScopeId401,
-  DeleteApiV1ApiKeysIdScopesScopeId404,
-  GetApiV1ApiKeys200,
-  GetApiV1ApiKeys401,
-  GetApiV1ApiKeys500,
-  GetApiV1ApiKeysId200,
-  GetApiV1ApiKeysId400,
-  GetApiV1ApiKeysId401,
-  GetApiV1ApiKeysId404,
-  GetApiV1ApiKeysIdScopes200,
-  GetApiV1ApiKeysIdScopes400,
-  GetApiV1ApiKeysIdScopes401,
-  GetApiV1ApiKeysIdScopes404,
-  PostApiV1ApiKeys201,
-  PostApiV1ApiKeys400,
-  PostApiV1ApiKeys401,
-  PostApiV1ApiKeys500,
-  PostApiV1ApiKeysBody,
-  PostApiV1ApiKeysIdScopes201,
-  PostApiV1ApiKeysIdScopes400,
-  PostApiV1ApiKeysIdScopes401,
-  PostApiV1ApiKeysIdScopes404,
-  PostApiV1ApiKeysIdScopesBody,
+  AddScopeRequest,
+  CreateAPIKeyRequest,
+  CreateAPIKeyResponse,
+  ErrorResponse,
+  GetAPIKeyResponse,
+  ListAPIKeysResponse,
+  ListScopesResponse,
+  MessageResponse2,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -60,7 +39,7 @@ import { apiClient } from '../../../lib/api';
  * @summary List API keys
  */
 export const getApiV1ApiKeys = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1ApiKeys200>({ url: `/api/v1/api-keys`, method: 'GET', signal });
+  return apiClient<ListAPIKeysResponse>({ url: `/api/v1/api-keys`, method: 'GET', signal });
 };
 
 export const getGetApiV1ApiKeysQueryKey = () => {
@@ -69,7 +48,7 @@ export const getGetApiV1ApiKeysQueryKey = () => {
 
 export const getGetApiV1ApiKeysQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ApiKeys>>,
-  TError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ApiKeys>>, TError, TData>>;
 }) => {
@@ -88,11 +67,11 @@ export const getGetApiV1ApiKeysQueryOptions = <
 };
 
 export type GetApiV1ApiKeysQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1ApiKeys>>>;
-export type GetApiV1ApiKeysQueryError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void;
+export type GetApiV1ApiKeysQueryError = ErrorResponse | void;
 
 export function useGetApiV1ApiKeys<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeys>>,
-  TError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ApiKeys>>, TError, TData>> &
@@ -109,7 +88,7 @@ export function useGetApiV1ApiKeys<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeys<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeys>>,
-  TError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ApiKeys>>, TError, TData>> &
@@ -126,7 +105,7 @@ export function useGetApiV1ApiKeys<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeys<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeys>>,
-  TError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ApiKeys>>, TError, TData>>;
@@ -139,7 +118,7 @@ export function useGetApiV1ApiKeys<
 
 export function useGetApiV1ApiKeys<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeys>>,
-  TError = GetApiV1ApiKeys401 | GetApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1ApiKeys>>, TError, TData>>;
@@ -160,32 +139,32 @@ export function useGetApiV1ApiKeys<
  * @summary Create API key
  */
 export const postApiV1ApiKeys = (
-  postApiV1ApiKeysBody: PostApiV1ApiKeysBody,
+  createAPIKeyRequest: CreateAPIKeyRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<PostApiV1ApiKeys201>({
+  return apiClient<CreateAPIKeyResponse>({
     url: `/api/v1/api-keys`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1ApiKeysBody,
+    data: createAPIKeyRequest,
     signal,
   });
 };
 
 export const getPostApiV1ApiKeysMutationOptions = <
-  TError = PostApiV1ApiKeys400 | PostApiV1ApiKeys401 | PostApiV1ApiKeys500 | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1ApiKeys>>,
     TError,
-    { data: PostApiV1ApiKeysBody },
+    { data: CreateAPIKeyRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ApiKeys>>,
   TError,
-  { data: PostApiV1ApiKeysBody },
+  { data: CreateAPIKeyRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1ApiKeys'];
@@ -197,7 +176,7 @@ export const getPostApiV1ApiKeysMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ApiKeys>>,
-    { data: PostApiV1ApiKeysBody }
+    { data: CreateAPIKeyRequest }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -210,25 +189,18 @@ export const getPostApiV1ApiKeysMutationOptions = <
 export type PostApiV1ApiKeysMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1ApiKeys>>
 >;
-export type PostApiV1ApiKeysMutationBody = PostApiV1ApiKeysBody;
-export type PostApiV1ApiKeysMutationError =
-  | PostApiV1ApiKeys400
-  | PostApiV1ApiKeys401
-  | PostApiV1ApiKeys500
-  | void;
+export type PostApiV1ApiKeysMutationBody = CreateAPIKeyRequest;
+export type PostApiV1ApiKeysMutationError = ErrorResponse | void;
 
 /**
  * @summary Create API key
  */
-export const usePostApiV1ApiKeys = <
-  TError = PostApiV1ApiKeys400 | PostApiV1ApiKeys401 | PostApiV1ApiKeys500 | void,
-  TContext = unknown,
->(
+export const usePostApiV1ApiKeys = <TError = ErrorResponse | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1ApiKeys>>,
       TError,
-      { data: PostApiV1ApiKeysBody },
+      { data: CreateAPIKeyRequest },
       TContext
     >;
   },
@@ -236,7 +208,7 @@ export const usePostApiV1ApiKeys = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1ApiKeys>>,
   TError,
-  { data: PostApiV1ApiKeysBody },
+  { data: CreateAPIKeyRequest },
   TContext
 > => {
   return useMutation(getPostApiV1ApiKeysMutationOptions(options), queryClient);
@@ -246,15 +218,11 @@ export const usePostApiV1ApiKeys = <
  * @summary Revoke API key
  */
 export const deleteApiV1ApiKeysId = (id: number, signal?: AbortSignal) => {
-  return apiClient<DeleteApiV1ApiKeysId200>({
-    url: `/api/v1/api-keys/${id}`,
-    method: 'DELETE',
-    signal,
-  });
+  return apiClient<MessageResponse2>({ url: `/api/v1/api-keys/${id}`, method: 'DELETE', signal });
 };
 
 export const getDeleteApiV1ApiKeysIdMutationOptions = <
-  TError = DeleteApiV1ApiKeysId400 | DeleteApiV1ApiKeysId401 | DeleteApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -292,19 +260,12 @@ export type DeleteApiV1ApiKeysIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteApiV1ApiKeysId>>
 >;
 
-export type DeleteApiV1ApiKeysIdMutationError =
-  | DeleteApiV1ApiKeysId400
-  | DeleteApiV1ApiKeysId401
-  | DeleteApiV1ApiKeysId404
-  | void;
+export type DeleteApiV1ApiKeysIdMutationError = ErrorResponse | void;
 
 /**
  * @summary Revoke API key
  */
-export const useDeleteApiV1ApiKeysId = <
-  TError = DeleteApiV1ApiKeysId400 | DeleteApiV1ApiKeysId401 | DeleteApiV1ApiKeysId404 | void,
-  TContext = unknown,
->(
+export const useDeleteApiV1ApiKeysId = <TError = ErrorResponse | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteApiV1ApiKeysId>>,
@@ -327,7 +288,7 @@ export const useDeleteApiV1ApiKeysId = <
  * @summary Get API key
  */
 export const getApiV1ApiKeysId = (id: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ApiKeysId200>({ url: `/api/v1/api-keys/${id}`, method: 'GET', signal });
+  return apiClient<GetAPIKeyResponse>({ url: `/api/v1/api-keys/${id}`, method: 'GET', signal });
 };
 
 export const getGetApiV1ApiKeysIdQueryKey = (id?: number) => {
@@ -336,7 +297,7 @@ export const getGetApiV1ApiKeysIdQueryKey = (id?: number) => {
 
 export const getGetApiV1ApiKeysIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysId>>,
-  TError = GetApiV1ApiKeysId400 | GetApiV1ApiKeysId401 | GetApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -360,15 +321,11 @@ export const getGetApiV1ApiKeysIdQueryOptions = <
 export type GetApiV1ApiKeysIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ApiKeysId>>
 >;
-export type GetApiV1ApiKeysIdQueryError =
-  | GetApiV1ApiKeysId400
-  | GetApiV1ApiKeysId401
-  | GetApiV1ApiKeysId404
-  | void;
+export type GetApiV1ApiKeysIdQueryError = ErrorResponse | void;
 
 export function useGetApiV1ApiKeysId<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysId>>,
-  TError = GetApiV1ApiKeysId400 | GetApiV1ApiKeysId401 | GetApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options: {
@@ -386,7 +343,7 @@ export function useGetApiV1ApiKeysId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeysId<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysId>>,
-  TError = GetApiV1ApiKeysId400 | GetApiV1ApiKeysId401 | GetApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -404,7 +361,7 @@ export function useGetApiV1ApiKeysId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeysId<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysId>>,
-  TError = GetApiV1ApiKeysId400 | GetApiV1ApiKeysId401 | GetApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -418,7 +375,7 @@ export function useGetApiV1ApiKeysId<
 
 export function useGetApiV1ApiKeysId<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysId>>,
-  TError = GetApiV1ApiKeysId400 | GetApiV1ApiKeysId401 | GetApiV1ApiKeysId404 | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -440,7 +397,7 @@ export function useGetApiV1ApiKeysId<
  * @summary List API key scopes
  */
 export const getApiV1ApiKeysIdScopes = (id: number, signal?: AbortSignal) => {
-  return apiClient<GetApiV1ApiKeysIdScopes200>({
+  return apiClient<ListScopesResponse>({
     url: `/api/v1/api-keys/${id}/scopes`,
     method: 'GET',
     signal,
@@ -453,11 +410,7 @@ export const getGetApiV1ApiKeysIdScopesQueryKey = (id?: number) => {
 
 export const getGetApiV1ApiKeysIdScopesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>,
-  TError =
-    | GetApiV1ApiKeysIdScopes400
-    | GetApiV1ApiKeysIdScopes401
-    | GetApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -484,19 +437,11 @@ export const getGetApiV1ApiKeysIdScopesQueryOptions = <
 export type GetApiV1ApiKeysIdScopesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>
 >;
-export type GetApiV1ApiKeysIdScopesQueryError =
-  | GetApiV1ApiKeysIdScopes400
-  | GetApiV1ApiKeysIdScopes401
-  | GetApiV1ApiKeysIdScopes404
-  | void;
+export type GetApiV1ApiKeysIdScopesQueryError = ErrorResponse | void;
 
 export function useGetApiV1ApiKeysIdScopes<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>,
-  TError =
-    | GetApiV1ApiKeysIdScopes400
-    | GetApiV1ApiKeysIdScopes401
-    | GetApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options: {
@@ -516,11 +461,7 @@ export function useGetApiV1ApiKeysIdScopes<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeysIdScopes<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>,
-  TError =
-    | GetApiV1ApiKeysIdScopes400
-    | GetApiV1ApiKeysIdScopes401
-    | GetApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -540,11 +481,7 @@ export function useGetApiV1ApiKeysIdScopes<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ApiKeysIdScopes<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>,
-  TError =
-    | GetApiV1ApiKeysIdScopes400
-    | GetApiV1ApiKeysIdScopes401
-    | GetApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -560,11 +497,7 @@ export function useGetApiV1ApiKeysIdScopes<
 
 export function useGetApiV1ApiKeysIdScopes<
   TData = Awaited<ReturnType<typeof getApiV1ApiKeysIdScopes>>,
-  TError =
-    | GetApiV1ApiKeysIdScopes400
-    | GetApiV1ApiKeysIdScopes401
-    | GetApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
 >(
   id: number,
   options?: {
@@ -589,36 +522,32 @@ export function useGetApiV1ApiKeysIdScopes<
  */
 export const postApiV1ApiKeysIdScopes = (
   id: number,
-  postApiV1ApiKeysIdScopesBody: PostApiV1ApiKeysIdScopesBody,
+  addScopeRequest: AddScopeRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<PostApiV1ApiKeysIdScopes201>({
+  return apiClient<MessageResponse2>({
     url: `/api/v1/api-keys/${id}/scopes`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data: postApiV1ApiKeysIdScopesBody,
+    data: addScopeRequest,
     signal,
   });
 };
 
 export const getPostApiV1ApiKeysIdScopesMutationOptions = <
-  TError =
-    | PostApiV1ApiKeysIdScopes400
-    | PostApiV1ApiKeysIdScopes401
-    | PostApiV1ApiKeysIdScopes404
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>,
     TError,
-    { id: number; data: PostApiV1ApiKeysIdScopesBody },
+    { id: number; data: AddScopeRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>,
   TError,
-  { id: number; data: PostApiV1ApiKeysIdScopesBody },
+  { id: number; data: AddScopeRequest },
   TContext
 > => {
   const mutationKey = ['postApiV1ApiKeysIdScopes'];
@@ -630,7 +559,7 @@ export const getPostApiV1ApiKeysIdScopesMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>,
-    { id: number; data: PostApiV1ApiKeysIdScopesBody }
+    { id: number; data: AddScopeRequest }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -643,29 +572,18 @@ export const getPostApiV1ApiKeysIdScopesMutationOptions = <
 export type PostApiV1ApiKeysIdScopesMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>
 >;
-export type PostApiV1ApiKeysIdScopesMutationBody = PostApiV1ApiKeysIdScopesBody;
-export type PostApiV1ApiKeysIdScopesMutationError =
-  | PostApiV1ApiKeysIdScopes400
-  | PostApiV1ApiKeysIdScopes401
-  | PostApiV1ApiKeysIdScopes404
-  | void;
+export type PostApiV1ApiKeysIdScopesMutationBody = AddScopeRequest;
+export type PostApiV1ApiKeysIdScopesMutationError = ErrorResponse | void;
 
 /**
  * @summary Add scope to API key
  */
-export const usePostApiV1ApiKeysIdScopes = <
-  TError =
-    | PostApiV1ApiKeysIdScopes400
-    | PostApiV1ApiKeysIdScopes401
-    | PostApiV1ApiKeysIdScopes404
-    | void,
-  TContext = unknown,
->(
+export const usePostApiV1ApiKeysIdScopes = <TError = ErrorResponse | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>,
       TError,
-      { id: number; data: PostApiV1ApiKeysIdScopesBody },
+      { id: number; data: AddScopeRequest },
       TContext
     >;
   },
@@ -673,7 +591,7 @@ export const usePostApiV1ApiKeysIdScopes = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postApiV1ApiKeysIdScopes>>,
   TError,
-  { id: number; data: PostApiV1ApiKeysIdScopesBody },
+  { id: number; data: AddScopeRequest },
   TContext
 > => {
   return useMutation(getPostApiV1ApiKeysIdScopesMutationOptions(options), queryClient);
@@ -687,7 +605,7 @@ export const deleteApiV1ApiKeysIdScopesScopeId = (
   scopeId: number,
   signal?: AbortSignal
 ) => {
-  return apiClient<DeleteApiV1ApiKeysIdScopesScopeId200>({
+  return apiClient<MessageResponse2>({
     url: `/api/v1/api-keys/${id}/scopes/${scopeId}`,
     method: 'DELETE',
     signal,
@@ -695,11 +613,7 @@ export const deleteApiV1ApiKeysIdScopesScopeId = (
 };
 
 export const getDeleteApiV1ApiKeysIdScopesScopeIdMutationOptions = <
-  TError =
-    | DeleteApiV1ApiKeysIdScopesScopeId400
-    | DeleteApiV1ApiKeysIdScopesScopeId401
-    | DeleteApiV1ApiKeysIdScopesScopeId404
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -737,21 +651,13 @@ export type DeleteApiV1ApiKeysIdScopesScopeIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteApiV1ApiKeysIdScopesScopeId>>
 >;
 
-export type DeleteApiV1ApiKeysIdScopesScopeIdMutationError =
-  | DeleteApiV1ApiKeysIdScopesScopeId400
-  | DeleteApiV1ApiKeysIdScopesScopeId401
-  | DeleteApiV1ApiKeysIdScopesScopeId404
-  | void;
+export type DeleteApiV1ApiKeysIdScopesScopeIdMutationError = ErrorResponse | void;
 
 /**
  * @summary Remove scope from API key
  */
 export const useDeleteApiV1ApiKeysIdScopesScopeId = <
-  TError =
-    | DeleteApiV1ApiKeysIdScopesScopeId400
-    | DeleteApiV1ApiKeysIdScopesScopeId401
-    | DeleteApiV1ApiKeysIdScopesScopeId404
-    | void,
+  TError = ErrorResponse | void,
   TContext = unknown,
 >(
   options?: {

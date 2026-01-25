@@ -19,19 +19,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs200,
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400,
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401,
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403,
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404,
-  GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500,
+  ErrorResponse,
   GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsParams,
-  GetApiV1ServersServeridStacksStacknameLogs200,
-  GetApiV1ServersServeridStacksStacknameLogs401,
-  GetApiV1ServersServeridStacksStacknameLogs403,
-  GetApiV1ServersServeridStacksStacknameLogs404,
-  GetApiV1ServersServeridStacksStacknameLogs500,
   GetApiV1ServersServeridStacksStacknameLogsParams,
+  LogsResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -47,7 +38,7 @@ export const getApiV1ServersServeridStacksStacknameContainersContainerNameLogs =
   params?: GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs200>({
+  return apiClient<LogsResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/containers/${containerName}/logs`,
     method: 'GET',
     params,
@@ -71,13 +62,7 @@ export const getGetApiV1ServersServeridStacksStacknameContainersContainerNameLog
   TData = Awaited<
     ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>
   >,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -134,24 +119,13 @@ export type GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsQue
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>>
   >;
 export type GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsQueryError =
-  | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-  | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-  | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-  | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-  | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-  | void;
+  ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameContainersContainerNameLogs<
   TData = Awaited<
     ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>
   >,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -186,13 +160,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
   TData = Awaited<
     ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>
   >,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -227,13 +195,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
   TData = Awaited<
     ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>
   >,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -260,13 +222,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
   TData = Awaited<
     ReturnType<typeof getApiV1ServersServeridStacksStacknameContainersContainerNameLogs>
   >,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs400
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs401
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs403
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs404
-    | GetApiV1ServersServeridStacksStacknameContainersContainerNameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -311,7 +267,7 @@ export const getApiV1ServersServeridStacksStacknameLogs = (
   params?: GetApiV1ServersServeridStacksStacknameLogsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<GetApiV1ServersServeridStacksStacknameLogs200>({
+  return apiClient<LogsResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/logs`,
     method: 'GET',
     params,
@@ -332,12 +288,7 @@ export const getGetApiV1ServersServeridStacksStacknameLogsQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameLogs401
-    | GetApiV1ServersServeridStacksStacknameLogs403
-    | GetApiV1ServersServeridStacksStacknameLogs404
-    | GetApiV1ServersServeridStacksStacknameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -378,21 +329,11 @@ export const getGetApiV1ServersServeridStacksStacknameLogsQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameLogsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>
 >;
-export type GetApiV1ServersServeridStacksStacknameLogsQueryError =
-  | GetApiV1ServersServeridStacksStacknameLogs401
-  | GetApiV1ServersServeridStacksStacknameLogs403
-  | GetApiV1ServersServeridStacksStacknameLogs404
-  | GetApiV1ServersServeridStacksStacknameLogs500
-  | void;
+export type GetApiV1ServersServeridStacksStacknameLogsQueryError = ErrorResponse | void;
 
 export function useGetApiV1ServersServeridStacksStacknameLogs<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameLogs401
-    | GetApiV1ServersServeridStacksStacknameLogs403
-    | GetApiV1ServersServeridStacksStacknameLogs404
-    | GetApiV1ServersServeridStacksStacknameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -418,12 +359,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameLogs<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameLogs401
-    | GetApiV1ServersServeridStacksStacknameLogs403
-    | GetApiV1ServersServeridStacksStacknameLogs404
-    | GetApiV1ServersServeridStacksStacknameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -449,12 +385,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameLogs<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameLogs401
-    | GetApiV1ServersServeridStacksStacknameLogs403
-    | GetApiV1ServersServeridStacksStacknameLogs404
-    | GetApiV1ServersServeridStacksStacknameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,
@@ -476,12 +407,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
 
 export function useGetApiV1ServersServeridStacksStacknameLogs<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>,
-  TError =
-    | GetApiV1ServersServeridStacksStacknameLogs401
-    | GetApiV1ServersServeridStacksStacknameLogs403
-    | GetApiV1ServersServeridStacksStacknameLogs404
-    | GetApiV1ServersServeridStacksStacknameLogs500
-    | void,
+  TError = ErrorResponse | void,
 >(
   serverid: number,
   stackname: string,

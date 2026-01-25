@@ -18,7 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { GetApiV1Version200 } from '.././models';
+import type { GetVersionResponse } from '.././models';
 
 import { apiClient } from '../../../lib/api';
 
@@ -27,7 +27,7 @@ import { apiClient } from '../../../lib/api';
  * @summary Get application version
  */
 export const getApiV1Version = (signal?: AbortSignal) => {
-  return apiClient<GetApiV1Version200>({ url: `/api/v1/version`, method: 'GET', signal });
+  return apiClient<GetVersionResponse>({ url: `/api/v1/version`, method: 'GET', signal });
 };
 
 export const getGetApiV1VersionQueryKey = () => {
