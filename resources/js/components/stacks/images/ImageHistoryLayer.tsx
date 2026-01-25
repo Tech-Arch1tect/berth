@@ -1,4 +1,4 @@
-import type { GetApiV1ServersServeridStacksStacknameImages200ImagesItemImageHistoryItem } from '../../../api/generated/models';
+import type { ImageHistoryLayer as ImageHistoryLayerType } from '../../../api/generated/models';
 import {
   formatImageSize,
   formatCreatedTime,
@@ -9,7 +9,7 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface ImageHistoryLayerProps {
-  layer: GetApiV1ServersServeridStacksStacknameImages200ImagesItemImageHistoryItem;
+  layer: ImageHistoryLayerType;
 }
 
 export const ImageHistoryLayer: React.FC<ImageHistoryLayerProps> = ({ layer }) => {

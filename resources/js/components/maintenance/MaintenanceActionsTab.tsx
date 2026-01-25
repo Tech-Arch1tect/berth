@@ -14,12 +14,12 @@ import {
   CubeIcon,
   WrenchIcon,
 } from '@heroicons/react/24/outline';
-import type { GetApiV1ServersServeridMaintenanceInfo200 } from '../../api/generated/models';
+import type { MaintenanceInfo } from '../../api/generated/models';
 
 type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 
 interface MaintenanceActionsTabProps {
-  maintenanceInfo: GetApiV1ServersServeridMaintenanceInfo200 | undefined;
+  maintenanceInfo: MaintenanceInfo | undefined;
   selectedPruneType: PruneType;
   pruneAll: boolean;
   isPruning: boolean;

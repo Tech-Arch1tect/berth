@@ -1,11 +1,11 @@
 import React from 'react';
 import { SidebarSelection } from '../sidebar/types';
 import type {
-  GetApiV1ServersServeridStacksStackname200ServicesItem,
-  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
-  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
+  ComposeService,
+  Network,
+  Volume,
   GetApiV1ServersServeridStacksStacknameEnvironment200,
-  GetApiV1ServersServeridStacksStacknameStats200ContainersItem,
+  ContainerStats,
 } from '../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
 import { ServiceDetailPanel } from '../panels/ServiceDetailPanel';
@@ -28,11 +28,11 @@ interface StackContentProps {
   stackname: string;
   stackPath: string;
   composeFile: string;
-  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
-  networks: GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[];
-  volumes: GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[];
+  services: ComposeService[];
+  networks: Network[];
+  volumes: Volume[];
   environment: GetApiV1ServersServeridStacksStacknameEnvironment200;
-  statsContainers: GetApiV1ServersServeridStacksStacknameStats200ContainersItem[];
+  statsContainers: ContainerStats[];
   logContainers: Array<{ name: string; service_name: string }>;
   permissions: {
     canManage: boolean;

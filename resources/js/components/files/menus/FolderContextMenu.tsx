@@ -1,21 +1,21 @@
 import React from 'react';
-import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
+import type { FileEntry } from '../../../api/generated/models';
 import { ContextMenu, ContextMenuItem } from './ContextMenu';
 
 interface FolderContextMenuProps {
   isOpen: boolean;
   position: { x: number; y: number };
-  folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
+  folder: FileEntry | null;
   canWrite: boolean;
   onClose: () => void;
-  onNewFile: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onNewFolder: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onUpload: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onRename: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onChmod: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onChown: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onCreateArchive: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onDelete: (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onNewFile: (folder: FileEntry) => void;
+  onNewFolder: (folder: FileEntry) => void;
+  onUpload: (folder: FileEntry) => void;
+  onRename: (folder: FileEntry) => void;
+  onChmod: (folder: FileEntry) => void;
+  onChown: (folder: FileEntry) => void;
+  onCreateArchive: (folder: FileEntry) => void;
+  onDelete: (folder: FileEntry) => void;
 }
 
 export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({

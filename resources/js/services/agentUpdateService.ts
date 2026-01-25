@@ -3,10 +3,7 @@ import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStackname,
 } from '../api/generated/stacks/stacks';
-import type {
-  GetApiV1ServersServeridStacks200StacksItem,
-  GetApiV1ServersServeridStacksStackname200,
-} from '../api/generated/models';
+import type { Stack, StackDetails } from '../api/generated/models';
 
 interface Server {
   id: number;
@@ -34,17 +31,12 @@ export class AgentUpdateService {
     return response.data.servers || [];
   }
 
-  static async getServerStacks(
-    serverId: number
-  ): Promise<GetApiV1ServersServeridStacks200StacksItem[]> {
+  static async getServerStacks(serverId: number): Promise<Stack[]> {
     const response = await getApiV1ServersServeridStacks(serverId);
     return response.data.stacks || [];
   }
 
-  static async getStackDetails(
-    serverId: number,
-    stackName: string
-  ): Promise<GetApiV1ServersServeridStacksStackname200> {
+  static async getStackDetails(serverId: number, stackName: string): Promise<StackDetails> {
     const response = await getApiV1ServersServeridStacksStackname(serverId, stackName);
     return response.data;
   }

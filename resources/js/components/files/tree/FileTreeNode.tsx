@@ -1,24 +1,21 @@
 import React, { useState, useCallback } from 'react';
-import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../../api/generated/models';
+import type { FileEntry } from '../../../api/generated/models';
 import { FileIcon } from '../FileIcon';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface FileTreeNodeProps {
-  entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem;
+  entry: FileEntry;
   depth: number;
   isExpanded: boolean;
   isSelected: boolean;
   isLoading: boolean;
-  children: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
-  onSelect: (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  onContextMenu: (
-    e: React.MouseEvent,
-    entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem
-  ) => void;
+  children: FileEntry[];
+  onSelect: (entry: FileEntry) => void;
+  onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void;
   onMove?: (sourcePath: string, targetDirectory: string) => void;
   canWrite?: boolean;
-  getChildren: (path: string) => GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
+  getChildren: (path: string) => FileEntry[];
   checkExpanded: (path: string) => boolean;
   checkSelected: (path: string) => boolean;
   checkLoading: (path: string) => boolean;

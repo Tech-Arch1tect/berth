@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useServerImageUpdates } from './useImageUpdates';
-import type { GetApiV1ServersServeridImageUpdates200UpdatesItem } from '../api/generated/models';
+import type { ImageUpdate } from '../api/generated/models';
 
 interface UseStackImageUpdatesOptions {
   serverid: number;
@@ -9,7 +9,7 @@ interface UseStackImageUpdatesOptions {
 }
 
 interface UseStackImageUpdatesResult {
-  updates: GetApiV1ServersServeridImageUpdates200UpdatesItem[];
+  updates: ImageUpdate[];
   updateCount: number;
   hasUpdates: boolean;
   isLoading: boolean;

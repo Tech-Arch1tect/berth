@@ -1,12 +1,12 @@
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import type { GetApiV1AdminSecurityAuditLogsStats200Data } from '../../api/generated/models';
+import type { StatsResponseData } from '../../api/generated/models';
 
 interface Props {
-  stats: GetApiV1AdminSecurityAuditLogsStats200Data | null;
+  stats: StatsResponseData | null;
 }
 
-export function GetApiV1AdminSecurityAuditLogsStats200Data({ stats }: Props) {
+export function SecurityAuditStats({ stats }: Props) {
   if (!stats) {
     return null;
   }

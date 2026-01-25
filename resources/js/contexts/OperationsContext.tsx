@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { StreamMessage } from '../types/operations';
 import StorageManager from '../utils/storage';
 import { getApiV1RunningOperations } from '../api/generated/operation-logs/operation-logs';
-import type { GetApiV1RunningOperations200OperationsItem } from '../api/generated/models';
+import type { OperationLogResponse } from '../api/generated/models';
 
-type RunningOperation = GetApiV1RunningOperations200OperationsItem;
+type RunningOperation = OperationLogResponse;
 
 export interface NewOperationInput {
   operation_id: string;

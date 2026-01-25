@@ -5,7 +5,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { GetApiV1ServersServeridStacks200StacksItem } from '../../../api/generated/models';
+import type { Stack } from '../../../api/generated/models';
 import { Server } from '../../../types/server';
 import { CompactStatistics } from './CompactStatistics';
 import { StackCard } from '../../dashboard/StackCard';
@@ -13,7 +13,7 @@ import { EmptyState } from '../../common/EmptyState';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 
 interface StacksContentProps {
-  stacks: GetApiV1ServersServeridStacks200StacksItem[];
+  stacks: Stack[];
   statistics: {
     total: number;
     healthy: number;

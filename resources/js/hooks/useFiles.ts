@@ -14,16 +14,16 @@ import {
 } from '../api/generated/files/files';
 import { apiClient } from '../lib/api';
 import type {
-  GetApiV1ServersServeridStacksStacknameFiles200,
-  GetApiV1ServersServeridStacksStacknameFilesRead200,
-  GetApiV1ServersServeridStacksStacknameFilesStats200,
-  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
-  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
-  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
-  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
-  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
-  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
-  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+  DirectoryListing,
+  FileContent,
+  DirectoryStats,
+  WriteFileRequest,
+  CreateDirectoryRequest,
+  DeleteRequest2,
+  RenameRequest,
+  CopyRequest,
+  ChmodRequest,
+  ChownRequest,
 } from '../api/generated/models';
 
 interface UseFilesOptions {
@@ -53,7 +53,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const listDirectory = useCallback(
-    async (path?: string): Promise<GetApiV1ServersServeridStacksStacknameFiles200> => {
+    async (path?: string): Promise<DirectoryListing> => {
       try {
         setLoading(true);
         const response = await getApiV1ServersServeridStacksStacknameFiles(
@@ -73,7 +73,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const readFile = useCallback(
-    async (path: string): Promise<GetApiV1ServersServeridStacksStacknameFilesRead200> => {
+    async (path: string): Promise<FileContent> => {
       try {
         setLoading(true);
         const response = await getApiV1ServersServeridStacksStacknameFilesRead(
@@ -93,7 +93,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const writeFile = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesWriteBody): Promise<void> => {
+    async (request: WriteFileRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesWrite(serverid, stackname, request);
@@ -107,7 +107,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const createDirectory = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody): Promise<void> => {
+    async (request: CreateDirectoryRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesMkdir(serverid, stackname, request);
@@ -121,7 +121,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const deleteFile = useCallback(
-    async (request: DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody): Promise<void> => {
+    async (request: DeleteRequest2): Promise<void> => {
       try {
         setLoading(true);
         await deleteApiV1ServersServeridStacksStacknameFilesDelete(serverid, stackname, request);
@@ -135,7 +135,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const renameFile = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesRenameBody): Promise<void> => {
+    async (request: RenameRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesRename(serverid, stackname, request);
@@ -149,7 +149,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const copyFile = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesCopyBody): Promise<void> => {
+    async (request: CopyRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesCopy(serverid, stackname, request);
@@ -218,7 +218,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const chmodFile = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody): Promise<void> => {
+    async (request: ChmodRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesChmod(serverid, stackname, request);
@@ -232,7 +232,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const chownFile = useCallback(
-    async (request: PostApiV1ServersServeridStacksStacknameFilesChownBody): Promise<void> => {
+    async (request: ChownRequest): Promise<void> => {
       try {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesChown(serverid, stackname, request);
@@ -246,7 +246,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   );
 
   const getDirectoryStats = useCallback(
-    async (path?: string): Promise<GetApiV1ServersServeridStacksStacknameFilesStats200> => {
+    async (path?: string): Promise<DirectoryStats> => {
       try {
         setLoading(true);
         const response = await getApiV1ServersServeridStacksStacknameFilesStats(

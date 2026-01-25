@@ -10,7 +10,7 @@ import {
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import { ActivitySummary } from '../hooks/useDashboardActivity';
-import type { GetApiV1OperationLogs200DataItem } from '../../../api/generated/models';
+import type { OperationLogResponse } from '../../../api/generated/models';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 
 interface ActivityPanelProps {
@@ -18,7 +18,7 @@ interface ActivityPanelProps {
   onRefresh?: () => void;
 }
 
-const getStatusIcon = (operation: GetApiV1OperationLogs200DataItem) => {
+const getStatusIcon = (operation: OperationLogResponse) => {
   if (operation.is_incomplete) {
     return <ExclamationTriangleIcon className={cn('h-5 w-5', 'text-amber-500')} />;
   }
@@ -42,7 +42,7 @@ const formatDuration = (duration: number | null, isPartial = false) => {
   return isPartial ? `~${formatted}` : formatted;
 };
 
-const getOperationDuration = (operation: GetApiV1OperationLogs200DataItem) => {
+const getOperationDuration = (operation: OperationLogResponse) => {
   if (operation.duration_ms !== null) {
     return formatDuration(operation.duration_ms, false);
   }
@@ -53,7 +53,7 @@ const getOperationDuration = (operation: GetApiV1OperationLogs200DataItem) => {
 };
 
 interface OperationRowProps {
-  operation: GetApiV1OperationLogs200DataItem;
+  operation: OperationLogResponse;
   variant?: 'default' | 'error';
 }
 

@@ -18,13 +18,13 @@ import {
   usePutApiV1ServersServeridRegistriesId,
   useDeleteApiV1ServersServeridRegistriesId,
 } from '../../api/generated/registries/registries';
-import type { GetApiV1ServersServeridRegistries200DataCredentialsItem } from '../../api/generated/models';
+import type { RegistryCredentialResponse } from '../../api/generated/models';
 
 interface Props {
   title?: string;
   server_id: number;
   server_name: string;
-  credentials: GetApiV1ServersServeridRegistries200DataCredentialsItem[];
+  credentials: RegistryCredentialResponse[];
 }
 
 export default function Registries({
@@ -34,8 +34,9 @@ export default function Registries({
   credentials,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCredential, setEditingCredential] =
-    useState<GetApiV1ServersServeridRegistries200DataCredentialsItem | null>(null);
+  const [editingCredential, setEditingCredential] = useState<RegistryCredentialResponse | null>(
+    null
+  );
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; url: string } | null>(null);
@@ -111,7 +112,7 @@ export default function Registries({
     }
   };
 
-  const handleEdit = (credential: GetApiV1ServersServeridRegistries200DataCredentialsItem) => {
+  const handleEdit = (credential: RegistryCredentialResponse) => {
     setEditingCredential(credential);
     setShowAddForm(true);
     setFormData({

@@ -13,10 +13,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { GetApiV1AdminSecurityAuditLogsStats200Data } from '../../../api/generated/models';
+import type { StatsResponseData } from '../../../api/generated/models';
 
 interface SecurityAuditLogsSidebarProps {
-  stats: GetApiV1AdminSecurityAuditLogsStats200Data | null;
+  stats: StatsResponseData | null;
   selectedCategory: string;
   selectedSeverity: string;
   selectedSuccess: string;

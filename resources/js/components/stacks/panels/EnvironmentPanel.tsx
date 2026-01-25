@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type {
   GetApiV1ServersServeridStacksStacknameEnvironment200,
-  GetApiV1ServersServeridStacksStacknameEnvironment200ItemVariablesItem,
+  EnvironmentVariable,
 } from '../../../api/generated/models';
 import { Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
@@ -20,9 +20,7 @@ export const EnvironmentPanel: React.FC<EnvironmentPanelProps> = ({ environment 
     0
   );
 
-  const filterVariables = (
-    variables: GetApiV1ServersServeridStacksStacknameEnvironment200ItemVariablesItem[]
-  ) => {
+  const filterVariables = (variables: EnvironmentVariable[]) => {
     if (!searchQuery) return variables;
     const query = searchQuery.toLowerCase();
     return variables.filter(

@@ -1,11 +1,11 @@
 import React from 'react';
-import type { GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem } from '../../../api/generated/models';
+import type { Volume } from '../../../api/generated/models';
 import { CircleStackIcon, ServerIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface VolumeDetailPanelProps {
-  volume: GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem;
+  volume: Volume;
 }
 
 export const VolumeDetailPanel: React.FC<VolumeDetailPanelProps> = ({ volume }) => {

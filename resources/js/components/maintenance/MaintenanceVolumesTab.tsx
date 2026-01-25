@@ -5,12 +5,12 @@ import { Table } from '../common/Table';
 import { formatBytes, formatDate } from '../../utils/formatters';
 import { getResourceStatusBadge } from '../../utils/statusHelpers';
 import { FolderIcon, TrashIcon } from '@heroicons/react/24/outline';
-import type { GetApiV1ServersServeridMaintenanceInfo200VolumeSummaryVolumesItem } from '../../api/generated/models';
+import type { VolumeInfo } from '../../api/generated/models';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 interface MaintenanceVolumesTabProps {
-  volumes: GetApiV1ServersServeridMaintenanceInfo200VolumeSummaryVolumesItem[];
+  volumes: VolumeInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
 }
@@ -40,7 +40,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
           Docker Volumes ({volumes.length})
         </h3>
       </div>
-      <Table<GetApiV1ServersServeridMaintenanceInfo200VolumeSummaryVolumesItem>
+      <Table<VolumeInfo>
         data={volumes}
         keyExtractor={(volume) => volume.name}
         emptyMessage="No Docker volumes found"

@@ -22,7 +22,7 @@ import {
   getGetApiV1ApiKeysIdScopesQueryKey,
 } from '../../api/generated/api-keys/api-keys';
 import { useQueryClient } from '@tanstack/react-query';
-import type { GetApiV1ApiKeysIdScopes200DataItem } from '../../api/generated/models';
+import type { APIKeyScopeResponse } from '../../api/generated/models';
 
 interface ScopesProps {
   api_key_id: string;
@@ -331,7 +331,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                {scopes.map((scope: GetApiV1ApiKeysIdScopes200DataItem) => (
+                {scopes.map((scope: APIKeyScopeResponse) => (
                   <li key={scope.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">

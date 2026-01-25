@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type { LogFilterOptions } from '../types/logs';
-import type { GetApiV1ServersServeridStacksStacknameLogs200LogsItem } from '../api/generated/models';
+import type { LogEntry } from '../api/generated/models';
 import {
   getApiV1ServersServeridStacksStacknameLogs,
   getApiV1ServersServeridStacksStacknameContainersContainerNameLogs,
@@ -19,11 +19,11 @@ interface FetchLogsOptions {
 }
 
 interface UseLogsReturn {
-  logs: GetApiV1ServersServeridStacksStacknameLogs200LogsItem[];
+  logs: LogEntry[];
   loading: boolean;
   error: string | null;
   fetchLogs: (fetchOptions: FetchLogsOptions) => Promise<void>;
-  filteredLogs: GetApiV1ServersServeridStacksStacknameLogs200LogsItem[];
+  filteredLogs: LogEntry[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   levelFilter: string;
@@ -32,7 +32,7 @@ interface UseLogsReturn {
 }
 
 export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions): UseLogsReturn => {
-  const [logs, setLogs] = useState<GetApiV1ServersServeridStacksStacknameLogs200LogsItem[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');

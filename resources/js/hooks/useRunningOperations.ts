@@ -4,7 +4,7 @@ import {
   useGetApiV1RunningOperations,
   getGetApiV1RunningOperationsQueryKey,
 } from '../api/generated/operation-logs/operation-logs';
-import type { GetApiV1RunningOperations200 } from '../api/generated/models';
+import type { RunningOperationsResponse } from '../api/generated/models';
 
 export const useRunningOperations = () => {
   const queryClient = useQueryClient();
@@ -27,7 +27,7 @@ export const useRunningOperations = () => {
     (operationId: string) => {
       const queryKey = getGetApiV1RunningOperationsQueryKey();
 
-      queryClient.setQueryData<{ data: GetApiV1RunningOperations200 }>(queryKey, (oldData) => {
+      queryClient.setQueryData<{ data: RunningOperationsResponse }>(queryKey, (oldData) => {
         if (!oldData?.data?.operations) return oldData;
 
         return {

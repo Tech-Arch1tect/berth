@@ -17,7 +17,7 @@ import { theme } from '../../../theme';
 import { Server } from '../../../types/server';
 import { HealthSummary } from '../types/dashboard';
 import { ActivitySummary } from '../hooks/useDashboardActivity';
-import type { GetApiV1OperationLogs200DataItem } from '../../../api/generated/models';
+import type { OperationLogResponse } from '../../../api/generated/models';
 import { useServerStatistics } from '../../../hooks/useServerStatistics';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 
@@ -79,7 +79,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, sublabel,
   </div>
 );
 
-const getStatusIcon = (operation: GetApiV1OperationLogs200DataItem) => {
+const getStatusIcon = (operation: OperationLogResponse) => {
   if (operation.is_incomplete) {
     return <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" />;
   }

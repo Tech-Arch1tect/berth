@@ -11,10 +11,10 @@ import {
   GlobeAltIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import type { GetApiV1ServersServeridMaintenanceInfo200 } from '../../api/generated/models';
+import type { MaintenanceInfo } from '../../api/generated/models';
 
 interface MaintenanceOverviewProps {
-  maintenanceInfo: GetApiV1ServersServeridMaintenanceInfo200;
+  maintenanceInfo: MaintenanceInfo;
 }
 
 export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ maintenanceInfo }) => {

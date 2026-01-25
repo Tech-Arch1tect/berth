@@ -2,10 +2,10 @@ import React from 'react';
 import { FunnelIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { GetApiV1AdminOperationLogs200Pagination } from '../../../api/generated/models';
+import type { PaginationInfo } from '../../../api/generated/models';
 
 interface OperationLogsStatusBarProps {
-  pagination: GetApiV1AdminOperationLogs200Pagination | null;
+  pagination: PaginationInfo | null;
   hasActiveFilters: boolean;
   activeFilterCount: number;
   lastUpdated: Date | null;

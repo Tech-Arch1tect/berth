@@ -1,9 +1,9 @@
 import { useQueries } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import type { GetApiV1ServersServeridStacks200StacksItem } from '../api/generated/models';
+import type { Stack } from '../api/generated/models';
 import { Server } from '../types/server';
 
-export interface StackWithServer extends GetApiV1ServersServeridStacks200StacksItem {
+export interface StackWithServer extends Stack {
   server: Server;
 }
 

@@ -10,12 +10,12 @@ import {
   postApiV1ServersServeridStacks,
 } from '../api/generated/stacks/stacks';
 import type {
-  GetApiV1ServersServeridStacks200StacksItem,
-  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
-  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
+  Stack,
+  Network,
+  Volume,
   GetApiV1ServersServeridStacksStacknameEnvironment200,
-  GetApiV1ServersServeridStacksStacknameImages200ImagesItem,
-  GetApiV1ServersServeridStacksStacknamePermissions200,
+  ContainerImageDetails,
+  StackPermissionsResponse,
 } from '../api/generated/models';
 import { RawComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
 
@@ -27,9 +27,7 @@ const api = axios.create({
 });
 
 export class StackService {
-  static async getServerStacks(
-    serverid: number
-  ): Promise<GetApiV1ServersServeridStacks200StacksItem[]> {
+  static async getServerStacks(serverid: number): Promise<Stack[]> {
     try {
       const response = await getApiV1ServersServeridStacks(serverid);
       const stacks = response.data.stacks || [];
@@ -48,10 +46,7 @@ export class StackService {
     }
   }
 
-  static async getStackNetworks(
-    serverid: number,
-    stackname: string
-  ): Promise<GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[]> {
+  static async getStackNetworks(serverid: number, stackname: string): Promise<Network[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname);
       return response.data.networks || [];
@@ -69,10 +64,7 @@ export class StackService {
     }
   }
 
-  static async getStackVolumes(
-    serverid: number,
-    stackname: string
-  ): Promise<GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[]> {
+  static async getStackVolumes(serverid: number, stackname: string): Promise<Volume[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname);
       return response.data.volumes || [];
@@ -120,7 +112,7 @@ export class StackService {
   static async getStackPermissions(
     serverid: number,
     stackname: string
-  ): Promise<GetApiV1ServersServeridStacksStacknamePermissions200> {
+  ): Promise<StackPermissionsResponse> {
     try {
       const response = await getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname);
       return response.data;
@@ -141,7 +133,7 @@ export class StackService {
   static async getStackImages(
     serverid: number,
     stackname: string
-  ): Promise<GetApiV1ServersServeridStacksStacknameImages200ImagesItem[]> {
+  ): Promise<ContainerImageDetails[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameImages(serverid, stackname);
       return response.data.images || [];
@@ -220,12 +212,12 @@ export class StackService {
     }
   }
 
-  static async createStack(
-    serverid: number,
-    name: string
-  ): Promise<GetApiV1ServersServeridStacks200StacksItem> {
+  static async createStack(serverid: number, name: string): Promise<Stack> {
     try {
       const response = await postApiV1ServersServeridStacks(serverid, { name });
+      if (!response.data.stack) {
+        throw new Error('Failed to create stack: no stack data returned');
+      }
       return response.data.stack;
     } catch (error) {
       if (axios.isAxiosError(error)) {

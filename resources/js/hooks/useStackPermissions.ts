@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import type { GetApiV1ServersServeridStacksStacknamePermissions200 } from '../api/generated/models';
+import type { StackPermissionsResponse } from '../api/generated/models';
 
 interface UseStackPermissionsOptions {
   serverid: number;
@@ -13,7 +13,7 @@ export function useStackPermissions({
   stackname,
   enabled = true,
 }: UseStackPermissionsOptions) {
-  return useQuery<GetApiV1ServersServeridStacksStacknamePermissions200, Error>({
+  return useQuery<StackPermissionsResponse, Error>({
     queryKey: ['stack-permissions', serverid, stackname],
     queryFn: () => StackService.getStackPermissions(serverid, stackname),
     enabled,

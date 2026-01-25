@@ -8,12 +8,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import type { GetApiV1ServersServeridStacks200StacksItem } from '../../api/generated/models';
+import type { Stack } from '../../api/generated/models';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { UpdateAvailableBadge } from '../image-updates';
 
 interface StackCardProps {
-  stack: GetApiV1ServersServeridStacks200StacksItem;
+  stack: Stack;
   compact?: boolean;
 }
 

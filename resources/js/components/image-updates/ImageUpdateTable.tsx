@@ -7,10 +7,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import type { GetApiV1ImageUpdates200UpdatesItem } from '../../api/generated/models';
+import type { ImageUpdate } from '../../api/generated/models';
 
 interface ImageUpdateTableProps {
-  updates: GetApiV1ImageUpdates200UpdatesItem[];
+  updates: ImageUpdate[];
 }
 
 export const ImageUpdateTable: React.FC<ImageUpdateTableProps> = ({ updates }) => {

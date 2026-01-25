@@ -1,8 +1,6 @@
-import type { GetApiV1ServersServeridStacksStackname200 } from '../api/generated/models';
+import type { StackDetails, ComposeService, Container, Port } from '../api/generated/models';
 
-export const generateStackDocumentation = (
-  stackDetails: GetApiV1ServersServeridStacksStackname200
-): string => {
+export const generateStackDocumentation = (stackDetails: StackDetails): string => {
   const { name, path, compose_file, services, server_name } = stackDetails;
 
   let doc = `# ${name} Stack Documentation\n\n`;
@@ -18,7 +16,7 @@ export const generateStackDocumentation = (
   // Services
   doc += `## Services\n\n`;
 
-  services.forEach((service) => {
+  services.forEach((service: ComposeService) => {
     doc += `### ${service.name}\n\n`;
 
     if (service.image) {
@@ -27,14 +25,14 @@ export const generateStackDocumentation = (
 
     // Container status
     if (service.containers && service.containers.length > 0) {
-      const running = service.containers.filter((c) => c.state === 'running').length;
+      const running = service.containers.filter((c: Container) => c.state === 'running').length;
       doc += `- **Containers**: ${running}/${service.containers.length} running\n`;
 
-      service.containers.forEach((container) => {
+      service.containers.forEach((container: Container) => {
         doc += `  - ${container.name} (${container.state})\n`;
 
         if (container.ports && container.ports.length > 0) {
-          const ports = container.ports.map((p) => `${p.public}:${p.private}/${p.type}`);
+          const ports = container.ports.map((p: Port) => `${p.public}:${p.private}/${p.type}`);
           doc += `    - **Ports**: ${ports.join(', ')}\n`;
         }
 

@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import type { GetApiV1ServersServeridStacksStacknameImages200ImagesItem } from '../../../api/generated/models';
+import type {
+  ContainerImageDetails,
+  ImageHistoryLayer as ImageHistoryLayerType,
+} from '../../../api/generated/models';
 import { ImageHistoryLayer } from './ImageHistoryLayer';
 import { ImageConfigDetails } from './ImageConfigDetails';
 import { formatImageSize, formatCreatedTime } from './utils/image-helpers';
@@ -15,7 +18,7 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface ContainerImageCardProps {
-  imageDetails: GetApiV1ServersServeridStacksStacknameImages200ImagesItem;
+  imageDetails: ContainerImageDetails;
 }
 
 export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDetails }) => {
@@ -207,7 +210,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
                   <div>
                     <p className={cn('text-xs', theme.text.muted)}>Repository Tags</p>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {image_info.repo_tags.map((tag, index) => (
+                      {image_info.repo_tags.map((tag: string, index: number) => (
                         <span
                           key={index}
                           className={cn(
@@ -227,7 +230,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
                   <div>
                     <p className={cn('text-xs', theme.text.muted)}>Repository Digests</p>
                     <div className="space-y-1 mt-1">
-                      {image_info.repo_digests.map((digest, index) => (
+                      {image_info.repo_digests.map((digest: string, index: number) => (
                         <div key={index} className="flex items-center gap-2">
                           <code
                             className={cn('text-xs font-mono break-all truncate', theme.text.muted)}
@@ -280,7 +283,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
               {showHistory && (
                 <div className={cn('mt-4 rounded-lg p-4', 'bg-zinc-50 dark:bg-zinc-800/50')}>
                   <div className="space-y-1 max-h-96 overflow-y-auto">
-                    {image_history.map((layer, index) => (
+                    {image_history.map((layer: ImageHistoryLayerType, index: number) => (
                       <ImageHistoryLayer key={layer.id || index} layer={layer} />
                     ))}
                   </div>

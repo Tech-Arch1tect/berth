@@ -7,11 +7,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
-import type { GetApiV1ImageUpdates200UpdatesItem } from '../../api/generated/models';
+import type { ImageUpdate } from '../../api/generated/models';
 import { ImageUpdateTable } from './ImageUpdateTable';
 
 interface ImageUpdateBannerProps {
-  updates: GetApiV1ImageUpdates200UpdatesItem[];
+  updates: ImageUpdate[];
   stackName: string;
   lastChecked: string | null;
   className?: string;

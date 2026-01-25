@@ -1,8 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import type {
-  GetApiV1ServersServeridStacksStackname200ServicesItem,
-  GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem,
-} from '../../../api/generated/models';
+import type { ComposeService, Container } from '../../../api/generated/models';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import { OperationRequest } from '../../../types/operations';
 import {
@@ -23,7 +20,7 @@ import { getContainerStatus } from '../../../utils/statusHelpers';
 import LogViewer from '../../logs/LogViewer';
 
 interface ServiceDetailPanelProps {
-  service: GetApiV1ServersServeridStacksStackname200ServicesItem;
+  service: ComposeService;
   onQuickOperation: (operation: OperationRequest) => void;
   isOperationRunning: boolean;
   runningOperation?: string;
@@ -277,7 +274,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
 };
 
 const ContainerDetail: React.FC<{
-  container: GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem;
+  container: Container;
 }> = ({ container }) => {
   const statusInfo = getContainerStatus(container);
   const StatusIcon = statusInfo.icon;

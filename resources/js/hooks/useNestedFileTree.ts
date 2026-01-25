@@ -1,32 +1,29 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import type {
-  GetApiV1ServersServeridStacksStacknameFiles200,
-  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
-} from '../api/generated/models';
+import type { DirectoryListing, FileEntry } from '../api/generated/models';
 import { getApiV1ServersServeridStacksStacknameFiles } from '../api/generated/files/files';
 import { fileQueryKeys } from './useFileQueries';
 
 interface UseNestedFileTreeOptions {
   serverid: number;
   stackname: string;
-  onFileSelect: (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  onFileSelect: (entry: FileEntry) => void;
   enabled?: boolean;
 }
 
 interface UseNestedFileTreeReturn {
-  rootEntries: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
+  rootEntries: FileEntry[];
   rootPath: string;
   rootLoading: boolean;
   rootError: Error | null;
   expandedPaths: Set<string>;
-  selectedEntry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
-  toggleDirectory: (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
-  selectEntry: (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => void;
+  selectedEntry: FileEntry | null;
+  toggleDirectory: (entry: FileEntry) => void;
+  selectEntry: (entry: FileEntry) => void;
   isExpanded: (path: string) => boolean;
   isLoading: (path: string) => boolean;
   isSelected: (path: string) => boolean;
-  getChildren: (path: string) => GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[];
+  getChildren: (path: string) => FileEntry[];
   refetchAll: () => void;
 }
 
@@ -37,8 +34,7 @@ export function useNestedFileTree({
   enabled = true,
 }: UseNestedFileTreeOptions): UseNestedFileTreeReturn {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
-  const [selectedEntry, setSelectedEntry] =
-    useState<GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null);
 
   const expandedPathsArray = useMemo(() => Array.from(expandedPaths), [expandedPaths]);
 
@@ -47,7 +43,7 @@ export function useNestedFileTree({
   const queries = useQueries({
     queries: allPaths.map((path) => ({
       queryKey: fileQueryKeys.directory(serverid, stackname, path),
-      queryFn: async (): Promise<GetApiV1ServersServeridStacksStacknameFiles200> => {
+      queryFn: async (): Promise<DirectoryListing> => {
         const response = await getApiV1ServersServeridStacksStacknameFiles(
           serverid,
           stackname,
@@ -68,7 +64,7 @@ export function useNestedFileTree({
   const childQueries = queries.slice(1);
 
   const childrenMap = useMemo(() => {
-    const map = new Map<string, GetApiV1ServersServeridStacksStacknameFiles200EntriesItem[]>();
+    const map = new Map<string, FileEntry[]>();
     expandedPathsArray.forEach((path, index) => {
       const query = childQueries[index];
       if (query?.data?.entries) {
@@ -89,25 +85,22 @@ export function useNestedFileTree({
     return set;
   }, [expandedPathsArray, childQueries]);
 
-  const toggleDirectory = useCallback(
-    (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
-      if (!entry.is_directory) return;
+  const toggleDirectory = useCallback((entry: FileEntry) => {
+    if (!entry.is_directory) return;
 
-      setExpandedPaths((prev) => {
-        const next = new Set(prev);
-        if (next.has(entry.path)) {
-          next.delete(entry.path);
-        } else {
-          next.add(entry.path);
-        }
-        return next;
-      });
-    },
-    []
-  );
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(entry.path)) {
+        next.delete(entry.path);
+      } else {
+        next.add(entry.path);
+      }
+      return next;
+    });
+  }, []);
 
   const selectEntry = useCallback(
-    (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (entry: FileEntry) => {
       setSelectedEntry(entry);
 
       if (entry.is_directory) {

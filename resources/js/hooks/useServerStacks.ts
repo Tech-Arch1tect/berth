@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import type { GetApiV1ServersServeridStacks200StacksItem } from '../api/generated/models';
+import type { Stack } from '../api/generated/models';
 
 interface UseServerStacksOptions {
   serverid: number;
@@ -8,7 +8,7 @@ interface UseServerStacksOptions {
 }
 
 export function useServerStacks({ serverid, enabled = true }: UseServerStacksOptions) {
-  return useQuery<GetApiV1ServersServeridStacks200StacksItem[], Error>({
+  return useQuery<Stack[], Error>({
     queryKey: ['server-stacks', serverid],
     queryFn: () => StackService.getServerStacks(serverid),
     enabled,

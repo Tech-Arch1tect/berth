@@ -1,10 +1,10 @@
 import React from 'react';
-import type { GetApiV1ServersServeridStacksStacknameImages200ImagesItemImageInfoConfig } from '../../../api/generated/models';
+import type { ImageConfig } from '../../../api/generated/models';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface ImageConfigDetailsProps {
-  config: GetApiV1ServersServeridStacksStacknameImages200ImagesItemImageInfoConfig;
+  config: ImageConfig;
 }
 
 export const ImageConfigDetails: React.FC<ImageConfigDetailsProps> = ({ config }) => {

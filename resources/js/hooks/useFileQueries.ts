@@ -14,13 +14,13 @@ import {
   postApiV1ServersServeridStacksStacknameFilesChown,
 } from '../api/generated/files/files';
 import type {
-  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
-  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
-  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
-  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
-  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
-  PostApiV1ServersServeridStacksStacknameFilesChmodBody,
-  PostApiV1ServersServeridStacksStacknameFilesChownBody,
+  WriteFileRequest,
+  CreateDirectoryRequest,
+  DeleteRequest2,
+  RenameRequest,
+  CopyRequest,
+  ChmodRequest,
+  ChownRequest,
 } from '../api/generated/models';
 import { apiClient } from '../lib/api';
 
@@ -113,7 +113,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   };
 
   const writeFile = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesWriteBody) => {
+    mutationFn: async (request: WriteFileRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesWrite(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -126,7 +126,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const createDirectory = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody) => {
+    mutationFn: async (request: CreateDirectoryRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesMkdir(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -136,7 +136,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const deleteFile = useMutation({
-    mutationFn: async (request: DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody) => {
+    mutationFn: async (request: DeleteRequest2) => {
       await deleteApiV1ServersServeridStacksStacknameFilesDelete(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -149,7 +149,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const renameFile = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesRenameBody) => {
+    mutationFn: async (request: RenameRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesRename(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -166,7 +166,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const copyFile = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesCopyBody) => {
+    mutationFn: async (request: CopyRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesCopy(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -176,7 +176,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const chmodFile = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesChmodBody) => {
+    mutationFn: async (request: ChmodRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesChmod(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {
@@ -186,7 +186,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
   });
 
   const chownFile = useMutation({
-    mutationFn: async (request: PostApiV1ServersServeridStacksStacknameFilesChownBody) => {
+    mutationFn: async (request: ChownRequest) => {
       await postApiV1ServersServeridStacksStacknameFilesChown(serverid, stackname, request);
     },
     onSuccess: (_, variables) => {

@@ -5,10 +5,7 @@ import {
   usePostApiV1ServersServeridMaintenancePrune,
   useDeleteApiV1ServersServeridMaintenanceResource,
 } from '../api/generated/maintenance/maintenance';
-import type {
-  PostApiV1ServersServeridMaintenancePruneBody,
-  DeleteApiV1ServersServeridMaintenanceResourceBody,
-} from '../api/generated/models';
+import type { PruneRequest, DeleteRequest } from '../api/generated/models';
 
 export const useMaintenanceInfo = (serverid: number, enabled: boolean = true) => {
   return useGetApiV1ServersServeridMaintenanceInfo(serverid, {
@@ -36,20 +33,9 @@ export const useDockerPrune = () => {
 
   return {
     ...mutation,
-    mutate: ({
-      serverid,
-      request,
-    }: {
-      serverid: number;
-      request: PostApiV1ServersServeridMaintenancePruneBody;
-    }) => mutation.mutate({ serverid, data: request }),
-    mutateAsync: async ({
-      serverid,
-      request,
-    }: {
-      serverid: number;
-      request: PostApiV1ServersServeridMaintenancePruneBody;
-    }) => {
+    mutate: ({ serverid, request }: { serverid: number; request: PruneRequest }) =>
+      mutation.mutate({ serverid, data: request }),
+    mutateAsync: async ({ serverid, request }: { serverid: number; request: PruneRequest }) => {
       const response = await mutation.mutateAsync({ serverid, data: request });
       return response.data;
     },
@@ -71,20 +57,9 @@ export const useDeleteResource = () => {
 
   return {
     ...mutation,
-    mutate: ({
-      serverid,
-      request,
-    }: {
-      serverid: number;
-      request: DeleteApiV1ServersServeridMaintenanceResourceBody;
-    }) => mutation.mutate({ serverid, data: request }),
-    mutateAsync: async ({
-      serverid,
-      request,
-    }: {
-      serverid: number;
-      request: DeleteApiV1ServersServeridMaintenanceResourceBody;
-    }) => {
+    mutate: ({ serverid, request }: { serverid: number; request: DeleteRequest }) =>
+      mutation.mutate({ serverid, data: request }),
+    mutateAsync: async ({ serverid, request }: { serverid: number; request: DeleteRequest }) => {
       const response = await mutation.mutateAsync({ serverid, data: request });
       return response.data;
     },

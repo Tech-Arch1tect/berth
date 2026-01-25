@@ -6,6 +6,7 @@ import { theme } from '../../../theme';
 import { EmptyState } from '../../common/EmptyState';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 import { useServerStack } from '../../../contexts/ServerStackContext';
+import type { ContainerImageDetails } from '../../../api/generated/models';
 
 export const StackImagesTab: React.FC = () => {
   const { serverId, stackName } = useServerStack();
@@ -56,7 +57,8 @@ export const StackImagesTab: React.FC = () => {
   }
 
   const totalImages = imageDetails.length;
-  const uniqueImages = new Set(imageDetails.map((img) => img.image_name)).size;
+  const uniqueImages = new Set(imageDetails.map((img: ContainerImageDetails) => img.image_name))
+    .size;
 
   return (
     <div className="space-y-6">
@@ -82,7 +84,7 @@ export const StackImagesTab: React.FC = () => {
 
       {/* Image Cards */}
       <div className="space-y-4">
-        {imageDetails.map((imageDetail) => (
+        {imageDetails.map((imageDetail: ContainerImageDetails) => (
           <ContainerImageCard
             key={`${imageDetail.container_name}-${imageDetail.image_id}`}
             imageDetails={imageDetail}

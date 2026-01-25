@@ -4,10 +4,7 @@ import {
   useGetApiV1AdminSecurityAuditLogsStats,
   getApiV1AdminSecurityAuditLogsId,
 } from '../api/generated/admin/admin';
-import type {
-  GetApiV1AdminSecurityAuditLogs200DataLogsItem,
-  GetApiV1AdminSecurityAuditLogsStats200Data,
-} from '../api/generated/models';
+import type { SecurityAuditLogResponse, StatsResponseData } from '../api/generated/models';
 
 interface UseSecurityAuditLogsParams {
   page: number;
@@ -27,13 +24,13 @@ interface PaginationMetadata {
 }
 
 interface UseSecurityAuditLogsReturn {
-  logs: GetApiV1AdminSecurityAuditLogs200DataLogsItem[];
-  stats: GetApiV1AdminSecurityAuditLogsStats200Data | null;
-  selectedLog: GetApiV1AdminSecurityAuditLogs200DataLogsItem | null;
+  logs: SecurityAuditLogResponse[];
+  stats: StatsResponseData | null;
+  selectedLog: SecurityAuditLogResponse | null;
   loading: boolean;
   statsLoading: boolean;
   paginationMetadata: PaginationMetadata | null;
-  fetchLogDetails: (id: number) => Promise<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>;
+  fetchLogDetails: (id: number) => Promise<SecurityAuditLogResponse | null>;
   clearSelectedLog: () => void;
   refetch: () => void;
   refetchStats: () => void;
@@ -49,8 +46,7 @@ export function useSecurityAuditLogs({
   startDate,
   endDate,
 }: UseSecurityAuditLogsParams): UseSecurityAuditLogsReturn {
-  const [selectedLog, setSelectedLog] =
-    useState<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null>(null);
+  const [selectedLog, setSelectedLog] = useState<SecurityAuditLogResponse | null>(null);
 
   const {
     data: logsResponse,
@@ -96,13 +92,13 @@ export function useSecurityAuditLogs({
     : null;
 
   const fetchLogDetails = useCallback(
-    async (id: number): Promise<GetApiV1AdminSecurityAuditLogs200DataLogsItem | null> => {
+    async (id: number): Promise<SecurityAuditLogResponse | null> => {
       try {
         const response = await getApiV1AdminSecurityAuditLogsId(id);
         const logData = response.data?.data;
         if (logData) {
-          setSelectedLog(logData as GetApiV1AdminSecurityAuditLogs200DataLogsItem);
-          return logData as GetApiV1AdminSecurityAuditLogs200DataLogsItem;
+          setSelectedLog(logData as SecurityAuditLogResponse);
+          return logData as SecurityAuditLogResponse;
         }
         return null;
       } catch (error) {

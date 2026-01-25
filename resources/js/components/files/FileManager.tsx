@@ -20,7 +20,7 @@ import { useContextMenu } from '../../hooks/useContextMenu';
 import { cn } from '../../utils/cn';
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { useServerStack } from '../../contexts/ServerStackContext';
-import type { GetApiV1ServersServeridStacksStacknameFiles200EntriesItem } from '../../api/generated/models';
+import type { FileEntry } from '../../api/generated/models';
 import { OpenTab } from '../../types/files';
 import { showToast } from '../../utils/toast';
 import { useFiles } from '../../hooks/useFiles';
@@ -55,8 +55,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
     closeAllTabs,
   } = useTabs();
 
-  const fileMenu = useContextMenu<GetApiV1ServersServeridStacksStacknameFiles200EntriesItem>();
-  const folderMenu = useContextMenu<GetApiV1ServersServeridStacksStacknameFiles200EntriesItem>();
+  const fileMenu = useContextMenu<FileEntry>();
+  const folderMenu = useContextMenu<FileEntry>();
   const tabMenu = useContextMenu<OpenTab>();
   const treeMenu = useContextMenu<null>();
 
@@ -68,7 +68,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   );
 
   const handleOpenFile = useCallback(
-    async (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    async (entry: FileEntry) => {
       const existingTab = tabs.find((t) => t.path === entry.path);
 
       try {
@@ -117,7 +117,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   );
 
   const handleFileContextMenu = useCallback(
-    (e: React.MouseEvent, entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (e: React.MouseEvent, entry: FileEntry) => {
       if (entry.is_directory) {
         folderMenu.open(e, entry);
       } else {
@@ -183,78 +183,75 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   );
 
   const handleFileOpen = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       handleOpenFile(file);
     },
     [handleOpenFile]
   );
 
   const handleFileRename = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('rename', file);
     },
     [fm]
   );
 
   const handleFileCopy = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('copy', file);
     },
     [fm]
   );
 
-  const handleFileCopyPath = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
-      navigator.clipboard.writeText(file.path);
-      showToast.success('Path copied to clipboard');
-    },
-    []
-  );
+  const handleFileCopyPath = useCallback((file: FileEntry) => {
+    navigator.clipboard.writeText(file.path);
+    showToast.success('Path copied to clipboard');
+  }, []);
 
   const handleFileDownload = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleDownload(file);
     },
     [fm]
   );
 
   const handleFileChmod = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('chmod', file);
     },
     [fm]
   );
 
   const handleFileChown = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('chown', file);
     },
     [fm]
   );
 
   const handleFileDelete = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('delete', file);
     },
     [fm]
   );
 
   const handleNewFile = useCallback(
-    (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (folder: FileEntry) => {
       fm.handleFileOperation('create', undefined, folder.path);
     },
     [fm]
   );
 
   const handleNewFolder = useCallback(
-    (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (folder: FileEntry) => {
       fm.handleFileOperation('mkdir', undefined, folder.path);
     },
     [fm]
   );
 
   const handleUpload = useCallback(
-    (folder: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (folder: FileEntry) => {
       fm.handleFileOperation('upload', undefined, folder.path);
     },
     [fm]
@@ -273,7 +270,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   }, [fm]);
 
   const handleCreateArchive = useCallback(
-    (entry: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (entry: FileEntry) => {
       fm.handleFileOperation('create_archive', entry, entry.path);
     },
     [fm]
@@ -297,7 +294,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   }, [fm]);
 
   const handleExtractArchive = useCallback(
-    (file: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem) => {
+    (file: FileEntry) => {
       fm.handleFileOperation('extract_archive', file);
     },
     [fm]

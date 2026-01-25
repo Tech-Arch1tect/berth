@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 import { theme } from '../../../theme';
-import type { GetApiV1ServersServeridStacksStackname200ServicesItem } from '../../../api/generated/models';
+import type { ComposeService } from '../../../api/generated/models';
 import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../utils/cn';
 import {
@@ -18,7 +18,7 @@ import {
 } from '../../../utils/statusHelpers';
 
 interface StackQuickActionsProps {
-  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
+  services: ComposeService[];
   onQuickOperation: (operation: OperationRequest) => void;
   disabled?: boolean;
   isOperationRunning?: boolean;

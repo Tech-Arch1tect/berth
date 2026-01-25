@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import type {
-  GetApiV1ServersServeridStacksStacknameFiles200EntriesItem,
-  PostApiV1ServersServeridStacksStacknameFilesMkdirBody,
-  PostApiV1ServersServeridStacksStacknameFilesWriteBody,
-  PostApiV1ServersServeridStacksStacknameFilesRenameBody,
-  PostApiV1ServersServeridStacksStacknameFilesCopyBody,
-  DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody,
-  GetApiV1ServersServeridStacksStacknameFilesStats200,
+  FileEntry,
+  CreateDirectoryRequest,
+  WriteFileRequest,
+  RenameRequest,
+  CopyRequest,
+  DeleteRequest2,
+  DirectoryStats,
 } from '../../../api/generated/models';
 import { FileOperation } from '../../../types/files';
 import { cn } from '../../../utils/cn';
@@ -16,20 +16,13 @@ import { Modal } from '../../common/Modal';
 interface FileOperationModalProps {
   isOpen: boolean;
   operation: FileOperation | null;
-  selectedFile: GetApiV1ServersServeridStacksStacknameFiles200EntriesItem | null;
+  selectedFile: FileEntry | null;
   targetDirectory: string;
   onClose: () => void;
   onConfirm: (
-    data:
-      | PostApiV1ServersServeridStacksStacknameFilesMkdirBody
-      | PostApiV1ServersServeridStacksStacknameFilesWriteBody
-      | PostApiV1ServersServeridStacksStacknameFilesRenameBody
-      | PostApiV1ServersServeridStacksStacknameFilesCopyBody
-      | DeleteApiV1ServersServeridStacksStacknameFilesDeleteBody
+    data: CreateDirectoryRequest | WriteFileRequest | RenameRequest | CopyRequest | DeleteRequest2
   ) => Promise<void>;
-  getDirectoryStats?: (
-    path?: string
-  ) => Promise<GetApiV1ServersServeridStacksStacknameFilesStats200>;
+  getDirectoryStats?: (path?: string) => Promise<DirectoryStats>;
 }
 
 export const FileOperationModal: React.FC<FileOperationModalProps> = ({
@@ -142,7 +135,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
       switch (operation) {
         case 'mkdir': {
           const dirPath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
-          const request: PostApiV1ServersServeridStacksStacknameFilesMkdirBody = { path: dirPath };
+          const request: CreateDirectoryRequest = { path: dirPath };
           if (mode.trim()) request.mode = mode.trim();
           if (ownerId.trim()) request.owner_id = parseInt(ownerId.trim());
           if (groupId.trim()) request.group_id = parseInt(groupId.trim());
@@ -152,7 +145,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
 
         case 'create': {
           const filePath = targetDirectory ? `${targetDirectory}/${inputValue}` : inputValue;
-          const request: PostApiV1ServersServeridStacksStacknameFilesWriteBody = {
+          const request: WriteFileRequest = {
             path: filePath,
             content: '',
             encoding: 'utf-8',
@@ -170,7 +163,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
           await onConfirm({
             old_path: selectedFile.path,
             new_path: newPath,
-          } as PostApiV1ServersServeridStacksStacknameFilesRenameBody);
+          } as RenameRequest);
           break;
         }
 
@@ -185,7 +178,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
           await onConfirm({
             source_path: selectedFile.path,
             target_path: copyPath,
-          } as PostApiV1ServersServeridStacksStacknameFilesCopyBody);
+          } as CopyRequest);
           break;
         }
 

@@ -2,10 +2,10 @@ import type { FC } from 'react';
 import { KeyIcon, PlusIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { GetApiV1ServersServeridRegistries200DataCredentialsItem } from '../../../api/generated/models';
+import type { RegistryCredentialResponse } from '../../../api/generated/models';
 
 interface RegistriesContentProps {
-  credentials: GetApiV1ServersServeridRegistries200DataCredentialsItem[];
+  credentials: RegistryCredentialResponse[];
   showForm: boolean;
   isEditing: boolean;
   processing: boolean;
@@ -19,7 +19,7 @@ interface RegistriesContentProps {
   onFormDataChange: (key: string, value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
-  onEdit: (credential: GetApiV1ServersServeridRegistries200DataCredentialsItem) => void;
+  onEdit: (credential: RegistryCredentialResponse) => void;
   onDelete: (id: number, url: string) => void;
   onShowAddForm: () => void;
 }

@@ -1,10 +1,5 @@
 import React from 'react';
-import type {
-  GetApiV1ServersServeridStacksStackname200ServicesItem,
-  GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem,
-  GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem,
-  GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem,
-} from '../../../api/generated/models';
+import type { ComposeService, Container, Network, Volume } from '../../../api/generated/models';
 import { OperationRequest } from '../../../types/operations';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import {
@@ -23,9 +18,9 @@ import { getServiceStatus } from '../../../utils/statusHelpers';
 interface OverviewPanelProps {
   stackPath: string;
   composeFile: string;
-  services: GetApiV1ServersServeridStacksStackname200ServicesItem[];
-  networks: GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[];
-  volumes: GetApiV1ServersServeridStacksStacknameVolumes200VolumesItem[];
+  services: ComposeService[];
+  networks: Network[];
+  volumes: Volume[];
   canManage: boolean;
   onQuickOperation: (operation: OperationRequest) => void;
   isOperationRunning: boolean;
@@ -46,9 +41,7 @@ const formatUptime = (startedAt?: string) => {
   return `${minutes}m`;
 };
 
-const getOldestUptime = (
-  containers: GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem[]
-) => {
+const getOldestUptime = (containers: Container[]) => {
   const runningContainers = containers.filter(
     (c) => c.state?.toLowerCase() === 'running' && c.started
   );

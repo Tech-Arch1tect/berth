@@ -13,13 +13,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type {
-  GetApiV1AdminOperationLogsId200,
-  GetApiV1AdminOperationLogsId200Log,
-} from '../../../api/generated/models';
+import type { OperationLogDetail, OperationLogResponse } from '../../../api/generated/models';
 
 interface OperationDetailPanelProps {
-  detail: GetApiV1AdminOperationLogsId200 | null;
+  detail: OperationLogDetail | null;
   isLoading: boolean;
   showUser?: boolean;
   onClose: () => void;
@@ -48,7 +45,7 @@ const formatDuration = (duration: number | null, isPartial: boolean = false) => 
   return isPartial ? `~${formattedTime}` : formattedTime;
 };
 
-const getOperationDuration = (log: GetApiV1AdminOperationLogsId200Log) => {
+const getOperationDuration = (log: OperationLogResponse) => {
   if (log.duration_ms !== null && log.duration_ms !== undefined) {
     return formatDuration(log.duration_ms, false);
   } else if (log.partial_duration_ms !== null && log.partial_duration_ms !== undefined) {
@@ -64,7 +61,7 @@ const formatTriggerSource = (triggerSource: string) => {
   return 'Manual';
 };
 
-const StatusBadge: React.FC<{ log: GetApiV1AdminOperationLogsId200Log }> = ({ log }) => {
+const StatusBadge: React.FC<{ log: OperationLogResponse }> = ({ log }) => {
   if (log.is_incomplete) {
     return (
       <span

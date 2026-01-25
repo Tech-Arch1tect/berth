@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
-import type { GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem } from '../api/generated/models';
+import type { Network } from '../api/generated/models';
 
 interface UseStackNetworksOptions {
   serverid: number;
@@ -13,7 +13,7 @@ export const useStackNetworks = ({
   stackname,
   enabled = true,
 }: UseStackNetworksOptions) => {
-  return useQuery<GetApiV1ServersServeridStacksStacknameNetworks200NetworksItem[], Error>({
+  return useQuery<Network[], Error>({
     queryKey: ['stackNetworks', serverid, stackname],
     queryFn: () => StackService.getStackNetworks(serverid, stackname),
     enabled: enabled && !!serverid && !!stackname,

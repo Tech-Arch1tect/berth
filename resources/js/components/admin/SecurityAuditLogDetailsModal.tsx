@@ -1,11 +1,11 @@
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Modal } from '../common/Modal';
-import type { GetApiV1AdminSecurityAuditLogs200DataLogsItem } from '../../api/generated/models';
+import type { SecurityAuditLogResponse } from '../../api/generated/models';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 
 interface Props {
-  log: GetApiV1AdminSecurityAuditLogs200DataLogsItem | null;
+  log: SecurityAuditLogResponse | null;
   isOpen: boolean;
   onClose: () => void;
 }

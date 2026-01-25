@@ -1,9 +1,9 @@
 import { useGetApiV1OperationLogs } from '../../../api/generated/operation-logs/operation-logs';
-import type { GetApiV1OperationLogs200DataItem } from '../../../api/generated/models';
+import type { OperationLogResponse } from '../../../api/generated/models';
 
 export interface ActivitySummary {
-  recentOperations: GetApiV1OperationLogs200DataItem[];
-  failedOperations: GetApiV1OperationLogs200DataItem[];
+  recentOperations: OperationLogResponse[];
+  failedOperations: OperationLogResponse[];
   loading: boolean;
   error: string | null;
 }

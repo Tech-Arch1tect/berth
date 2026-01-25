@@ -1,12 +1,6 @@
 import { cn } from './cn';
 import { theme } from '../theme';
-import type {
-  GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem,
-  GetApiV1ServersServeridStacksStackname200ServicesItem,
-} from '../api/generated/models';
-
-type Container = GetApiV1ServersServeridStacksStackname200ServicesItemContainersItem;
-type ComposeService = GetApiV1ServersServeridStacksStackname200ServicesItem;
+import type { Container, ComposeService } from '../api/generated/models';
 import type { ComponentType, SVGProps } from 'react';
 import {
   CheckCircleIcon,
@@ -22,8 +16,8 @@ const STOPPED_EXIT_CODES = [0, 137, 143];
 
 type ExitCodeStatus = 'stopped' | 'error' | 'unknown';
 
-const getExitCodeStatus = (exitCode: number | undefined): ExitCodeStatus => {
-  if (exitCode === undefined) return 'unknown';
+const getExitCodeStatus = (exitCode: number | null | undefined): ExitCodeStatus => {
+  if (exitCode === undefined || exitCode === null) return 'unknown';
   if (STOPPED_EXIT_CODES.includes(exitCode)) return 'stopped';
   return 'error';
 };

@@ -5,12 +5,12 @@ import { Table } from '../common/Table';
 import { formatDate } from '../../utils/formatters';
 import { getResourceStatusBadge } from '../../utils/statusHelpers';
 import { GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
-import type { GetApiV1ServersServeridMaintenanceInfo200NetworkSummaryNetworksItem } from '../../api/generated/models';
+import type { NetworkInfo } from '../../api/generated/models';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 interface MaintenanceNetworksTabProps {
-  networks: GetApiV1ServersServeridMaintenanceInfo200NetworkSummaryNetworksItem[];
+  networks: NetworkInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
 }
@@ -40,7 +40,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
           Docker Networks ({networks.length})
         </h3>
       </div>
-      <Table<GetApiV1ServersServeridMaintenanceInfo200NetworkSummaryNetworksItem>
+      <Table<NetworkInfo>
         data={networks}
         keyExtractor={(network) => network.id}
         emptyMessage="No Docker networks found"
