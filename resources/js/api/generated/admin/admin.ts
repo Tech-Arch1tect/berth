@@ -5,20 +5,27 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 
 import type {
+  AssignRoleRequest,
+  AssignRoleResponse,
+  CreateUserRequest,
+  CreateUserResponse,
   ErrorResponse,
   GetApiV1AdminOperationLogsParams,
   GetApiV1AdminSecurityAuditLogsParams,
@@ -28,6 +35,8 @@ import type {
   OperationLogDetail,
   OperationLogStats,
   PaginatedOperationLogs,
+  RevokeRoleRequest,
+  RevokeRoleResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -789,3 +798,238 @@ export function useGetApiV1AdminSecurityAuditLogsId<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Creates a new user account. Requires admin permissions.
+ * @summary Create a new user
+ */
+export const postApiV1AdminUsers = (createUserRequest: CreateUserRequest, signal?: AbortSignal) => {
+  return apiClient<CreateUserResponse>({
+    url: `/api/v1/admin/users`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: createUserRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminUsersMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminUsers>>,
+    TError,
+    { data: CreateUserRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminUsers>>,
+  TError,
+  { data: CreateUserRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminUsers'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminUsers>>,
+    { data: CreateUserRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminUsers(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminUsersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminUsers>>
+>;
+export type PostApiV1AdminUsersMutationBody = CreateUserRequest;
+export type PostApiV1AdminUsersMutationError = ErrorResponse | void;
+
+/**
+ * @summary Create a new user
+ */
+export const usePostApiV1AdminUsers = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminUsers>>,
+      TError,
+      { data: CreateUserRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminUsers>>,
+  TError,
+  { data: CreateUserRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminUsersMutationOptions(options), queryClient);
+};
+/**
+ * Assigns a role to a user. Requires admin permissions.
+ * @summary Assign a role to a user
+ */
+export const postApiV1AdminUsersAssignRole = (
+  assignRoleRequest: AssignRoleRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<AssignRoleResponse>({
+    url: `/api/v1/admin/users/assign-role`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: assignRoleRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminUsersAssignRoleMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
+    TError,
+    { data: AssignRoleRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
+  TError,
+  { data: AssignRoleRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminUsersAssignRole'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
+    { data: AssignRoleRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminUsersAssignRole(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminUsersAssignRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>
+>;
+export type PostApiV1AdminUsersAssignRoleMutationBody = AssignRoleRequest;
+export type PostApiV1AdminUsersAssignRoleMutationError = ErrorResponse | void;
+
+/**
+ * @summary Assign a role to a user
+ */
+export const usePostApiV1AdminUsersAssignRole = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
+      TError,
+      { data: AssignRoleRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
+  TError,
+  { data: AssignRoleRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminUsersAssignRoleMutationOptions(options), queryClient);
+};
+/**
+ * Revokes a role from a user. Requires admin permissions.
+ * @summary Revoke a role from a user
+ */
+export const postApiV1AdminUsersRevokeRole = (
+  revokeRoleRequest: RevokeRoleRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<RevokeRoleResponse>({
+    url: `/api/v1/admin/users/revoke-role`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: revokeRoleRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminUsersRevokeRoleMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
+    TError,
+    { data: RevokeRoleRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
+  TError,
+  { data: RevokeRoleRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminUsersRevokeRole'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
+    { data: RevokeRoleRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminUsersRevokeRole(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminUsersRevokeRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>
+>;
+export type PostApiV1AdminUsersRevokeRoleMutationBody = RevokeRoleRequest;
+export type PostApiV1AdminUsersRevokeRoleMutationError = ErrorResponse | void;
+
+/**
+ * @summary Revoke a role from a user
+ */
+export const usePostApiV1AdminUsersRevokeRole = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
+      TError,
+      { data: RevokeRoleRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
+  TError,
+  { data: RevokeRoleRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminUsersRevokeRoleMutationOptions(options), queryClient);
+};
