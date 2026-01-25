@@ -24,19 +24,28 @@ import type {
 import type {
   AssignRoleRequest,
   AssignRoleResponse,
+  CreateRoleRequest,
+  CreateRoleResponse,
+  CreateStackPermissionRequest,
+  CreateStackPermissionResponse,
   CreateUserRequest,
   CreateUserResponse,
+  DeleteRoleResponse,
+  DeleteStackPermissionResponse,
   ErrorResponse,
   GetApiV1AdminOperationLogsParams,
   GetApiV1AdminSecurityAuditLogsParams,
   GetLogAPIResponse,
   GetStatsAPIResponse,
   ListLogsAPIResponse,
+  ListRoleStackPermissionsResponse,
   OperationLogDetail,
   OperationLogStats,
   PaginatedOperationLogs,
   RevokeRoleRequest,
   RevokeRoleResponse,
+  UpdateRoleRequest,
+  UpdateRoleResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -412,6 +421,552 @@ export function useGetApiV1AdminOperationLogsId<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+/**
+ * Creates a new role. Requires admin permissions.
+ * @summary Create a new role
+ */
+export const postApiV1AdminRoles = (createRoleRequest: CreateRoleRequest, signal?: AbortSignal) => {
+  return apiClient<CreateRoleResponse>({
+    url: `/api/v1/admin/roles`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: createRoleRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminRolesMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminRoles>>,
+    TError,
+    { data: CreateRoleRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminRoles>>,
+  TError,
+  { data: CreateRoleRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminRoles'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminRoles>>,
+    { data: CreateRoleRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminRoles(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminRolesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminRoles>>
+>;
+export type PostApiV1AdminRolesMutationBody = CreateRoleRequest;
+export type PostApiV1AdminRolesMutationError = ErrorResponse | void;
+
+/**
+ * @summary Create a new role
+ */
+export const usePostApiV1AdminRoles = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminRoles>>,
+      TError,
+      { data: CreateRoleRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminRoles>>,
+  TError,
+  { data: CreateRoleRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminRolesMutationOptions(options), queryClient);
+};
+/**
+ * Deletes a role. Requires admin permissions.
+ * @summary Delete a role
+ */
+export const deleteApiV1AdminRolesId = (id: number, signal?: AbortSignal) => {
+  return apiClient<DeleteRoleResponse>({
+    url: `/api/v1/admin/roles/${id}`,
+    method: 'DELETE',
+    signal,
+  });
+};
+
+export const getDeleteApiV1AdminRolesIdMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1AdminRolesId'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteApiV1AdminRolesId(id);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1AdminRolesIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>
+>;
+
+export type DeleteApiV1AdminRolesIdMutationError = ErrorResponse | void;
+
+/**
+ * @summary Delete a role
+ */
+export const useDeleteApiV1AdminRolesId = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteApiV1AdminRolesIdMutationOptions(options), queryClient);
+};
+/**
+ * Updates an existing role. Requires admin permissions.
+ * @summary Update a role
+ */
+export const putApiV1AdminRolesId = (
+  id: number,
+  updateRoleRequest: UpdateRoleRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<UpdateRoleResponse>({
+    url: `/api/v1/admin/roles/${id}`,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    data: updateRoleRequest,
+    signal,
+  });
+};
+
+export const getPutApiV1AdminRolesIdMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
+    TError,
+    { id: number; data: UpdateRoleRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
+  TError,
+  { id: number; data: UpdateRoleRequest },
+  TContext
+> => {
+  const mutationKey = ['putApiV1AdminRolesId'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
+    { id: number; data: UpdateRoleRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return putApiV1AdminRolesId(id, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutApiV1AdminRolesIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putApiV1AdminRolesId>>
+>;
+export type PutApiV1AdminRolesIdMutationBody = UpdateRoleRequest;
+export type PutApiV1AdminRolesIdMutationError = ErrorResponse | void;
+
+/**
+ * @summary Update a role
+ */
+export const usePutApiV1AdminRolesId = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
+      TError,
+      { id: number; data: UpdateRoleRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
+  TError,
+  { id: number; data: UpdateRoleRequest },
+  TContext
+> => {
+  return useMutation(getPutApiV1AdminRolesIdMutationOptions(options), queryClient);
+};
+/**
+ * Returns the role details, available servers, permissions, and current permission rules. Requires admin permissions.
+ * @summary List role stack permissions
+ */
+export const getApiV1AdminRolesRoleIdStackPermissions = (roleId: number, signal?: AbortSignal) => {
+  return apiClient<ListRoleStackPermissionsResponse>({
+    url: `/api/v1/admin/roles/${roleId}/stack-permissions`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1AdminRolesRoleIdStackPermissionsQueryKey = (roleId?: number) => {
+  return [`/api/v1/admin/roles/${roleId}/stack-permissions`] as const;
+};
+
+export const getGetApiV1AdminRolesRoleIdStackPermissionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  roleId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApiV1AdminRolesRoleIdStackPermissionsQueryKey(roleId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>
+  > = ({ signal }) => getApiV1AdminRolesRoleIdStackPermissions(roleId, signal);
+
+  return { queryKey, queryFn, enabled: !!roleId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminRolesRoleIdStackPermissionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>
+>;
+export type GetApiV1AdminRolesRoleIdStackPermissionsQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminRolesRoleIdStackPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  roleId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminRolesRoleIdStackPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  roleId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminRolesRoleIdStackPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  roleId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List role stack permissions
+ */
+
+export function useGetApiV1AdminRolesRoleIdStackPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  roleId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminRolesRoleIdStackPermissionsQueryOptions(roleId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Creates a new permission rule for a role on a server with a stack pattern. Requires admin permissions.
+ * @summary Create a role stack permission
+ */
+export const postApiV1AdminRolesRoleIdStackPermissions = (
+  roleId: number,
+  createStackPermissionRequest: CreateStackPermissionRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<CreateStackPermissionResponse>({
+    url: `/api/v1/admin/roles/${roleId}/stack-permissions`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: createStackPermissionRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminRolesRoleIdStackPermissionsMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>,
+    TError,
+    { roleId: number; data: CreateStackPermissionRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>,
+  TError,
+  { roleId: number; data: CreateStackPermissionRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminRolesRoleIdStackPermissions'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>,
+    { roleId: number; data: CreateStackPermissionRequest }
+  > = (props) => {
+    const { roleId, data } = props ?? {};
+
+    return postApiV1AdminRolesRoleIdStackPermissions(roleId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminRolesRoleIdStackPermissionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>
+>;
+export type PostApiV1AdminRolesRoleIdStackPermissionsMutationBody = CreateStackPermissionRequest;
+export type PostApiV1AdminRolesRoleIdStackPermissionsMutationError = ErrorResponse | void;
+
+/**
+ * @summary Create a role stack permission
+ */
+export const usePostApiV1AdminRolesRoleIdStackPermissions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>,
+      TError,
+      { roleId: number; data: CreateStackPermissionRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>,
+  TError,
+  { roleId: number; data: CreateStackPermissionRequest },
+  TContext
+> => {
+  return useMutation(
+    getPostApiV1AdminRolesRoleIdStackPermissionsMutationOptions(options),
+    queryClient
+  );
+};
+/**
+ * Deletes a permission rule from a role. Requires admin permissions.
+ * @summary Delete a role stack permission
+ */
+export const deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = (
+  roleId: number,
+  permissionId: number,
+  signal?: AbortSignal
+) => {
+  return apiClient<DeleteStackPermissionResponse>({
+    url: `/api/v1/admin/roles/${roleId}/stack-permissions/${permissionId}`,
+    method: 'DELETE',
+    signal,
+  });
+};
+
+export const getDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>,
+    TError,
+    { roleId: number; permissionId: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>,
+  TError,
+  { roleId: number; permissionId: number },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>,
+    { roleId: number; permissionId: number }
+  > = (props) => {
+    const { roleId, permissionId } = props ?? {};
+
+    return deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId(roleId, permissionId);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>
+>;
+
+export type DeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationError =
+  ErrorResponse | void;
+
+/**
+ * @summary Delete a role stack permission
+ */
+export const useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>,
+      TError,
+      { roleId: number; permissionId: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId>>,
+  TError,
+  { roleId: number; permissionId: number },
+  TContext
+> => {
+  return useMutation(
+    getDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationOptions(options),
+    queryClient
+  );
+};
 /**
  * Returns paginated list of security audit logs. Requires admin permissions.
  * @summary List security audit logs
