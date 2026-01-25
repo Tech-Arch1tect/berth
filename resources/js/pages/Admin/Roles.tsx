@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
@@ -6,6 +6,11 @@ import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import {
+  usePostApiV1AdminRoles,
+  usePutApiV1AdminRolesId,
+  useDeleteApiV1AdminRolesId,
+} from '../../api/generated/admin/admin';
 
 interface Role {
   id: number;
@@ -17,10 +22,9 @@ interface Role {
 interface Props {
   title: string;
   roles: Role[];
-  csrfToken?: string;
 }
 
-export default function AdminRoles({ title, roles, csrfToken }: Props) {
+export default function AdminRoles({ title, roles }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -29,41 +33,35 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
     name: '',
     description: '',
   });
-  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const createRoleMutation = usePostApiV1AdminRoles();
+  const updateRoleMutation = usePutApiV1AdminRolesId();
+  const deleteRoleMutation = useDeleteApiV1AdminRolesId();
+
+  const processing =
+    createRoleMutation.isPending || updateRoleMutation.isPending || deleteRoleMutation.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setProcessing(true);
 
-    try {
-      const url = editingRole ? `/api/v1/admin/roles/${editingRole.id}` : '/api/v1/admin/roles';
-      const method = editingRole ? 'PUT' : 'POST';
+    const onSuccess = () => {
+      router.reload();
+      setEditingRole(null);
+      setShowAddForm(false);
+      setFormData({ name: '', description: '' });
+    };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+    const onError = (err: unknown) => {
+      const errorData = err as { message?: string; error?: string };
+      setError(errorData.message || errorData.error || 'Operation failed');
+    };
 
-      if (response.ok) {
-        router.reload();
-        setEditingRole(null);
-        setShowAddForm(false);
-        setFormData({ name: '', description: '' });
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || errorData.error || 'Operation failed');
-      }
-    } catch (err) {
-      setError('Network error: ' + err);
-    } finally {
-      setProcessing(false);
+    if (editingRole) {
+      updateRoleMutation.mutate({ id: editingRole.id, data: formData }, { onSuccess, onError });
+    } else {
+      createRoleMutation.mutate({ data: formData }, { onSuccess, onError });
     }
   };
 
@@ -90,37 +88,26 @@ export default function AdminRoles({ title, roles, csrfToken }: Props) {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!roleToDelete) return;
-
     setError(null);
-    setProcessing(true);
 
-    try {
-      const response = await fetch(`/api/v1/admin/roles/${roleToDelete.id}`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
+    deleteRoleMutation.mutate(
+      { id: roleToDelete.id },
+      {
+        onSuccess: () => {
+          router.reload();
+          setShowDeleteModal(false);
+          setRoleToDelete(null);
         },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        router.reload();
-        setShowDeleteModal(false);
-        setRoleToDelete(null);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || errorData.error || 'Failed to delete role');
-        setShowDeleteModal(false);
+        onError: (err) => {
+          const errorData = err as { message?: string; error?: string };
+          setError(errorData.message || errorData.error || 'Failed to delete role');
+          setShowDeleteModal(false);
+          setRoleToDelete(null);
+        },
       }
-    } catch (err) {
-      setError('Network error: ' + err);
-      setShowDeleteModal(false);
-    } finally {
-      setProcessing(false);
-      setRoleToDelete(null);
-    }
+    );
   };
 
   return (

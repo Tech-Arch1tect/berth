@@ -723,6 +723,90 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	// Admin Role Management
+	apiDoc.Document("POST", "/api/v1/admin/roles").
+		Tags("admin", "roles").
+		Summary("Create a new role").
+		Description("Creates a new role. Requires admin permissions.").
+		Body(rbac.CreateRoleRequest{}, "Role details").
+		Response(http.StatusCreated, rbac.CreateRoleResponse{}, "Role created successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("PUT", "/api/v1/admin/roles/{id}").
+		Tags("admin", "roles").
+		Summary("Update a role").
+		Description("Updates an existing role. Requires admin permissions.").
+		PathParam("id", "Role ID").TypeInt().Required().
+		Body(rbac.UpdateRoleRequest{}, "Role details").
+		Response(http.StatusOK, rbac.UpdateRoleResponse{}, "Role updated successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/admin/roles/{id}").
+		Tags("admin", "roles").
+		Summary("Delete a role").
+		Description("Deletes a role. Requires admin permissions.").
+		PathParam("id", "Role ID").TypeInt().Required().
+		Response(http.StatusOK, rbac.DeleteRoleResponse{}, "Role deleted successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Role Stack Permissions
+	apiDoc.Document("GET", "/api/v1/admin/roles/{roleId}/stack-permissions").
+		Tags("admin", "roles").
+		Summary("List role stack permissions").
+		Description("Returns the role details, available servers, permissions, and current permission rules. Requires admin permissions.").
+		PathParam("roleId", "Role ID").TypeInt().Required().
+		Response(http.StatusOK, rbac.ListRoleStackPermissionsResponse{}, "Role stack permissions").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Cannot manage permissions for admin role").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "Role not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/roles/{roleId}/stack-permissions").
+		Tags("admin", "roles").
+		Summary("Create a role stack permission").
+		Description("Creates a new permission rule for a role on a server with a stack pattern. Requires admin permissions.").
+		PathParam("roleId", "Role ID").TypeInt().Required().
+		Body(rbac.CreateStackPermissionRequest{}, "Permission rule details").
+		Response(http.StatusCreated, rbac.CreateStackPermissionResponse{}, "Permission rule created").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or permission already exists").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/admin/roles/{roleId}/stack-permissions/{permissionId}").
+		Tags("admin", "roles").
+		Summary("Delete a role stack permission").
+		Description("Deletes a permission rule from a role. Requires admin permissions.").
+		PathParam("roleId", "Role ID").TypeInt().Required().
+		PathParam("permissionId", "Permission rule ID").TypeInt().Required().
+		Response(http.StatusOK, rbac.DeleteStackPermissionResponse{}, "Permission rule deleted").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// User Operation Logs
 	apiDoc.Document("GET", "/api/v1/operation-logs").
 		Tags("operation-logs").

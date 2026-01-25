@@ -8,6 +8,10 @@ import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import {
+  usePostApiV1AdminRolesRoleIdStackPermissions,
+  useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId,
+} from '../../api/generated/admin/admin';
 
 interface Permission {
   id: number;
@@ -50,7 +54,6 @@ interface Props {
   servers: Server[];
   permissions: Permission[];
   permissionRules: PermissionRule[];
-  csrfToken?: string;
 }
 
 export default function RoleStackPermissions({
@@ -59,16 +62,19 @@ export default function RoleStackPermissions({
   servers = [],
   permissions = [],
   permissionRules = [],
-  csrfToken,
 }: Props) {
   const [showAddRule, setShowAddRule] = useState(false);
   const [showAddToPattern, setShowAddToPattern] = useState<{
     serverid: number;
     stackPattern: string;
   } | null>(null);
-  const [deleting, setDeleting] = useState<number | null>(null);
-  const [adding, setAdding] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<number | null>(null);
+
+  const createPermissionMutation = usePostApiV1AdminRolesRoleIdStackPermissions();
+  const deletePermissionMutation = useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId();
+
+  const adding = createPermissionMutation.isPending;
+  const deleting = deletePermissionMutation.isPending ? ruleToDelete : null;
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({
     isOpen: false,
     message: '',
@@ -130,45 +136,31 @@ export default function RoleStackPermissions({
     e.preventDefault();
     if (!newRule.server_id || newRule.permission_ids.length === 0) return;
 
-    setAdding(true);
     try {
       // Create multiple rules for each selected permission
       const promises = newRule.permission_ids.map((permissionId) =>
-        fetch(`/api/v1/admin/roles/${role.id}/stack-permissions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || '',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
+        createPermissionMutation.mutateAsync({
+          roleId: role.id,
+          data: {
             server_id: parseInt(newRule.server_id),
             permission_id: permissionId,
             stack_pattern: newRule.stack_pattern || '*',
-          }),
+          },
         })
       );
 
-      const responses = await Promise.all(promises);
-      const failed = responses.filter((r) => !r.ok);
-
-      if (failed.length === 0) {
-        router.reload();
-        setShowAddRule(false);
-        setNewRule({ server_id: '', permission_ids: [], stack_pattern: '*' });
-      } else {
-        setErrorModal({
-          isOpen: true,
-          message: `Failed to add ${failed.length} permission rule(s)`,
-        });
-      }
+      await Promise.all(promises);
+      router.reload();
+      setShowAddRule(false);
+      setNewRule({ server_id: '', permission_ids: [], stack_pattern: '*' });
     } catch (error) {
+      const errorData = error as { message?: string; error?: string };
       setErrorModal({
         isOpen: true,
-        message: 'Failed to add permission rules: ' + error,
+        message:
+          'Failed to add permission rules: ' +
+          (errorData.message || errorData.error || 'Unknown error'),
       });
-    } finally {
-      setAdding(false);
     }
   };
 
@@ -176,83 +168,55 @@ export default function RoleStackPermissions({
     e.preventDefault();
     if (!addToPatternRule.server_id || addToPatternRule.permission_ids.length === 0) return;
 
-    setAdding(true);
     try {
       const promises = addToPatternRule.permission_ids.map((permissionId) =>
-        fetch(`/api/v1/admin/roles/${role.id}/stack-permissions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || '',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
+        createPermissionMutation.mutateAsync({
+          roleId: role.id,
+          data: {
             server_id: addToPatternRule.server_id,
             permission_id: permissionId,
             stack_pattern: addToPatternRule.stack_pattern,
-          }),
+          },
         })
       );
 
-      const responses = await Promise.all(promises);
-      const failed = responses.filter((r) => !r.ok);
-
-      if (failed.length === 0) {
-        router.reload();
-        setShowAddToPattern(null);
-        setAddToPatternRule({ server_id: 0, permission_ids: [], stack_pattern: '' });
-      } else {
-        setErrorModal({
-          isOpen: true,
-          message: `Failed to add ${failed.length} permission(s) to pattern`,
-        });
-      }
+      await Promise.all(promises);
+      router.reload();
+      setShowAddToPattern(null);
+      setAddToPatternRule({ server_id: 0, permission_ids: [], stack_pattern: '' });
     } catch (error) {
+      const errorData = error as { message?: string; error?: string };
       setErrorModal({
         isOpen: true,
-        message: 'Failed to add permissions to pattern: ' + error,
+        message:
+          'Failed to add permissions to pattern: ' +
+          (errorData.message || errorData.error || 'Unknown error'),
       });
-    } finally {
-      setAdding(false);
     }
   };
 
-  const handleDeleteRule = async () => {
+  const handleDeleteRule = () => {
     if (ruleToDelete === null) return;
 
-    setDeleting(ruleToDelete);
-    try {
-      const response = await fetch(
-        `/api/v1/admin/roles/${role.id}/stack-permissions/${ruleToDelete}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'X-CSRF-Token': csrfToken || '',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        router.reload();
-        setRuleToDelete(null);
-      } else {
-        const errorData = await response.json();
-        setErrorModal({
-          isOpen: true,
-          message:
-            'Failed to delete permission rule: ' +
-            (errorData.message || errorData.error || 'Unknown error'),
-        });
+    deletePermissionMutation.mutate(
+      { roleId: role.id, permissionId: ruleToDelete },
+      {
+        onSuccess: () => {
+          router.reload();
+          setRuleToDelete(null);
+        },
+        onError: (error) => {
+          const errorData = error as { message?: string; error?: string };
+          setErrorModal({
+            isOpen: true,
+            message:
+              'Failed to delete permission rule: ' +
+              (errorData.message || errorData.error || 'Unknown error'),
+          });
+          setRuleToDelete(null);
+        },
       }
-    } catch (error) {
-      setErrorModal({
-        isOpen: true,
-        message: 'Failed to delete permission rule: ' + error,
-      });
-    } finally {
-      setDeleting(null);
-    }
+    );
   };
 
   const groupedRules = (permissionRules || []).reduce(

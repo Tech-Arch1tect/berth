@@ -257,11 +257,7 @@ func (h *APIHandler) ListRoles(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateRole(c echo.Context) error {
-	var req struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	}
-
+	var req CreateRoleRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -295,7 +291,10 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 		},
 	)
 
-	return common.SendCreated(c, dto.ConvertRoleToRoleWithPermissions(*role))
+	return c.JSON(http.StatusCreated, CreateRoleResponse{
+		Success: true,
+		Data:    dto.ConvertRoleToRoleWithPermissions(*role),
+	})
 }
 
 func (h *APIHandler) UpdateRole(c echo.Context) error {
@@ -304,11 +303,7 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 		return err
 	}
 
-	var req struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	}
-
+	var req UpdateRoleRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -342,7 +337,10 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 		},
 	)
 
-	return common.SendSuccess(c, dto.ConvertRoleToRoleWithPermissions(*role))
+	return c.JSON(http.StatusOK, UpdateRoleResponse{
+		Success: true,
+		Data:    dto.ConvertRoleToRoleWithPermissions(*role),
+	})
 }
 
 func (h *APIHandler) DeleteRole(c echo.Context) error {
@@ -377,7 +375,10 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 		nil,
 	)
 
-	return common.SendMessage(c, "Role deleted successfully")
+	return c.JSON(http.StatusOK, DeleteRoleResponse{
+		Success: true,
+		Message: "Role deleted successfully",
+	})
 }
 
 func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
@@ -410,31 +411,49 @@ func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
 		return common.SendInternalError(c, "failed to fetch role stack permissions")
 	}
 
-	type PermissionRule struct {
-		ID           uint   `json:"id"`
-		ServerID     uint   `json:"server_id"`
-		PermissionID uint   `json:"permission_id"`
-		StackPattern string `json:"stack_pattern"`
-		IsStackBased bool   `json:"is_stack_based"`
+	roleInfo := dto.RoleInfo{
+		ID:          role.ID,
+		Name:        role.Name,
+		Description: role.Description,
+		IsAdmin:     role.IsAdmin,
 	}
 
-	var permissionRules []PermissionRule
+	serverInfos := make([]ServerInfo, len(servers))
+	for i, s := range servers {
+		serverInfos[i] = ServerInfo{
+			ID:          s.ID,
+			Name:        s.Name,
+			Description: s.Description,
+			Host:        s.Host,
+			Port:        s.Port,
+			IsActive:    s.IsActive,
+		}
+	}
 
-	for _, srsp := range serverRoleStackPermissions {
-		permissionRules = append(permissionRules, PermissionRule{
+	permissionInfos := make([]dto.PermissionInfo, len(permissions))
+	for i, p := range permissions {
+		permissionInfos[i] = dto.ConvertPermissionToPermissionInfo(p)
+	}
+
+	permissionRules := make([]StackPermissionRule, len(serverRoleStackPermissions))
+	for i, srsp := range serverRoleStackPermissions {
+		permissionRules[i] = StackPermissionRule{
 			ID:           srsp.ID,
 			ServerID:     srsp.ServerID,
 			PermissionID: srsp.PermissionID,
 			StackPattern: srsp.StackPattern,
 			IsStackBased: true,
-		})
+		}
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"role":            role,
-		"servers":         servers,
-		"permissions":     permissions,
-		"permissionRules": permissionRules,
+	return c.JSON(http.StatusOK, ListRoleStackPermissionsResponse{
+		Success: true,
+		Data: ListRoleStackPermissionsData{
+			Role:            roleInfo,
+			Servers:         serverInfos,
+			Permissions:     permissionInfos,
+			PermissionRules: permissionRules,
+		},
 	})
 }
 
@@ -444,12 +463,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		return err
 	}
 
-	var req struct {
-		ServerID     uint   `json:"server_id"`
-		PermissionID uint   `json:"permission_id"`
-		StackPattern string `json:"stack_pattern"`
-	}
-
+	var req CreateStackPermissionRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -514,8 +528,9 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		},
 	)
 
-	return common.SendCreated(c, map[string]string{
-		"message": "Role stack permission created successfully",
+	return c.JSON(http.StatusCreated, CreateStackPermissionResponse{
+		Success: true,
+		Message: "Role stack permission created successfully",
 	})
 }
 
@@ -561,7 +576,10 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 		},
 	)
 
-	return common.SendMessage(c, "Role stack permission deleted successfully")
+	return c.JSON(http.StatusOK, DeleteStackPermissionResponse{
+		Success: true,
+		Message: "Role stack permission deleted successfully",
+	})
 }
 
 func (h *APIHandler) GetUserPermissions(c echo.Context) error {
