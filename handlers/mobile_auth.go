@@ -964,9 +964,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
-	var req struct {
-		SessionID uint `json:"session_id"`
-	}
+	var req RevokeSessionRequest
 
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
@@ -1003,8 +1001,9 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Session revoked successfully",
+	return c.JSON(http.StatusOK, SessionMessageResponse{
+		Success: true,
+		Message: "Session revoked successfully",
 	})
 }
 
@@ -1052,9 +1051,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		}
 	} else {
 
-		var req struct {
-			RefreshToken string `json:"refresh_token"`
-		}
+		var req RevokeAllOtherSessionsRequest
 
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{
@@ -1099,8 +1096,9 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "All other sessions revoked successfully",
+	return c.JSON(http.StatusOK, SessionMessageResponse{
+		Success: true,
+		Message: "All other sessions revoked successfully",
 	})
 }
 

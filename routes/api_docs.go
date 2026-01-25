@@ -848,4 +848,29 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "session").
 		Build()
+
+	// Sessions Management
+	apiDoc.Document("POST", "/api/v1/sessions/revoke").
+		Tags("sessions").
+		Summary("Revoke a session").
+		Description("Revokes a specific session by ID. The user will be logged out from that device.").
+		Body(handlers.RevokeSessionRequest{}, "Session to revoke").
+		Response(http.StatusOK, handlers.SessionMessageResponse{}, "Session revoked successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or session ID").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/sessions/revoke-all-others").
+		Tags("sessions").
+		Summary("Revoke all other sessions").
+		Description("Revokes all sessions except the current one. For JWT authentication, the refresh token must be provided in the request body.").
+		Body(handlers.RevokeAllOtherSessionsRequest{}, "Refresh token (required for JWT auth, not needed for session auth)").
+		Response(http.StatusOK, handlers.SessionMessageResponse{}, "All other sessions revoked successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "session").
+		Build()
 }

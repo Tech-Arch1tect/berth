@@ -1,5 +1,5 @@
 import FlashMessages from '../../components/FlashMessages';
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DevicePhoneMobileIcon,
@@ -18,6 +18,10 @@ import { theme } from '../../theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useState } from 'react';
+import {
+  usePostApiV1SessionsRevoke,
+  usePostApiV1SessionsRevokeAllOthers,
+} from '../../api/generated/sessions/sessions';
 
 interface Session {
   id: number;
@@ -43,15 +47,13 @@ interface SessionsProps {
 }
 
 export default function SessionsIndex({ sessions }: SessionsProps) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
-
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
   const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
-  const [isRevoking, setIsRevoking] = useState(false);
-  const [isRevokingAll, setIsRevokingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const revokeMutation = usePostApiV1SessionsRevoke();
+  const revokeAllMutation = usePostApiV1SessionsRevokeAllOthers();
 
   const handleRevokeSessionClick = (sessionId: number) => {
     setSessionToRevoke(sessionId);
@@ -62,73 +64,32 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   const confirmRevokeSession = async () => {
     if (!sessionToRevoke) return;
 
-    setIsRevoking(true);
     setError(null);
 
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await fetch('/api/v1/sessions/revoke', {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({
-          session_id: sessionToRevoke,
-        }),
+      await revokeMutation.mutateAsync({
+        data: { session_id: sessionToRevoke },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to revoke session');
-      }
-
       router.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke session');
     } finally {
-      setIsRevoking(false);
       setShowRevokeModal(false);
       setSessionToRevoke(null);
     }
   };
 
   const confirmRevokeAllOthers = async () => {
-    setIsRevokingAll(true);
     setError(null);
 
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await fetch('/api/v1/sessions/revoke-all-others', {
-        method: 'POST',
-        headers,
-        credentials: 'include',
+      await revokeAllMutation.mutateAsync({
+        data: {},
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to revoke sessions');
-      }
-
       router.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke sessions');
     } finally {
-      setIsRevokingAll(false);
       setShowRevokeAllModal(false);
     }
   };
@@ -140,12 +101,10 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   const getDeviceIcon = (session: Session) => {
     const iconClass = cn('h-8 w-8', theme.text.muted);
 
-    // Return icon based on device type and browser
     if (session.bot) return <CpuChipIcon className={iconClass} />;
     if (session.mobile) return <DevicePhoneMobileIcon className={iconClass} />;
     if (session.tablet) return <DeviceTabletIcon className={iconClass} />;
 
-    // Desktop browser icons
     const browser = session.browser.toLowerCase();
     if (browser.includes('chrome')) return <GlobeAltIcon className={iconClass} />;
     if (browser.includes('firefox')) return <FireIcon className={iconClass} />;
@@ -173,10 +132,13 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
             {sessions.filter((s) => !s.current).length > 0 && (
               <button
                 onClick={() => setShowRevokeAllModal(true)}
-                disabled={isRevokingAll || isRevoking}
-                className={cn(theme.buttons.danger, (isRevokingAll || isRevoking) && 'opacity-50')}
+                disabled={revokeAllMutation.isPending || revokeMutation.isPending}
+                className={cn(
+                  theme.buttons.danger,
+                  (revokeAllMutation.isPending || revokeMutation.isPending) && 'opacity-50'
+                )}
               >
-                {isRevokingAll ? 'Revoking...' : 'Revoke All Others'}
+                {revokeAllMutation.isPending ? 'Revoking...' : 'Revoke All Others'}
               </button>
             )}
           </div>
@@ -251,14 +213,17 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                       <div className="flex-shrink-0">
                         <button
                           onClick={() => handleRevokeSessionClick(session.id)}
-                          disabled={isRevoking || isRevokingAll}
+                          disabled={revokeMutation.isPending || revokeAllMutation.isPending}
                           className={cn(
                             'inline-flex items-center text-sm leading-4',
                             theme.buttons.danger,
-                            (isRevoking || isRevokingAll) && 'opacity-50'
+                            (revokeMutation.isPending || revokeAllMutation.isPending) &&
+                              'opacity-50'
                           )}
                         >
-                          {isRevoking && sessionToRevoke === session.id ? 'Revoking...' : 'Revoke'}
+                          {revokeMutation.isPending && sessionToRevoke === session.id
+                            ? 'Revoking...'
+                            : 'Revoke'}
                         </button>
                       </div>
                     )}
