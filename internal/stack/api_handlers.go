@@ -331,12 +331,12 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 		return err
 	}
 
-	var changes map[string]any
-	if err := c.Bind(&changes); err != nil {
+	var req UpdateComposeRequest
+	if err := c.Bind(&req); err != nil {
 		return common.SendBadRequest(c, "invalid request body")
 	}
 
-	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, changes)
+	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, &req)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}

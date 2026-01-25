@@ -1,3 +1,34 @@
+export type {
+  RawComposeConfig,
+  ComposeChanges,
+  ServiceChanges,
+  NewServiceConfig,
+  UpdateComposeRequest,
+  UpdateComposeResponse,
+  PortMapping,
+  CommandConfig,
+  DependsOnConfig,
+  HealthcheckConfig,
+  DeployConfig,
+  BuildConfig,
+  ResourcesConfig,
+  RestartPolicyConfig,
+  PlacementConfig,
+  PlacementPreference,
+  UpdateRollbackConfig,
+  NetworkConfig,
+  VolumeConfig,
+  SecretConfig,
+  ConfigConfig,
+  IpamConfig,
+  IpamPool,
+  ServiceNetworkConfig,
+} from '../api/generated/models';
+
+export type { VolumeMount2 as VolumeMountChange } from '../api/generated/models';
+
+export type { PortMapping as PortMappingChange } from '../api/generated/models';
+
 export interface ComposePort {
   mode: string;
   protocol: string;
@@ -165,29 +196,6 @@ export interface ComposeConfig {
   configs?: Record<string, ComposeConfigConfig>;
 }
 
-export interface RawComposeConfig {
-  compose_file: string;
-  services: Record<string, RawComposeServiceConfig>;
-  networks?: Record<string, ComposeNetworkConfig>;
-  volumes?: Record<string, ComposeVolumeConfig>;
-  secrets?: Record<string, ComposeSecretConfig>;
-  configs?: Record<string, ComposeConfigConfig>;
-}
-
-export interface PortMappingChange {
-  target: string;
-  published?: string;
-  host_ip?: string;
-  protocol?: string;
-}
-
-export interface VolumeMountChange {
-  type: string;
-  source: string;
-  target: string;
-  read_only?: boolean;
-}
-
 export interface HealthcheckChange {
   test?: string[];
   interval?: string;
@@ -202,15 +210,6 @@ export interface DependsOnChange {
   condition?: string;
   restart?: boolean;
   required?: boolean;
-}
-
-export interface UpdateRollbackConfig {
-  parallelism?: number;
-  delay?: string;
-  failure_action?: string;
-  monitor?: string;
-  max_failure_ratio?: number;
-  order?: string;
 }
 
 export interface DeployChange {
@@ -230,8 +229,22 @@ export interface DeployChange {
     constraints?: string[];
     preferences?: { spread: string }[];
   };
-  update_config?: UpdateRollbackConfig;
-  rollback_config?: UpdateRollbackConfig;
+  update_config?: {
+    parallelism?: number | null;
+    delay?: string;
+    failure_action?: string;
+    monitor?: string;
+    max_failure_ratio?: number;
+    order?: string;
+  };
+  rollback_config?: {
+    parallelism?: number | null;
+    delay?: string;
+    failure_action?: string;
+    monitor?: string;
+    max_failure_ratio?: number;
+    order?: string;
+  };
 }
 
 export interface BuildChange {
@@ -242,58 +255,4 @@ export interface BuildChange {
   cache_from?: string[];
   cache_to?: string[];
   platforms?: string[];
-}
-
-export interface ServiceNetworkConfig {
-  aliases?: string[];
-  ipv4_address?: string;
-  ipv6_address?: string;
-  priority?: number;
-}
-
-export interface ServiceChanges {
-  image?: string;
-  ports?: PortMappingChange[];
-  environment?: Record<string, string | null>;
-  volumes?: VolumeMountChange[];
-  command?: { values: string[] };
-  entrypoint?: { values: string[] };
-  depends_on?: Record<string, DependsOnChange>;
-  healthcheck?: HealthcheckChange;
-  restart?: string;
-  labels?: Record<string, string | null>;
-  deploy?: DeployChange;
-  build?: BuildChange;
-  networks?: Record<string, ServiceNetworkConfig | null>;
-}
-
-export interface NewServiceConfig {
-  image: string;
-  ports?: PortMappingChange[];
-  environment?: Record<string, string>;
-  volumes?: VolumeMountChange[];
-  restart?: string;
-}
-
-export interface ComposeChanges {
-  service_changes?: Record<string, ServiceChanges>;
-  network_changes?: Record<string, ComposeNetworkConfig | null>;
-  volume_changes?: Record<string, ComposeVolumeConfig | null>;
-  secret_changes?: Record<string, ComposeSecretConfig | null>;
-  config_changes?: Record<string, ComposeConfigConfig | null>;
-  add_services?: Record<string, NewServiceConfig>;
-  delete_services?: string[];
-  rename_services?: Record<string, string>;
-}
-
-export interface UpdateComposeRequest {
-  changes: ComposeChanges;
-  preview?: boolean;
-}
-
-export interface UpdateComposeResponse {
-  success: boolean;
-  message?: string;
-  original_yaml?: string;
-  modified_yaml?: string;
 }

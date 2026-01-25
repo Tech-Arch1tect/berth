@@ -142,7 +142,7 @@ const ComposeEditorContent: React.FC<{
     setError(null);
 
     try {
-      await StackService.updateCompose(serverId, stackName, { changes: apiChanges }, csrfToken);
+      await StackService.updateCompose(serverId, stackName, { changes: apiChanges });
       clearChangesAfterSave();
       refetch();
     } catch (err) {

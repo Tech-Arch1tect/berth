@@ -604,7 +604,7 @@ func (s *Service) fetchContainerImageDetailsFromAgent(ctx context.Context, serve
 	return imageDetails, nil
 }
 
-func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID uint, stackname string) (map[string]any, error) {
+func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID uint, stackname string) (*RawComposeConfig, error) {
 	s.logger.Debug("getting compose config",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -628,7 +628,7 @@ func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID ui
 	return s.fetchComposeConfigFromAgent(ctx, server, stackname)
 }
 
-func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *models.Server, stackname string) (map[string]any, error) {
+func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *models.Server, stackname string) (*RawComposeConfig, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/compose", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -639,15 +639,15 @@ func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *model
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
 	}
 
-	var composeConfig map[string]any
+	var composeConfig RawComposeConfig
 	if err := json.NewDecoder(resp.Body).Decode(&composeConfig); err != nil {
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
 
-	return composeConfig, nil
+	return &composeConfig, nil
 }
 
-func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, changes map[string]any) (map[string]any, error) {
+func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
 	s.logger.Debug("updating compose config",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -668,27 +668,27 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	return s.updateComposeOnAgent(ctx, server, stackname, changes)
+	return s.updateComposeOnAgent(ctx, server, stackname, req)
 }
 
-func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, changes map[string]any) (map[string]any, error) {
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), changes)
+func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
+	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	var result map[string]any
+	var result UpdateComposeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if msg, ok := result["error"].(string); ok {
-			return nil, fmt.Errorf("agent error: %s", msg)
+		if result.Message != "" {
+			return nil, fmt.Errorf("agent error: %s", result.Message)
 		}
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
 	}
 
-	return result, nil
+	return &result, nil
 }

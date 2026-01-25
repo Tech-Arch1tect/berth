@@ -8,6 +8,8 @@ import {
   getApiV1ServersServeridStacksStacknameImages,
   getApiV1ServersServeridStacksCanCreate,
   postApiV1ServersServeridStacks,
+  getApiV1ServersServeridStacksStacknameCompose,
+  patchApiV1ServersServeridStacksStacknameCompose,
 } from '../api/generated/stacks/stacks';
 import type {
   Stack,
@@ -16,15 +18,10 @@ import type {
   GetApiV1ServersServeridStacksStacknameEnvironment200,
   ContainerImageDetails,
   StackPermissionsResponse,
+  RawComposeConfig,
+  UpdateComposeRequest,
+  UpdateComposeResponse,
 } from '../api/generated/models';
-import { RawComposeConfig, UpdateComposeRequest, UpdateComposeResponse } from '../types/compose';
-
-const api = axios.create({
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-  },
-});
 
 export class StackService {
   static async getServerStacks(serverid: number): Promise<Stack[]> {
@@ -151,20 +148,9 @@ export class StackService {
     }
   }
 
-  static async getComposeConfig(
-    serverid: number,
-    stackname: string,
-    csrfToken?: string
-  ): Promise<RawComposeConfig> {
+  static async getComposeConfig(serverid: number, stackname: string): Promise<RawComposeConfig> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.get(`/api/v1/servers/${serverid}/stacks/${stackname}/compose`, {
-        headers,
-      });
+      const response = await getApiV1ServersServeridStacksStacknameCompose(serverid, stackname);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -183,19 +169,13 @@ export class StackService {
   static async updateCompose(
     serverid: number,
     stackname: string,
-    request: UpdateComposeRequest,
-    csrfToken?: string
+    request: UpdateComposeRequest
   ): Promise<UpdateComposeResponse> {
     try {
-      const headers: Record<string, string> = {};
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
-
-      const response = await api.patch<UpdateComposeResponse>(
-        `/api/v1/servers/${serverid}/stacks/${stackname}/compose`,
-        request,
-        { headers }
+      const response = await patchApiV1ServersServeridStacksStacknameCompose(
+        serverid,
+        stackname,
+        request
       );
       return response.data;
     } catch (error) {

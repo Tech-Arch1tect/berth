@@ -241,6 +241,35 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	// Compose Editor
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/compose").
+		Tags("stacks", "compose").
+		Summary("Get compose configuration").
+		Description("Returns the parsed Docker Compose configuration for a stack. Requires files.read permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, stack.RawComposeConfig{}, "Compose configuration").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("PATCH", "/api/v1/servers/{serverid}/stacks/{stackname}/compose").
+		Tags("stacks", "compose").
+		Summary("Update compose configuration").
+		Description("Updates the Docker Compose configuration with the specified changes. Supports preview mode to see changes without applying. Requires files.write permission.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(stack.UpdateComposeRequest{}, "Changes to apply to the compose file").
+		Response(http.StatusOK, stack.UpdateComposeResponse{}, "Update result with original and modified YAML").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request body").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// Logs
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/logs").
 		Tags("logs").

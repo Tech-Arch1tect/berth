@@ -38,12 +38,10 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
     setError(null);
 
     try {
-      const response = await StackService.updateCompose(
-        serverId,
-        stackName,
-        { changes, preview: true },
-        csrfToken
-      );
+      const response = await StackService.updateCompose(serverId, stackName, {
+        changes,
+        preview: true,
+      });
 
       if (response.original_yaml && response.modified_yaml) {
         setOriginalYaml(response.original_yaml);
