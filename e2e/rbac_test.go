@@ -1,6 +1,8 @@
 package e2e
 
 import (
+	"berth/internal/dto"
+	"berth/internal/rbac"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,41 +10,15 @@ import (
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
-type UserInfo struct {
-	ID              uint       `json:"id"`
-	Username        string     `json:"username"`
-	Email           string     `json:"email"`
-	EmailVerifiedAt *string    `json:"email_verified_at"`
-	LastLoginAt     *string    `json:"last_login_at"`
-	TOTPEnabled     bool       `json:"totp_enabled"`
-	CreatedAt       string     `json:"created_at"`
-	UpdatedAt       string     `json:"updated_at"`
-	Roles           []RoleInfo `json:"roles"`
-}
-
-type RoleInfo struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsAdmin     bool   `json:"is_admin"`
-}
-
-type RoleWithPermissions struct {
-	ID          uint             `json:"id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	IsAdmin     bool             `json:"is_admin"`
-	Permissions []PermissionInfo `json:"permissions"`
-}
-
-type PermissionInfo struct {
-	ID           uint   `json:"id"`
-	Name         string `json:"name"`
-	Resource     string `json:"resource"`
-	Action       string `json:"action"`
-	Description  string `json:"description"`
-	IsAPIKeyOnly bool   `json:"is_api_key_only"`
-}
+type (
+	UserInfo            = dto.UserInfo
+	RoleInfo            = dto.RoleInfo
+	RoleWithPermissions = dto.RoleWithPermissions
+	PermissionInfo      = dto.PermissionInfo
+	CreateUserResponse  = rbac.CreateUserResponse
+	AssignRoleResponse  = rbac.AssignRoleResponse
+	RevokeRoleResponse  = rbac.RevokeRoleResponse
+)
 
 type UsersListResponse struct {
 	Users []UserInfo `json:"users"`
@@ -127,11 +103,12 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var userInfo UserInfo
-		require.NoError(t, resp.GetJSON(&userInfo))
-		assert.Equal(t, "testcreateduser", userInfo.Username)
-		assert.Equal(t, "testcreateduser@example.com", userInfo.Email)
-		createdUserID = userInfo.ID
+		var createResp CreateUserResponse
+		require.NoError(t, resp.GetJSON(&createResp))
+		assert.True(t, createResp.Success)
+		assert.Equal(t, "testcreateduser", createResp.Data.Username)
+		assert.Equal(t, "testcreateduser@example.com", createResp.Data.Email)
+		createdUserID = createResp.Data.ID
 	})
 
 	t.Run("POST /api/v1/admin/users returns 400 for duplicate user", func(t *testing.T) {
@@ -335,8 +312,9 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 201, createResp.StatusCode)
 
-	var createdUser UserInfo
-	require.NoError(t, createResp.GetJSON(&createdUser))
+	var createUserResp CreateUserResponse
+	require.NoError(t, createResp.GetJSON(&createUserResp))
+	createdUser := createUserResp.Data
 
 	roleResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",

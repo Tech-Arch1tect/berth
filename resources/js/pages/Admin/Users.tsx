@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Table } from '../../components/common/Table';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
+import { usePostApiV1AdminUsers } from '../../api/generated/admin/admin';
 
 interface User {
   id: number;
@@ -25,13 +26,10 @@ interface Role {
 interface Props {
   title: string;
   users: User[];
-  csrfToken?: string;
 }
 
-export default function AdminUsers({ title, users, csrfToken }: Props) {
+export default function AdminUsers({ title, users }: Props) {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { props } = usePage();
-  const actualCsrfToken = csrfToken || (props.csrfToken as string | undefined);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -39,50 +37,39 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
     password: '',
     password_confirm: '',
   });
-  const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const createUserMutation = usePostApiV1AdminUsers();
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProcessing(true);
     setErrors({});
 
-    try {
-      const response = await fetch('/api/v1/admin/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': actualCsrfToken || '',
+    createUserMutation.mutate(
+      { data: formData },
+      {
+        onSuccess: () => {
+          setFormData({
+            username: '',
+            email: '',
+            password: '',
+            password_confirm: '',
+          });
+          setShowCreateForm(false);
+          window.location.reload();
         },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          password_confirm: '',
-        });
-        setShowCreateForm(false);
-
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        if (error.message) {
-          setErrors({ general: error.message });
-        } else if (error.errors) {
-          setErrors(error.errors);
-        } else {
-          setErrors({ general: 'Failed to create user' });
-        }
+        onError: (error) => {
+          const errorData = error as { message?: string; errors?: Record<string, string> };
+          if (errorData.message) {
+            setErrors({ general: errorData.message });
+          } else if (errorData.errors) {
+            setErrors(errorData.errors);
+          } else {
+            setErrors({ general: 'Failed to create user' });
+          }
+        },
       }
-    } catch {
-      setErrors({ general: 'Network error. Please try again.' });
-    } finally {
-      setProcessing(false);
-    }
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -243,13 +230,13 @@ export default function AdminUsers({ title, users, csrfToken }: Props) {
                     </button>
                     <button
                       type="submit"
-                      disabled={processing}
+                      disabled={createUserMutation.isPending}
                       className={cn(
                         theme.buttons.primary,
-                        processing && 'opacity-50 cursor-not-allowed'
+                        createUserMutation.isPending && 'opacity-50 cursor-not-allowed'
                       )}
                     >
-                      {processing ? 'Creating...' : 'Create User'}
+                      {createUserMutation.isPending ? 'Creating...' : 'Create User'}
                     </button>
                   </div>
                 </form>

@@ -11,6 +11,7 @@ import (
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
+	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/internal/security"
 	"berth/internal/server"
@@ -678,6 +679,46 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
 		Response(http.StatusNotFound, ErrorResponse{}, "Log not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Admin User Management
+	apiDoc.Document("POST", "/api/v1/admin/users").
+		Tags("admin", "users").
+		Summary("Create a new user").
+		Description("Creates a new user account. Requires admin permissions.").
+		Body(rbac.CreateUserRequest{}, "User details").
+		Response(http.StatusCreated, rbac.CreateUserResponse{}, "User created successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or user already exists").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/users/assign-role").
+		Tags("admin", "users").
+		Summary("Assign a role to a user").
+		Description("Assigns a role to a user. Requires admin permissions.").
+		Body(rbac.AssignRoleRequest{}, "User and role IDs").
+		Response(http.StatusOK, rbac.AssignRoleResponse{}, "Role assigned successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/users/revoke-role").
+		Tags("admin", "users").
+		Summary("Revoke a role from a user").
+		Description("Revokes a role from a user. Requires admin permissions.").
+		Body(rbac.RevokeRoleRequest{}, "User and role IDs").
+		Response(http.StatusOK, rbac.RevokeRoleResponse{}, "Role revoked successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

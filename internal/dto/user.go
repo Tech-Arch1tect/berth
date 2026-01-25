@@ -8,11 +8,12 @@ type RoleInfo struct {
 }
 
 type PermissionInfo struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	Resource    string `json:"resource"`
-	Action      string `json:"action"`
-	Description string `json:"description"`
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	Resource     string `json:"resource"`
+	Action       string `json:"action"`
+	Description  string `json:"description"`
+	IsAPIKeyOnly bool   `json:"is_api_key_only"`
 }
 
 type RoleWithPermissions struct {

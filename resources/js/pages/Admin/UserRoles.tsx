@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import {
+  usePostApiV1AdminUsersAssignRole,
+  usePostApiV1AdminUsersRevokeRole,
+} from '../../api/generated/admin/admin';
 
 interface User {
   id: number;
@@ -21,77 +25,50 @@ interface Props {
   title: string;
   user: User;
   allRoles: Role[];
-  csrfToken?: string;
 }
 
-export default function UserRoles({ title, user, allRoles, csrfToken }: Props) {
-  const [processing, setProcessing] = useState(false);
+export default function UserRoles({ title, user, allRoles }: Props) {
   const [error, setError] = useState<string | null>(null);
 
-  const assignRole = async (roleId: number) => {
-    if (processing) return;
+  const assignRoleMutation = usePostApiV1AdminUsersAssignRole();
+  const revokeRoleMutation = usePostApiV1AdminUsersRevokeRole();
 
-    setProcessing(true);
+  const processing = assignRoleMutation.isPending || revokeRoleMutation.isPending;
+
+  const assignRole = (roleId: number) => {
+    if (processing) return;
     setError(null);
 
-    try {
-      const response = await fetch('/api/v1/admin/users/assign-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
+    assignRoleMutation.mutate(
+      { data: { user_id: user.id, role_id: roleId } },
+      {
+        onSuccess: () => {
+          window.location.reload();
         },
-        credentials: 'include',
-        body: JSON.stringify({
-          user_id: user.id,
-          role_id: roleId,
-        }),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        setError(error.message || 'Failed to assign role');
+        onError: (err) => {
+          const errorData = err as { message?: string };
+          setError(errorData.message || 'Failed to assign role');
+        },
       }
-    } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
+    );
   };
 
-  const revokeRole = async (roleId: number) => {
+  const revokeRole = (roleId: number) => {
     if (processing) return;
-
-    setProcessing(true);
     setError(null);
 
-    try {
-      const response = await fetch('/api/v1/admin/users/revoke-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
+    revokeRoleMutation.mutate(
+      { data: { user_id: user.id, role_id: roleId } },
+      {
+        onSuccess: () => {
+          window.location.reload();
         },
-        credentials: 'include',
-        body: JSON.stringify({
-          user_id: user.id,
-          role_id: roleId,
-        }),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        setError(error.message || 'Failed to revoke role');
+        onError: (err) => {
+          const errorData = err as { message?: string };
+          setError(errorData.message || 'Failed to revoke role');
+        },
       }
-    } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
+    );
   };
 
   const userRoleIds = user.roles.map((role) => role.id);

@@ -41,11 +41,12 @@ func ConvertUserToUserInfo(user models.User, totpSvc *totp.Service) UserInfo {
 
 func ConvertPermissionToPermissionInfo(permission models.Permission) PermissionInfo {
 	return PermissionInfo{
-		ID:          permission.ID,
-		Name:        permission.Name,
-		Resource:    permission.Resource,
-		Action:      permission.Action,
-		Description: permission.Description,
+		ID:           permission.ID,
+		Name:         permission.Name,
+		Resource:     permission.Resource,
+		Action:       permission.Action,
+		Description:  permission.Description,
+		IsAPIKeyOnly: permission.IsAPIKeyOnly,
 	}
 }
 

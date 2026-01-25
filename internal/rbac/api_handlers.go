@@ -5,6 +5,7 @@ import (
 	"berth/internal/dto"
 	"berth/internal/security"
 	"berth/models"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -48,13 +49,7 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateUser(c echo.Context) error {
-	var req struct {
-		Username        string `json:"username"`
-		Email           string `json:"email"`
-		Password        string `json:"password"`
-		PasswordConfirm string `json:"password_confirm"`
-	}
-
+	var req CreateUserRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -122,7 +117,10 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 
 	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
-	return common.SendCreated(c, userInfo)
+	return c.JSON(http.StatusCreated, CreateUserResponse{
+		Success: true,
+		Data:    userInfo,
+	})
 }
 
 func (h *APIHandler) GetUserRoles(c echo.Context) error {
@@ -159,11 +157,7 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 }
 
 func (h *APIHandler) AssignRole(c echo.Context) error {
-	var req struct {
-		UserID uint `json:"user_id"`
-		RoleID uint `json:"role_id"`
-	}
-
+	var req AssignRoleRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -198,15 +192,14 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 		},
 	)
 
-	return common.SendMessage(c, "Role assigned successfully")
+	return c.JSON(http.StatusOK, AssignRoleResponse{
+		Success: true,
+		Message: "Role assigned successfully",
+	})
 }
 
 func (h *APIHandler) RevokeRole(c echo.Context) error {
-	var req struct {
-		UserID uint `json:"user_id"`
-		RoleID uint `json:"role_id"`
-	}
-
+	var req RevokeRoleRequest
 	if err := common.BindRequest(c, &req); err != nil {
 		return err
 	}
@@ -241,7 +234,10 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 		},
 	)
 
-	return common.SendMessage(c, "Role revoked successfully")
+	return c.JSON(http.StatusOK, RevokeRoleResponse{
+		Success: true,
+		Message: "Role revoked successfully",
+	})
 }
 
 func (h *APIHandler) ListRoles(c echo.Context) error {
