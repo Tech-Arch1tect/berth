@@ -22,6 +22,11 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminCreateServerResponse,
+  AdminDeleteServerResponse,
+  AdminListServersResponse,
+  AdminTestConnectionResponse,
+  AdminUpdateServerResponse,
   AssignRoleRequest,
   AssignRoleResponse,
   CreateRoleRequest,
@@ -44,6 +49,8 @@ import type {
   PaginatedOperationLogs,
   RevokeRoleRequest,
   RevokeRoleResponse,
+  ServerCreateRequest,
+  ServerUpdateRequest,
   UpdateRoleRequest,
   UpdateRoleResponse,
 } from '.././models';
@@ -1354,6 +1361,427 @@ export function useGetApiV1AdminSecurityAuditLogsId<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+/**
+ * Returns list of all servers. Requires admin access.
+ * @summary List all servers
+ */
+export const getApiV1AdminServers = (signal?: AbortSignal) => {
+  return apiClient<AdminListServersResponse>({
+    url: `/api/v1/admin/servers`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1AdminServersQueryKey = () => {
+  return [`/api/v1/admin/servers`] as const;
+};
+
+export const getGetApiV1AdminServersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminServers>>,
+  TError = ErrorResponse | void,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminServers>>, TError, TData>>;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminServersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminServers>>> = ({ signal }) =>
+    getApiV1AdminServers(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminServers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminServersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminServers>>
+>;
+export type GetApiV1AdminServersQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminServers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminServers>>,
+  TError = ErrorResponse | void,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminServers>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminServers>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminServers>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminServers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminServers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminServers>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminServers>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminServers>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminServers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminServers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminServers>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List all servers
+ */
+
+export function useGetApiV1AdminServers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminServers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminServers>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminServersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Create a new server connection. Requires admin access.
+ * @summary Create a new server
+ */
+export const postApiV1AdminServers = (
+  serverCreateRequest: ServerCreateRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<AdminCreateServerResponse>({
+    url: `/api/v1/admin/servers`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: serverCreateRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminServersMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminServers>>,
+    TError,
+    { data: ServerCreateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminServers>>,
+  TError,
+  { data: ServerCreateRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminServers'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminServers>>,
+    { data: ServerCreateRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminServers(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminServersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminServers>>
+>;
+export type PostApiV1AdminServersMutationBody = ServerCreateRequest;
+export type PostApiV1AdminServersMutationError = ErrorResponse | void;
+
+/**
+ * @summary Create a new server
+ */
+export const usePostApiV1AdminServers = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminServers>>,
+      TError,
+      { data: ServerCreateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminServers>>,
+  TError,
+  { data: ServerCreateRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminServersMutationOptions(options), queryClient);
+};
+/**
+ * Delete a server connection. Requires admin access.
+ * @summary Delete a server
+ */
+export const deleteApiV1AdminServersId = (id: number, signal?: AbortSignal) => {
+  return apiClient<AdminDeleteServerResponse>({
+    url: `/api/v1/admin/servers/${id}`,
+    method: 'DELETE',
+    signal,
+  });
+};
+
+export const getDeleteApiV1AdminServersIdMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1AdminServersId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1AdminServersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1AdminServersId'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1AdminServersId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteApiV1AdminServersId(id);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1AdminServersIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1AdminServersId>>
+>;
+
+export type DeleteApiV1AdminServersIdMutationError = ErrorResponse | void;
+
+/**
+ * @summary Delete a server
+ */
+export const useDeleteApiV1AdminServersId = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1AdminServersId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1AdminServersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteApiV1AdminServersIdMutationOptions(options), queryClient);
+};
+/**
+ * Update an existing server connection. Requires admin access.
+ * @summary Update a server
+ */
+export const putApiV1AdminServersId = (
+  id: number,
+  serverUpdateRequest: ServerUpdateRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<AdminUpdateServerResponse>({
+    url: `/api/v1/admin/servers/${id}`,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    data: serverUpdateRequest,
+    signal,
+  });
+};
+
+export const getPutApiV1AdminServersIdMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putApiV1AdminServersId>>,
+    TError,
+    { id: number; data: ServerUpdateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putApiV1AdminServersId>>,
+  TError,
+  { id: number; data: ServerUpdateRequest },
+  TContext
+> => {
+  const mutationKey = ['putApiV1AdminServersId'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putApiV1AdminServersId>>,
+    { id: number; data: ServerUpdateRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return putApiV1AdminServersId(id, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutApiV1AdminServersIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putApiV1AdminServersId>>
+>;
+export type PutApiV1AdminServersIdMutationBody = ServerUpdateRequest;
+export type PutApiV1AdminServersIdMutationError = ErrorResponse | void;
+
+/**
+ * @summary Update a server
+ */
+export const usePutApiV1AdminServersId = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putApiV1AdminServersId>>,
+      TError,
+      { id: number; data: ServerUpdateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof putApiV1AdminServersId>>,
+  TError,
+  { id: number; data: ServerUpdateRequest },
+  TContext
+> => {
+  return useMutation(getPutApiV1AdminServersIdMutationOptions(options), queryClient);
+};
+/**
+ * Test the connection to a server. Requires admin access.
+ * @summary Test server connection
+ */
+export const postApiV1AdminServersIdTest = (id: number, signal?: AbortSignal) => {
+  return apiClient<AdminTestConnectionResponse>({
+    url: `/api/v1/admin/servers/${id}/test`,
+    method: 'POST',
+    signal,
+  });
+};
+
+export const getPostApiV1AdminServersIdTestMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminServersIdTest'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return postApiV1AdminServersIdTest(id);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminServersIdTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>
+>;
+
+export type PostApiV1AdminServersIdTestMutationError = ErrorResponse | void;
+
+/**
+ * @summary Test server connection
+ */
+export const usePostApiV1AdminServersIdTest = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdTest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminServersIdTestMutationOptions(options), queryClient);
+};
 /**
  * Creates a new user account. Requires admin permissions.
  * @summary Create a new user

@@ -7,6 +7,14 @@
  */
 
 export * from './addScopeRequest';
+export * from './adminCreateServerResponse';
+export * from './adminCreateServerResponseData';
+export * from './adminDeleteServerResponse';
+export * from './adminListServersResponse';
+export * from './adminListServersResponseData';
+export * from './adminTestConnectionResponse';
+export * from './adminUpdateServerResponse';
+export * from './adminUpdateServerResponseData';
 export * from './aPIKeyResponse';
 export * from './aPIKeyScopeResponse';
 export * from './assignRoleRequest';
@@ -175,9 +183,11 @@ export * from './runningOperationsResponse';
 export * from './secretConfig';
 export * from './securityAuditLogResponse';
 export * from './server';
+export * from './serverCreateRequest';
 export * from './serverInfo';
 export * from './serverResponse';
 export * from './serverStatisticsResponse';
+export * from './serverUpdateRequest';
 export * from './serviceChanges';
 export * from './serviceChangesDependsOn';
 export * from './serviceChangesEnvironment';
