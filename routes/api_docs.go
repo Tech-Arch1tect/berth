@@ -1200,6 +1200,17 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "session").
 		Build()
 
+	// Profile
+	apiDoc.Document("GET", "/api/v1/profile").
+		Tags("profile").
+		Summary("Get current user profile").
+		Description("Returns the profile information for the authenticated user including roles and TOTP status.").
+		Response(http.StatusOK, handlers.GetProfileResponse{}, "User profile").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// Sessions Management
 	apiDoc.Document("POST", "/api/v1/sessions/revoke").
 		Tags("sessions").

@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"berth/handlers"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,13 +58,6 @@ type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
 	Code    int    `json:"code"`
-}
-
-type ProfileResponse struct {
-	ID          uint   `json:"id"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	TOTPEnabled bool   `json:"totp_enabled"`
 }
 
 type TOTPStatusResponse struct {
@@ -284,10 +278,10 @@ func TestAPIProfile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile ProfileResponse
+		var profile handlers.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
-		assert.Equal(t, user.Username, profile.Username)
-		assert.Equal(t, user.Email, profile.Email)
+		assert.Equal(t, user.Username, profile.Data.Username)
+		assert.Equal(t, user.Email, profile.Data.Email)
 	})
 
 	t.Run("unauthenticated request returns error", func(t *testing.T) {

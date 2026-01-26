@@ -349,7 +349,6 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) Profile(c echo.Context) error {
-
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, ErrorResponse{
@@ -376,7 +375,10 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 
 	userInfo := dto.ConvertUserToUserInfo(fullUser, h.totpSvc)
 
-	return c.JSON(http.StatusOK, userInfo)
+	return c.JSON(http.StatusOK, GetProfileResponse{
+		Success: true,
+		Data:    userInfo,
+	})
 }
 
 func (h *MobileAuthHandler) Logout(c echo.Context) error {

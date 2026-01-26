@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"berth/handlers"
 	"net/http"
 	"testing"
 
@@ -27,10 +28,10 @@ func TestAPISessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile ProfileResponse
+		var profile handlers.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
-		assert.Equal(t, user.Username, profile.Username)
-		assert.Equal(t, user.Email, profile.Email)
+		assert.Equal(t, user.Username, profile.Data.Username)
+		assert.Equal(t, user.Email, profile.Data.Email)
 	})
 
 	t.Run("session auth can access totp status endpoint", func(t *testing.T) {
@@ -136,9 +137,9 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile ProfileResponse
+		var profile handlers.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
-		assert.Equal(t, user.Username, profile.Username)
+		assert.Equal(t, user.Username, profile.Data.Username)
 	})
 
 	t.Run("profile endpoint via session cookie", func(t *testing.T) {
@@ -149,8 +150,8 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile ProfileResponse
+		var profile handlers.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
-		assert.Equal(t, user.Username, profile.Username)
+		assert.Equal(t, user.Username, profile.Data.Username)
 	})
 }

@@ -102,6 +102,7 @@ export * from './getCredentialResponse';
 export * from './getLatestScanData';
 export * from './getLatestScanResponse';
 export * from './getLogAPIResponse';
+export * from './getProfileResponse';
 export * from './getScanData';
 export * from './getScanResponse';
 export * from './getScansHistoryData';
