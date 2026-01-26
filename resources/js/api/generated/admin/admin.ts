@@ -38,15 +38,18 @@ import type {
   DeleteRoleResponse,
   DeleteStackPermissionResponse,
   ErrorResponse,
+  ExportRequest,
   GetApiV1AdminOperationLogsParams,
   GetApiV1AdminSecurityAuditLogsParams,
   GetLogAPIResponse,
   GetStatsAPIResponse,
+  ImportResponse,
   ListLogsAPIResponse,
   ListRoleStackPermissionsResponse,
   OperationLogDetail,
   OperationLogStats,
   PaginatedOperationLogs,
+  PostApiV1AdminMigrationImportBody,
   RevokeRoleRequest,
   RevokeRoleResponse,
   ServerCreateRequest,
@@ -57,6 +60,169 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+/**
+ * Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.
+ * @summary Export data
+ */
+export const postApiV1AdminMigrationExport = (
+  exportRequest: ExportRequest,
+  signal?: AbortSignal
+) => {
+  return apiClient<Blob>({
+    url: `/api/v1/admin/migration/export`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: exportRequest,
+    responseType: 'blob',
+    signal,
+  });
+};
+
+export const getPostApiV1AdminMigrationExportMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
+    TError,
+    { data: ExportRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
+  TError,
+  { data: ExportRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminMigrationExport'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
+    { data: ExportRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminMigrationExport(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminMigrationExportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>
+>;
+export type PostApiV1AdminMigrationExportMutationBody = ExportRequest;
+export type PostApiV1AdminMigrationExportMutationError = ErrorResponse | void;
+
+/**
+ * @summary Export data
+ */
+export const usePostApiV1AdminMigrationExport = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
+      TError,
+      { data: ExportRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
+  TError,
+  { data: ExportRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminMigrationExportMutationOptions(options), queryClient);
+};
+/**
+ * Import configuration data from an encrypted backup file. WARNING: This will completely replace all existing data. Requires admin.system.import permission.
+ * @summary Import data
+ */
+export const postApiV1AdminMigrationImport = (
+  postApiV1AdminMigrationImportBody: PostApiV1AdminMigrationImportBody,
+  signal?: AbortSignal
+) => {
+  const formData = new FormData();
+  formData.append(`backup_file`, postApiV1AdminMigrationImportBody.backup_file);
+  formData.append(`password`, postApiV1AdminMigrationImportBody.password);
+
+  return apiClient<ImportResponse>({
+    url: `/api/v1/admin/migration/import`,
+    method: 'POST',
+    headers: { 'Content-Type': 'multipart/form-data' },
+    data: formData,
+    signal,
+  });
+};
+
+export const getPostApiV1AdminMigrationImportMutationOptions = <
+  TError = ErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,
+    TError,
+    { data: PostApiV1AdminMigrationImportBody },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,
+  TError,
+  { data: PostApiV1AdminMigrationImportBody },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminMigrationImport'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,
+    { data: PostApiV1AdminMigrationImportBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AdminMigrationImport(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminMigrationImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>
+>;
+export type PostApiV1AdminMigrationImportMutationBody = PostApiV1AdminMigrationImportBody;
+export type PostApiV1AdminMigrationImportMutationError = ErrorResponse | void;
+
+/**
+ * @summary Import data
+ */
+export const usePostApiV1AdminMigrationImport = <TError = ErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,
+      TError,
+      { data: PostApiV1AdminMigrationImportBody },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,
+  TError,
+  { data: PostApiV1AdminMigrationImportBody },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminMigrationImportMutationOptions(options), queryClient);
+};
 /**
  * Returns paginated list of all operation logs. Requires admin permissions.
  * @summary List all operation logs
