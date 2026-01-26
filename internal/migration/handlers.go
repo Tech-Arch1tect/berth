@@ -69,9 +69,7 @@ func (h *Handler) Export(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "Admin access required")
 	}
 
-	var request struct {
-		Password string `json:"password"`
-	}
+	var request ExportRequest
 	if err := c.Bind(&request); err != nil {
 		h.logger.Warn("failed to parse export request",
 			zap.Uint("user_id", userID),
@@ -193,9 +191,11 @@ func (h *Handler) Import(c echo.Context) error {
 		zap.Any("summary", result.Summary),
 	)
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"success":           true,
-		"encryption_secret": result.EncryptionSecret,
-		"summary":           result.Summary,
+	return c.JSON(http.StatusOK, ImportResponse{
+		Success: true,
+		Data: ImportResponseData{
+			EncryptionSecret: result.EncryptionSecret,
+			Summary:          result.Summary,
+		},
 	})
 }

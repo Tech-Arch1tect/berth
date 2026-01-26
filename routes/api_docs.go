@@ -11,6 +11,7 @@ import (
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
+	"berth/internal/migration"
 	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/internal/security"
@@ -967,6 +968,35 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
 		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
 		Response(http.StatusServiceUnavailable, ErrorResponse{}, "Connection test failed").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Admin Migration
+	apiDoc.Document("POST", "/api/v1/admin/migration/export").
+		Tags("admin", "migration").
+		Summary("Export data").
+		Description("Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.").
+		Body(migration.ExportRequest{}, "Export password (min 12 characters)").
+		ResponseBinary(http.StatusOK, "application/octet-stream", "Encrypted backup file").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or password too short").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Export failed").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/migration/import").
+		Tags("admin", "migration").
+		Summary("Import data").
+		Description("Import configuration data from an encrypted backup file. WARNING: This will completely replace all existing data. Requires admin.system.import permission.").
+		BodyMultipart("Backup file and decryption password").
+		Field("password", true).
+		FileField("backup_file", true).
+		Response(http.StatusOK, migration.ImportResponse{}, "Import completed successfully").
+		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or missing file/password").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Import failed").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

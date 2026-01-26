@@ -1,32 +1,24 @@
 import React, { useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import FlashMessages from '../../components/FlashMessages';
 import { Modal } from '../../components/common/Modal';
 import { Tabs } from '../../components/common/Tabs';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
+import {
+  usePostApiV1AdminMigrationExport,
+  usePostApiV1AdminMigrationImport,
+} from '../../api/generated/admin/admin';
+import type { ImportResponseData } from '../../api/generated/models';
 
 interface Props {
   title: string;
 }
 
-interface ImportResult {
-  success: boolean;
-  encryption_secret: string;
-  summary: {
-    users_imported: number;
-    roles_imported: number;
-    servers_imported: number;
-    totp_secrets_imported: number;
-    permissions_imported: number;
-  };
-}
-
 export default function Migration({ title }: Props) {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResult, setImportResult] = useState<ImportResponseData | null>(null);
   const [showEncryptionSecret, setShowEncryptionSecret] = useState(false);
-  const [exportProcessing, setExportProcessing] = useState(false);
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string }>(
     {
       isOpen: false,
@@ -34,22 +26,60 @@ export default function Migration({ title }: Props) {
       message: '',
     }
   );
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
 
-  const exportForm = useForm({
-    password: '',
+  const [exportPassword, setExportPassword] = useState('');
+  const [importPassword, setImportPassword] = useState('');
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+
+  const exportMutation = usePostApiV1AdminMigrationExport({
+    mutation: {
+      onSuccess: (response) => {
+        const blob = response.data;
+        const filename = `berth-backup-${Date.now()}.json`;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        setExportPassword('');
+      },
+      onError: (error) => {
+        console.error('Export failed:', error);
+        setErrorModal({
+          isOpen: true,
+          title: 'Export Failed',
+          message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      },
+    },
   });
 
-  const importForm = useForm({
-    password: '',
-    backup_file: null as File | null,
+  const importMutation = usePostApiV1AdminMigrationImport({
+    mutation: {
+      onSuccess: (response) => {
+        setImportResult(response.data.data);
+        setImportPassword('');
+        setBackupFile(null);
+        setShowEncryptionSecret(true);
+      },
+      onError: (error) => {
+        console.error('Import failed:', error);
+        setErrorModal({
+          isOpen: true,
+          title: 'Import Failed',
+          message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      },
+    },
   });
 
-  const handleExport = async (e: React.FormEvent) => {
+  const handleExport = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!exportForm.data.password) {
+    if (!exportPassword) {
       setErrorModal({
         isOpen: true,
         title: 'Password Required',
@@ -58,7 +88,7 @@ export default function Migration({ title }: Props) {
       return;
     }
 
-    if (exportForm.data.password.length < 12) {
+    if (exportPassword.length < 12) {
       setErrorModal({
         isOpen: true,
         title: 'Invalid Password',
@@ -67,55 +97,13 @@ export default function Migration({ title }: Props) {
       return;
     }
 
-    try {
-      setExportProcessing(true);
-
-      const response = await fetch('/api/v1/admin/migration/export', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ password: exportForm.data.password }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.status} ${response.statusText}`);
-      }
-
-      const contentDisposition = response.headers.get('Content-Disposition');
-      const filename = contentDisposition
-        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
-        : `berth-backup-${Date.now()}.json`;
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      exportForm.reset();
-    } catch (error) {
-      console.error('Export failed:', error);
-      setErrorModal({
-        isOpen: true,
-        title: 'Export Failed',
-        message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      });
-    } finally {
-      setExportProcessing(false);
-    }
+    exportMutation.mutate({ data: { password: exportPassword } });
   };
 
   const handleImport = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!importForm.data.password) {
+    if (!importPassword) {
       setErrorModal({
         isOpen: true,
         title: 'Password Required',
@@ -124,7 +112,7 @@ export default function Migration({ title }: Props) {
       return;
     }
 
-    if (!importForm.data.backup_file) {
+    if (!backupFile) {
       setErrorModal({
         isOpen: true,
         title: 'File Required',
@@ -133,42 +121,17 @@ export default function Migration({ title }: Props) {
       return;
     }
 
-    const importFormData = new FormData();
-    importFormData.append('password', importForm.data.password);
-    importFormData.append('backup_file', importForm.data.backup_file);
-
-    fetch('/api/v1/admin/migration/import', {
-      method: 'POST',
-      headers: {
-        'X-CSRF-Token': csrfToken || '',
+    importMutation.mutate({
+      data: {
+        password: importPassword,
+        backup_file: backupFile,
       },
-      credentials: 'include',
-      body: importFormData,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Import failed: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setImportResult(data);
-        importForm.reset();
-        setShowEncryptionSecret(true);
-      })
-      .catch((error) => {
-        console.error('Import failed:', error);
-        setErrorModal({
-          isOpen: true,
-          title: 'Import Failed',
-          message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        });
-      });
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    importForm.setData('backup_file', file);
+    setBackupFile(file);
   };
 
   return (
@@ -216,8 +179,8 @@ export default function Migration({ title }: Props) {
                     <label className={cn('block mb-2', theme.forms.label)}>Export Password</label>
                     <input
                       type="password"
-                      value={exportForm.data.password}
-                      onChange={(e) => exportForm.setData('password', e.target.value)}
+                      value={exportPassword}
+                      onChange={(e) => setExportPassword(e.target.value)}
                       placeholder="Enter a strong password to encrypt the export (min 12 chars)"
                       className={cn('w-full', theme.forms.input)}
                       minLength={12}
@@ -231,10 +194,10 @@ export default function Migration({ title }: Props) {
                   <div className="flex justify-end">
                     <button
                       type="submit"
-                      disabled={exportProcessing}
+                      disabled={exportMutation.isPending}
                       className={cn(theme.buttons.primary, 'disabled:opacity-50')}
                     >
-                      {exportProcessing ? 'Exporting...' : 'Export Data'}
+                      {exportMutation.isPending ? 'Exporting...' : 'Export Data'}
                     </button>
                   </div>
                 </form>
@@ -287,8 +250,8 @@ export default function Migration({ title }: Props) {
                     </label>
                     <input
                       type="password"
-                      value={importForm.data.password}
-                      onChange={(e) => importForm.setData('password', e.target.value)}
+                      value={importPassword}
+                      onChange={(e) => setImportPassword(e.target.value)}
                       placeholder="Enter the password used during export"
                       className={cn('w-full', theme.forms.input)}
                       required
@@ -298,10 +261,10 @@ export default function Migration({ title }: Props) {
                   <div className="flex justify-end">
                     <button
                       type="submit"
-                      disabled={importForm.processing}
+                      disabled={importMutation.isPending}
                       className={cn(theme.buttons.danger, 'disabled:opacity-50')}
                     >
-                      {importForm.processing ? 'Importing...' : 'Import Data'}
+                      {importMutation.isPending ? 'Importing...' : 'Import Data'}
                     </button>
                   </div>
                 </form>
