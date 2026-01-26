@@ -534,6 +534,10 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Uploads a file to a stack's file system using multipart form data").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
+		BodyMultipart("File upload with optional destination path").
+		FileField("file", true).
+		Field("path", false).
+		Done().
 		Response(http.StatusOK, files.MessageResponse{}, "File uploaded successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "File is required").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
@@ -640,7 +644,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("path", "File path to download").Required().
 		QueryParam("filename", "Optional filename for the downloaded file").Optional().
-		Response(http.StatusOK, nil, "File content (binary)").
+		ResponseBinary(http.StatusOK, "application/octet-stream", "File content").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").

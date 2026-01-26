@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { usePage } from '@inertiajs/react';
 import {
   useGetApiV1ServersServeridStacksStacknameFiles,
   useGetApiV1ServersServeridStacksStacknameFilesRead,
@@ -12,6 +11,7 @@ import {
   postApiV1ServersServeridStacksStacknameFilesCopy,
   postApiV1ServersServeridStacksStacknameFilesChmod,
   postApiV1ServersServeridStacksStacknameFilesChown,
+  postApiV1ServersServeridStacksStacknameFilesUpload,
 } from '../api/generated/files/files';
 import type {
   WriteFileRequest,
@@ -22,7 +22,6 @@ import type {
   ChmodRequest,
   ChownRequest,
 } from '../api/generated/models';
-import { apiClient } from '../lib/api';
 
 interface UseFileQueriesOptions {
   serverid: number;
@@ -91,8 +90,6 @@ export function useFileContentQuery(
 
 export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions) {
   const queryClient = useQueryClient();
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({
@@ -197,18 +194,9 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
 
   const uploadFile = useMutation({
     mutationFn: async ({ file, path }: { file: File; path: string }) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('path', path);
-
-      await apiClient({
-        url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/upload`,
-        method: 'POST',
-        data: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-        },
+      await postApiV1ServersServeridStacksStacknameFilesUpload(serverid, stackname, {
+        file,
+        path,
       });
     },
     onSuccess: (_, variables) => {

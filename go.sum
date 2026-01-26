@@ -182,8 +182,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/tech-arch1tect/berth-agent v0.2.8 h1:pElyyOWco0plI/eD/vl6kJRxFvxvmd3PBpxpT/+gZjw=
 github.com/tech-arch1tect/berth-agent v0.2.8/go.mod h1:FwJTnDk2Lg6COMMYu9mk4QTQPXR2WYVVwBgJYZTGj3E=
-github.com/tech-arch1tect/brx v0.0.21 h1:jn6JuAxTG2MTfZHNHgY+JjExKWxjOo4HpBys5P5S4MM=
-github.com/tech-arch1tect/brx v0.0.21/go.mod h1:mvEM3p5UqPGH7tAXYczDbO5mLohIIWogZp6rZku9qLk=
+github.com/tech-arch1tect/brx v0.0.22 h1:6GuQr4uNKKaXVOo8izLdSFZN1uvRg6hVdEoUS20Kpww=
+github.com/tech-arch1tect/brx v0.0.22/go.mod h1:mvEM3p5UqPGH7tAXYczDbO5mLohIIWogZp6rZku9qLk=
 github.com/ugorji/go/codec v1.2.7 h1:YPXUKf7fYbp/y8xloBqZOw2qaVggbfwMlI8WM3wZUJ0=
 github.com/ugorji/go/codec v1.2.7/go.mod h1:WGN1fab3R1fzQlVQTkfxVtIBhWDRqOviHU95kRgeqEY=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=

@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { usePage } from '@inertiajs/react';
 import {
   getApiV1ServersServeridStacksStacknameFiles,
   getApiV1ServersServeridStacksStacknameFilesRead,
@@ -10,9 +9,10 @@ import {
   postApiV1ServersServeridStacksStacknameFilesCopy,
   postApiV1ServersServeridStacksStacknameFilesChmod,
   postApiV1ServersServeridStacksStacknameFilesChown,
+  postApiV1ServersServeridStacksStacknameFilesUpload,
+  getApiV1ServersServeridStacksStacknameFilesDownload,
   getApiV1ServersServeridStacksStacknameFilesStats,
 } from '../api/generated/files/files';
-import { apiClient } from '../lib/api';
 import type {
   DirectoryListing,
   FileContent,
@@ -34,8 +34,6 @@ interface UseFilesOptions {
 
 export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   const [loading, setLoading] = useState(false);
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
 
   const handleError = useCallback(
     (error: unknown) => {
@@ -166,18 +164,9 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     async (file: File, path: string): Promise<void> => {
       try {
         setLoading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('path', path);
-
-        await apiClient({
-          url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/upload`,
-          method: 'POST',
-          data: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-          },
+        await postApiV1ServersServeridStacksStacknameFilesUpload(serverid, stackname, {
+          file,
+          path,
         });
       } catch (error) {
         handleError(error);
@@ -185,19 +174,18 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(false);
       }
     },
-    [serverid, stackname, handleError, csrfToken]
+    [serverid, stackname, handleError]
   );
 
   const downloadFile = useCallback(
     async (path: string, filename?: string): Promise<void> => {
       try {
         setLoading(true);
-        const response = await apiClient<Blob>({
-          url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/download`,
-          method: 'GET',
-          params: filename ? { path, filename } : { path },
-          responseType: 'blob',
-        });
+        const response = await getApiV1ServersServeridStacksStacknameFilesDownload(
+          serverid,
+          stackname,
+          { path, filename }
+        );
 
         const blob = new Blob([response.data]);
         const url = window.URL.createObjectURL(blob);
