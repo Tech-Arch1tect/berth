@@ -178,6 +178,7 @@ export * from './placementPreference';
 export * from './port';
 export * from './portMapping';
 export * from './postApiV1AdminMigrationImportBody';
+export * from './postApiV1ServersServeridStacksStacknameFilesUploadBody';
 export * from './pruneRequest';
 export * from './pruneResult';
 export * from './rawComposeConfig';
