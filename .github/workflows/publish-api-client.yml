@@ -1,0 +1,55 @@
+name: Publish API Client
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate API client
+        run: |
+          npm ci
+          npm run api:generate
+
+      - name: Clone and update berth-api-client
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          TOKEN: ${{ secrets.API_CLIENT_TOKEN }}
+        run: |
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            BRANCH="$REF_NAME"
+          else
+            BRANCH="main"
+          fi
+
+          git clone --depth=1 -b main "https://x-access-token:${TOKEN}@github.com/Tech-Arch1tect/berth-api-client.git" api-client
+          cd api-client
+
+          if [[ "$BRANCH" != "main" ]]; then
+            git checkout -b "$BRANCH"
+          fi
+
+          rm -rf ./*
+          cp -r ../resources/js/api/generated/* .
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Generated from ${REPO}@${SHA}" || echo "No changes to commit"
+          git push origin "$BRANCH"
