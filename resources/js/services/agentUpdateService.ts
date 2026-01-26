@@ -1,17 +1,10 @@
-import axios from 'axios';
 import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStackname,
+  patchApiV1ServersServeridStacksStacknameCompose,
 } from '../api/generated/stacks/stacks';
 import { getApiV1AdminServers, postApiV1AdminServersIdTest } from '../api/generated/admin/admin';
 import type { Stack, StackDetails, ServerResponse } from '../api/generated/models';
-
-const api = axios.create({
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-  },
-});
 
 export class AgentUpdateService {
   static async getServers(): Promise<ServerResponse[]> {
@@ -33,19 +26,11 @@ export class AgentUpdateService {
   static async updateComposeImages(
     serverId: number,
     stackName: string,
-    serviceChanges: Record<string, { image: string }>,
-    csrfToken?: string
+    serviceChanges: Record<string, { image: string }>
   ): Promise<void> {
-    const headers: Record<string, string> = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
-    await api.patch(
-      `/api/v1/servers/${serverId}/stacks/${stackName}/compose`,
-      { changes: { service_changes: serviceChanges } },
-      { headers }
-    );
+    await patchApiV1ServersServeridStacksStacknameCompose(serverId, stackName, {
+      changes: { service_changes: serviceChanges },
+    });
   }
 
   static async testServerConnection(serverId: number): Promise<boolean> {

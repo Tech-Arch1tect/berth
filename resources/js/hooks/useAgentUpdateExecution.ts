@@ -144,8 +144,7 @@ export function useAgentUpdateExecution({
           await AgentUpdateService.updateComposeImages(
             server.serverId,
             'berth-agent',
-            serviceChanges,
-            csrfToken
+            serviceChanges
           );
           log('Image tags updated successfully');
 
