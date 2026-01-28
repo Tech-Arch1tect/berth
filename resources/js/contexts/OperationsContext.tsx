@@ -12,6 +12,7 @@ export interface NewOperationInput {
   stack_name: string;
   command: string;
   is_incomplete: boolean;
+  skipWebSocket?: boolean;
 }
 
 interface OperationState {
@@ -251,7 +252,10 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         };
 
         const newMap = new Map(prev);
-        const ws = operation.is_incomplete ? createWebSocketForOperation(operation) : null;
+        const ws =
+          operation.is_incomplete && !input.skipWebSocket
+            ? createWebSocketForOperation(operation)
+            : null;
 
         newMap.set(operation.operation_id, {
           operation,

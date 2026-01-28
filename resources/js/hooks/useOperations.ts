@@ -86,6 +86,7 @@ export const useOperations = ({
               operation_id: opResponse.operationId,
               command: pendingOperationRef.current.command,
               is_incomplete: true,
+              skipWebSocket: true,
             };
 
             addOperation(newOp);
