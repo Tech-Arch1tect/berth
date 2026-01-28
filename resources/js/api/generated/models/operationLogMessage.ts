@@ -10,7 +10,7 @@ import type { OperationLog } from './operationLog';
 
 export interface OperationLogMessage {
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   /** @minimum 0 */
   id: number;
   message_data: string;

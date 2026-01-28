@@ -10,15 +10,15 @@ import type { Role } from './role';
 
 export interface User {
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   email: string;
   /** @nullable */
-  email_verified_at: string | null;
+  email_verified_at?: string | null;
   /** @minimum 0 */
   id: number;
   /** @nullable */
-  last_login_at: string | null;
-  roles: Role[];
+  last_login_at?: string | null;
+  roles?: Role[];
   updated_at: string;
   username: string;
 }

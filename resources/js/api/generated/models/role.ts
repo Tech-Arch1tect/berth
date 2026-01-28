@@ -10,7 +10,7 @@ import type { User } from './user';
 
 export interface Role {
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   description: string;
   /** @minimum 0 */
   id: number;

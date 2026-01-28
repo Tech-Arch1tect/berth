@@ -14,7 +14,7 @@ export interface ImageScan {
   /** @nullable */
   completed_at?: string | null;
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   error_message?: string;
   /** @minimum 0 */
   id: number;

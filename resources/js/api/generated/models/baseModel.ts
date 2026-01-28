@@ -9,7 +9,7 @@ import type { DeletedAt } from './deletedAt';
 
 export interface BaseModel {
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   /** @minimum 0 */
   id: number;
   updated_at: string;

@@ -12,9 +12,9 @@ type User struct {
 	Username        string     `json:"username" gorm:"uniqueIndex;not null"`
 	Email           string     `json:"email" gorm:"uniqueIndex;not null"`
 	Password        string     `json:"-" gorm:"not null"`
-	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:""`
-	LastLoginAt     *time.Time `json:"last_login_at" gorm:""`
-	Roles           []Role     `json:"roles" gorm:"many2many:user_roles;"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty" gorm:""`
+	LastLoginAt     *time.Time `json:"last_login_at,omitempty" gorm:""`
+	Roles           []Role     `json:"roles,omitempty" gorm:"many2many:user_roles;"`
 }
 
 func (u *User) BeforeDelete(tx *gorm.DB) error {

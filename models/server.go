@@ -16,7 +16,7 @@ type Server struct {
 	Description         string `json:"description"`
 	Host                string `json:"host" gorm:"not null"`
 	Port                int    `json:"port" gorm:"not null;default:8080"`
-	SkipSSLVerification *bool  `json:"skip_ssl_verification" gorm:"default:true"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty" gorm:"default:true"`
 	AccessToken         string `json:"-" gorm:"not null"`
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
 }
@@ -85,7 +85,7 @@ type ServerWithStatistics struct {
 	Description         string           `json:"description"`
 	Host                string           `json:"host"`
 	Port                int              `json:"port"`
-	SkipSSLVerification bool             `json:"skip_ssl_verification"`
+	SkipSSLVerification bool             `json:"skip_ssl_verification,omitempty"`
 	IsActive            bool             `json:"is_active"`
 	Statistics          *StackStatistics `json:"statistics,omitempty"`
 }

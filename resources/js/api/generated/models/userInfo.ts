@@ -11,12 +11,12 @@ export interface UserInfo {
   created_at: string;
   email: string;
   /** @nullable */
-  email_verified_at: string | null;
+  email_verified_at?: string | null;
   /** @minimum 0 */
   id: number;
   /** @nullable */
   last_login_at: string | null;
-  roles: RoleInfo[];
+  roles?: RoleInfo[];
   totp_enabled: boolean;
   updated_at: string;
   username: string;

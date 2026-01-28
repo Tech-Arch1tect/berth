@@ -12,31 +12,31 @@ import type { User } from './user';
 export interface OperationLog {
   command: string;
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   /** @nullable */
-  duration_ms: number | null;
+  duration_ms?: number | null;
   /** @nullable */
-  end_time: string | null;
+  end_time?: string | null;
   /** @nullable */
-  exit_code: number | null;
+  exit_code?: number | null;
   /** @minimum 0 */
   id: number;
   /** @nullable */
-  last_message_at: string | null;
+  last_message_at?: string | null;
   operation_id: string;
-  options: string;
+  options?: string;
   /** @nullable */
-  queued_at: string | null;
+  queued_at?: string | null;
   server: Server;
   /** @minimum 0 */
   server_id: number;
-  services: string;
+  services?: string;
   stack_name: string;
-  start_time: string;
-  status: string;
+  start_time?: string;
+  status?: string;
   /** @nullable */
-  success: boolean | null;
-  summary: string;
+  success?: boolean | null;
+  summary?: string;
   updated_at: string;
   user: User;
   /** @minimum 0 */

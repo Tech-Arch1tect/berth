@@ -9,7 +9,7 @@ import type { DeletedAt } from './deletedAt';
 
 export interface Server {
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   description: string;
   host: string;
   /** @minimum 0 */
@@ -18,6 +18,6 @@ export interface Server {
   name: string;
   port: number;
   /** @nullable */
-  skip_ssl_verification: boolean | null;
+  skip_ssl_verification?: boolean | null;
   updated_at: string;
 }

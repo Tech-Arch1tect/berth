@@ -28,10 +28,10 @@ type UserInfo struct {
 	ID              uint       `json:"id"`
 	Username        string     `json:"username"`
 	Email           string     `json:"email"`
-	EmailVerifiedAt *string    `json:"email_verified_at"`
+	EmailVerifiedAt *string    `json:"email_verified_at,omitempty"`
 	LastLoginAt     *string    `json:"last_login_at"`
 	TOTPEnabled     bool       `json:"totp_enabled"`
 	CreatedAt       string     `json:"created_at"`
 	UpdatedAt       string     `json:"updated_at"`
-	Roles           []RoleInfo `json:"roles"`
+	Roles           []RoleInfo `json:"roles,omitempty"`
 }

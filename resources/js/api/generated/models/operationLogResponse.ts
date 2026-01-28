@@ -12,37 +12,37 @@ import type { User } from './user';
 export interface OperationLogResponse {
   command: string;
   created_at: string;
-  deleted_at: DeletedAt;
+  deleted_at?: DeletedAt;
   /** @nullable */
-  duration_ms: number | null;
+  duration_ms?: number | null;
   /** @nullable */
-  end_time: string | null;
+  end_time?: string | null;
   /** @nullable */
-  exit_code: number | null;
+  exit_code?: number | null;
   formatted_date: string;
   /** @minimum 0 */
   id: number;
   is_incomplete: boolean;
   /** @nullable */
-  last_message_at: string | null;
+  last_message_at?: string | null;
   message_count: number;
   operation_id: string;
-  options: string;
+  options?: string;
   /** @nullable */
-  partial_duration_ms: number | null;
+  partial_duration_ms?: number | null;
   /** @nullable */
-  queued_at: string | null;
+  queued_at?: string | null;
   server: Server;
   /** @minimum 0 */
   server_id: number;
   server_name: string;
-  services: string;
+  services?: string;
   stack_name: string;
-  start_time: string;
-  status: string;
+  start_time?: string;
+  status?: string;
   /** @nullable */
-  success: boolean | null;
-  summary: string;
+  success?: boolean | null;
+  summary?: string;
   trigger_source: string;
   updated_at: string;
   user: User;
