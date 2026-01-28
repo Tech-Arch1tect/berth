@@ -489,7 +489,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Returns the contents of a directory within a stack's file system").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		QueryParam("path", "Directory path to list").Optional().
+		QueryParam("filePath", "Directory path to list").Optional().
 		Response(http.StatusOK, files.DirectoryListing{}, "Directory listing").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
@@ -504,7 +504,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Returns the contents of a file within a stack's file system").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		QueryParam("path", "File path to read").Required().
+		QueryParam("filePath", "File path to read").Required().
 		Response(http.StatusOK, files.FileContent{}, "File contents").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
@@ -536,7 +536,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("stackname", "Stack name").Required().
 		BodyMultipart("File upload with optional destination path").
 		FileField("file", true).
-		Field("path", false).
+		Field("filePath", false).
 		Done().
 		Response(http.StatusOK, files.MessageResponse{}, "File uploaded successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "File is required").
@@ -642,7 +642,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Downloads a file from a stack's file system").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		QueryParam("path", "File path to download").Required().
+		QueryParam("filePath", "File path to download").Required().
 		QueryParam("filename", "Optional filename for the downloaded file").Optional().
 		ResponseBinary(http.StatusOK, "application/octet-stream", "File content").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
@@ -658,7 +658,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Description("Returns statistics about a directory including most common owner, group, and mode").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		QueryParam("path", "Directory path").Optional().
+		QueryParam("filePath", "Directory path").Optional().
 		Response(http.StatusOK, files.DirectoryStats{}, "Directory statistics").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").

@@ -57,7 +57,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         const response = await getApiV1ServersServeridStacksStacknameFiles(
           serverid,
           stackname,
-          path ? { path } : undefined
+          path ? { filePath: path } : undefined
         );
         return response.data;
       } catch (error) {
@@ -77,7 +77,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         const response = await getApiV1ServersServeridStacksStacknameFilesRead(
           serverid,
           stackname,
-          { path }
+          { filePath: path }
         );
         return response.data;
       } catch (error) {
@@ -166,7 +166,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         setLoading(true);
         await postApiV1ServersServeridStacksStacknameFilesUpload(serverid, stackname, {
           file,
-          path,
+          filePath: path,
         });
       } catch (error) {
         handleError(error);
@@ -184,7 +184,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         const response = await getApiV1ServersServeridStacksStacknameFilesDownload(
           serverid,
           stackname,
-          { path, filename }
+          { filePath: path, filename }
         );
 
         const blob = new Blob([response.data]);
@@ -240,7 +240,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
         const response = await getApiV1ServersServeridStacksStacknameFilesStats(
           serverid,
           stackname,
-          path ? { path } : undefined
+          path ? { filePath: path } : undefined
         );
         return response.data;
       } catch (error) {

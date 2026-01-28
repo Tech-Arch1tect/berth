@@ -8,5 +8,5 @@
 
 export type PostApiV1ServersServeridStacksStacknameFilesUploadBody = {
   file: Blob;
-  path?: string;
+  filePath?: string;
 };

@@ -10,5 +10,5 @@ export type GetApiV1ServersServeridStacksStacknameFilesReadParams = {
   /**
    * File path to read
    */
-  path: string;
+  filePath: string;
 };

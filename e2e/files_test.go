@@ -142,7 +142,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files/read", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/read?path=docker-compose.yml",
+			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files/read?filePath=docker-compose.yml",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -156,7 +156,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 		assert.NotEmpty(t, content.Content)
 	})
 
-	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read without path returns 400", func(t *testing.T) {
+	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read without filePath returns 400", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/files/read", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",

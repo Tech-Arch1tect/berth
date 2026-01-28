@@ -1299,8 +1299,8 @@ export const postApiV1ServersServeridStacksStacknameFilesUpload = (
 ) => {
   const formData = new FormData();
   formData.append(`file`, postApiV1ServersServeridStacksStacknameFilesUploadBody.file);
-  if (postApiV1ServersServeridStacksStacknameFilesUploadBody.path !== undefined) {
-    formData.append(`path`, postApiV1ServersServeridStacksStacknameFilesUploadBody.path);
+  if (postApiV1ServersServeridStacksStacknameFilesUploadBody.filePath !== undefined) {
+    formData.append(`filePath`, postApiV1ServersServeridStacksStacknameFilesUploadBody.filePath);
   }
 
   return apiClient<MessageResponse>({

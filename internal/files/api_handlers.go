@@ -35,9 +35,9 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 		return err
 	}
 
-	path := common.GetQueryParam(c, "path")
+	filePath := common.GetQueryParam(c, "filePath")
 
-	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, path)
+	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
@@ -56,12 +56,12 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 		return err
 	}
 
-	path := common.GetQueryParam(c, "path")
-	if path == "" {
-		return common.SendBadRequest(c, "path parameter is required")
+	filePath := common.GetQueryParam(c, "filePath")
+	if filePath == "" {
+		return common.SendBadRequest(c, "filePath parameter is required")
 	}
 
-	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, path)
+	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
@@ -262,14 +262,14 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		return err
 	}
 
-	path := c.FormValue("path")
+	filePath := c.FormValue("filePath")
 
 	file, err := c.FormFile("file")
 	if err != nil {
 		return common.SendBadRequest(c, "file is required")
 	}
 
-	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, path, file); err != nil {
+	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, filePath, file); err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
 
@@ -282,7 +282,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 			actorUser.Username,
 			serverID,
 			stackname,
-			path,
+			filePath,
 			c.RealIP(),
 			map[string]any{
 				"filename": file.Filename,
@@ -305,14 +305,14 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 		return err
 	}
 
-	path := common.GetQueryParam(c, "path")
-	if path == "" {
-		return common.SendBadRequest(c, "path parameter is required")
+	filePath := common.GetQueryParam(c, "filePath")
+	if filePath == "" {
+		return common.SendBadRequest(c, "filePath parameter is required")
 	}
 
 	filename := common.GetQueryParam(c, "filename")
 
-	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, path, filename)
+	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, filePath, filename)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}
@@ -327,7 +327,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 			actorUser.Username,
 			serverID,
 			stackname,
-			path,
+			filePath,
 			c.RealIP(),
 			map[string]any{
 				"filename": filename,
@@ -416,12 +416,12 @@ func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
 		return err
 	}
 
-	path := c.QueryParam("path")
-	if path == "" {
-		path = "."
+	filePath := c.QueryParam("filePath")
+	if filePath == "" {
+		filePath = "."
 	}
 
-	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, path)
+	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
 		return common.SendInternalError(c, err.Error())
 	}

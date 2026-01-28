@@ -10,7 +10,7 @@ export type GetApiV1ServersServeridStacksStacknameFilesDownloadParams = {
   /**
    * File path to download
    */
-  path: string;
+  filePath: string;
   /**
    * Optional filename for the downloaded file
    */

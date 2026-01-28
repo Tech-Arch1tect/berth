@@ -47,7 +47,7 @@ export function useNestedFileTree({
         const response = await getApiV1ServersServeridStacksStacknameFiles(
           serverid,
           stackname,
-          path ? { path } : undefined
+          path ? { filePath: path } : undefined
         );
         return response.data;
       },

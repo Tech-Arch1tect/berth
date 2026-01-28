@@ -34,10 +34,12 @@ const fileQueryKeys = {
     getGetApiV1ServersServeridStacksStacknameFilesQueryKey(
       serverid,
       stackname,
-      path ? { path } : undefined
+      path ? { filePath: path } : undefined
     ),
   content: (serverid: number, stackname: string, path: string) =>
-    getGetApiV1ServersServeridStacksStacknameFilesReadQueryKey(serverid, stackname, { path }),
+    getGetApiV1ServersServeridStacksStacknameFilesReadQueryKey(serverid, stackname, {
+      filePath: path,
+    }),
 };
 
 export function useDirectoryQuery(
@@ -49,7 +51,7 @@ export function useDirectoryQuery(
   return useGetApiV1ServersServeridStacksStacknameFiles(
     serverid,
     stackname,
-    path ? { path } : undefined,
+    path ? { filePath: path } : undefined,
     {
       query: {
         enabled,
@@ -73,7 +75,7 @@ export function useFileContentQuery(
   return useGetApiV1ServersServeridStacksStacknameFilesRead(
     serverid,
     stackname,
-    { path },
+    { filePath: path },
     {
       query: {
         enabled: enabled && !!path,
@@ -196,7 +198,7 @@ export function useFileMutations({ serverid, stackname }: UseFileQueriesOptions)
     mutationFn: async ({ file, path }: { file: File; path: string }) => {
       await postApiV1ServersServeridStacksStacknameFilesUpload(serverid, stackname, {
         file,
-        path,
+        filePath: path,
       });
     },
     onSuccess: (_, variables) => {

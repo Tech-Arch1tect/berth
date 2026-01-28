@@ -10,5 +10,5 @@ export type GetApiV1ServersServeridStacksStacknameFilesStatsParams = {
   /**
    * Directory path
    */
-  path?: string;
+  filePath?: string;
 };
