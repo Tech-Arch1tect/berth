@@ -286,7 +286,7 @@ export default function AdminUsers({ title, users }: Props) {
                       header: 'Roles',
                       render: (user) => (
                         <div className="flex flex-wrap gap-2">
-                          {user.roles.map((role) => (
+                          {(user.roles ?? []).map((role) => (
                             <span
                               key={role.id}
                               className={cn(theme.badges.tag.base, theme.badges.tag.info)}
@@ -294,7 +294,7 @@ export default function AdminUsers({ title, users }: Props) {
                               {role.name}
                             </span>
                           ))}
-                          {user.roles.length === 0 && (
+                          {(!user.roles || user.roles.length === 0) && (
                             <span className={cn('text-sm', theme.text.subtle)}>No roles</span>
                           )}
                         </div>

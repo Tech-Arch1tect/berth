@@ -71,8 +71,9 @@ export default function UserRoles({ title, user, allRoles }: Props) {
     );
   };
 
-  const userRoleIds = user.roles.map((role) => role.id);
-  const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.id));
+  const userRoles = user.roles ?? [];
+  const userRoleIds = userRoles.map((role) => role.id);
+  const availableRoles = (allRoles ?? []).filter((role) => !userRoleIds.includes(role.id));
 
   return (
     <>
@@ -117,9 +118,9 @@ export default function UserRoles({ title, user, allRoles }: Props) {
           <div>
             <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>Current Roles</h3>
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
-              {user.roles.length > 0 ? (
+              {userRoles.length > 0 ? (
                 <ul className="divide-y divide-slate-200 dark:divide-slate-700">
-                  {user.roles.map((role) => (
+                  {userRoles.map((role) => (
                     <li key={role.id} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <div>
