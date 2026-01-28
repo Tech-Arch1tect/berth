@@ -103,3 +103,12 @@ type DeleteStackPermissionResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
+
+type ListRolesResponseData struct {
+	Roles []dto.RoleWithPermissions `json:"roles"`
+}
+
+type ListRolesResponse struct {
+	Success bool                  `json:"success"`
+	Data    ListRolesResponseData `json:"data"`
+}

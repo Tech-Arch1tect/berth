@@ -251,8 +251,11 @@ func (h *APIHandler) ListRoles(c echo.Context) error {
 		roleInfos[i] = dto.ConvertRoleToRoleWithPermissions(role)
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"roles": roleInfos,
+	return c.JSON(http.StatusOK, ListRolesResponse{
+		Success: true,
+		Data: ListRolesResponseData{
+			Roles: roleInfos,
+		},
 	})
 }
 

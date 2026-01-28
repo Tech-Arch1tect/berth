@@ -46,6 +46,7 @@ import type {
   ImportResponse,
   ListLogsAPIResponse,
   ListRoleStackPermissionsResponse,
+  ListRolesResponse,
   OperationLogDetail,
   OperationLogStats,
   PaginatedOperationLogs,
@@ -586,6 +587,110 @@ export function useGetApiV1AdminOperationLogsId<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetApiV1AdminOperationLogsIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * List all roles. Requires admin permissions.
+ * @summary List all roles
+ */
+export const getApiV1AdminRoles = (signal?: AbortSignal) => {
+  return apiClient<ListRolesResponse>({ url: `/api/v1/admin/roles`, method: 'GET', signal });
+};
+
+export const getGetApiV1AdminRolesQueryKey = () => {
+  return [`/api/v1/admin/roles`] as const;
+};
+
+export const getGetApiV1AdminRolesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+  TError = ErrorResponse | void,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminRolesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminRoles>>> = ({ signal }) =>
+    getApiV1AdminRoles(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminRolesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminRoles>>
+>;
+export type GetApiV1AdminRolesQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+  TError = ErrorResponse | void,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminRoles>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminRoles>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List all roles
+ */
+
+export function useGetApiV1AdminRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminRolesQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

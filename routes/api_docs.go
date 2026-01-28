@@ -826,6 +826,17 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	// Admin Role Management
+	apiDoc.Document("GET", "/api/v1/admin/roles").
+		Tags("admin", "roles").
+		Summary("List all roles").
+		Description("List all roles. Requires admin permissions.").
+		Response(http.StatusOK, rbac.ListRolesResponse{}, "List of roles").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/roles").
 		Tags("admin", "roles").
 		Summary("Create a new role").

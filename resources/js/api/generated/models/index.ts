@@ -138,6 +138,8 @@ export * from './listCredentialsData';
 export * from './listCredentialsResponse';
 export * from './listLogsAPIResponse';
 export * from './listLogsResponseData';
+export * from './listRolesResponse';
+export * from './listRolesResponseData';
 export * from './listRoleStackPermissionsData';
 export * from './listRoleStackPermissionsResponse';
 export * from './listScopesResponse';
