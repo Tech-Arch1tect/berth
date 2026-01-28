@@ -292,9 +292,9 @@ const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
                   stackname={op.stack_name}
                   operationId={op.operation_id}
                   command={op.command}
-                  startTime={op.start_time}
+                  startTime={op.start_time ?? ''}
                   isIncomplete={op.is_incomplete}
-                  summary={op.summary}
+                  summary={op.summary ?? null}
                   onDismiss={() => removeOperation(op.operation_id)}
                 />
               ))
@@ -505,9 +505,9 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
                 stackname={op.stack_name}
                 operationId={op.operation_id}
                 command={op.command}
-                startTime={op.start_time}
+                startTime={op.start_time ?? ''}
                 isIncomplete={op.is_incomplete}
-                summary={op.summary}
+                summary={op.summary ?? null}
                 onDismiss={() => removeOperation(op.operation_id)}
               />
             ))

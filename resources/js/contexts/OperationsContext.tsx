@@ -327,7 +327,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const operations = Array.from(operationStates.values())
     .map((state) => state.operation)
-    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+    .sort((a, b) => new Date(b.start_time ?? 0).getTime() - new Date(a.start_time ?? 0).getTime());
 
   return (
     <OperationsContext.Provider

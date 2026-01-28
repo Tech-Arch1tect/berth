@@ -500,7 +500,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             </span>
                           </div>
                           <span className={cn('text-xs', theme.text.subtle)}>
-                            {formatDuration(op.duration_ms) || op.formatted_date}
+                            {formatDuration(op.duration_ms ?? null) || op.formatted_date}
                           </span>
                         </div>
                       ))}

@@ -43,10 +43,10 @@ const formatDuration = (duration: number | null, isPartial = false) => {
 };
 
 const getOperationDuration = (operation: OperationLogResponse) => {
-  if (operation.duration_ms !== null) {
+  if (operation.duration_ms != null) {
     return formatDuration(operation.duration_ms, false);
   }
-  if (operation.partial_duration_ms !== null) {
+  if (operation.partial_duration_ms != null) {
     return formatDuration(operation.partial_duration_ms, true);
   }
   return 'N/A';
