@@ -50,65 +50,20 @@ func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice
 	}
 }
 
-type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-type LoginResponse struct {
-	AccessToken      string       `json:"access_token"`
-	RefreshToken     string       `json:"refresh_token"`
-	TokenType        string       `json:"token_type"`
-	ExpiresIn        int          `json:"expires_in"`
-	RefreshExpiresIn int          `json:"refresh_expires_in"`
-	User             dto.UserInfo `json:"user"`
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
-}
-
-type RefreshResponse struct {
-	AccessToken      string `json:"access_token"`
-	RefreshToken     string `json:"refresh_token"`
-	TokenType        string `json:"token_type"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-}
-
-type ErrorResponse struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
-}
-
-type TOTPRequiredResponse struct {
-	Message        string `json:"message"`
-	TOTPRequired   bool   `json:"totp_required"`
-	TemporaryToken string `json:"temporary_token"`
-}
-
-type TOTPVerifyRequest struct {
-	Code string `json:"code" validate:"required"`
-}
-
-type LogoutRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
-}
-
 func (h *MobileAuthHandler) Login(c echo.Context) error {
-	var req LoginRequest
+	var req AuthLoginRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Warn("mobile login - invalid request format",
 			zap.String("remote_ip", c.RealIP()),
 			zap.Error(err))
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.Username == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "Username and password are required",
 		})
@@ -136,7 +91,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			"user not found",
 			nil,
 		)
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "invalid_credentials",
 			Message: "Invalid username or password",
 		})
@@ -158,14 +113,14 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			"invalid password",
 			nil,
 		)
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "invalid_credentials",
 			Message: "Invalid username or password",
 		})
 	}
 
 	if h.authSvc.IsEmailVerificationRequired() && !h.authSvc.IsEmailVerified(user.Email) {
-		return c.JSON(http.StatusForbidden, ErrorResponse{
+		return c.JSON(http.StatusForbidden, AuthErrorResponse{
 			Error:   "email_not_verified",
 			Message: "Please verify your email before signing in",
 		})
@@ -178,7 +133,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 				zap.Uint("user_id", user.ID),
 				zap.Error(err),
 			)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 				Error:   "token_generation_failed",
 				Message: "Failed to generate authentication token",
 			})
@@ -190,7 +145,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			zap.String("remote_ip", c.RealIP()),
 		)
 
-		return c.JSON(http.StatusOK, TOTPRequiredResponse{
+		return c.JSON(http.StatusOK, AuthTOTPRequiredResponse{
 			Message:        "Two-factor authentication required",
 			TOTPRequired:   true,
 			TemporaryToken: temporaryToken,
@@ -203,7 +158,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			zap.Uint("user_id", user.ID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "token_generation_failed",
 			Message: "Failed to generate authentication token",
 		})
@@ -221,7 +176,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			zap.Uint("user_id", user.ID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "token_generation_failed",
 			Message: "Failed to generate refresh token",
 		})
@@ -256,7 +211,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 
 	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
 
-	return c.JSON(http.StatusOK, LoginResponse{
+	return c.JSON(http.StatusOK, AuthLoginResponse{
 		AccessToken:      accessToken,
 		RefreshToken:     refreshTokenData.Token,
 		TokenType:        "Bearer",
@@ -267,16 +222,16 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
-	var req RefreshRequest
+	var req AuthRefreshRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "Refresh token is required",
 		})
@@ -286,18 +241,18 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 	if validateErr != nil {
 		switch validateErr {
 		case refreshtoken.ErrRefreshTokenExpired:
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Error:   "expired_token",
 				Message: "Refresh token has expired",
 			})
 		case refreshtoken.ErrRefreshTokenNotFound, refreshtoken.ErrRefreshTokenInvalid:
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Error:   "invalid_token",
 				Message: "Invalid refresh token",
 			})
 		default:
 			h.logger.Error("failed to validate refresh token", zap.Error(validateErr))
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 				Error:   "token_refresh_failed",
 				Message: "Failed to refresh token",
 			})
@@ -307,7 +262,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 	result, err := h.refreshTokenSvc.ValidateAndRotateRefreshToken(req.RefreshToken, h.jwtSvc)
 	if err != nil {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "token_refresh_failed",
 			Message: "Failed to refresh token",
 		})
@@ -339,7 +294,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		)
 	}
 
-	return c.JSON(http.StatusOK, RefreshResponse{
+	return c.JSON(http.StatusOK, AuthRefreshResponse{
 		AccessToken:      result.AccessToken,
 		RefreshToken:     result.RefreshToken,
 		TokenType:        "Bearer",
@@ -351,7 +306,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 func (h *MobileAuthHandler) Profile(c echo.Context) error {
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -359,7 +314,7 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -367,7 +322,7 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 
 	var fullUser models.User
 	if err := h.db.Preload("Roles").Where("id = ?", userModel.ID).First(&fullUser).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "database_error",
 			Message: "Failed to load user profile",
 		})
@@ -382,19 +337,19 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) Logout(c echo.Context) error {
-	var req LogoutRequest
+	var req AuthLogoutRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Warn("logout - invalid request format",
 			zap.String("remote_ip", c.RealIP()),
 			zap.Error(err))
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "Refresh token is required",
 		})
@@ -438,7 +393,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 
 	if len(revokedTokens) == 0 {
 		h.logger.Error("failed to revoke any tokens during logout")
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "logout_failed",
 			Message: "Failed to revoke tokens",
 		})
@@ -464,23 +419,23 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		zap.Strings("revoked_tokens", revokedTokens),
 		zap.String("remote_ip", c.RealIP()))
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"message":        "Logout successful. Tokens have been revoked.",
-		"revoked_tokens": revokedTokens,
+	return c.JSON(http.StatusOK, AuthLogoutResponse{
+		Message:       "Logout successful. Tokens have been revoked.",
+		RevokedTokens: revokedTokens,
 	})
 }
 
 func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
-	var req TOTPVerifyRequest
+	var req AuthTOTPVerifyRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.Code == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "TOTP code is required",
 		})
@@ -488,7 +443,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Missing or invalid authorization header",
 		})
@@ -497,14 +452,14 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	tokenString := authHeader[7:]
 	claims, err := h.jwtSvc.ValidateToken(tokenString)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or expired token",
 		})
 	}
 
 	if claims.TokenType != "totp_pending" {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "invalid_token_type",
 			Message: "Invalid token for TOTP verification",
 		})
@@ -526,12 +481,12 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		}
 		switch err {
 		case totp.ErrInvalidCode:
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Error:   "invalid_totp_code",
 				Message: "Invalid TOTP code",
 			})
 		case totp.ErrCodeAlreadyUsed:
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Error:   "code_already_used",
 				Message: "TOTP code has already been used",
 			})
@@ -540,7 +495,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "totp_verification_failed",
 			Message: "Failed to verify TOTP code",
 		})
@@ -548,7 +503,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 
 	var user models.User
 	if err := h.db.First(&user, claims.UserID).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_not_found",
 			Message: "User not found",
 		})
@@ -560,7 +515,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "token_generation_failed",
 			Message: "Failed to generate authentication token",
 		})
@@ -578,7 +533,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "token_generation_failed",
 			Message: "Failed to generate refresh token",
 		})
@@ -612,7 +567,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, LoginResponse{
+	return c.JSON(http.StatusOK, AuthLoginResponse{
 		AccessToken:      accessToken,
 		RefreshToken:     refreshTokenData.Token,
 		TokenType:        "Bearer",
@@ -625,7 +580,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -633,14 +588,14 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
 	}
 
 	if h.totpSvc.IsUserTOTPEnabled(userModel.ID) {
-		return c.JSON(http.StatusConflict, ErrorResponse{
+		return c.JSON(http.StatusConflict, AuthErrorResponse{
 			Error:   "totp_already_enabled",
 			Message: "TOTP is already enabled for your account",
 		})
@@ -648,7 +603,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 
 	existing, err := h.totpSvc.GetSecret(userModel.ID)
 	if err != nil && err != totp.ErrSecretNotFound {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "totp_setup_failed",
 			Message: "Failed to retrieve TOTP information",
 		})
@@ -660,7 +615,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 	} else {
 		secret, err = h.totpSvc.GenerateSecret(userModel.ID, userModel.Email)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 				Error:   "totp_setup_failed",
 				Message: "Failed to generate TOTP secret",
 			})
@@ -669,7 +624,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 
 	qrCodeURI, err := h.totpSvc.GenerateProvisioningURI(secret, userModel.Email)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "totp_setup_failed",
 			Message: "Failed to generate QR code",
 		})
@@ -687,7 +642,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -695,7 +650,7 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -703,14 +658,14 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 
 	var req TOTPEnableRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.Code == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "TOTP code is required",
 		})
@@ -718,12 +673,12 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 
 	if err := h.totpSvc.EnableTOTP(userModel.ID, req.Code); err != nil {
 		if err == totp.ErrInvalidCode {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{
+			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 				Error:   "invalid_totp_code",
 				Message: "Invalid TOTP code. Please try again.",
 			})
 		}
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "totp_enable_failed",
 			Message: "Failed to enable TOTP",
 		})
@@ -753,7 +708,7 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -761,7 +716,7 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -769,35 +724,35 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 
 	var req TOTPDisableRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.Code == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "TOTP code and password are required to disable 2FA",
 		})
 	}
 
 	if err := h.authSvc.VerifyPassword(userModel.Password, req.Password); err != nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "invalid_password",
 			Message: "Invalid password",
 		})
 	}
 
 	if err := h.totpSvc.VerifyUserCode(userModel.ID, req.Code); err != nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "invalid_totp_code",
 			Message: "Invalid TOTP code",
 		})
 	}
 
 	if err := h.totpSvc.DisableTOTP(userModel.ID); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "totp_disable_failed",
 			Message: "Failed to disable TOTP",
 		})
@@ -827,7 +782,7 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -835,7 +790,7 @@ func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -853,7 +808,7 @@ func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 
 func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, ErrorResponse{
+		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Error:   "sessions_unavailable",
 			Message: "Session service not available",
 		})
@@ -861,7 +816,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -869,25 +824,22 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
 	}
 
-	var req struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
+	var req GetSessionsRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "Refresh token is required",
 		})
@@ -895,7 +847,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 
 	refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_token",
 			Message: "Invalid refresh token",
 		})
@@ -904,47 +856,47 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 
 	sessions, err := h.sessionSvc.GetUserSessions(userModel.ID, currentToken)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "sessions_fetch_failed",
 			Message: "Failed to retrieve sessions",
 		})
 	}
 
-	sessionData := make([]map[string]any, len(sessions))
+	sessionItems := make([]SessionItem, len(sessions))
 	for i, sess := range sessions {
 		deviceInfo := session.GetDeviceInfo(sess.UserAgent)
 
-		sessionData[i] = map[string]any{
-			"id":          sess.ID,
-			"user_id":     sess.UserID,
-			"token":       sess.Token,
-			"type":        string(sess.Type),
-			"current":     sess.Current,
-			"ip_address":  sess.IPAddress,
-			"user_agent":  sess.UserAgent,
-			"location":    session.GetLocationInfo(sess.IPAddress),
-			"browser":     deviceInfo["browser"],
-			"os":          deviceInfo["os"],
-			"device_type": deviceInfo["device_type"],
-			"device":      deviceInfo["device"],
-			"mobile":      deviceInfo["mobile"],
-			"tablet":      deviceInfo["tablet"],
-			"desktop":     deviceInfo["desktop"],
-			"bot":         deviceInfo["bot"],
-			"created_at":  sess.CreatedAt,
-			"last_used":   sess.LastUsed,
-			"expires_at":  sess.ExpiresAt,
+		sessionItems[i] = SessionItem{
+			ID:         sess.ID,
+			UserID:     sess.UserID,
+			Token:      sess.Token,
+			Type:       string(sess.Type),
+			Current:    sess.Current,
+			IPAddress:  sess.IPAddress,
+			UserAgent:  sess.UserAgent,
+			Location:   session.GetLocationInfo(sess.IPAddress),
+			Browser:    toString(deviceInfo["browser"]),
+			OS:         toString(deviceInfo["os"]),
+			DeviceType: toString(deviceInfo["device_type"]),
+			Device:     toString(deviceInfo["device"]),
+			Mobile:     toBool(deviceInfo["mobile"]),
+			Tablet:     toBool(deviceInfo["tablet"]),
+			Desktop:    toBool(deviceInfo["desktop"]),
+			Bot:        toBool(deviceInfo["bot"]),
+			CreatedAt:  sess.CreatedAt,
+			LastUsed:   sess.LastUsed,
+			ExpiresAt:  sess.ExpiresAt,
 		}
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"sessions": sessionData,
+	return c.JSON(http.StatusOK, GetSessionsResponse{
+		Sessions: sessionItems,
 	})
 }
 
 func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, ErrorResponse{
+		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Error:   "sessions_unavailable",
 			Message: "Session service not available",
 		})
@@ -952,7 +904,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -960,7 +912,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -969,14 +921,14 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 	var req RevokeSessionRequest
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid request format",
 		})
 	}
 
 	if req.SessionID == 0 {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
+		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Error:   "validation_error",
 			Message: "Session ID is required",
 		})
@@ -984,7 +936,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 
 	err := h.sessionSvc.RevokeSession(userModel.ID, req.SessionID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "session_revoke_failed",
 			Message: "Failed to revoke session",
 		})
@@ -1011,7 +963,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 
 func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, ErrorResponse{
+		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Error:   "sessions_unavailable",
 			Message: "Session service not available",
 		})
@@ -1019,7 +971,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 	user := jwtshared.GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Error:   "unauthorized",
 			Message: "Invalid or missing authentication token",
 		})
@@ -1027,7 +979,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 	userModel, ok := user.(models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "user_data_error",
 			Message: "Failed to process user data",
 		})
@@ -1038,7 +990,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 	if session.IsAuthenticated(c) {
 		manager := session.GetManager(c)
 		if manager == nil {
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 				Error:   "session_manager_unavailable",
 				Message: "Session manager not available",
 			})
@@ -1046,7 +998,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 		currentToken = manager.Token(c.Request().Context())
 		if currentToken == "" {
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 				Error:   "current_session_not_found",
 				Message: "Current session token not found",
 			})
@@ -1056,14 +1008,14 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		var req RevokeAllOtherSessionsRequest
 
 		if err := c.Bind(&req); err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{
+			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 				Error:   "invalid_request",
 				Message: "Invalid request format",
 			})
 		}
 
 		if req.RefreshToken == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{
+			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 				Error:   "validation_error",
 				Message: "Refresh token is required",
 			})
@@ -1071,7 +1023,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 		refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{
+			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 				Error:   "invalid_token",
 				Message: "Invalid refresh token",
 			})
@@ -1081,7 +1033,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 	err := h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Error:   "sessions_revoke_failed",
 			Message: "Failed to revoke other sessions",
 		})
@@ -1125,4 +1077,18 @@ func (h *MobileAuthHandler) trackJWTSession(c echo.Context, userID uint, accessT
 			zap.Error(err),
 		)
 	}
+}
+
+func toString(v any) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
+}
+
+func toBool(v any) bool {
+	if b, ok := v.(bool); ok {
+		return b
+	}
+	return false
 }
