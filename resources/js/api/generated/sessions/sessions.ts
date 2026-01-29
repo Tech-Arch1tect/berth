@@ -14,7 +14,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AuthErrorResponse,
   ErrorResponse,
+  GetSessionsRequest,
+  GetSessionsResponse,
   RevokeAllOtherSessionsRequest,
   RevokeSessionRequest,
   SessionMessageResponse,
@@ -22,6 +25,82 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+/**
+ * Returns all active sessions for the authenticated user. The refresh token must be provided to identify the current session.
+ * @summary List user sessions
+ */
+export const postApiV1Sessions = (getSessionsRequest: GetSessionsRequest, signal?: AbortSignal) => {
+  return apiClient<GetSessionsResponse>({
+    url: `/api/v1/sessions`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: getSessionsRequest,
+    signal,
+  });
+};
+
+export const getPostApiV1SessionsMutationOptions = <
+  TError = AuthErrorResponse | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1Sessions>>,
+    TError,
+    { data: GetSessionsRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1Sessions>>,
+  TError,
+  { data: GetSessionsRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1Sessions'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1Sessions>>,
+    { data: GetSessionsRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1Sessions(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1SessionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1Sessions>>
+>;
+export type PostApiV1SessionsMutationBody = GetSessionsRequest;
+export type PostApiV1SessionsMutationError = AuthErrorResponse | void;
+
+/**
+ * @summary List user sessions
+ */
+export const usePostApiV1Sessions = <TError = AuthErrorResponse | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1Sessions>>,
+      TError,
+      { data: GetSessionsRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1Sessions>>,
+  TError,
+  { data: GetSessionsRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1SessionsMutationOptions(options), queryClient);
+};
 /**
  * Revokes a specific session by ID. The user will be logged out from that device.
  * @summary Revoke a session
