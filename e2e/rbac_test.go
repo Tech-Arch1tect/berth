@@ -25,6 +25,7 @@ type (
 	ListRoleStackPermissionsResponse = rbac.ListRoleStackPermissionsResponse
 	CreateStackPermissionResponse    = rbac.CreateStackPermissionResponse
 	DeleteStackPermissionResponse    = rbac.DeleteStackPermissionResponse
+	ListRolesResponse                = rbac.ListRolesResponse
 )
 
 type UsersListResponse struct {
@@ -34,10 +35,6 @@ type UsersListResponse struct {
 type UserRolesResponse struct {
 	User     UserInfo   `json:"user"`
 	AllRoles []RoleInfo `json:"all_roles"`
-}
-
-type RolesListResponse struct {
-	Roles []RoleWithPermissions `json:"roles"`
 }
 
 type PermissionsListResponse struct {
@@ -203,12 +200,12 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var rolesResp RolesListResponse
+		var rolesResp ListRolesResponse
 		require.NoError(t, resp.GetJSON(&rolesResp))
-		assert.NotEmpty(t, rolesResp.Roles)
+		assert.NotEmpty(t, rolesResp.Data.Roles)
 
 		var hasAdmin bool
-		for _, role := range rolesResp.Roles {
+		for _, role := range rolesResp.Data.Roles {
 			if role.Name == "admin" {
 				hasAdmin = true
 				assert.True(t, role.IsAdmin)
@@ -463,11 +460,11 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		var roles RolesListResponse
+		var roles ListRolesResponse
 		require.NoError(t, rolesResp.GetJSON(&roles))
 
 		var adminRoleID uint
-		for _, role := range roles.Roles {
+		for _, role := range roles.Data.Roles {
 			if role.IsAdmin {
 				adminRoleID = role.ID
 				break
