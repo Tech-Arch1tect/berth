@@ -262,7 +262,7 @@ type StackNetworksResponse struct {
 }
 
 type StackVolumesResponse struct {
-	Volumes []Volume `json:"volumes"`
+	Volumes []Volume `json:"volumes,omitempty"`
 }
 
 type StackEnvironmentResponse struct {

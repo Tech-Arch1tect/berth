@@ -8,5 +8,5 @@
 import type { Volume } from './volume';
 
 export interface StackVolumesResponse {
-  volumes: Volume[];
+  volumes?: Volume[];
 }
