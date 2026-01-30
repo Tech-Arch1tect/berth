@@ -43,8 +43,11 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 		userInfos[i] = dto.ConvertUserToUserInfo(user, h.totpSvc)
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"users": userInfos,
+	return c.JSON(http.StatusOK, ListUsersResponse{
+		Success: true,
+		Data: ListUsersResponseData{
+			Users: userInfos,
+		},
 	})
 }
 
@@ -150,9 +153,12 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 		}
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"user":      userInfo,
-		"all_roles": roleInfos,
+	return c.JSON(http.StatusOK, GetUserRolesResponse{
+		Success: true,
+		Data: GetUserRolesResponseData{
+			User:     userInfo,
+			AllRoles: roleInfos,
+		},
 	})
 }
 

@@ -112,3 +112,22 @@ type ListRolesResponse struct {
 	Success bool                  `json:"success"`
 	Data    ListRolesResponseData `json:"data"`
 }
+
+type ListUsersResponseData struct {
+	Users []dto.UserInfo `json:"users"`
+}
+
+type ListUsersResponse struct {
+	Success bool                  `json:"success"`
+	Data    ListUsersResponseData `json:"data"`
+}
+
+type GetUserRolesResponseData struct {
+	User     dto.UserInfo   `json:"user"`
+	AllRoles []dto.RoleInfo `json:"all_roles"`
+}
+
+type GetUserRolesResponse struct {
+	Success bool                     `json:"success"`
+	Data    GetUserRolesResponseData `json:"data"`
+}

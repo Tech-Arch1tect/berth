@@ -845,6 +845,30 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	// Admin User Management
+	apiDoc.Document("GET", "/api/v1/admin/users").
+		Tags("admin", "users").
+		Summary("List all users").
+		Description("List all users. Requires admin permissions.").
+		Response(http.StatusOK, rbac.ListUsersResponse{}, "List of users").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/users/{id}/roles").
+		Tags("admin", "users").
+		Summary("Get user with roles").
+		Description("Returns user details and all available roles. Requires admin permissions.").
+		PathParam("id", "User ID").TypeInt().Required().
+		Response(http.StatusOK, rbac.GetUserRolesResponse{}, "User with roles").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusNotFound, ErrorResponse{}, "User not found").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/users").
 		Tags("admin", "users").
 		Summary("Create a new user").
