@@ -241,7 +241,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 		}()),
 	)
 
-	return common.SendSuccess(c, StackEnvironmentResponse(environmentVariables))
+	return common.SendSuccess(c, StackEnvironmentResponse{Services: environmentVariables})
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {

@@ -25,7 +25,7 @@ export const useStackEnvironmentVariables = ({
   return {
     ...query,
 
-    data: query.data?.data,
+    data: query.data?.data?.services,
 
     error: query.error ? new Error(String(query.error)) : null,
   };

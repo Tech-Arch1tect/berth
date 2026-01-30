@@ -15,7 +15,7 @@ import type {
   Stack,
   Network,
   Volume,
-  GetApiV1ServersServeridStacksStacknameEnvironment200,
+  StackEnvironmentResponseServices,
   ContainerImageDetails,
   StackPermissionsResponse,
   RawComposeConfig,
@@ -83,7 +83,7 @@ export class StackService {
     serverid: number,
     stackname: string,
     unmask: boolean = false
-  ): Promise<GetApiV1ServersServeridStacksStacknameEnvironment200> {
+  ): Promise<StackEnvironmentResponseServices> {
     try {
       const params = unmask ? { unmask: 'true' } : undefined;
       const response = await getApiV1ServersServeridStacksStacknameEnvironment(
@@ -91,7 +91,7 @@ export class StackService {
         stackname,
         params
       );
-      return response.data || {};
+      return response.data?.services || {};
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {

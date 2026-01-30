@@ -265,7 +265,9 @@ type StackVolumesResponse struct {
 	Volumes []Volume `json:"volumes"`
 }
 
-type StackEnvironmentResponse map[string][]ServiceEnvironment
+type StackEnvironmentResponse struct {
+	Services map[string][]ServiceEnvironment `json:"services"`
+}
 
 type StackImagesResponse struct {
 	Images []ContainerImageDetails `json:"images"`

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type {
-  GetApiV1ServersServeridStacksStacknameEnvironment200,
+  StackEnvironmentResponseServices,
   EnvironmentVariable,
 } from '../../../api/generated/models';
 import { Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -8,7 +8,7 @@ import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 
 interface EnvironmentPanelProps {
-  environment: GetApiV1ServersServeridStacksStacknameEnvironment200;
+  environment: StackEnvironmentResponseServices;
 }
 
 export const EnvironmentPanel: React.FC<EnvironmentPanelProps> = ({ environment }) => {
