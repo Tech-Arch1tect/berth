@@ -7,6 +7,4 @@
  */
 import type { ServiceEnvironment } from './serviceEnvironment';
 
-export type GetApiV1ServersServeridStacksStacknameEnvironment200 = {
-  [key: string]: ServiceEnvironment[];
-};
+export type StackEnvironmentResponseServices = { [key: string]: ServiceEnvironment[] };
