@@ -15,7 +15,7 @@ export interface UserInfo {
   /** @minimum 0 */
   id: number;
   /** @nullable */
-  last_login_at: string | null;
+  last_login_at?: string | null;
   roles?: RoleInfo[];
   totp_enabled: boolean;
   updated_at: string;

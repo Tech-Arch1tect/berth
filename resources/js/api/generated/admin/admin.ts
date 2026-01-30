@@ -43,10 +43,12 @@ import type {
   GetApiV1AdminSecurityAuditLogsParams,
   GetLogAPIResponse,
   GetStatsAPIResponse,
+  GetUserRolesResponse,
   ImportResponse,
   ListLogsAPIResponse,
   ListRoleStackPermissionsResponse,
   ListRolesResponse,
+  ListUsersResponse,
   OperationLogDetail,
   OperationLogStats,
   PaginatedOperationLogs,
@@ -2054,6 +2056,110 @@ export const usePostApiV1AdminServersIdTest = <TError = ErrorResponse | void, TC
   return useMutation(getPostApiV1AdminServersIdTestMutationOptions(options), queryClient);
 };
 /**
+ * List all users. Requires admin permissions.
+ * @summary List all users
+ */
+export const getApiV1AdminUsers = (signal?: AbortSignal) => {
+  return apiClient<ListUsersResponse>({ url: `/api/v1/admin/users`, method: 'GET', signal });
+};
+
+export const getGetApiV1AdminUsersQueryKey = () => {
+  return [`/api/v1/admin/users`] as const;
+};
+
+export const getGetApiV1AdminUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+  TError = ErrorResponse | void,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminUsersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminUsers>>> = ({ signal }) =>
+    getApiV1AdminUsers(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminUsers>>
+>;
+export type GetApiV1AdminUsersQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminUsers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+  TError = ErrorResponse | void,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminUsers>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminUsers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminUsers>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminUsers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List all users
+ */
+
+export function useGetApiV1AdminUsers<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
+  TError = ErrorResponse | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminUsersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * Creates a new user account. Requires admin permissions.
  * @summary Create a new user
  */
@@ -2287,3 +2393,126 @@ export const usePostApiV1AdminUsersRevokeRole = <TError = ErrorResponse | void, 
 > => {
   return useMutation(getPostApiV1AdminUsersRevokeRoleMutationOptions(options), queryClient);
 };
+/**
+ * Returns user details and all available roles. Requires admin permissions.
+ * @summary Get user with roles
+ */
+export const getApiV1AdminUsersIdRoles = (id: number, signal?: AbortSignal) => {
+  return apiClient<GetUserRolesResponse>({
+    url: `/api/v1/admin/users/${id}/roles`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetApiV1AdminUsersIdRolesQueryKey = (id?: number) => {
+  return [`/api/v1/admin/users/${id}/roles`] as const;
+};
+
+export const getGetApiV1AdminUsersIdRolesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+  TError = ErrorResponse | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminUsersIdRolesQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>> = ({
+    signal,
+  }) => getApiV1AdminUsersIdRoles(id, signal);
+
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminUsersIdRolesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>
+>;
+export type GetApiV1AdminUsersIdRolesQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminUsersIdRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+  TError = ErrorResponse | void,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminUsersIdRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+  TError = ErrorResponse | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminUsersIdRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+  TError = ErrorResponse | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get user with roles
+ */
+
+export function useGetApiV1AdminUsersIdRoles<
+  TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
+  TError = ErrorResponse | void,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminUsersIdRolesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
