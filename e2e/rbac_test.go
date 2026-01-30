@@ -26,16 +26,9 @@ type (
 	CreateStackPermissionResponse    = rbac.CreateStackPermissionResponse
 	DeleteStackPermissionResponse    = rbac.DeleteStackPermissionResponse
 	ListRolesResponse                = rbac.ListRolesResponse
+	ListUsersResponse                = rbac.ListUsersResponse
+	GetUserRolesResponse             = rbac.GetUserRolesResponse
 )
-
-type UsersListResponse struct {
-	Users []UserInfo `json:"users"`
-}
-
-type UserRolesResponse struct {
-	User     UserInfo   `json:"user"`
-	AllRoles []RoleInfo `json:"all_roles"`
-}
 
 type PermissionsListResponse struct {
 	Permissions []PermissionInfo `json:"permissions"`
@@ -81,9 +74,9 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var usersResp UsersListResponse
+		var usersResp ListUsersResponse
 		require.NoError(t, resp.GetJSON(&usersResp))
-		assert.NotEmpty(t, usersResp.Users)
+		assert.NotEmpty(t, usersResp.Data.Users)
 	})
 
 	var createdUserID uint
@@ -147,10 +140,10 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var rolesResp UserRolesResponse
+		var rolesResp GetUserRolesResponse
 		require.NoError(t, resp.GetJSON(&rolesResp))
-		assert.Equal(t, "testcreateduser", rolesResp.User.Username)
-		assert.NotEmpty(t, rolesResp.AllRoles)
+		assert.Equal(t, "testcreateduser", rolesResp.Data.User.Username)
+		assert.NotEmpty(t, rolesResp.Data.AllRoles)
 	})
 
 	t.Run("GET /api/v1/admin/users/:id/roles returns 404 for non-existent user", func(t *testing.T) {
