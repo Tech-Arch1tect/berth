@@ -5,9 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { LogsData } from './logsData';
+import type { LogEntry } from './logEntry';
 
-export interface LogsResponse {
-  data: LogsData;
-  success: boolean;
+export interface LogsData {
+  logs: LogEntry[];
 }

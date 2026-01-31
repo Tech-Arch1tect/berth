@@ -21,9 +21,9 @@ import type {
 import type {
   ErrorResponse,
   GetApiV1OperationLogsParams,
-  OperationLogDetail,
-  OperationLogStats,
-  PaginatedOperationLogs,
+  OperationLogDetailResponse,
+  OperationLogStatsResponse,
+  PaginatedOperationLogsResponse,
   RunningOperationsResponse,
 } from '.././models';
 
@@ -37,7 +37,7 @@ export const getApiV1OperationLogs = (
   params?: GetApiV1OperationLogsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<PaginatedOperationLogs>({
+  return apiClient<PaginatedOperationLogsResponse>({
     url: `/api/v1/operation-logs`,
     method: 'GET',
     params,
@@ -164,7 +164,7 @@ export const getApiV1OperationLogsByOperationIdOperationId = (
   operationId: string,
   signal?: AbortSignal
 ) => {
-  return apiClient<OperationLogDetail>({
+  return apiClient<OperationLogDetailResponse>({
     url: `/api/v1/operation-logs/by-operation-id/${operationId}`,
     method: 'GET',
     signal,
@@ -312,7 +312,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
  * @summary Get user's operation logs statistics
  */
 export const getApiV1OperationLogsStats = (signal?: AbortSignal) => {
-  return apiClient<OperationLogStats>({
+  return apiClient<OperationLogStatsResponse>({
     url: `/api/v1/operation-logs/stats`,
     method: 'GET',
     signal,
@@ -429,7 +429,7 @@ export function useGetApiV1OperationLogsStats<
  * @summary Get operation log details
  */
 export const getApiV1OperationLogsId = (id: number, signal?: AbortSignal) => {
-  return apiClient<OperationLogDetail>({
+  return apiClient<OperationLogDetailResponse>({
     url: `/api/v1/operation-logs/${id}`,
     method: 'GET',
     signal,

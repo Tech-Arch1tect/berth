@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"berth/handlers"
+	"berth/internal/dto"
+	"berth/internal/logs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,39 +14,6 @@ import (
 
 type OperationStartResponse struct {
 	OperationID string `json:"operationId"`
-}
-
-type OperationLogStats struct {
-	TotalOperations      int64 `json:"total_operations"`
-	IncompleteOperations int64 `json:"incomplete_operations"`
-	FailedOperations     int64 `json:"failed_operations"`
-	SuccessfulOperations int64 `json:"successful_operations"`
-	RecentOperations     int64 `json:"recent_operations"`
-}
-
-type PaginatedOperationLogs struct {
-	Data       []map[string]interface{} `json:"data"`
-	Pagination struct {
-		CurrentPage int   `json:"current_page"`
-		PageSize    int   `json:"page_size"`
-		Total       int64 `json:"total"`
-		TotalPages  int   `json:"total_pages"`
-		HasNext     bool  `json:"has_next"`
-		HasPrev     bool  `json:"has_prev"`
-	} `json:"pagination"`
-}
-
-type OperationLogDetail struct {
-	Log      map[string]interface{}   `json:"log"`
-	Messages []map[string]interface{} `json:"messages"`
-}
-
-type LogsResponse struct {
-	Logs []struct {
-		Timestamp string `json:"timestamp"`
-		Message   string `json:"message"`
-		Source    string `json:"source"`
-	} `json:"logs"`
 }
 
 func TestOperationsEndpointsJWT(t *testing.T) {
@@ -128,9 +97,10 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logs PaginatedOperationLogs
-		require.NoError(t, resp.GetJSON(&logs))
-		assert.GreaterOrEqual(t, logs.Pagination.CurrentPage, 1)
+		var logsResp dto.PaginatedOperationLogsResponse
+		require.NoError(t, resp.GetJSON(&logsResp))
+		assert.True(t, logsResp.Success)
+		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
 	})
 
 	t.Run("GET /api/v1/operation-logs/stats returns user stats", func(t *testing.T) {
@@ -145,9 +115,10 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stats OperationLogStats
-		require.NoError(t, resp.GetJSON(&stats))
-		assert.GreaterOrEqual(t, stats.TotalOperations, int64(0))
+		var statsResp dto.OperationLogStatsResponse
+		require.NoError(t, resp.GetJSON(&statsResp))
+		assert.True(t, statsResp.Success)
+		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))
 	})
 
 	t.Run("GET /api/v1/running-operations returns running operations", func(t *testing.T) {
@@ -175,9 +146,10 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logs LogsResponse
-		require.NoError(t, resp.GetJSON(&logs))
-		assert.NotEmpty(t, logs.Logs)
+		var logsResp logs.LogsResponse
+		require.NoError(t, resp.GetJSON(&logsResp))
+		assert.True(t, logsResp.Success)
+		assert.NotEmpty(t, logsResp.Data.Logs)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs returns container logs", func(t *testing.T) {
@@ -227,9 +199,10 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logs PaginatedOperationLogs
-		require.NoError(t, resp.GetJSON(&logs))
-		assert.GreaterOrEqual(t, logs.Pagination.CurrentPage, 1)
+		var logsResp dto.PaginatedOperationLogsResponse
+		require.NoError(t, resp.GetJSON(&logsResp))
+		assert.True(t, logsResp.Success)
+		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
 	})
 
 	t.Run("GET /api/v1/admin/operation-logs/stats returns global stats", func(t *testing.T) {
@@ -244,9 +217,10 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stats OperationLogStats
-		require.NoError(t, resp.GetJSON(&stats))
-		assert.GreaterOrEqual(t, stats.TotalOperations, int64(0))
+		var statsResp dto.OperationLogStatsResponse
+		require.NoError(t, resp.GetJSON(&statsResp))
+		assert.True(t, statsResp.Success)
+		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))
 	})
 }
 

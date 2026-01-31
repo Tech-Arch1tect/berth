@@ -50,11 +50,16 @@ type LogRequest struct {
 	Timestamps    bool
 }
 
-type LogsResponse struct {
+type LogsData struct {
 	Logs []LogEntry `json:"logs"`
 }
 
-func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsResponse, error) {
+type LogsResponse struct {
+	Success bool     `json:"success"`
+	Data    LogsData `json:"data"`
+}
+
+func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsData, error) {
 	s.logger.Debug("retrieving stack logs",
 		zap.Uint("user_id", req.UserID),
 		zap.Uint("server_id", req.ServerID),
@@ -101,7 +106,7 @@ func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsRespon
 	return response, nil
 }
 
-func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsResponse, error) {
+func (s *Service) GetContainerLogs(ctx context.Context, req LogRequest) (*LogsData, error) {
 	s.logger.Debug("retrieving container logs",
 		zap.Uint("user_id", req.UserID),
 		zap.Uint("server_id", req.ServerID),
@@ -190,7 +195,7 @@ func (s *Service) validateAccess(ctx context.Context, userID, serverID uint, sta
 	return nil
 }
 
-func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server, endpoint string, req LogRequest) (*LogsResponse, error) {
+func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server, endpoint string, req LogRequest) (*LogsData, error) {
 	params := url.Values{}
 
 	if req.Tail > 0 {
@@ -233,8 +238,8 @@ func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
 	}
 
-	var logsResponse LogsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&logsResponse); err != nil {
+	var logsData LogsData
+	if err := json.NewDecoder(resp.Body).Decode(&logsData); err != nil {
 		s.logger.Error("failed to decode logs response",
 			zap.Error(err),
 			zap.String("endpoint", fullEndpoint),
@@ -244,8 +249,8 @@ func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server
 
 	s.logger.Debug("logs response decoded successfully",
 		zap.String("endpoint", fullEndpoint),
-		zap.Int("log_entries", len(logsResponse.Logs)),
+		zap.Int("log_entries", len(logsData.Logs)),
 	)
 
-	return &logsResponse, nil
+	return &logsData, nil
 }

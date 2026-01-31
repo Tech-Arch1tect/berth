@@ -9,7 +9,7 @@ import type { DeletedAt } from './deletedAt';
 import type { Server } from './server';
 import type { User } from './user';
 
-export interface OperationLogResponse {
+export interface OperationLogInfo {
   command: string;
   created_at: string;
   deleted_at?: DeletedAt;

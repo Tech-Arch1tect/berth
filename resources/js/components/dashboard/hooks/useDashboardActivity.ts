@@ -1,9 +1,9 @@
 import { useGetApiV1OperationLogs } from '../../../api/generated/operation-logs/operation-logs';
-import type { OperationLogResponse } from '../../../api/generated/models';
+import type { OperationLogInfo } from '../../../api/generated/models';
 
 export interface ActivitySummary {
-  recentOperations: OperationLogResponse[];
-  failedOperations: OperationLogResponse[];
+  recentOperations: OperationLogInfo[];
+  failedOperations: OperationLogInfo[];
   loading: boolean;
   error: string | null;
 }
@@ -30,8 +30,8 @@ export const useDashboardActivity = (): ActivitySummary => {
     days_back: 7,
   });
 
-  const recentOperations = recentResponse?.data?.data ?? [];
-  const failedOperations = failedResponse?.data?.data ?? [];
+  const recentOperations = recentResponse?.data?.data?.data ?? [];
+  const failedOperations = failedResponse?.data?.data?.data ?? [];
   const loading = recentLoading || failedLoading;
   const error = recentError || failedError ? 'Failed to load activity data' : null;
 

@@ -134,7 +134,7 @@ export const useOperations = ({
                 onOperationComplete(
                   message.success || false,
                   message.exitCode,
-                  response.data?.log?.summary || undefined
+                  response.data?.data?.log?.summary || undefined
                 );
               })
               .catch(() => {

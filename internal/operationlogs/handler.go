@@ -75,7 +75,10 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation logs")
 	}
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, dto.PaginatedOperationLogsResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *Handler) ListUserOperationLogs(c echo.Context) error {
@@ -101,7 +104,10 @@ func (h *Handler) ListUserOperationLogs(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation logs")
 	}
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, dto.PaginatedOperationLogsResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *Handler) GetOperationLogDetails(c echo.Context) error {
@@ -119,7 +125,10 @@ func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, dto.OperationLogDetailResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
@@ -142,7 +151,10 @@ func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, dto.OperationLogDetailResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *Handler) GetOperationLogsStats(c echo.Context) error {
@@ -152,7 +164,10 @@ func (h *Handler) GetOperationLogsStats(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return common.SendSuccess(c, stats)
+	return common.SendSuccess(c, dto.OperationLogStatsResponse{
+		Success: true,
+		Data:    *stats,
+	})
 }
 
 func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
@@ -167,7 +182,10 @@ func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return common.SendSuccess(c, stats)
+	return common.SendSuccess(c, dto.OperationLogStatsResponse{
+		Success: true,
+		Data:    *stats,
+	})
 }
 
 func (h *Handler) GetRunningOperations(c echo.Context) error {
@@ -182,7 +200,12 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve running operations")
 	}
 
-	return common.SendSuccess(c, dto.RunningOperationsResponse{Operations: operations})
+	return common.SendSuccess(c, dto.RunningOperationsResponse{
+		Success: true,
+		Data: dto.RunningOperationsData{
+			Operations: operations,
+		},
+	})
 }
 
 func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
@@ -205,5 +228,8 @@ func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return common.SendSuccess(c, result)
+	return common.SendSuccess(c, dto.OperationLogDetailResponse{
+		Success: true,
+		Data:    *result,
+	})
 }

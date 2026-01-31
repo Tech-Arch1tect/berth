@@ -10,9 +10,9 @@ import {
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
 import type {
-  OperationLogResponse,
+  OperationLogInfo,
   PaginationInfo,
-  OperationLogDetail,
+  OperationLogDetailData,
 } from '../../../api/generated/models';
 import { OperationDetailPanel } from '../panels/OperationDetailPanel';
 
@@ -22,13 +22,13 @@ const DETAIL_PANEL_DEFAULT_WIDTH = 400;
 const DETAIL_PANEL_STORAGE_KEY = 'berth-operation-logs-detail-width';
 
 interface OperationLogsContentProps {
-  logs: OperationLogResponse[];
+  logs: OperationLogInfo[];
   loading: boolean;
   pagination: PaginationInfo | null;
   currentPage: number;
   showUser?: boolean;
   onPageChange: (page: number) => void;
-  onFetchDetail: (logId: number) => Promise<OperationLogDetail | null>;
+  onFetchDetail: (logId: number) => Promise<OperationLogDetailData | null>;
 }
 
 const formatDuration = (duration: number | null, isPartial: boolean = false) => {
@@ -44,7 +44,7 @@ const formatDuration = (duration: number | null, isPartial: boolean = false) => 
   return isPartial ? `~${formattedTime}` : formattedTime;
 };
 
-const getOperationDuration = (log: OperationLogResponse) => {
+const getOperationDuration = (log: OperationLogInfo) => {
   if (log.duration_ms !== null && log.duration_ms !== undefined) {
     return formatDuration(log.duration_ms, false);
   } else if (log.partial_duration_ms !== null && log.partial_duration_ms !== undefined) {
@@ -99,7 +99,7 @@ const TriggerBadge: React.FC<{ triggerSource: string }> = ({ triggerSource }) =>
   );
 };
 
-const StatusBadge: React.FC<{ log: OperationLogResponse }> = ({ log }) => {
+const StatusBadge: React.FC<{ log: OperationLogInfo }> = ({ log }) => {
   if (log.is_incomplete) {
     return (
       <span
@@ -152,7 +152,7 @@ const StatusBadge: React.FC<{ log: OperationLogResponse }> = ({ log }) => {
 };
 
 const OperationRow: React.FC<{
-  log: OperationLogResponse;
+  log: OperationLogInfo;
   isSelected: boolean;
   showUser: boolean;
   onClick: () => void;
@@ -213,7 +213,7 @@ export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
   onFetchDetail,
 }) => {
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<OperationLogDetail | null>(null);
+  const [detail, setDetail] = useState<OperationLogDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailPanelWidth, setDetailPanelWidth] = useState(() => {
     const stored = localStorage.getItem(DETAIL_PANEL_STORAGE_KEY);

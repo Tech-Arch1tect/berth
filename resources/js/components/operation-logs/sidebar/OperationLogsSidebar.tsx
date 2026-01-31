@@ -13,10 +13,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { OperationLogStats } from '../../../api/generated/models';
+import type { OperationLogStatsData } from '../../../api/generated/models';
 
 interface OperationLogsSidebarProps {
-  stats: OperationLogStats | null;
+  stats: OperationLogStatsData | null;
   selectedStatus: string;
   selectedCommand: string;
   onStatusChange: (status: string) => void;

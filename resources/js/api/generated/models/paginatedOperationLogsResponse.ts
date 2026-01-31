@@ -5,9 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { LogsData } from './logsData';
+import type { PaginatedOperationLogsData } from './paginatedOperationLogsData';
 
-export interface LogsResponse {
-  data: LogsData;
+export interface PaginatedOperationLogsResponse {
+  data: PaginatedOperationLogsData;
   success: boolean;
 }

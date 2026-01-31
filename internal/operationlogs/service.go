@@ -45,7 +45,7 @@ func (s *Service) calculatePartialDuration(log models.OperationLog) *int {
 	return &duration
 }
 
-func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.PaginatedOperationLogs, error) {
+func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.PaginatedOperationLogsData, error) {
 	offset := (params.Page - 1) * params.PageSize
 
 	query := s.db.Model(&models.OperationLog{}).
@@ -102,7 +102,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 		return nil, err
 	}
 
-	var response []dto.OperationLogResponse
+	var response []dto.OperationLogInfo
 	for _, log := range logs {
 		var messageCount int64
 		s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
@@ -123,7 +123,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 
 		partialDuration := s.calculatePartialDuration(log)
 
-		response = append(response, dto.OperationLogResponse{
+		response = append(response, dto.OperationLogInfo{
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,
@@ -137,7 +137,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 
 	totalPages := (int(total) + params.PageSize - 1) / params.PageSize
 
-	return &dto.PaginatedOperationLogs{
+	return &dto.PaginatedOperationLogsData{
 		Data: response,
 		Pagination: dto.PaginationInfo{
 			CurrentPage: params.Page,
@@ -150,7 +150,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*dto.Pagina
 	}, nil
 }
 
-func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.OperationLogDetail, error) {
+func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.OperationLogDetailData, error) {
 	query := s.db.Preload("User").Preload("Server")
 
 	if userID != nil {
@@ -190,8 +190,8 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.Operati
 
 	partialDuration := s.calculatePartialDuration(log)
 
-	return &dto.OperationLogDetail{
-		Log: dto.OperationLogResponse{
+	return &dto.OperationLogDetailData{
+		Log: dto.OperationLogInfo{
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,
@@ -205,7 +205,7 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*dto.Operati
 	}, nil
 }
 
-func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID *uint) (*dto.OperationLogDetail, error) {
+func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID *uint) (*dto.OperationLogDetailData, error) {
 	query := s.db.Preload("User").Preload("Server").Where("operation_id = ?", operationID)
 
 	if userID != nil {
@@ -245,8 +245,8 @@ func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID
 
 	partialDuration := s.calculatePartialDuration(log)
 
-	return &dto.OperationLogDetail{
-		Log: dto.OperationLogResponse{
+	return &dto.OperationLogDetailData{
+		Log: dto.OperationLogInfo{
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,
@@ -260,8 +260,8 @@ func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID
 	}, nil
 }
 
-func (s *Service) GetOperationLogsStats() (*dto.OperationLogStats, error) {
-	var stats dto.OperationLogStats
+func (s *Service) GetOperationLogsStats() (*dto.OperationLogStatsData, error) {
+	var stats dto.OperationLogStatsData
 
 	if err := s.db.Model(&models.OperationLog{}).Count(&stats.TotalOperations).Error; err != nil {
 		s.logger.Error("failed to count total operations", zap.Error(err))
@@ -292,8 +292,8 @@ func (s *Service) GetOperationLogsStats() (*dto.OperationLogStats, error) {
 	return &stats, nil
 }
 
-func (s *Service) GetUserOperationLogsStats(userID uint) (*dto.OperationLogStats, error) {
-	var stats dto.OperationLogStats
+func (s *Service) GetUserOperationLogsStats(userID uint) (*dto.OperationLogStatsData, error) {
+	var stats dto.OperationLogStatsData
 
 	if err := s.db.Model(&models.OperationLog{}).Where("user_id = ?", userID).Count(&stats.TotalOperations).Error; err != nil {
 		s.logger.Error("failed to count user total operations", zap.Error(err), zap.Uint("user_id", userID))
@@ -324,7 +324,7 @@ func (s *Service) GetUserOperationLogsStats(userID uint) (*dto.OperationLogStats
 	return &stats, nil
 }
 
-func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogResponse, error) {
+func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogInfo, error) {
 	heartbeatTimeout := time.Now().Add(-5 * time.Minute)
 
 	var logs []models.OperationLog
@@ -342,7 +342,7 @@ func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogResponse,
 		return nil, err
 	}
 
-	response := make([]dto.OperationLogResponse, 0)
+	response := make([]dto.OperationLogInfo, 0)
 	for _, log := range logs {
 		var messageCount int64
 		s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
@@ -361,7 +361,7 @@ func (s *Service) GetRunningOperations(userID uint) ([]dto.OperationLogResponse,
 
 		partialDuration := s.calculatePartialDuration(log)
 
-		response = append(response, dto.OperationLogResponse{
+		response = append(response, dto.OperationLogInfo{
 			OperationLog:    log,
 			UserName:        userName,
 			ServerName:      serverName,

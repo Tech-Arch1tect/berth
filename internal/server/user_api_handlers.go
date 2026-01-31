@@ -14,8 +14,8 @@ type UserAPIHandler struct {
 }
 
 type ListServersResponse struct {
-	Success bool                     `json:"success"`
-	Data    ListServersResponseData  `json:"data"`
+	Success bool                    `json:"success"`
+	Data    ListServersResponseData `json:"data"`
 }
 
 type ListServersResponseData struct {

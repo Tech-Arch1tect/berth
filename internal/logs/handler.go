@@ -38,7 +38,7 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 		Timestamps: h.parseBoolParam(c, "timestamps", true),
 	}
 
-	logs, err := h.service.GetStackLogs(c.Request().Context(), req)
+	logsData, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
 			return common.SendForbidden(c, err.Error())
@@ -49,7 +49,10 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, logs)
+	return common.SendSuccess(c, LogsResponse{
+		Success: true,
+		Data:    *logsData,
+	})
 }
 
 func (h *Handler) GetContainerLogs(c echo.Context) error {
@@ -78,7 +81,7 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 		Timestamps:    h.parseBoolParam(c, "timestamps", true),
 	}
 
-	logs, err := h.service.GetContainerLogs(c.Request().Context(), req)
+	logsData, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
 			return common.SendForbidden(c, err.Error())
@@ -89,7 +92,10 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, logs)
+	return common.SendSuccess(c, LogsResponse{
+		Success: true,
+		Data:    *logsData,
+	})
 }
 
 func (h *Handler) parseIntParam(c echo.Context, param string, defaultValue int) int {

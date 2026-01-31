@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface OperationLogStats {
+export interface OperationLogStatsData {
   failed_operations: number;
   incomplete_operations: number;
   recent_operations: number;

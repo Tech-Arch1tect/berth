@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"berth/handlers"
+	"berth/internal/logs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -77,10 +78,11 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logs LogsResponse
-		require.NoError(t, resp.GetJSON(&logs))
-		assert.NotEmpty(t, logs.Logs)
-		assert.Equal(t, 2, len(logs.Logs))
+		var logsResp logs.LogsResponse
+		require.NoError(t, resp.GetJSON(&logsResp))
+		assert.True(t, logsResp.Success)
+		assert.NotEmpty(t, logsResp.Data.Logs)
+		assert.Equal(t, 2, len(logsResp.Data.Logs))
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/logs with tail parameter", func(t *testing.T) {
@@ -134,9 +136,10 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logs LogsResponse
-		require.NoError(t, resp.GetJSON(&logs))
-		assert.NotEmpty(t, logs.Logs)
+		var logsResp logs.LogsResponse
+		require.NoError(t, resp.GetJSON(&logsResp))
+		assert.True(t, logsResp.Success)
+		assert.NotEmpty(t, logsResp.Data.Logs)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs with parameters", func(t *testing.T) {

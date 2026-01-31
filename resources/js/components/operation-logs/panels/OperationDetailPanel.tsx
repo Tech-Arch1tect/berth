@@ -13,10 +13,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { OperationLogDetail, OperationLogResponse } from '../../../api/generated/models';
+import type { OperationLogDetailData, OperationLogInfo } from '../../../api/generated/models';
 
 interface OperationDetailPanelProps {
-  detail: OperationLogDetail | null;
+  detail: OperationLogDetailData | null;
   isLoading: boolean;
   showUser?: boolean;
   onClose: () => void;
@@ -45,7 +45,7 @@ const formatDuration = (duration: number | null, isPartial: boolean = false) => 
   return isPartial ? `~${formattedTime}` : formattedTime;
 };
 
-const getOperationDuration = (log: OperationLogResponse) => {
+const getOperationDuration = (log: OperationLogInfo) => {
   if (log.duration_ms !== null && log.duration_ms !== undefined) {
     return formatDuration(log.duration_ms, false);
   } else if (log.partial_duration_ms !== null && log.partial_duration_ms !== undefined) {
@@ -61,7 +61,7 @@ const formatTriggerSource = (triggerSource: string) => {
   return 'Manual';
 };
 
-const StatusBadge: React.FC<{ log: OperationLogResponse }> = ({ log }) => {
+const StatusBadge: React.FC<{ log: OperationLogInfo }> = ({ log }) => {
   if (log.is_incomplete) {
     return (
       <span

@@ -2,7 +2,7 @@ package dto
 
 import "berth/models"
 
-type OperationLogResponse struct {
+type OperationLogInfo struct {
 	models.OperationLog
 	UserName        string `json:"user_name"`
 	ServerName      string `json:"server_name"`
@@ -13,17 +13,27 @@ type OperationLogResponse struct {
 	PartialDuration *int   `json:"partial_duration_ms,omitempty"`
 }
 
-type OperationLogDetail struct {
-	Log      OperationLogResponse         `json:"log"`
+type OperationLogDetailData struct {
+	Log      OperationLogInfo             `json:"log"`
 	Messages []models.OperationLogMessage `json:"messages"`
 }
 
-type OperationLogStats struct {
+type OperationLogDetailResponse struct {
+	Success bool                   `json:"success"`
+	Data    OperationLogDetailData `json:"data"`
+}
+
+type OperationLogStatsData struct {
 	TotalOperations      int64 `json:"total_operations"`
 	IncompleteOperations int64 `json:"incomplete_operations"`
 	FailedOperations     int64 `json:"failed_operations"`
 	SuccessfulOperations int64 `json:"successful_operations"`
 	RecentOperations     int64 `json:"recent_operations"`
+}
+
+type OperationLogStatsResponse struct {
+	Success bool                  `json:"success"`
+	Data    OperationLogStatsData `json:"data"`
 }
 
 type PaginationInfo struct {
@@ -35,11 +45,21 @@ type PaginationInfo struct {
 	HasPrev     bool  `json:"has_prev"`
 }
 
-type PaginatedOperationLogs struct {
-	Data       []OperationLogResponse `json:"data"`
-	Pagination PaginationInfo         `json:"pagination"`
+type PaginatedOperationLogsData struct {
+	Data       []OperationLogInfo `json:"data"`
+	Pagination PaginationInfo     `json:"pagination"`
+}
+
+type PaginatedOperationLogsResponse struct {
+	Success bool                       `json:"success"`
+	Data    PaginatedOperationLogsData `json:"data"`
+}
+
+type RunningOperationsData struct {
+	Operations []OperationLogInfo `json:"operations"`
 }
 
 type RunningOperationsResponse struct {
-	Operations []OperationLogResponse `json:"operations"`
+	Success bool                  `json:"success"`
+	Data    RunningOperationsData `json:"data"`
 }

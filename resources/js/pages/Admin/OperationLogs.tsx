@@ -41,14 +41,14 @@ export default function OperationLogs({ title }: Props) {
   const { data: logsResponse, isLoading: logsLoading } = useGetApiV1AdminOperationLogs(logsParams);
   const { data: statsResponse, isLoading: statsLoading } = useGetApiV1AdminOperationLogsStats();
 
-  const logs = logsResponse?.data?.data ?? [];
-  const pagination = logsResponse?.data?.pagination ?? null;
-  const stats = statsResponse?.data ?? null;
+  const logs = logsResponse?.data?.data?.data ?? [];
+  const pagination = logsResponse?.data?.data?.pagination ?? null;
+  const stats = statsResponse?.data?.data ?? null;
 
   const fetchLogDetail = useCallback(async (logId: number) => {
     try {
       const response = await getApiV1AdminOperationLogsId(logId);
-      return response.data;
+      return response.data?.data ?? null;
     } catch (error) {
       console.error('Failed to fetch operation log details:', error);
       return null;

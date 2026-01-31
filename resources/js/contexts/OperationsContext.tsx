@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { StreamMessage } from '../types/operations';
 import StorageManager from '../utils/storage';
 import { getApiV1RunningOperations } from '../api/generated/operation-logs/operation-logs';
-import type { OperationLogResponse } from '../api/generated/models';
+import type { OperationLogInfo } from '../api/generated/models';
 
-type RunningOperation = OperationLogResponse;
+type RunningOperation = OperationLogInfo;
 
 export interface NewOperationInput {
   operation_id: string;
@@ -155,12 +155,14 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchRunningOperations = useCallback(async () => {
     try {
       const response = await getApiV1RunningOperations();
-      const operations = response.data?.operations ?? [];
+      const operations = response.data?.data?.operations ?? [];
 
       setOperationStates((prev) => {
         const newMap = new Map(prev);
 
-        const serverOperationIds = new Set(operations.map((op) => op.operation_id));
+        const serverOperationIds = new Set(
+          operations.map((op: OperationLogInfo) => op.operation_id)
+        );
 
         for (const [opId, state] of newMap.entries()) {
           if (!serverOperationIds.has(opId) && state.operation.is_incomplete) {
@@ -170,7 +172,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
         }
 
-        operations.forEach((serverOp) => {
+        operations.forEach((serverOp: OperationLogInfo) => {
           const existing = newMap.get(serverOp.operation_id);
 
           if (existing) {

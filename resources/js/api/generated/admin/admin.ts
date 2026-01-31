@@ -49,9 +49,9 @@ import type {
   ListRoleStackPermissionsResponse,
   ListRolesResponse,
   ListUsersResponse,
-  OperationLogDetail,
-  OperationLogStats,
-  PaginatedOperationLogs,
+  OperationLogDetailResponse,
+  OperationLogStatsResponse,
+  PaginatedOperationLogsResponse,
   PostApiV1AdminMigrationImportBody,
   RevokeRoleRequest,
   RevokeRoleResponse,
@@ -234,7 +234,7 @@ export const getApiV1AdminOperationLogs = (
   params?: GetApiV1AdminOperationLogsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<PaginatedOperationLogs>({
+  return apiClient<PaginatedOperationLogsResponse>({
     url: `/api/v1/admin/operation-logs`,
     method: 'GET',
     params,
@@ -361,7 +361,7 @@ export function useGetApiV1AdminOperationLogs<
  * @summary Get operation logs statistics
  */
 export const getApiV1AdminOperationLogsStats = (signal?: AbortSignal) => {
-  return apiClient<OperationLogStats>({
+  return apiClient<OperationLogStatsResponse>({
     url: `/api/v1/admin/operation-logs/stats`,
     method: 'GET',
     signal,
@@ -478,7 +478,7 @@ export function useGetApiV1AdminOperationLogsStats<
  * @summary Get operation log details
  */
 export const getApiV1AdminOperationLogsId = (id: number, signal?: AbortSignal) => {
-  return apiClient<OperationLogDetail>({
+  return apiClient<OperationLogDetailResponse>({
     url: `/api/v1/admin/operation-logs/${id}`,
     method: 'GET',
     signal,

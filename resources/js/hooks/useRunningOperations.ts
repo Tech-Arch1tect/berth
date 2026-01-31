@@ -20,7 +20,7 @@ export const useRunningOperations = () => {
     },
   });
 
-  const operations = response?.data?.operations ?? [];
+  const operations = response?.data?.data?.operations ?? [];
   const error = queryError ? 'Failed to fetch running operations' : null;
 
   const removeOperation = useCallback(
@@ -28,13 +28,18 @@ export const useRunningOperations = () => {
       const queryKey = getGetApiV1RunningOperationsQueryKey();
 
       queryClient.setQueryData<{ data: RunningOperationsResponse }>(queryKey, (oldData) => {
-        if (!oldData?.data?.operations) return oldData;
+        if (!oldData?.data?.data?.operations) return oldData;
 
         return {
           ...oldData,
           data: {
             ...oldData.data,
-            operations: oldData.data.operations.filter((op) => op.operation_id !== operationId),
+            data: {
+              ...oldData.data.data,
+              operations: oldData.data.data.operations.filter(
+                (op) => op.operation_id !== operationId
+              ),
+            },
           },
         };
       });

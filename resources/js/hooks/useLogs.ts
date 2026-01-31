@@ -68,7 +68,7 @@ export const useLogs = ({ serverid, stackname, containerName }: UseLogsOptions):
             )
           : await getApiV1ServersServeridStacksStacknameLogs(serverid, stackname, params);
 
-        const newLogs = response.data.logs || [];
+        const newLogs = response.data.data?.logs || [];
 
         setLogs((prevLogs) => {
           if (incremental && prevLogs.length > 0) {
