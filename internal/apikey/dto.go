@@ -14,32 +14,36 @@ type AddScopeRequest struct {
 }
 
 type ListAPIKeysResponse struct {
-	Success bool                    `json:"success"`
-	Data    []models.APIKeyResponse `json:"data"`
+	Success bool                `json:"success"`
+	Data    []models.APIKeyInfo `json:"data"`
 }
 
 type GetAPIKeyResponse struct {
-	Success bool                  `json:"success"`
-	Data    models.APIKeyResponse `json:"data"`
+	Success bool              `json:"success"`
+	Data    models.APIKeyInfo `json:"data"`
 }
 
 type CreateAPIKeyResponseData struct {
-	APIKey   models.APIKeyResponse `json:"api_key"`
-	PlainKey string                `json:"plain_key"`
+	Message  string            `json:"message,omitempty"`
+	APIKey   models.APIKeyInfo `json:"api_key"`
+	PlainKey string            `json:"plain_key"`
 }
 
 type CreateAPIKeyResponse struct {
 	Success bool                     `json:"success"`
-	Message string                   `json:"message,omitempty"`
 	Data    CreateAPIKeyResponseData `json:"data"`
 }
 
 type ListScopesResponse struct {
-	Success bool                         `json:"success"`
-	Data    []models.APIKeyScopeResponse `json:"data"`
+	Success bool                     `json:"success"`
+	Data    []models.APIKeyScopeInfo `json:"data"`
+}
+
+type MessageData struct {
+	Message string `json:"message"`
 }
 
 type MessageResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }

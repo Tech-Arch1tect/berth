@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface APIKeyResponse {
+export interface APIKeyInfo {
   created_at: string;
   /** @nullable */
   expires_at: string | null;

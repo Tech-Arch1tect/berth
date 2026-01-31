@@ -9,6 +9,5 @@ import type { CreateAPIKeyResponseData } from './createAPIKeyResponseData';
 
 export interface CreateAPIKeyResponse {
   data: CreateAPIKeyResponseData;
-  message?: string;
   success: boolean;
 }

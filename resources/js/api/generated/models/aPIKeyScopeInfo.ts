@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface APIKeyScopeResponse {
+export interface APIKeyScopeInfo {
   /** @minimum 0 */
   api_key_id: number;
   created_at: string;

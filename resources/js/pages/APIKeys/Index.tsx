@@ -26,7 +26,7 @@ import {
   getGetApiV1ApiKeysQueryKey,
 } from '../../api/generated/api-keys/api-keys';
 import { useQueryClient } from '@tanstack/react-query';
-import type { APIKeyResponse } from '../../api/generated/models';
+import type { APIKeyInfo } from '../../api/generated/models';
 
 interface NewAPIKeyModal {
   name: string;
@@ -272,7 +272,7 @@ export default function APIKeysIndex() {
           ) : (
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                {apiKeys.map((apiKey: APIKeyResponse) => (
+                {apiKeys.map((apiKey: APIKeyInfo) => (
                   <li key={apiKey.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">

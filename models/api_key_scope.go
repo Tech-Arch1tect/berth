@@ -15,7 +15,7 @@ func (APIKeyScope) TableName() string {
 	return "api_key_scopes"
 }
 
-type APIKeyScopeResponse struct {
+type APIKeyScopeInfo struct {
 	ID           uint   `json:"id"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
@@ -27,8 +27,8 @@ type APIKeyScopeResponse struct {
 	Permission   string `json:"permission"`
 }
 
-func (s *APIKeyScope) ToResponse() APIKeyScopeResponse {
-	resp := APIKeyScopeResponse{
+func (s *APIKeyScope) ToResponse() APIKeyScopeInfo {
+	resp := APIKeyScopeInfo{
 		ID:           s.ID,
 		CreatedAt:    s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:    s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),

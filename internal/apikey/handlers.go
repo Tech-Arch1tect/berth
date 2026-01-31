@@ -53,7 +53,7 @@ func (h *Handler) ListAPIKeys(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve API keys", err)
 	}
 
-	responses := make([]models.APIKeyResponse, len(apiKeys))
+	responses := make([]models.APIKeyInfo, len(apiKeys))
 	for i, key := range apiKeys {
 		responses[i] = key.ToResponse()
 	}
@@ -138,8 +138,8 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, CreateAPIKeyResponse{
 		Success: true,
-		Message: "API key created successfully. Save this key securely - it won't be shown again!",
 		Data: CreateAPIKeyResponseData{
+			Message:  "API key created successfully. Save this key securely - it won't be shown again!",
 			APIKey:   apiKey.ToResponse(),
 			PlainKey: plainKey,
 		},
@@ -186,7 +186,9 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, MessageResponse{
 		Success: true,
-		Message: "API key revoked successfully",
+		Data: MessageData{
+			Message: "API key revoked successfully",
+		},
 	})
 }
 
@@ -206,7 +208,7 @@ func (h *Handler) ListScopes(c echo.Context) error {
 		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
-	responses := make([]models.APIKeyScopeResponse, len(scopes))
+	responses := make([]models.APIKeyScopeInfo, len(scopes))
 	for i, scope := range scopes {
 		responses[i] = scope.ToResponse()
 	}
@@ -278,7 +280,9 @@ func (h *Handler) AddScope(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, MessageResponse{
 		Success: true,
-		Message: "Scope added successfully",
+		Data: MessageData{
+			Message: "Scope added successfully",
+		},
 	})
 }
 
@@ -318,6 +322,8 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, MessageResponse{
 		Success: true,
-		Message: "Scope removed successfully",
+		Data: MessageData{
+			Message: "Scope removed successfully",
+		},
 	})
 }

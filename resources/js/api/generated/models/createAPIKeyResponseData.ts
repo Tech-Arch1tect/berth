@@ -5,9 +5,10 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { APIKeyResponse } from './aPIKeyResponse';
+import type { APIKeyInfo } from './aPIKeyInfo';
 
 export interface CreateAPIKeyResponseData {
-  api_key: APIKeyResponse;
+  api_key: APIKeyInfo;
+  message?: string;
   plain_key: string;
 }

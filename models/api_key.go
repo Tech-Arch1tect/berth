@@ -29,7 +29,7 @@ func (a *APIKey) BeforeDelete(tx *gorm.DB) error {
 	return nil
 }
 
-type APIKeyResponse struct {
+type APIKeyInfo struct {
 	ID         uint    `json:"id"`
 	CreatedAt  string  `json:"created_at"`
 	UpdatedAt  string  `json:"updated_at"`
@@ -41,7 +41,7 @@ type APIKeyResponse struct {
 	ScopeCount int     `json:"scope_count"`
 }
 
-func (a *APIKey) ToResponse() APIKeyResponse {
+func (a *APIKey) ToResponse() APIKeyInfo {
 	var lastUsedAt *string
 	if a.LastUsedAt != nil {
 		formatted := a.LastUsedAt.Format("2006-01-02T15:04:05Z07:00")
@@ -54,7 +54,7 @@ func (a *APIKey) ToResponse() APIKeyResponse {
 		expiresAt = &formatted
 	}
 
-	return APIKeyResponse{
+	return APIKeyInfo{
 		ID:         a.ID,
 		CreatedAt:  a.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:  a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
