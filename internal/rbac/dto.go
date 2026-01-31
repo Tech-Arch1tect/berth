@@ -19,9 +19,13 @@ type AssignRoleRequest struct {
 	RoleID uint `json:"role_id"`
 }
 
-type AssignRoleResponse struct {
-	Success bool   `json:"success"`
+type MessageData struct {
 	Message string `json:"message"`
+}
+
+type AssignRoleResponse struct {
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }
 
 type RevokeRoleRequest struct {
@@ -30,8 +34,8 @@ type RevokeRoleRequest struct {
 }
 
 type RevokeRoleResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }
 
 type CreateRoleRequest struct {
@@ -55,8 +59,8 @@ type UpdateRoleResponse struct {
 }
 
 type DeleteRoleResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }
 
 type ServerInfo struct {
@@ -95,13 +99,13 @@ type CreateStackPermissionRequest struct {
 }
 
 type CreateStackPermissionResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }
 
 type DeleteStackPermissionResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool        `json:"success"`
+	Data    MessageData `json:"data"`
 }
 
 type ListRolesResponseData struct {

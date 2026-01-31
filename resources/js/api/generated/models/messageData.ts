@@ -5,9 +5,7 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { MessageData } from './messageData';
 
-export interface AssignRoleResponse {
-  data: MessageData;
-  success: boolean;
+export interface MessageData {
+  message: string;
 }

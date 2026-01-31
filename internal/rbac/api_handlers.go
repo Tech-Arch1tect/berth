@@ -200,7 +200,7 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, AssignRoleResponse{
 		Success: true,
-		Message: "Role assigned successfully",
+		Data:    MessageData{Message: "Role assigned successfully"},
 	})
 }
 
@@ -242,7 +242,7 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, RevokeRoleResponse{
 		Success: true,
-		Message: "Role revoked successfully",
+		Data:    MessageData{Message: "Role revoked successfully"},
 	})
 }
 
@@ -386,7 +386,7 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, DeleteRoleResponse{
 		Success: true,
-		Message: "Role deleted successfully",
+		Data:    MessageData{Message: "Role deleted successfully"},
 	})
 }
 
@@ -539,7 +539,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, CreateStackPermissionResponse{
 		Success: true,
-		Message: "Role stack permission created successfully",
+		Data:    MessageData{Message: "Role stack permission created successfully"},
 	})
 }
 
@@ -587,7 +587,7 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, DeleteStackPermissionResponse{
 		Success: true,
-		Message: "Role stack permission deleted successfully",
+		Data:    MessageData{Message: "Role stack permission deleted successfully"},
 	})
 }
 

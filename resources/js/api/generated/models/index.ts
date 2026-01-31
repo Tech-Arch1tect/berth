@@ -175,6 +175,7 @@ export * from './logsData';
 export * from './logsResponse';
 export * from './maintenanceInfo';
 export * from './maintenancePermissions';
+export * from './messageData';
 export * from './messageResponse';
 export * from './messageResponse2';
 export * from './network';
