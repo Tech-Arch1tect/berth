@@ -370,6 +370,8 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, DeleteCredentialResponse{
 		Success: true,
-		Message: "Registry credential deleted successfully",
+		Data: DeleteCredentialMessageData{
+			Message: "Registry credential deleted successfully",
+		},
 	})
 }

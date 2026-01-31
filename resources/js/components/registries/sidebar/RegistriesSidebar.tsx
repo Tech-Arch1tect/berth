@@ -2,10 +2,10 @@ import type { FC } from 'react';
 import { KeyIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { RegistryCredentialResponse } from '../../../api/generated/models';
+import type { RegistryCredentialInfo } from '../../../api/generated/models';
 
 interface RegistriesSidebarProps {
-  credentials: RegistryCredentialResponse[];
+  credentials: RegistryCredentialInfo[];
 }
 
 export const RegistriesSidebar: FC<RegistriesSidebarProps> = ({ credentials }) => {

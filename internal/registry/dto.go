@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type RegistryCredentialResponse struct {
+type RegistryCredentialInfo struct {
 	ID           uint      `json:"id"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -22,7 +22,7 @@ type ListCredentialsResponse struct {
 }
 
 type ListCredentialsData struct {
-	Credentials []RegistryCredentialResponse `json:"credentials"`
+	Credentials []RegistryCredentialInfo `json:"credentials"`
 }
 
 type GetCredentialResponse struct {
@@ -31,7 +31,7 @@ type GetCredentialResponse struct {
 }
 
 type GetCredentialData struct {
-	Credential RegistryCredentialResponse `json:"credential"`
+	Credential RegistryCredentialInfo `json:"credential"`
 }
 
 type CreateCredentialResponse struct {
@@ -44,9 +44,13 @@ type UpdateCredentialResponse struct {
 	Data    GetCredentialData `json:"data"`
 }
 
-type DeleteCredentialResponse struct {
-	Success bool   `json:"success"`
+type DeleteCredentialMessageData struct {
 	Message string `json:"message"`
+}
+
+type DeleteCredentialResponse struct {
+	Success bool                        `json:"success"`
+	Data    DeleteCredentialMessageData `json:"data"`
 }
 
 type ErrorResponse struct {
@@ -54,8 +58,8 @@ type ErrorResponse struct {
 	Error   string `json:"error"`
 }
 
-func ToResponse(cred *models.ServerRegistryCredential) RegistryCredentialResponse {
-	return RegistryCredentialResponse{
+func ToResponse(cred *models.ServerRegistryCredential) RegistryCredentialInfo {
+	return RegistryCredentialInfo{
 		ID:           cred.ID,
 		CreatedAt:    cred.CreatedAt,
 		UpdatedAt:    cred.UpdatedAt,
@@ -67,8 +71,8 @@ func ToResponse(cred *models.ServerRegistryCredential) RegistryCredentialRespons
 	}
 }
 
-func ToResponseList(creds []models.ServerRegistryCredential) []RegistryCredentialResponse {
-	result := make([]RegistryCredentialResponse, len(creds))
+func ToResponseList(creds []models.ServerRegistryCredential) []RegistryCredentialInfo {
+	result := make([]RegistryCredentialInfo, len(creds))
 	for i, cred := range creds {
 		result[i] = ToResponse(&cred)
 	}

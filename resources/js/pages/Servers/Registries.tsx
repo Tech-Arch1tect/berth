@@ -18,13 +18,13 @@ import {
   usePutApiV1ServersServeridRegistriesId,
   useDeleteApiV1ServersServeridRegistriesId,
 } from '../../api/generated/registries/registries';
-import type { RegistryCredentialResponse } from '../../api/generated/models';
+import type { RegistryCredentialInfo } from '../../api/generated/models';
 
 interface Props {
   title?: string;
   server_id: number;
   server_name: string;
-  credentials: RegistryCredentialResponse[];
+  credentials: RegistryCredentialInfo[];
 }
 
 export default function Registries({
@@ -34,9 +34,7 @@ export default function Registries({
   credentials,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCredential, setEditingCredential] = useState<RegistryCredentialResponse | null>(
-    null
-  );
+  const [editingCredential, setEditingCredential] = useState<RegistryCredentialInfo | null>(null);
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; url: string } | null>(null);
@@ -112,7 +110,7 @@ export default function Registries({
     }
   };
 
-  const handleEdit = (credential: RegistryCredentialResponse) => {
+  const handleEdit = (credential: RegistryCredentialInfo) => {
     setEditingCredential(credential);
     setShowAddForm(true);
     setFormData({

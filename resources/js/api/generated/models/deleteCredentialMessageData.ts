@@ -5,8 +5,7 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { RegistryCredentialInfo } from './registryCredentialInfo';
 
-export interface ListCredentialsData {
-  credentials: RegistryCredentialInfo[];
+export interface DeleteCredentialMessageData {
+  message: string;
 }

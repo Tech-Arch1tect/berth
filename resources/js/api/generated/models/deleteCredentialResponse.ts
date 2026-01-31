@@ -5,8 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { DeleteCredentialMessageData } from './deleteCredentialMessageData';
 
 export interface DeleteCredentialResponse {
-  message: string;
+  data: DeleteCredentialMessageData;
   success: boolean;
 }

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface RegistryCredentialResponse {
+export interface RegistryCredentialInfo {
   created_at: string;
   /** @minimum 0 */
   id: number;
