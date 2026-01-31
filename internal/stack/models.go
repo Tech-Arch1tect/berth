@@ -250,38 +250,83 @@ type CreateStackRequest struct {
 }
 
 type ListStacksResponse struct {
+	Success bool           `json:"success"`
+	Data    ListStacksData `json:"data"`
+}
+
+type ListStacksData struct {
 	Stacks []Stack `json:"stacks"`
 }
 
 type StackPermissionsResponse struct {
+	Success bool                 `json:"success"`
+	Data    StackPermissionsData `json:"data"`
+}
+
+type StackPermissionsData struct {
 	Permissions []string `json:"permissions"`
 }
 
 type StackNetworksResponse struct {
+	Success bool              `json:"success"`
+	Data    StackNetworksData `json:"data"`
+}
+
+type StackNetworksData struct {
 	Networks []Network `json:"networks"`
 }
 
 type StackVolumesResponse struct {
+	Success bool             `json:"success"`
+	Data    StackVolumesData `json:"data"`
+}
+
+type StackVolumesData struct {
 	Volumes []Volume `json:"volumes,omitempty"`
 }
 
 type StackEnvironmentResponse struct {
+	Success bool                 `json:"success"`
+	Data    StackEnvironmentData `json:"data"`
+}
+
+type StackEnvironmentData struct {
 	Services map[string][]ServiceEnvironment `json:"services"`
 }
 
 type StackImagesResponse struct {
+	Success bool            `json:"success"`
+	Data    StackImagesData `json:"data"`
+}
+
+type StackImagesData struct {
 	Images []ContainerImageDetails `json:"images"`
 }
 
 type StackStatsResponse struct {
+	Success bool           `json:"success"`
+	Data    StackStatsData `json:"data"`
+}
+
+type StackStatsData struct {
 	StackStats
 }
 
 type CanCreateStackResponse struct {
+	Success bool               `json:"success"`
+	Data    CanCreateStackData `json:"data"`
+}
+
+type CanCreateStackData struct {
 	CanCreate bool `json:"canCreate"`
 }
 
 type CreateStackResponse struct {
+	Success bool            `json:"success"`
+	Data    CreateStackData `json:"data"`
+}
+
+type CreateStackData struct {
 	Stack   *Stack `json:"stack"`
 	Message string `json:"message"`
 }

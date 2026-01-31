@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"berth/internal/apikey"
+	"berth/internal/stack"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,12 +97,11 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result struct {
-			Stacks []any `json:"stacks"`
-		}
+		var result stack.ListStacksResponse
 		require.NoError(t, resp.GetJSON(&result))
 
-		assert.NotEmpty(t, result.Stacks, "API key with * scope should see stacks")
+		assert.True(t, result.Success)
+		assert.NotEmpty(t, result.Data.Stacks, "API key with * scope should see stacks")
 	})
 
 	t.Run("API key with specific stack pattern only sees matching stacks", func(t *testing.T) {
@@ -115,17 +115,13 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result struct {
-			Stacks []map[string]any `json:"stacks"`
-		}
+		var result stack.ListStacksResponse
 		require.NoError(t, resp.GetJSON(&result))
 
-		assert.NotEmpty(t, result.Stacks, "Should see at least one stack")
-		for _, stack := range result.Stacks {
-			name, ok := stack["name"].(string)
-			if ok {
-				assert.Contains(t, name, "test-", "API key with test-* pattern should only see test-* stacks, got: %s", name)
-			}
+		assert.True(t, result.Success)
+		assert.NotEmpty(t, result.Data.Stacks, "Should see at least one stack")
+		for _, s := range result.Data.Stacks {
+			assert.Contains(t, s.Name, "test-", "API key with test-* pattern should only see test-* stacks, got: %s", s.Name)
 		}
 	})
 
@@ -222,12 +218,11 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result struct {
-			Stacks []any `json:"stacks"`
-		}
+		var result stack.ListStacksResponse
 		require.NoError(t, resp.GetJSON(&result))
 
-		assert.NotEmpty(t, result.Stacks, "API key with null server_id should see stacks on any server")
+		assert.True(t, result.Success)
+		assert.NotEmpty(t, result.Data.Stacks, "API key with null server_id should see stacks on any server")
 	})
 
 	t.Run("API key permissions endpoint reflects scope-filtered permissions", func(t *testing.T) {
@@ -242,15 +237,14 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result struct {
-			Permissions []string `json:"permissions"`
-		}
+		var result stack.StackPermissionsResponse
 		require.NoError(t, resp.GetJSON(&result))
 
-		if len(result.Permissions) > 0 {
-			assert.Contains(t, result.Permissions, "stacks.read", "Should have stacks.read permission")
+		assert.True(t, result.Success)
+		if len(result.Data.Permissions) > 0 {
+			assert.Contains(t, result.Data.Permissions, "stacks.read", "Should have stacks.read permission")
 
-			for _, perm := range result.Permissions {
+			for _, perm := range result.Data.Permissions {
 				assert.NotEqual(t, "stacks.manage", perm, "Should not have stacks.manage permission when key only has read scope")
 			}
 		}

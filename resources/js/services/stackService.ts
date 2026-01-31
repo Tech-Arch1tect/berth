@@ -15,9 +15,9 @@ import type {
   Stack,
   Network,
   Volume,
-  StackEnvironmentResponseServices,
+  StackEnvironmentData,
   ContainerImageDetails,
-  StackPermissionsResponse,
+  StackPermissionsData,
   RawComposeConfig,
   UpdateComposeRequest,
   UpdateComposeResponse,
@@ -27,8 +27,8 @@ export class StackService {
   static async getServerStacks(serverid: number): Promise<Stack[]> {
     try {
       const response = await getApiV1ServersServeridStacks(serverid);
-      const stacks = response.data.stacks || [];
-      return stacks.sort((a, b) => a.name.localeCompare(b.name));
+      const stacks = response.data.data?.stacks || [];
+      return stacks.sort((a: Stack, b: Stack) => a.name.localeCompare(b.name));
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -46,7 +46,7 @@ export class StackService {
   static async getStackNetworks(serverid: number, stackname: string): Promise<Network[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname);
-      return response.data.networks || [];
+      return response.data.data?.networks || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -64,7 +64,7 @@ export class StackService {
   static async getStackVolumes(serverid: number, stackname: string): Promise<Volume[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname);
-      return response.data.volumes || [];
+      return response.data.data?.volumes || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -83,7 +83,7 @@ export class StackService {
     serverid: number,
     stackname: string,
     unmask: boolean = false
-  ): Promise<StackEnvironmentResponseServices> {
+  ): Promise<StackEnvironmentData['services']> {
     try {
       const params = unmask ? { unmask: 'true' } : undefined;
       const response = await getApiV1ServersServeridStacksStacknameEnvironment(
@@ -91,7 +91,7 @@ export class StackService {
         stackname,
         params
       );
-      return response.data?.services || {};
+      return response.data.data?.services || {};
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -109,10 +109,10 @@ export class StackService {
   static async getStackPermissions(
     serverid: number,
     stackname: string
-  ): Promise<StackPermissionsResponse> {
+  ): Promise<StackPermissionsData> {
     try {
       const response = await getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -133,7 +133,7 @@ export class StackService {
   ): Promise<ContainerImageDetails[]> {
     try {
       const response = await getApiV1ServersServeridStacksStacknameImages(serverid, stackname);
-      return response.data.images || [];
+      return response.data.data?.images || [];
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -195,10 +195,10 @@ export class StackService {
   static async createStack(serverid: number, name: string): Promise<Stack> {
     try {
       const response = await postApiV1ServersServeridStacks(serverid, { name });
-      if (!response.data.stack) {
+      if (!response.data.data?.stack) {
         throw new Error('Failed to create stack: no stack data returned');
       }
-      return response.data.stack;
+      return response.data.data.stack;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {
@@ -216,7 +216,7 @@ export class StackService {
   static async canCreateStack(serverid: number): Promise<boolean> {
     try {
       const response = await getApiV1ServersServeridStacksCanCreate(serverid);
-      return response.data.canCreate ?? false;
+      return response.data.data?.canCreate ?? false;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 403) {

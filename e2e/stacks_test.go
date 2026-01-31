@@ -4,41 +4,12 @@ import (
 	"testing"
 
 	"berth/handlers"
+	"berth/internal/stack"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
-
-type StackResponse struct {
-	Name              string `json:"name"`
-	Path              string `json:"path"`
-	ComposeFile       string `json:"compose_file"`
-	ServerID          uint   `json:"server_id"`
-	ServerName        string `json:"server_name"`
-	IsHealthy         bool   `json:"is_healthy"`
-	TotalContainers   int    `json:"total_containers"`
-	RunningContainers int    `json:"running_containers"`
-}
-
-type StacksListResponse struct {
-	Stacks []StackResponse `json:"stacks"`
-}
-
-type PermissionsResponse struct {
-	Permissions []string `json:"permissions"`
-}
-
-type StackStatsResponse struct {
-	StackName  string `json:"stack_name"`
-	Containers []struct {
-		Name          string  `json:"name"`
-		ServiceName   string  `json:"service_name"`
-		CPUPercent    float64 `json:"cpu_percent"`
-		MemoryUsage   uint64  `json:"memory_usage"`
-		MemoryPercent float64 `json:"memory_percent"`
-	} `json:"containers"`
-}
 
 func TestStackEndpointsJWT(t *testing.T) {
 	app := SetupTestApp(t)
@@ -141,10 +112,11 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stacksResp StacksListResponse
+		var stacksResp stack.ListStacksResponse
 		require.NoError(t, resp.GetJSON(&stacksResp))
-		assert.NotEmpty(t, stacksResp.Stacks)
-		assert.Equal(t, "test-stack", stacksResp.Stacks[0].Name)
+		assert.True(t, stacksResp.Success)
+		assert.NotEmpty(t, stacksResp.Data.Stacks)
+		assert.Equal(t, "test-stack", stacksResp.Data.Stacks[0].Name)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname returns stack details", func(t *testing.T) {
@@ -172,9 +144,10 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp PermissionsResponse
+		var permsResp stack.StackPermissionsResponse
 		require.NoError(t, resp.GetJSON(&permsResp))
-		assert.NotNil(t, permsResp.Permissions)
+		assert.True(t, permsResp.Success)
+		assert.NotNil(t, permsResp.Data.Permissions)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/networks returns networks", func(t *testing.T) {
@@ -241,9 +214,10 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp StackStatsResponse
+		var statsResp stack.StackStatsResponse
 		require.NoError(t, resp.GetJSON(&statsResp))
-		assert.Equal(t, "test-stack", statsResp.StackName)
+		assert.True(t, statsResp.Success)
+		assert.Equal(t, "test-stack", statsResp.Data.StackName)
 	})
 }
 

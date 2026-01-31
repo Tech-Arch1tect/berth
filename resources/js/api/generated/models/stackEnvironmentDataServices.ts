@@ -5,9 +5,6 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { ListStacksData } from './listStacksData';
+import type { ServiceEnvironment } from './serviceEnvironment';
 
-export interface ListStacksResponse {
-  data: ListStacksData;
-  success: boolean;
-}
+export type StackEnvironmentDataServices = { [key: string]: ServiceEnvironment[] };

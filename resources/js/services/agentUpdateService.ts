@@ -15,7 +15,7 @@ export class AgentUpdateService {
 
   static async getServerStacks(serverId: number): Promise<Stack[]> {
     const response = await getApiV1ServersServeridStacks(serverId);
-    return response.data.stacks || [];
+    return response.data.data?.stacks || [];
   }
 
   static async getStackDetails(serverId: number, stackName: string): Promise<StackDetails> {

@@ -4,7 +4,7 @@ import type {
   ComposeService,
   Network,
   Volume,
-  StackEnvironmentResponseServices,
+  StackEnvironmentDataServices,
   ContainerStats,
 } from '../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
@@ -31,7 +31,7 @@ interface StackContentProps {
   services: ComposeService[];
   networks: Network[];
   volumes: Volume[];
-  environment: StackEnvironmentResponseServices;
+  environment: StackEnvironmentDataServices;
   statsContainers: ContainerStats[];
   logContainers: Array<{ name: string; service_name: string }>;
   permissions: {

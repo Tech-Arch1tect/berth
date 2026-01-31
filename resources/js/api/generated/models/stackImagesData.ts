@@ -5,9 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { ListStacksData } from './listStacksData';
+import type { ContainerImageDetails } from './containerImageDetails';
 
-export interface ListStacksResponse {
-  data: ListStacksData;
-  success: boolean;
+export interface StackImagesData {
+  images: ContainerImageDetails[];
 }

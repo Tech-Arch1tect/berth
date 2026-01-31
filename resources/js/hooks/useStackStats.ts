@@ -12,7 +12,7 @@ export const useStackStats = (serverid: number, stackname: string, enabled: bool
   return {
     ...query,
 
-    data: query.data?.data,
+    data: query.data?.data?.data,
 
     error: query.error ? new Error(String(query.error)) : null,
   };

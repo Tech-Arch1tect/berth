@@ -5,7 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { CanCreateStackData } from './canCreateStackData';
 
 export interface CanCreateStackResponse {
-  canCreate: boolean;
+  data: CanCreateStackData;
+  success: boolean;
 }

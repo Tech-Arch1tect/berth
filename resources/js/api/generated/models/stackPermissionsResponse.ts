@@ -5,7 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { StackPermissionsData } from './stackPermissionsData';
 
 export interface StackPermissionsResponse {
-  permissions: string[];
+  data: StackPermissionsData;
+  success: boolean;
 }
