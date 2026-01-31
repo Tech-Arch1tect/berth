@@ -10,7 +10,7 @@ export class AgentUpdateService {
   static async getServers(): Promise<ServerResponse[]> {
     const response = await getApiV1AdminServers();
 
-    return (response as { data?: { servers?: ServerResponse[] } }).data?.servers || [];
+    return response.data.data.servers || [];
   }
 
   static async getServerStacks(serverId: number): Promise<Stack[]> {
@@ -35,6 +35,6 @@ export class AgentUpdateService {
 
   static async testServerConnection(serverId: number): Promise<boolean> {
     const response = await postApiV1AdminServersIdTest(serverId);
-    return (response as { success?: boolean }).success === true;
+    return response.data.success === true;
   }
 }
