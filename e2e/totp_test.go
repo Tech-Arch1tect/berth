@@ -25,21 +25,21 @@ func TestTOTPSetupAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -71,21 +71,21 @@ func TestTOTPSetupAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPEnableRequest{
@@ -115,13 +115,13 @@ func TestTOTPSetupAPI(t *testing.T) {
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 409, conflictResp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, conflictResp.GetJSON(&errResp))
 		assert.Equal(t, "totp_already_enabled", errResp.Error)
 	})
@@ -137,19 +137,18 @@ func TestTOTPSetupAPI(t *testing.T) {
 
 		app.AuthHelper.EnableTOTPForUser(t, user.ID)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthTOTPRequiredResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
-		assert.True(t, login.TOTPRequired, "should require TOTP verification")
-		assert.NotEmpty(t, login.TemporaryToken, "should provide temporary token for TOTP verification")
-		assert.Empty(t, login.AccessToken, "should not provide access token until TOTP verified")
+		assert.True(t, login.Data.TOTPRequired, "should require TOTP verification")
+		assert.NotEmpty(t, login.Data.TemporaryToken, "should provide temporary token for TOTP verification")
 	})
 }
 
@@ -178,19 +177,19 @@ func TestTOTPEnableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: map[string]interface{}{},
@@ -198,7 +197,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "validation_error", errResp.Error)
 	})
@@ -212,19 +211,19 @@ func TestTOTPEnableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		_, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -233,7 +232,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPEnableRequest{
@@ -243,7 +242,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "invalid_totp_code", errResp.Error)
 	})
@@ -257,19 +256,19 @@ func TestTOTPEnableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -286,7 +285,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPEnableRequest{
@@ -300,7 +299,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Method: "GET",
 			Path:   "/api/v1/totp/status",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -338,19 +337,19 @@ func TestTOTPDisableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/totp/disable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: map[string]interface{}{
@@ -370,19 +369,19 @@ func TestTOTPDisableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/totp/disable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPDisableRequest{
@@ -393,7 +392,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "invalid_password", errResp.Error)
 	})
@@ -407,19 +406,19 @@ func TestTOTPDisableAPI(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -436,7 +435,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPEnableRequest{
@@ -455,7 +454,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/disable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPDisableRequest{
@@ -470,7 +469,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Method: "GET",
 			Path:   "/api/v1/totp/status",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -591,21 +590,21 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		statusResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/status",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -625,21 +624,21 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/setup",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -655,7 +654,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 			Method: "POST",
 			Path:   "/api/v1/totp/enable",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 				"Content-Type":  "application/json",
 			},
 			Body: handlers.TOTPEnableRequest{
@@ -669,7 +668,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 			Method: "GET",
 			Path:   "/api/v1/totp/status",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)

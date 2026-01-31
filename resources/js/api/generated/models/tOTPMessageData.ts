@@ -5,9 +5,7 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { GetSessionsData } from './getSessionsData';
 
-export interface GetSessionsResponse {
-  data: GetSessionsData;
-  success: boolean;
+export interface TOTPMessageData {
+  message: string;
 }

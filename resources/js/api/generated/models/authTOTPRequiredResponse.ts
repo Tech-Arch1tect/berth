@@ -5,9 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { AuthTOTPRequiredData } from './authTOTPRequiredData';
 
 export interface AuthTOTPRequiredResponse {
-  message: string;
-  temporary_token: string;
-  totp_required: boolean;
+  data: AuthTOTPRequiredData;
+  success: boolean;
 }

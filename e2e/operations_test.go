@@ -3,6 +3,8 @@ package e2e
 import (
 	"testing"
 
+	"berth/handlers"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
@@ -55,16 +57,16 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-ops")
 
@@ -202,16 +204,16 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/operation-logs returns all operation logs", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/operation-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -258,16 +260,16 @@ func TestOperationLogsDetailEndpoints(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/operation-logs/:id returns 404 for non-existent log", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/operation-logs/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)

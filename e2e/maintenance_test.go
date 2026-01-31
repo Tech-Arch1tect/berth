@@ -3,6 +3,8 @@ package e2e
 import (
 	"testing"
 
+	"berth/handlers"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
@@ -82,16 +84,16 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "maintenance-perm-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
@@ -145,16 +147,16 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "maintenance-info-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
@@ -236,16 +238,16 @@ func TestMaintenancePruneJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "maintenance-prune-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
@@ -319,16 +321,16 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "maintenance-delete-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})

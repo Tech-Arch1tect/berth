@@ -29,6 +29,10 @@ type TOTPSetupResponse struct {
 }
 
 type TOTPMessageResponse struct {
-	Success bool   `json:"success"`
+	Success bool            `json:"success"`
+	Data    TOTPMessageData `json:"data"`
+}
+
+type TOTPMessageData struct {
 	Message string `json:"message"`
 }

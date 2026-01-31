@@ -37,10 +37,19 @@ type SessionItem struct {
 }
 
 type GetSessionsResponse struct {
+	Success bool            `json:"success"`
+	Data    GetSessionsData `json:"data"`
+}
+
+type GetSessionsData struct {
 	Sessions []SessionItem `json:"sessions"`
 }
 
 type SessionMessageResponse struct {
-	Success bool   `json:"success"`
+	Success bool               `json:"success"`
+	Data    SessionMessageData `json:"data"`
+}
+
+type SessionMessageData struct {
 	Message string `json:"message"`
 }

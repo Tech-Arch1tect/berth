@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"berth/handlers"
 	"berth/internal/security"
 
 	"github.com/stretchr/testify/assert"
@@ -21,16 +22,16 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs returns paginated logs", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -118,16 +119,16 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs/stats returns statistics", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -160,16 +161,16 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	listResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "GET",
@@ -234,16 +235,16 @@ func TestMigrationExportJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("POST /api/v1/admin/migration/export requires password", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/migration/export", e2etesting.CategoryValidation, e2etesting.ValueMedium)
@@ -310,16 +311,16 @@ func TestMigrationImportJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("POST /api/v1/admin/migration/import requires password", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/migration/import", e2etesting.CategoryValidation, e2etesting.ValueMedium)
@@ -362,16 +363,16 @@ func TestAdminOperationLogDetailJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/operation-logs/:id returns 404 for non-existent log", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/operation-logs/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
@@ -445,16 +446,16 @@ func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/security-audit-logs returns 403 for non-admin", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)

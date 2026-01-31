@@ -5,13 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { UserInfo } from './userInfo';
+import type { AuthLoginData } from './authLoginData';
 
 export interface AuthLoginResponse {
-  access_token: string;
-  expires_in: number;
-  refresh_expires_in: number;
-  refresh_token: string;
-  token_type: string;
-  user: UserInfo;
+  data: AuthLoginData;
+  success: boolean;
 }

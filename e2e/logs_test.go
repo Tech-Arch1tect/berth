@@ -3,6 +3,8 @@ package e2e
 import (
 	"testing"
 
+	"berth/handlers"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
@@ -18,16 +20,16 @@ func TestLogsEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-logs")
 
@@ -161,16 +163,16 @@ func TestLogsEndpointsErrorCases(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	_, testServer := app.CreateTestServerWithAgent(t, "test-server-logs-error")
 
@@ -225,16 +227,16 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, adminUser)
 
-	adminLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	adminLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: adminUser.Username,
 		Password: adminUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, adminLoginResp.StatusCode)
 
-	var adminLogin LoginResponse
+	var adminLogin handlers.AuthLoginResponse
 	require.NoError(t, adminLoginResp.GetJSON(&adminLogin))
-	adminToken := adminLogin.AccessToken
+	adminToken := adminLogin.Data.AccessToken
 
 	regularUser := &e2etesting.TestUser{
 		Username: "logsregularuser",
@@ -243,16 +245,16 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, regularUser)
 
-	regularLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	regularLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: regularUser.Username,
 		Password: regularUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, regularLoginResp.StatusCode)
 
-	var regularLogin LoginResponse
+	var regularLogin handlers.AuthLoginResponse
 	require.NoError(t, regularLoginResp.GetJSON(&regularLogin))
-	regularToken := regularLogin.AccessToken
+	regularToken := regularLogin.Data.AccessToken
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-logs-rbac")
 

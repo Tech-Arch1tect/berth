@@ -49,9 +49,9 @@ func TestAPISessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status TOTPStatusResponse
+		var status handlers.TOTPStatusResponse
 		require.NoError(t, statusResp.GetJSON(&status))
-		assert.False(t, status.Enabled)
+		assert.False(t, status.Data.Enabled)
 	})
 
 	t.Run("session auth can access servers endpoint", func(t *testing.T) {
@@ -117,21 +117,21 @@ func TestBothAuthMethodsWork(t *testing.T) {
 
 	t.Run("profile endpoint via JWT", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/profile", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/profile",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)

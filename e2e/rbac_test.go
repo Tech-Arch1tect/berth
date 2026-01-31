@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"berth/handlers"
 	"berth/internal/dto"
 	"berth/internal/rbac"
 	"testing"
@@ -51,16 +52,16 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/users returns users list", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/users", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -170,16 +171,16 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/roles returns roles list", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/roles", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -287,16 +288,16 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, adminUser)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: adminUser.Username,
 		Password: adminUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	createResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
@@ -393,16 +394,16 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	roleResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
@@ -620,16 +621,16 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/permissions returns all permissions", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -704,16 +705,16 @@ func TestRBACEndpointsNonAdmin(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /api/v1/admin/users returns 403 for non-admin", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/users", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)

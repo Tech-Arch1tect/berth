@@ -3,6 +3,8 @@ package e2e
 import (
 	"testing"
 
+	"berth/handlers"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
@@ -86,16 +88,16 @@ func TestWebSocketStackStatusJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /ws/api/stack-status/:server_id with valid token", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -121,16 +123,16 @@ func TestWebSocketTerminalJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /ws/api/servers/:serverid/terminal with valid token attempts connection", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/terminal", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -157,16 +159,16 @@ func TestWebSocketOperationsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login LoginResponse
+	var login handlers.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
-	token := login.AccessToken
+	token := login.Data.AccessToken
 
 	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations with valid token attempts connection", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)

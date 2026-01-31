@@ -9,4 +9,5 @@
 export interface AuthErrorResponse {
   error: string;
   message: string;
+  success: boolean;
 }

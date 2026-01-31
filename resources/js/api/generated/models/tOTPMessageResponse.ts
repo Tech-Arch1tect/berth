@@ -5,8 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { TOTPMessageData } from './tOTPMessageData';
 
 export interface TOTPMessageResponse {
-  message: string;
+  data: TOTPMessageData;
   success: boolean;
 }

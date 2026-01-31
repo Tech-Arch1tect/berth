@@ -9,78 +9,6 @@ import (
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	AccessToken      string       `json:"access_token"`
-	RefreshToken     string       `json:"refresh_token"`
-	TokenType        string       `json:"token_type"`
-	ExpiresIn        int          `json:"expires_in"`
-	RefreshExpiresIn int          `json:"refresh_expires_in"`
-	User             UserResponse `json:"user"`
-	TOTPRequired     bool         `json:"totp_required"`
-	TemporaryToken   string       `json:"temporary_token"`
-	Message          string       `json:"message"`
-}
-
-type UserResponse struct {
-	ID          uint   `json:"id"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	TOTPEnabled bool   `json:"totp_enabled"`
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
-type RefreshResponse struct {
-	AccessToken      string `json:"access_token"`
-	RefreshToken     string `json:"refresh_token"`
-	TokenType        string `json:"token_type"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-}
-
-type LogoutRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
-type LogoutResponse struct {
-	Message       string   `json:"message"`
-	RevokedTokens []string `json:"revoked_tokens"`
-}
-
-type ErrorResponse struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-}
-
-type TOTPStatusResponse struct {
-	Enabled bool `json:"enabled"`
-}
-
-type SessionsRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
-type SessionsResponse struct {
-	Sessions []SessionInfo `json:"sessions"`
-}
-
-type SessionInfo struct {
-	ID        uint   `json:"id"`
-	UserID    uint   `json:"user_id"`
-	Type      string `json:"type"`
-	IPAddress string `json:"ip_address"`
-	Browser   string `json:"browser"`
-	Current   bool   `json:"current"`
-}
-
 func TestAPILogin(t *testing.T) {
 	app := SetupTestApp(t)
 
@@ -93,23 +21,24 @@ func TestAPILogin(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var loginResp LoginResponse
+		var loginResp handlers.AuthLoginResponse
 		require.NoError(t, resp.GetJSON(&loginResp))
 
-		assert.NotEmpty(t, loginResp.AccessToken)
-		assert.NotEmpty(t, loginResp.RefreshToken)
-		assert.Equal(t, "Bearer", loginResp.TokenType)
-		assert.Equal(t, 900, loginResp.ExpiresIn)
-		assert.Greater(t, loginResp.RefreshExpiresIn, 0)
-		assert.Equal(t, user.Username, loginResp.User.Username)
-		assert.Equal(t, user.Email, loginResp.User.Email)
+		assert.True(t, loginResp.Success)
+		assert.NotEmpty(t, loginResp.Data.AccessToken)
+		assert.NotEmpty(t, loginResp.Data.RefreshToken)
+		assert.Equal(t, "Bearer", loginResp.Data.TokenType)
+		assert.Equal(t, 900, loginResp.Data.ExpiresIn)
+		assert.Greater(t, loginResp.Data.RefreshExpiresIn, 0)
+		assert.Equal(t, user.Username, loginResp.Data.User.Username)
+		assert.Equal(t, user.Email, loginResp.Data.User.Email)
 	})
 
 	t.Run("invalid credentials returns error", func(t *testing.T) {
@@ -121,29 +50,31 @@ func TestAPILogin(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: "wrongpassword",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
+		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_credentials", errResp.Error)
 	})
 
 	t.Run("nonexistent user returns error", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: "nonexistent",
 			Password: "password",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
+		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_credentials", errResp.Error)
 	})
 }
@@ -160,41 +91,43 @@ func TestAPIRefresh(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
-			RefreshToken: login.RefreshToken,
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+			RefreshToken: login.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, refreshResp.StatusCode)
 
-		var refresh RefreshResponse
+		var refresh handlers.AuthRefreshResponse
 		require.NoError(t, refreshResp.GetJSON(&refresh))
 
-		assert.NotEmpty(t, refresh.AccessToken)
-		assert.NotEmpty(t, refresh.RefreshToken)
-		assert.Equal(t, "Bearer", refresh.TokenType)
-		assert.NotEqual(t, login.AccessToken, refresh.AccessToken)
+		assert.True(t, refresh.Success)
+		assert.NotEmpty(t, refresh.Data.AccessToken)
+		assert.NotEmpty(t, refresh.Data.RefreshToken)
+		assert.Equal(t, "Bearer", refresh.Data.TokenType)
+		assert.NotEqual(t, login.Data.AccessToken, refresh.Data.AccessToken)
 	})
 
 	t.Run("invalid refresh token returns error", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
 			RefreshToken: "invalid-token",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp ErrorResponse
+		var errResp handlers.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
+		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_token", errResp.Error)
 	})
 }
@@ -211,35 +144,36 @@ func TestAPILogout(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		logoutResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/logout",
-			Body: LogoutRequest{
-				RefreshToken: login.RefreshToken,
+			Body: handlers.AuthLogoutRequest{
+				RefreshToken: login.Data.RefreshToken,
 			},
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, logoutResp.StatusCode)
 
-		var logout LogoutResponse
+		var logout handlers.AuthLogoutResponse
 		require.NoError(t, logoutResp.GetJSON(&logout))
-		assert.Contains(t, logout.Message, "Logout successful")
+		assert.True(t, logout.Success)
+		assert.Contains(t, logout.Data.Message, "Logout successful")
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
-			RefreshToken: login.RefreshToken,
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+			RefreshToken: login.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, refreshResp.StatusCode)
@@ -258,21 +192,21 @@ func TestAPIProfile(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/profile",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
@@ -307,29 +241,30 @@ func TestAPITOTPStatus(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		statusResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/totp/status",
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status TOTPStatusResponse
+		var status handlers.TOTPStatusResponse
 		require.NoError(t, statusResp.GetJSON(&status))
-		assert.False(t, status.Enabled)
+		assert.True(t, status.Success)
+		assert.False(t, status.Data.Enabled)
 	})
 }
 
@@ -345,35 +280,36 @@ func TestAPISessions(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login LoginResponse
+		var login handlers.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: SessionsRequest{
-				RefreshToken: login.RefreshToken,
+			Body: handlers.GetSessionsRequest{
+				RefreshToken: login.Data.RefreshToken,
 			},
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login.AccessToken,
+				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, sessionsResp.StatusCode)
 
-		var sessions SessionsResponse
+		var sessions handlers.GetSessionsResponse
 		require.NoError(t, sessionsResp.GetJSON(&sessions))
-		assert.GreaterOrEqual(t, len(sessions.Sessions), 1)
+		assert.True(t, sessions.Success)
+		assert.GreaterOrEqual(t, len(sessions.Data.Sessions), 1)
 
 		var foundCurrent bool
-		for _, s := range sessions.Sessions {
+		for _, s := range sessions.Data.Sessions {
 			if s.Current {
 				foundCurrent = true
 				break
@@ -391,43 +327,43 @@ func TestAPISessions(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		login1Resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		login1Resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login1 LoginResponse
+		var login1 handlers.AuthLoginResponse
 		require.NoError(t, login1Resp.GetJSON(&login1))
 
-		login2Resp, err := app.HTTPClient.Post("/api/v1/auth/login", LoginRequest{
+		login2Resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login2 LoginResponse
+		var login2 handlers.AuthLoginResponse
 		require.NoError(t, login2Resp.GetJSON(&login2))
 
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: SessionsRequest{
-				RefreshToken: login2.RefreshToken,
+			Body: handlers.RevokeAllOtherSessionsRequest{
+				RefreshToken: login2.Data.RefreshToken,
 			},
 			Headers: map[string]string{
-				"Authorization": "Bearer " + login2.AccessToken,
+				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, revokeResp.StatusCode)
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
-			RefreshToken: login1.RefreshToken,
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+			RefreshToken: login1.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, refreshResp.StatusCode)
 
-		refreshResp2, err := app.HTTPClient.Post("/api/v1/auth/refresh", RefreshRequest{
-			RefreshToken: login2.RefreshToken,
+		refreshResp2, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+			RefreshToken: login2.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, refreshResp2.StatusCode)
