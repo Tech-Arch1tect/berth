@@ -7,12 +7,12 @@
  */
 import type { PermissionInfo } from './permissionInfo';
 import type { RoleInfo } from './roleInfo';
-import type { ServerInfo } from './serverInfo';
+import type { ServerInfo2 } from './serverInfo2';
 import type { StackPermissionRule } from './stackPermissionRule';
 
 export interface ListRoleStackPermissionsData {
   permissionRules: StackPermissionRule[];
   permissions: PermissionInfo[];
   role: RoleInfo;
-  servers: ServerInfo[];
+  servers: ServerInfo2[];
 }

@@ -5,8 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { ServerResponse } from './serverResponse';
+import type { ListServersResponseData } from './listServersResponseData';
 
 export interface ListServersResponse {
-  servers: ServerResponse[];
+  data: ListServersResponseData;
+  success: boolean;
 }

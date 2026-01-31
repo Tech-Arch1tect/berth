@@ -14,10 +14,20 @@ type UserAPIHandler struct {
 }
 
 type ListServersResponse struct {
-	Servers []models.ServerResponse `json:"servers"`
+	Success bool                     `json:"success"`
+	Data    ListServersResponseData  `json:"data"`
+}
+
+type ListServersResponseData struct {
+	Servers []models.ServerInfo `json:"servers"`
 }
 
 type ServerStatisticsResponse struct {
+	Success bool                         `json:"success"`
+	Data    ServerStatisticsResponseData `json:"data"`
+}
+
+type ServerStatisticsResponseData struct {
 	Statistics models.StackStatistics `json:"statistics"`
 }
 
@@ -41,7 +51,10 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 	}
 
 	return common.SendSuccess(c, ListServersResponse{
-		Servers: servers,
+		Success: true,
+		Data: ListServersResponseData{
+			Servers: servers,
+		},
 	})
 }
 
@@ -63,6 +76,9 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 	}
 
 	return common.SendSuccess(c, ServerStatisticsResponse{
-		Statistics: *statistics,
+		Success: true,
+		Data: ServerStatisticsResponseData{
+			Statistics: *statistics,
+		},
 	})
 }

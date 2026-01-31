@@ -38,13 +38,13 @@ func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service, agentS
 	}
 }
 
-func (s *Service) ListServers() ([]models.ServerResponse, error) {
+func (s *Service) ListServers() ([]models.ServerInfo, error) {
 	var servers []models.Server
 	if err := s.db.Find(&servers).Error; err != nil {
 		return nil, err
 	}
 
-	responses := make([]models.ServerResponse, len(servers))
+	responses := make([]models.ServerInfo, len(servers))
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
 	}
@@ -132,7 +132,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 	return &server, nil
 }
 
-func (s *Service) GetServerResponse(id uint) (*models.ServerResponse, error) {
+func (s *Service) GetServerResponse(id uint) (*models.ServerInfo, error) {
 	var server models.Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 	return nil
 }
 
-func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models.ServerResponse, error) {
+func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error) {
 	s.logger.Debug("listing servers for user",
 		zap.Uint("user_id", userID),
 	)
@@ -353,7 +353,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models
 		s.logger.Debug("user has no accessible servers",
 			zap.Uint("user_id", userID),
 		)
-		return []models.ServerResponse{}, nil
+		return []models.ServerInfo{}, nil
 	}
 
 	var servers []models.Server
@@ -366,7 +366,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models
 		return nil, err
 	}
 
-	responses := make([]models.ServerResponse, len(servers))
+	responses := make([]models.ServerInfo, len(servers))
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
 	}

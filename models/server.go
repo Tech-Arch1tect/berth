@@ -21,7 +21,7 @@ type Server struct {
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
 }
 
-type ServerResponse struct {
+type ServerInfo struct {
 	ID                  uint   `json:"id"`
 	CreatedAt           string `json:"created_at"`
 	UpdatedAt           string `json:"updated_at"`
@@ -98,13 +98,13 @@ func (s *Server) GetAPIURL() string {
 	return s.GetBaseURL() + "/api"
 }
 
-func (s *Server) ToResponse() ServerResponse {
+func (s *Server) ToResponse() ServerInfo {
 	skipSSL := true
 	if s.SkipSSLVerification != nil {
 		skipSSL = *s.SkipSSLVerification
 	}
 
-	return ServerResponse{
+	return ServerInfo{
 		ID:                  s.ID,
 		CreatedAt:           s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:           s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),

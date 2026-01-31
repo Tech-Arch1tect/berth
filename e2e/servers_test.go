@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	ServerResponse = models.ServerResponse
+	ServerInfo = models.ServerInfo
 
 	ListServersResponse      = server.ListServersResponse
 	ServerStatisticsResponse = server.ServerStatisticsResponse
@@ -26,7 +26,7 @@ type (
 )
 
 type SingleServerResponse struct {
-	Server ServerResponse `json:"server"`
+	Server ServerInfo `json:"server"`
 }
 
 func TestServerEndpointsJWT(t *testing.T) {
@@ -73,10 +73,10 @@ func TestServerEndpointsJWT(t *testing.T) {
 
 		var serversResp ListServersResponse
 		require.NoError(t, resp.GetJSON(&serversResp))
-		assert.NotEmpty(t, serversResp.Servers)
+		assert.NotEmpty(t, serversResp.Data.Servers)
 
 		var found bool
-		for _, s := range serversResp.Servers {
+		for _, s := range serversResp.Data.Servers {
 			if s.Name == "test-server-jwt" {
 				found = true
 				assert.Equal(t, testServer.ID, s.ID)
@@ -339,7 +339,7 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 
 		var serversResp ListServersResponse
 		require.NoError(t, resp.GetJSON(&serversResp))
-		assert.NotEmpty(t, serversResp.Servers)
+		assert.NotEmpty(t, serversResp.Data.Servers)
 	})
 
 	t.Run("GET /api/v1/admin/servers works with session auth", func(t *testing.T) {

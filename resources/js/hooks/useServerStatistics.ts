@@ -9,7 +9,7 @@ export const useServerStatistics = (serverId: number) => {
   });
 
   return {
-    data: data?.data?.statistics,
+    data: data?.data?.data?.statistics,
     isLoading,
     error,
     refetch,

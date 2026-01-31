@@ -4,10 +4,10 @@ import {
   patchApiV1ServersServeridStacksStacknameCompose,
 } from '../api/generated/stacks/stacks';
 import { getApiV1AdminServers, postApiV1AdminServersIdTest } from '../api/generated/admin/admin';
-import type { Stack, StackDetails, ServerResponse } from '../api/generated/models';
+import type { Stack, StackDetails, ServerInfo } from '../api/generated/models';
 
 export class AgentUpdateService {
-  static async getServers(): Promise<ServerResponse[]> {
+  static async getServers(): Promise<ServerInfo[]> {
     const response = await getApiV1AdminServers();
 
     return response.data.data.servers || [];

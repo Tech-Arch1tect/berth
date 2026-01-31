@@ -8,7 +8,7 @@ type AdminListServersResponse struct {
 }
 
 type AdminListServersResponseData struct {
-	Servers []models.ServerResponse `json:"servers"`
+	Servers []models.ServerInfo `json:"servers"`
 }
 
 type AdminCreateServerRequest = models.ServerCreateRequest
@@ -19,7 +19,7 @@ type AdminCreateServerResponse struct {
 }
 
 type AdminCreateServerResponseData struct {
-	Server models.ServerResponse `json:"server"`
+	Server models.ServerInfo `json:"server"`
 }
 
 type AdminUpdateServerRequest = models.ServerUpdateRequest
@@ -30,15 +30,23 @@ type AdminUpdateServerResponse struct {
 }
 
 type AdminUpdateServerResponseData struct {
-	Server models.ServerResponse `json:"server"`
+	Server models.ServerInfo `json:"server"`
 }
 
 type AdminDeleteServerResponse struct {
-	Success bool   `json:"success"`
+	Success bool                          `json:"success"`
+	Data    AdminDeleteServerResponseData `json:"data"`
+}
+
+type AdminDeleteServerResponseData struct {
 	Message string `json:"message"`
 }
 
 type AdminTestConnectionResponse struct {
-	Success bool   `json:"success"`
+	Success bool                            `json:"success"`
+	Data    AdminTestConnectionResponseData `json:"data"`
+}
+
+type AdminTestConnectionResponseData struct {
 	Message string `json:"message"`
 }

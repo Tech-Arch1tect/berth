@@ -5,8 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { StackStatistics } from './stackStatistics';
+import type { ServerStatisticsResponseData } from './serverStatisticsResponseData';
 
 export interface ServerStatisticsResponse {
-  statistics: StackStatistics;
+  data: ServerStatisticsResponseData;
+  success: boolean;
 }

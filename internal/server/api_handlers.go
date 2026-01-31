@@ -115,7 +115,9 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, AdminDeleteServerResponse{
 		Success: true,
-		Message: "Server deleted successfully",
+		Data: AdminDeleteServerResponseData{
+			Message: "Server deleted successfully",
+		},
 	})
 }
 
@@ -136,6 +138,8 @@ func (h *APIHandler) TestConnection(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, AdminTestConnectionResponse{
 		Success: true,
-		Message: "Connection successful",
+		Data: AdminTestConnectionResponseData{
+			Message: "Connection successful",
+		},
 	})
 }

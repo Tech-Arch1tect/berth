@@ -6,8 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface ServerResponse {
-  created_at: string;
+export interface ServerInfo2 {
   description: string;
   host: string;
   /** @minimum 0 */
@@ -15,6 +14,4 @@ export interface ServerResponse {
   is_active: boolean;
   name: string;
   port: number;
-  skip_ssl_verification: boolean;
-  updated_at: string;
 }

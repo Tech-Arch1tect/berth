@@ -29,11 +29,11 @@ export const useDashboardHealth = (servers: DashboardServer[]): HealthSummary =>
       serversLoading++;
     } else if (query.error) {
       serversWithErrors++;
-    } else if (query.data?.data?.statistics) {
+    } else if (query.data?.data?.data?.statistics) {
       serversOnline++;
-      totalStacks += query.data.data.statistics.total_stacks;
-      healthyStacks += query.data.data.statistics.healthy_stacks;
-      unhealthyStacks += query.data.data.statistics.unhealthy_stacks;
+      totalStacks += query.data.data.data.statistics.total_stacks;
+      healthyStacks += query.data.data.data.statistics.healthy_stacks;
+      unhealthyStacks += query.data.data.data.statistics.unhealthy_stacks;
     }
   });
 

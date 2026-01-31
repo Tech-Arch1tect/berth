@@ -56,7 +56,7 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
     const map = new Map<number, { total: number; healthy: number; unhealthy: number }>();
     activeServers.forEach((server, index) => {
       const query = statisticsQueries[index];
-      const stats = query?.data?.data?.statistics;
+      const stats = query?.data?.data?.data?.statistics;
       if (stats) {
         map.set(server.id, {
           total: stats.total_stacks,

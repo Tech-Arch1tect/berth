@@ -5,8 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { AdminDeleteServerResponseData } from './adminDeleteServerResponseData';
 
 export interface AdminDeleteServerResponse {
-  message: string;
+  data: AdminDeleteServerResponseData;
   success: boolean;
 }

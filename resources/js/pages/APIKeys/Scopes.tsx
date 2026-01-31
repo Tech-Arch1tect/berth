@@ -78,7 +78,7 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
       select: (response) => response.data,
     },
   });
-  const servers = serversResponse?.servers ?? [];
+  const servers = serversResponse?.data?.servers ?? [];
 
   const { data: scopesResponse, isLoading: scopesLoading } = useGetApiV1ApiKeysIdScopes(
     apiKeyIdNum,

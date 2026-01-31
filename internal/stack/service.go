@@ -31,7 +31,7 @@ func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rba
 	}
 }
 
-func (s *Service) GetServerInfo(serverID uint) (*models.ServerResponse, error) {
+func (s *Service) GetServerInfo(serverID uint) (*models.ServerInfo, error) {
 	return s.serverSvc.GetServerResponse(serverID)
 }
 

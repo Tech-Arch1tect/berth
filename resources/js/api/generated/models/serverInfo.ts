@@ -7,6 +7,7 @@
  */
 
 export interface ServerInfo {
+  created_at: string;
   description: string;
   host: string;
   /** @minimum 0 */
@@ -14,4 +15,6 @@ export interface ServerInfo {
   is_active: boolean;
   name: string;
   port: number;
+  skip_ssl_verification: boolean;
+  updated_at: string;
 }
