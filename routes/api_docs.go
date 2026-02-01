@@ -305,7 +305,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Compose Editor
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/compose").
-		Tags("stacks", "compose").
+		Tags("compose").
 		Summary("Get compose configuration").
 		Description("Returns the parsed Docker Compose configuration for a stack. Requires files.read permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
@@ -318,7 +318,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("PATCH", "/api/v1/servers/{serverid}/stacks/{stackname}/compose").
-		Tags("stacks", "compose").
+		Tags("compose").
 		Summary("Update compose configuration").
 		Description("Updates the Docker Compose configuration with the specified changes. Supports preview mode to see changes without applying. Requires files.write permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
@@ -753,7 +753,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin Operation Logs
 	apiDoc.Document("GET", "/api/v1/admin/operation-logs").
-		Tags("admin", "operation-logs").
+		Tags("admin").
 		Summary("List all operation logs").
 		Description("Returns paginated list of all operation logs. Requires admin permissions.").
 		QueryParam("page", "Page number").TypeInt().Default(1).Min(1).
@@ -772,7 +772,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("GET", "/api/v1/admin/operation-logs/stats").
-		Tags("admin", "operation-logs").
+		Tags("admin").
 		Summary("Get operation logs statistics").
 		Description("Returns aggregated statistics for all operation logs. Requires admin permissions.").
 		Response(http.StatusOK, dto.OperationLogStatsResponse{}, "Operation logs statistics").
@@ -783,7 +783,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("GET", "/api/v1/admin/operation-logs/{id}").
-		Tags("admin", "operation-logs").
+		Tags("admin").
 		Summary("Get operation log details").
 		Description("Returns detailed information about a specific operation log including all messages. Requires admin permissions.").
 		PathParam("id", "Operation log ID").TypeInt().Required().
@@ -798,7 +798,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin Security Audit Logs
 	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs").
-		Tags("admin", "security-audit").
+		Tags("admin").
 		Summary("List security audit logs").
 		Description("Returns paginated list of security audit logs. Requires admin permissions.").
 		QueryParam("page", "Page number").TypeInt().Default(1).Min(1).
@@ -820,7 +820,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs/stats").
-		Tags("admin", "security-audit").
+		Tags("admin").
 		Summary("Get security audit statistics").
 		Description("Returns aggregated statistics for security audit logs. Requires admin permissions.").
 		Response(http.StatusOK, security.GetStatsAPIResponse{}, "Security audit statistics").
@@ -831,7 +831,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("GET", "/api/v1/admin/security-audit-logs/{id}").
-		Tags("admin", "security-audit").
+		Tags("admin").
 		Summary("Get security audit log details").
 		Description("Returns detailed information about a specific security audit log. Requires admin permissions.").
 		PathParam("id", "Security audit log ID").TypeInt().Required().
@@ -846,7 +846,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin User Management
 	apiDoc.Document("GET", "/api/v1/admin/users").
-		Tags("admin", "users").
+		Tags("admin").
 		Summary("List all users").
 		Description("List all users. Requires admin permissions.").
 		Response(http.StatusOK, rbac.ListUsersResponse{}, "List of users").
@@ -857,7 +857,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("GET", "/api/v1/admin/users/{id}/roles").
-		Tags("admin", "users").
+		Tags("admin").
 		Summary("Get user with roles").
 		Description("Returns user details and all available roles. Requires admin permissions.").
 		PathParam("id", "User ID").TypeInt().Required().
@@ -870,7 +870,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/users").
-		Tags("admin", "users").
+		Tags("admin").
 		Summary("Create a new user").
 		Description("Creates a new user account. Requires admin permissions.").
 		Body(rbac.CreateUserRequest{}, "User details").
@@ -883,7 +883,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/users/assign-role").
-		Tags("admin", "users").
+		Tags("admin").
 		Summary("Assign a role to a user").
 		Description("Assigns a role to a user. Requires admin permissions.").
 		Body(rbac.AssignRoleRequest{}, "User and role IDs").
@@ -896,7 +896,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/users/revoke-role").
-		Tags("admin", "users").
+		Tags("admin").
 		Summary("Revoke a role from a user").
 		Description("Revokes a role from a user. Requires admin permissions.").
 		Body(rbac.RevokeRoleRequest{}, "User and role IDs").
@@ -910,7 +910,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin Role Management
 	apiDoc.Document("GET", "/api/v1/admin/roles").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("List all roles").
 		Description("List all roles. Requires admin permissions.").
 		Response(http.StatusOK, rbac.ListRolesResponse{}, "List of roles").
@@ -921,7 +921,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/roles").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("Create a new role").
 		Description("Creates a new role. Requires admin permissions.").
 		Body(rbac.CreateRoleRequest{}, "Role details").
@@ -934,7 +934,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("PUT", "/api/v1/admin/roles/{id}").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("Update a role").
 		Description("Updates an existing role. Requires admin permissions.").
 		PathParam("id", "Role ID").TypeInt().Required().
@@ -948,7 +948,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("DELETE", "/api/v1/admin/roles/{id}").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("Delete a role").
 		Description("Deletes a role. Requires admin permissions.").
 		PathParam("id", "Role ID").TypeInt().Required().
@@ -962,7 +962,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Role Stack Permissions
 	apiDoc.Document("GET", "/api/v1/admin/roles/{roleId}/stack-permissions").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("List role stack permissions").
 		Description("Returns the role details, available servers, permissions, and current permission rules. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
@@ -976,7 +976,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/roles/{roleId}/stack-permissions").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("Create a role stack permission").
 		Description("Creates a new permission rule for a role on a server with a stack pattern. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
@@ -990,7 +990,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("DELETE", "/api/v1/admin/roles/{roleId}/stack-permissions/{permissionId}").
-		Tags("admin", "roles").
+		Tags("admin").
 		Summary("Delete a role stack permission").
 		Description("Deletes a permission rule from a role. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
@@ -1005,7 +1005,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin Servers
 	apiDoc.Document("GET", "/api/v1/admin/servers").
-		Tags("admin", "servers").
+		Tags("admin").
 		Summary("List all servers").
 		Description("Returns list of all servers. Requires admin access.").
 		Response(http.StatusOK, server.AdminListServersResponse{}, "List of servers").
@@ -1016,7 +1016,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/servers").
-		Tags("admin", "servers").
+		Tags("admin").
 		Summary("Create a new server").
 		Description("Create a new server connection. Requires admin access.").
 		Body(server.AdminCreateServerRequest{}, "Server details").
@@ -1029,7 +1029,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("PUT", "/api/v1/admin/servers/{id}").
-		Tags("admin", "servers").
+		Tags("admin").
 		Summary("Update a server").
 		Description("Update an existing server connection. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
@@ -1044,7 +1044,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("DELETE", "/api/v1/admin/servers/{id}").
-		Tags("admin", "servers").
+		Tags("admin").
 		Summary("Delete a server").
 		Description("Delete a server connection. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
@@ -1057,7 +1057,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/test").
-		Tags("admin", "servers").
+		Tags("admin").
 		Summary("Test server connection").
 		Description("Test the connection to a server. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
@@ -1071,7 +1071,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 
 	// Admin Migration
 	apiDoc.Document("POST", "/api/v1/admin/migration/export").
-		Tags("admin", "migration").
+		Tags("admin").
 		Summary("Export data").
 		Description("Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.").
 		Body(migration.ExportRequest{}, "Export password (min 12 characters)").
@@ -1084,7 +1084,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/admin/migration/import").
-		Tags("admin", "migration").
+		Tags("admin").
 		Summary("Import data").
 		Description("Import configuration data from an encrypted backup file. WARNING: This will completely replace all existing data. Requires admin.system.import permission.").
 		BodyMultipart("Backup file and decryption password").
