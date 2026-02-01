@@ -9,7 +9,7 @@ func NewOpenAPI() *openapi.OpenAPI {
 		Description("Berth: Opinionated docker compose stack management API").
 		License("GPL-2.0", "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html").
 		BearerAuth("bearerAuth", "JWT token").
-		APIKeyAuth("apiKey", "X-API-Key", "header", "API key from user settings").
+		BearerAuth("apiKey", "API key").
 		CookieAuth("session", "session_id", "Browser session cookie").
 		Tag("auth", "Authentication endpoints").
 		Tag("servers", "Server management").
