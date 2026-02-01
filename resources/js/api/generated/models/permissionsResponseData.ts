@@ -5,8 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { MaintenancePermissions } from './maintenancePermissions';
 
-export interface EventTypeCountResponse {
-  count: number;
-  event_type: string;
+export interface PermissionsResponseData {
+  maintenance: MaintenancePermissions;
 }

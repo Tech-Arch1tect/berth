@@ -26,6 +26,11 @@ type ImageUpdate struct {
 }
 
 type ImageUpdatesResponse struct {
+	Success bool                  `json:"success"`
+	Data    ImageUpdatesDataInner `json:"data"`
+}
+
+type ImageUpdatesDataInner struct {
 	Updates []ImageUpdate `json:"updates"`
 }
 
@@ -122,7 +127,10 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return common.SendSuccess(c, ImageUpdatesResponse{Updates: accessibleUpdates})
+	return common.SendSuccess(c, ImageUpdatesResponse{
+		Success: true,
+		Data:    ImageUpdatesDataInner{Updates: accessibleUpdates},
+	})
 }
 
 func (h *APIHandler) ListServerUpdates(c echo.Context) error {
@@ -214,5 +222,8 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return common.SendSuccess(c, ImageUpdatesResponse{Updates: accessibleUpdates})
+	return common.SendSuccess(c, ImageUpdatesResponse{
+		Success: true,
+		Data:    ImageUpdatesDataInner{Updates: accessibleUpdates},
+	})
 }

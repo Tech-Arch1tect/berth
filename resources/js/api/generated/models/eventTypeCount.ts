@@ -5,9 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { SecurityAuditLogInfo } from './securityAuditLogInfo';
 
-export interface GetLogAPIResponse {
-  data: SecurityAuditLogInfo;
-  success: boolean;
+export interface EventTypeCount {
+  count: number;
+  event_type: string;
 }

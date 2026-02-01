@@ -47,7 +47,8 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 
 		var result imageupdates.ImageUpdatesResponse
 		require.NoError(t, resp.GetJSON(&result))
-		assert.NotNil(t, result.Updates)
+		assert.True(t, result.Success)
+		assert.NotNil(t, result.Data.Updates)
 	})
 
 	t.Run("GET /api/v1/servers/1/image-updates returns 403 when server doesn't exist", func(t *testing.T) {

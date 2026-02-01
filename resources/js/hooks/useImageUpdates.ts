@@ -21,7 +21,7 @@ export function useAvailableUpdates({ enabled = true }: UseAvailableUpdatesOptio
 
   return {
     ...query,
-    data: query.data?.data?.updates,
+    data: query.data?.data?.data?.updates,
   };
 }
 
@@ -44,6 +44,6 @@ export function useServerImageUpdates({ serverid, enabled = true }: UseServerIma
 
   return {
     ...query,
-    data: query.data?.data?.updates,
+    data: query.data?.data?.data?.updates,
   };
 }

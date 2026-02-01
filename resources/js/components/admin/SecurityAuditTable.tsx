@@ -1,12 +1,12 @@
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 import { Table } from '../common/Table';
-import type { SecurityAuditLogResponse } from '../../api/generated/models';
+import type { SecurityAuditLogInfo } from '../../api/generated/models';
 import type { UsePaginationReturn } from '../../hooks/usePagination';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 
 interface Props {
-  logs: SecurityAuditLogResponse[];
+  logs: SecurityAuditLogInfo[];
   loading: boolean;
   pagination: UsePaginationReturn;
   onViewDetails: (id: number) => void;
@@ -22,7 +22,7 @@ export function SecurityAuditTable({ logs, loading, pagination, onViewDetails }:
         'rounded-lg shadow overflow-hidden border border-slate-200 dark:border-slate-700'
       )}
     >
-      <Table<SecurityAuditLogResponse>
+      <Table<SecurityAuditLogInfo>
         data={logs}
         keyExtractor={(log) => log.id.toString()}
         isLoading={loading}

@@ -2,7 +2,7 @@ package security
 
 import "time"
 
-type SecurityAuditLogResponse struct {
+type SecurityAuditLogInfo struct {
 	ID             uint      `json:"id"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
@@ -26,11 +26,11 @@ type SecurityAuditLogResponse struct {
 }
 
 type ListLogsResponseData struct {
-	Logs       []SecurityAuditLogResponse `json:"logs"`
-	Total      int64                      `json:"total"`
-	Page       int                        `json:"page"`
-	PerPage    int                        `json:"per_page"`
-	TotalPages int                        `json:"total_pages"`
+	Logs       []SecurityAuditLogInfo `json:"logs"`
+	Total      int64                  `json:"total"`
+	Page       int                    `json:"page"`
+	PerPage    int                    `json:"per_page"`
+	TotalPages int                    `json:"total_pages"`
 }
 
 type ListLogsAPIResponse struct {
@@ -39,23 +39,23 @@ type ListLogsAPIResponse struct {
 }
 
 type GetLogAPIResponse struct {
-	Success bool                     `json:"success"`
-	Data    SecurityAuditLogResponse `json:"data"`
+	Success bool                 `json:"success"`
+	Data    SecurityAuditLogInfo `json:"data"`
 }
 
-type EventTypeCountResponse struct {
+type EventTypeCount struct {
 	EventType string `json:"event_type"`
 	Count     int64  `json:"count"`
 }
 
 type StatsResponseData struct {
-	TotalEvents       int64                    `json:"total_events"`
-	EventsByCategory  map[string]int64         `json:"events_by_category"`
-	EventsBySeverity  map[string]int64         `json:"events_by_severity"`
-	FailedEvents      int64                    `json:"failed_events"`
-	RecentEventTypes  []EventTypeCountResponse `json:"recent_event_types"`
-	EventsLast24Hours int64                    `json:"events_last_24_hours"`
-	EventsLast7Days   int64                    `json:"events_last_7_days"`
+	TotalEvents       int64            `json:"total_events"`
+	EventsByCategory  map[string]int64 `json:"events_by_category"`
+	EventsBySeverity  map[string]int64 `json:"events_by_severity"`
+	FailedEvents      int64            `json:"failed_events"`
+	RecentEventTypes  []EventTypeCount `json:"recent_event_types"`
+	EventsLast24Hours int64            `json:"events_last_24_hours"`
+	EventsLast7Days   int64            `json:"events_last_7_days"`
 }
 
 type GetStatsAPIResponse struct {

@@ -4,18 +4,12 @@ import (
 	"testing"
 
 	"berth/handlers"
+	"berth/internal/maintenance"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
-
-type MaintenancePermissionsResponse struct {
-	Maintenance struct {
-		Read  bool `json:"read"`
-		Write bool `json:"write"`
-	} `json:"maintenance"`
-}
 
 type SystemInfoResponse struct {
 	SystemInfo struct {
@@ -110,11 +104,12 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp MaintenancePermissionsResponse
+		var permsResp maintenance.PermissionsResponse
 		require.NoError(t, resp.GetJSON(&permsResp))
 
-		assert.True(t, permsResp.Maintenance.Read)
-		assert.True(t, permsResp.Maintenance.Write)
+		assert.True(t, permsResp.Success)
+		assert.True(t, permsResp.Data.Maintenance.Read)
+		assert.True(t, permsResp.Data.Maintenance.Write)
 	})
 
 	t.Run("GET /api/servers/:serverid/maintenance/permissions returns permissions for any server ID", func(t *testing.T) {
@@ -129,11 +124,12 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp MaintenancePermissionsResponse
+		var permsResp maintenance.PermissionsResponse
 		require.NoError(t, resp.GetJSON(&permsResp))
 
-		assert.True(t, permsResp.Maintenance.Read)
-		assert.True(t, permsResp.Maintenance.Write)
+		assert.True(t, permsResp.Success)
+		assert.True(t, permsResp.Data.Maintenance.Read)
+		assert.True(t, permsResp.Data.Maintenance.Write)
 	})
 }
 

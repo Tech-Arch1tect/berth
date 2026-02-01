@@ -14,6 +14,11 @@ type MaintenancePermissions struct {
 }
 
 type PermissionsResponse struct {
+	Success bool                    `json:"success"`
+	Data    PermissionsResponseData `json:"data"`
+}
+
+type PermissionsResponseData struct {
 	Maintenance MaintenancePermissions `json:"maintenance"`
 }
 
@@ -195,9 +200,12 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 	}
 
 	return common.SendSuccess(c, PermissionsResponse{
-		Maintenance: MaintenancePermissions{
-			Read:  hasReadPermission,
-			Write: hasWritePermission,
+		Success: true,
+		Data: PermissionsResponseData{
+			Maintenance: MaintenancePermissions{
+				Read:  hasReadPermission,
+				Write: hasWritePermission,
+			},
 		},
 	})
 }

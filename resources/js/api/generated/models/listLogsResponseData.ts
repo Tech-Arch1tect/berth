@@ -5,10 +5,10 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { SecurityAuditLogResponse } from './securityAuditLogResponse';
+import type { SecurityAuditLogInfo } from './securityAuditLogInfo';
 
 export interface ListLogsResponseData {
-  logs: SecurityAuditLogResponse[];
+  logs: SecurityAuditLogInfo[];
   page: number;
   per_page: number;
   total: number;

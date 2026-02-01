@@ -16,7 +16,7 @@ export function useMaintenancePermissions({
       gcTime: 15 * 60 * 1000,
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      select: (response) => response.data,
+      select: (response) => response.data?.data,
     },
   });
 

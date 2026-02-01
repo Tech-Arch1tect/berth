@@ -1,11 +1,11 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import type { SecurityAuditLogResponse } from '../../../api/generated/models';
+import type { SecurityAuditLogInfo } from '../../../api/generated/models';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../../utils/securityAuditHelpers';
 
 interface SecurityAuditDetailPanelProps {
-  log: SecurityAuditLogResponse | null;
+  log: SecurityAuditLogInfo | null;
   isLoading: boolean;
   onClose: () => void;
 }

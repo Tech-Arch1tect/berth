@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogResponse {
-	return SecurityAuditLogResponse{
+func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogInfo {
+	return SecurityAuditLogInfo{
 		ID:             log.ID,
 		CreatedAt:      log.CreatedAt,
 		UpdatedAt:      log.UpdatedAt,
@@ -36,8 +36,8 @@ func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogResponse {
 	}
 }
 
-func toLogResponseList(logs []models.SecurityAuditLog) []SecurityAuditLogResponse {
-	result := make([]SecurityAuditLogResponse, len(logs))
+func toLogResponseList(logs []models.SecurityAuditLog) []SecurityAuditLogInfo {
+	result := make([]SecurityAuditLogInfo, len(logs))
 	for i, log := range logs {
 		result[i] = toLogResponse(&log)
 	}
@@ -219,9 +219,9 @@ func (h *Handler) GetStats(c echo.Context) error {
 		Order("count DESC").
 		Limit(10).
 		Scan(&eventTypeRows)
-	stats.RecentEventTypes = make([]EventTypeCountResponse, len(eventTypeRows))
+	stats.RecentEventTypes = make([]EventTypeCount, len(eventTypeRows))
 	for i, row := range eventTypeRows {
-		stats.RecentEventTypes[i] = EventTypeCountResponse{
+		stats.RecentEventTypes[i] = EventTypeCount{
 			EventType: row.EventType,
 			Count:     row.Count,
 		}

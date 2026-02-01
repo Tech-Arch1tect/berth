@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface SecurityAuditLogResponse {
+export interface SecurityAuditLogInfo {
   actor_ip: string;
   actor_user_agent: string;
   /**
