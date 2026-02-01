@@ -1,0 +1,53 @@
+name: Publish Go API Client
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build berth and generate OpenAPI spec
+        run: |
+          go build -o berth-tmp .
+          ./berth-tmp openapi > openapi.json
+
+      - name: Generate Go API client
+        uses: openapi-generators/openapitools-generator-action@v1
+        with:
+          generator: go
+          openapi-file: openapi.json
+          command-args: --additional-properties=packageName=berth --git-user-id=tech-arch1tect --git-repo-id=berth-go-api-client
+
+      - name: Clone and update berth-go-api-client
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          TOKEN: ${{ secrets.API_CLIENT_TOKEN }}
+        run: |
+          git clone --depth=1 -b main "https://x-access-token:${TOKEN}@github.com/Tech-Arch1tect/berth-go-api-client.git" api-client
+          cd api-client
+
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -r ../go-client/* .
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Generated from ${REPO}@${SHA}" || echo "No changes to commit"
+          git push origin main
+
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            git tag "$REF_NAME"
+            git push origin "$REF_NAME"
+          fi
