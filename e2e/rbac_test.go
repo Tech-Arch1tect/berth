@@ -29,11 +29,8 @@ type (
 	ListRolesResponse                = rbac.ListRolesResponse
 	ListUsersResponse                = rbac.ListUsersResponse
 	GetUserRolesResponse             = rbac.GetUserRolesResponse
+	ListPermissionsResponse          = rbac.ListPermissionsResponse
 )
-
-type PermissionsListResponse struct {
-	Permissions []PermissionInfo `json:"permissions"`
-}
 
 type StackPermissionsResponse struct {
 	Role            map[string]interface{}   `json:"role"`
@@ -490,15 +487,11 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, permResp.StatusCode)
 
-	var permList struct {
-		Permissions []struct {
-			ID   uint   `json:"id"`
-			Name string `json:"name"`
-		} `json:"permissions"`
-	}
+	var permList ListPermissionsResponse
 	require.NoError(t, permResp.GetJSON(&permList))
-	require.NotEmpty(t, permList.Permissions, "should have permissions")
-	testPermissionID := permList.Permissions[0].ID
+	require.True(t, permList.Success)
+	require.NotEmpty(t, permList.Data.Permissions, "should have permissions")
+	testPermissionID := permList.Data.Permissions[0].ID
 
 	var createdStackPermissionID uint
 
@@ -644,9 +637,10 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permResp PermissionsListResponse
+		var permResp ListPermissionsResponse
 		require.NoError(t, resp.GetJSON(&permResp))
-		assert.NotEmpty(t, permResp.Permissions)
+		assert.True(t, permResp.Success)
+		assert.NotEmpty(t, permResp.Data.Permissions)
 	})
 
 	t.Run("GET /api/v1/admin/permissions?type=role filters permissions", func(t *testing.T) {
@@ -661,10 +655,11 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permResp PermissionsListResponse
+		var permResp ListPermissionsResponse
 		require.NoError(t, resp.GetJSON(&permResp))
+		assert.True(t, permResp.Success)
 
-		for _, perm := range permResp.Permissions {
+		for _, perm := range permResp.Data.Permissions {
 			assert.False(t, perm.IsAPIKeyOnly, "role type filter should exclude API-key-only permissions")
 		}
 	})

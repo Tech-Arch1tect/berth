@@ -621,8 +621,23 @@ func (h *APIHandler) ListPermissions(c echo.Context) error {
 		return common.SendInternalError(c, "Failed to fetch permissions")
 	}
 
-	return common.SendSuccess(c, map[string]any{
-		"permissions": permissions,
+	permissionInfos := make([]dto.PermissionInfo, len(permissions))
+	for i, p := range permissions {
+		permissionInfos[i] = dto.PermissionInfo{
+			ID:           p.ID,
+			Name:         p.Name,
+			Resource:     p.Resource,
+			Action:       p.Action,
+			Description:  p.Description,
+			IsAPIKeyOnly: p.IsAPIKeyOnly,
+		}
+	}
+
+	return c.JSON(http.StatusOK, ListPermissionsResponse{
+		Success: true,
+		Data: ListPermissionsResponseData{
+			Permissions: permissionInfos,
+		},
 	})
 }
 

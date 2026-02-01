@@ -135,3 +135,12 @@ type GetUserRolesResponse struct {
 	Success bool                     `json:"success"`
 	Data    GetUserRolesResponseData `json:"data"`
 }
+
+type ListPermissionsResponseData struct {
+	Permissions []dto.PermissionInfo `json:"permissions"`
+}
+
+type ListPermissionsResponse struct {
+	Success bool                        `json:"success"`
+	Data    ListPermissionsResponseData `json:"data"`
+}

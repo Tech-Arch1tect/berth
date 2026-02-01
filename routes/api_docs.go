@@ -1003,6 +1003,19 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	// Admin Permissions
+	apiDoc.Document("GET", "/api/v1/admin/permissions").
+		Tags("admin").
+		Summary("List all permissions").
+		Description("Returns list of all permissions. Use ?type=role to filter out API-key-only permissions. Requires admin access.").
+		QueryParam("type", "Filter type - use 'role' to exclude API-key-only permissions").Optional().
+		Response(http.StatusOK, rbac.ListPermissionsResponse{}, "List of permissions").
+		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
+		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
+		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// Admin Servers
 	apiDoc.Document("GET", "/api/v1/admin/servers").
 		Tags("admin").
