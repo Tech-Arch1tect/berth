@@ -125,244 +125,256 @@ export default function APIKeysIndex() {
   return (
     <>
       <Head title="API Keys" />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Keys</h1>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className={cn('inline-flex items-center', theme.buttons.primary)}
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Create API Key
-            </button>
-          </div>
-
-          <FlashMessages className="mb-6" />
-
-          {/* New Key Display Modal */}
-          <Modal
-            isOpen={!!newKeyData}
-            onClose={() => setNewKeyData(null)}
-            title="API Key Created Successfully"
-            subtitle={newKeyData?.name}
-            size="lg"
-            footer={
-              <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
-                Done
+      <div className="h-full overflow-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Keys</h1>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className={cn('inline-flex items-center', theme.buttons.primary)}
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Create API Key
               </button>
-            }
-          >
-            <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
+            </div>
+
+            <FlashMessages className="mb-6" />
+
+            {/* New Key Display Modal */}
+            <Modal
+              isOpen={!!newKeyData}
+              onClose={() => setNewKeyData(null)}
+              title="API Key Created Successfully"
+              subtitle={newKeyData?.name}
+              size="lg"
+              footer={
+                <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
+                  Done
+                </button>
+              }
+            >
+              <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
+                  </div>
+                  <div className="ml-3">
+                    <p className={cn('text-sm', theme.intent.warning.textStrong)}>
+                      <strong>Important:</strong> Copy this API key now. You won't be able to see it
+                      again!
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className={cn(theme.forms.label, 'mb-2')}>API Key</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={newKeyData?.key || ''}
+                    readOnly
+                    className={cn(
+                      theme.forms.input,
+                      theme.surface.code,
+                      'flex-1 font-mono text-sm'
+                    )}
+                  />
+                  <button
+                    onClick={() => copyToClipboard(newKeyData?.key || '')}
+                    className={cn(theme.buttons.ghost, 'p-3')}
+                    title={copiedKey ? 'Copied!' : 'Copy to clipboard'}
+                  >
+                    {copiedKey ? (
+                      <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
+                    ) : (
+                      <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </Modal>
+
+            {/* Create Modal */}
+            <Modal
+              isOpen={showCreateModal}
+              onClose={() => {
+                setShowCreateModal(false);
+                reset();
+              }}
+              title="Create New API Key"
+              size="md"
+              footer={
+                <div className="flex justify-end space-x-3 w-full">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      reset();
+                    }}
+                    className={theme.buttons.secondary}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    form="create-api-key-form"
+                    disabled={processing || createMutation.isPending}
+                    className={cn(
+                      theme.buttons.primary,
+                      (processing || createMutation.isPending) && 'opacity-50'
+                    )}
+                  >
+                    Create
+                  </button>
+                </div>
+              }
+            >
+              <form id="create-api-key-form" onSubmit={createAPIKey}>
+                <div className="mb-4">
+                  <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setData('name', e.target.value)}
+                    className={cn('w-full', theme.forms.input)}
+                    placeholder="My API Key"
+                    required
+                  />
+                  {errors.name && (
+                    <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.expires_at}
+                    onChange={(e) => setData('expires_at', e.target.value)}
+                    className={cn('w-full', theme.forms.input)}
+                  />
+                  {errors.expires_at && (
+                    <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
+                  )}
+                </div>
+              </form>
+            </Modal>
+
+            {/* API Keys List */}
+            {loading ? (
+              <LoadingSpinner size="lg" text="Loading API keys..." />
+            ) : apiKeys.length === 0 ? (
+              <EmptyState
+                icon={KeyIcon}
+                title="No API keys"
+                description="Get started by creating a new API key."
+                variant="info"
+                action={{
+                  label: 'Create API Key',
+                  onClick: () => setShowCreateModal(true),
+                }}
+              />
+            ) : (
+              <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
+                <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {apiKeys.map((apiKey: APIKeyInfo) => (
+                    <li key={apiKey.id} className="px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 flex-1">
+                          <div className="flex-shrink-0">
+                            <KeyIcon className={cn('h-8 w-8', theme.text.muted)} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <p className={cn('text-sm font-medium', theme.text.strong)}>
+                                {apiKey.name}
+                              </p>
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
+                                {apiKey.key_prefix}...
+                              </span>
+                              {apiKey.is_active ? (
+                                <span
+                                  className={cn(theme.badges.tag.base, theme.badges.tag.success)}
+                                >
+                                  Active
+                                </span>
+                              ) : (
+                                <span
+                                  className={cn(theme.badges.tag.base, theme.badges.tag.danger)}
+                                >
+                                  Inactive
+                                </span>
+                              )}
+                            </div>
+                            <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
+                              <p className="flex items-center">
+                                <ClockIcon className="h-4 w-4 mr-1" />
+                                <span className="font-medium">Last used:</span>{' '}
+                                {formatDate(apiKey.last_used_at)}
+                              </p>
+                              <p className="flex items-center">
+                                <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                                <span className="font-medium">Scopes:</span> {apiKey.scope_count}
+                              </p>
+                              {apiKey.expires_at && (
+                                <p className="flex items-center">
+                                  <span className="font-medium">Expires:</span>{' '}
+                                  {formatDate(apiKey.expires_at)}
+                                </p>
+                              )}
+                              <p className="flex items-center">
+                                <span className="font-medium">Created:</span>{' '}
+                                {formatDate(apiKey.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex-shrink-0 flex space-x-2">
+                          <button
+                            onClick={() =>
+                              router.visit(`/api-keys/${apiKey.id}/scopes`, {
+                                preserveState: false,
+                              })
+                            }
+                            className={cn(
+                              'inline-flex items-center text-sm leading-4',
+                              theme.buttons.secondary
+                            )}
+                          >
+                            <EyeIcon className="h-4 w-4 mr-1" />
+                            Manage Scopes
+                          </button>
+                          <button
+                            onClick={() => handleRevokeClick(apiKey.id, apiKey.name)}
+                            className={cn(
+                              'inline-flex items-center text-sm leading-4',
+                              theme.buttons.danger
+                            )}
+                          >
+                            <TrashIcon className="h-4 w-4 mr-1" />
+                            Revoke
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
+                  <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
                 </div>
                 <div className="ml-3">
-                  <p className={cn('text-sm', theme.intent.warning.textStrong)}>
-                    <strong>Important:</strong> Copy this API key now. You won't be able to see it
-                    again!
+                  <p className={cn('text-sm', theme.intent.info.textStrong)}>
+                    <strong>Security Note:</strong> API keys provide access to your account. Keep
+                    them secure and never share them publicly. Each key's permissions are limited by
+                    scopes you assign and cannot exceed your own user permissions.
                   </p>
                 </div>
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className={cn(theme.forms.label, 'mb-2')}>API Key</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={newKeyData?.key || ''}
-                  readOnly
-                  className={cn(theme.forms.input, theme.surface.code, 'flex-1 font-mono text-sm')}
-                />
-                <button
-                  onClick={() => copyToClipboard(newKeyData?.key || '')}
-                  className={cn(theme.buttons.ghost, 'p-3')}
-                  title={copiedKey ? 'Copied!' : 'Copy to clipboard'}
-                >
-                  {copiedKey ? (
-                    <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
-                  ) : (
-                    <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
-                  )}
-                </button>
-              </div>
-            </div>
-          </Modal>
-
-          {/* Create Modal */}
-          <Modal
-            isOpen={showCreateModal}
-            onClose={() => {
-              setShowCreateModal(false);
-              reset();
-            }}
-            title="Create New API Key"
-            size="md"
-            footer={
-              <div className="flex justify-end space-x-3 w-full">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    reset();
-                  }}
-                  className={theme.buttons.secondary}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  form="create-api-key-form"
-                  disabled={processing || createMutation.isPending}
-                  className={cn(
-                    theme.buttons.primary,
-                    (processing || createMutation.isPending) && 'opacity-50'
-                  )}
-                >
-                  Create
-                </button>
-              </div>
-            }
-          >
-            <form id="create-api-key-form" onSubmit={createAPIKey}>
-              <div className="mb-4">
-                <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setData('name', e.target.value)}
-                  className={cn('w-full', theme.forms.input)}
-                  placeholder="My API Key"
-                  required
-                />
-                {errors.name && (
-                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
-                )}
-              </div>
-              <div className="mb-4">
-                <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
-                <input
-                  type="datetime-local"
-                  value={formData.expires_at}
-                  onChange={(e) => setData('expires_at', e.target.value)}
-                  className={cn('w-full', theme.forms.input)}
-                />
-                {errors.expires_at && (
-                  <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
-                )}
-              </div>
-            </form>
-          </Modal>
-
-          {/* API Keys List */}
-          {loading ? (
-            <LoadingSpinner size="lg" text="Loading API keys..." />
-          ) : apiKeys.length === 0 ? (
-            <EmptyState
-              icon={KeyIcon}
-              title="No API keys"
-              description="Get started by creating a new API key."
-              variant="info"
-              action={{
-                label: 'Create API Key',
-                onClick: () => setShowCreateModal(true),
-              }}
-            />
-          ) : (
-            <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
-              <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                {apiKeys.map((apiKey: APIKeyInfo) => (
-                  <li key={apiKey.id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex-shrink-0">
-                          <KeyIcon className={cn('h-8 w-8', theme.text.muted)} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <p className={cn('text-sm font-medium', theme.text.strong)}>
-                              {apiKey.name}
-                            </p>
-                            <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
-                              {apiKey.key_prefix}...
-                            </span>
-                            {apiKey.is_active ? (
-                              <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
-                                Active
-                              </span>
-                            ) : (
-                              <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>
-                                Inactive
-                              </span>
-                            )}
-                          </div>
-                          <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
-                            <p className="flex items-center">
-                              <ClockIcon className="h-4 w-4 mr-1" />
-                              <span className="font-medium">Last used:</span>{' '}
-                              {formatDate(apiKey.last_used_at)}
-                            </p>
-                            <p className="flex items-center">
-                              <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                              <span className="font-medium">Scopes:</span> {apiKey.scope_count}
-                            </p>
-                            {apiKey.expires_at && (
-                              <p className="flex items-center">
-                                <span className="font-medium">Expires:</span>{' '}
-                                {formatDate(apiKey.expires_at)}
-                              </p>
-                            )}
-                            <p className="flex items-center">
-                              <span className="font-medium">Created:</span>{' '}
-                              {formatDate(apiKey.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0 flex space-x-2">
-                        <button
-                          onClick={() =>
-                            router.visit(`/api-keys/${apiKey.id}/scopes`, { preserveState: false })
-                          }
-                          className={cn(
-                            'inline-flex items-center text-sm leading-4',
-                            theme.buttons.secondary
-                          )}
-                        >
-                          <EyeIcon className="h-4 w-4 mr-1" />
-                          Manage Scopes
-                        </button>
-                        <button
-                          onClick={() => handleRevokeClick(apiKey.id, apiKey.name)}
-                          className={cn(
-                            'inline-flex items-center text-sm leading-4',
-                            theme.buttons.danger
-                          )}
-                        >
-                          <TrashIcon className="h-4 w-4 mr-1" />
-                          Revoke
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
-              </div>
-              <div className="ml-3">
-                <p className={cn('text-sm', theme.intent.info.textStrong)}>
-                  <strong>Security Note:</strong> API keys provide access to your account. Keep them
-                  secure and never share them publicly. Each key's permissions are limited by scopes
-                  you assign and cannot exceed your own user permissions.
-                </p>
               </div>
             </div>
           </div>

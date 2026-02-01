@@ -271,9 +271,7 @@ export default function AdminRoles({ title, roles }: Props) {
                         render: (role) => (
                           <div className="flex flex-wrap gap-2">
                             {role.is_admin && (
-                              <span
-                                className={cn(theme.badges.tag.base, theme.badges.tag.danger)}
-                              >
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.danger)}>
                                 Admin
                               </span>
                             )}
@@ -327,9 +325,7 @@ export default function AdminRoles({ title, roles }: Props) {
                               </>
                             )}
                             {role.is_admin && (
-                              <span className={cn('text-sm', theme.text.subtle)}>
-                                System role
-                              </span>
+                              <span className={cn('text-sm', theme.text.subtle)}>System role</span>
                             )}
                           </div>
                         ),

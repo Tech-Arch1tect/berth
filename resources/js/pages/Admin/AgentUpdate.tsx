@@ -101,96 +101,98 @@ export default function AgentUpdate({ title = 'Agent Updates' }: Props) {
     <>
       <Head title={title} />
 
-      <div className="py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <h1 className={cn('text-xl font-semibold', theme.text.strong)}>Agent Updates</h1>
-            <p className={cn('mt-2 text-sm', theme.text.muted)}>
-              Update berth-agent containers across all servers. Updates are executed sequentially
-              with health checks after each update.
-            </p>
-          </div>
+      <div className="h-full overflow-auto">
+        <div className="py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <h1 className={cn('text-xl font-semibold', theme.text.strong)}>Agent Updates</h1>
+              <p className={cn('mt-2 text-sm', theme.text.muted)}>
+                Update berth-agent containers across all servers. Updates are executed sequentially
+                with health checks after each update.
+              </p>
+            </div>
 
-          {/* Discovery Section */}
-          <AgentDiscoveryTable
-            servers={servers}
-            agentServers={agentServers}
-            selectedServerIds={selectedIds}
-            loading={loading}
-            error={error}
-            isUpdating={isUpdating}
-            onToggleSelection={toggle}
-            onSelectAll={handleSelectAll}
-            onDeselectAll={deselectAll}
-            onRefresh={discover}
-          />
-
-          {/* Update Configuration */}
-          {!isUpdating && progress.length === 0 && (
-            <UpdateConfigForm
-              changeTag={changeTag}
-              pullImages={pullImages}
-              newTag={newTag}
-              selectedCount={selectedCount}
-              onChangeTagToggle={setChangeTag}
-              onPullImagesToggle={setPullImages}
-              onNewTagChange={setNewTag}
-              onStartUpdate={() => setShowConfirmModal(true)}
-            />
-          )}
-
-          {/* Progress Section */}
-          {(isUpdating || progress.length > 0) && (
-            <UpdateProgressTable
-              progress={progress}
-              currentServerIndex={currentServerIndex}
+            {/* Discovery Section */}
+            <AgentDiscoveryTable
+              servers={servers}
+              agentServers={agentServers}
+              selectedServerIds={selectedIds}
+              loading={loading}
+              error={error}
               isUpdating={isUpdating}
-              successCount={successCount}
-              failedCount={failedCount}
-              skippedCount={skippedCount}
-              onCancel={cancelUpdate}
-              onReset={handleReset}
+              onToggleSelection={toggle}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={deselectAll}
+              onRefresh={discover}
             />
-          )}
 
-          {/* Confirmation Modal */}
-          <ConfirmationModal
-            isOpen={showConfirmModal}
-            onClose={() => setShowConfirmModal(false)}
-            onConfirm={handleStartUpdate}
-            title="Confirm Agent Update"
-            message={`Are you sure you want to update ${selectedAgentServers.length} berth-agent(s)? Actions: ${[
-              changeTag ? `change tag to "${newTag}"` : null,
-              pullImages ? 'pull images' : null,
-              'restart all services',
-            ]
-              .filter(Boolean)
-              .join(
-                ', '
-              )}. Each service will be updated individually with breaks between operations.`}
-            confirmText="Start Update"
-            variant="warning"
-          />
+            {/* Update Configuration */}
+            {!isUpdating && progress.length === 0 && (
+              <UpdateConfigForm
+                changeTag={changeTag}
+                pullImages={pullImages}
+                newTag={newTag}
+                selectedCount={selectedCount}
+                onChangeTagToggle={setChangeTag}
+                onPullImagesToggle={setPullImages}
+                onNewTagChange={setNewTag}
+                onStartUpdate={() => setShowConfirmModal(true)}
+              />
+            )}
 
-          {/* Error Modal */}
-          <Modal
-            isOpen={errorModal.isOpen}
-            onClose={() => setErrorModal({ isOpen: false, title: '', message: '' })}
-            title={errorModal.title}
-            size="sm"
-            footer={
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setErrorModal({ isOpen: false, title: '', message: '' })}
-                  className={theme.buttons.primary}
-                >
-                  OK
-                </button>
-              </div>
-            }
-          >
-            <p className={theme.text.standard}>{errorModal.message}</p>
-          </Modal>
+            {/* Progress Section */}
+            {(isUpdating || progress.length > 0) && (
+              <UpdateProgressTable
+                progress={progress}
+                currentServerIndex={currentServerIndex}
+                isUpdating={isUpdating}
+                successCount={successCount}
+                failedCount={failedCount}
+                skippedCount={skippedCount}
+                onCancel={cancelUpdate}
+                onReset={handleReset}
+              />
+            )}
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={showConfirmModal}
+              onClose={() => setShowConfirmModal(false)}
+              onConfirm={handleStartUpdate}
+              title="Confirm Agent Update"
+              message={`Are you sure you want to update ${selectedAgentServers.length} berth-agent(s)? Actions: ${[
+                changeTag ? `change tag to "${newTag}"` : null,
+                pullImages ? 'pull images' : null,
+                'restart all services',
+              ]
+                .filter(Boolean)
+                .join(
+                  ', '
+                )}. Each service will be updated individually with breaks between operations.`}
+              confirmText="Start Update"
+              variant="warning"
+            />
+
+            {/* Error Modal */}
+            <Modal
+              isOpen={errorModal.isOpen}
+              onClose={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+              title={errorModal.title}
+              size="sm"
+              footer={
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+                    className={theme.buttons.primary}
+                  >
+                    OK
+                  </button>
+                </div>
+              }
+            >
+              <p className={theme.text.standard}>{errorModal.message}</p>
+            </Modal>
+          </div>
         </div>
       </div>
     </>

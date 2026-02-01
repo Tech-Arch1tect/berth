@@ -125,134 +125,138 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
   return (
     <>
       <Head title="Active Sessions" />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
-            {sessions.filter((s) => !s.current).length > 0 && (
-              <button
-                onClick={() => setShowRevokeAllModal(true)}
-                disabled={revokeAllMutation.isPending || revokeMutation.isPending}
-                className={cn(
-                  theme.buttons.danger,
-                  (revokeAllMutation.isPending || revokeMutation.isPending) && 'opacity-50'
-                )}
-              >
-                {revokeAllMutation.isPending ? 'Revoking...' : 'Revoke All Others'}
-              </button>
+      <div className="h-full overflow-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            <div className="flex justify-between items-center mb-8">
+              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
+              {sessions.filter((s) => !s.current).length > 0 && (
+                <button
+                  onClick={() => setShowRevokeAllModal(true)}
+                  disabled={revokeAllMutation.isPending || revokeMutation.isPending}
+                  className={cn(
+                    theme.buttons.danger,
+                    (revokeAllMutation.isPending || revokeMutation.isPending) && 'opacity-50'
+                  )}
+                >
+                  {revokeAllMutation.isPending ? 'Revoking...' : 'Revoke All Others'}
+                </button>
+              )}
+            </div>
+
+            <FlashMessages className="mb-6" />
+
+            {error && (
+              <div className={cn(theme.intent.danger.surface, 'mb-6 rounded-lg p-4')}>
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.danger.icon)} />
+                  </div>
+                  <div className="ml-3">
+                    <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
 
-          <FlashMessages className="mb-6" />
+            <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
+              <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+                {sessions.map((session) => (
+                  <li key={session.id} className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">{getDeviceIcon(session)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <p className={cn('text-sm font-medium', theme.text.strong)}>
+                              {session.browser}
+                            </p>
+                            <span className={getDeviceTypeColor(session)}>
+                              {session.device_type}
+                            </span>
+                            <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
+                              {session.type.toUpperCase()}
+                            </span>
+                            {session.current && (
+                              <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
+                                Current Session
+                              </span>
+                            )}
+                          </div>
+                          <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
+                            <p>
+                              <span className="font-medium">Operating System:</span> {session.os}
+                            </p>
+                            <p>
+                              <span className="font-medium">Device:</span> {session.device}
+                            </p>
+                            <p>
+                              <span className="font-medium">Location:</span> {session.location}
+                            </p>
+                            <p>
+                              <span className="font-medium">IP Address:</span> {session.ip_address}
+                            </p>
+                            <p>
+                              <span className="font-medium">Last Active:</span>{' '}
+                              {formatDate(session.last_used)}
+                            </p>
+                            <p>
+                              <span className="font-medium">Created:</span>{' '}
+                              {formatDate(session.created_at)}
+                            </p>
+                            <p>
+                              <span className="font-medium">Expires:</span>{' '}
+                              {formatDate(session.expires_at)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-          {error && (
-            <div className={cn(theme.intent.danger.surface, 'mb-6 rounded-lg p-4')}>
+                      {!session.current && (
+                        <div className="flex-shrink-0">
+                          <button
+                            onClick={() => handleRevokeSessionClick(session.id)}
+                            disabled={revokeMutation.isPending || revokeAllMutation.isPending}
+                            className={cn(
+                              'inline-flex items-center text-sm leading-4',
+                              theme.buttons.danger,
+                              (revokeMutation.isPending || revokeAllMutation.isPending) &&
+                                'opacity-50'
+                            )}
+                          >
+                            {revokeMutation.isPending && sessionToRevoke === session.id
+                              ? 'Revoking...'
+                              : 'Revoke'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {sessions.length === 0 && (
+              <EmptyState
+                icon={InformationCircleIcon}
+                title="No active sessions found"
+                description="This might indicate a configuration issue with session tracking."
+                variant="info"
+              />
+            )}
+
+            <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <ExclamationTriangleIcon className={cn('h-5 w-5', theme.intent.danger.icon)} />
+                  <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
                 </div>
                 <div className="ml-3">
-                  <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
+                  <p className={cn('text-sm', theme.intent.info.textStrong)}>
+                    <strong>Security Note:</strong> If you see any sessions you don't recognise,
+                    revoke them immediately. You can also revoke all other sessions if you suspect
+                    unauthorised access.
+                  </p>
                 </div>
-              </div>
-            </div>
-          )}
-
-          <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
-            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-              {sessions.map((session) => (
-                <li key={session.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">{getDeviceIcon(session)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <p className={cn('text-sm font-medium', theme.text.strong)}>
-                            {session.browser}
-                          </p>
-                          <span className={getDeviceTypeColor(session)}>{session.device_type}</span>
-                          <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
-                            {session.type.toUpperCase()}
-                          </span>
-                          {session.current && (
-                            <span className={cn(theme.badges.tag.base, theme.badges.tag.success)}>
-                              Current Session
-                            </span>
-                          )}
-                        </div>
-                        <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
-                          <p>
-                            <span className="font-medium">Operating System:</span> {session.os}
-                          </p>
-                          <p>
-                            <span className="font-medium">Device:</span> {session.device}
-                          </p>
-                          <p>
-                            <span className="font-medium">Location:</span> {session.location}
-                          </p>
-                          <p>
-                            <span className="font-medium">IP Address:</span> {session.ip_address}
-                          </p>
-                          <p>
-                            <span className="font-medium">Last Active:</span>{' '}
-                            {formatDate(session.last_used)}
-                          </p>
-                          <p>
-                            <span className="font-medium">Created:</span>{' '}
-                            {formatDate(session.created_at)}
-                          </p>
-                          <p>
-                            <span className="font-medium">Expires:</span>{' '}
-                            {formatDate(session.expires_at)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {!session.current && (
-                      <div className="flex-shrink-0">
-                        <button
-                          onClick={() => handleRevokeSessionClick(session.id)}
-                          disabled={revokeMutation.isPending || revokeAllMutation.isPending}
-                          className={cn(
-                            'inline-flex items-center text-sm leading-4',
-                            theme.buttons.danger,
-                            (revokeMutation.isPending || revokeAllMutation.isPending) &&
-                              'opacity-50'
-                          )}
-                        >
-                          {revokeMutation.isPending && sessionToRevoke === session.id
-                            ? 'Revoking...'
-                            : 'Revoke'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {sessions.length === 0 && (
-            <EmptyState
-              icon={InformationCircleIcon}
-              title="No active sessions found"
-              description="This might indicate a configuration issue with session tracking."
-              variant="info"
-            />
-          )}
-
-          <div className={cn(theme.intent.info.surface, 'mt-8 rounded-lg p-4')}>
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <InformationCircleIcon className={cn('h-5 w-5', theme.intent.info.icon)} />
-              </div>
-              <div className="ml-3">
-                <p className={cn('text-sm', theme.intent.info.textStrong)}>
-                  <strong>Security Note:</strong> If you see any sessions you don't recognise,
-                  revoke them immediately. You can also revoke all other sessions if you suspect
-                  unauthorised access.
-                </p>
               </div>
             </div>
           </div>
