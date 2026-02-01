@@ -59,7 +59,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           path ? { filePath: path } : undefined
         );
-        return response.data;
+        return response.data.data;
       } catch (error) {
         handleError(error);
         throw error;
@@ -79,7 +79,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           { filePath: path }
         );
-        return response.data;
+        return response.data.data;
       } catch (error) {
         handleError(error);
         throw error;
@@ -242,7 +242,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           path ? { filePath: path } : undefined
         );
-        return response.data;
+        return response.data.data;
       } catch (error) {
         handleError(error);
         throw error;

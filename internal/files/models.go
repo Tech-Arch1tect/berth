@@ -86,12 +86,32 @@ type DirectoryStats struct {
 	GroupName       string `json:"group_name,omitempty"`
 }
 
-type MessageResponse struct {
-	Message string `json:"message"`
-}
-
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Code    string `json:"code,omitempty"`
 	Details string `json:"details,omitempty"`
+}
+
+type DirectoryListingResponse struct {
+	Success bool             `json:"success"`
+	Data    DirectoryListing `json:"data"`
+}
+
+type FileContentResponse struct {
+	Success bool        `json:"success"`
+	Data    FileContent `json:"data"`
+}
+
+type FileMessageResponse struct {
+	Success bool            `json:"success"`
+	Data    FileMessageData `json:"data"`
+}
+
+type FileMessageData struct {
+	Message string `json:"message"`
+}
+
+type DirectoryStatsResponse struct {
+	Success bool           `json:"success"`
+	Data    DirectoryStats `json:"data"`
 }

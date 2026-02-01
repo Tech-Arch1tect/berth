@@ -5,9 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { MessageData2 } from './messageData2';
+import type { FileContent } from './fileContent';
 
-export interface MessageResponse {
-  data: MessageData2;
+export interface FileContentResponse {
+  data: FileContent;
   success: boolean;
 }

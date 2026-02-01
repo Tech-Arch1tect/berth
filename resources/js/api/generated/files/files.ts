@@ -27,15 +27,15 @@ import type {
   CopyRequest,
   CreateDirectoryRequest,
   DeleteRequest2,
-  DirectoryListing,
-  DirectoryStats,
+  DirectoryListingResponse,
+  DirectoryStatsResponse,
   ErrorResponse,
-  FileContent,
+  FileContentResponse,
+  FileMessageResponse,
   GetApiV1ServersServeridStacksStacknameFilesDownloadParams,
   GetApiV1ServersServeridStacksStacknameFilesParams,
   GetApiV1ServersServeridStacksStacknameFilesReadParams,
   GetApiV1ServersServeridStacksStacknameFilesStatsParams,
-  MessageResponse,
   PostApiV1ServersServeridStacksStacknameFilesUploadBody,
   RenameRequest,
   WriteFileRequest,
@@ -53,7 +53,7 @@ export const getApiV1ServersServeridStacksStacknameFiles = (
   params?: GetApiV1ServersServeridStacksStacknameFilesParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<DirectoryListing>({
+  return apiClient<DirectoryListingResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files`,
     method: 'GET',
     params,
@@ -233,7 +233,7 @@ export const postApiV1ServersServeridStacksStacknameFilesChmod = (
   chmodRequest: ChmodRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/chmod`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -320,7 +320,7 @@ export const postApiV1ServersServeridStacksStacknameFilesChown = (
   chownRequest: ChownRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/chown`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -407,7 +407,7 @@ export const postApiV1ServersServeridStacksStacknameFilesCopy = (
   copyRequest: CopyRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/copy`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -494,7 +494,7 @@ export const deleteApiV1ServersServeridStacksStacknameFilesDelete = (
   deleteRequest2: DeleteRequest2,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/delete`,
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -763,7 +763,7 @@ export const postApiV1ServersServeridStacksStacknameFilesMkdir = (
   createDirectoryRequest: CreateDirectoryRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/mkdir`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -850,7 +850,7 @@ export const getApiV1ServersServeridStacksStacknameFilesRead = (
   params: GetApiV1ServersServeridStacksStacknameFilesReadParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<FileContent>({
+  return apiClient<FileContentResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/read`,
     method: 'GET',
     params,
@@ -1030,7 +1030,7 @@ export const postApiV1ServersServeridStacksStacknameFilesRename = (
   renameRequest: RenameRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/rename`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1117,7 +1117,7 @@ export const getApiV1ServersServeridStacksStacknameFilesStats = (
   params?: GetApiV1ServersServeridStacksStacknameFilesStatsParams,
   signal?: AbortSignal
 ) => {
-  return apiClient<DirectoryStats>({
+  return apiClient<DirectoryStatsResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/stats`,
     method: 'GET',
     params,
@@ -1303,7 +1303,7 @@ export const postApiV1ServersServeridStacksStacknameFilesUpload = (
     formData.append(`filePath`, postApiV1ServersServeridStacksStacknameFilesUploadBody.filePath);
   }
 
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/upload`,
     method: 'POST',
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -1411,7 +1411,7 @@ export const postApiV1ServersServeridStacksStacknameFilesWrite = (
   writeFileRequest: WriteFileRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse>({
+  return apiClient<FileMessageResponse>({
     url: `/api/v1/servers/${serverid}/stacks/${stackname}/files/write`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

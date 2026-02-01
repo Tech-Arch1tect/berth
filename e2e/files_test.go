@@ -4,36 +4,12 @@ import (
 	"testing"
 
 	"berth/handlers"
+	"berth/internal/files"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
-
-type DirectoryListingResponse struct {
-	Path    string `json:"path"`
-	Entries []struct {
-		Name        string `json:"name"`
-		Path        string `json:"path"`
-		Size        int64  `json:"size"`
-		IsDirectory bool   `json:"is_directory"`
-		Mode        string `json:"mode"`
-	} `json:"entries"`
-}
-
-type FileContentResponse struct {
-	Path     string `json:"path"`
-	Content  string `json:"content"`
-	Size     int64  `json:"size"`
-	Encoding string `json:"encoding"`
-}
-
-type DirectoryStatsResponse struct {
-	Path            string `json:"path"`
-	MostCommonOwner uint32 `json:"most_common_owner"`
-	MostCommonGroup uint32 `json:"most_common_group"`
-	MostCommonMode  string `json:"most_common_mode"`
-}
 
 func TestFileEndpointsJWT(t *testing.T) {
 	app := SetupTestApp(t)
@@ -134,10 +110,11 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var listing DirectoryListingResponse
+		var listing files.DirectoryListingResponse
 		require.NoError(t, resp.GetJSON(&listing))
-		assert.Equal(t, ".", listing.Path)
-		assert.NotEmpty(t, listing.Entries)
+		assert.True(t, listing.Success)
+		assert.Equal(t, ".", listing.Data.Path)
+		assert.NotEmpty(t, listing.Data.Entries)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read returns file content", func(t *testing.T) {
@@ -152,10 +129,11 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var content FileContentResponse
+		var content files.FileContentResponse
 		require.NoError(t, resp.GetJSON(&content))
-		assert.Equal(t, "docker-compose.yml", content.Path)
-		assert.NotEmpty(t, content.Content)
+		assert.True(t, content.Success)
+		assert.Equal(t, "docker-compose.yml", content.Data.Path)
+		assert.NotEmpty(t, content.Data.Content)
 	})
 
 	t.Run("GET /api/v1/servers/:serverid/stacks/:stackname/files/read without filePath returns 400", func(t *testing.T) {
@@ -311,9 +289,10 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stats DirectoryStatsResponse
+		var stats files.DirectoryStatsResponse
 		require.NoError(t, resp.GetJSON(&stats))
-		assert.Equal(t, ".", stats.Path)
+		assert.True(t, stats.Success)
+		assert.Equal(t, ".", stats.Data.Path)
 	})
 }
 

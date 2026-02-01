@@ -58,7 +58,7 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
             const baseMode = stats.most_common_mode || '755';
             defaultMode = baseMode
               .split('')
-              .map((digit) => {
+              .map((digit: string) => {
                 const d = parseInt(digit, 10);
                 if (isNaN(d)) return digit;
                 return (d & 4 ? d | 1 : d).toString();

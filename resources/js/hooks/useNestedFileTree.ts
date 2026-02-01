@@ -49,7 +49,7 @@ export function useNestedFileTree({
           stackname,
           path ? { filePath: path } : undefined
         );
-        return response.data;
+        return response.data.data;
       },
       enabled,
       staleTime: 0,

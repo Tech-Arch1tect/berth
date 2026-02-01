@@ -549,7 +549,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "Directory path to list").Optional().
-		Response(http.StatusOK, files.DirectoryListing{}, "Directory listing").
+		Response(http.StatusOK, files.DirectoryListingResponse{}, "Directory listing").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -564,7 +564,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "File path to read").Required().
-		Response(http.StatusOK, files.FileContent{}, "File contents").
+		Response(http.StatusOK, files.FileContentResponse{}, "File contents").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -579,7 +579,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.WriteFileRequest{}, "File write request").
-		Response(http.StatusOK, files.MessageResponse{}, "File written successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "File written successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -597,7 +597,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		FileField("file", true).
 		Field("filePath", false).
 		Done().
-		Response(http.StatusOK, files.MessageResponse{}, "File uploaded successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "File uploaded successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "File is required").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -612,7 +612,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.CreateDirectoryRequest{}, "Directory creation request").
-		Response(http.StatusOK, files.MessageResponse{}, "Directory created successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "Directory created successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -627,7 +627,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.DeleteRequest{}, "Delete request").
-		Response(http.StatusOK, files.MessageResponse{}, "File or directory deleted successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory deleted successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -642,7 +642,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.RenameRequest{}, "Rename request").
-		Response(http.StatusOK, files.MessageResponse{}, "File or directory renamed successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory renamed successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -657,7 +657,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.CopyRequest{}, "Copy request").
-		Response(http.StatusOK, files.MessageResponse{}, "File or directory copied successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory copied successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -672,7 +672,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.ChmodRequest{}, "Chmod request").
-		Response(http.StatusOK, files.MessageResponse{}, "Permissions changed successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "Permissions changed successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -687,7 +687,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.ChownRequest{}, "Chown request").
-		Response(http.StatusOK, files.MessageResponse{}, "Ownership changed successfully").
+		Response(http.StatusOK, files.FileMessageResponse{}, "Ownership changed successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
@@ -718,7 +718,7 @@ func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "Directory path").Optional().
-		Response(http.StatusOK, files.DirectoryStats{}, "Directory statistics").
+		Response(http.StatusOK, files.DirectoryStatsResponse{}, "Directory statistics").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").

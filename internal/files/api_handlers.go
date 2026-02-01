@@ -42,7 +42,10 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, DirectoryListing(*result))
+	return common.SendSuccess(c, DirectoryListingResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *APIHandler) ReadFile(c echo.Context) error {
@@ -66,7 +69,10 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileContent(*result))
+	return common.SendSuccess(c, FileContentResponse{
+		Success: true,
+		Data:    *result,
+	})
 }
 
 func (h *APIHandler) WriteFile(c echo.Context) error {
@@ -108,7 +114,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) CreateDirectory(c echo.Context) error {
@@ -135,7 +141,7 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Delete(c echo.Context) error {
@@ -177,7 +183,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Rename(c echo.Context) error {
@@ -221,7 +227,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Copy(c echo.Context) error {
@@ -248,7 +254,7 @@ func (h *APIHandler) Copy(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) UploadFile(c echo.Context) error {
@@ -291,7 +297,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "File uploaded successfully"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "File uploaded successfully"}})
 }
 
 func (h *APIHandler) DownloadFile(c echo.Context) error {
@@ -371,7 +377,7 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Chown(c echo.Context) error {
@@ -402,7 +408,7 @@ func (h *APIHandler) Chown(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, MessageResponse{Message: "success"})
+	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
@@ -426,5 +432,8 @@ func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
 		return common.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, DirectoryStats(*stats))
+	return common.SendSuccess(c, DirectoryStatsResponse{
+		Success: true,
+		Data:    *stats,
+	})
 }

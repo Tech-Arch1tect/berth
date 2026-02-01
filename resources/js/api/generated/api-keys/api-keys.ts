@@ -29,7 +29,7 @@ import type {
   GetAPIKeyResponse,
   ListAPIKeysResponse,
   ListScopesResponse,
-  MessageResponse2,
+  MessageResponse,
 } from '.././models';
 
 import { apiClient } from '../../../lib/api';
@@ -218,7 +218,7 @@ export const usePostApiV1ApiKeys = <TError = ErrorResponse | void, TContext = un
  * @summary Revoke API key
  */
 export const deleteApiV1ApiKeysId = (id: number, signal?: AbortSignal) => {
-  return apiClient<MessageResponse2>({ url: `/api/v1/api-keys/${id}`, method: 'DELETE', signal });
+  return apiClient<MessageResponse>({ url: `/api/v1/api-keys/${id}`, method: 'DELETE', signal });
 };
 
 export const getDeleteApiV1ApiKeysIdMutationOptions = <
@@ -525,7 +525,7 @@ export const postApiV1ApiKeysIdScopes = (
   addScopeRequest: AddScopeRequest,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse2>({
+  return apiClient<MessageResponse>({
     url: `/api/v1/api-keys/${id}/scopes`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -605,7 +605,7 @@ export const deleteApiV1ApiKeysIdScopesScopeId = (
   scopeId: number,
   signal?: AbortSignal
 ) => {
-  return apiClient<MessageResponse2>({
+  return apiClient<MessageResponse>({
     url: `/api/v1/api-keys/${id}/scopes/${scopeId}`,
     method: 'DELETE',
     signal,
