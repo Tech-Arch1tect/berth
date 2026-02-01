@@ -8,9 +8,11 @@ import {
   getApiV1ServersServeridStacksStacknameImages,
   getApiV1ServersServeridStacksCanCreate,
   postApiV1ServersServeridStacks,
+} from '../api/generated/stacks/stacks';
+import {
   getApiV1ServersServeridStacksStacknameCompose,
   patchApiV1ServersServeridStacksStacknameCompose,
-} from '../api/generated/stacks/stacks';
+} from '../api/generated/compose/compose';
 import type {
   Stack,
   Network,

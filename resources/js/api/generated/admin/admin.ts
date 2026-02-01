@@ -40,12 +40,14 @@ import type {
   ErrorResponse,
   ExportRequest,
   GetApiV1AdminOperationLogsParams,
+  GetApiV1AdminPermissionsParams,
   GetApiV1AdminSecurityAuditLogsParams,
   GetLogAPIResponse,
   GetStatsAPIResponse,
   GetUserRolesResponse,
   ImportResponse,
   ListLogsAPIResponse,
+  ListPermissionsResponse,
   ListRoleStackPermissionsResponse,
   ListRolesResponse,
   ListUsersResponse,
@@ -589,6 +591,134 @@ export function useGetApiV1AdminOperationLogsId<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetApiV1AdminOperationLogsIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns list of all permissions. Use ?type=role to filter out API-key-only permissions. Requires admin access.
+ * @summary List all permissions
+ */
+export const getApiV1AdminPermissions = (
+  params?: GetApiV1AdminPermissionsParams,
+  signal?: AbortSignal
+) => {
+  return apiClient<ListPermissionsResponse>({
+    url: `/api/v1/admin/permissions`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetApiV1AdminPermissionsQueryKey = (params?: GetApiV1AdminPermissionsParams) => {
+  return [`/api/v1/admin/permissions`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiV1AdminPermissionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  params?: GetApiV1AdminPermissionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminPermissions>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminPermissionsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminPermissions>>> = ({
+    signal,
+  }) => getApiV1AdminPermissions(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminPermissionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminPermissions>>
+>;
+export type GetApiV1AdminPermissionsQueryError = ErrorResponse | void;
+
+export function useGetApiV1AdminPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  params: undefined | GetApiV1AdminPermissionsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminPermissions>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminPermissions>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  params?: GetApiV1AdminPermissionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminPermissions>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminPermissions>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  params?: GetApiV1AdminPermissionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminPermissions>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List all permissions
+ */
+
+export function useGetApiV1AdminPermissions<
+  TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
+  TError = ErrorResponse | void,
+>(
+  params?: GetApiV1AdminPermissionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminPermissions>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminPermissionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

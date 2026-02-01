@@ -1,8 +1,8 @@
 import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStackname,
-  patchApiV1ServersServeridStacksStacknameCompose,
 } from '../api/generated/stacks/stacks';
+import { patchApiV1ServersServeridStacksStacknameCompose } from '../api/generated/compose/compose';
 import { getApiV1AdminServers, postApiV1AdminServersIdTest } from '../api/generated/admin/admin';
 import type { Stack, StackDetails, ServerInfo } from '../api/generated/models';
 
