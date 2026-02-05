@@ -145,6 +145,23 @@ func SetupTestApp(t *testing.T) *TestApp {
 			cfg.Mail.TemplatesDir = filepath.Join("..", "testdata", "mail")
 			return cfg
 		},
+		ReadinessCheck: func(ctx context.Context, app *e2etesting.E2EApp) error {
+			var roleCount int64
+			if err := app.DB.Raw("SELECT COUNT(*) FROM roles").Scan(&roleCount).Error; err != nil {
+				return fmt.Errorf("database not accessible: %w", err)
+			}
+			if roleCount == 0 {
+				return fmt.Errorf("RBAC roles not seeded")
+			}
+			var permCount int64
+			if err := app.DB.Raw("SELECT COUNT(*) FROM permissions").Scan(&permCount).Error; err != nil {
+				return fmt.Errorf("database not accessible: %w", err)
+			}
+			if permCount == 0 {
+				return fmt.Errorf("RBAC permissions not seeded")
+			}
+			return nil
+		},
 	}
 
 	e2eApp, err := e2etesting.BuildTestApp(
