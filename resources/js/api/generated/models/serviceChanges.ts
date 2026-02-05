@@ -28,8 +28,10 @@ export interface ServiceChanges {
   image?: string | null;
   labels?: ServiceChangesLabels;
   networks?: ServiceChangesNetworks;
-  ports?: PortMapping[];
+  /** @nullable */
+  ports?: PortMapping[] | null;
   /** @nullable */
   restart?: string | null;
-  volumes?: VolumeMount2[];
+  /** @nullable */
+  volumes?: VolumeMount2[] | null;
 }
