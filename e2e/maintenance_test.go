@@ -69,6 +69,7 @@ type SingleRegistryCredentialResponse struct {
 }
 
 func TestMaintenancePermissionsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -134,6 +135,7 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 }
 
 func TestMaintenanceInfoJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -225,6 +227,7 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 }
 
 func TestMaintenancePruneJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -308,6 +311,7 @@ func TestMaintenancePruneJWT(t *testing.T) {
 }
 
 func TestMaintenanceDeleteResourceJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -412,6 +416,7 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 }
 
 func TestMaintenanceEndpointsSessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -441,6 +446,7 @@ func TestMaintenanceEndpointsSessionAuth(t *testing.T) {
 }
 
 func TestMaintenanceEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/servers/:serverid/maintenance/permissions requires authentication", func(t *testing.T) {
@@ -485,6 +491,7 @@ func TestMaintenanceEndpointsNoAuth(t *testing.T) {
 }
 
 func TestRegistryCredentialsSessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -629,6 +636,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 }
 
 func TestRegistryEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("POST /api/v1/servers/:serverid/registries requires authentication", func(t *testing.T) {

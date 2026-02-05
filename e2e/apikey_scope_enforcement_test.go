@@ -12,6 +12,7 @@ import (
 )
 
 func TestAPIKeyScopeEnforcement(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -252,6 +253,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 }
 
 func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -329,6 +331,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 }
 
 func TestAPIKeyFilesAccess(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -421,6 +424,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 }
 
 func TestAPIKeyLogsAccess(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{

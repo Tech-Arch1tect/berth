@@ -11,6 +11,7 @@ import (
 )
 
 func TestImageUpdatesNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/image-updates requires authentication", func(t *testing.T) {
@@ -29,6 +30,7 @@ func TestImageUpdatesNoAuth(t *testing.T) {
 }
 
 func TestImageUpdatesWithAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -67,6 +69,7 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 }
 
 func TestImageUpdatesNonAdmin(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{

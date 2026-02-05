@@ -12,6 +12,7 @@ import (
 )
 
 func TestStackEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -222,6 +223,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 }
 
 func TestStackEndpointsSessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -247,6 +249,7 @@ func TestStackEndpointsSessionAuth(t *testing.T) {
 }
 
 func TestStackEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-noauth")

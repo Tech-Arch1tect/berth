@@ -11,6 +11,7 @@ import (
 )
 
 func TestWebSocketStackStatusNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /ws/ui/stack-status/:server_id requires authentication", func(t *testing.T) {
@@ -29,6 +30,7 @@ func TestWebSocketStackStatusNoAuth(t *testing.T) {
 }
 
 func TestWebSocketTerminalNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /ws/ui/servers/:serverid/terminal requires authentication", func(t *testing.T) {
@@ -47,6 +49,7 @@ func TestWebSocketTerminalNoAuth(t *testing.T) {
 }
 
 func TestWebSocketOperationsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /ws/ui/servers/:serverid/stacks/:stackname/operations requires authentication", func(t *testing.T) {
@@ -79,6 +82,7 @@ func TestWebSocketOperationsNoAuth(t *testing.T) {
 }
 
 func TestWebSocketStackStatusJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -114,6 +118,7 @@ func TestWebSocketStackStatusJWT(t *testing.T) {
 }
 
 func TestWebSocketTerminalJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -150,6 +155,7 @@ func TestWebSocketTerminalJWT(t *testing.T) {
 }
 
 func TestWebSocketOperationsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -200,6 +206,7 @@ func TestWebSocketOperationsJWT(t *testing.T) {
 }
 
 func TestWebSocketInvalidToken(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /ws/api/stack-status/:server_id with invalid token returns 401", func(t *testing.T) {
@@ -243,6 +250,7 @@ func TestWebSocketInvalidToken(t *testing.T) {
 }
 
 func TestWebSocketMalformedAuthorization(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /ws/api/stack-status/:server_id with malformed auth returns 401", func(t *testing.T) {

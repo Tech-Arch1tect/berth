@@ -14,6 +14,7 @@ import (
 )
 
 func TestTOTPSetupAPI(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/totp/setup returns QR code and secret for authenticated user", func(t *testing.T) {
@@ -153,6 +154,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 }
 
 func TestTOTPEnableAPI(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("POST /api/v1/totp/enable requires authentication", func(t *testing.T) {
@@ -312,6 +314,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 }
 
 func TestTOTPDisableAPI(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("POST /api/v1/totp/disable requires authentication", func(t *testing.T) {
@@ -482,6 +485,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 }
 
 func TestTOTPUIPages(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /auth/totp/setup redirects to login when unauthenticated", func(t *testing.T) {
@@ -569,6 +573,7 @@ func TestTOTPUIPages(t *testing.T) {
 }
 
 func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/totp/status requires authentication", func(t *testing.T) {

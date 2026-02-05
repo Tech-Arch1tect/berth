@@ -17,6 +17,7 @@ type OperationStartResponse struct {
 }
 
 func TestOperationsEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -167,6 +168,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 }
 
 func TestAdminOperationLogsEndpoints(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -225,6 +227,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 }
 
 func TestOperationLogsDetailEndpoints(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -273,6 +276,7 @@ func TestOperationLogsDetailEndpoints(t *testing.T) {
 }
 
 func TestOperationsEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-ops-noauth")

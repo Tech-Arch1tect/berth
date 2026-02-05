@@ -19,6 +19,7 @@ import (
 //   - E2E_COVERAGE_JSON=path - custom path for JSON report
 //   - E2E_COVERAGE_FILE=path - custom path for text report
 func TestMain(m *testing.M) {
+	os.Setenv("ENCRYPTION_SECRET", "test-encryption-secret-key-32chars!!")
 
 	code := m.Run()
 

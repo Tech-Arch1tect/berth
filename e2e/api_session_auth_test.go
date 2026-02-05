@@ -11,6 +11,7 @@ import (
 )
 
 func TestAPISessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("session auth can access profile endpoint", func(t *testing.T) {
@@ -106,6 +107,7 @@ func TestAPISessionAuth(t *testing.T) {
 }
 
 func TestBothAuthMethodsWork(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{

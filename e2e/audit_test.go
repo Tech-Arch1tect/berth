@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"os"
 	"testing"
 
 	"berth/handlers"
@@ -13,6 +12,7 @@ import (
 )
 
 func TestSecurityAuditLogsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -110,6 +110,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 }
 
 func TestSecurityAuditStatsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -152,6 +153,7 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 }
 
 func TestSecurityAuditLogDetailJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -221,12 +223,8 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 }
 
 func TestMigrationExportJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
-
-	os.Setenv("ENCRYPTION_SECRET", "test-encryption-secret-key-32chars!!")
-	t.Cleanup(func() {
-		os.Unsetenv("ENCRYPTION_SECRET")
-	})
 
 	user := &e2etesting.TestUser{
 		Username: "migrationuser",
@@ -297,12 +295,8 @@ func TestMigrationExportJWT(t *testing.T) {
 }
 
 func TestMigrationImportJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
-
-	os.Setenv("ENCRYPTION_SECRET", "test-encryption-secret-key-32chars!!")
-	t.Cleanup(func() {
-		os.Unsetenv("ENCRYPTION_SECRET")
-	})
 
 	user := &e2etesting.TestUser{
 		Username: "migrationimportuser",
@@ -354,6 +348,7 @@ func TestMigrationImportJWT(t *testing.T) {
 }
 
 func TestAdminOperationLogDetailJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -389,6 +384,7 @@ func TestAdminOperationLogDetailJWT(t *testing.T) {
 }
 
 func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/admin/security-audit-logs requires authentication", func(t *testing.T) {
@@ -437,6 +433,7 @@ func TestSecurityAuditEndpointsNoAuth(t *testing.T) {
 }
 
 func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{

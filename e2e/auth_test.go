@@ -11,6 +11,7 @@ import (
 )
 
 func TestUserLogin(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("successful login", func(t *testing.T) {
@@ -60,6 +61,7 @@ func TestUserLogin(t *testing.T) {
 }
 
 func TestUserLogout(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 	TagTest(t, "POST", "/auth/logout", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 
@@ -79,6 +81,7 @@ func TestUserLogout(t *testing.T) {
 }
 
 func TestRememberMe(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := app.CreateVerifiedTestUser(t)
@@ -140,6 +143,7 @@ func TestRememberMe(t *testing.T) {
 }
 
 func TestPasswordReset(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := app.CreateVerifiedTestUser(t)
@@ -179,6 +183,7 @@ func TestPasswordReset(t *testing.T) {
 }
 
 func TestProtectedRoutes(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("unauthenticated access redirects to login", func(t *testing.T) {
@@ -202,6 +207,7 @@ func TestProtectedRoutes(t *testing.T) {
 }
 
 func TestSessionManagement(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := app.CreateVerifiedTestUser(t)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestAPILogin(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("successful login returns tokens", func(t *testing.T) {
@@ -80,6 +81,7 @@ func TestAPILogin(t *testing.T) {
 }
 
 func TestAPIRefresh(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("valid refresh token returns new tokens", func(t *testing.T) {
@@ -133,6 +135,7 @@ func TestAPIRefresh(t *testing.T) {
 }
 
 func TestAPILogout(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("logout revokes tokens", func(t *testing.T) {
@@ -181,6 +184,7 @@ func TestAPILogout(t *testing.T) {
 }
 
 func TestAPIProfile(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("authenticated user can get profile", func(t *testing.T) {
@@ -230,6 +234,7 @@ func TestAPIProfile(t *testing.T) {
 }
 
 func TestAPITOTPStatus(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("new user has TOTP disabled", func(t *testing.T) {
@@ -269,6 +274,7 @@ func TestAPITOTPStatus(t *testing.T) {
 }
 
 func TestAPISessions(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("list sessions returns current session", func(t *testing.T) {
@@ -371,6 +377,7 @@ func TestAPISessions(t *testing.T) {
 }
 
 func TestAPITOTPVerify(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("POST /api/v1/auth/totp/verify requires code", func(t *testing.T) {

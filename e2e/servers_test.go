@@ -30,6 +30,7 @@ type SingleServerResponse struct {
 }
 
 func TestServerEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -153,6 +154,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 }
 
 func TestServerCRUDOperations(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -267,6 +269,7 @@ func TestServerCRUDOperations(t *testing.T) {
 }
 
 func TestServerTestConnection(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -319,6 +322,7 @@ func TestServerTestConnection(t *testing.T) {
 }
 
 func TestServerEndpointsSessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -356,6 +360,7 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 }
 
 func TestServerEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/servers requires authentication", func(t *testing.T) {

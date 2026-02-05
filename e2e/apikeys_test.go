@@ -11,6 +11,7 @@ import (
 )
 
 func TestAPIKeysSessionAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -215,6 +216,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 }
 
 func TestAPIKeysNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/api-keys requires authentication", func(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 )
 
 func TestLogsEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -157,6 +158,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 }
 
 func TestLogsEndpointsErrorCases(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -221,6 +223,7 @@ func TestLogsEndpointsErrorCases(t *testing.T) {
 }
 
 func TestLogsEndpointsRBAC(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	adminUser := &e2etesting.TestUser{

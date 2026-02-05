@@ -40,6 +40,7 @@ type StackPermissionsResponse struct {
 }
 
 func TestRBACUsersEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -159,6 +160,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 }
 
 func TestRBACRolesEndpointsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -276,6 +278,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 }
 
 func TestRBACAssignRevokeRoleJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	adminUser := &e2etesting.TestUser{
@@ -382,6 +385,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 }
 
 func TestRBACStackPermissionsJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -605,6 +609,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 }
 
 func TestRBACPermissionsEndpointJWT(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
@@ -666,6 +671,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 }
 
 func TestRBACEndpointsNoAuth(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	t.Run("GET /api/v1/admin/users requires authentication", func(t *testing.T) {
@@ -691,6 +697,7 @@ func TestRBACEndpointsNoAuth(t *testing.T) {
 }
 
 func TestRBACEndpointsNonAdmin(t *testing.T) {
+	t.Parallel()
 	app := SetupTestApp(t)
 
 	user := &e2etesting.TestUser{
