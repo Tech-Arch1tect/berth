@@ -39,83 +39,132 @@ import (
 	"github.com/tech-arch1tect/brx/services/logging"
 	"github.com/tech-arch1tect/brx/services/totp"
 	"github.com/tech-arch1tect/brx/session"
+	"go.uber.org/fx"
 )
 
-func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler, mobileAuthHandler *handlers.MobileAuthHandler, sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, migrationHandler *migration.Handler, operationLogsHandler *operationlogs.Handler, rbacHandler *rbac.Handler, rbacAPIHandler *rbac.APIHandler, rbacMiddleware *rbac.Middleware, setupHandler *setup.Handler, serverHandler *server.Handler, serverAPIHandler *server.APIHandler, serverUserAPIHandler *server.UserAPIHandler, stackHandler *stack.Handler, stackAPIHandler *stack.APIHandler, maintenanceHandler *maintenance.Handler, maintenanceAPIHandler *maintenance.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler, operationsHandler *operations.Handler, operationsWSHandler *operations.WebSocketHandler, registryHandler *registry.Handler, registryAPIHandler *registry.APIHandler, wsHandler *websocket.Handler, securityHandler *security.Handler, apiKeyHandler *apikey.Handler, apiKeySvc *apikey.Service, imageUpdatesAPIHandler *imageupdates.APIHandler, vulnscanHandler *vulnscan.Handler, sessionManager *session.Manager, sessionService session.SessionService, rateLimitStore ratelimit.Store, inertiaService *inertia.Service, jwtSvc *jwtservice.Service, userProvider jwtshared.UserProvider, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, cfg *config.Config) {
-	if rbacMiddleware != nil && apiKeySvc != nil {
-		rbacMiddleware.SetAPIKeyService(apiKeySvc)
+type RouteParams struct {
+	fx.In
+
+	Srv                    *brxserver.Server
+	DashboardHandler       *handlers.DashboardHandler
+	StacksHandler          *handlers.StacksHandler
+	AuthHandler            *handlers.AuthHandler
+	MobileAuthHandler      *handlers.MobileAuthHandler
+	SessionHandler         *handlers.SessionHandler
+	TOTPHandler            *handlers.TOTPHandler
+	VersionHandler         *handlers.VersionHandler
+	MigrationHandler       *migration.Handler
+	OperationLogsHandler   *operationlogs.Handler
+	RBACHandler            *rbac.Handler
+	RBACAPIHandler         *rbac.APIHandler
+	RBACMiddleware         *rbac.Middleware
+	SetupHandler           *setup.Handler
+	ServerHandler          *server.Handler
+	ServerAPIHandler       *server.APIHandler
+	ServerUserAPIHandler   *server.UserAPIHandler
+	StackHandler           *stack.Handler
+	StackAPIHandler        *stack.APIHandler
+	MaintenanceHandler     *maintenance.Handler
+	MaintenanceAPIHandler  *maintenance.APIHandler
+	FilesAPIHandler        *files.APIHandler
+	LogsHandler            *logs.Handler
+	OperationsHandler      *operations.Handler
+	OperationsWSHandler    *operations.WebSocketHandler
+	RegistryHandler        *registry.Handler
+	RegistryAPIHandler     *registry.APIHandler
+	WSHandler              *websocket.Handler
+	SecurityHandler        *security.Handler
+	APIKeyHandler          *apikey.Handler
+	APIKeySvc              *apikey.Service
+	ImageUpdatesAPIHandler *imageupdates.APIHandler
+	VulnscanHandler        *vulnscan.Handler
+	SessionManager         *session.Manager
+	SessionService         session.SessionService
+	RateLimitStore         ratelimit.Store
+	InertiaService         *inertia.Service
+	JWTSvc                 *jwtservice.Service
+	UserProvider           jwtshared.UserProvider
+	AuthSvc                *auth.Service
+	TOTPSvc                *totp.Service
+	Logger                 *logging.Service
+	Cfg                    *config.Config
+}
+
+func RegisterRoutes(p RouteParams) {
+	if p.RBACMiddleware != nil && p.APIKeySvc != nil {
+		p.RBACMiddleware.SetAPIKeyService(p.APIKeySvc)
 	}
 
-	e := srv.Echo()
+	e := p.Srv.Echo()
 	e.Use(middleware.Recover())
-	handlers.SetupErrorHandler(e, inertiaService)
+	handlers.SetupErrorHandler(e, p.InertiaService)
 
 	// ============================================================================
 	// PUBLIC ROUTES
 	// ============================================================================
 
-	srv.Get("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
+	p.Srv.Get("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
-	if setupHandler != nil {
-		srv.Get("/setup/admin", setupHandler.ShowSetup)
-		srv.Post("/setup/admin", setupHandler.CreateAdmin)
+	if p.SetupHandler != nil {
+		p.Srv.Get("/setup/admin", p.SetupHandler.ShowSetup)
+		p.Srv.Post("/setup/admin", p.SetupHandler.CreateAdmin)
 	}
 
 	// ============================================================================
 	// WEB UI ROUTES - Session Auth Only
 	// ============================================================================
 
-	web := srv.Group("")
-	web.Use(session.Middleware(sessionManager))
-	if sessionService != nil {
-		web.Use(session.SessionServiceMiddleware(sessionService))
+	web := p.Srv.Group("")
+	web.Use(session.Middleware(p.SessionManager))
+	if p.SessionService != nil {
+		web.Use(session.SessionServiceMiddleware(p.SessionService))
 	}
 	web.Use(rememberme.Middleware(rememberme.Config{
-		AuthService:  authSvc,
-		UserProvider: userProvider,
-		TOTPService:  totpSvc,
-		Logger:       logger,
+		AuthService:  p.AuthSvc,
+		UserProvider: p.UserProvider,
+		TOTPService:  p.TOTPSvc,
+		Logger:       p.Logger,
 	}))
-	if cfg.CSRF.Enabled {
-		web.Use(csrf.WithConfig(&cfg.CSRF))
-		web.Use(inertiacsrf.Middleware(cfg))
+	if p.Cfg.CSRF.Enabled {
+		web.Use(csrf.WithConfig(&p.Cfg.CSRF))
+		web.Use(inertiacsrf.Middleware(p.Cfg))
 	}
-	if inertiaService != nil {
-		web.Use(inertiaService.Middleware())
+	if p.InertiaService != nil {
+		web.Use(p.InertiaService.Middleware())
 		web.Use(inertiashared.MiddlewareWithConfig(inertiashared.Config{
 			AuthEnabled:  true,
 			FlashEnabled: true,
-			UserProvider: userProvider,
+			UserProvider: p.UserProvider,
 		}))
 	}
 
-	registerAuthRoutes(web, authHandler, totpHandler, rateLimitStore)
+	registerAuthRoutes(web, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
 	registerProtectedWebRoutes(web,
-		dashboardHandler, stacksHandler, authHandler, sessionHandler, totpHandler,
-		versionHandler, stackHandler, maintenanceHandler, registryHandler,
-		operationLogsHandler, apiKeyHandler,
-		registryAPIHandler)
-	registerAdminWebRoutes(web, rbacMiddleware, inertiaService,
-		rbacHandler, operationLogsHandler, serverHandler,
-		migrationHandler, securityHandler)
-	registerWebUIWebSocketRoutes(srv, sessionManager, wsHandler, operationsWSHandler)
+		p.DashboardHandler, p.StacksHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
+		p.VersionHandler, p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
+		p.OperationLogsHandler, p.APIKeyHandler,
+		p.RegistryAPIHandler)
+	registerAdminWebRoutes(web, p.RBACMiddleware, p.InertiaService,
+		p.RBACHandler, p.OperationLogsHandler, p.ServerHandler,
+		p.MigrationHandler, p.SecurityHandler)
+	registerWebUIWebSocketRoutes(p.Srv, p.SessionManager, p.WSHandler, p.OperationsWSHandler)
 
 	// ============================================================================
 	// API ROUTES - Hybrid Auth (Session OR JWT OR API Key)
 	// ============================================================================
 
-	if mobileAuthHandler != nil && jwtSvc != nil {
-		api := srv.Group("/api/v1")
-		api.Use(session.Middleware(sessionManager))
-		if sessionService != nil {
-			api.Use(session.SessionServiceMiddleware(sessionService))
+	if p.MobileAuthHandler != nil && p.JWTSvc != nil {
+		api := p.Srv.Group("/api/v1")
+		api.Use(session.Middleware(p.SessionManager))
+		if p.SessionService != nil {
+			api.Use(session.SessionServiceMiddleware(p.SessionService))
 		}
-		if cfg.CSRF.Enabled {
-			api.Use(berthauth.ConditionalCSRFMiddleware(cfg))
+		if p.Cfg.CSRF.Enabled {
+			api.Use(berthauth.ConditionalCSRFMiddleware(p.Cfg))
 		}
 
 		authApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-			Store:        rateLimitStore,
+			Store:        p.RateLimitStore,
 			Rate:         25,
 			Period:       time.Minute,
 			CountMode:    config.CountFailures,
@@ -123,23 +172,23 @@ func RegisterRoutes(srv *brxserver.Server, dashboardHandler *handlers.DashboardH
 		})
 
 		generalApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-			Store:        rateLimitStore,
+			Store:        p.RateLimitStore,
 			Rate:         1000,
 			Period:       time.Minute * 10,
 			CountMode:    config.CountAll,
 			KeyGenerator: ratelimit.DefaultKeyGenerator,
 		})
 
-		registerAPIAuthRoutes(api, authApiRateLimit, mobileAuthHandler)
-		registerProtectedAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
-			rbacMiddleware, mobileAuthHandler, serverUserAPIHandler,
-			stackAPIHandler, filesAPIHandler, logsHandler, operationsHandler,
-			operationLogsHandler, maintenanceAPIHandler, vulnscanHandler,
-			imageUpdatesAPIHandler, apiKeyHandler, versionHandler, registryAPIHandler)
-		registerAdminAPIRoutes(api, generalApiRateLimit, jwtSvc, apiKeySvc, userProvider,
-			rbacMiddleware, rbacAPIHandler, operationLogsHandler,
-			serverAPIHandler, migrationHandler, securityHandler)
-		registerAPIWebSocketRoutes(srv, jwtSvc, apiKeySvc, userProvider, wsHandler, operationsWSHandler)
+		registerAPIAuthRoutes(api, authApiRateLimit, p.MobileAuthHandler)
+		registerProtectedAPIRoutes(api, generalApiRateLimit, p.JWTSvc, p.APIKeySvc, p.UserProvider,
+			p.RBACMiddleware, p.MobileAuthHandler, p.ServerUserAPIHandler,
+			p.StackAPIHandler, p.FilesAPIHandler, p.LogsHandler, p.OperationsHandler,
+			p.OperationLogsHandler, p.MaintenanceAPIHandler, p.VulnscanHandler,
+			p.ImageUpdatesAPIHandler, p.APIKeyHandler, p.VersionHandler, p.RegistryAPIHandler)
+		registerAdminAPIRoutes(api, generalApiRateLimit, p.JWTSvc, p.APIKeySvc, p.UserProvider,
+			p.RBACMiddleware, p.RBACAPIHandler, p.OperationLogsHandler,
+			p.ServerAPIHandler, p.MigrationHandler, p.SecurityHandler)
+		registerAPIWebSocketRoutes(p.Srv, p.JWTSvc, p.APIKeySvc, p.UserProvider, p.WSHandler, p.OperationsWSHandler)
 	}
 }
 
