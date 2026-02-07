@@ -22,4 +22,10 @@ var Module = fx.Options(
 	fx.Provide(func(serverService *server.Service, agentManager *AgentManager, logger *logging.Service) *ServiceManager {
 		return NewServiceManager(serverService, agentManager, logger)
 	}),
+	fx.Invoke(startHub),
+	fx.Invoke(StartWebSocketServiceManager),
 )
+
+func startHub(hub *Hub) {
+	go hub.Run()
+}

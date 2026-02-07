@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"path/filepath"
 
 	"berth/handlers"
@@ -46,7 +45,6 @@ import (
 	"github.com/tech-arch1tect/brx/services/totp"
 	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -189,12 +187,8 @@ func NewApp(opts *AppOptions) *app.App {
 
 	fxOptions = append(fxOptions,
 		websocket.Module,
-		fx.Invoke(StartWebSocketHub),
-		fx.Invoke(websocket.StartWebSocketServiceManager),
 		fx.Invoke(func(svc *imageupdates.Service) {}),
 		fx.Invoke(vulnscan.StartPoller),
-		fx.Invoke(RegisterOperationAuditLoggerShutdown),
-		fx.Invoke(RegisterSecurityAuditLoggerShutdown),
 	)
 
 	if len(opts.ExtraFxOptions) > 0 {
@@ -233,38 +227,6 @@ func NewApp(opts *AppOptions) *app.App {
 	}
 
 	return berthApp
-}
-
-func StartWebSocketHub(hub *websocket.Hub) {
-	go hub.Run()
-}
-
-func RegisterOperationAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *operations.AuditLogger, logger *logging.Service) {
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			logger.Info("closing operation log audit logger")
-			if err := auditLogger.Close(); err != nil {
-				logger.Error("failed to close operation audit logger", zap.Error(err))
-				return err
-			}
-			logger.Info("operation log audit logger closed successfully")
-			return nil
-		},
-	})
-}
-
-func RegisterSecurityAuditLoggerShutdown(lc fx.Lifecycle, auditLogger *security.AuditLogger, logger *logging.Service) {
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			logger.Info("closing security audit logger")
-			if err := auditLogger.Close(); err != nil {
-				logger.Error("failed to close security audit logger", zap.Error(err))
-				return err
-			}
-			logger.Info("security audit logger closed successfully")
-			return nil
-		},
-	})
 }
 
 func Run() {

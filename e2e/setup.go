@@ -249,10 +249,6 @@ func SetupTestApp(t *testing.T) *TestApp {
 					}
 				}),
 				websocket.Module,
-				fx.Invoke(func(hub *websocket.Hub) {
-					go hub.Run()
-				}),
-				fx.Invoke(websocket.StartWebSocketServiceManager),
 				e2etesting.Module,
 			),
 		testConfig,
