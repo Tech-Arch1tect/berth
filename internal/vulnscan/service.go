@@ -1,9 +1,6 @@
 package vulnscan
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
-	"berth/internal/server"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -19,15 +16,27 @@ import (
 	"gorm.io/gorm"
 )
 
+type vulnscanServerProvider interface {
+	GetServer(id uint) (*models.Server, error)
+}
+
+type vulnscanAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
+type vulnscanPermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
 type Service struct {
 	db        *gorm.DB
-	serverSvc *server.Service
-	agentSvc  *agent.Service
-	rbacSvc   *rbac.Service
+	serverSvc vulnscanServerProvider
+	agentSvc  vulnscanAgentClient
+	rbacSvc   vulnscanPermissionChecker
 	logger    *logging.Service
 }
 
-func NewService(db *gorm.DB, serverSvc *server.Service, agentSvc *agent.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, rbacSvc vulnscanPermissionChecker, logger *logging.Service) *Service {
 	return &Service{
 		db:        db,
 		serverSvc: serverSvc,

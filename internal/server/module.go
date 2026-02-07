@@ -1,9 +1,19 @@
 package server
 
-import "go.uber.org/fx"
+import (
+	"berth/internal/agent"
+	"berth/internal/rbac"
+	"berth/utils"
+
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/fx"
+	"gorm.io/gorm"
+)
 
 var Module = fx.Options(
-	fx.Provide(NewService),
+	fx.Provide(func(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service, logger *logging.Service) *Service {
+		return NewService(db, crypto, rbacSvc, agentSvc, logger)
+	}),
 	fx.Provide(NewHandler),
 	fx.Provide(NewAPIHandler),
 	fx.Provide(NewUserAPIHandler),

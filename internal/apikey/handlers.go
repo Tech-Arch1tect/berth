@@ -13,14 +13,19 @@ import (
 	"gorm.io/gorm"
 )
 
+type apikeyAuditLogger interface {
+	LogAPIKeyEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID uint, apiKeyName, ip string, metadata map[string]any) error
+	LogAPIKeyScopeEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID, scopeID uint, ip string, metadata map[string]any) error
+}
+
 type Handler struct {
 	service      *Service
 	inertia      *inertia.Service
-	auditService *security.AuditService
+	auditService apikeyAuditLogger
 	db           *gorm.DB
 }
 
-func NewHandler(service *Service, inertia *inertia.Service, auditService *security.AuditService, db *gorm.DB) *Handler {
+func NewHandler(service *Service, inertia *inertia.Service, auditService apikeyAuditLogger, db *gorm.DB) *Handler {
 	return &Handler{
 		service:      service,
 		inertia:      inertia,

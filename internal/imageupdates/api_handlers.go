@@ -2,7 +2,7 @@ package imageupdates
 
 import (
 	"berth/internal/common"
-	"berth/internal/rbac"
+	"context"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -34,13 +34,18 @@ type ImageUpdatesDataInner struct {
 	Updates []ImageUpdate `json:"updates"`
 }
 
+type imageupdatesPermissionChecker interface {
+	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
 type APIHandler struct {
 	service *Service
-	rbacSvc *rbac.Service
+	rbacSvc imageupdatesPermissionChecker
 	logger  *logging.Service
 }
 
-func NewAPIHandler(service *Service, rbacSvc *rbac.Service, logger *logging.Service) *APIHandler {
+func NewAPIHandler(service *Service, rbacSvc imageupdatesPermissionChecker, logger *logging.Service) *APIHandler {
 	return &APIHandler{
 		service: service,
 		rbacSvc: rbacSvc,

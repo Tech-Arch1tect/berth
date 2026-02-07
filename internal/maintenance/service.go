@@ -1,9 +1,7 @@
 package maintenance
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
-	"berth/internal/server"
+	"berth/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,14 +12,26 @@ import (
 	"go.uber.org/zap"
 )
 
+type maintAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
+type maintServerProvider interface {
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+}
+
+type maintPermissionChecker interface {
+	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
+}
+
 type Service struct {
-	agentSvc  *agent.Service
-	serverSvc *server.Service
-	rbacSvc   *rbac.Service
+	agentSvc  maintAgentClient
+	serverSvc maintServerProvider
+	rbacSvc   maintPermissionChecker
 	logger    *logging.Service
 }
 
-func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(agentSvc maintAgentClient, serverSvc maintServerProvider, rbacSvc maintPermissionChecker, logger *logging.Service) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,

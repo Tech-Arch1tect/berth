@@ -23,6 +23,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type mobileAuthAuditLogger interface {
+	LogAPIEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
+	LogAuthEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
+}
+
 type MobileAuthHandler struct {
 	db              *gorm.DB
 	authSvc         *auth.Service
@@ -31,10 +36,10 @@ type MobileAuthHandler struct {
 	totpSvc         *totp.Service
 	sessionSvc      session.SessionService
 	logger          *logging.Service
-	auditSvc        *security.AuditService
+	auditSvc        mobileAuthAuditLogger
 }
 
-func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, auditSvc *security.AuditService) *MobileAuthHandler {
+func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, auditSvc mobileAuthAuditLogger) *MobileAuthHandler {
 	return &MobileAuthHandler{
 		db:              db,
 		authSvc:         authSvc,

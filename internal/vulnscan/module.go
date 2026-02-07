@@ -1,6 +1,9 @@
 package vulnscan
 
 import (
+	"berth/internal/agent"
+	"berth/internal/rbac"
+	"berth/internal/server"
 	"context"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -9,7 +12,9 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(NewService),
+	fx.Provide(func(db *gorm.DB, serverSvc *server.Service, agentSvc *agent.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+		return NewService(db, serverSvc, agentSvc, rbacSvc, logger)
+	}),
 	fx.Provide(NewHandler),
 	fx.Provide(NewPoller),
 )

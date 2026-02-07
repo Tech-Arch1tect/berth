@@ -1,7 +1,6 @@
 package stack
 
 import (
-	"berth/internal/agent"
 	"berth/internal/common"
 	"berth/internal/security"
 	"strings"
@@ -12,18 +11,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type stackAuditLogger interface {
+	LogStackEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName, ip string, metadata map[string]any) error
+}
+
 type APIHandler struct {
 	service      *Service
-	agentSvc     *agent.Service
 	logger       *logging.Service
-	auditService *security.AuditService
+	auditService stackAuditLogger
 	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, agentSvc *agent.Service, logger *logging.Service, auditService *security.AuditService, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, logger *logging.Service, auditService stackAuditLogger, db *gorm.DB) *APIHandler {
 	return &APIHandler{
 		service:      service,
-		agentSvc:     agentSvc,
 		logger:       logger,
 		auditService: auditService,
 		db:           db,

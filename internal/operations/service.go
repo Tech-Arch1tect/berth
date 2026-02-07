@@ -2,9 +2,7 @@ package operations
 
 import (
 	"berth/internal/files"
-	"berth/internal/rbac"
 	"berth/internal/registry"
-	"berth/internal/server"
 	"berth/models"
 	"berth/utils"
 	"bufio"
@@ -24,16 +22,33 @@ import (
 	"gorm.io/gorm"
 )
 
+type opsServerProvider interface {
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+	GetServer(id uint) (*models.Server, error)
+}
+
+type opsPermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
+type opsRegistryProvider interface {
+	GetCredentialForStack(serverID uint, stackName, registryURL string) (*registry.RegistryCredential, error)
+}
+
+type opsFileReader interface {
+	ReadFile(ctx context.Context, userID, serverID uint, stackname, path string) (*files.FileContent, error)
+}
+
 type Service struct {
-	serverSvc   *server.Service
-	rbacSvc     *rbac.Service
+	serverSvc   opsServerProvider
+	rbacSvc     opsPermissionChecker
 	auditSvc    *AuditService
-	registrySvc *registry.Service
-	filesSvc    *files.Service
+	registrySvc opsRegistryProvider
+	filesSvc    opsFileReader
 	logger      *logging.Service
 }
 
-func NewService(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, registrySvc *registry.Service, filesSvc *files.Service, logger *logging.Service) *Service {
+func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *logging.Service) *Service {
 	return &Service{
 		serverSvc:   serverSvc,
 		rbacSvc:     rbacSvc,

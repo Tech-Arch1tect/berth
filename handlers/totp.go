@@ -17,16 +17,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type totpAuditLogger interface {
+	LogAuthEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
+}
+
 type TOTPHandler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
 	totpSvc    *totp.Service
 	authSvc    *auth.Service
 	logger     *logging.Service
-	auditSvc   *security.AuditService
+	auditSvc   totpAuditLogger
 }
 
-func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *logging.Service, auditSvc *security.AuditService) *TOTPHandler {
+func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *logging.Service, auditSvc totpAuditLogger) *TOTPHandler {
 	return &TOTPHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,

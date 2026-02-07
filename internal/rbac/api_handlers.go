@@ -14,15 +14,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type rbacAuditLogger interface {
+	LogUserManagementEvent(eventType string, actorUserID uint, actorUsername string, targetUserID uint, targetUsername, ip string, metadata map[string]any) error
+	LogRBACEvent(eventType string, actorUserID uint, actorUsername string, targetType string, targetID uint, targetName, ip string, metadata map[string]any) error
+}
+
 type APIHandler struct {
 	db           *gorm.DB
 	rbacSvc      *Service
 	totpSvc      *totp.Service
 	authSvc      *auth.Service
-	auditService *security.AuditService
+	auditService rbacAuditLogger
 }
 
-func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service, auditService *security.AuditService) *APIHandler {
+func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service, auditService rbacAuditLogger) *APIHandler {
 	return &APIHandler{
 		db:           db,
 		rbacSvc:      rbacSvc,

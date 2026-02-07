@@ -22,13 +22,17 @@ type PermissionsResponseData struct {
 	Maintenance MaintenancePermissions `json:"maintenance"`
 }
 
+type maintenanceAuditLogger interface {
+	Log(event security.LogEvent) error
+}
+
 type APIHandler struct {
 	service      *Service
-	auditService *security.AuditService
+	auditService maintenanceAuditLogger
 	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, auditService *security.AuditService, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, auditService maintenanceAuditLogger, db *gorm.DB) *APIHandler {
 	return &APIHandler{
 		service:      service,
 		auditService: auditService,

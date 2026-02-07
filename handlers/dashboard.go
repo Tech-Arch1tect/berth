@@ -1,7 +1,9 @@
 package handlers
 
 import (
-	"berth/internal/server"
+	"berth/models"
+	"context"
+
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
 	"github.com/tech-arch1tect/brx/services/inertia"
@@ -11,14 +13,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type serverLister interface {
+	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
+}
+
 type DashboardHandler struct {
 	inertiaSvc *inertia.Service
 	db         *gorm.DB
 	logger     *logging.Service
-	serverSvc  *server.Service
+	serverSvc  serverLister
 }
 
-func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *logging.Service, serverSvc *server.Service) *DashboardHandler {
+func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *logging.Service, serverSvc serverLister) *DashboardHandler {
 	return &DashboardHandler{
 		inertiaSvc: inertiaSvc,
 		db:         db,

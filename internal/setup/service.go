@@ -1,7 +1,6 @@
 package setup
 
 import (
-	"berth/internal/rbac"
 	"berth/models"
 	"errors"
 
@@ -10,13 +9,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type roleAssigner interface {
+	AssignUserRole(userID uint, roleName string) error
+}
+
 type Service struct {
 	db      *gorm.DB
-	rbacSvc *rbac.Service
+	rbacSvc roleAssigner
 	logger  *logging.Service
 }
 
-func NewService(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, rbacSvc roleAssigner, logger *logging.Service) *Service {
 	return &Service{
 		db:      db,
 		rbacSvc: rbacSvc,

@@ -1,9 +1,7 @@
 package files
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
-	"berth/internal/server"
+	"berth/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,14 +14,28 @@ import (
 	"go.uber.org/zap"
 )
 
+type filesAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeMultipartRequest(ctx context.Context, server *models.Server, method, endpoint, path string, fileHeader *multipart.FileHeader) (*http.Response, error)
+}
+
+type filesServerProvider interface {
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+	GetServer(id uint) (*models.Server, error)
+}
+
+type filesPermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
 type Service struct {
-	agentSvc  *agent.Service
-	serverSvc *server.Service
-	rbacSvc   *rbac.Service
+	agentSvc  filesAgentClient
+	serverSvc filesServerProvider
+	rbacSvc   filesPermissionChecker
 	logger    *logging.Service
 }
 
-func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(agentSvc filesAgentClient, serverSvc filesServerProvider, rbacSvc filesPermissionChecker, logger *logging.Service) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,

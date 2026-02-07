@@ -2,8 +2,8 @@ package registry
 
 import (
 	"berth/internal/common"
-	"berth/internal/rbac"
 	"berth/models"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,13 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type permissionChecker interface {
+	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
+}
+
 type APIHandler struct {
 	service *Service
-	rbacSvc *rbac.Service
+	rbacSvc permissionChecker
 	db      *gorm.DB
 }
 
-func NewAPIHandler(service *Service, rbacSvc *rbac.Service, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, rbacSvc permissionChecker, db *gorm.DB) *APIHandler {
 	return &APIHandler{
 		service: service,
 		rbacSvc: rbacSvc,

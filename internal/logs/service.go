@@ -1,9 +1,6 @@
 package logs
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
-	"berth/internal/server"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -17,14 +14,26 @@ import (
 	"go.uber.org/zap"
 )
 
+type logsAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
+type logsServerProvider interface {
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+}
+
+type logsPermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
 type Service struct {
-	agentSvc  *agent.Service
-	serverSvc *server.Service
-	rbacSvc   *rbac.Service
+	agentSvc  logsAgentClient
+	serverSvc logsServerProvider
+	rbacSvc   logsPermissionChecker
 	logger    *logging.Service
 }
 
-func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(agentSvc logsAgentClient, serverSvc logsServerProvider, rbacSvc logsPermissionChecker, logger *logging.Service) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,

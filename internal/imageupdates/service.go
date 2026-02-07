@@ -1,14 +1,13 @@
 package imageupdates
 
 import (
-	"berth/internal/agent"
 	"berth/internal/config"
-	"berth/internal/server"
 	"berth/models"
 	"berth/utils"
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -17,10 +16,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type agentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
+type serverProvider interface {
+	GetServer(id uint) (*models.Server, error)
+}
+
 type Service struct {
 	db                 *gorm.DB
-	agentSvc           *agent.Service
-	serverSvc          *server.Service
+	agentSvc           agentClient
+	serverSvc          serverProvider
 	crypto             *utils.Crypto
 	logger             *logging.Service
 	interval           time.Duration
@@ -30,7 +37,7 @@ type Service struct {
 	cancel             context.CancelFunc
 }
 
-func NewService(db *gorm.DB, agentSvc *agent.Service, serverSvc *server.Service,
+func NewService(db *gorm.DB, agentSvc agentClient, serverSvc serverProvider,
 	crypto *utils.Crypto, logger *logging.Service, cfg *config.BerthConfig) *Service {
 
 	interval, err := time.ParseDuration(cfg.Custom.ImageUpdateCheckInterval)

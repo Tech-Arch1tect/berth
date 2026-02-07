@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"berth/internal/server"
+	"berth/models"
 	"context"
 
 	"github.com/tech-arch1tect/brx/services/logging"
@@ -9,13 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type wsServerProvider interface {
+	ListServers() ([]models.ServerInfo, error)
+	GetServer(id uint) (*models.Server, error)
+}
+
 type ServiceManager struct {
-	serverService *server.Service
+	serverService wsServerProvider
 	agentManager  *AgentManager
 	logger        *logging.Service
 }
 
-func NewServiceManager(serverService *server.Service, agentManager *AgentManager, logger *logging.Service) *ServiceManager {
+func NewServiceManager(serverService wsServerProvider, agentManager *AgentManager, logger *logging.Service) *ServiceManager {
 	return &ServiceManager{
 		serverService: serverService,
 		agentManager:  agentManager,

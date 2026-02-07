@@ -1,8 +1,6 @@
 package server
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
 	"berth/models"
 	"berth/utils"
 	"context"
@@ -20,15 +18,24 @@ import (
 	"gorm.io/gorm"
 )
 
+type accessChecker interface {
+	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
+	GetUserAccessibleStackPatterns(userID, serverID uint) ([]string, error)
+}
+
+type serverAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
 type Service struct {
 	db       *gorm.DB
 	crypto   *utils.Crypto
-	rbacSvc  *rbac.Service
-	agentSvc *agent.Service
+	rbacSvc  accessChecker
+	agentSvc serverAgentClient
 	logger   *logging.Service
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *logging.Service) *Service {
 	return &Service{
 		db:       db,
 		crypto:   crypto,

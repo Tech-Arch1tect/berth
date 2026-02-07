@@ -20,6 +20,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type authAuditLogger interface {
+	LogAuthEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
+}
+
 func (h *AuthHandler) setRememberMeCookie(c echo.Context, token string, expiresAt time.Time) {
 	sameSite := http.SameSiteLaxMode
 	switch h.authSvc.GetRememberMeCookieSameSite() {
@@ -75,10 +79,10 @@ type AuthHandler struct {
 	authSvc    *auth.Service
 	totpSvc    *totp.Service
 	logger     *logging.Service
-	auditSvc   *security.AuditService
+	auditSvc   authAuditLogger
 }
 
-func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, auditSvc *security.AuditService) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, auditSvc authAuditLogger) *AuthHandler {
 	return &AuthHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,

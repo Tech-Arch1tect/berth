@@ -15,16 +15,6 @@ var Module = fx.Options(
 	fx.Provide(NewServiceWithDeps),
 )
 
-type ServiceDeps struct {
-	fx.In
-	DB           *gorm.DB
-	OperationSvc *operations.Service
-	RBACService  *rbac.Service
-	Logger       *logging.Service
-	AuditService *security.AuditService
-	Config       *config.BerthConfig
-}
-
-func NewServiceWithDeps(deps ServiceDeps) *Service {
-	return NewService(deps.DB, deps.OperationSvc, deps.RBACService, deps.Logger, deps.AuditService, deps.Config.Custom.OperationTimeoutSeconds)
+func NewServiceWithDeps(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service, auditService *security.AuditService, cfg *config.BerthConfig) *Service {
+	return NewService(db, operationSvc, rbacSvc, logger, auditService, cfg.Custom.OperationTimeoutSeconds)
 }

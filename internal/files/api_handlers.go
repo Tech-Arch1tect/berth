@@ -10,13 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type fileAuditLogger interface {
+	LogFileEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName, filePath, ip string, metadata map[string]any) error
+}
+
 type APIHandler struct {
 	db       *gorm.DB
 	service  *Service
-	auditSvc *security.AuditService
+	auditSvc fileAuditLogger
 }
 
-func NewAPIHandler(db *gorm.DB, service *Service, auditSvc *security.AuditService) *APIHandler {
+func NewAPIHandler(db *gorm.DB, service *Service, auditSvc fileAuditLogger) *APIHandler {
 	return &APIHandler{
 		db:       db,
 		service:  service,

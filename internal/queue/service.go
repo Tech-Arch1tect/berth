@@ -2,8 +2,6 @@ package queue
 
 import (
 	"berth/internal/operations"
-	"berth/internal/rbac"
-	"berth/internal/security"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -17,12 +15,24 @@ import (
 	"gorm.io/gorm"
 )
 
+type queuePermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+}
+
+type queueSecurityAuditor interface {
+	LogAuthorizationDenied(actorUserID *uint, actorUsername, ip, resource, permission string, metadata map[string]any) error
+}
+
+type queueOperationExecutor interface {
+	StartAndExecuteOperation(ctx context.Context, userID, serverID uint, stackname string, req operations.OperationRequest, operationLogID uint) (*operations.OperationResponse, error)
+}
+
 type Service struct {
 	db           *gorm.DB
-	operationSvc *operations.Service
-	rbacSvc      *rbac.Service
+	operationSvc queueOperationExecutor
+	rbacSvc      queuePermissionChecker
 	logger       *logging.Service
-	auditService *security.AuditService
+	auditService queueSecurityAuditor
 
 	operationTimeoutSeconds int
 
@@ -42,7 +52,7 @@ type StackWorker struct {
 	service  *Service
 }
 
-func NewService(db *gorm.DB, operationSvc *operations.Service, rbacSvc *rbac.Service, logger *logging.Service, auditService *security.AuditService, operationTimeoutSeconds int) *Service {
+func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queuePermissionChecker, logger *logging.Service, auditService queueSecurityAuditor, operationTimeoutSeconds int) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &Service{

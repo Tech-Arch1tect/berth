@@ -1,9 +1,6 @@
 package stack
 
 import (
-	"berth/internal/agent"
-	"berth/internal/rbac"
-	"berth/internal/server"
 	"berth/internal/validation"
 	"berth/models"
 	"context"
@@ -15,14 +12,29 @@ import (
 	"go.uber.org/zap"
 )
 
+type stackAgentClient interface {
+	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+}
+
+type stackServerProvider interface {
+	GetServerResponse(id uint) (*models.ServerInfo, error)
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+}
+
+type stackPermissionChecker interface {
+	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
+	GetUserStackPermissions(ctx context.Context, userID, serverID uint, stackname string) ([]string, error)
+}
+
 type Service struct {
-	agentSvc  *agent.Service
-	serverSvc *server.Service
-	rbacSvc   *rbac.Service
+	agentSvc  stackAgentClient
+	serverSvc stackServerProvider
+	rbacSvc   stackPermissionChecker
 	logger    *logging.Service
 }
 
-func NewService(agentSvc *agent.Service, serverSvc *server.Service, rbacSvc *rbac.Service, logger *logging.Service) *Service {
+func NewService(agentSvc stackAgentClient, serverSvc stackServerProvider, rbacSvc stackPermissionChecker, logger *logging.Service) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
