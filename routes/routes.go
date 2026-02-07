@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -258,6 +257,20 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 	}
 }
 
+func requireWebSocketAuth() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if !session.IsAuthenticated(c) {
+				return c.JSON(401, map[string]string{"error": "Not authenticated"})
+			}
+			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
+				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+			}
+			return next(c)
+		}
+	}
+}
+
 func registerWebUIWebSocketRoutes(srv *brxserver.Server, sessionManager *session.Manager, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
 	if wsHandler == nil {
 		return
@@ -266,49 +279,14 @@ func registerWebUIWebSocketRoutes(srv *brxserver.Server, sessionManager *session
 	wsGroup := srv.Group("/ws")
 	wsUIGroup := wsGroup.Group("/ui")
 	wsUIGroup.Use(session.Middleware(sessionManager))
+	wsUIGroup.Use(requireWebSocketAuth())
 
-	wsUIGroup.GET("/stack-status/:server_id", func(c echo.Context) error {
-		if !session.IsAuthenticated(c) {
-			return c.JSON(401, map[string]string{"error": "Not authenticated"})
-		}
-		if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-			return c.JSON(401, map[string]string{"error": "TOTP verification required"})
-		}
-		return wsHandler.HandleWebUIWebSocket(c)
-	})
-
-	wsUIGroup.GET("/servers/:serverid/terminal", func(c echo.Context) error {
-		if !session.IsAuthenticated(c) {
-			log.Printf("WebSocket Route: User not authenticated")
-			return c.JSON(401, map[string]string{"error": "Not authenticated"})
-		}
-		if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-			log.Printf("WebSocket Route: TOTP verification required")
-			return c.JSON(401, map[string]string{"error": "TOTP verification required"})
-		}
-		return wsHandler.HandleWebUITerminalWebSocket(c)
-	})
+	wsUIGroup.GET("/stack-status/:server_id", wsHandler.HandleWebUIWebSocket)
+	wsUIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleWebUITerminalWebSocket)
 
 	if operationsWSHandler != nil {
-		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations", func(c echo.Context) error {
-			if !session.IsAuthenticated(c) {
-				return c.JSON(401, map[string]string{"error": "Not authenticated"})
-			}
-			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
-			}
-			return operationsWSHandler.HandleOperationWebSocket(c)
-		})
-
-		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", func(c echo.Context) error {
-			if !session.IsAuthenticated(c) {
-				return c.JSON(401, map[string]string{"error": "Not authenticated"})
-			}
-			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
-			}
-			return operationsWSHandler.HandleOperationWebSocket(c)
-		})
+		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations", operationsWSHandler.HandleOperationWebSocket)
+		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
 	}
 }
 
