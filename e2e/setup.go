@@ -206,49 +206,27 @@ func SetupTestApp(t *testing.T) *TestApp {
 				fx.Provide(func(cfg *berthconfig.BerthConfig) *utils.Crypto {
 					return utils.NewCrypto(cfg.Custom.EncryptionSecret)
 				}),
-				fx.Provide(func(logger *logging.Service) *agent.Service {
-					return agent.NewService(logger, 600)
-				}),
-				fx.Provide(rbac.NewService),
-				fx.Provide(rbac.NewMiddleware),
-				fx.Provide(rbac.NewRBACHandler),
-				fx.Provide(rbac.NewAPIHandler),
+				agent.Module,
+				rbac.Module,
 				fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
 					return apikey.NewService(db, logger, rbacSvc)
 				}),
-				fx.Provide(apikey.NewHandler),
-				fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
-					return setup.NewService(db, rbacSvc, logger)
-				}),
-				fx.Provide(setup.NewHandler),
-				fx.Provide(server.NewService),
-				fx.Provide(server.NewHandler),
-				fx.Provide(server.NewAPIHandler),
-				fx.Provide(server.NewUserAPIHandler),
-				fx.Provide(stack.NewService),
-				fx.Provide(stack.NewHandler),
-				fx.Provide(stack.NewAPIHandler),
-				fx.Provide(maintenance.NewService),
-				fx.Provide(maintenance.NewHandler),
-				fx.Provide(maintenance.NewAPIHandler),
+				apikey.Module,
+				setup.Module,
+				server.Module,
+				stack.Module,
+				maintenance.Module,
+				security.Module,
+				handlers.Module,
 				files.Module,
 				logs.Module,
 				operations.Module,
 				registry.Module,
 				operationlogs.Module,
 				migration.Module,
-				queue.Module(),
+				queue.Module,
 				imageupdates.Module,
 				vulnscan.Module,
-				fx.Provide(security.NewAuditService),
-				fx.Provide(security.NewHandler),
-				fx.Provide(handlers.NewDashboardHandler),
-				fx.Provide(handlers.NewStacksHandler),
-				fx.Provide(handlers.NewAuthHandler),
-				fx.Provide(handlers.NewMobileAuthHandler),
-				fx.Provide(handlers.NewSessionHandler),
-				fx.Provide(handlers.NewTOTPHandler),
-				fx.Provide(handlers.NewVersionHandler),
 				fx.Provide(func() auth.MailService {
 					mockSvc := &testutils.MockMailService{}
 					mockSvc.On("SendTemplate", mockpkg.Anything, mockpkg.Anything, mockpkg.Anything, mockpkg.Anything).Return(nil)

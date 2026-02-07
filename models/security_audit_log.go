@@ -72,4 +72,3 @@ func (l *SecurityAuditLog) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-

@@ -11,13 +11,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func Module() fx.Option {
-	return fx.Module("queue",
-		fx.Provide(
-			NewServiceWithDeps,
-		),
-	)
-}
+var Module = fx.Options(
+	fx.Provide(NewServiceWithDeps),
+)
 
 type ServiceDeps struct {
 	fx.In

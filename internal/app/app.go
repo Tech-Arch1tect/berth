@@ -39,7 +39,6 @@ import (
 	"github.com/tech-arch1tect/brx/openapi"
 	brxserver "github.com/tech-arch1tect/brx/server"
 	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
 	"github.com/tech-arch1tect/brx/services/jwt"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"github.com/tech-arch1tect/brx/services/refreshtoken"
@@ -143,51 +142,27 @@ func NewApp(opts *AppOptions) *app.App {
 			fx.As(new(SecurityLogAuditor)),
 		)),
 		fx.Invoke(RegisterAuditCallbacks),
-		fx.Provide(security.NewAuditService),
-		fx.Provide(func(logger *logging.Service, cfg *berthconfig.BerthConfig) *agent.Service {
-			return agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
-		}),
-		fx.Provide(rbac.NewService),
-		fx.Provide(rbac.NewMiddleware),
-		fx.Provide(rbac.NewRBACHandler),
-		fx.Provide(rbac.NewAPIHandler),
+		agent.Module,
+		rbac.Module,
 		fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
 			return apikey.NewService(db, logger, rbacSvc)
 		}),
-		fx.Provide(apikey.NewHandler),
-		fx.Provide(func(db *gorm.DB, rbacSvc *rbac.Service, logger *logging.Service) *setup.Service {
-			return setup.NewService(db, rbacSvc, logger)
-		}),
-		fx.Provide(setup.NewHandler),
-		fx.Provide(server.NewService),
-		fx.Provide(func(db *gorm.DB, svc *server.Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *server.Handler {
-			return server.NewHandler(db, svc, inertiaSvc, auditSvc)
-		}),
-		fx.Provide(server.NewAPIHandler),
-		fx.Provide(server.NewUserAPIHandler),
-		fx.Provide(stack.NewService),
-		fx.Provide(stack.NewHandler),
-		fx.Provide(stack.NewAPIHandler),
-		fx.Provide(maintenance.NewService),
-		fx.Provide(maintenance.NewHandler),
-		fx.Provide(maintenance.NewAPIHandler),
+		apikey.Module,
+		setup.Module,
+		server.Module,
+		stack.Module,
+		maintenance.Module,
+		security.Module,
+		handlers.Module,
 		files.Module,
 		logs.Module,
 		operations.Module,
 		registry.Module,
 		operationlogs.Module,
 		migration.Module,
-		queue.Module(),
+		queue.Module,
 		imageupdates.Module,
 		vulnscan.Module,
-		fx.Provide(security.NewHandler),
-		fx.Provide(handlers.NewDashboardHandler),
-		fx.Provide(handlers.NewStacksHandler),
-		fx.Provide(handlers.NewAuthHandler),
-		fx.Provide(handlers.NewMobileAuthHandler),
-		fx.Provide(handlers.NewSessionHandler),
-		fx.Provide(handlers.NewTOTPHandler),
-		fx.Provide(handlers.NewVersionHandler),
 		fx.Provide(apidocs.NewOpenAPI),
 		fx.Invoke(routes.RegisterAPIDocs),
 		fx.Invoke(func(srv *brxserver.Server, apiDoc *openapi.OpenAPI, cfg *berthconfig.BerthConfig) {
