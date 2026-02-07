@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"berth/internal/dto"
-	"berth/internal/rbac"
 	"berth/internal/security"
 	"berth/models"
 
@@ -32,11 +31,10 @@ type MobileAuthHandler struct {
 	totpSvc         *totp.Service
 	sessionSvc      session.SessionService
 	logger          *logging.Service
-	rbacSvc         *rbac.Service
 	auditSvc        *security.AuditService
 }
 
-func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, rbacSvc *rbac.Service, auditSvc *security.AuditService) *MobileAuthHandler {
+func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, auditSvc *security.AuditService) *MobileAuthHandler {
 	return &MobileAuthHandler{
 		db:              db,
 		authSvc:         authSvc,
@@ -45,7 +43,6 @@ func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice
 		totpSvc:         totpSvc,
 		sessionSvc:      sessionSvc,
 		logger:          logger,
-		rbacSvc:         rbacSvc,
 		auditSvc:        auditSvc,
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"berth/internal/rbac"
 	"berth/internal/security"
 	"berth/models"
 
@@ -76,18 +75,16 @@ type AuthHandler struct {
 	authSvc    *auth.Service
 	totpSvc    *totp.Service
 	logger     *logging.Service
-	rbacSvc    *rbac.Service
 	auditSvc   *security.AuditService
 }
 
-func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, rbacSvc *rbac.Service, auditSvc *security.AuditService) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, auditSvc *security.AuditService) *AuthHandler {
 	return &AuthHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		authSvc:    authSvc,
 		totpSvc:    totpSvc,
 		logger:     logger,
-		rbacSvc:    rbacSvc,
 		auditSvc:   auditSvc,
 	}
 }

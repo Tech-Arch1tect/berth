@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"berth/internal/server"
 	"berth/models"
 	"berth/utils"
 	"errors"
@@ -13,10 +12,9 @@ import (
 )
 
 type Service struct {
-	db        *gorm.DB
-	crypto    *utils.Crypto
-	logger    *logging.Service
-	serverSvc *server.Service
+	db     *gorm.DB
+	crypto *utils.Crypto
+	logger *logging.Service
 }
 
 type RegistryCredential struct {
@@ -25,12 +23,11 @@ type RegistryCredential struct {
 	Password string
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto, logger *logging.Service, serverSvc *server.Service) *Service {
+func NewService(db *gorm.DB, crypto *utils.Crypto, logger *logging.Service) *Service {
 	return &Service{
-		db:        db,
-		crypto:    crypto,
-		logger:    logger,
-		serverSvc: serverSvc,
+		db:     db,
+		crypto: crypto,
+		logger: logger,
 	}
 }
 

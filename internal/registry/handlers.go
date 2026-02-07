@@ -3,6 +3,7 @@ package registry
 import (
 	"berth/internal/common"
 	"berth/internal/rbac"
+	"berth/internal/server"
 	"berth/models"
 
 	"github.com/labstack/echo/v4"
@@ -13,13 +14,15 @@ import (
 type Handler struct {
 	service    *Service
 	rbacSvc    *rbac.Service
+	serverSvc  *server.Service
 	inertiaSvc *inertia.Service
 }
 
-func NewHandler(service *Service, rbacSvc *rbac.Service, inertiaSvc *inertia.Service) *Handler {
+func NewHandler(service *Service, rbacSvc *rbac.Service, serverSvc *server.Service, inertiaSvc *inertia.Service) *Handler {
 	return &Handler{
 		service:    service,
 		rbacSvc:    rbacSvc,
+		serverSvc:  serverSvc,
 		inertiaSvc: inertiaSvc,
 	}
 }
@@ -33,7 +36,7 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 	userID := session.GetUserIDAsUint(c)
 	ctx := c.Request().Context()
 
-	server, err := h.service.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := h.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
