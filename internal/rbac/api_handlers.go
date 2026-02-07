@@ -6,7 +6,6 @@ import (
 	"berth/internal/security"
 	"berth/models"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/auth"
@@ -644,23 +643,4 @@ func (h *APIHandler) ListPermissions(c echo.Context) error {
 			Permissions: permissionInfos,
 		},
 	})
-}
-
-func isValidPermission(permission string) bool {
-	validPermissions := []string{
-		"read",
-		"files.read",
-		"files.write",
-		"stacks.read",
-		"stacks.manage",
-		"containers.read",
-		"containers.manage",
-		"logs.read",
-	}
-	for _, valid := range validPermissions {
-		if strings.EqualFold(permission, valid) {
-			return true
-		}
-	}
-	return false
 }

@@ -1,6 +1,7 @@
 package maintenance
 
 import (
+	"berth/internal/rbac"
 	"berth/models"
 	"context"
 	"encoding/json"
@@ -46,7 +47,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 		zap.Uint("server_id", serverID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.read")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
 		s.logger.Error("failed to check system info permission",
 			zap.Error(err),
@@ -122,7 +123,7 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 		zap.Bool("all", request.All),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.write")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermDockerMaintenanceWrite)
 	if err != nil {
 		s.logger.Error("failed to check Docker prune permission",
 			zap.Error(err),
@@ -198,7 +199,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 		zap.String("resource_id", request.ID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.write")
+	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermDockerMaintenanceWrite)
 	if err != nil {
 		s.logger.Error("failed to check Docker resource deletion permission",
 			zap.Error(err),

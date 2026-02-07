@@ -1,6 +1,7 @@
 package seeds
 
 import (
+	"berth/internal/rbac"
 	"berth/models"
 
 	"gorm.io/gorm"
@@ -9,32 +10,32 @@ import (
 func SeedRBACData(db *gorm.DB) error {
 	permissions := []models.Permission{
 		// stack/server-level permissions
-		{Name: "stacks.read", Resource: "stacks", Action: "read", Description: "View stacks and containers", IsAPIKeyOnly: false},
-		{Name: "stacks.manage", Resource: "stacks", Action: "manage", Description: "Start/stop/deploy/remove stacks", IsAPIKeyOnly: false},
-		{Name: "stacks.create", Resource: "stacks", Action: "create", Description: "Create new stacks", IsAPIKeyOnly: false},
-		{Name: "files.read", Resource: "files", Action: "read", Description: "Read files within stacks", IsAPIKeyOnly: false},
-		{Name: "files.write", Resource: "files", Action: "write", Description: "Modify files within stacks", IsAPIKeyOnly: false},
-		{Name: "logs.read", Resource: "logs", Action: "read", Description: "View container logs", IsAPIKeyOnly: false},
-		{Name: "docker.maintenance.read", Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)", IsAPIKeyOnly: false},
-		{Name: "docker.maintenance.write", Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)", IsAPIKeyOnly: false},
-		{Name: "registries.manage", Resource: "registries", Action: "manage", Description: "Create, update, and delete registry credentials", IsAPIKeyOnly: false},
+		{Name: rbac.PermStacksRead, Resource: "stacks", Action: "read", Description: "View stacks and containers", IsAPIKeyOnly: false},
+		{Name: rbac.PermStacksManage, Resource: "stacks", Action: "manage", Description: "Start/stop/deploy/remove stacks", IsAPIKeyOnly: false},
+		{Name: rbac.PermStacksCreate, Resource: "stacks", Action: "create", Description: "Create new stacks", IsAPIKeyOnly: false},
+		{Name: rbac.PermFilesRead, Resource: "files", Action: "read", Description: "Read files within stacks", IsAPIKeyOnly: false},
+		{Name: rbac.PermFilesWrite, Resource: "files", Action: "write", Description: "Modify files within stacks", IsAPIKeyOnly: false},
+		{Name: rbac.PermLogsRead, Resource: "logs", Action: "read", Description: "View container logs", IsAPIKeyOnly: false},
+		{Name: rbac.PermDockerMaintenanceRead, Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)", IsAPIKeyOnly: false},
+		{Name: rbac.PermDockerMaintenanceWrite, Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)", IsAPIKeyOnly: false},
+		{Name: rbac.PermRegistriesManage, Resource: "registries", Action: "manage", Description: "Create, update, and delete registry credentials", IsAPIKeyOnly: false},
 
 		// admin permissions for API key scope enforcement
-		{Name: "admin.users.read", Resource: "admin.users", Action: "read", Description: "View users and their roles", IsAPIKeyOnly: true},
-		{Name: "admin.users.write", Resource: "admin.users", Action: "write", Description: "Create users, assign/revoke roles", IsAPIKeyOnly: true},
-		{Name: "admin.roles.read", Resource: "admin.roles", Action: "read", Description: "View roles and permissions", IsAPIKeyOnly: true},
-		{Name: "admin.roles.write", Resource: "admin.roles", Action: "write", Description: "Create/modify/delete roles and permissions", IsAPIKeyOnly: true},
-		{Name: "admin.permissions.read", Resource: "admin.permissions", Action: "read", Description: "List available permissions", IsAPIKeyOnly: true},
-		{Name: "admin.servers.read", Resource: "admin.servers", Action: "read", Description: "View server configurations", IsAPIKeyOnly: true},
-		{Name: "admin.servers.write", Resource: "admin.servers", Action: "write", Description: "Create/modify/delete servers", IsAPIKeyOnly: true},
-		{Name: "admin.logs.read", Resource: "admin.logs", Action: "read", Description: "View all operation logs", IsAPIKeyOnly: true},
-		{Name: "admin.audit.read", Resource: "admin.audit", Action: "read", Description: "View security audit logs", IsAPIKeyOnly: true},
-		{Name: "admin.system.export", Resource: "admin.system", Action: "export", Description: "Export system configuration", IsAPIKeyOnly: true},
-		{Name: "admin.system.import", Resource: "admin.system", Action: "import", Description: "Import system configuration", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminUsersRead, Resource: "admin.users", Action: "read", Description: "View users and their roles", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminUsersWrite, Resource: "admin.users", Action: "write", Description: "Create users, assign/revoke roles", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminRolesRead, Resource: "admin.roles", Action: "read", Description: "View roles and permissions", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminRolesWrite, Resource: "admin.roles", Action: "write", Description: "Create/modify/delete roles and permissions", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminPermissionsRead, Resource: "admin.permissions", Action: "read", Description: "List available permissions", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminServersRead, Resource: "admin.servers", Action: "read", Description: "View server configurations", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminServersWrite, Resource: "admin.servers", Action: "write", Description: "Create/modify/delete servers", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminLogsRead, Resource: "admin.logs", Action: "read", Description: "View all operation logs", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminAuditRead, Resource: "admin.audit", Action: "read", Description: "View security audit logs", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminSystemExport, Resource: "admin.system", Action: "export", Description: "Export system configuration", IsAPIKeyOnly: true},
+		{Name: rbac.PermAdminSystemImport, Resource: "admin.system", Action: "import", Description: "Import system configuration", IsAPIKeyOnly: true},
 
 		// user-level permissions for API key scope enforcement
-		{Name: "servers.read", Resource: "servers", Action: "read", Description: "View accessible servers", IsAPIKeyOnly: true},
-		{Name: "logs.operations.read", Resource: "logs.operations", Action: "read", Description: "View own operation logs", IsAPIKeyOnly: true},
+		{Name: rbac.PermServersRead, Resource: "servers", Action: "read", Description: "View accessible servers", IsAPIKeyOnly: true},
+		{Name: rbac.PermLogsOperationsRead, Resource: "logs.operations", Action: "read", Description: "View own operation logs", IsAPIKeyOnly: true},
 	}
 
 	for _, permission := range permissions {
@@ -66,10 +67,10 @@ func SeedRBACData(db *gorm.DB) error {
 
 	if result.Error == gorm.ErrRecordNotFound {
 		roles := []models.Role{
-			{Name: "admin", Description: "System administrator with full access", IsAdmin: true},
-			{Name: "user", Description: "Standard user with basic permissions", IsAdmin: false},
-			{Name: "developer", Description: "Developer with full server access", IsAdmin: false},
-			{Name: "viewer", Description: "Read-only access to servers", IsAdmin: false},
+			{Name: rbac.RoleAdmin, Description: "System administrator with full access", IsAdmin: true},
+			{Name: rbac.RoleUser, Description: "Standard user with basic permissions", IsAdmin: false},
+			{Name: rbac.RoleDeveloper, Description: "Developer with full server access", IsAdmin: false},
+			{Name: rbac.RoleViewer, Description: "Read-only access to servers", IsAdmin: false},
 		}
 
 		for _, role := range roles {
@@ -106,12 +107,12 @@ func seedServerPermissions(db *gorm.DB) error {
 	}
 
 	var developerRole models.Role
-	if err := db.Where("name = ?", "developer").First(&developerRole).Error; err != nil {
+	if err := db.Where("name = ?", rbac.RoleDeveloper).First(&developerRole).Error; err != nil {
 		return nil
 	}
 
 	var viewerRole models.Role
-	if err := db.Where("name = ?", "viewer").First(&viewerRole).Error; err != nil {
+	if err := db.Where("name = ?", rbac.RoleViewer).First(&viewerRole).Error; err != nil {
 		return nil
 	}
 
@@ -136,16 +137,16 @@ func seedServerPermissions(db *gorm.DB) error {
 		}
 
 		developerPermissions := []models.ServerRoleStackPermission{
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.read"], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["stacks.manage"], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.read"], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["files.write"], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap["logs.read"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksManage], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesRead], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesWrite], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
 		}
 
 		viewerPermissions := []models.ServerRoleStackPermission{
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["stacks.read"], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap["logs.read"], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
+			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
 		}
 
 		allPermissions := append(developerPermissions, viewerPermissions...)

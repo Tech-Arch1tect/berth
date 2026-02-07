@@ -257,7 +257,7 @@ func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc 
 				})
 			}
 
-			hasRole, err := m.rbac.HasRole(userModel.ID, "admin")
+			hasRole, err := m.rbac.HasRole(userModel.ID, RoleAdmin)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{
 					"error": "Failed to check role",

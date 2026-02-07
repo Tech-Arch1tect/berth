@@ -461,7 +461,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	serverIDMap := make(map[uint]bool)
 
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == "stacks.read" {
+		if srsp.Permission.Name == PermStacksRead {
 			if !serverIDMap[srsp.ServerID] {
 				serverIDs = append(serverIDs, srsp.ServerID)
 				serverIDMap[srsp.ServerID] = true
@@ -656,7 +656,7 @@ func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackn
 
 	for _, role := range user.Roles {
 		if role.IsAdmin {
-			return []string{"stacks.read", "stacks.manage", "stacks.create", "files.read", "files.write", "logs.read"}, nil
+			return AdminStackPermissions(), nil
 		}
 	}
 
@@ -925,7 +925,7 @@ func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]
 
 	patternSet := make(map[string]bool)
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == "stacks.read" {
+		if srsp.Permission.Name == PermStacksRead {
 			patternSet[srsp.StackPattern] = true
 		}
 	}

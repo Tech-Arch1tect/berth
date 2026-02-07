@@ -2,6 +2,7 @@ package maintenance
 
 import (
 	"berth/internal/common"
+	"berth/internal/rbac"
 	"berth/internal/security"
 
 	"github.com/labstack/echo/v4"
@@ -193,12 +194,12 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return err
 	}
 
-	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, "docker.maintenance.read")
+	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check read permissions")
 	}
 
-	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, "docker.maintenance.write")
+	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceWrite)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check write permissions")
 	}

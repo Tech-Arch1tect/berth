@@ -2,6 +2,7 @@ package operations
 
 import (
 	"berth/internal/files"
+	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/models"
 	"berth/utils"
@@ -79,9 +80,9 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 
 	var requiredPermission string
 	if req.Command == "create-archive" || req.Command == "extract-archive" {
-		requiredPermission = "files.write"
+		requiredPermission = rbac.PermFilesWrite
 	} else {
-		requiredPermission = "stacks.manage"
+		requiredPermission = rbac.PermStacksManage
 	}
 
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
@@ -244,7 +245,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.manage")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksManage)
 	if err != nil {
 		s.logger.Error("failed to check stream permission",
 			zap.Error(err),

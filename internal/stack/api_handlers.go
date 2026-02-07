@@ -2,6 +2,7 @@ package stack
 
 import (
 	"berth/internal/common"
+	"berth/internal/rbac"
 	"berth/internal/security"
 	"strings"
 
@@ -318,7 +319,7 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 		return err
 	}
 
-	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, "stacks.create")
+	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermStacksCreate)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}

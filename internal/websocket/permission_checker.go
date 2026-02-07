@@ -29,9 +29,9 @@ func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(ctx context.
 
 	switch permission {
 	case "view":
-		permissionName = "stacks.read"
+		permissionName = rbac.PermStacksRead
 	case "manage":
-		permissionName = "stacks.manage"
+		permissionName = rbac.PermStacksManage
 	default:
 		return false
 	}
@@ -48,9 +48,9 @@ func (r *RBACPermissionChecker) HasStackPermission(ctx context.Context, userID i
 
 	switch permission {
 	case "view":
-		permissionName = "stacks.read"
+		permissionName = rbac.PermStacksRead
 	case "manage":
-		permissionName = "stacks.manage"
+		permissionName = rbac.PermStacksManage
 	default:
 		return false
 	}

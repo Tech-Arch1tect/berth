@@ -38,7 +38,7 @@ func (h *Handler) Index(c echo.Context) error {
 		return err
 	}
 
-	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
+	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
 	if err != nil || !isAdmin {
 		h.logger.Warn("unauthorized migration page access attempt",
 			zap.Uint("user_id", userID),
@@ -61,7 +61,7 @@ func (h *Handler) Export(c echo.Context) error {
 		return err
 	}
 
-	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
+	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
 	if err != nil || !isAdmin {
 		h.logger.Warn("unauthorized export attempt",
 			zap.Uint("user_id", userID),
@@ -127,7 +127,7 @@ func (h *Handler) Import(c echo.Context) error {
 		return err
 	}
 
-	isAdmin, err := h.rbacSvc.HasRole(userID, "admin")
+	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
 	if err != nil || !isAdmin {
 		h.logger.Warn("unauthorized import attempt",
 			zap.Uint("user_id", userID),

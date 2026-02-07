@@ -40,7 +40,7 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 	if err != nil {
 		return common.SendNotFound(c, "Server not found")
 	}
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "registries.manage")
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
 		return h.inertiaSvc.Render(c, "Errors/Generic", map[string]any{
 			"title":   "Error",

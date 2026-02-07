@@ -2,6 +2,7 @@ package maintenance
 
 import (
 	"berth/internal/common"
+	"berth/internal/rbac"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
@@ -37,7 +38,7 @@ func (h *Handler) ShowMaintenance(c echo.Context) error {
 		return common.SendNotFound(c, "Server not found")
 	}
 
-	hasPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, "docker.maintenance.read")
+	hasPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
 		return common.SendInternalError(c, "Failed to check permissions")
 	}

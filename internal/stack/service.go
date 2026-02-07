@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"berth/internal/rbac"
 	"berth/internal/validation"
 	"berth/models"
 	"context"
@@ -75,7 +76,7 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 
 	var accessibleStacks []Stack
 	for _, stack := range allStacks {
-		hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stack.Name, "stacks.read")
+		hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stack.Name, rbac.PermStacksRead)
 		if err != nil {
 			s.logger.Warn("failed to check stack permission",
 				zap.Error(err),
@@ -119,7 +120,7 @@ func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, n
 		return nil, fmt.Errorf("invalid stack name: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, name, "stacks.create")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, name, rbac.PermStacksCreate)
 	if err != nil {
 		s.logger.Error("failed to check create permission",
 			zap.Error(err),
@@ -214,7 +215,7 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksRead)
 	if err != nil {
 		s.logger.Error("failed to check stack permission",
 			zap.Error(err),
@@ -338,7 +339,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission for stack networks",
 			zap.Error(err),
@@ -405,7 +406,7 @@ func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *model
 }
 
 func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uint, stackname string) ([]Volume, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -428,7 +429,7 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 }
 
 func (s *Service) GetContainerImageDetails(ctx context.Context, userID uint, serverID uint, stackname string) ([]ContainerImageDetails, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -470,9 +471,9 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models
 }
 
 func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
-	requiredPermission := "stacks.read"
+	requiredPermission := rbac.PermStacksRead
 	if unmask {
-		requiredPermission = "stacks.manage"
+		requiredPermission = rbac.PermStacksManage
 	}
 
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
@@ -528,7 +529,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "stacks.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission for stack stats",
 			zap.Error(err),
@@ -623,7 +624,7 @@ func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID ui
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "files.read")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermFilesRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -666,7 +667,7 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, "files.write")
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermFilesWrite)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}

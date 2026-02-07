@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"berth/internal/apikey"
+	"berth/internal/rbac"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,7 +121,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
 			"server_id":     testServer.ID,
 			"stack_pattern": "test-*",
-			"permission":    "stacks.read",
+			"permission":    rbac.PermStacksRead,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
@@ -135,7 +136,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
-			"permission": "stacks.read",
+			"permission": rbac.PermStacksRead,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
@@ -165,7 +166,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		assert.True(t, result.Success)
 		assert.Len(t, result.Data, 1)
 		assert.Equal(t, "test-*", result.Data[0].StackPattern)
-		assert.Equal(t, "stacks.read", result.Data[0].Permission)
+		assert.Equal(t, rbac.PermStacksRead, result.Data[0].Permission)
 		createdScopeID = result.Data[0].ID
 	})
 

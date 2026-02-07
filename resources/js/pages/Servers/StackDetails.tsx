@@ -12,6 +12,12 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Layout from '../../components/layout/Layout';
 import { ComposeEditorModal } from '../../components/compose-editor/ComposeEditorModal';
 
+import {
+  PERM_STACKS_MANAGE,
+  PERM_LOGS_READ,
+  PERM_FILES_READ,
+  PERM_FILES_WRITE,
+} from '../../constants/permissions';
 import { PanelLayout } from '../../components/common/PanelLayout';
 import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
 import { SidebarSelection } from '../../components/stacks/sidebar/types';
@@ -36,10 +42,10 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [composeEditorOpen, setComposeEditorOpen] = useState(false);
 
-  const canManageStack = stack.stackPermissions?.permissions?.includes('stacks.manage') ?? false;
-  const canViewLogs = stack.stackPermissions?.permissions?.includes('logs.read') ?? false;
-  const canViewFiles = stack.stackPermissions?.permissions?.includes('files.read') ?? false;
-  const canWriteFiles = stack.stackPermissions?.permissions?.includes('files.write') ?? false;
+  const canManageStack = stack.stackPermissions?.permissions?.includes(PERM_STACKS_MANAGE) ?? false;
+  const canViewLogs = stack.stackPermissions?.permissions?.includes(PERM_LOGS_READ) ?? false;
+  const canViewFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_READ) ?? false;
+  const canWriteFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_WRITE) ?? false;
 
   const { updates, hasUpdates, lastChecked } = useStackImageUpdates({
     serverid,

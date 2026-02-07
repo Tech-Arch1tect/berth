@@ -8,6 +8,7 @@ import { useStackWebSocket } from './useStackWebSocket';
 import { useOperations } from './useOperations';
 import { useStackPermissions } from './useStackPermissions';
 import { showToast } from '../utils/toast';
+import { PERM_LOGS_READ, PERM_FILES_READ } from '../constants/permissions';
 import { OperationRequest } from '../types/operations';
 import {
   generateStackDocumentation,
@@ -86,8 +87,8 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
         environment: null,
         images: null,
         stats: null,
-        logs: 'logs.read',
-        files: 'files.read',
+        logs: PERM_LOGS_READ,
+        files: PERM_FILES_READ,
       };
 
       const currentTabPermission = tabPermissionMap[activeTab];

@@ -2,6 +2,7 @@ package imageupdates
 
 import (
 	"berth/internal/common"
+	"berth/internal/rbac"
 	"context"
 	"time"
 
@@ -94,7 +95,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 			userID,
 			update.ServerID,
 			update.StackName,
-			"stacks.read",
+			rbac.PermStacksRead,
 		)
 		if err != nil {
 			h.logger.Warn("failed to check stack permission",
@@ -191,7 +192,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 			userID,
 			serverID,
 			update.StackName,
-			"stacks.read",
+			rbac.PermStacksRead,
 		)
 		if err != nil {
 			h.logger.Warn("failed to check stack permission",

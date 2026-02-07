@@ -23,6 +23,30 @@ import {
 } from '../../api/generated/api-keys/api-keys';
 import { useQueryClient } from '@tanstack/react-query';
 import type { APIKeyScopeInfo } from '../../api/generated/models';
+import {
+  PERM_SERVERS_READ,
+  PERM_STACKS_READ,
+  PERM_STACKS_MANAGE,
+  PERM_STACKS_CREATE,
+  PERM_FILES_READ,
+  PERM_FILES_WRITE,
+  PERM_LOGS_READ,
+  PERM_LOGS_OPERATIONS_READ,
+  PERM_REGISTRIES_MANAGE,
+  PERM_DOCKER_MAINTENANCE_READ,
+  PERM_DOCKER_MAINTENANCE_WRITE,
+  PERM_ADMIN_SERVERS_READ,
+  PERM_ADMIN_SERVERS_WRITE,
+  PERM_ADMIN_USERS_READ,
+  PERM_ADMIN_USERS_WRITE,
+  PERM_ADMIN_ROLES_READ,
+  PERM_ADMIN_ROLES_WRITE,
+  PERM_ADMIN_PERMISSIONS_READ,
+  PERM_ADMIN_LOGS_READ,
+  PERM_ADMIN_AUDIT_READ,
+  PERM_ADMIN_SYSTEM_EXPORT,
+  PERM_ADMIN_SYSTEM_IMPORT,
+} from '../../constants/permissions';
 
 interface ScopesProps {
   api_key_id: string;
@@ -35,35 +59,35 @@ interface NewScopeForm {
 }
 
 const PERMISSIONS = [
-  { value: 'servers.read', label: 'View accessible servers' },
-  { value: 'stacks.read', label: 'View stacks and containers' },
-  { value: 'stacks.manage', label: 'Start/stop/deploy/remove stacks' },
-  { value: 'stacks.create', label: 'Create new stacks' },
-  { value: 'files.read', label: 'Read files within stacks' },
-  { value: 'files.write', label: 'Modify files within stacks' },
-  { value: 'logs.read', label: 'View container logs' },
-  { value: 'logs.operations.read', label: 'View own operation logs' },
-  { value: 'registries.manage', label: 'Create, update, and delete registry credentials' },
+  { value: PERM_SERVERS_READ, label: 'View accessible servers' },
+  { value: PERM_STACKS_READ, label: 'View stacks and containers' },
+  { value: PERM_STACKS_MANAGE, label: 'Start/stop/deploy/remove stacks' },
+  { value: PERM_STACKS_CREATE, label: 'Create new stacks' },
+  { value: PERM_FILES_READ, label: 'Read files within stacks' },
+  { value: PERM_FILES_WRITE, label: 'Modify files within stacks' },
+  { value: PERM_LOGS_READ, label: 'View container logs' },
+  { value: PERM_LOGS_OPERATIONS_READ, label: 'View own operation logs' },
+  { value: PERM_REGISTRIES_MANAGE, label: 'Create, update, and delete registry credentials' },
   {
-    value: 'docker.maintenance.read',
+    value: PERM_DOCKER_MAINTENANCE_READ,
     label: 'View Docker usage statistics and system information (server-wide)',
   },
   {
-    value: 'docker.maintenance.write',
+    value: PERM_DOCKER_MAINTENANCE_WRITE,
     label: 'Run Docker maintenance tasks like pruning images and containers (server-wide)',
   },
 
-  { value: 'admin.servers.read', label: 'View server configurations (admin)' },
-  { value: 'admin.servers.write', label: 'Create/modify/delete servers (admin)' },
-  { value: 'admin.users.read', label: 'View users and their roles (admin)' },
-  { value: 'admin.users.write', label: 'Create users, assign/revoke roles (admin)' },
-  { value: 'admin.roles.read', label: 'View roles and permissions (admin)' },
-  { value: 'admin.roles.write', label: 'Create/modify/delete roles and permissions (admin)' },
-  { value: 'admin.permissions.read', label: 'List available permissions (admin)' },
-  { value: 'admin.logs.read', label: 'View all operation logs (admin)' },
-  { value: 'admin.audit.read', label: 'View security audit logs (admin)' },
-  { value: 'admin.system.export', label: 'Export system configuration (admin)' },
-  { value: 'admin.system.import', label: 'Import system configuration (admin)' },
+  { value: PERM_ADMIN_SERVERS_READ, label: 'View server configurations (admin)' },
+  { value: PERM_ADMIN_SERVERS_WRITE, label: 'Create/modify/delete servers (admin)' },
+  { value: PERM_ADMIN_USERS_READ, label: 'View users and their roles (admin)' },
+  { value: PERM_ADMIN_USERS_WRITE, label: 'Create users, assign/revoke roles (admin)' },
+  { value: PERM_ADMIN_ROLES_READ, label: 'View roles and permissions (admin)' },
+  { value: PERM_ADMIN_ROLES_WRITE, label: 'Create/modify/delete roles and permissions (admin)' },
+  { value: PERM_ADMIN_PERMISSIONS_READ, label: 'List available permissions (admin)' },
+  { value: PERM_ADMIN_LOGS_READ, label: 'View all operation logs (admin)' },
+  { value: PERM_ADMIN_AUDIT_READ, label: 'View security audit logs (admin)' },
+  { value: PERM_ADMIN_SYSTEM_EXPORT, label: 'Export system configuration (admin)' },
+  { value: PERM_ADMIN_SYSTEM_IMPORT, label: 'Import system configuration (admin)' },
 ];
 
 export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {

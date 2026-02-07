@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"berth/internal/rbac"
 	"berth/models"
 	"errors"
 
@@ -34,7 +35,7 @@ func (s *Service) AdminExists() (bool, error) {
 	err := s.db.Model(&models.User{}).
 		Joins("JOIN user_roles ON users.id = user_roles.user_id").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("roles.name = ?", "admin").
+		Where("roles.name = ?", rbac.RoleAdmin).
 		Count(&count).Error
 
 	if err != nil {
@@ -96,7 +97,7 @@ func (s *Service) CreateAdmin(username, email, password string) (*models.User, e
 		zap.String("username", username),
 	)
 
-	if err := s.rbacSvc.AssignUserRole(user.ID, "admin"); err != nil {
+	if err := s.rbacSvc.AssignUserRole(user.ID, rbac.RoleAdmin); err != nil {
 		s.logger.Error("failed to assign admin role, rolling back user creation",
 			zap.Error(err),
 			zap.Uint("user_id", user.ID),
