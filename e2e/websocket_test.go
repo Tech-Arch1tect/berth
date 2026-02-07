@@ -279,3 +279,56 @@ func TestWebSocketMalformedAuthorization(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 }
+
+func TestWebSocketTOTPNotVerified(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "wstotp",
+		Email:    "wstotp@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	app.AuthHelper.EnableTOTPForUser(t, user.ID)
+
+	loginResp, err := app.AuthHelper.Login(user.Username, user.Password)
+	require.NoError(t, err)
+	require.Equal(t, 302, loginResp.StatusCode)
+
+	sessionCookie := app.SessionHelper.AssertSessionCookiePresent(t, loginResp)
+	client := app.SessionHelper.WithSessionCookie(sessionCookie)
+
+	checkResp, err := client.Get("/")
+	require.NoError(t, err)
+	require.Equal(t, 302, checkResp.StatusCode)
+	assert.Equal(t, "/auth/totp/verify", checkResp.Header.Get("Location"), "session should be in TOTP-pending state")
+
+	t.Run("GET /ws/ui/stack-status/:server_id requires TOTP verification", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/ui/stack-status/:server_id", e2etesting.CategoryNoAuth, e2etesting.ValueMedium)
+		resp, err := client.Get("/ws/ui/stack-status/1")
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("GET /ws/ui/servers/:serverid/terminal requires TOTP verification", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/ui/servers/:serverid/terminal", e2etesting.CategoryNoAuth, e2etesting.ValueMedium)
+		resp, err := client.Get("/ws/ui/servers/1/terminal")
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("GET /ws/ui/servers/:serverid/stacks/:stackname/operations requires TOTP verification", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/ui/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryNoAuth, e2etesting.ValueMedium)
+		resp, err := client.Get("/ws/ui/servers/1/stacks/test-stack/operations")
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
+	t.Run("GET /ws/ui/servers/:serverid/stacks/:stackname/operations/:operationId requires TOTP verification", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/ui/servers/:serverid/stacks/:stackname/operations/:operationId", e2etesting.CategoryNoAuth, e2etesting.ValueMedium)
+		resp, err := client.Get("/ws/ui/servers/1/stacks/test-stack/operations/op-123")
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+}
