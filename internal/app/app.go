@@ -124,9 +124,10 @@ func NewApp(opts *AppOptions) *app.App {
 				maxSizeBytes,
 			)
 		}),
-		fx.Invoke(func(auditLogger *operations.AuditLogger) {
-			models.OperationLogAuditLogger = auditLogger
-		}),
+		fx.Provide(fx.Annotate(
+			func(l *operations.AuditLogger) OperationLogAuditor { return l },
+			fx.As(new(OperationLogAuditor)),
+		)),
 		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
 			securityLogDir := filepath.Join(cfg.Custom.LogDir, "security")
 			maxSizeBytes := int64(cfg.Custom.LogFileSizeLimitMB) * 1024 * 1024
@@ -137,9 +138,11 @@ func NewApp(opts *AppOptions) *app.App {
 				maxSizeBytes,
 			)
 		}),
-		fx.Invoke(func(auditLogger *security.AuditLogger) {
-			models.SecurityAuditLogAuditor = auditLogger
-		}),
+		fx.Provide(fx.Annotate(
+			func(l *security.AuditLogger) SecurityLogAuditor { return l },
+			fx.As(new(SecurityLogAuditor)),
+		)),
+		fx.Invoke(RegisterAuditCallbacks),
 		fx.Provide(security.NewAuditService),
 		fx.Provide(func(logger *logging.Service, cfg *berthconfig.BerthConfig) *agent.Service {
 			return agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
