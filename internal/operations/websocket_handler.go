@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -19,13 +18,11 @@ type WebSocketHandler struct {
 	upgrader websocket.Upgrader
 }
 
-func NewWebSocketHandler(service *Service) *WebSocketHandler {
+func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc) *WebSocketHandler {
 	return &WebSocketHandler{
 		service: service,
 		upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
+			CheckOrigin:     checkOrigin,
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},

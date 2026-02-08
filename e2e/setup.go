@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"berth/internal/common"
 	"berth/internal/crypto"
 	"berth/models"
 	"berth/providers"
@@ -205,6 +206,9 @@ func SetupTestApp(t *testing.T) *TestApp {
 				}),
 				fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
 					return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
+				}),
+				fx.Provide(func(cfg *berthconfig.BerthConfig) common.CheckOriginFunc {
+					return common.NewOriginChecker(cfg.App.URL)
 				}),
 				agent.Module,
 				rbac.Module,

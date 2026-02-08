@@ -3,21 +3,16 @@ package websocket
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"sync"
 	"time"
+
+	"berth/internal/common"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
 
 type User struct {
 	ID   int    `json:"id"`
@@ -32,6 +27,7 @@ type Hub struct {
 	mutex             sync.RWMutex
 	permissionChecker PermissionChecker
 	logger            *logging.Service
+	upgrader          websocket.Upgrader
 }
 
 type UserConnection struct {
@@ -48,7 +44,7 @@ type PermissionChecker interface {
 	HasStackPermission(ctx context.Context, userID int, serverID int, stackname string, permission string) bool
 }
 
-func NewHub(permissionChecker PermissionChecker, logger *logging.Service) *Hub {
+func NewHub(permissionChecker PermissionChecker, logger *logging.Service, checkOrigin common.CheckOriginFunc) *Hub {
 	return &Hub{
 		register:          make(chan *UserConnection),
 		unregister:        make(chan *UserConnection),
@@ -56,6 +52,9 @@ func NewHub(permissionChecker PermissionChecker, logger *logging.Service) *Hub {
 		subscriptionMgr:   NewSubscriptionManager(),
 		permissionChecker: permissionChecker,
 		logger:            logger,
+		upgrader: websocket.Upgrader{
+			CheckOrigin: checkOrigin,
+		},
 	}
 }
 
@@ -179,7 +178,7 @@ func (h *Hub) BroadcastStackStatus(event StackStatusEvent) {
 }
 
 func (h *Hub) ServeWebSocket(c echo.Context, user *User) error {
-	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	conn, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		h.logger.Error("WebSocket upgrade error",
 			zap.Error(err),

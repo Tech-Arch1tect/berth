@@ -7,6 +7,7 @@ import (
 	"berth/internal/agent"
 	"berth/internal/apidocs"
 	"berth/internal/apikey"
+	"berth/internal/common"
 	berthconfig "berth/internal/config"
 	"berth/internal/crypto"
 	"berth/internal/files"
@@ -107,6 +108,9 @@ func NewApp(opts *AppOptions) *app.App {
 		jwt.Options,
 		fx.Provide(func() *berthconfig.BerthConfig {
 			return cfg
+		}),
+		fx.Provide(func(cfg *berthconfig.BerthConfig) common.CheckOriginFunc {
+			return common.NewOriginChecker(cfg.App.URL)
 		}),
 		fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
 			return crypto.NewCrypto(cfg.Custom.EncryptionSecret)

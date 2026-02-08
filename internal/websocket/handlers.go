@@ -26,15 +26,17 @@ type Handler struct {
 	permChecker   PermissionChecker
 	serverService *server.Service
 	auditService  *operations.AuditService
+	checkOrigin   common.CheckOriginFunc
 }
 
-func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService) *Handler {
+func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService, checkOrigin common.CheckOriginFunc) *Handler {
 	return &Handler{
 		hub:           hub,
 		jwtService:    jwtService,
 		permChecker:   permChecker,
 		serverService: serverService,
 		auditService:  auditService,
+		checkOrigin:   checkOrigin,
 	}
 }
 
@@ -202,13 +204,11 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 
 	defer func() { _ = agentConn.Close() }()
 
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
+	termUpgrader := websocket.Upgrader{
+		CheckOrigin: h.checkOrigin,
 	}
 
-	clientConn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	clientConn, err := termUpgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
