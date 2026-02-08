@@ -97,6 +97,13 @@ func RegisterRoutes(p RouteParams) {
 
 	e := p.Srv.Echo()
 	e.Use(middleware.Recover())
+	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XSSProtection:      "0",
+		ContentTypeNosniff: "nosniff",
+		XFrameOptions:      "DENY",
+		HSTSMaxAge:         31536000,
+		ReferrerPolicy:     "strict-origin-when-cross-origin",
+	}))
 	handlers.SetupErrorHandler(e, p.InertiaService)
 
 	// ============================================================================
