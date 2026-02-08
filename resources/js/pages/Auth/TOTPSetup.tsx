@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 import FlashMessages from '../../components/FlashMessages';
 import { cn } from '../../utils/cn';
@@ -55,11 +56,7 @@ export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
               </p>
 
               <div className={cn('p-4 rounded-lg text-center', theme.surface.muted)}>
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeURI)}`}
-                  alt="TOTP QR Code"
-                  className="mx-auto"
-                />
+                <QRCodeSVG value={qrCodeURI} size={200} className="mx-auto" />
               </div>
             </div>
 
