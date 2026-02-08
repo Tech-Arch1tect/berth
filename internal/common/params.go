@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"berth/internal/validation"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -45,6 +47,10 @@ func GetServerIDAndStackName(c echo.Context) (uint, string, error) {
 	stackname := c.Param("stackname")
 	if stackname == "" {
 		return 0, "", echo.NewHTTPError(http.StatusBadRequest, "stackname is required")
+	}
+
+	if err := validation.ValidateStackName(stackname); err != nil {
+		return 0, "", echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return serverID, stackname, nil
