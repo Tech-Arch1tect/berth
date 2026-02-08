@@ -10,10 +10,20 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
+
+var validFileModeRegex = regexp.MustCompile(`^0?[0-7]{3}$`)
+
+func validateFileMode(mode string) error {
+	if !validFileModeRegex.MatchString(mode) {
+		return fmt.Errorf("invalid file mode %q: must be a 3 or 4-digit octal value (e.g. 644, 0755)", mode)
+	}
+	return nil
+}
 
 type filesAgentClient interface {
 	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
@@ -153,6 +163,12 @@ func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, sta
 		zap.String("file_path", req.Path),
 	)
 
+	if req.Mode != nil && *req.Mode != "" {
+		if err := validateFileMode(*req.Mode); err != nil {
+			return err
+		}
+	}
+
 	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
 		s.logger.Warn("file write permission denied",
 			zap.Error(err),
@@ -204,6 +220,12 @@ func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, sta
 }
 
 func (s *Service) CreateDirectory(ctx context.Context, userID uint, serverID uint, stackname string, req CreateDirectoryRequest) error {
+	if req.Mode != nil && *req.Mode != "" {
+		if err := validateFileMode(*req.Mode); err != nil {
+			return err
+		}
+	}
+
 	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
 		return err
 	}
@@ -473,6 +495,10 @@ func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackna
 		zap.String("target_path", req.Path),
 		zap.String("mode", req.Mode),
 	)
+
+	if err := validateFileMode(req.Mode); err != nil {
+		return err
+	}
 
 	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
 		s.logger.Warn("chmod permission denied",

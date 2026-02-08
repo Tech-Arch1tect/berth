@@ -134,7 +134,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
   }, []);
 
   const handleOctalChange = useCallback((value: string) => {
-    if (value.match(/^\d{0,3}$/)) {
+    if (value.match(/^[0-7]{0,3}$/)) {
       setOctalInput(value);
       setIsEditingOctal(true);
       if (value.length === 3) {

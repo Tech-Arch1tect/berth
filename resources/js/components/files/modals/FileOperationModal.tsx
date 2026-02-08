@@ -371,12 +371,17 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
                       <input
                         type="text"
                         value={mode}
-                        onChange={(e) => setMode(e.target.value)}
+                        onChange={(e) => {
+                          if (e.target.value.match(/^[0-7]{0,3}$/)) {
+                            setMode(e.target.value);
+                          }
+                        }}
                         className={cn(theme.forms.input, 'w-full')}
                         placeholder={operation === 'mkdir' ? '755' : '644'}
+                        maxLength={3}
                       />
                       <p className={cn('text-xs mt-1', theme.text.subtle)}>
-                        Leave empty to use default permissions
+                        3-digit octal (0-7), e.g. 644, 755. Leave empty for default.
                       </p>
                     </div>
 
