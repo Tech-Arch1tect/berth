@@ -11,16 +11,20 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 )
 
 type WebSocketHandler struct {
 	service  *Service
 	upgrader websocket.Upgrader
+	logger   *logging.Service
 }
 
-func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc) *WebSocketHandler {
+func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc, logger *logging.Service) *WebSocketHandler {
 	return &WebSocketHandler{
 		service: service,
+		logger:  logger,
 		upgrader: websocket.Upgrader{
 			CheckOrigin:     checkOrigin,
 			ReadBufferSize:  1024,
@@ -231,11 +235,12 @@ func (h *WebSocketHandler) relayToWebSocketInternal(ctx context.Context, conn *w
 
 				var streamMsg StreamMessage
 				if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
-
 					if streamMsg.Type == "complete" {
-						fmt.Printf("[DEBUG] Complete message received: %s\n", jsonData)
-						fmt.Printf("[DEBUG] Parsed - Success: %v, ExitCode: %v, Timestamp: %v\n",
-							streamMsg.Success, streamMsg.ExitCode, streamMsg.Timestamp)
+						h.logger.Debug("operation complete message received",
+							zap.Any("success", streamMsg.Success),
+							zap.Any("exit_code", streamMsg.ExitCode),
+							zap.Time("timestamp", streamMsg.Timestamp),
+						)
 					}
 
 					if operationLogID != nil && logAllMessages {
