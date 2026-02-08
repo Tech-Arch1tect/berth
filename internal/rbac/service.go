@@ -2,8 +2,8 @@ package rbac
 
 import (
 	"berth/internal/auth"
+	"berth/internal/patterns"
 	"berth/models"
-	"berth/utils"
 	"context"
 	"errors"
 
@@ -592,7 +592,7 @@ func (s *Service) checkUserStackPermission(userID uint, serverID uint, stackname
 	}
 
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == permissionName && utils.MatchesPattern(stackname, srsp.StackPattern) {
+		if srsp.Permission.Name == permissionName && patterns.Matches(stackname, srsp.StackPattern) {
 			s.logger.Debug("permission granted via role assignment",
 				zap.Uint("user_id", userID),
 				zap.Uint("server_id", serverID),
@@ -620,7 +620,7 @@ func (s *Service) checkAPIKeyStackScope(apiKey *models.APIKey, serverID uint, st
 			continue
 		}
 
-		if !utils.MatchesPattern(stackname, scope.StackPattern) {
+		if !patterns.Matches(stackname, scope.StackPattern) {
 			continue
 		}
 
@@ -672,7 +672,7 @@ func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackn
 
 	permissionSet := make(map[string]bool)
 	for _, srsp := range serverRoleStackPermissions {
-		if utils.MatchesPattern(stackname, srsp.StackPattern) {
+		if patterns.Matches(stackname, srsp.StackPattern) {
 			permissionSet[srsp.Permission.Name] = true
 		}
 	}
@@ -692,7 +692,7 @@ func (s *Service) filterPermissionsByAPIKeyScopes(apiKey *models.APIKey, serverI
 			continue
 		}
 
-		if !utils.MatchesPattern(stackname, scope.StackPattern) {
+		if !patterns.Matches(stackname, scope.StackPattern) {
 			continue
 		}
 

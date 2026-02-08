@@ -1,8 +1,8 @@
 package apikey
 
 import (
+	"berth/internal/patterns"
 	"berth/models"
-	"berth/utils"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -456,7 +456,7 @@ func (s *Service) CheckAPIKeyPermission(apiKey *models.APIKey, userHasPermission
 			continue
 		}
 
-		if !utils.MatchesPattern(stackName, scope.StackPattern) {
+		if !patterns.Matches(stackName, scope.StackPattern) {
 			continue
 		}
 

@@ -1,4 +1,4 @@
-package utils
+package compose
 
 import (
 	"strings"

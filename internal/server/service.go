@@ -1,8 +1,8 @@
 package server
 
 import (
+	berthcrypto "berth/internal/crypto"
 	"berth/models"
-	"berth/utils"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -29,13 +29,13 @@ type serverAgentClient interface {
 
 type Service struct {
 	db       *gorm.DB
-	crypto   *utils.Crypto
+	crypto   *berthcrypto.Crypto
 	rbacSvc  accessChecker
 	agentSvc serverAgentClient
 	logger   *logging.Service
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *logging.Service) *Service {
 	return &Service{
 		db:       db,
 		crypto:   crypto,

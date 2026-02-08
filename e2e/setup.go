@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"berth/internal/crypto"
 	"berth/models"
 	"berth/providers"
-	"berth/utils"
 
 	mockpkg "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -203,8 +203,8 @@ func SetupTestApp(t *testing.T) *TestApp {
 						},
 					}
 				}),
-				fx.Provide(func(cfg *berthconfig.BerthConfig) *utils.Crypto {
-					return utils.NewCrypto(cfg.Custom.EncryptionSecret)
+				fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
+					return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
 				}),
 				agent.Module,
 				rbac.Module,
@@ -315,7 +315,7 @@ func (app *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 }
 
 func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
-	crypto := utils.NewCrypto("test-encryption-secret-key-32chars!!")
+	crypto := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
 	encryptedToken, err := crypto.Encrypt("test-access-token")
 	require.NoError(t, err, "failed to encrypt access tokene")
 

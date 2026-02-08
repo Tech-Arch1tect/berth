@@ -1,9 +1,10 @@
 package imageupdates
 
 import (
+	"berth/internal/compose"
 	"berth/internal/config"
+	"berth/internal/crypto"
 	"berth/models"
-	"berth/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -28,7 +29,7 @@ type Service struct {
 	db                 *gorm.DB
 	agentSvc           agentClient
 	serverSvc          serverProvider
-	crypto             *utils.Crypto
+	crypto             *crypto.Crypto
 	logger             *logging.Service
 	interval           time.Duration
 	enabled            bool
@@ -38,7 +39,7 @@ type Service struct {
 }
 
 func NewService(db *gorm.DB, agentSvc agentClient, serverSvc serverProvider,
-	crypto *utils.Crypto, logger *logging.Service, cfg *config.BerthConfig) *Service {
+	crypto *crypto.Crypto, logger *logging.Service, cfg *config.BerthConfig) *Service {
 
 	interval, err := time.ParseDuration(cfg.Custom.ImageUpdateCheckInterval)
 	if err != nil {
@@ -53,7 +54,7 @@ func NewService(db *gorm.DB, agentSvc agentClient, serverSvc serverProvider,
 	if cfg.Custom.ImageUpdateCheckDisabledRegistries != "" {
 		registries := strings.Split(cfg.Custom.ImageUpdateCheckDisabledRegistries, ",")
 		for _, registry := range registries {
-			normalized := utils.NormalizeRegistryURL(strings.TrimSpace(registry))
+			normalized := compose.NormalizeRegistryURL(strings.TrimSpace(registry))
 			if normalized != "" {
 				disabledRegistries[normalized] = true
 			}

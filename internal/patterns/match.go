@@ -1,10 +1,10 @@
-package utils
+package patterns
 
 import (
 	"strings"
 )
 
-func MatchesPattern(text, pattern string) bool {
+func Matches(text, pattern string) bool {
 	if pattern == "*" {
 		return true
 	}

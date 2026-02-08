@@ -8,6 +8,7 @@ import (
 	"berth/internal/apidocs"
 	"berth/internal/apikey"
 	berthconfig "berth/internal/config"
+	"berth/internal/crypto"
 	"berth/internal/files"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
@@ -29,7 +30,6 @@ import (
 	"berth/providers"
 	"berth/routes"
 	"berth/seeds"
-	"berth/utils"
 
 	"github.com/tech-arch1tect/brx/app"
 	"github.com/tech-arch1tect/brx/config"
@@ -108,8 +108,8 @@ func NewApp(opts *AppOptions) *app.App {
 		fx.Provide(func() *berthconfig.BerthConfig {
 			return cfg
 		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig) *utils.Crypto {
-			return utils.NewCrypto(cfg.Custom.EncryptionSecret)
+		fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
+			return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
 		}),
 		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
 			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")

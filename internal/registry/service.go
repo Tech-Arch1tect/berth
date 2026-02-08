@@ -1,8 +1,9 @@
 package registry
 
 import (
+	"berth/internal/crypto"
+	"berth/internal/patterns"
 	"berth/models"
-	"berth/utils"
 	"errors"
 	"fmt"
 
@@ -13,7 +14,7 @@ import (
 
 type Service struct {
 	db     *gorm.DB
-	crypto *utils.Crypto
+	crypto *crypto.Crypto
 	logger *logging.Service
 }
 
@@ -23,7 +24,7 @@ type RegistryCredential struct {
 	Password string
 }
 
-func NewService(db *gorm.DB, crypto *utils.Crypto, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, crypto *crypto.Crypto, logger *logging.Service) *Service {
 	return &Service{
 		db:     db,
 		crypto: crypto,
@@ -268,7 +269,7 @@ func (s *Service) GetCredentialForStack(serverID uint, stackName, registryURL st
 
 	var matchedCredential *models.ServerRegistryCredential
 	for i := range credentials {
-		if utils.MatchesPattern(stackName, credentials[i].StackPattern) {
+		if patterns.Matches(stackName, credentials[i].StackPattern) {
 			if matchedCredential == nil ||
 				(credentials[i].StackPattern != "*" && matchedCredential.StackPattern == "*") ||
 				(credentials[i].StackPattern == stackName) {
@@ -347,7 +348,7 @@ func (s *Service) GetCredentialsForStack(serverID uint, stackName string) ([]mod
 
 	var matched []models.ServerRegistryCredential
 	for _, cred := range credentials {
-		if utils.MatchesPattern(stackName, cred.StackPattern) {
+		if patterns.Matches(stackName, cred.StackPattern) {
 			matched = append(matched, cred)
 		}
 	}

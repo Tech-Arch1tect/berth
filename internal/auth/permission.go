@@ -2,7 +2,7 @@ package auth
 
 import (
 	"berth/internal/apikey"
-	"berth/utils"
+	"berth/internal/patterns"
 
 	"github.com/labstack/echo/v4"
 )
@@ -154,7 +154,7 @@ func GetStackPermissions(c echo.Context, rbacService RBACService, apiKeyService 
 				continue
 			}
 
-			if !utils.MatchesPattern(stackName, scope.StackPattern) {
+			if !patterns.Matches(stackName, scope.StackPattern) {
 				continue
 			}
 

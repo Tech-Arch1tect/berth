@@ -2,8 +2,8 @@ package server
 
 import (
 	"berth/internal/agent"
+	"berth/internal/crypto"
 	"berth/internal/rbac"
-	"berth/utils"
 
 	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/fx"
@@ -11,7 +11,7 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(func(db *gorm.DB, crypto *utils.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service, logger *logging.Service) *Service {
+	fx.Provide(func(db *gorm.DB, crypto *crypto.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service, logger *logging.Service) *Service {
 		return NewService(db, crypto, rbacSvc, agentSvc, logger)
 	}),
 	fx.Provide(NewHandler),

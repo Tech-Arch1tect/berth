@@ -1,11 +1,11 @@
 package operations
 
 import (
+	"berth/internal/compose"
 	"berth/internal/files"
 	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/models"
-	"berth/utils"
 	"bufio"
 	"context"
 	"crypto/tls"
@@ -515,7 +515,7 @@ func (s *Service) fetchRegistryCredentials(ctx context.Context, userID uint, ser
 		}
 	}
 
-	registries, err := utils.ExtractRegistries(fileContent.Content)
+	registries, err := compose.ExtractRegistries(fileContent.Content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract registries: %w", err)
 	}
@@ -534,7 +534,7 @@ func (s *Service) fetchRegistryCredentials(ctx context.Context, userID uint, ser
 
 	var credentials []RegistryCredential
 	for _, registry := range registries {
-		normalizedRegistry := utils.NormalizeRegistryURL(registry)
+		normalizedRegistry := compose.NormalizeRegistryURL(registry)
 
 		cred, err := s.registrySvc.GetCredentialForStack(serverID, stackname, normalizedRegistry)
 		if err != nil {
