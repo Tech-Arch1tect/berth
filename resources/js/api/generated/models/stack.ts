@@ -5,9 +5,11 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { StackHealthDetails } from './stackHealthDetails';
 
 export interface Stack {
   compose_file: string;
+  health_details?: StackHealthDetails | null;
   is_healthy: boolean;
   name: string;
   path: string;

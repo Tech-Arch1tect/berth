@@ -276,6 +276,7 @@ export * from './stackDetails';
 export * from './stackEnvironmentData';
 export * from './stackEnvironmentDataServices';
 export * from './stackEnvironmentResponse';
+export * from './stackHealthDetails';
 export * from './stackImagesData';
 export * from './stackImagesResponse';
 export * from './stackNetworksData';
