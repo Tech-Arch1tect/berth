@@ -376,7 +376,7 @@ export default function Layout({ children }: LayoutProps) {
           <Bars3Icon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
         </button>
 
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="flex-1 overflow-hidden flex flex-col h-full">{children}</main>
       </div>
 
       <GlobalOperationsTracker />

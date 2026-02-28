@@ -191,84 +191,86 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       {/* Server Navigation */}
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
-      <PanelLayout
-        storageKey="maintenance"
-        sidebarTitle="Resources"
-        defaultWidth={260}
-        maxWidthPercent={35}
-        toolbar={
-          <MaintenanceToolbar
-            serverName={server.name}
-            onRefresh={refetch}
-            isRefreshing={isLoading}
-          />
-        }
-        sidebar={
-          <MaintenanceSidebar
-            activeTab={activeTab}
-            onTabChange={(tabId) => setActiveTab(tabId as TabType)}
-            summary={summary}
-          />
-        }
-        content={
-          <MaintenanceContent>
-            {maintenanceInfo && (
-              <>
-                {activeTab === 'overview' && (
-                  <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
-                )}
+      <div className="h-full flex flex-col">
+        <PanelLayout
+          storageKey="maintenance"
+          sidebarTitle="Resources"
+          defaultWidth={260}
+          maxWidthPercent={35}
+          toolbar={
+            <MaintenanceToolbar
+              serverName={server.name}
+              onRefresh={refetch}
+              isRefreshing={isLoading}
+            />
+          }
+          sidebar={
+            <MaintenanceSidebar
+              activeTab={activeTab}
+              onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+              summary={summary}
+            />
+          }
+          content={
+            <MaintenanceContent>
+              {maintenanceInfo && (
+                <>
+                  {activeTab === 'overview' && (
+                    <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
+                  )}
 
-                {activeTab === 'images' && (
-                  <MaintenanceImagesTab
-                    images={maintenanceInfo.image_summary.images}
-                    onDelete={setDeleteConfirm}
-                    isDeleting={deleteMutation.isPending}
-                  />
-                )}
+                  {activeTab === 'images' && (
+                    <MaintenanceImagesTab
+                      images={maintenanceInfo.image_summary.images}
+                      onDelete={setDeleteConfirm}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  )}
 
-                {activeTab === 'containers' && (
-                  <MaintenanceContainersTab
-                    containers={maintenanceInfo.container_summary.containers}
-                    onDelete={setDeleteConfirm}
-                    isDeleting={deleteMutation.isPending}
-                  />
-                )}
+                  {activeTab === 'containers' && (
+                    <MaintenanceContainersTab
+                      containers={maintenanceInfo.container_summary.containers}
+                      onDelete={setDeleteConfirm}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  )}
 
-                {activeTab === 'volumes' && (
-                  <MaintenanceVolumesTab
-                    volumes={maintenanceInfo.volume_summary.volumes}
-                    onDelete={setDeleteConfirm}
-                    isDeleting={deleteMutation.isPending}
-                  />
-                )}
+                  {activeTab === 'volumes' && (
+                    <MaintenanceVolumesTab
+                      volumes={maintenanceInfo.volume_summary.volumes}
+                      onDelete={setDeleteConfirm}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  )}
 
-                {activeTab === 'networks' && (
-                  <MaintenanceNetworksTab
-                    networks={maintenanceInfo.network_summary.networks}
-                    onDelete={setDeleteConfirm}
-                    isDeleting={deleteMutation.isPending}
-                  />
-                )}
+                  {activeTab === 'networks' && (
+                    <MaintenanceNetworksTab
+                      networks={maintenanceInfo.network_summary.networks}
+                      onDelete={setDeleteConfirm}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  )}
 
-                {activeTab === 'actions' && (
-                  <MaintenanceActionsTab
-                    maintenanceInfo={maintenanceInfo}
-                    selectedPruneType={selectedPruneType}
-                    pruneAll={pruneAll}
-                    isPruning={pruneMutation.isPending}
-                    isLoading={isLoading}
-                    onPruneTypeChange={setSelectedPruneType}
-                    onPruneAllChange={setPruneAll}
-                    onStartPrune={() => setShowConfirm(true)}
-                    onRefresh={refetch}
-                  />
-                )}
-              </>
-            )}
-          </MaintenanceContent>
-        }
-        statusBar={<MaintenanceStatusBar summary={summary} />}
-      />
+                  {activeTab === 'actions' && (
+                    <MaintenanceActionsTab
+                      maintenanceInfo={maintenanceInfo}
+                      selectedPruneType={selectedPruneType}
+                      pruneAll={pruneAll}
+                      isPruning={pruneMutation.isPending}
+                      isLoading={isLoading}
+                      onPruneTypeChange={setSelectedPruneType}
+                      onPruneAllChange={setPruneAll}
+                      onStartPrune={() => setShowConfirm(true)}
+                      onRefresh={refetch}
+                    />
+                  )}
+                </>
+              )}
+            </MaintenanceContent>
+          }
+          statusBar={<MaintenanceStatusBar summary={summary} />}
+        />
+      </div>
 
       {/* Prune Confirmation Modal */}
       <ConfirmationModal

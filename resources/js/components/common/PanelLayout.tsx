@@ -230,7 +230,7 @@ export const PanelLayout: FC<PanelLayoutProps> = ({
             'bg-white dark:bg-zinc-900'
           )}
         >
-          {content}
+          <div className="flex-1 overflow-auto">{content}</div>
         </div>
       </div>
 
