@@ -18,17 +18,28 @@ interface StackCardProps {
 }
 
 export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) => {
-  const healthPercentage =
-    stack.total_containers > 0
-      ? Math.round((stack.running_containers / stack.total_containers) * 100)
-      : 0;
-
-  // Fetch image updates for this stack
   const { updateCount } = useStackImageUpdates({
     serverid: stack.server_id,
     stackname: stack.name,
     enabled: true,
   });
+
+  const healthDetails = stack.health_details;
+
+  const healthyPercentage =
+    healthDetails?.percentage ??
+    (stack.total_containers > 0
+      ? Math.round((stack.running_containers / stack.total_containers) * 100)
+      : 0);
+
+  const unhealthyPercentage = stack.total_containers > 0 ? 100 - healthyPercentage : 0;
+
+  const getUnhealthyReason = () => {
+    if (!healthDetails || healthDetails.reasons.length === 0) {
+      return 'Unhealthy';
+    }
+    return healthDetails.reasons.join(', ');
+  };
 
   if (compact) {
     return (
@@ -41,15 +52,8 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
             : theme.cards.stack.compact.unhealthy,
           theme.cards.stack.compact.lift
         )}
+        title={stack.is_healthy ? 'Healthy' : getUnhealthyReason()}
       >
-        {/* Color accent bar at bottom */}
-        <div
-          className={
-            stack.is_healthy ? theme.progress.compactHealthy : theme.progress.compactUnhealthy
-          }
-          style={{ width: `${healthPercentage}%` }}
-        />
-
         <div className="p-3 pb-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -71,13 +75,13 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
               )}
               <UpdateAvailableBadge count={updateCount} variant="compact" />
             </div>
-          </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className={cn('truncate', theme.text.subtle)}>{stack.server_name}</span>
-            <span className={cn('font-semibold ml-2 flex-shrink-0', theme.text.strong)}>
-              {stack.running_containers}/{stack.total_containers}
-            </span>
+            <div className="flex items-center justify-between text-xs">
+              <span className={cn('truncate', theme.text.subtle)}>{stack.server_name}</span>
+              <span className={cn('font-semibold ml-2 flex-shrink-0', theme.text.strong)}>
+                {stack.running_containers}/{stack.total_containers}
+              </span>
+            </div>
           </div>
         </div>
       </Link>
@@ -89,15 +93,45 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
       href={`/servers/${stack.server_id}/stacks/${stack.name}`}
       className={cn(theme.cards.stack.normal.base, theme.cards.stack.normal.hover)}
     >
-      {/* Health accent bar at top */}
-      <div
-        className={cn(
-          'h-1.5',
-          stack.is_healthy ? theme.intent.success.icon : theme.intent.danger.icon
-        )}
-      />
-
       <div className="p-5">
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className={cn(theme.text.subtle)}>Health Status</span>
+            <span
+              className={cn(
+                'font-medium',
+                stack.is_healthy ? theme.text.success : theme.text.danger
+              )}
+            >
+              {healthyPercentage}% healthy
+            </span>
+          </div>
+          <div
+            className={cn(
+              'relative h-2.5 overflow-hidden rounded-full flex',
+              stack.is_healthy
+                ? 'bg-emerald-100 dark:bg-emerald-900/20'
+                : 'bg-red-100 dark:bg-red-900/20'
+            )}
+          >
+            <div
+              className={theme.progress.healthyGradient}
+              style={{ width: `${healthyPercentage}%` }}
+            />
+            {unhealthyPercentage > 0 && (
+              <div
+                className={theme.progress.unhealthyGradient}
+                style={{ width: `${unhealthyPercentage}%` }}
+              />
+            )}
+          </div>
+          {!stack.is_healthy && (
+            <div className="mt-1 text-xs text-right">
+              <span className={cn(theme.text.subtle)}>{getUnhealthyReason()}</span>
+            </div>
+          )}
+        </div>
+
         {/* Header with name and status */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
@@ -125,7 +159,10 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
             {stack.is_healthy ? (
               <CheckCircleIcon className={cn('h-5 w-5', theme.text.success)} title="Healthy" />
             ) : (
-              <XCircleIcon className={cn('h-5 w-5', theme.text.danger)} title="Unhealthy" />
+              <XCircleIcon
+                className={cn('h-5 w-5', theme.text.danger)}
+                title={getUnhealthyReason()}
+              />
             )}
             <UpdateAvailableBadge count={updateCount} variant="compact" />
           </div>
@@ -160,21 +197,9 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
                 stack.is_healthy ? theme.text.success : theme.text.danger
               )}
             >
-              {healthPercentage}%
+              {healthyPercentage}%
             </div>
-            <div className={cn('text-xs', theme.text.subtle)}>healthy</div>
           </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="relative h-2 mb-3">
-          <div className="absolute inset-0 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-          <div
-            className={
-              stack.is_healthy ? theme.progress.healthyGradient : theme.progress.unhealthyGradient
-            }
-            style={{ width: `${healthPercentage}%` }}
-          />
         </div>
 
         {/* Compose file path */}

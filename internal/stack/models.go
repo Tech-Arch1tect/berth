@@ -30,14 +30,23 @@ type StackStats struct {
 }
 
 type Stack struct {
-	Name              string `json:"name"`
-	Path              string `json:"path"`
-	ComposeFile       string `json:"compose_file"`
-	ServerID          uint   `json:"server_id"`
-	ServerName        string `json:"server_name"`
-	IsHealthy         bool   `json:"is_healthy"`
-	TotalContainers   int    `json:"total_containers"`
-	RunningContainers int    `json:"running_containers"`
+	Name              string              `json:"name"`
+	Path              string              `json:"path"`
+	ComposeFile       string              `json:"compose_file"`
+	ServerID          uint                `json:"server_id"`
+	ServerName        string              `json:"server_name"`
+	IsHealthy         bool                `json:"is_healthy"`
+	TotalContainers   int                 `json:"total_containers"`
+	RunningContainers int                 `json:"running_containers"`
+	HealthDetails     *StackHealthDetails `json:"health_details,omitempty"`
+}
+
+type StackHealthDetails struct {
+	Percentage     int      `json:"percentage"`
+	HealthyCount   int      `json:"healthy_count"`
+	UnhealthyCount int      `json:"unhealthy_count"`
+	StoppedCount   int      `json:"stopped_count"`
+	Reasons        []string `json:"reasons"`
 }
 
 type StackDetails struct {

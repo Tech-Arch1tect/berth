@@ -10,10 +10,11 @@ import {
   DocumentTextIcon,
   FolderIcon,
   ClockIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import { getServiceStatus } from '../../../utils/statusHelpers';
+import { getServiceHealthStatus } from '../../../utils/statusHelpers';
 
 interface OverviewPanelProps {
   stackPath: string;
@@ -52,6 +53,83 @@ const getOldestUptime = (containers: Container[]) => {
   return formatUptime(oldestStart);
 };
 
+const getUnhealthyServices = (services: ComposeService[]) => {
+  return services
+    .map((s) => ({ service: s, status: getServiceHealthStatus(s) }))
+    .filter(
+      ({ status }) =>
+        status.status === 'error' || status.status === 'stopped' || status.status === 'partial'
+    );
+};
+
+const HealthIssuesSection: React.FC<{ services: ComposeService[] }> = ({ services }) => {
+  const unhealthyServices = getUnhealthyServices(services);
+
+  if (unhealthyServices.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cn(
+        'rounded-lg border p-4',
+        'border-red-200 dark:border-red-900/30',
+        'bg-red-50 dark:bg-red-900/10'
+      )}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
+        <h3 className={cn('font-semibold', theme.text.strong)}>Health Issues</h3>
+        <span className="text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+          {unhealthyServices.length}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        {unhealthyServices.map(({ service, status }) => {
+          const StatusIcon = status.icon;
+
+          return (
+            <div
+              key={service.name}
+              className={cn(
+                'flex items-start gap-2 p-2 rounded',
+                'bg-white dark:bg-zinc-800',
+                'border border-red-100 dark:border-red-900/20'
+              )}
+            >
+              <StatusIcon className={cn('w-4 h-4 flex-shrink-0 mt-0.5', status.color)} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium">{service.name}</div>
+                <div className={cn('text-xs', theme.text.subtle)}>{status.reason}</div>
+                {status.containerBreakdown && (
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                    {status.containerBreakdown.unhealthy > 0 && (
+                      <span className="text-red-500">
+                        {status.containerBreakdown.unhealthy} unhealthy
+                      </span>
+                    )}
+                    {status.containerBreakdown.unhealthy > 0 &&
+                      status.containerBreakdown.healthy > 0 &&
+                      ' • '}
+                    {status.containerBreakdown.healthy > 0 && (
+                      <span className="text-emerald-500">
+                        {status.containerBreakdown.healthy} healthy
+                      </span>
+                    )}
+                    {' • '}
+                    {status.containerBreakdown.running} running
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const OverviewPanel: React.FC<OverviewPanelProps> = ({
   stackPath,
   composeFile,
@@ -74,7 +152,7 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
   const activeVolumes = volumes.filter((v) => v.exists).length;
 
   const healthyServices = services.filter((s) => {
-    const status = getServiceStatus(s);
+    const status = getServiceHealthStatus(s);
     return status.status === 'running';
   }).length;
 
@@ -127,6 +205,9 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
           />
         </div>
 
+        {/* Health Issues Section */}
+        <HealthIssuesSection services={services} />
+
         {/* Services Dashboard */}
         <div
           className={cn(
@@ -146,7 +227,7 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
           </div>
           <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {services.map((service) => {
-              const status = getServiceStatus(service);
+              const status = getServiceHealthStatus(service);
               const StatusIcon = status.icon;
               const uptime = getOldestUptime(service.containers || []);
               const running =

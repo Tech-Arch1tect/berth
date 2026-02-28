@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import type { ComposeService, Container } from '../../../api/generated/models';
+import type { ComposeService, Container, HealthStatus } from '../../../api/generated/models';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import { OperationRequest } from '../../../types/operations';
 import {
@@ -16,7 +16,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/cn';
 import { theme } from '../../../theme';
-import { getContainerStatus } from '../../../utils/statusHelpers';
+import {
+  getContainerStatus,
+  getContainerHealthStatus,
+  formatHealthLog,
+} from '../../../utils/statusHelpers';
 import LogViewer from '../../logs/LogViewer';
 
 interface ServiceDetailPanelProps {
@@ -273,6 +277,74 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
   );
 };
 
+const HealthCheckSection: React.FC<{ health?: HealthStatus | null }> = ({ health }) => {
+  if (!health) {
+    return null;
+  }
+
+  const healthInfo = getContainerHealthStatus({ health, state: 'running' } as Container);
+  const HealthIcon = healthInfo.icon;
+
+  return (
+    <DetailSection title="Health Check">
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <HealthIcon className={cn('w-4 h-4', healthInfo.color)} />
+          <span className={cn('text-sm font-medium', healthInfo.color)}>{healthInfo.label}</span>
+        </div>
+
+        <div
+          className={cn(
+            'text-xs px-2 py-1.5 rounded',
+            healthInfo.status === 'unhealthy'
+              ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+              : healthInfo.status === 'starting'
+                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+          )}
+        >
+          {healthInfo.reason}
+        </div>
+
+        {health.failing_streak !== undefined && health.failing_streak > 0 && (
+          <div
+            className={cn(
+              'text-xs px-2 py-1 rounded',
+              'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+            )}
+          >
+            Failing streak: {health.failing_streak} consecutive checks
+          </div>
+        )}
+
+        {health.log && health.log.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              Recent Checks ({health.log.length})
+            </p>
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {health.log.slice(0, 10).map((log, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'text-xs p-2 rounded font-mono break-all',
+                    log.exit_code === 0
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                  )}
+                >
+                  <div className="font-medium mb-1">{formatHealthLog(log)}</div>
+                  <div className="opacity-75 truncate">{log.output}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </DetailSection>
+  );
+};
+
 const ContainerDetail: React.FC<{
   container: Container;
 }> = ({ container }) => {
@@ -301,6 +373,18 @@ const ContainerDetail: React.FC<{
           <span className={cn('text-xs px-2 py-0.5 rounded', statusInfo.bg, statusInfo.color)}>
             {statusInfo.label}
           </span>
+          {container.health && (
+            <div className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  'text-xs px-2 py-0.5 rounded',
+                  'bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                )}
+              >
+                {container.health.status}
+              </span>
+            </div>
+          )}
         </div>
         {uptime && (
           <span className={cn('text-sm', theme.text.subtle)}>
@@ -314,6 +398,8 @@ const ContainerDetail: React.FC<{
       <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column */}
         <div className="space-y-4">
+          <HealthCheckSection health={container.health} />
+
           {/* Ports */}
           {container.ports && container.ports.length > 0 && (
             <DetailSection title="Ports">

@@ -14,7 +14,7 @@ export const UpdateAvailableBadge: React.FC<UpdateAvailableBadgeProps> = ({
   variant = 'default',
   className,
 }) => {
-  if (count === 0) return null;
+  if (!count || count <= 0) return null;
 
   return (
     <span

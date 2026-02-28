@@ -1,6 +1,6 @@
 import { cn } from './cn';
 import { theme } from '../theme';
-import type { Container, ComposeService } from '../api/generated/models';
+import type { Container, ComposeService, HealthLog } from '../api/generated/models';
 import type { ComponentType, SVGProps } from 'react';
 import {
   CheckCircleIcon,
@@ -414,4 +414,231 @@ export const getResourceStatusBadge = (
     className: cn(theme.badges.tag.base, theme.badges.tag.success),
     label: 'Active',
   };
+};
+
+export interface ContainerHealthInfo {
+  status: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  color: string;
+  bg: string;
+  label: string;
+  reason: string;
+}
+
+export interface ServiceHealthInfo {
+  status: ServiceDisplayStatus;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  color: string;
+  bg: string;
+  label: string;
+  reason: string;
+  containerBreakdown?: {
+    total: number;
+    running: number;
+    stopped: number;
+    unhealthy: number;
+    healthy: number;
+  };
+}
+
+export const getContainerHealthStatus = (container: Container): ContainerHealthInfo => {
+  const health = container.health;
+
+  if (!health || !health.status) {
+    return {
+      status: 'none',
+      icon: CheckCircleIcon,
+      color: 'text-zinc-400',
+      bg: 'bg-zinc-50 dark:bg-zinc-800',
+      label: 'No Health Check',
+      reason: 'Container has no health check configured',
+    };
+  }
+
+  switch (health.status.toLowerCase()) {
+    case 'healthy':
+      return {
+        status: 'healthy',
+        icon: CheckCircleIcon,
+        color: 'text-emerald-500',
+        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+        label: 'Healthy',
+        reason: 'Health check passing',
+      };
+
+    case 'unhealthy':
+      return {
+        status: 'unhealthy',
+        icon: XCircleIcon,
+        color: 'text-red-500',
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        label: 'Unhealthy',
+        reason:
+          health.failing_streak && health.failing_streak > 0
+            ? `Health check failing (${health.failing_streak} consecutive failures)`
+            : 'Health check failing',
+      };
+
+    case 'starting':
+      return {
+        status: 'starting',
+        icon: ClockIcon,
+        color: 'text-amber-500',
+        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        label: 'Starting',
+        reason: 'Health check initializing (grace period)',
+      };
+
+    default:
+      return {
+        status: 'none',
+        icon: CheckCircleIcon,
+        color: 'text-zinc-400',
+        bg: 'bg-zinc-50 dark:bg-zinc-800',
+        label: health.status,
+        reason: `Health status: ${health.status}`,
+      };
+  }
+};
+
+export const getServiceHealthStatus = (service: ComposeService): ServiceHealthInfo => {
+  const containers = service.containers || [];
+
+  if (containers.length === 0) {
+    return {
+      status: 'no-containers',
+      icon: XCircleIcon,
+      color: 'text-zinc-400',
+      bg: 'bg-zinc-100 dark:bg-zinc-800',
+      label: 'No Containers',
+      reason: 'Service has no containers created',
+    };
+  }
+
+  const counts = getContainerCounts(containers);
+  const breakdown = {
+    total: counts.total,
+    running: counts.running,
+    stopped: counts.stopped,
+    error: counts.error,
+    notCreated: counts.notCreated,
+    other: counts.other,
+  };
+
+  const unhealthyContainers = containers.filter(
+    (c) => c.health && c.health.status.toLowerCase() === 'unhealthy'
+  );
+
+  if (unhealthyContainers.length > 0) {
+    return {
+      status: 'error',
+      icon: XCircleIcon,
+      color: 'text-red-500',
+      bg: 'bg-red-100 dark:bg-red-900/30',
+      label: 'Unhealthy',
+      reason: `${unhealthyContainers.length} container(s) failing health check`,
+      containerBreakdown: {
+        ...breakdown,
+        unhealthy: unhealthyContainers.length,
+        healthy: counts.running - unhealthyContainers.length,
+      },
+    };
+  }
+
+  const startingContainers = containers.filter(
+    (c) => c.health && c.health.status.toLowerCase() === 'starting'
+  );
+
+  if (startingContainers.length > 0 && counts.running === counts.total) {
+    return {
+      status: 'running',
+      icon: ClockIcon,
+      color: 'text-amber-500',
+      bg: 'bg-amber-100 dark:bg-amber-900/30',
+      label: 'Starting',
+      reason: `${startingContainers.length} container(s) health check initializing`,
+      containerBreakdown: {
+        ...breakdown,
+        unhealthy: 0,
+        healthy: 0,
+      },
+    };
+  }
+
+  if (counts.running === 0) {
+    return {
+      status: 'stopped',
+      icon: StopIcon,
+      color: 'text-zinc-500',
+      bg: 'bg-zinc-100 dark:bg-zinc-800',
+      label: 'Stopped',
+      reason: 'All containers are stopped',
+      containerBreakdown: {
+        ...breakdown,
+        unhealthy: 0,
+        healthy: 0,
+      },
+    };
+  }
+
+  if (counts.error > 0) {
+    return {
+      status: 'error',
+      icon: XCircleIcon,
+      color: 'text-red-500',
+      bg: 'bg-red-100 dark:bg-red-900/30',
+      label: 'Error',
+      reason: `${counts.error} container(s) have crashed`,
+      containerBreakdown: {
+        ...breakdown,
+        unhealthy: 0,
+        healthy: counts.running,
+      },
+    };
+  }
+
+  if (counts.running > 0 && counts.running < counts.total) {
+    return {
+      status: 'partial',
+      icon: PauseCircleIcon,
+      color: 'text-amber-500',
+      bg: 'bg-amber-100 dark:bg-amber-900/30',
+      label: 'Partial',
+      reason: `${counts.running} of ${counts.total} containers running`,
+      containerBreakdown: {
+        ...breakdown,
+        unhealthy: 0,
+        healthy: counts.running,
+      },
+    };
+  }
+
+  return {
+    status: 'running',
+    icon: CheckCircleIcon,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    label: 'Running',
+    reason: `All ${counts.total} container(s) running`,
+    containerBreakdown: {
+      ...breakdown,
+      unhealthy: 0,
+      healthy: counts.running,
+    },
+  };
+};
+
+export const formatHealthLog = (log: HealthLog): string => {
+  const start = new Date(log.start);
+  const end = log.end ? new Date(log.end) : null;
+
+  const duration = end ? Math.round((end.getTime() - start.getTime()) / 1000) : null;
+
+  let result = `[${start.toLocaleTimeString()}] Exit ${log.exit_code}`;
+
+  if (duration !== null) {
+    result += ` (${duration}s)`;
+  }
+
+  return result;
 };
