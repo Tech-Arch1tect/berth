@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	e2etesting "github.com/tech-arch1tect/brx/testing"
+	e2etesting "berth/e2e/internal/harness"
 )
 
 // TestMain runs before/after all tests in this package

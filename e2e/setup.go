@@ -17,6 +17,7 @@ import (
 	"berth/models"
 	"berth/providers"
 
+	e2etesting "berth/e2e/internal/harness"
 	mockpkg "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tech-arch1tect/brx/app"
@@ -30,7 +31,6 @@ import (
 	"github.com/tech-arch1tect/brx/services/revocation"
 	"github.com/tech-arch1tect/brx/services/totp"
 	"github.com/tech-arch1tect/brx/session"
-	e2etesting "github.com/tech-arch1tect/brx/testing"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
@@ -56,8 +56,6 @@ import (
 	"berth/internal/websocket"
 	"berth/routes"
 	"berth/seeds"
-
-	"github.com/tech-arch1tect/brx/testutils"
 )
 
 var (
@@ -232,7 +230,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 				imageupdates.Module,
 				vulnscan.Module,
 				fx.Provide(func() auth.MailService {
-					mockSvc := &testutils.MockMailService{}
+					mockSvc := &e2etesting.MockMailService{}
 					mockSvc.On("SendTemplate", mockpkg.Anything, mockpkg.Anything, mockpkg.Anything, mockpkg.Anything).Return(nil)
 					return mockSvc
 				}),

@@ -6,9 +6,9 @@ import (
 	"berth/handlers"
 	"berth/internal/logs"
 
+	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
 func TestLogsEndpointsJWT(t *testing.T) {

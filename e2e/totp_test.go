@@ -7,10 +7,10 @@ import (
 
 	"berth/handlers"
 
+	e2etesting "berth/e2e/internal/harness"
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
 func TestTOTPSetupAPI(t *testing.T) {

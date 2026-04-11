@@ -6,9 +6,9 @@ import (
 	"berth/handlers"
 	"berth/internal/maintenance"
 
+	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	e2etesting "github.com/tech-arch1tect/brx/testing"
 )
 
 type SystemInfoResponse struct {
