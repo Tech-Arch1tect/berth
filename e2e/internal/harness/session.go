@@ -162,15 +162,15 @@ func (h *SessionHelper) WithSessionCookie(cookie *http.Cookie) *HTTPClient {
 }
 
 func (h *SessionHelper) SimulateLogin(t *testing.T, authHelper *AuthHelper, username, password string) *HTTPClient {
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
 
-	resp, err := authHelper.Login(username, password)
+	resp, err := authHelper.LoginWithClient(client, username, password)
 	require.NoError(t, err, "login request failed")
 
 	authHelper.AssertLoginSuccess(t, resp)
+	h.AssertSessionCookiePresent(t, resp)
 
-	sessionCookie := h.AssertSessionCookiePresent(t, resp)
-
-	return h.WithSessionCookie(sessionCookie)
+	return client
 }
 
 func (h *SessionHelper) AssertAuthenticationRequired(t *testing.T, resp *Response) {

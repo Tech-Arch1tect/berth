@@ -529,7 +529,10 @@ func TestTOTPUIPages(t *testing.T) {
 
 	t.Run("POST /auth/totp/verify redirects to login when unauthenticated", func(t *testing.T) {
 		TagTest(t, "POST", "/auth/totp/verify", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().PostForm("/auth/totp/verify", url.Values{
+		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+		_, err := client.Get("/auth/login")
+		require.NoError(t, err)
+		resp, err := client.PostForm("/auth/totp/verify", url.Values{
 			"code": {"123456"},
 		})
 		require.NoError(t, err)

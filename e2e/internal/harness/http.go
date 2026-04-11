@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const csrfCookieName = "_csrf"
+
 type RequestOptions struct {
 	Method      string
 	Path        string
@@ -22,6 +24,30 @@ type RequestOptions struct {
 	Cookies     []*http.Cookie
 	ContentType string
 	FormData    url.Values
+}
+
+func isSafeHTTPMethod(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace, "":
+		return true
+	}
+	return false
+}
+
+func csrfTokenFromJar(jar http.CookieJar, baseURL string) string {
+	if jar == nil || baseURL == "" {
+		return ""
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return ""
+	}
+	for _, ck := range jar.Cookies(u) {
+		if ck.Name == csrfCookieName {
+			return ck.Value
+		}
+	}
+	return ""
 }
 
 type Response struct {
@@ -148,6 +174,12 @@ func (c *HTTPClient) Request(opts *RequestOptions) (*Response, error) {
 
 	for _, cookie := range opts.Cookies {
 		req.AddCookie(cookie)
+	}
+
+	if !isSafeHTTPMethod(opts.Method) && req.Header.Get("X-CSRF-Token") == "" {
+		if token := csrfTokenFromJar(c.Client.Jar, c.BaseURL); token != "" {
+			req.Header.Set("X-CSRF-Token", token)
+		}
 	}
 
 	resp, err := c.Client.Do(req)

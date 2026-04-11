@@ -147,6 +147,7 @@ func buildTestConfig(dbFile string) *config.Config {
 			Secure:   false,
 			HttpOnly: true,
 			SameSite: "lax",
+			Path:     "/",
 		},
 		Auth: config.AuthConfig{
 			MinLength:                    8,
@@ -189,7 +190,16 @@ func buildTestConfig(dbFile string) *config.Config {
 			Development: true,
 		},
 		CSRF: config.CSRFConfig{
-			Enabled: false,
+			Enabled:        true,
+			TokenLength:    32,
+			TokenLookup:    "header:X-CSRF-Token",
+			ContextKey:     "csrf",
+			CookieName:     "_csrf",
+			CookiePath:     "/",
+			CookieMaxAge:   86400,
+			CookieSecure:   false,
+			CookieHTTPOnly: false,
+			CookieSameSite: "lax",
 		},
 		Mail: config.MailConfig{
 			FromAddress:  "test@example.com",

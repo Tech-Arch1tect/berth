@@ -53,35 +53,42 @@ func (h *AuthHelper) CreateTestUser(t *testing.T, user *TestUser) {
 }
 
 func (h *AuthHelper) Login(username, password string) (*Response, error) {
-	formData := url.Values{
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	return h.LoginWithClient(client, username, password)
+}
+
+func (h *AuthHelper) LoginWithClient(client *HTTPClient, username, password string) (*Response, error) {
+	if _, err := client.Get("/auth/login"); err != nil {
+		return nil, err
+	}
+	return client.PostForm("/auth/login", url.Values{
 		"username": {username},
 		"password": {password},
-	}
-
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	return client.PostForm("/auth/login", formData)
+	})
 }
 
 func (h *AuthHelper) LoginWithRememberMe(username, password string) (*Response, error) {
-	formData := url.Values{
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	if _, err := client.Get("/auth/login"); err != nil {
+		return nil, err
+	}
+	return client.PostForm("/auth/login", url.Values{
 		"username":    {username},
 		"password":    {password},
 		"remember_me": {"true"},
-	}
-
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	return client.PostForm("/auth/login", formData)
+	})
 }
 
 func (h *AuthHelper) Register(username, email, password string) (*Response, error) {
-	formData := url.Values{
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	if _, err := client.Get("/auth/login"); err != nil {
+		return nil, err
+	}
+	return client.PostForm("/auth/register", url.Values{
 		"username": {username},
 		"email":    {email},
 		"password": {password},
-	}
-
-	client := h.HTTPClient.WithoutRedirects()
-	return client.PostForm("/auth/register", formData)
+	})
 }
 
 func (h *AuthHelper) Logout() (*Response, error) {
@@ -89,35 +96,43 @@ func (h *AuthHelper) Logout() (*Response, error) {
 }
 
 func (h *AuthHelper) RequestPasswordReset(email string) (*Response, error) {
-	formData := url.Values{
-		"email": {email},
-	}
-
 	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	return client.PostForm("/auth/password-reset", formData)
+	if _, err := client.Get("/auth/password-reset"); err != nil {
+		return nil, err
+	}
+	return client.PostForm("/auth/password-reset", url.Values{
+		"email": {email},
+	})
 }
 
 func (h *AuthHelper) ResetPassword(token, newPassword string) (*Response, error) {
-	formData := url.Values{
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	if _, err := client.Get("/auth/password-reset/confirm"); err != nil {
+		return nil, err
+	}
+	return client.PostForm("/auth/password-reset/confirm", url.Values{
 		"token":            {token},
 		"password":         {newPassword},
 		"password_confirm": {newPassword},
-	}
-
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	return client.PostForm("/auth/password-reset/confirm", formData)
+	})
 }
 
 func (h *AuthHelper) VerifyEmail(token string) (*Response, error) {
-	return h.HTTPClient.Post(fmt.Sprintf("/auth/verify-email?token=%s", token), nil)
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	if _, err := client.Get("/auth/verify-email"); err != nil {
+		return nil, err
+	}
+	return client.Post(fmt.Sprintf("/auth/verify-email?token=%s", token), nil)
 }
 
 func (h *AuthHelper) ResendVerification(email string) (*Response, error) {
-	formData := url.Values{
-		"email": {email},
+	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
+	if _, err := client.Get("/auth/login"); err != nil {
+		return nil, err
 	}
-
-	return h.HTTPClient.PostForm("/auth/resend-verification", formData)
+	return client.PostForm("/auth/resend-verification", url.Values{
+		"email": {email},
+	})
 }
 
 func (h *AuthHelper) GetPasswordResetToken(t *testing.T, email string) string {
