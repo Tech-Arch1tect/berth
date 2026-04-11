@@ -20,7 +20,6 @@ import (
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/labstack/echo/v4"
-	mockpkg "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tech-arch1tect/brx/config"
 	"github.com/tech-arch1tect/brx/database"
@@ -110,6 +109,7 @@ type TestApp struct {
 	Echo          *echo.Echo
 	BaseURL       string
 	AuthSvc       *auth.Service
+	Mail          *e2etesting.CapturingMailService
 	HTTPClient    *e2etesting.HTTPClient
 	AuthHelper    *e2etesting.AuthHelper
 	SessionHelper *e2etesting.SessionHelper
@@ -235,6 +235,8 @@ func SetupTestApp(t *testing.T) *TestApp {
 
 	inertiaSvc := inertia.New(&cfg.Inertia, logger)
 
+	mailSvc := e2etesting.NewCapturingMailService()
+
 	var nilSessionOpts *session.Options
 
 	var (
@@ -336,9 +338,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 		websocket.Module,
 
 		fx.Provide(func() auth.MailService {
-			mockSvc := &e2etesting.MockMailService{}
-			mockSvc.On("SendTemplate", mockpkg.Anything, mockpkg.Anything, mockpkg.Anything, mockpkg.Anything).Return(nil)
-			return mockSvc
+			return mailSvc
 		}),
 		fx.Provide(fx.Annotate(
 			providers.NewUserProvider,
@@ -396,6 +396,7 @@ func SetupTestApp(t *testing.T) *TestApp {
 		Echo:          echoServer,
 		BaseURL:       baseURL,
 		AuthSvc:       capturedAuthSvc,
+		Mail:          mailSvc,
 		HTTPClient:    httpClient,
 		AuthHelper:    authHelper,
 		SessionHelper: sessionHelper,
