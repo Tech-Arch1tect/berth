@@ -1,0 +1,43 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/roles",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "roles": [
+        {
+          "description": "System administrator with full access",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": true,
+          "name": "admin",
+          "permissions": []
+        },
+        {
+          "description": "Standard user with basic permissions",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "user",
+          "permissions": []
+        },
+        {
+          "description": "Developer with full server access",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "developer",
+          "permissions": []
+        },
+        {
+          "description": "Read-only access to servers",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "viewer",
+          "permissions": []
+        }
+      ]
+    },
+    "success": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/totp/status",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "enabled": false
+    },
+    "success": true
+  }
+}
