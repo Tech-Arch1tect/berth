@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/version",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "version": "dev"
+    },
+    "success": true
+  }
+}

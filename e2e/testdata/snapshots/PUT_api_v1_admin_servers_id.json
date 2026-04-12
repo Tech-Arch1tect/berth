@@ -1,0 +1,24 @@
+{
+  "method": "PUT",
+  "path": "/api/v1/admin/servers/:id",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "server": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "description": "",
+        "host": "",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "is_active": false,
+        "name": "snap-admin-server-updated",
+        "port": "\u003c\u003cPORT\u003e\u003e",
+        "skip_ssl_verification": true,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      }
+    },
+    "success": true
+  }
+}

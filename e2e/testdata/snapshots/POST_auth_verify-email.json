@@ -1,0 +1,9 @@
+{
+  "method": "POST",
+  "path": "/auth/verify-email",
+  "status_code": 302,
+  "headers": {
+    "Location": "/auth/login"
+  },
+  "body": ""
+}

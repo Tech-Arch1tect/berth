@@ -1,0 +1,14 @@
+{
+  "method": "DELETE",
+  "path": "/api/v1/admin/servers/:id",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "Server deleted successfully"
+    },
+    "success": true
+  }
+}

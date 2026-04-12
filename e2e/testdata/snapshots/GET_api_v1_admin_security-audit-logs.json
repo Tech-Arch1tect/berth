@@ -1,0 +1,63 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/security-audit-logs",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "logs": [
+        {
+          "actor_ip": "127.0.0.1",
+          "actor_user_agent": "Go-http-client/1.1",
+          "actor_user_id": 2,
+          "actor_username": "snapnormalapi",
+          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "event_category": "api",
+          "event_type": "api.token.issued",
+          "failure_reason": "",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "metadata": "",
+          "server_id": null,
+          "session_id": "",
+          "severity": "low",
+          "stack_name": "",
+          "success": true,
+          "target_id": null,
+          "target_name": "",
+          "target_type": "",
+          "target_user_id": null,
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+        },
+        {
+          "actor_ip": "127.0.0.1",
+          "actor_user_agent": "Go-http-client/1.1",
+          "actor_user_id": 1,
+          "actor_username": "snapadminapi",
+          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "event_category": "api",
+          "event_type": "api.token.issued",
+          "failure_reason": "",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "metadata": "",
+          "server_id": null,
+          "session_id": "",
+          "severity": "low",
+          "stack_name": "",
+          "success": true,
+          "target_id": null,
+          "target_name": "",
+          "target_type": "",
+          "target_user_id": null,
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+        }
+      ],
+      "page": 1,
+      "per_page": 50,
+      "total": 2,
+      "total_pages": 1
+    },
+    "success": true
+  }
+}

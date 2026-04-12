@@ -1,0 +1,28 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "compose_file": "docker-compose.yml",
+    "name": "snap-stack",
+    "path": "/opt/snap-stack",
+    "server_id": 1,
+    "server_name": "snap-server-api",
+    "services": [
+      {
+        "containers": [
+          {
+            "image": "",
+            "name": "snap-stack-web-1",
+            "state": "running"
+          }
+        ],
+        "image": "nginx:latest",
+        "name": "web"
+      }
+    ]
+  }
+}

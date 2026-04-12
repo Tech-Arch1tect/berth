@@ -189,15 +189,22 @@ var volatileFieldPatterns = []string{
 }
 
 var volatileFieldExact = map[string]bool{
-	"id":         true,
-	"ID":         true,
-	"user_id":    true,
-	"userID":     true,
-	"role_id":    true,
-	"csrfToken":  true,
-	"expires_at": true,
-	"expiry":     true,
-	"password":   true,
+	"id":           true,
+	"ID":           true,
+	"user_id":      true,
+	"userID":       true,
+	"role_id":      true,
+	"csrfToken":    true,
+	"expires_at":   true,
+	"expiry":       true,
+	"password":     true,
+	"port":         true,
+	"last_used":    true,
+	"qr_code_uri":  true,
+	"key_prefix":   true,
+	"plain_key":    true,
+	"access_token": true,
+	"jti":          true,
 }
 
 func isVolatileField(key string) bool {
@@ -215,9 +222,9 @@ func isVolatileField(key string) bool {
 func placeholder(key string, val interface{}) interface{} {
 	lower := strings.ToLower(key)
 	switch {
-	case strings.HasSuffix(lower, "_at") || lower == "expires_at" || lower == "expiry" || lower == "expires":
+	case strings.HasSuffix(lower, "_at") || lower == "expires_at" || lower == "expiry" || lower == "expires" || lower == "last_used":
 		return "<<TIMESTAMP>>"
-	case strings.Contains(lower, "token") || lower == "secret":
+	case strings.Contains(lower, "token") || lower == "secret" || lower == "jti":
 		return "<<TOKEN>>"
 	case lower == "id" || strings.HasSuffix(lower, "_id") || strings.HasSuffix(lower, "id"):
 		switch v := val.(type) {
@@ -232,6 +239,12 @@ func placeholder(key string, val interface{}) interface{} {
 		return "<<ID>>"
 	case lower == "password":
 		return "<<REDACTED>>"
+	case lower == "port":
+		return "<<PORT>>"
+	case lower == "qr_code_uri":
+		return "<<QR_CODE_URI>>"
+	case lower == "key_prefix" || lower == "plain_key":
+		return "<<KEY>>"
 	default:
 		return "<<SANITIZED>>"
 	}

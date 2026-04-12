@@ -1,0 +1,12 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/roles/:roleId/stack-permissions",
+  "status_code": 400,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "code": 400,
+    "error": "cannot manage server permissions for admin role"
+  }
+}

@@ -1,19 +1,19 @@
 {
   "method": "GET",
-  "path": "/admin/servers",
+  "path": "/servers/:id/stacks",
   "status_code": 200,
   "headers": {
     "Content-Type": "text/html"
   },
   "body": {
-    "component": "Admin/Servers",
+    "component": "Servers/Stacks",
     "props": {
       "authenticated": true,
       "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
       "currentUser": {
         "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-        "email": "snapshotadmin@example.com",
+        "email": "snapwebparam@example.com",
         "id": "\u003c\u003cID\u003e\u003e",
         "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "roles": [
@@ -29,7 +29,7 @@
           }
         ],
         "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-        "username": "snapshotadmin"
+        "username": "snapwebparam"
       },
       "errors": {},
       "flashMessages": [
@@ -42,21 +42,21 @@
           "type": "info"
         }
       ],
-      "servers": [
-        {
-          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "description": "",
-          "host": "127.0.0.1",
-          "id": "\u003c\u003cID\u003e\u003e",
-          "is_active": true,
-          "name": "snap-admin-server",
-          "port": "\u003c\u003cPORT\u003e\u003e",
-          "skip_ssl_verification": true,
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
-        }
-      ],
+      "server": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "description": "",
+        "host": "127.0.0.1",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "is_active": true,
+        "name": "snap-web-server",
+        "port": "\u003c\u003cPORT\u003e\u003e",
+        "skip_ssl_verification": true,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      },
+      "serverid": 1,
+      "title": "snap-web-server - Stacks",
       "userID": "\u003c\u003cID\u003e\u003e"
     },
-    "url": "/admin/servers"
+    "url": "/servers/1/stacks"
   }
 }

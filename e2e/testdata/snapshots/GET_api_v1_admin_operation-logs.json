@@ -1,0 +1,22 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/operation-logs",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "data": null,
+      "pagination": {
+        "current_page": 1,
+        "has_next": false,
+        "has_prev": false,
+        "page_size": 20,
+        "total": 0,
+        "total_pages": 0
+      }
+    },
+    "success": true
+  }
+}

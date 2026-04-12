@@ -14,12 +14,12 @@
       "token_type": "Bearer",
       "user": {
         "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-        "email": "snapapiuser@example.com",
+        "email": "snapauthapi@example.com",
         "id": "\u003c\u003cID\u003e\u003e",
         "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "totp_enabled": false,
         "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-        "username": "snapapiuser"
+        "username": "snapauthapi"
       }
     },
     "success": true

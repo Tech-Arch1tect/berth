@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/vulnscan/history",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "scans": []
+    },
+    "success": true
+  }
+}

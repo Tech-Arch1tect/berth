@@ -1,0 +1,9 @@
+{
+  "method": "POST",
+  "path": "/auth/logout",
+  "status_code": 302,
+  "headers": {
+    "Location": "/auth/login"
+  },
+  "body": ""
+}

@@ -1,0 +1,20 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/networks",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "networks": [
+        {
+          "driver": "bridge",
+          "exists": true,
+          "name": "snap-stack_default"
+        }
+      ]
+    },
+    "success": true
+  }
+}

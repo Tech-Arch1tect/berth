@@ -1,0 +1,17 @@
+{
+  "method": "GET",
+  "path": "/setup/admin",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Setup/Admin",
+    "props": {
+      "authenticated": false,
+      "errors": {},
+      "title": "Admin Setup"
+    },
+    "url": "/setup/admin"
+  }
+}

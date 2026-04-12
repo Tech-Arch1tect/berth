@@ -1,0 +1,15 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/files",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "entries": null,
+      "path": ""
+    },
+    "success": true
+  }
+}

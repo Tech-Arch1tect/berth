@@ -1,12 +1,12 @@
 {
   "method": "GET",
-  "path": "/admin/servers",
+  "path": "/admin/operation-logs",
   "status_code": 200,
   "headers": {
     "Content-Type": "text/html"
   },
   "body": {
-    "component": "Admin/Servers",
+    "component": "Admin/OperationLogs",
     "props": {
       "authenticated": true,
       "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
@@ -32,31 +32,9 @@
         "username": "snapshotadmin"
       },
       "errors": {},
-      "flashMessages": [
-        {
-          "message": "Login successful!",
-          "type": "success"
-        },
-        {
-          "message": "Welcome back! Your last login was recorded.",
-          "type": "info"
-        }
-      ],
-      "servers": [
-        {
-          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "description": "",
-          "host": "127.0.0.1",
-          "id": "\u003c\u003cID\u003e\u003e",
-          "is_active": true,
-          "name": "snap-admin-server",
-          "port": "\u003c\u003cPORT\u003e\u003e",
-          "skip_ssl_verification": true,
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
-        }
-      ],
+      "title": "Operation Logs",
       "userID": "\u003c\u003cID\u003e\u003e"
     },
-    "url": "/admin/servers"
+    "url": "/admin/operation-logs"
   }
 }

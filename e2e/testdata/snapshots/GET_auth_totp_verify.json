@@ -1,0 +1,21 @@
+{
+  "method": "GET",
+  "path": "/auth/totp/verify",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Auth/Login",
+    "props": {
+      "authenticated": false,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "emailVerificationEnabled": false,
+      "errors": {},
+      "rememberMeDays": 1,
+      "rememberMeEnabled": true,
+      "title": "Login"
+    },
+    "url": "/auth/login"
+  }
+}

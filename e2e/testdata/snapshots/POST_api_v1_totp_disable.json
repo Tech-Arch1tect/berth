@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/api/v1/totp/disable",
+  "status_code": 401,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "error": "invalid_totp_code",
+    "message": "Invalid TOTP code",
+    "success": false
+  }
+}
