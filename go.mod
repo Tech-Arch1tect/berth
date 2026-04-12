@@ -10,7 +10,7 @@ require (
 	github.com/romsar/gonertia/v2 v2.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tech-arch1tect/berth-agent v0.4.5
-	github.com/tech-arch1tect/brx v0.0.25
+	github.com/tech-arch1tect/brx v0.0.26
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.49.0
@@ -50,7 +50,6 @@ require (
 	github.com/oasdiff/yaml3 v0.0.0-20260224194419-61cd415a242b // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wneessen/go-mail v0.7.2 // indirect
