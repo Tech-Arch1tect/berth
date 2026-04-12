@@ -212,11 +212,18 @@ func buildTestConfig(dbFile string) *config.Config {
 }
 
 func SetupTestApp(t *testing.T) *TestApp {
+	return SetupTestAppWithConfig(t)
+}
+
+func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *TestApp {
 	tempDir := os.TempDir()
 	dbFile := filepath.Join(tempDir, fmt.Sprintf("test_%s_%d.db", t.Name(), time.Now().UnixNano()))
 	t.Logf("using test database: %s", dbFile)
 
 	cfg := buildTestConfig(dbFile)
+	for _, mod := range modifiers {
+		mod(cfg)
+	}
 
 	logger, err := logging.NewService(logging.Config{
 		Level:      logging.LogLevel(cfg.Log.Level),
