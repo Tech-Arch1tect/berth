@@ -575,6 +575,11 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
+	if !h.authSvc.IsEmailVerificationRequired() {
+		session.AddFlashInfo(c, "If an account with that email exists, a verification email will be sent.")
+		return c.Redirect(http.StatusFound, "/auth/login")
+	}
+
 	var user models.User
 	if err := h.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -582,11 +587,6 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 			return c.Redirect(http.StatusFound, "/auth/login")
 		}
 		session.AddFlashError(c, "Something went wrong. Please try again.")
-		return c.Redirect(http.StatusFound, "/auth/login")
-	}
-
-	if !h.authSvc.IsEmailVerificationRequired() {
-		session.AddFlashError(c, "Email verification is currently disabled")
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
