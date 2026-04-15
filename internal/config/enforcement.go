@@ -12,7 +12,6 @@ func EnforceRequiredSettings() {
 	enforceJWTSettings()
 	enforceRefreshTokenSettings()
 	enforceJWTRevocationSettings()
-	enforceRateLimitSettings()
 	enforceCSRFSettings()
 }
 
@@ -34,10 +33,7 @@ func enforceDatabaseSettings() {
 }
 
 func enforceInertiaSettings() {
-	os.Setenv("INERTIA_ENABLED", "true")
 	os.Setenv("INERTIA_ROOT_VIEW", "app.html")
-	os.Setenv("INERTIA_VERSION", "1.0")
-	os.Setenv("INERTIA_SSR_ENABLED", "false")
 }
 
 func enforceSessionSettings() {
@@ -68,16 +64,11 @@ func enforceJWTSettings() {
 func enforceRefreshTokenSettings() {
 	os.Setenv("REFRESH_TOKEN_TOKEN_LENGTH", "32")
 	os.Setenv("REFRESH_TOKEN_EXPIRY", "720h")
-	os.Setenv("REFRESH_TOKEN_ROTATION_MODE", "always")
 }
 
 func enforceJWTRevocationSettings() {
 	os.Setenv("JWT_REVOCATION_ENABLED", "true")
 	os.Setenv("JWT_REVOCATION_STORE", "memory")
-}
-
-func enforceRateLimitSettings() {
-	os.Setenv("RATELIMIT_STORE", "memory")
 }
 
 func enforceCSRFSettings() {
