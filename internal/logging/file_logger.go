@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +17,7 @@ type FileLogger struct {
 	enabled       bool
 	logDir        string
 	logName       string
-	logger        *logging.Service
+	logger        *zap.Logger
 	currentFile   *os.File
 	currentDate   string
 	currentSeqNum int
@@ -26,7 +25,7 @@ type FileLogger struct {
 	mu            sync.Mutex
 }
 
-func NewFileLogger(enabled bool, logDir string, logName string, logger *logging.Service, maxSizeBytes int64) (*FileLogger, error) {
+func NewFileLogger(enabled bool, logDir string, logName string, logger *zap.Logger, maxSizeBytes int64) (*FileLogger, error) {
 	if !enabled {
 		logger.Info("file logger disabled",
 			zap.String("log_name", logName),
