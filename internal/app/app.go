@@ -1,64 +1,48 @@
 package app
 
 import (
-	"path/filepath"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"berth/handlers"
-	"berth/internal/agent"
 	"berth/internal/apidocs"
-	"berth/internal/apikey"
-	"berth/internal/common"
-	berthconfig "berth/internal/config"
-	"berth/internal/crypto"
-	"berth/internal/files"
-	"berth/internal/imageupdates"
-	"berth/internal/logs"
-	"berth/internal/maintenance"
-	"berth/internal/migration"
-	"berth/internal/operationlogs"
-	"berth/internal/operations"
-	"berth/internal/queue"
-	"berth/internal/rbac"
-	"berth/internal/registry"
-	"berth/internal/security"
-	"berth/internal/server"
-	"berth/internal/setup"
+	"berth/internal/config"
 	"berth/internal/ssl"
-	"berth/internal/stack"
-	"berth/internal/vulnscan"
-	"berth/internal/websocket"
-	"berth/models"
-	"berth/providers"
 	"berth/routes"
-	"berth/seeds"
 
-	"github.com/tech-arch1tect/brx/app"
-	"github.com/tech-arch1tect/brx/config"
-	"github.com/tech-arch1tect/brx/middleware/inertiashared"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/openapi"
-	brxserver "github.com/tech-arch1tect/brx/server"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/refreshtoken"
-	"github.com/tech-arch1tect/brx/services/revocation"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
+	"berth/internal/auth"
+	"berth/internal/inertia"
+	"berth/internal/logging"
+	"berth/internal/mail"
+
+	"github.com/labstack/echo/v4"
+
+	"berth/internal/imageupdates"
+	"berth/internal/vulnscan"
+
 	"go.uber.org/fx"
-	"gorm.io/gorm"
+	"go.uber.org/zap"
 )
 
+type App struct {
+	fx     *fx.App
+	logger *zap.Logger
+}
+
 type AppOptions struct {
-	Config                *berthconfig.BerthConfig
+	Config                *config.Config
 	SkipConfigEnforcement bool
 	CertFile              string
 	KeyFile               string
 	ExtraFxOptions        []fx.Option
 }
 
-func LoadConfig() (*berthconfig.BerthConfig, error) {
-	var cfg berthconfig.BerthConfig
+func LoadConfig() (*config.Config, error) {
+	var cfg config.Config
 	if err := config.LoadConfig(&cfg); err != nil {
 		return nil, err
 	}
@@ -74,24 +58,25 @@ func LoadConfig() (*berthconfig.BerthConfig, error) {
 	return &cfg, nil
 }
 
-func NewApp(opts *AppOptions) *app.App {
+func NewApp(opts *AppOptions) *App {
 	if opts == nil {
 		opts = &AppOptions{}
 	}
 
-	var cfg *berthconfig.BerthConfig
+	var cfg *config.Config
 	var err error
 	if opts.Config != nil {
 		cfg = opts.Config
 	} else {
 		if !opts.SkipConfigEnforcement {
-			berthconfig.EnforceRequiredSettings()
+			config.EnforceRequiredSettings()
 		}
 		cfg, err = LoadConfig()
 		if err != nil {
 			panic(err)
 		}
 	}
+
 	var certFile, keyFile string
 	if opts.CertFile != "" && opts.KeyFile != "" {
 		certFile = opts.CertFile
@@ -104,141 +89,86 @@ func NewApp(opts *AppOptions) *app.App {
 		}
 	}
 
-	fxOptions := []fx.Option{
-		jwt.Options,
-		fx.Provide(func() *berthconfig.BerthConfig {
-			return cfg
-		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig) common.CheckOriginFunc {
-			return common.NewOriginChecker(cfg.App.URL)
-		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
-			return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
-		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*operations.AuditLogger, error) {
-			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")
-			maxSizeBytes := int64(cfg.Custom.LogFileSizeLimitMB) * 1024 * 1024
-			return operations.NewAuditLogger(
-				cfg.Custom.OperationLogLogToFile,
-				operationLogDir,
-				logger,
-				maxSizeBytes,
-			)
-		}),
-		fx.Provide(fx.Annotate(
-			func(l *operations.AuditLogger) OperationLogAuditor { return l },
-			fx.As(new(OperationLogAuditor)),
-		)),
-		fx.Provide(func(cfg *berthconfig.BerthConfig, logger *logging.Service) (*security.AuditLogger, error) {
-			securityLogDir := filepath.Join(cfg.Custom.LogDir, "security")
-			maxSizeBytes := int64(cfg.Custom.LogFileSizeLimitMB) * 1024 * 1024
-			return security.NewAuditLogger(
-				cfg.Custom.SecurityAuditLogLogToFile,
-				securityLogDir,
-				logger,
-				maxSizeBytes,
-			)
-		}),
-		fx.Provide(fx.Annotate(
-			func(l *security.AuditLogger) SecurityLogAuditor { return l },
-			fx.As(new(SecurityLogAuditor)),
-		)),
-		fx.Invoke(RegisterAuditCallbacks),
-		agent.Module,
-		rbac.Module,
-		fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
-			return apikey.NewService(db, logger, rbacSvc)
-		}),
-		apikey.Module,
-		setup.Module,
-		server.Module,
-		stack.Module,
-		maintenance.Module,
-		security.Module,
-		handlers.Module,
-		files.Module,
-		logs.Module,
-		operations.Module,
-		registry.Module,
-		operationlogs.Module,
-		migration.Module,
-		queue.Module,
-		imageupdates.Module,
-		vulnscan.Module,
-		fx.Provide(apidocs.NewOpenAPI),
-		fx.Invoke(routes.RegisterAPIDocs),
-		fx.Invoke(func(srv *brxserver.Server, apiDoc *openapi.OpenAPI, cfg *berthconfig.BerthConfig) {
-			routes.RegisterOpenAPIEndpoints(srv.Echo(), apiDoc, cfg)
-		}),
-		fx.Provide(fx.Annotate(
-			providers.NewUserProvider,
-			fx.As(new(inertiashared.UserProvider)),
-		)),
-		fx.Provide(fx.Annotate(
-			providers.NewUserProvider,
-			fx.As(new(jwtshared.UserProvider)),
-		)),
-		fx.Provide(func(svc refreshtoken.RefreshTokenService) session.RefreshTokenRevocationService {
-			return svc
-		}),
-		fx.Invoke(routes.RegisterRoutes),
-		fx.Invoke(func(db *gorm.DB) {
-			if err := seeds.SeedRBACData(db); err != nil {
-				panic(err)
-			}
-		}),
+	logger, err := logging.NewLogger(cfg)
+	if err != nil {
+		panic(fmt.Errorf("failed to create logger: %w", err))
 	}
 
-	fxOptions = append(fxOptions,
-		websocket.Module,
+	db, err := OpenDatabase(cfg, logger, DatabaseModels()...)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize database: %w", err))
+	}
+
+	inertiaSvc := inertia.New(&cfg.Inertia, logger)
+
+	e := NewEcho(cfg, logger)
+
+	fxOptions := []fx.Option{
+		fx.NopLogger,
+
+		fx.Supply(cfg),
+		fx.Supply(logger),
+		fx.Supply(db),
+		fx.Supply(inertiaSvc),
+		fx.Supply(e),
+		fx.Supply(&SSLConfig{
+			Enabled:  true,
+			CertFile: certFile,
+			KeyFile:  keyFile,
+		}),
+
+		fx.Provide(mail.NewClient),
+		fx.Provide(func(c *mail.Client) auth.MailService { return c }),
+
+		CoreFxOptions(),
+
+		fx.Provide(apidocs.NewOpenAPI),
+		fx.Invoke(routes.RegisterAPIDocs),
+		fx.Invoke(func(e *echo.Echo, apiDoc *apidocs.OpenAPI, cfg *config.Config) {
+			routes.RegisterOpenAPIEndpoints(e, apiDoc, cfg)
+		}),
+		fx.Invoke(RegisterHTTPLifecycle),
+
 		fx.Invoke(func(svc *imageupdates.Service) {}),
 		fx.Invoke(vulnscan.StartPoller),
-	)
+	}
 
 	if len(opts.ExtraFxOptions) > 0 {
 		fxOptions = append(fxOptions, opts.ExtraFxOptions...)
 	}
 
-	berthApp, err := app.NewApp().
-		WithConfig(&cfg.Config).
-		WithMail().
-		WithDatabase(
-			&models.User{}, &models.Role{}, &models.Permission{},
-			&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
-			&models.APIKey{}, &models.APIKeyScope{},
-			&models.OperationLog{}, &models.OperationLogMessage{},
-			&models.SecurityAuditLog{},
-			&models.SeedTracker{},
-			&models.QueuedOperation{}, &session.UserSession{},
-			&models.ContainerImageUpdate{},
-			&models.ImageScan{}, &models.ImageVulnerability{}, &models.ScanScope{},
-			&totp.TOTPSecret{}, &totp.UsedCode{},
-			&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
-			&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
-		).
-		WithSessionsNoMiddleware().
-		WithInertiaNoMiddleware().
-		WithAuth().
-		WithTOTP().
-		WithJWT().
-		WithJWTRevocation().
-		WithSSL(certFile, keyFile).
-		WithFxOptions(fxOptions...).
-		Build()
+	return &App{
+		fx:     fx.New(fxOptions...),
+		logger: logger,
+	}
+}
 
-	if err != nil {
-		panic(err)
+func (a *App) Start() error {
+	return a.fx.Start(context.Background())
+}
+
+func (a *App) Run() {
+	if err := a.Start(); err != nil {
+		log.Fatalf("Failed to start application: %v", err)
 	}
 
-	return berthApp
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-sigChan
+	a.logger.Info("Received shutdown signal, stopping gracefully...")
+	a.Stop()
+}
+
+func (a *App) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := a.fx.Stop(ctx); err != nil {
+		a.logger.Error("Failed to stop application gracefully")
+	}
 }
 
 func Run() {
 	NewApp(nil).Run()
-}
-
-func Start() *app.App {
-	berthApp := NewApp(nil)
-	go berthApp.Start()
-	return berthApp
 }
