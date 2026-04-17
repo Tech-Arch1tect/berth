@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"strings"
 
+	tokens "berth/internal/auth/tokens"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	jwtservice "github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 const (
@@ -32,7 +31,7 @@ const (
 	AuthTypeSession AuthType = "session"
 )
 
-func RequireAuth(jwtService *jwtservice.Service, apiKeyService *apikey.Service, userProvider jwtshared.UserProvider) echo.MiddlewareFunc {
+func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -76,8 +75,8 @@ func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apik
 	return next(c)
 }
 
-func handleJWTAuth(c echo.Context, next echo.HandlerFunc, jwtService *jwtservice.Service, userProvider jwtshared.UserProvider, tokenString string) error {
-	claims, err := jwtService.ValidateToken(tokenString)
+func handleJWTAuth(c echo.Context, next echo.HandlerFunc, jwtService *tokens.Service, userProvider UserProvider, tokenString string) error {
+	claims, err := jwtService.ValidateAccess(tokenString)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, "Authentication failed")
 	}
@@ -118,7 +117,7 @@ func GetUserID(c echo.Context) uint {
 }
 
 func GetUser(c echo.Context) *models.User {
-	if user := jwtshared.GetCurrentUser(c); user != nil {
+	if user := GetCurrentUser(c); user != nil {
 		if userModel, ok := user.(models.User); ok {
 			return &userModel
 		}
@@ -145,7 +144,7 @@ func GetAPIKeyFromContext(ctx context.Context) *models.APIKey {
 	return nil
 }
 
-func RequireHybridAuth(jwtService *jwtservice.Service, apiKeyService *apikey.Service, userProvider jwtshared.UserProvider) echo.MiddlewareFunc {
+func RequireHybridAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			isAuth := session.IsAuthenticated(c)

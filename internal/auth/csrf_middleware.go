@@ -1,29 +1,56 @@
 package auth
 
 import (
+	"net/http"
+
+	"berth/internal/config"
+	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/config"
-	"github.com/tech-arch1tect/brx/middleware/csrf"
-	"github.com/tech-arch1tect/brx/session"
+	"github.com/labstack/echo/v4/middleware"
 )
 
+func CSRFMiddleware(cfg *config.CSRFConfig) echo.MiddlewareFunc {
+	if !cfg.Enabled {
+		return func(next echo.HandlerFunc) echo.HandlerFunc {
+			return next
+		}
+	}
+
+	var sameSite http.SameSite
+	switch cfg.CookieSameSite {
+	case "strict":
+		sameSite = http.SameSiteStrictMode
+	case "lax":
+		sameSite = http.SameSiteLaxMode
+	case "none":
+		sameSite = http.SameSiteNoneMode
+	default:
+		sameSite = http.SameSiteDefaultMode
+	}
+
+	return middleware.CSRFWithConfig(middleware.CSRFConfig{
+		TokenLength:    cfg.TokenLength,
+		TokenLookup:    cfg.TokenLookup,
+		ContextKey:     cfg.ContextKey,
+		CookieName:     cfg.CookieName,
+		CookieDomain:   cfg.CookieDomain,
+		CookiePath:     cfg.CookiePath,
+		CookieMaxAge:   cfg.CookieMaxAge,
+		CookieSecure:   cfg.CookieSecure,
+		CookieHTTPOnly: cfg.CookieHTTPOnly,
+		CookieSameSite: sameSite,
+	})
+}
+
 func ConditionalCSRFMiddleware(cfg *config.Config) echo.MiddlewareFunc {
-	csrfMiddleware := csrf.WithConfig(&cfg.CSRF)
+	csrfMiddleware := CSRFMiddleware(&cfg.CSRF)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-
-			authHeader := c.Request().Header.Get("Authorization")
-
-			if authHeader != "" {
-				// JWT or API Key authentication - skip CSRF validation
-				return next(c)
-			}
-
 			if session.IsAuthenticated(c) {
 				return csrfMiddleware(next)(c)
 			}
-
 			return next(c)
 		}
 	}
