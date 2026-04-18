@@ -29,7 +29,7 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Name string `env:"NAME" envDefault:"brx Application"`
+	Name string `env:"NAME" envDefault:"berth"`
 	URL  string `env:"URL" envDefault:"http://localhost:8080"`
 }
 
@@ -61,7 +61,7 @@ type DatabaseConfig struct {
 type SessionConfig struct {
 	Enabled  bool          `env:"ENABLED" envDefault:"false"`
 	Store    string        `env:"STORE" envDefault:"memory"`
-	Name     string        `env:"NAME" envDefault:"brx-session"`
+	Name     string        `env:"NAME" envDefault:"berth-session"`
 	MaxAge   time.Duration `env:"MAX_AGE" envDefault:"24h"`
 	Secure   bool          `env:"SECURE" envDefault:"false"`
 	HttpOnly bool          `env:"HTTP_ONLY" envDefault:"true"`
@@ -95,7 +95,7 @@ type AuthConfig struct {
 type JWTConfig struct {
 	SecretKey    string        `env:"SECRET_KEY"`
 	AccessExpiry time.Duration `env:"ACCESS_EXPIRY" envDefault:"15m"`
-	Issuer       string        `env:"ISSUER" envDefault:"brx Application"`
+	Issuer       string        `env:"ISSUER" envDefault:"berth"`
 	Algorithm    string        `env:"ALGORITHM" envDefault:"HS256"`
 }
 
@@ -107,7 +107,7 @@ type RefreshTokenConfig struct {
 
 type TOTPConfig struct {
 	Enabled bool   `env:"ENABLED" envDefault:"false"`
-	Issuer  string `env:"ISSUER" envDefault:"brx Application"`
+	Issuer  string `env:"ISSUER" envDefault:"berth"`
 }
 
 type RateLimitConfig struct {
