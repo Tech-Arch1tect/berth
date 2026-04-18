@@ -1,11 +1,8 @@
 package e2e
 
 import (
-	"encoding/json"
-	"html"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -33,19 +30,9 @@ func getCSRFCookie(t *testing.T, client *e2etesting.HTTPClient) *http.Cookie {
 	return nil
 }
 
-var dataPageRE = regexp.MustCompile(`data-page="([^"]*)"`)
-
 func extractInertiaCSRFToken(t *testing.T, body []byte) string {
 	t.Helper()
-	m := dataPageRE.FindSubmatch(body)
-	require.NotNil(t, m, "data-page attribute not found in HTML response")
-	decoded := html.UnescapeString(string(m[1]))
-	var page struct {
-		Props map[string]any `json:"props"`
-	}
-	require.NoError(t, json.Unmarshal([]byte(decoded), &page),
-		"failed to parse data-page JSON: %s", decoded)
-	tok, _ := page.Props["csrfToken"].(string)
+	tok, _ := extractInertiaProps(t, body)["csrfToken"].(string)
 	return tok
 }
 

@@ -149,8 +149,8 @@ github.com/pquerna/otp v1.5.0/go.mod h1:dkJfzwRKNiegxyNb54X/3fLwhCynbMspSyWKnvi1
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
-github.com/romsar/gonertia/v2 v2.1.1 h1:0l9dbyMCFkq5hHc3tRmJqgdLt7Gb5pQDbYm47atwSXo=
-github.com/romsar/gonertia/v2 v2.1.1/go.mod h1:8DOQfQz9D1GHd5M6BtXsaF+CIovjXOx/tVna2LcazvA=
+github.com/romsar/gonertia/v3 v3.0.0 h1:Prnfflq14Axz4Csjn+h9WVlinSGGoJSbyiXinNMcuAg=
+github.com/romsar/gonertia/v3 v3.0.0/go.mod h1:QrEjAsqiHXxWSEtILCf3SQJ5UwPkcXYKbuPLxb0T6kY=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
 github.com/rs/zerolog v1.13.0/go.mod h1:YbFCdg8HfsridGWAh22vktObvhZbQsZXe4/zB0OKkWU=
 github.com/rs/zerolog v1.15.0/go.mod h1:xYTKnLHcpfU2225ny5qZjxnj9NvkumZYjJHlAThCjNc=

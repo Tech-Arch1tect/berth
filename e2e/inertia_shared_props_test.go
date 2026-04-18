@@ -2,9 +2,7 @@ package e2e
 
 import (
 	"encoding/json"
-	"html"
 	"net/http"
-	"regexp"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -15,16 +13,14 @@ import (
 
 func extractInertiaProps(t *testing.T, body []byte) map[string]any {
 	t.Helper()
-	re := regexp.MustCompile(`data-page="([^"]*)"`)
-	m := re.FindSubmatch(body)
-	require.NotNil(t, m, "data-page attribute not found in HTML response")
-	decoded := html.UnescapeString(string(m[1]))
+	raw := e2etesting.ExtractInertiaPageJSON(body)
+	require.NotNil(t, raw, "inertia page script not found in HTML response")
 	var page struct {
 		Component string         `json:"component"`
 		Props     map[string]any `json:"props"`
 	}
-	require.NoError(t, json.Unmarshal([]byte(decoded), &page),
-		"failed to parse data-page JSON: %s", decoded)
+	require.NoError(t, json.Unmarshal(raw, &page),
+		"failed to parse inertia page JSON: %s", raw)
 	require.NotNil(t, page.Props, "props should not be nil")
 	return page.Props
 }

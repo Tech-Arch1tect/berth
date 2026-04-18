@@ -9,7 +9,7 @@ import (
 	"berth/internal/inertia"
 	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	gonertia "github.com/romsar/gonertia/v2"
+	gonertia "github.com/romsar/gonertia/v3"
 )
 
 type Handler struct {

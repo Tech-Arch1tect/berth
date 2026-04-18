@@ -3,7 +3,6 @@ package harness
 import (
 	"encoding/json"
 	"fmt"
-	"html"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -140,26 +139,33 @@ func (sr *SnapshotRecorder) RecordAndAssert(t *testing.T, method, path string, r
 	sr.AssertMatch(t, snap)
 }
 
-var dataPageRe = regexp.MustCompile(`data-page="([^"]*)"`)
+var inertiaPageScriptRe = regexp.MustCompile(`(?s)<script[^>]*data-page="[^"]*"[^>]*type="application/json"[^>]*>(.*?)</script>`)
 
 func isInertiaHTML(body string) bool {
 	return strings.Contains(body, "data-page=")
 }
 
+func ExtractInertiaPageJSON(body []byte) []byte {
+	m := inertiaPageScriptRe.FindSubmatch(body)
+	if m == nil {
+		return nil
+	}
+	return []byte(strings.ReplaceAll(string(m[1]), `<\/script>`, `</script>`))
+}
+
 func extractDataPageProps(body string) json.RawMessage {
-	m := dataPageRe.FindStringSubmatch(body)
-	if len(m) < 2 {
+	raw := ExtractInertiaPageJSON([]byte(body))
+	if raw == nil {
 		return nil
 	}
 
-	decoded := html.UnescapeString(m[1])
 	var page struct {
 		Component string          `json:"component"`
 		Props     json.RawMessage `json:"props"`
 		URL       string          `json:"url"`
 		Version   string          `json:"version"`
 	}
-	if err := json.Unmarshal([]byte(decoded), &page); err != nil {
+	if err := json.Unmarshal(raw, &page); err != nil {
 		return nil
 	}
 

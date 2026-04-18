@@ -11,7 +11,7 @@ import (
 
 	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
-	gonertia "github.com/romsar/gonertia/v2"
+	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
 )
 

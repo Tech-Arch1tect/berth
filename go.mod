@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/pquerna/otp v1.5.0
-	github.com/romsar/gonertia/v2 v2.1.1
+	github.com/romsar/gonertia/v3 v3.0.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tech-arch1tect/berth-agent v0.4.5
 	go.uber.org/fx v1.24.0
