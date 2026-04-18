@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"strings"
 
+	"berth/internal/auth"
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 )
 
@@ -17,10 +16,10 @@ type Handler struct {
 	setupSvc   *Service
 	authSvc    *auth.Service
 	inertiaSvc *inertia.Service
-	logger     *logging.Service
+	logger     *zap.Logger
 }
 
-func NewHandler(setupSvc *Service, authSvc *auth.Service, inertiaSvc *inertia.Service, logger *logging.Service) *Handler {
+func NewHandler(setupSvc *Service, authSvc *auth.Service, inertiaSvc *inertia.Service, logger *zap.Logger) *Handler {
 	return &Handler{
 		setupSvc:   setupSvc,
 		authSvc:    authSvc,

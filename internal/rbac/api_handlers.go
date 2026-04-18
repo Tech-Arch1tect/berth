@@ -7,9 +7,9 @@ import (
 	"berth/models"
 	"net/http"
 
+	"berth/internal/auth"
+	"berth/internal/auth/totp"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/totp"
 	"gorm.io/gorm"
 )
 

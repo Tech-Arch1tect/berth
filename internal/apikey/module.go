@@ -3,7 +3,7 @@ package apikey
 import (
 	"berth/internal/security"
 
-	"github.com/tech-arch1tect/brx/services/inertia"
+	"berth/internal/inertia"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )

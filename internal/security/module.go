@@ -3,7 +3,6 @@ package security
 import (
 	"context"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -18,7 +17,7 @@ type auditLoggerShutdownParams struct {
 	fx.In
 	LC          fx.Lifecycle
 	AuditLogger *AuditLogger `optional:"true"`
-	Logger      *logging.Service
+	Logger      *zap.Logger
 }
 
 func registerAuditLoggerShutdown(p auditLoggerShutdownParams) {
