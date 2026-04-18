@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"testing"
 
+	"berth/internal/auth"
 	"github.com/stretchr/testify/require"
-	"github.com/tech-arch1tect/brx/services/auth"
 	"gorm.io/gorm"
 )
 
@@ -149,34 +149,6 @@ func (h *AuthHelper) GetPasswordResetToken(t *testing.T, email string) string {
 	return tokens[0]
 }
 
-func (h *AuthHelper) GetEmailVerificationToken(t *testing.T, email string) string {
-	var tokens []string
-	err := h.DB.Table("email_verification_tokens").
-		Select("token").
-		Where("email = ? AND used = ?", email, false).
-		Order("created_at DESC").
-		Limit(1).
-		Pluck("token", &tokens).Error
-
-	require.NoError(t, err, "failed to find email verification token")
-	require.NotEmpty(t, tokens, "no email verification token found")
-	return tokens[0]
-}
-
-func (h *AuthHelper) AssertUserExists(t *testing.T, email string) {
-	var count int64
-	err := h.DB.Table("users").Where("email = ?", email).Count(&count).Error
-	require.NoError(t, err, "failed to check if user exists")
-	require.Equal(t, int64(1), count, "user should exist")
-}
-
-func (h *AuthHelper) AssertUserNotExists(t *testing.T, email string) {
-	var count int64
-	err := h.DB.Table("users").Where("email = ?", email).Count(&count).Error
-	require.NoError(t, err, "failed to check if user exists")
-	require.Equal(t, int64(0), count, "user should not exist")
-}
-
 func (h *AuthHelper) AssertEmailVerified(t *testing.T, email string) {
 	var count int64
 	err := h.DB.Table("users").
@@ -195,46 +167,12 @@ func (h *AuthHelper) AssertEmailNotVerified(t *testing.T, email string) {
 	require.Equal(t, int64(1), count, "email should not be verified")
 }
 
-func (h *AuthHelper) GetLoginForm() (*Response, error) {
-	return h.HTTPClient.Get("/auth/login")
-}
-
-func (h *AuthHelper) GetRegisterForm() (*Response, error) {
-	return h.HTTPClient.Get("/auth/register")
-}
-
-func (h *AuthHelper) GetPasswordResetForm() (*Response, error) {
-	return h.HTTPClient.Get("/auth/password-reset")
-}
-
 func (h *AuthHelper) AssertLoginSuccess(t *testing.T, resp *Response) {
 	resp.AssertRedirect(t, "/")
 }
 
 func (h *AuthHelper) AssertLoginFailed(t *testing.T, resp *Response) {
 	resp.AssertRedirect(t, "/auth/login")
-}
-
-func (h *AuthHelper) AssertRegistrationSuccess(t *testing.T, resp *Response) {
-
-	resp.AssertRedirect(t, "/")
-}
-
-func (h *AuthHelper) CleanAuthTables() error {
-	tables := []string{
-		"users",
-		"password_reset_tokens",
-		"email_verification_tokens",
-		"remember_me_tokens",
-	}
-
-	for _, table := range tables {
-		if err := h.DB.Exec("DELETE FROM " + table).Error; err != nil {
-			return fmt.Errorf("failed to clean table %s: %w", table, err)
-		}
-	}
-
-	return nil
 }
 
 func (h *AuthHelper) EnableTOTPForUser(t *testing.T, userID uint) {

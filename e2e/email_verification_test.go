@@ -6,9 +6,9 @@ import (
 
 	e2etesting "berth/e2e/internal/harness"
 
+	"berth/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tech-arch1tect/brx/config"
 )
 
 func setupVerificationApp(t *testing.T) *TestApp {

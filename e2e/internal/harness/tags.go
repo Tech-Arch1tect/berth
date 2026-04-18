@@ -97,14 +97,6 @@ func TagTest(t interface{ Name() string }, method, path, category, value string)
 	})
 }
 
-func TagTestRoute(t interface{ Name() string }, method, path string) {
-	TagTest(t, method, path, CategoryUnspecified, ValueUnspecified)
-}
-
-func TagTestCategory(t interface{ Name() string }, method, path, category string) {
-	TagTest(t, method, path, category, ValueUnspecified)
-}
-
 func (tt *TestTagTracker) Add(tag TestTag) {
 	tt.mu.Lock()
 	defer tt.mu.Unlock()
@@ -339,10 +331,6 @@ func (tt *TestTagTracker) PrintReportToWithCoverage(w io.Writer, coverage *Cover
 	fmt.Fprintf(w, "\n")
 }
 
-func (tt *TestTagTracker) WriteReportToFile(filename string) error {
-	return tt.WriteReportToFileWithCoverage(filename, nil)
-}
-
 func (tt *TestTagTracker) WriteReportToFileWithCoverage(filename string, coverage *CoverageTracker) error {
 	f, err := os.Create(filename)
 	if err != nil {
@@ -352,10 +340,6 @@ func (tt *TestTagTracker) WriteReportToFileWithCoverage(filename string, coverag
 
 	tt.PrintReportToWithCoverage(f, coverage)
 	return nil
-}
-
-func (tt *TestTagTracker) WriteJSONReport(filename string) error {
-	return tt.WriteJSONReportWithCoverage(filename, nil)
 }
 
 func (tt *TestTagTracker) WriteJSONReportWithCoverage(filename string, coverage *CoverageTracker) error {
@@ -382,13 +366,4 @@ func (tt *TestTagTracker) Reset() {
 	tt.mu.Lock()
 	defer tt.mu.Unlock()
 	tt.tags = make([]TestTag, 0)
-}
-
-func (tt *TestTagTracker) GetTags() []TestTag {
-	tt.mu.RLock()
-	defer tt.mu.RUnlock()
-
-	result := make([]TestTag, len(tt.tags))
-	copy(result, tt.tags)
-	return result
 }

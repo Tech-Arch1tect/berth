@@ -141,10 +141,6 @@ func (ct *CoverageTracker) GetStats() CoverageStats {
 	}
 }
 
-func (ct *CoverageTracker) GetMissingRoutes() []RouteInfo {
-	return ct.GetStats().MissingRoutes
-}
-
 func (ct *CoverageTracker) GetCoveredRoutes() []RouteInfo {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
@@ -170,31 +166,6 @@ func (ct *CoverageTracker) GetCoveredRoutes() []RouteInfo {
 	})
 
 	return covered
-}
-
-func (ct *CoverageTracker) GetHitCount(method, path string) int {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-	return ct.hitRoutes[routeKey(method, path)]
-}
-
-func (ct *CoverageTracker) GetAllRoutes() []RouteInfo {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-
-	routes := make([]RouteInfo, 0, len(ct.registeredRoutes))
-	for _, route := range ct.registeredRoutes {
-		routes = append(routes, route)
-	}
-
-	sort.Slice(routes, func(i, j int) bool {
-		if routes[i].Path == routes[j].Path {
-			return routes[i].Method < routes[j].Method
-		}
-		return routes[i].Path < routes[j].Path
-	})
-
-	return routes
 }
 
 func (ct *CoverageTracker) PrintReport() {
@@ -280,116 +251,8 @@ func (ct *CoverageTracker) WriteJSONReport(filename string) error {
 	return nil
 }
 
-func (ct *CoverageTracker) PrintCompactReport() {
-	stats := ct.GetStats()
-	fmt.Fprintf(os.Stderr, "API Coverage: %d/%d endpoints (%.1f%%) - %d missing\n",
-		stats.CoveredRoutes, stats.TotalRoutes, stats.Coverage, len(stats.MissingRoutes))
-}
-
 func (ct *CoverageTracker) Reset() {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	ct.hitRoutes = make(map[string]int)
-}
-
-func (ct *CoverageTracker) Clear() {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-	ct.registeredRoutes = make(map[string]RouteInfo)
-	ct.hitRoutes = make(map[string]int)
-}
-
-func (ct *CoverageTracker) RoutesByPathPrefix(prefix string) []RouteInfo {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-
-	var routes []RouteInfo
-	for _, route := range ct.registeredRoutes {
-		if strings.HasPrefix(route.Path, prefix) {
-			routes = append(routes, route)
-		}
-	}
-
-	sort.Slice(routes, func(i, j int) bool {
-		if routes[i].Path == routes[j].Path {
-			return routes[i].Method < routes[j].Method
-		}
-		return routes[i].Path < routes[j].Path
-	})
-
-	return routes
-}
-
-func (ct *CoverageTracker) MissingRoutesByPathPrefix(prefix string) []RouteInfo {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-
-	var routes []RouteInfo
-	for key, route := range ct.registeredRoutes {
-		if strings.HasPrefix(route.Path, prefix) && ct.hitRoutes[key] == 0 {
-			routes = append(routes, route)
-		}
-	}
-
-	sort.Slice(routes, func(i, j int) bool {
-		if routes[i].Path == routes[j].Path {
-			return routes[i].Method < routes[j].Method
-		}
-		return routes[i].Path < routes[j].Path
-	})
-
-	return routes
-}
-
-func (ct *CoverageTracker) CoverageByPathPrefix(prefix string) CoverageStats {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-
-	var missing []RouteInfo
-	covered := 0
-	total := 0
-
-	for key, route := range ct.registeredRoutes {
-		if !strings.HasPrefix(route.Path, prefix) {
-			continue
-		}
-		total++
-		if ct.hitRoutes[key] > 0 {
-			covered++
-		} else {
-			missing = append(missing, route)
-		}
-	}
-
-	sort.Slice(missing, func(i, j int) bool {
-		if missing[i].Path == missing[j].Path {
-			return missing[i].Method < missing[j].Method
-		}
-		return missing[i].Path < missing[j].Path
-	})
-
-	var coverage float64
-	if total > 0 {
-		coverage = float64(covered) / float64(total) * 100
-	}
-
-	return CoverageStats{
-		TotalRoutes:   total,
-		CoveredRoutes: covered,
-		MissingRoutes: missing,
-		Coverage:      coverage,
-	}
-}
-
-func (ct *CoverageTracker) HasRoute(method, path string) bool {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-	_, exists := ct.registeredRoutes[routeKey(method, path)]
-	return exists
-}
-
-func (ct *CoverageTracker) IsCovered(method, path string) bool {
-	ct.mu.RLock()
-	defer ct.mu.RUnlock()
-	return ct.hitRoutes[routeKey(method, path)] > 0
 }

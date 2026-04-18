@@ -237,7 +237,3 @@ func (c *HTTPClient) WithoutRedirects() *HTTPClient {
 		BaseURL: c.BaseURL,
 	}
 }
-
-func (c *HTTPClient) SetBaseURL(baseURL string) {
-	c.BaseURL = baseURL
-}

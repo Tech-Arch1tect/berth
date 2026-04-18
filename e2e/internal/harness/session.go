@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"berth/models"
 	"github.com/stretchr/testify/require"
-	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
 
@@ -24,22 +24,6 @@ func NewSessionHelper(httpClient *HTTPClient, db *gorm.DB) *SessionHelper {
 	}
 }
 
-func (h *SessionHelper) GetSessions() (*Response, error) {
-	return h.HTTPClient.Get("/sessions")
-}
-
-func (h *SessionHelper) RevokeSession(token string) (*Response, error) {
-	formData := url.Values{
-		"token": {token},
-	}
-
-	return h.HTTPClient.PostForm("/sessions/revoke", formData)
-}
-
-func (h *SessionHelper) RevokeAllOtherSessions() (*Response, error) {
-	return h.HTTPClient.PostForm("/sessions/revoke-all-others", url.Values{})
-}
-
 func (h *SessionHelper) GetSessionCookie(resp *Response) *http.Cookie {
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == "session" || cookie.Name == "test_session" {
@@ -47,13 +31,6 @@ func (h *SessionHelper) GetSessionCookie(resp *Response) *http.Cookie {
 		}
 	}
 	return nil
-}
-
-func (h *SessionHelper) ExtractSessionToken(cookie *http.Cookie) string {
-	if cookie == nil {
-		return ""
-	}
-	return cookie.Value
 }
 
 func (h *SessionHelper) AssertSessionExists(t *testing.T, userID uint) {
@@ -87,25 +64,11 @@ func (h *SessionHelper) AssertSessionCount(t *testing.T, userID uint, expectedCo
 	require.Equal(t, int64(expectedCount), count, "unexpected number of sessions")
 }
 
-func (h *SessionHelper) GetUserSessions(t *testing.T, userID uint) []session.UserSession {
-	var sessions []session.UserSession
-	err := h.DB.Where("user_id = ?", userID).Find(&sessions).Error
-	require.NoError(t, err, "failed to retrieve user sessions")
-	return sessions
-}
-
-func (h *SessionHelper) GetSessionByToken(t *testing.T, token string) *session.UserSession {
-	var sess session.UserSession
-	err := h.DB.Where("token = ?", token).First(&sess).Error
-	require.NoError(t, err, "failed to find session by token")
-	return &sess
-}
-
 func (h *SessionHelper) CreateTestSession(t *testing.T, userID uint, token string) {
-	sess := session.UserSession{
+	sess := models.UserSession{
 		UserID:    userID,
 		Token:     token,
-		Type:      session.SessionTypeWeb,
+		Type:      models.SessionTypeWeb,
 		IPAddress: "127.0.0.1",
 		UserAgent: "Test User Agent",
 		ExpiresAt: time.Now().Add(time.Hour),
@@ -136,18 +99,6 @@ func (h *SessionHelper) AssertSessionCookiePresent(t *testing.T, resp *Response)
 	return cookie
 }
 
-func (h *SessionHelper) AssertSessionCookieAbsent(t *testing.T, resp *Response) {
-	cookie := h.GetSessionCookie(resp)
-
-	if cookie != nil {
-		expired := cookie.MaxAge <= 0
-		if !expired && !cookie.Expires.IsZero() {
-			expired = cookie.Expires.Before(time.Now())
-		}
-		require.Truef(t, expired, "session cookie should be expired or have non-positive MaxAge (maxAge=%d expires=%v value=%s)", cookie.MaxAge, cookie.Expires, cookie.Value)
-	}
-}
-
 func (h *SessionHelper) WithSessionCookie(cookie *http.Cookie) *HTTPClient {
 	client := h.HTTPClient.EnsureCookieJar()
 
@@ -176,9 +127,4 @@ func (h *SessionHelper) SimulateLogin(t *testing.T, authHelper *AuthHelper, user
 func (h *SessionHelper) AssertAuthenticationRequired(t *testing.T, resp *Response) {
 
 	resp.AssertRedirect(t, "/auth/login")
-}
-
-func (h *SessionHelper) AssertTOTPRequired(t *testing.T, resp *Response) {
-
-	resp.AssertRedirect(t, "/auth/totp/verify")
 }

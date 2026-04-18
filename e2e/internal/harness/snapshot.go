@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"testing"
 
@@ -297,22 +296,4 @@ func sanitizeSlice(s []interface{}) []interface{} {
 func jsonString(s string) json.RawMessage {
 	b, _ := json.Marshal(s)
 	return b
-}
-func (sr *SnapshotRecorder) ListSnapshots() ([]string, error) {
-	entries, err := os.ReadDir(sr.dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	var names []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
-			names = append(names, e.Name())
-		}
-	}
-	sort.Strings(names)
-	return names, nil
 }

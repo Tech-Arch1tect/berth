@@ -13,53 +13,20 @@ import (
 	"testing"
 	"time"
 
-	"berth/internal/common"
+	"berth/internal/app"
 	"berth/internal/crypto"
 	"berth/models"
-	"berth/providers"
 
 	e2etesting "berth/e2e/internal/harness"
+	"berth/internal/auth"
+	"berth/internal/config"
+	"berth/internal/inertia"
+	"berth/internal/logging"
+
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"github.com/tech-arch1tect/brx/config"
-	"github.com/tech-arch1tect/brx/database"
-	"github.com/tech-arch1tect/brx/middleware/inertiashared"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/middleware/ratelimit"
-	brxserver "github.com/tech-arch1tect/brx/server"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/refreshtoken"
-	"github.com/tech-arch1tect/brx/services/revocation"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
-
-	"berth/handlers"
-	"berth/internal/agent"
-	"berth/internal/apikey"
-	berthconfig "berth/internal/config"
-	"berth/internal/files"
-	"berth/internal/imageupdates"
-	"berth/internal/logs"
-	"berth/internal/maintenance"
-	"berth/internal/migration"
-	"berth/internal/operationlogs"
-	"berth/internal/operations"
-	"berth/internal/queue"
-	"berth/internal/rbac"
-	"berth/internal/registry"
-	"berth/internal/security"
-	"berth/internal/server"
-	"berth/internal/setup"
-	"berth/internal/stack"
-	"berth/internal/vulnscan"
-	"berth/internal/websocket"
-	"berth/routes"
-	"berth/seeds"
 )
 
 var (
@@ -172,7 +139,6 @@ func buildTestConfig(dbFile string) *config.Config {
 		RefreshToken: config.RefreshTokenConfig{
 			TokenLength:     32,
 			Expiry:          30 * 24 * time.Hour,
-			RotationMode:    "always",
 			CleanupInterval: time.Hour,
 		},
 		Revocation: config.RevocationConfig{
@@ -185,9 +151,11 @@ func buildTestConfig(dbFile string) *config.Config {
 			Issuer:  "Test App",
 		},
 		Inertia: config.InertiaConfig{
-			Enabled:     true,
 			RootView:    "../app.html",
 			Development: true,
+		},
+		RateLimit: config.RateLimitConfig{
+			Enabled: false,
 		},
 		CSRF: config.CSRFConfig{
 			Enabled:        true,
@@ -208,6 +176,16 @@ func buildTestConfig(dbFile string) *config.Config {
 			Port:         587,
 			TemplatesDir: filepath.Join("..", "testdata", "mail"),
 		},
+		Custom: config.AppCustomConfig{
+			EncryptionSecret:                   "test-encryption-secret-key-32chars!!",
+			LogDir:                             os.TempDir(),
+			OperationLogLogToFile:              false,
+			SecurityAuditLogLogToFile:          false,
+			OperationTimeoutSeconds:            600,
+			ImageUpdateCheckEnabled:            false,
+			ImageUpdateCheckInterval:           "6h",
+			ImageUpdateCheckDisabledRegistries: "",
+		},
 	}
 }
 
@@ -225,41 +203,19 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 		mod(cfg)
 	}
 
-	logger, err := logging.NewService(logging.Config{
-		Level:      logging.LogLevel(cfg.Log.Level),
-		Format:     cfg.Log.Format,
-		OutputPath: cfg.Log.Output,
-	})
+	logger, err := logging.NewLogger(cfg)
 	require.NoError(t, err, "failed to create logger")
 
-	modelsOpt := database.WithModels(
-		&models.User{}, &models.Role{}, &models.Permission{},
-		&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
-		&models.APIKey{}, &models.APIKeyScope{},
-		&models.OperationLog{}, &models.OperationLogMessage{},
-		&models.SecurityAuditLog{},
-		&models.SeedTracker{},
-		&models.QueuedOperation{}, &session.UserSession{},
-		&models.ContainerImageUpdate{},
-		&models.ImageScan{}, &models.ImageVulnerability{}, &models.ScanScope{},
-		&totp.TOTPSecret{}, &totp.UsedCode{},
-		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
-		&revocation.RevokedToken{}, &refreshtoken.RefreshToken{},
-	)
-
-	db, err := database.ProvideDatabase(*cfg, modelsOpt, logger)
+	db, err := app.OpenDatabase(cfg, logger, app.DatabaseModels()...)
 	require.NoError(t, err, "failed to initialize database")
 
 	inertiaSvc := inertia.New(&cfg.Inertia, logger)
 
 	mailSvc := e2etesting.NewCapturingMailService()
 
-	var nilSessionOpts *session.Options
+	e := app.NewEcho(cfg, logger)
 
-	var (
-		capturedServer  *brxserver.Server
-		capturedAuthSvc *auth.Service
-	)
+	var capturedAuthSvc *auth.Service
 
 	fxOpts := []fx.Option{
 		fx.NopLogger,
@@ -268,122 +224,25 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 		fx.Supply(logger),
 		fx.Supply(db),
 		fx.Supply(inertiaSvc),
-		fx.Supply(nilSessionOpts),
-		fx.Supply(&brxserver.SSLConfig{Enabled: false}),
-
-		brxserver.NewProvider(),
-		fx.Provide(ratelimit.ProvideRateLimitStore),
-
-		session.Module,
-		auth.Module,
-		totp.Module,
-		fx.Provide(refreshtoken.ProvideRefreshTokenService),
-		revocation.Module,
-		jwt.Options,
-
-		fx.Invoke(func(srv *brxserver.Server, sessionMgr *session.Manager) {
-			srv.Echo().Use(session.Middleware(sessionMgr))
-		}),
-		fx.Invoke(func(srv *brxserver.Server, inSvc *inertia.Service, userProvider inertiashared.UserProvider) {
-			srv.Echo().Use(inSvc.Middleware())
-			srv.Echo().Use(inertiashared.MiddlewareWithConfig(inertiashared.Config{
-				AuthEnabled:  true,
-				FlashEnabled: true,
-				UserProvider: userProvider,
-			}))
-		}),
-
-		fx.Invoke(func(lc fx.Lifecycle, svc *inertia.Service) {
-			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					rootView := cfg.Inertia.RootView
-					if rootView == "" {
-						rootView = "app.html"
-					}
-					if err := svc.InitializeFromFile(rootView); err != nil {
-						return err
-					}
-					svc.ShareAssetData()
-					return nil
-				},
-			})
-		}),
-
-		fx.Provide(func(cfg *config.Config) *berthconfig.BerthConfig {
-			return &berthconfig.BerthConfig{
-				Config: *cfg,
-				Custom: berthconfig.AppCustomConfig{
-					EncryptionSecret:                   "test-encryption-secret-key-32chars!!",
-					LogDir:                             os.TempDir(),
-					OperationLogLogToFile:              false,
-					SecurityAuditLogLogToFile:          false,
-					OperationTimeoutSeconds:            600,
-					ImageUpdateCheckEnabled:            false,
-					ImageUpdateCheckInterval:           "6h",
-					ImageUpdateCheckDisabledRegistries: "",
-				},
-			}
-		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig) *crypto.Crypto {
-			return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
-		}),
-		fx.Provide(func(cfg *berthconfig.BerthConfig) common.CheckOriginFunc {
-			return common.NewOriginChecker(cfg.App.URL)
-		}),
-
-		agent.Module,
-		rbac.Module,
-		fx.Provide(func(db *gorm.DB, logger *logging.Service, rbacSvc *rbac.Service) *apikey.Service {
-			return apikey.NewService(db, logger, rbacSvc)
-		}),
-		apikey.Module,
-		setup.Module,
-		server.Module,
-		stack.Module,
-		maintenance.Module,
-		security.Module,
-		handlers.Module,
-		files.Module,
-		logs.Module,
-		operations.Module,
-		registry.Module,
-		operationlogs.Module,
-		migration.Module,
-		queue.Module,
-		imageupdates.Module,
-		vulnscan.Module,
-		websocket.Module,
+		fx.Supply(e),
+		fx.Supply(&app.SSLConfig{Enabled: false}),
 
 		fx.Provide(func() auth.MailService {
 			return mailSvc
 		}),
-		fx.Provide(fx.Annotate(
-			providers.NewUserProvider,
-			fx.As(new(inertiashared.UserProvider)),
-		)),
-		fx.Provide(fx.Annotate(
-			providers.NewUserProvider,
-			fx.As(new(jwtshared.UserProvider)),
-		)),
-		fx.Provide(func(svc refreshtoken.RefreshTokenService) session.RefreshTokenRevocationService {
-			return svc
-		}),
 
-		fx.Invoke(routes.RegisterRoutes),
-		fx.Invoke(func(db *gorm.DB) {
-			_ = seeds.SeedRBACData(db)
-		}),
+		app.CoreFxOptions(),
 
-		fx.Invoke(func(srv *brxserver.Server, authSvc *auth.Service) {
-			capturedServer = srv
+		fx.Invoke(func(srv *echo.Echo, authSvc *auth.Service) {
 			capturedAuthSvc = authSvc
 
 			tracker := GetGlobalCoverageTracker()
-			srv.Echo().Use(tracker.TrackingMiddleware())
+			srv.Use(tracker.TrackingMiddleware())
 			routesRegisteredOnce.Do(func() {
-				tracker.RegisterRoutes(srv.Echo())
+				tracker.RegisterRoutes(srv)
 			})
 		}),
+		fx.Invoke(app.RegisterHTTPLifecycle),
 	}
 
 	fxApp := fx.New(fxOpts...)
@@ -392,11 +251,9 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 	err = fxApp.Start(ctx)
 	require.NoError(t, err, "failed to start test app")
 
-	require.NotNil(t, capturedServer, "brx server was not captured from fx")
-	echoServer := capturedServer.Echo()
-	require.NotNil(t, echoServer, "echo server not initialised")
+	require.NotNil(t, e, "echo server not initialised")
 
-	baseURL := waitForListener(t, echoServer, 5*time.Second)
+	baseURL := waitForListener(t, e, 5*time.Second)
 	waitForRBACSeeded(t, db, 5*time.Second)
 
 	httpClient := &e2etesting.HTTPClient{
@@ -410,7 +267,7 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 	testApp := &TestApp{
 		Config:        cfg,
 		DB:            db,
-		Echo:          echoServer,
+		Echo:          e,
 		BaseURL:       baseURL,
 		AuthSvc:       capturedAuthSvc,
 		Mail:          mailSvc,
@@ -480,16 +337,16 @@ func waitForRBACSeeded(t *testing.T, db *gorm.DB, timeout time.Duration) {
 	}
 }
 
-func (app *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
+func (a *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 	user := &e2etesting.TestUser{
 		Username: "testuser",
 		Email:    "test@example.com",
 		Password: "password123",
 	}
 
-	app.AuthHelper.CreateTestUser(t, user)
+	a.AuthHelper.CreateTestUser(t, user)
 
-	err := app.DB.Table("users").
+	err := a.DB.Table("users").
 		Where("id = ?", user.ID).
 		Update("email_verified_at", time.Now()).Error
 	require.NoError(t, err, "failed to verify test user email")
@@ -497,7 +354,7 @@ func (app *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 	return user
 }
 
-func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
+func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
 	crypto := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
 	encryptedToken, err := crypto.Encrypt("test-access-token")
 	require.NoError(t, err, "failed to encrypt access tokene")
@@ -526,27 +383,27 @@ func (app *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL str
 		IsActive:            true,
 	}
 
-	err = app.DB.Create(server).Error
+	err = a.DB.Create(server).Error
 	require.NoError(t, err, "failed to create test server")
 
 	return server
 }
 
-func (app *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAgent, *models.Server) {
+func (a *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAgent, *models.Server) {
 	mockAgent := NewMockAgent()
 	t.Cleanup(mockAgent.Close)
 
-	server := app.CreateTestServer(t, name, mockAgent.URL)
+	server := a.CreateTestServer(t, name, mockAgent.URL)
 	return mockAgent, server
 }
 
-func (app *TestApp) CreateAdminTestUser(t *testing.T, user *e2etesting.TestUser) {
-	app.AuthHelper.CreateTestUser(t, user)
+func (a *TestApp) CreateAdminTestUser(t *testing.T, user *e2etesting.TestUser) {
+	a.AuthHelper.CreateTestUser(t, user)
 
 	var adminRole models.Role
-	err := app.DB.Where("name = ?", "admin").First(&adminRole).Error
+	err := a.DB.Where("name = ?", "admin").First(&adminRole).Error
 	require.NoError(t, err, "failed to find admin role")
 
-	err = app.DB.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", user.ID, adminRole.ID).Error
+	err = a.DB.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", user.ID, adminRole.ID).Error
 	require.NoError(t, err, "failed to assign admin role to user")
 }

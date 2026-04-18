@@ -408,6 +408,27 @@ func TestCSRFAPIHybrid(t *testing.T) {
 			"Sec-Fetch-Site fast-path should pass CSRF even without _csrf cookie/header; body=%s", resp.GetString())
 	})
 
+	t.Run("session cookie + bogus Authorization header must NOT bypass CSRF", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/api-keys", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+		sessionCookie := app.SessionHelper.GetSessionCookie(mustLoginResp(t, app, user))
+		require.NotNil(t, sessionCookie)
+		barren := app.SessionHelper.WithSessionCookie(sessionCookie)
+
+		resp, err := postJSONWithHeaders(barren, "/api/v1/api-keys",
+			map[string]any{"name": "auth-header-bypass"},
+			map[string]string{
+				"Authorization": "Bearer not-a-real-token",
+			},
+		)
+		require.NoError(t, err)
+		assert.True(t, resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusForbidden,
+			"session-authenticated request with fake Authorization header must still be CSRF-checked; got %d body=%s",
+			resp.StatusCode, resp.GetString())
+		assert.Contains(t, strings.ToLower(resp.GetString()), "csrf",
+			"response must indicate CSRF rejection, not bypass")
+	})
+
 	t.Run("session-authenticated API POST with Sec-Fetch-Site cross-site returns 403", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/api-keys", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
 		sessionClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
