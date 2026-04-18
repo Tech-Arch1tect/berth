@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -32,7 +31,7 @@ type Service struct {
 	db           *gorm.DB
 	operationSvc queueOperationExecutor
 	rbacSvc      queuePermissionChecker
-	logger       *logging.Service
+	logger       *zap.Logger
 	auditService queueSecurityAuditor
 
 	operationTimeoutSeconds int
@@ -49,11 +48,11 @@ type StackWorker struct {
 	stackKey string // "serverID:stackName"
 	queue    chan *models.QueuedOperation
 	active   bool
-	logger   *logging.Service
+	logger   *zap.Logger
 	service  *Service
 }
 
-func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queuePermissionChecker, logger *logging.Service, auditService queueSecurityAuditor, operationTimeoutSeconds int) *Service {
+func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queuePermissionChecker, logger *zap.Logger, auditService queueSecurityAuditor, operationTimeoutSeconds int) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &Service{

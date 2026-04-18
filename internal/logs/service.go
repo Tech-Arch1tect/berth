@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -31,10 +30,10 @@ type Service struct {
 	agentSvc  logsAgentClient
 	serverSvc logsServerProvider
 	rbacSvc   logsPermissionChecker
-	logger    *logging.Service
+	logger    *zap.Logger
 }
 
-func NewService(agentSvc logsAgentClient, serverSvc logsServerProvider, rbacSvc logsPermissionChecker, logger *logging.Service) *Service {
+func NewService(agentSvc logsAgentClient, serverSvc logsServerProvider, rbacSvc logsPermissionChecker, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,

@@ -14,22 +14,22 @@ import (
 	"berth/internal/operations"
 	"berth/internal/server"
 
+	"berth/internal/auth/tokens"
+	"berth/internal/session"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {
 	hub           *Hub
-	jwtService    *jwt.Service
+	jwtService    *tokens.Service
 	permChecker   PermissionChecker
 	serverService *server.Service
 	auditService  *operations.AuditService
 	checkOrigin   common.CheckOriginFunc
 }
 
-func NewHandler(hub *Hub, jwtService *jwt.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService, checkOrigin common.CheckOriginFunc) *Handler {
+func NewHandler(hub *Hub, jwtService *tokens.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService, checkOrigin common.CheckOriginFunc) *Handler {
 	return &Handler{
 		hub:           hub,
 		jwtService:    jwtService,
@@ -98,7 +98,7 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 			return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
 		}
 
-		claims, err := h.jwtService.ValidateToken(token)
+		claims, err := h.jwtService.ValidateAccess(token)
 		if err != nil {
 			return 0, 0, common.SendUnauthorized(c, "Invalid token")
 		}
@@ -139,7 +139,7 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 				return 0, 0, common.SendUnauthorized(c, "Authorization header with Bearer token required")
 			}
 
-			claims, err := h.jwtService.ValidateToken(token)
+			claims, err := h.jwtService.ValidateAccess(token)
 			if err != nil {
 				return 0, 0, common.SendUnauthorized(c, "Invalid token")
 			}

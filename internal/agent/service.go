@@ -12,16 +12,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
 type Service struct {
-	logger                  *logging.Service
+	logger                  *zap.Logger
 	operationTimeoutSeconds int
 }
 
-func NewService(logger *logging.Service, operationTimeoutSeconds int) *Service {
+func NewService(logger *zap.Logger, operationTimeoutSeconds int) *Service {
 	return &Service{
 		logger:                  logger,
 		operationTimeoutSeconds: operationTimeoutSeconds,
