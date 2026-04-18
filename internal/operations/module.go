@@ -8,7 +8,6 @@ import (
 	"berth/internal/registry"
 	"berth/internal/server"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -27,7 +26,7 @@ type auditLoggerShutdownParams struct {
 	fx.In
 	LC          fx.Lifecycle
 	AuditLogger *AuditLogger `optional:"true"`
-	Logger      *logging.Service
+	Logger      *zap.Logger
 }
 
 func registerAuditLoggerShutdown(p auditLoggerShutdownParams) {
@@ -47,10 +46,10 @@ func registerAuditLoggerShutdown(p auditLoggerShutdownParams) {
 	})
 }
 
-func NewAuditServiceWithDeps(db *gorm.DB, logger *logging.Service, summaryParser *SummaryParser) *AuditService {
+func NewAuditServiceWithDeps(db *gorm.DB, logger *zap.Logger, summaryParser *SummaryParser) *AuditService {
 	return NewAuditService(db, logger, summaryParser)
 }
 
-func NewServiceWithDeps(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, registrySvc *registry.Service, filesSvc *files.Service, logger *logging.Service) *Service {
+func NewServiceWithDeps(serverSvc *server.Service, rbacSvc *rbac.Service, auditSvc *AuditService, registrySvc *registry.Service, filesSvc *files.Service, logger *zap.Logger) *Service {
 	return NewService(serverSvc, rbacSvc, auditSvc, registrySvc, filesSvc, logger)
 }

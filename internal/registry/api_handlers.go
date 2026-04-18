@@ -9,8 +9,8 @@ import (
 	"errors"
 	"net/http"
 
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

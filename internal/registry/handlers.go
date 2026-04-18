@@ -6,9 +6,9 @@ import (
 	"berth/internal/server"
 	"berth/models"
 
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {

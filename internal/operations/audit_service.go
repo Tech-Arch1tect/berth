@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type AuditService struct {
 	db            *gorm.DB
-	logger        *logging.Service
+	logger        *zap.Logger
 	summaryParser *SummaryParser
 }
 
-func NewAuditService(db *gorm.DB, logger *logging.Service, summaryParser *SummaryParser) *AuditService {
+func NewAuditService(db *gorm.DB, logger *zap.Logger, summaryParser *SummaryParser) *AuditService {
 	return &AuditService{
 		db:            db,
 		logger:        logger,

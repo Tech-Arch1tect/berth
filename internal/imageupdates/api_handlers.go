@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -43,10 +42,10 @@ type imageupdatesPermissionChecker interface {
 type APIHandler struct {
 	service *Service
 	rbacSvc imageupdatesPermissionChecker
-	logger  *logging.Service
+	logger  *zap.Logger
 }
 
-func NewAPIHandler(service *Service, rbacSvc imageupdatesPermissionChecker, logger *logging.Service) *APIHandler {
+func NewAPIHandler(service *Service, rbacSvc imageupdatesPermissionChecker, logger *zap.Logger) *APIHandler {
 	return &APIHandler{
 		service: service,
 		rbacSvc: rbacSvc,

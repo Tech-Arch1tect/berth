@@ -9,21 +9,20 @@ import (
 	"strconv"
 	"time"
 
+	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
 type Handler struct {
 	inertiaSvc *inertia.Service
-	logger     *logging.Service
+	logger     *zap.Logger
 	service    *Service
 	rbacSvc    *rbac.Service
 }
 
-func NewHandler(inertiaSvc *inertia.Service, logger *logging.Service, service *Service, rbacSvc *rbac.Service) *Handler {
+func NewHandler(inertiaSvc *inertia.Service, logger *zap.Logger, service *Service, rbacSvc *rbac.Service) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
 		logger:     logger,

@@ -4,10 +4,9 @@ import (
 	"berth/internal/common"
 	"berth/internal/dto"
 
+	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -16,11 +15,11 @@ type Handler struct {
 	db                      *gorm.DB
 	service                 *Service
 	inertiaSvc              *inertia.Service
-	logger                  *logging.Service
+	logger                  *zap.Logger
 	operationTimeoutSeconds int
 }
 
-func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service, operationTimeoutSeconds int) *Handler {
+func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *zap.Logger, operationTimeoutSeconds int) *Handler {
 	return &Handler{
 		db:                      db,
 		service:                 service,

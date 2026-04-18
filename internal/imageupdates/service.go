@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -30,7 +29,7 @@ type Service struct {
 	agentSvc           agentClient
 	serverSvc          serverProvider
 	crypto             *crypto.Crypto
-	logger             *logging.Service
+	logger             *zap.Logger
 	interval           time.Duration
 	enabled            bool
 	disabledRegistries map[string]bool
@@ -39,7 +38,7 @@ type Service struct {
 }
 
 func NewService(db *gorm.DB, agentSvc agentClient, serverSvc serverProvider,
-	crypto *crypto.Crypto, logger *logging.Service, cfg *config.BerthConfig) *Service {
+	crypto *crypto.Crypto, logger *zap.Logger, cfg *config.Config) *Service {
 
 	interval, err := time.ParseDuration(cfg.Custom.ImageUpdateCheckInterval)
 	if err != nil {

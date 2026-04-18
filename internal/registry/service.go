@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -15,7 +14,7 @@ import (
 type Service struct {
 	db     *gorm.DB
 	crypto *crypto.Crypto
-	logger *logging.Service
+	logger *zap.Logger
 }
 
 type RegistryCredential struct {
@@ -24,7 +23,7 @@ type RegistryCredential struct {
 	Password string
 }
 
-func NewService(db *gorm.DB, crypto *crypto.Crypto, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, crypto *crypto.Crypto, logger *zap.Logger) *Service {
 	return &Service{
 		db:     db,
 		crypto: crypto,
@@ -32,7 +31,7 @@ func NewService(db *gorm.DB, crypto *crypto.Crypto, logger *logging.Service) *Se
 	}
 }
 
-func (s *Service) Logger() *logging.Service {
+func (s *Service) Logger() *zap.Logger {
 	return s.logger
 }
 

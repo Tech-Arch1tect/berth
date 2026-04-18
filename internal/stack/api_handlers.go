@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -18,12 +17,12 @@ type stackAuditLogger interface {
 
 type APIHandler struct {
 	service      *Service
-	logger       *logging.Service
+	logger       *zap.Logger
 	auditService stackAuditLogger
 	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, logger *logging.Service, auditService stackAuditLogger, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, logger *zap.Logger, auditService stackAuditLogger, db *gorm.DB) *APIHandler {
 	return &APIHandler{
 		service:      service,
 		logger:       logger,

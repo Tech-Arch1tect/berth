@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -13,13 +12,13 @@ import (
 type Poller struct {
 	db       *gorm.DB
 	service  *Service
-	logger   *logging.Service
+	logger   *zap.Logger
 	interval time.Duration
 	ctx      context.Context
 	cancel   context.CancelFunc
 }
 
-func NewPoller(db *gorm.DB, service *Service, logger *logging.Service) *Poller {
+func NewPoller(db *gorm.DB, service *Service, logger *zap.Logger) *Poller {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Poller{
