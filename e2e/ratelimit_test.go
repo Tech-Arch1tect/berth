@@ -132,6 +132,93 @@ func TestAuthLoginRateLimitUserAgentRotationDoesNotBypass(t *testing.T) {
 		"rotating User-Agent must NOT grant an attacker extra brute-force budget; body=%s", resp.GetString())
 }
 
+func TestAuthGetLoginPageDoesNotConsumeLoginBucket(t *testing.T) {
+	t.Parallel()
+	app := SetupTestAppWithConfig(t, func(c *config.Config) { c.RateLimit.Enabled = true })
+
+	TagTest(t, "GET", "/auth/login", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+
+	for i := 1; i <= 20; i++ {
+		resp, err := app.HTTPClient.Get("/auth/login")
+		require.NoError(t, err)
+		require.NotEqual(t, http.StatusTooManyRequests, resp.StatusCode,
+			"GET /auth/login #%d must not be rate limited (page renders don't consume the login bucket)", i)
+	}
+
+	user := &e2etesting.TestUser{
+		Username: "pagerenderuser",
+		Email:    "pagerender@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	for i := 1; i <= 5; i++ {
+		resp, err := app.AuthHelper.Login(user.Username, "wrong-"+strconv.Itoa(i))
+		require.NoError(t, err)
+		require.NotEqual(t, http.StatusTooManyRequests, resp.StatusCode,
+			"bad login #%d must not be rate limited — page renders should not have consumed login budget", i)
+	}
+
+	resp, err := app.AuthHelper.Login(user.Username, "wrong-final")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode,
+		"6th bad login must still trip the tight POST-only login bucket")
+}
+
+func TestAuthBucketsAreIsolatedPerRoute(t *testing.T) {
+	t.Parallel()
+	app := SetupTestAppWithConfig(t, func(c *config.Config) { c.RateLimit.Enabled = true })
+
+	TagTest(t, "POST", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "isolationuser",
+		Email:    "isolation@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	for i := 1; i <= 5; i++ {
+		resp, err := app.AuthHelper.Login(user.Username, "wrong-"+strconv.Itoa(i))
+		require.NoError(t, err)
+		require.NotEqual(t, http.StatusTooManyRequests, resp.StatusCode)
+	}
+
+	resp, err := app.AuthHelper.Login(user.Username, "wrong-final")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode, "login bucket exhausted")
+
+	resp, err = app.HTTPClient.PostForm("/auth/password-reset", url.Values{"email": {"nobody@example.com"}})
+	require.NoError(t, err)
+	assert.NotEqual(t, http.StatusTooManyRequests, resp.StatusCode,
+		"password-reset bucket must be independent from login bucket")
+}
+
+func TestAuthGroupCeilingTripsAbove60PerMinute(t *testing.T) {
+	t.Parallel()
+	app := SetupTestAppWithConfig(t, func(c *config.Config) { c.RateLimit.Enabled = true })
+
+	TagTest(t, "GET", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+
+	client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+
+	var tripped bool
+	var lastCode int
+	for i := 1; i <= 65; i++ {
+		resp, err := client.Get("/auth/login")
+		require.NoError(t, err)
+		lastCode = resp.StatusCode
+		if resp.StatusCode == http.StatusTooManyRequests {
+			tripped = true
+			assert.GreaterOrEqual(t, i, 61,
+				"group ceiling must not trip before 61 requests; tripped at %d", i)
+			break
+		}
+	}
+
+	assert.True(t, tripped, "group ceiling must trip within 65 GETs; last status=%d", lastCode)
+}
+
 func TestAuthLoginRateLimitHeaders(t *testing.T) {
 	t.Parallel()
 	app := SetupTestAppWithConfig(t, func(c *config.Config) { c.RateLimit.Enabled = true })

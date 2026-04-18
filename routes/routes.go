@@ -169,6 +169,7 @@ func RegisterRoutes(p RouteParams) {
 
 		authApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
 			Store:     p.RateLimitStore,
+			Name:      "api_auth",
 			Rate:      25,
 			Period:    time.Minute,
 			CountMode: ratelimit.CountNon2xx,
@@ -177,6 +178,7 @@ func RegisterRoutes(p RouteParams) {
 
 		generalApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
 			Store:     p.RateLimitStore,
+			Name:      "api_general",
 			Rate:      1000,
 			Period:    time.Minute * 10,
 			CountMode: ratelimit.CountAll,
@@ -204,32 +206,37 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 	auth := web.Group("/auth")
 	auth.Use(newRateLimit(cfg, ratelimit.Config{
 		Store:     rateLimitStore,
-		Rate:      5,
+		Name:      "web_auth_group",
+		Rate:      60,
 		Period:    time.Minute,
-		CountMode: ratelimit.CountNon2xx,
+		CountMode: ratelimit.CountAll,
 		KeyFunc:   ratelimit.KeyByIP,
 	}))
 
+	tightAuth := func(name string, rate int) echo.MiddlewareFunc {
+		return newRateLimit(cfg, ratelimit.Config{
+			Store:     rateLimitStore,
+			Name:      name,
+			Rate:      rate,
+			Period:    time.Minute,
+			CountMode: ratelimit.CountNon2xx,
+			KeyFunc:   ratelimit.KeyByIP,
+		})
+	}
+
 	auth.GET("/login", authHandler.ShowLogin)
-	auth.POST("/login", authHandler.Login)
+	auth.POST("/login", authHandler.Login, tightAuth("web_auth_login", 5))
 	auth.POST("/logout", authHandler.Logout)
 	auth.GET("/password-reset", authHandler.ShowPasswordReset)
-	auth.POST("/password-reset", authHandler.RequestPasswordReset)
+	auth.POST("/password-reset", authHandler.RequestPasswordReset, tightAuth("web_auth_password_reset", 5))
 	auth.GET("/password-reset/confirm", authHandler.ShowPasswordResetConfirm)
-	auth.POST("/password-reset/confirm", authHandler.ConfirmPasswordReset)
+	auth.POST("/password-reset/confirm", authHandler.ConfirmPasswordReset, tightAuth("web_auth_password_reset_confirm", 5))
 	auth.GET("/verify-email", authHandler.ShowVerifyEmail)
-	auth.POST("/verify-email", authHandler.VerifyEmail)
-	auth.POST("/resend-verification", authHandler.ResendVerification)
+	auth.POST("/verify-email", authHandler.VerifyEmail, tightAuth("web_auth_verify_email", 5))
+	auth.POST("/resend-verification", authHandler.ResendVerification, tightAuth("web_auth_resend_verification", 3))
 
-	totpRateLimit := newRateLimit(cfg, ratelimit.Config{
-		Store:     rateLimitStore,
-		Rate:      3,
-		Period:    time.Minute,
-		CountMode: ratelimit.CountNon2xx,
-		KeyFunc:   ratelimit.KeyByIP,
-	})
 	auth.GET("/totp/verify", totpHandler.ShowVerify)
-	auth.POST("/totp/verify", totpHandler.VerifyTOTP, totpRateLimit)
+	auth.POST("/totp/verify", totpHandler.VerifyTOTP, tightAuth("web_auth_totp_verify", 3))
 }
 
 func registerProtectedWebRoutes(web *echo.Group,

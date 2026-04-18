@@ -18,6 +18,7 @@ const (
 
 type Config struct {
 	Store     *Store
+	Name      string
 	Rate      int
 	Period    time.Duration
 	CountMode CountingMode
@@ -27,7 +28,7 @@ type Config struct {
 func New(cfg Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			key := cfg.KeyFunc(c)
+			key := "rate_limit:" + cfg.Name + ":" + cfg.KeyFunc(c)
 			now := time.Now()
 			resetTime := now.Add(cfg.Period)
 
@@ -74,7 +75,7 @@ func KeyByIP(c echo.Context) string {
 	if ip == "" || ip == "unknown" {
 		ip = "fallback"
 	}
-	return "rate_limit:" + ip
+	return ip
 }
 
 type Store struct {
