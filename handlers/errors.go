@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/inertia"
 )
 
 func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {

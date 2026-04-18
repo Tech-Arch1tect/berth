@@ -6,7 +6,7 @@ import (
 
 	"berth/handlers"
 	"berth/internal/apikey"
-	berthauth "berth/internal/auth"
+	"berth/internal/auth"
 	"berth/internal/files"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
@@ -23,29 +23,23 @@ import (
 	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 
+	"berth/internal/auth/tokens"
+	"berth/internal/auth/totp"
+	"berth/internal/config"
+	"berth/internal/inertia"
+	"berth/internal/middleware/ratelimit"
+	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/tech-arch1tect/brx/config"
-	"github.com/tech-arch1tect/brx/middleware/csrf"
-	"github.com/tech-arch1tect/brx/middleware/inertiacsrf"
-	"github.com/tech-arch1tect/brx/middleware/inertiashared"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/middleware/ratelimit"
-	"github.com/tech-arch1tect/brx/middleware/rememberme"
-	brxserver "github.com/tech-arch1tect/brx/server"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	jwtservice "github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type RouteParams struct {
 	fx.In
 
-	Srv                    *brxserver.Server
+	Srv                    *echo.Echo
 	DashboardHandler       *handlers.DashboardHandler
 	StacksHandler          *handlers.StacksHandler
 	AuthHandler            *handlers.AuthHandler
@@ -79,15 +73,22 @@ type RouteParams struct {
 	ImageUpdatesAPIHandler *imageupdates.APIHandler
 	VulnscanHandler        *vulnscan.Handler
 	SessionManager         *session.Manager
-	SessionService         session.SessionService
-	RateLimitStore         ratelimit.Store
+	SessionService         *session.Service
+	RateLimitStore         *ratelimit.Store
 	InertiaService         *inertia.Service
-	JWTSvc                 *jwtservice.Service
-	UserProvider           jwtshared.UserProvider
+	JWTSvc                 *tokens.Service
+	UserProvider           auth.UserProvider
 	AuthSvc                *auth.Service
 	TOTPSvc                *totp.Service
-	Logger                 *logging.Service
+	Logger                 *zap.Logger
 	Cfg                    *config.Config
+}
+
+func newRateLimit(cfg *config.Config, rlc ratelimit.Config) echo.MiddlewareFunc {
+	if !cfg.RateLimit.Enabled {
+		return func(next echo.HandlerFunc) echo.HandlerFunc { return next }
+	}
+	return ratelimit.New(rlc)
 }
 
 func RegisterRoutes(p RouteParams) {
@@ -95,7 +96,7 @@ func RegisterRoutes(p RouteParams) {
 		p.RBACMiddleware.SetAPIKeyService(p.APIKeySvc)
 	}
 
-	e := p.Srv.Echo()
+	e := p.Srv
 	e.Use(middleware.Recover())
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XSSProtection:      "0",
@@ -110,11 +111,11 @@ func RegisterRoutes(p RouteParams) {
 	// PUBLIC ROUTES
 	// ============================================================================
 
-	p.Srv.Get("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
+	p.Srv.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
 	if p.SetupHandler != nil {
-		p.Srv.Get("/setup/admin", p.SetupHandler.ShowSetup)
-		p.Srv.Post("/setup/admin", p.SetupHandler.CreateAdmin)
+		p.Srv.GET("/setup/admin", p.SetupHandler.ShowSetup)
+		p.Srv.POST("/setup/admin", p.SetupHandler.CreateAdmin)
 	}
 
 	// ============================================================================
@@ -124,28 +125,24 @@ func RegisterRoutes(p RouteParams) {
 	web := p.Srv.Group("")
 	web.Use(session.Middleware(p.SessionManager))
 	if p.SessionService != nil {
-		web.Use(session.SessionServiceMiddleware(p.SessionService))
+		web.Use(session.TrackingMiddleware(p.SessionService))
 	}
-	web.Use(rememberme.Middleware(rememberme.Config{
+	web.Use(auth.RememberMeMiddleware(auth.RememberMeConfig{
 		AuthService:  p.AuthSvc,
 		UserProvider: p.UserProvider,
 		TOTPService:  p.TOTPSvc,
 		Logger:       p.Logger,
 	}))
 	if p.Cfg.CSRF.Enabled {
-		web.Use(csrf.WithConfig(&p.Cfg.CSRF))
-		web.Use(inertiacsrf.Middleware(p.Cfg))
+		web.Use(auth.CSRFMiddleware(&p.Cfg.CSRF))
+		web.Use(inertia.CSRFContext(p.Cfg.CSRF.ContextKey))
 	}
 	if p.InertiaService != nil {
 		web.Use(p.InertiaService.Middleware())
-		web.Use(inertiashared.MiddlewareWithConfig(inertiashared.Config{
-			AuthEnabled:  true,
-			FlashEnabled: true,
-			UserProvider: p.UserProvider,
-		}))
+		web.Use(inertia.SharedContext(p.UserProvider.GetUser))
 	}
 
-	registerAuthRoutes(web, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
+	registerAuthRoutes(web, p.Cfg, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
 	registerProtectedWebRoutes(web,
 		p.DashboardHandler, p.StacksHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
 		p.VersionHandler, p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
@@ -164,26 +161,26 @@ func RegisterRoutes(p RouteParams) {
 		api := p.Srv.Group("/api/v1")
 		api.Use(session.Middleware(p.SessionManager))
 		if p.SessionService != nil {
-			api.Use(session.SessionServiceMiddleware(p.SessionService))
+			api.Use(session.TrackingMiddleware(p.SessionService))
 		}
 		if p.Cfg.CSRF.Enabled {
-			api.Use(berthauth.ConditionalCSRFMiddleware(p.Cfg))
+			api.Use(auth.ConditionalCSRFMiddleware(p.Cfg))
 		}
 
-		authApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-			Store:        p.RateLimitStore,
-			Rate:         25,
-			Period:       time.Minute,
-			CountMode:    config.CountFailures,
-			KeyGenerator: ratelimit.SecureKeyGenerator,
+		authApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
+			Store:     p.RateLimitStore,
+			Rate:      25,
+			Period:    time.Minute,
+			CountMode: ratelimit.CountNon2xx,
+			KeyFunc:   ratelimit.KeyByIP,
 		})
 
-		generalApiRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-			Store:        p.RateLimitStore,
-			Rate:         1000,
-			Period:       time.Minute * 10,
-			CountMode:    config.CountAll,
-			KeyGenerator: ratelimit.DefaultKeyGenerator,
+		generalApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
+			Store:     p.RateLimitStore,
+			Rate:      1000,
+			Period:    time.Minute * 10,
+			CountMode: ratelimit.CountAll,
+			KeyFunc:   ratelimit.KeyByIP,
 		})
 
 		registerAPIAuthRoutes(api, authApiRateLimit, p.MobileAuthHandler)
@@ -203,14 +200,14 @@ func RegisterRoutes(p RouteParams) {
 // WEB UI ROUTE HELPERS
 // ============================================================================
 
-func registerAuthRoutes(web *echo.Group, authHandler *handlers.AuthHandler, totpHandler *handlers.TOTPHandler, rateLimitStore ratelimit.Store) {
+func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handlers.AuthHandler, totpHandler *handlers.TOTPHandler, rateLimitStore *ratelimit.Store) {
 	auth := web.Group("/auth")
-	auth.Use(ratelimit.WithConfig(&ratelimit.Config{
-		Store:        rateLimitStore,
-		Rate:         5,
-		Period:       time.Minute,
-		CountMode:    config.CountFailures,
-		KeyGenerator: ratelimit.SecureKeyGenerator,
+	auth.Use(newRateLimit(cfg, ratelimit.Config{
+		Store:     rateLimitStore,
+		Rate:      5,
+		Period:    time.Minute,
+		CountMode: ratelimit.CountNon2xx,
+		KeyFunc:   ratelimit.KeyByIP,
 	}))
 
 	auth.GET("/login", authHandler.ShowLogin)
@@ -224,12 +221,12 @@ func registerAuthRoutes(web *echo.Group, authHandler *handlers.AuthHandler, totp
 	auth.POST("/verify-email", authHandler.VerifyEmail)
 	auth.POST("/resend-verification", authHandler.ResendVerification)
 
-	totpRateLimit := ratelimit.WithConfig(&ratelimit.Config{
-		Store:        rateLimitStore,
-		Rate:         3,
-		Period:       time.Minute,
-		CountMode:    config.CountFailures,
-		KeyGenerator: ratelimit.SecureKeyGenerator,
+	totpRateLimit := newRateLimit(cfg, ratelimit.Config{
+		Store:     rateLimitStore,
+		Rate:      3,
+		Period:    time.Minute,
+		CountMode: ratelimit.CountNon2xx,
+		KeyFunc:   ratelimit.KeyByIP,
 	})
 	auth.GET("/totp/verify", totpHandler.ShowVerify)
 	auth.POST("/totp/verify", totpHandler.VerifyTOTP, totpRateLimit)
@@ -327,7 +324,7 @@ func requireWebSocketAuth() echo.MiddlewareFunc {
 	}
 }
 
-func registerWebUIWebSocketRoutes(srv *brxserver.Server, sessionManager *session.Manager, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
+func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manager, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
 	if wsHandler == nil {
 		return
 	}
@@ -359,7 +356,7 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 	authApi.POST("/totp/verify", mobileAuthHandler.VerifyTOTP)
 }
 
-func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *jwtservice.Service, apiKeySvc *apikey.Service, userProvider jwtshared.UserProvider,
+func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
@@ -368,7 +365,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(berthauth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
 
 	// Version
 	if versionHandler != nil {
@@ -492,7 +489,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	}
 }
 
-func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *jwtservice.Service, apiKeySvc *apikey.Service, userProvider jwtshared.UserProvider,
+func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
 	rbacMiddleware *rbac.Middleware, rbacAPIHandler *rbac.APIHandler, operationLogsHandler *operationlogs.Handler,
 	serverAPIHandler *server.APIHandler, migrationHandler *migration.Handler, securityHandler *security.Handler) {
 
@@ -502,7 +499,7 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(berthauth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
 
 	apiAdmin := apiProtected.Group("/admin")
 
@@ -556,14 +553,14 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	}
 }
 
-func registerAPIWebSocketRoutes(srv *brxserver.Server, jwtSvc *jwtservice.Service, apiKeySvc *apikey.Service, userProvider jwtshared.UserProvider, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
+func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
 	if wsHandler == nil {
 		return
 	}
 
 	wsGroup := srv.Group("/ws")
 	wsAPIGroup := wsGroup.Group("/api")
-	wsAPIGroup.Use(berthauth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+	wsAPIGroup.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
 	wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
 	wsAPIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleFlutterTerminalWebSocket)
