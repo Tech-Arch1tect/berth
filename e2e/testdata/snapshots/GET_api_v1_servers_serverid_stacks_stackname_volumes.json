@@ -1,0 +1,20 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/volumes",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "volumes": [
+        {
+          "driver": "local",
+          "exists": true,
+          "name": "snap-stack_data"
+        }
+      ]
+    },
+    "success": true
+  }
+}

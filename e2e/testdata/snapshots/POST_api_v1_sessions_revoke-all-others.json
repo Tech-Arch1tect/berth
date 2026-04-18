@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/api/v1/sessions/revoke-all-others",
+  "status_code": 400,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "error": "validation_error",
+    "message": "Refresh token is required",
+    "success": false
+  }
+}

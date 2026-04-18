@@ -6,7 +6,7 @@ import (
 	"berth/internal/logging"
 	"berth/models"
 
-	brxLogging "github.com/tech-arch1tect/brx/services/logging"
+	"go.uber.org/zap"
 )
 
 type AuditLogger struct {
@@ -28,7 +28,7 @@ type AuditLogEntry struct {
 	Duration    *int   `json:"duration_ms,omitempty"`
 }
 
-func NewAuditLogger(enabled bool, logDir string, logger *brxLogging.Service, maxSizeBytes int64) (*AuditLogger, error) {
+func NewAuditLogger(enabled bool, logDir string, logger *zap.Logger, maxSizeBytes int64) (*AuditLogger, error) {
 	fileLogger, err := logging.NewFileLogger(enabled, logDir, "operations", logger, maxSizeBytes)
 	if err != nil {
 		return nil, err

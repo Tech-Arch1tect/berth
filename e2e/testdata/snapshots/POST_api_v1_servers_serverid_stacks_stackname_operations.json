@@ -1,0 +1,12 @@
+{
+  "method": "POST",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/operations",
+  "status_code": 500,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "code": 500,
+    "error": "agent error: 404 Not Found"
+  }
+}

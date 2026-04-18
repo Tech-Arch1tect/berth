@@ -1,0 +1,29 @@
+{
+  "method": "POST",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/vulnscan",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "scan": {
+        "agent_scan_id": "",
+        "completed_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "error_message": "agent returned status 404: not found\n",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "poll_failures": 0,
+        "scanned_images": 0,
+        "server_id": 1,
+        "stack_name": "snap-stack",
+        "started_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "status": "failed",
+        "total_images": 0,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      }
+    },
+    "success": true
+  }
+}

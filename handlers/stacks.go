@@ -1,11 +1,10 @@
 package handlers
 
 import (
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -13,11 +12,11 @@ import (
 type StacksHandler struct {
 	inertiaSvc *inertia.Service
 	db         *gorm.DB
-	logger     *logging.Service
+	logger     *zap.Logger
 	serverSvc  serverLister
 }
 
-func NewStacksHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *logging.Service, serverSvc serverLister) *StacksHandler {
+func NewStacksHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc serverLister) *StacksHandler {
 	return &StacksHandler{
 		inertiaSvc: inertiaSvc,
 		db:         db,

@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/can-create",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "canCreate": true
+    },
+    "success": true
+  }
+}

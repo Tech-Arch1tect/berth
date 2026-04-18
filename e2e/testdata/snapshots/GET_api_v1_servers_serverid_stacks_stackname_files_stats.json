@@ -1,0 +1,17 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/files/stats",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "most_common_group": 0,
+      "most_common_mode": "",
+      "most_common_owner": 0,
+      "path": ""
+    },
+    "success": true
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "method": "GET",
+  "path": "/servers/:serverid/stacks/:stackname",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Servers/StackDetails",
+    "props": {
+      "authenticated": true,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "currentUser": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "snapwebparam@example.com",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "roles": [
+          {
+            "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "description": "System administrator with full access",
+            "id": "\u003c\u003cID\u003e\u003e",
+            "is_admin": true,
+            "name": "admin",
+            "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "users": null
+          }
+        ],
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "snapwebparam"
+      },
+      "errors": {},
+      "permissions": [
+        "stacks.read",
+        "stacks.manage",
+        "stacks.create",
+        "files.read",
+        "files.write",
+        "logs.read"
+      ],
+      "server": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "description": "",
+        "host": "127.0.0.1",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "is_active": true,
+        "name": "snap-web-server",
+        "port": "\u003c\u003cPORT\u003e\u003e",
+        "skip_ssl_verification": true,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      },
+      "serverid": 1,
+      "stackname": "snap-stack",
+      "title": "snap-web-server - snap-stack",
+      "userID": "\u003c\u003cID\u003e\u003e"
+    },
+    "url": "/servers/1/stacks/snap-stack"
+  }
+}

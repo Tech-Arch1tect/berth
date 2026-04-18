@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/inertia"
 	"gorm.io/gorm"
 )
 

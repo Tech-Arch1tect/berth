@@ -1,0 +1,14 @@
+{
+  "method": "DELETE",
+  "path": "/api/v1/admin/roles/:roleId/stack-permissions/:permissionId",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "Role stack permission deleted successfully"
+    },
+    "success": true
+  }
+}

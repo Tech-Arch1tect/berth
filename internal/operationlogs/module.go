@@ -3,9 +3,9 @@ package operationlogs
 import (
 	"berth/internal/config"
 
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
+	"berth/internal/inertia"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -14,10 +14,10 @@ var Module = fx.Options(
 	fx.Provide(NewHandlerWithDeps),
 )
 
-func NewServiceWithDeps(db *gorm.DB, logger *logging.Service) *Service {
+func NewServiceWithDeps(db *gorm.DB, logger *zap.Logger) *Service {
 	return NewService(db, logger)
 }
 
-func NewHandlerWithDeps(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *logging.Service, cfg *config.BerthConfig) *Handler {
+func NewHandlerWithDeps(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *zap.Logger, cfg *config.Config) *Handler {
 	return NewHandler(db, service, inertiaSvc, logger, cfg.Custom.OperationTimeoutSeconds)
 }

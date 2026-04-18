@@ -4,7 +4,7 @@ import (
 	"berth/models"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/totp"
+	"berth/internal/auth/totp"
 )
 
 func FormatTimePtr(t *time.Time) *string {

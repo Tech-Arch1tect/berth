@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -43,10 +42,10 @@ type Service struct {
 	agentSvc  filesAgentClient
 	serverSvc filesServerProvider
 	rbacSvc   filesPermissionChecker
-	logger    *logging.Service
+	logger    *zap.Logger
 }
 
-func NewService(agentSvc filesAgentClient, serverSvc filesServerProvider, rbacSvc filesPermissionChecker, logger *logging.Service) *Service {
+func NewService(agentSvc filesAgentClient, serverSvc filesServerProvider, rbacSvc filesPermissionChecker, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,

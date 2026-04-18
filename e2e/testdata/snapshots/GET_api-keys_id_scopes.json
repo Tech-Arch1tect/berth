@@ -1,0 +1,29 @@
+{
+  "method": "GET",
+  "path": "/api-keys/:id/scopes",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "APIKeys/Scopes",
+    "props": {
+      "api_key_id": "2",
+      "authenticated": true,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "currentUser": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "snapapikeyweb@example.com",
+        "email_verified_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "snapapikeyweb"
+      },
+      "errors": {},
+      "userID": "\u003c\u003cID\u003e\u003e"
+    },
+    "url": "/api-keys/2/scopes"
+  }
+}

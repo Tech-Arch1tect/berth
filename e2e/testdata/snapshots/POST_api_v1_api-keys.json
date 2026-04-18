@@ -1,0 +1,26 @@
+{
+  "method": "POST",
+  "path": "/api/v1/api-keys",
+  "status_code": 201,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "api_key": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "expires_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "is_active": true,
+        "key_prefix": "\u003c\u003cKEY\u003e\u003e",
+        "last_used_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "name": "Snapshot Test Key",
+        "scope_count": 0,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      },
+      "message": "API key created successfully. Save this key securely - it won't be shown again!",
+      "plain_key": "\u003c\u003cKEY\u003e\u003e"
+    },
+    "success": true
+  }
+}

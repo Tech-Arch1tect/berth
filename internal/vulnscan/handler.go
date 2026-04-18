@@ -6,16 +6,15 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
 type Handler struct {
 	service *Service
-	logger  *logging.Service
+	logger  *zap.Logger
 }
 
-func NewHandler(service *Service, logger *logging.Service) *Handler {
+func NewHandler(service *Service, logger *zap.Logger) *Handler {
 	return &Handler{
 		service: service,
 		logger:  logger,

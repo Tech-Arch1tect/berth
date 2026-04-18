@@ -7,12 +7,11 @@ import (
 	"berth/internal/security"
 	"berth/models"
 
+	"berth/internal/auth"
+	"berth/internal/auth/totp"
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -26,11 +25,11 @@ type TOTPHandler struct {
 	inertiaSvc *inertia.Service
 	totpSvc    *totp.Service
 	authSvc    *auth.Service
-	logger     *logging.Service
+	logger     *zap.Logger
 	auditSvc   totpAuditLogger
 }
 
-func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *logging.Service, auditSvc totpAuditLogger) *TOTPHandler {
+func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *zap.Logger, auditSvc totpAuditLogger) *TOTPHandler {
 	return &TOTPHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
@@ -60,7 +59,7 @@ func (h *TOTPHandler) ShowSetup(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/profile")
 	}
 
-	var secret *totp.TOTPSecret
+	var secret *models.TOTPSecret
 	if existing != nil {
 		secret = existing
 	} else {

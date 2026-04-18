@@ -1,0 +1,15 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/vulnscan/trend",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "per_image_trend": [],
+      "stack_trend": []
+    },
+    "success": true
+  }
+}

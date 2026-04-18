@@ -1,0 +1,15 @@
+{
+  "method": "GET",
+  "path": "/api/v1/totp/setup",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "qr_code_uri": "\u003c\u003cQR_CODE_URI\u003e\u003e",
+      "secret": "\u003c\u003cTOKEN\u003e\u003e"
+    },
+    "success": true
+  }
+}

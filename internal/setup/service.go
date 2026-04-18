@@ -5,7 +5,6 @@ import (
 	"berth/models"
 	"errors"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -17,10 +16,10 @@ type roleAssigner interface {
 type Service struct {
 	db      *gorm.DB
 	rbacSvc roleAssigner
-	logger  *logging.Service
+	logger  *zap.Logger
 }
 
-func NewService(db *gorm.DB, rbacSvc roleAssigner, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, rbacSvc roleAssigner, logger *zap.Logger) *Service {
 	return &Service{
 		db:      db,
 		rbacSvc: rbacSvc,

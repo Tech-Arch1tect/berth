@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -30,11 +29,11 @@ type RBACService interface {
 
 type Service struct {
 	db          *gorm.DB
-	logger      *logging.Service
+	logger      *zap.Logger
 	rbacService RBACService
 }
 
-func NewService(db *gorm.DB, logger *logging.Service, rbacService RBACService) *Service {
+func NewService(db *gorm.DB, logger *zap.Logger, rbacService RBACService) *Service {
 	return &Service{
 		db:          db,
 		logger:      logger,

@@ -1,0 +1,28 @@
+{
+  "method": "GET",
+  "path": "/api/v1/profile",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+      "email": "snapapiuser@example.com",
+      "id": "\u003c\u003cID\u003e\u003e",
+      "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+      "roles": [
+        {
+          "description": "System administrator with full access",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": true,
+          "name": "admin"
+        }
+      ],
+      "totp_enabled": false,
+      "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+      "username": "snapapiuser"
+    },
+    "success": true
+  }
+}

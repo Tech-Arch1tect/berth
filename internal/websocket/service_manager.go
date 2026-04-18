@@ -4,7 +4,6 @@ import (
 	"berth/models"
 	"context"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -17,10 +16,10 @@ type wsServerProvider interface {
 type ServiceManager struct {
 	serverService wsServerProvider
 	agentManager  *AgentManager
-	logger        *logging.Service
+	logger        *zap.Logger
 }
 
-func NewServiceManager(serverService wsServerProvider, agentManager *AgentManager, logger *logging.Service) *ServiceManager {
+func NewServiceManager(serverService wsServerProvider, agentManager *AgentManager, logger *zap.Logger) *ServiceManager {
 	return &ServiceManager{
 		serverService: serverService,
 		agentManager:  agentManager,

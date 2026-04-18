@@ -1,0 +1,12 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/vulnscan",
+  "status_code": 404,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "code": 404,
+    "error": "no scans found for stack"
+  }
+}

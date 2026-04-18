@@ -1,0 +1,18 @@
+{
+  "method": "PUT",
+  "path": "/api/v1/admin/roles/:id",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "description": "",
+      "id": "\u003c\u003cID\u003e\u003e",
+      "is_admin": false,
+      "name": "snapshot-test-role-updated",
+      "permissions": []
+    },
+    "success": true
+  }
+}

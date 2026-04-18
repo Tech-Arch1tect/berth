@@ -1,0 +1,14 @@
+{
+  "method": "DELETE",
+  "path": "/api/v1/api-keys/:id",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "API key revoked successfully"
+    },
+    "success": true
+  }
+}

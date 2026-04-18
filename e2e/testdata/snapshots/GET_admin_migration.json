@@ -1,0 +1,40 @@
+{
+  "method": "GET",
+  "path": "/admin/migration",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Admin/Migration",
+    "props": {
+      "authenticated": true,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "currentUser": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "snapshotadmin@example.com",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "roles": [
+          {
+            "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "description": "System administrator with full access",
+            "id": "\u003c\u003cID\u003e\u003e",
+            "is_admin": true,
+            "name": "admin",
+            "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "users": null
+          }
+        ],
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "snapshotadmin"
+      },
+      "errors": {},
+      "title": "Data Migration",
+      "userID": "\u003c\u003cID\u003e\u003e"
+    },
+    "url": "/admin/migration"
+  }
+}

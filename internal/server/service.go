@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -32,10 +31,10 @@ type Service struct {
 	crypto   *berthcrypto.Crypto
 	rbacSvc  accessChecker
 	agentSvc serverAgentClient
-	logger   *logging.Service
+	logger   *zap.Logger
 }
 
-func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *zap.Logger) *Service {
 	return &Service{
 		db:       db,
 		crypto:   crypto,

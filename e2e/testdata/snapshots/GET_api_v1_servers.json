@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "servers": []
+    },
+    "success": true
+  }
+}

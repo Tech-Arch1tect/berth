@@ -3,19 +3,19 @@ package handlers
 import (
 	"net/http"
 
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
 
 type SessionHandler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
-	sessionSvc session.SessionService
+	sessionSvc *session.Service
 }
 
-func NewSessionHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc session.SessionService) *SessionHandler {
+func NewSessionHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc *session.Service) *SessionHandler {
 	return &SessionHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,

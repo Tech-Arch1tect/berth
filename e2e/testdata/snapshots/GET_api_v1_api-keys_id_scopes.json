@@ -1,0 +1,12 @@
+{
+  "method": "GET",
+  "path": "/api/v1/api-keys/:id/scopes",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": [],
+    "success": true
+  }
+}

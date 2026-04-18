@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "path": "/api/v1/running-operations",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "operations": []
+    },
+    "success": true
+  }
+}

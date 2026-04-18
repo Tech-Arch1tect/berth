@@ -6,9 +6,8 @@ import (
 	"berth/internal/auth"
 	"berth/models"
 
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type APIKeyScopeChecker interface {
@@ -125,7 +124,7 @@ func (m *Middleware) RequirePermissionByName(permissionName string) echo.Middlew
 func (m *Middleware) RequireRoleJWT(roleName string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			user := jwtshared.GetCurrentUser(c)
+			user := auth.GetCurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "User not found in context",
@@ -160,7 +159,7 @@ func (m *Middleware) RequireRoleJWT(roleName string) echo.MiddlewareFunc {
 func (m *Middleware) RequirePermissionJWT(resource, action string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			user := jwtshared.GetCurrentUser(c)
+			user := auth.GetCurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "User not found in context",
@@ -195,7 +194,7 @@ func (m *Middleware) RequirePermissionJWT(resource, action string) echo.Middlewa
 func (m *Middleware) RequirePermissionByNameJWT(permissionName string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			user := jwtshared.GetCurrentUser(c)
+			user := auth.GetCurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "User not found in context",
@@ -243,7 +242,7 @@ func (m *Middleware) RequireAPIKeyDenied() echo.MiddlewareFunc {
 func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			user := jwtshared.GetCurrentUser(c)
+			user := auth.GetCurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "User not found in context",
@@ -312,7 +311,7 @@ func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc 
 func (m *Middleware) RequireUserScopeJWT(scopeName string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			user := jwtshared.GetCurrentUser(c)
+			user := auth.GetCurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "User not found in context",

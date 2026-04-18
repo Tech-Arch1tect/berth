@@ -3,16 +3,15 @@ package operations
 import (
 	"berth/models"
 	"fmt"
+	"go.uber.org/zap"
 	"strings"
-
-	"github.com/tech-arch1tect/brx/services/logging"
 )
 
 type SummaryParser struct {
-	logger *logging.Service
+	logger *zap.Logger
 }
 
-func NewSummaryParser(logger *logging.Service) *SummaryParser {
+func NewSummaryParser(logger *zap.Logger) *SummaryParser {
 	return &SummaryParser{
 		logger: logger,
 	}

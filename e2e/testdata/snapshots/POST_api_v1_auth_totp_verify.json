@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/api/v1/auth/totp/verify",
+  "status_code": 401,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "error": "invalid_token_type",
+    "message": "Invalid token for TOTP verification",
+    "success": false
+  }
+}

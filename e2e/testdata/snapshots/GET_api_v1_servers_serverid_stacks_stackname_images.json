@@ -1,0 +1,34 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/images",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "images": [
+        {
+          "container_name": "snap-stack-web-1",
+          "image_history": null,
+          "image_id": "sha256:abc123",
+          "image_info": {
+            "architecture": "",
+            "author": "",
+            "config": {},
+            "created": "",
+            "docker_version": "",
+            "os": "",
+            "rootfs": {
+              "type": ""
+            },
+            "size": 0,
+            "virtual_size": 0
+          },
+          "image_name": "nginx:latest"
+        }
+      ]
+    },
+    "success": true
+  }
+}

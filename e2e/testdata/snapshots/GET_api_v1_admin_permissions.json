@@ -1,0 +1,191 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/permissions",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "permissions": [
+        {
+          "action": "read",
+          "description": "View stacks and containers",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "stacks.read",
+          "resource": "stacks"
+        },
+        {
+          "action": "manage",
+          "description": "Start/stop/deploy/remove stacks",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "stacks.manage",
+          "resource": "stacks"
+        },
+        {
+          "action": "create",
+          "description": "Create new stacks",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "stacks.create",
+          "resource": "stacks"
+        },
+        {
+          "action": "read",
+          "description": "Read files within stacks",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "files.read",
+          "resource": "files"
+        },
+        {
+          "action": "write",
+          "description": "Modify files within stacks",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "files.write",
+          "resource": "files"
+        },
+        {
+          "action": "read",
+          "description": "View container logs",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "logs.read",
+          "resource": "logs"
+        },
+        {
+          "action": "maintenance.read",
+          "description": "View Docker usage statistics and system information (server-wide, not stack-specific)",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "docker.maintenance.read",
+          "resource": "docker"
+        },
+        {
+          "action": "maintenance.write",
+          "description": "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "docker.maintenance.write",
+          "resource": "docker"
+        },
+        {
+          "action": "manage",
+          "description": "Create, update, and delete registry credentials",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "registries.manage",
+          "resource": "registries"
+        },
+        {
+          "action": "read",
+          "description": "View users and their roles",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.users.read",
+          "resource": "admin.users"
+        },
+        {
+          "action": "write",
+          "description": "Create users, assign/revoke roles",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.users.write",
+          "resource": "admin.users"
+        },
+        {
+          "action": "read",
+          "description": "View roles and permissions",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.roles.read",
+          "resource": "admin.roles"
+        },
+        {
+          "action": "write",
+          "description": "Create/modify/delete roles and permissions",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.roles.write",
+          "resource": "admin.roles"
+        },
+        {
+          "action": "read",
+          "description": "List available permissions",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.permissions.read",
+          "resource": "admin.permissions"
+        },
+        {
+          "action": "read",
+          "description": "View server configurations",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.servers.read",
+          "resource": "admin.servers"
+        },
+        {
+          "action": "write",
+          "description": "Create/modify/delete servers",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.servers.write",
+          "resource": "admin.servers"
+        },
+        {
+          "action": "read",
+          "description": "View all operation logs",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.logs.read",
+          "resource": "admin.logs"
+        },
+        {
+          "action": "read",
+          "description": "View security audit logs",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.audit.read",
+          "resource": "admin.audit"
+        },
+        {
+          "action": "export",
+          "description": "Export system configuration",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.system.export",
+          "resource": "admin.system"
+        },
+        {
+          "action": "import",
+          "description": "Import system configuration",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "admin.system.import",
+          "resource": "admin.system"
+        },
+        {
+          "action": "read",
+          "description": "View accessible servers",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "servers.read",
+          "resource": "servers"
+        },
+        {
+          "action": "read",
+          "description": "View own operation logs",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "logs.operations.read",
+          "resource": "logs.operations"
+        }
+      ]
+    },
+    "success": true
+  }
+}

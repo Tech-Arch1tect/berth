@@ -11,14 +11,11 @@ import (
 	"berth/internal/security"
 	"berth/models"
 
+	"berth/internal/auth"
+	"berth/internal/auth/tokens"
+	"berth/internal/auth/totp"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/services/auth"
-	jwtservice "github.com/tech-arch1tect/brx/services/jwt"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/refreshtoken"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -29,26 +26,24 @@ type mobileAuthAuditLogger interface {
 }
 
 type MobileAuthHandler struct {
-	db              *gorm.DB
-	authSvc         *auth.Service
-	jwtSvc          *jwtservice.Service
-	refreshTokenSvc refreshtoken.RefreshTokenService
-	totpSvc         *totp.Service
-	sessionSvc      session.SessionService
-	logger          *logging.Service
-	auditSvc        mobileAuthAuditLogger
+	db         *gorm.DB
+	authSvc    *auth.Service
+	tokens     *tokens.Service
+	totpSvc    *totp.Service
+	sessionSvc *session.Service
+	logger     *zap.Logger
+	auditSvc   mobileAuthAuditLogger
 }
 
-func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, jwtSvc *jwtservice.Service, refreshTokenSvc refreshtoken.RefreshTokenService, totpSvc *totp.Service, sessionSvc session.SessionService, logger *logging.Service, auditSvc mobileAuthAuditLogger) *MobileAuthHandler {
+func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc mobileAuthAuditLogger) *MobileAuthHandler {
 	return &MobileAuthHandler{
-		db:              db,
-		authSvc:         authSvc,
-		jwtSvc:          jwtSvc,
-		refreshTokenSvc: refreshTokenSvc,
-		totpSvc:         totpSvc,
-		sessionSvc:      sessionSvc,
-		logger:          logger,
-		auditSvc:        auditSvc,
+		db:         db,
+		authSvc:    authSvc,
+		tokens:     tokensSvc,
+		totpSvc:    totpSvc,
+		sessionSvc: sessionSvc,
+		logger:     logger,
+		auditSvc:   auditSvc,
 	}
 }
 
@@ -134,7 +129,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 	}
 
 	if h.totpSvc.IsUserTOTPEnabled(user.ID) {
-		temporaryToken, err := h.jwtSvc.GenerateTOTPToken(user.ID)
+		temporaryToken, err := h.tokens.IssueTOTPPendingToken(user.ID)
 		if err != nil {
 			h.logger.Error("failed to generate TOTP token",
 				zap.Uint("user_id", user.ID),
@@ -163,7 +158,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 		})
 	}
 
-	accessToken, err := h.jwtSvc.GenerateToken(user.ID)
+	accessToken, err := h.tokens.IssueAccessToken(user.ID)
 	if err != nil {
 		h.logger.Error("failed to generate access token",
 			zap.Uint("user_id", user.ID),
@@ -176,13 +171,13 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 		})
 	}
 
-	sessionInfo := refreshtoken.TokenSessionInfo{
+	sessionInfo := tokens.SessionInfo{
 		IPAddress:  c.RealIP(),
 		UserAgent:  c.Request().UserAgent(),
 		DeviceInfo: session.GetDeviceInfo(c.Request().UserAgent()),
 	}
 
-	refreshTokenData, err := h.refreshTokenSvc.GenerateRefreshToken(user.ID, sessionInfo)
+	refreshTokenData, err := h.tokens.IssueRefresh(user.ID, sessionInfo)
 	if err != nil {
 		h.logger.Error("failed to generate refresh token",
 			zap.Uint("user_id", user.ID),
@@ -230,7 +225,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 			AccessToken:      accessToken,
 			RefreshToken:     refreshTokenData.Token,
 			TokenType:        "Bearer",
-			ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
+			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
 			RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
 			User:             userInfo,
 		},
@@ -255,16 +250,16 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		})
 	}
 
-	oldToken, validateErr := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+	oldToken, validateErr := h.tokens.ValidateRefresh(req.RefreshToken)
 	if validateErr != nil {
 		switch validateErr {
-		case refreshtoken.ErrRefreshTokenExpired:
+		case tokens.ErrRefreshExpired:
 			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Success: false,
 				Error:   "expired_token",
 				Message: "Refresh token has expired",
 			})
-		case refreshtoken.ErrRefreshTokenNotFound, refreshtoken.ErrRefreshTokenInvalid:
+		case tokens.ErrRefreshNotFound, tokens.ErrRefreshInvalid:
 			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 				Success: false,
 				Error:   "invalid_token",
@@ -280,7 +275,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	result, err := h.refreshTokenSvc.ValidateAndRotateRefreshToken(req.RefreshToken, h.jwtSvc)
+	result, err := h.tokens.RotateRefresh(req.RefreshToken)
 	if err != nil {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
@@ -291,7 +286,7 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 	}
 
 	if h.sessionSvc != nil {
-		accessJTI, _ := h.jwtSvc.ExtractJTI(result.AccessToken)
+		accessJTI, _ := h.tokens.ExtractJTI(result.AccessToken)
 		err = h.sessionSvc.UpdateJWTSessionWithRefreshToken(result.OldTokenID, accessJTI, result.RefreshTokenID, result.ExpiresAt)
 		if err != nil {
 			h.logger.Warn("failed to update JWT session after token refresh",
@@ -322,14 +317,14 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 			AccessToken:      result.AccessToken,
 			RefreshToken:     result.RefreshToken,
 			TokenType:        "Bearer",
-			ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
+			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
 			RefreshExpiresIn: int(time.Until(result.ExpiresAt).Seconds()),
 		},
 	})
 }
 
 func (h *MobileAuthHandler) Profile(c echo.Context) error {
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -391,12 +386,12 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 	if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
 		accessToken := authHeader[7:]
 
-		accessJTI, err := h.jwtSvc.ExtractJTI(accessToken)
+		accessJTI, err := h.tokens.ExtractJTI(accessToken)
 		if err != nil {
 			h.logger.Warn("failed to extract JTI from access token during logout",
 				zap.Error(err))
 		} else {
-			if err := h.jwtSvc.RevokeToken(accessJTI, time.Now().Add(24*time.Hour)); err != nil {
+			if err := h.tokens.RevokeToken(accessJTI, time.Now().Add(24*time.Hour)); err != nil {
 				h.logger.Warn("failed to revoke access token JTI during logout",
 					zap.String("jti", accessJTI),
 					zap.Error(err))
@@ -406,7 +401,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		}
 
 		if h.sessionSvc != nil {
-			refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+			refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
 			if err == nil {
 				sessionToken := h.generateSessionTokenFromID(refreshToken.ID)
 				_ = h.sessionSvc.RemoveSessionByToken(sessionToken)
@@ -414,7 +409,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		}
 	}
 
-	if err := h.refreshTokenSvc.RevokeRefreshToken(req.RefreshToken); err != nil {
+	if err := h.tokens.RevokeRefresh(req.RefreshToken); err != nil {
 		h.logger.Warn("failed to revoke refresh token during logout",
 			zap.Error(err))
 	} else {
@@ -430,7 +425,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		})
 	}
 
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user != nil {
 		if userModel, ok := user.(models.User); ok {
 			_ = h.auditSvc.LogAPIEvent(
@@ -487,7 +482,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	tokenString := authHeader[7:]
-	claims, err := h.jwtSvc.ValidateToken(tokenString)
+	claims, err := h.tokens.ValidateAccess(tokenString)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -552,7 +547,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		})
 	}
 
-	accessToken, err := h.jwtSvc.GenerateToken(claims.UserID)
+	accessToken, err := h.tokens.IssueAccessToken(claims.UserID)
 	if err != nil {
 		h.logger.Error("failed to generate access token after TOTP verification",
 			zap.Uint("user_id", claims.UserID),
@@ -565,13 +560,13 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 		})
 	}
 
-	sessionInfo := refreshtoken.TokenSessionInfo{
+	sessionInfo := tokens.SessionInfo{
 		IPAddress:  c.RealIP(),
 		UserAgent:  c.Request().UserAgent(),
 		DeviceInfo: session.GetDeviceInfo(c.Request().UserAgent()),
 	}
 
-	refreshTokenData, err := h.refreshTokenSvc.GenerateRefreshToken(claims.UserID, sessionInfo)
+	refreshTokenData, err := h.tokens.IssueRefresh(claims.UserID, sessionInfo)
 	if err != nil {
 		h.logger.Error("failed to generate refresh token after TOTP verification",
 			zap.Uint("user_id", claims.UserID),
@@ -618,7 +613,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 			AccessToken:      accessToken,
 			RefreshToken:     refreshTokenData.Token,
 			TokenType:        "Bearer",
-			ExpiresIn:        h.jwtSvc.GetAccessExpirySeconds(),
+			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
 			RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
 			User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
 		},
@@ -626,7 +621,7 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -661,7 +656,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 		})
 	}
 
-	var secret *totp.TOTPSecret
+	var secret *models.TOTPSecret
 	if existing != nil {
 		secret = existing
 	} else {
@@ -694,7 +689,7 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -768,7 +763,7 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -851,7 +846,7 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 }
 
 func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -888,7 +883,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -923,7 +918,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+	refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -986,7 +981,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -1061,7 +1056,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		})
 	}
 
-	user := jwtshared.GetCurrentUser(c)
+	user := auth.GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -1119,7 +1114,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 			})
 		}
 
-		refreshToken, err := h.refreshTokenSvc.ValidateRefreshToken(req.RefreshToken)
+		refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 				Success: false,
@@ -1163,7 +1158,7 @@ func (h *MobileAuthHandler) generateSessionTokenFromID(refreshTokenID uint) stri
 	return hex.EncodeToString(hash[:])
 }
 
-func (h *MobileAuthHandler) trackJWTSession(c echo.Context, userID uint, accessToken string, refreshTokenData *refreshtoken.RefreshTokenData) {
+func (h *MobileAuthHandler) trackJWTSession(c echo.Context, userID uint, accessToken string, refreshTokenData *tokens.RefreshTokenData) {
 	if h.sessionSvc == nil {
 		return
 	}
@@ -1171,7 +1166,7 @@ func (h *MobileAuthHandler) trackJWTSession(c echo.Context, userID uint, accessT
 	ipAddress := c.RealIP()
 	userAgent := c.Request().UserAgent()
 
-	accessJTI, _ := h.jwtSvc.ExtractJTI(accessToken)
+	accessJTI, _ := h.tokens.ExtractJTI(accessToken)
 	err := h.sessionSvc.TrackJWTSessionWithRefreshToken(userID, accessJTI, refreshTokenData.TokenID, ipAddress, userAgent, refreshTokenData.ExpiresAt)
 	if err != nil {
 		h.logger.Warn("failed to track JWT session",

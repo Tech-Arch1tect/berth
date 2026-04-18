@@ -1,0 +1,25 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "stacks": [
+        {
+          "compose_file": "docker-compose.yml",
+          "is_healthy": true,
+          "name": "snap-stack",
+          "path": "/opt/snap-stack",
+          "running_containers": 1,
+          "server_id": 1,
+          "server_name": "snap-server-api",
+          "total_containers": 1
+        }
+      ]
+    },
+    "success": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "method": "DELETE",
+  "path": "/api/v1/api-keys/:id/scopes/:scopeId",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "Scope removed successfully"
+    },
+    "success": true
+  }
+}

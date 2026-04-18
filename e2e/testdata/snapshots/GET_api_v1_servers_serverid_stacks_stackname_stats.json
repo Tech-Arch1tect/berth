@@ -1,0 +1,39 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/stats",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "containers": [
+        {
+          "block_read_bytes": 0,
+          "block_read_ops": 0,
+          "block_write_bytes": 0,
+          "block_write_ops": 0,
+          "cpu_percent": 2.5,
+          "cpu_system_time": 0,
+          "cpu_user_time": 0,
+          "memory_cache": 0,
+          "memory_limit": 0,
+          "memory_percent": 0,
+          "memory_rss": 0,
+          "memory_swap": 0,
+          "memory_usage": 52428800,
+          "name": "snap-stack-web-1",
+          "network_rx_bytes": 0,
+          "network_rx_packets": 0,
+          "network_tx_bytes": 0,
+          "network_tx_packets": 0,
+          "page_faults": 0,
+          "page_major_faults": 0,
+          "service_name": ""
+        }
+      ],
+      "stack_name": "snap-stack"
+    },
+    "success": true
+  }
+}

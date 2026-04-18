@@ -19,11 +19,11 @@ import (
 	"berth/internal/stack"
 	"berth/internal/vulnscan"
 
+	"berth/internal/apidocs"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/openapi"
 )
 
-func RegisterOpenAPIEndpoints(e *echo.Echo, apiDoc *openapi.OpenAPI, cfg *config.BerthConfig) {
+func RegisterOpenAPIEndpoints(e *echo.Echo, apiDoc *apidocs.OpenAPI, cfg *config.Config) {
 	if apiDoc == nil || !cfg.Custom.OpenAPIEnabled {
 		return
 	}
@@ -33,7 +33,7 @@ func RegisterOpenAPIEndpoints(e *echo.Echo, apiDoc *openapi.OpenAPI, cfg *config
 	e.GET("/docs", apiDoc.SwaggerUIHandler("/openapi.json"))
 }
 
-func RegisterAPIDocs(apiDoc *openapi.OpenAPI) {
+func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	if apiDoc == nil {
 		return
 	}

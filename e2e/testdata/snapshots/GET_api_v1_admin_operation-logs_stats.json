@@ -1,0 +1,18 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/operation-logs/stats",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "failed_operations": 0,
+      "incomplete_operations": 0,
+      "recent_operations": 0,
+      "successful_operations": 0,
+      "total_operations": 0
+    },
+    "success": true
+  }
+}

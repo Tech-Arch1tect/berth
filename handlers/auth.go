@@ -10,12 +10,11 @@ import (
 	"berth/internal/security"
 	"berth/models"
 
+	"berth/internal/auth"
+	"berth/internal/auth/totp"
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/logging"
-	"github.com/tech-arch1tect/brx/services/totp"
-	"github.com/tech-arch1tect/brx/session"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -78,11 +77,11 @@ type AuthHandler struct {
 	inertiaSvc *inertia.Service
 	authSvc    *auth.Service
 	totpSvc    *totp.Service
-	logger     *logging.Service
+	logger     *zap.Logger
 	auditSvc   authAuditLogger
 }
 
-func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *logging.Service, auditSvc authAuditLogger) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc authAuditLogger) *AuthHandler {
 	return &AuthHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
@@ -575,6 +574,11 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
+	if !h.authSvc.IsEmailVerificationRequired() {
+		session.AddFlashInfo(c, "If an account with that email exists, a verification email will be sent.")
+		return c.Redirect(http.StatusFound, "/auth/login")
+	}
+
 	var user models.User
 	if err := h.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -582,11 +586,6 @@ func (h *AuthHandler) ResendVerification(c echo.Context) error {
 			return c.Redirect(http.StatusFound, "/auth/login")
 		}
 		session.AddFlashError(c, "Something went wrong. Please try again.")
-		return c.Redirect(http.StatusFound, "/auth/login")
-	}
-
-	if !h.authSvc.IsEmailVerificationRequired() {
-		session.AddFlashError(c, "Email verification is currently disabled")
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 

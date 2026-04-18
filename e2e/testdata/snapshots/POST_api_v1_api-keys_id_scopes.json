@@ -1,0 +1,14 @@
+{
+  "method": "POST",
+  "path": "/api/v1/api-keys/:id/scopes",
+  "status_code": 201,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "Scope added successfully"
+    },
+    "success": true
+  }
+}

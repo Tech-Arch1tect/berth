@@ -1,0 +1,17 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/maintenance/permissions",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "maintenance": {
+        "read": true,
+        "write": true
+      }
+    },
+    "success": true
+  }
+}

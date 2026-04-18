@@ -5,10 +5,10 @@ import (
 	"berth/internal/security"
 	"berth/models"
 
+	"berth/internal/auth"
+	"berth/internal/auth/totp"
+	"berth/internal/inertia"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/services/totp"
 	"gorm.io/gorm"
 )
 

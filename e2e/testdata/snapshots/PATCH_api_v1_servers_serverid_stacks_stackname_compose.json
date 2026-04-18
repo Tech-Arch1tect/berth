@@ -1,0 +1,11 @@
+{
+  "method": "PATCH",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/compose",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "success": false
+  }
+}

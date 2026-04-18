@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -34,10 +33,10 @@ type Service struct {
 	serverSvc vulnscanServerProvider
 	agentSvc  vulnscanAgentClient
 	rbacSvc   vulnscanPermissionChecker
-	logger    *logging.Service
+	logger    *zap.Logger
 }
 
-func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, rbacSvc vulnscanPermissionChecker, logger *logging.Service) *Service {
+func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, rbacSvc vulnscanPermissionChecker, logger *zap.Logger) *Service {
 	return &Service{
 		db:        db,
 		serverSvc: serverSvc,

@@ -1,0 +1,29 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/security-audit-logs/stats",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "events_by_category": {
+        "api": 2
+      },
+      "events_by_severity": {
+        "low": 2
+      },
+      "events_last_24_hours": 2,
+      "events_last_7_days": 2,
+      "failed_events": 0,
+      "recent_event_types": [
+        {
+          "count": 2,
+          "event_type": "api.token.issued"
+        }
+      ],
+      "total_events": 2
+    },
+    "success": true
+  }
+}

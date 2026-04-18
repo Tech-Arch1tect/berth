@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/api/v1/totp/enable",
+  "status_code": 400,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "error": "validation_error",
+    "message": "TOTP code is required",
+    "success": false
+  }
+}

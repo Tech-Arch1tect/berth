@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -46,10 +45,10 @@ type Service struct {
 	auditSvc    *AuditService
 	registrySvc opsRegistryProvider
 	filesSvc    opsFileReader
-	logger      *logging.Service
+	logger      *zap.Logger
 }
 
-func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *logging.Service) *Service {
+func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
 	return &Service{
 		serverSvc:   serverSvc,
 		rbacSvc:     rbacSvc,

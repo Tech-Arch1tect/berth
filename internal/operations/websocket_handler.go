@@ -11,17 +11,16 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
 type WebSocketHandler struct {
 	service  *Service
 	upgrader websocket.Upgrader
-	logger   *logging.Service
+	logger   *zap.Logger
 }
 
-func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc, logger *logging.Service) *WebSocketHandler {
+func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc, logger *zap.Logger) *WebSocketHandler {
 	return &WebSocketHandler{
 		service: service,
 		logger:  logger,

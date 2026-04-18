@@ -1,0 +1,12 @@
+{
+  "method": "POST",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/files/copy",
+  "status_code": 400,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "code": 400,
+    "error": "sourcePath and targetPath are required"
+  }
+}

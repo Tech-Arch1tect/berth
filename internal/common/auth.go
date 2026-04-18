@@ -4,14 +4,13 @@ import (
 	"berth/models"
 	"net/http"
 
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/middleware/jwtshared"
-	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
 
 func GetCurrentUserID(c echo.Context) (uint, error) {
-	if currentUser := jwtshared.GetCurrentUser(c); currentUser != nil {
+	if currentUser := c.Get("currentUser"); currentUser != nil {
 		if userModel, ok := currentUser.(models.User); ok {
 			return userModel.ID, nil
 		}
@@ -25,7 +24,7 @@ func GetCurrentUserID(c echo.Context) (uint, error) {
 }
 
 func GetCurrentUser(c echo.Context, db *gorm.DB) (*models.User, error) {
-	if currentUser := jwtshared.GetCurrentUser(c); currentUser != nil {
+	if currentUser := c.Get("currentUser"); currentUser != nil {
 		if userModel, ok := currentUser.(models.User); ok {
 			return &userModel, nil
 		}

@@ -6,17 +6,16 @@ import (
 
 	"berth/models"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type AuditService struct {
 	db     *gorm.DB
-	logger *logging.Service
+	logger *zap.Logger
 }
 
-func NewAuditService(db *gorm.DB, logger *logging.Service) *AuditService {
+func NewAuditService(db *gorm.DB, logger *zap.Logger) *AuditService {
 	return &AuditService{
 		db:     db,
 		logger: logger,

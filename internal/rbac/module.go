@@ -3,8 +3,8 @@ package rbac
 import (
 	"berth/internal/security"
 
-	"github.com/tech-arch1tect/brx/services/auth"
-	"github.com/tech-arch1tect/brx/services/totp"
+	"berth/internal/auth"
+	"berth/internal/auth/totp"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )

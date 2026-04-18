@@ -5,8 +5,8 @@ import (
 	"berth/internal/security"
 	"berth/models"
 
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/session"
 	"gorm.io/gorm"
 )
 

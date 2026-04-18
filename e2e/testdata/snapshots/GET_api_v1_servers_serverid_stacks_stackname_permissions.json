@@ -1,0 +1,21 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/permissions",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "permissions": [
+        "stacks.read",
+        "stacks.manage",
+        "stacks.create",
+        "files.read",
+        "files.write",
+        "logs.read"
+      ]
+    },
+    "success": true
+  }
+}

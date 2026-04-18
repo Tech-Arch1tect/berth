@@ -9,7 +9,6 @@ import (
 
 	"berth/models"
 	"github.com/gorilla/websocket"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -21,17 +20,17 @@ type AgentClient struct {
 	stop      chan bool
 	connected bool
 	mutex     sync.RWMutex
-	logger    *logging.Service
+	logger    *zap.Logger
 }
 
 type AgentManager struct {
 	clients map[uint]*AgentClient
 	hub     *Hub
 	mutex   sync.RWMutex
-	logger  *logging.Service
+	logger  *zap.Logger
 }
 
-func NewAgentManager(hub *Hub, logger *logging.Service) *AgentManager {
+func NewAgentManager(hub *Hub, logger *zap.Logger) *AgentManager {
 	return &AgentManager{
 		clients: make(map[uint]*AgentClient),
 		hub:     hub,

@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/zap"
 )
 
@@ -26,7 +25,7 @@ type Hub struct {
 	subscriptionMgr   *SubscriptionManager
 	mutex             sync.RWMutex
 	permissionChecker PermissionChecker
-	logger            *logging.Service
+	logger            *zap.Logger
 	upgrader          websocket.Upgrader
 }
 
@@ -44,7 +43,7 @@ type PermissionChecker interface {
 	HasStackPermission(ctx context.Context, userID int, serverID int, stackname string, permission string) bool
 }
 
-func NewHub(permissionChecker PermissionChecker, logger *logging.Service, checkOrigin common.CheckOriginFunc) *Hub {
+func NewHub(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin common.CheckOriginFunc) *Hub {
 	return &Hub{
 		register:          make(chan *UserConnection),
 		unregister:        make(chan *UserConnection),

@@ -6,10 +6,10 @@ import (
 	"berth/internal/common"
 	"berth/internal/rbac"
 
+	"berth/internal/inertia"
+	"berth/internal/session"
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v2"
-	"github.com/tech-arch1tect/brx/services/inertia"
-	"github.com/tech-arch1tect/brx/session"
 )
 
 type Handler struct {

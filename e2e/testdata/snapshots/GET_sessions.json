@@ -1,0 +1,48 @@
+{
+  "method": "GET",
+  "path": "/sessions",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Sessions/Index",
+    "props": {
+      "authenticated": true,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "currentUser": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "test@example.com",
+        "email_verified_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "testuser"
+      },
+      "errors": {},
+      "sessions": [
+        {
+          "bot": false,
+          "browser": "Go-http-client 1.1",
+          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "current": true,
+          "desktop": true,
+          "device": "Desktop Computer",
+          "device_type": "Desktop",
+          "expires_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "ip_address": "127.0.0.1",
+          "last_used": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "location": "Local",
+          "mobile": false,
+          "os": "Unknown OS",
+          "tablet": false,
+          "type": "web"
+        }
+      ],
+      "userID": "\u003c\u003cID\u003e\u003e"
+    },
+    "url": "/sessions"
+  }
+}

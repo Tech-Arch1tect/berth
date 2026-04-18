@@ -1,0 +1,12 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/maintenance/info",
+  "status_code": 500,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "code": 500,
+    "error": "agent returned status 404: not found\n"
+  }
+}

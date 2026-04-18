@@ -1,0 +1,48 @@
+{
+  "method": "GET",
+  "path": "/api/v1/admin/users/:id/roles",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "all_roles": [
+        {
+          "description": "System administrator with full access",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "admin"
+        },
+        {
+          "description": "Standard user with basic permissions",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "user"
+        },
+        {
+          "description": "Developer with full server access",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "developer"
+        },
+        {
+          "description": "Read-only access to servers",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_admin": false,
+          "name": "viewer"
+        }
+      ],
+      "user": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "snapnormalapi@example.com",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "totp_enabled": false,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "snapnormalapi"
+      }
+    },
+    "success": true
+  }
+}

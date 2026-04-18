@@ -1,0 +1,14 @@
+{
+  "method": "POST",
+  "path": "/api/v1/admin/users/revoke-role",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "message": "Role revoked successfully"
+    },
+    "success": true
+  }
+}

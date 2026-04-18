@@ -1,14 +1,14 @@
 package agent
 
 import (
-	berthconfig "berth/internal/config"
+	"berth/internal/config"
 
-	"github.com/tech-arch1tect/brx/services/logging"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 var Module = fx.Options(
-	fx.Provide(func(logger *logging.Service, cfg *berthconfig.BerthConfig) *Service {
+	fx.Provide(func(logger *zap.Logger, cfg *config.Config) *Service {
 		return NewService(logger, cfg.Custom.OperationTimeoutSeconds)
 	}),
 )

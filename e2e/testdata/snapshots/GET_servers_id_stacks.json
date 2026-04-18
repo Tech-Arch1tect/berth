@@ -1,0 +1,62 @@
+{
+  "method": "GET",
+  "path": "/servers/:id/stacks",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "text/html"
+  },
+  "body": {
+    "component": "Servers/Stacks",
+    "props": {
+      "authenticated": true,
+      "csrfToken": "\u003c\u003cTOKEN\u003e\u003e",
+      "currentUser": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "email": "snapwebparam@example.com",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "last_login_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "roles": [
+          {
+            "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "description": "System administrator with full access",
+            "id": "\u003c\u003cID\u003e\u003e",
+            "is_admin": true,
+            "name": "admin",
+            "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+            "users": null
+          }
+        ],
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "username": "snapwebparam"
+      },
+      "errors": {},
+      "flashMessages": [
+        {
+          "message": "Login successful!",
+          "type": "success"
+        },
+        {
+          "message": "Welcome back! Your last login was recorded.",
+          "type": "info"
+        }
+      ],
+      "server": {
+        "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+        "description": "",
+        "host": "127.0.0.1",
+        "id": "\u003c\u003cID\u003e\u003e",
+        "is_active": true,
+        "name": "snap-web-server",
+        "port": "\u003c\u003cPORT\u003e\u003e",
+        "skip_ssl_verification": true,
+        "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
+      },
+      "serverid": 1,
+      "title": "snap-web-server - Stacks",
+      "userID": "\u003c\u003cID\u003e\u003e"
+    },
+    "url": "/servers/1/stacks"
+  }
+}

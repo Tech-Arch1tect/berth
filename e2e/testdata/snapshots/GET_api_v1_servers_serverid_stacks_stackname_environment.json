@@ -1,0 +1,29 @@
+{
+  "method": "GET",
+  "path": "/api/v1/servers/:serverid/stacks/:stackname/environment",
+  "status_code": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "data": {
+      "services": {
+        "web": [
+          {
+            "service_name": "web",
+            "variables": [
+              {
+                "is_from_container": false,
+                "is_sensitive": false,
+                "key": "NODE_ENV",
+                "source": "",
+                "value": "production"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "success": true
+  }
+}

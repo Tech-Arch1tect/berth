@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/api/v1/auth/login_error",
+  "status_code": 401,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "error": "invalid_credentials",
+    "message": "Invalid username or password",
+    "success": false
+  }
+}
