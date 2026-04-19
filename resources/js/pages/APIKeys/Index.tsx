@@ -52,19 +52,15 @@ export default function APIKeysIndex() {
     expires_at: '',
   });
 
-  const { data: apiKeysResponse, isLoading: loading } = useGetApiV1ApiKeys({
-    query: {
-      select: (response) => response.data,
-    },
-  });
+  const { data: apiKeysResponse, isLoading: loading } = useGetApiV1ApiKeys();
   const apiKeys = apiKeysResponse?.data ?? [];
 
   const createMutation = usePostApiV1ApiKeys({
     mutation: {
       onSuccess: (response) => {
         setNewKeyData({
-          key: response.data.data.plain_key,
-          name: response.data.data.api_key.name,
+          key: response.data.plain_key,
+          name: response.data.api_key.name,
         });
         setShowCreateModal(false);
         reset();

@@ -9,18 +9,16 @@ import type { Stack, StackDetails, ServerInfo } from '../api/generated/models';
 export class AgentUpdateService {
   static async getServers(): Promise<ServerInfo[]> {
     const response = await getApiV1AdminServers();
-
-    return response.data.data.servers || [];
+    return response.data?.servers || [];
   }
 
   static async getServerStacks(serverId: number): Promise<Stack[]> {
     const response = await getApiV1ServersServeridStacks(serverId);
-    return response.data.data?.stacks || [];
+    return response.data?.stacks || [];
   }
 
   static async getStackDetails(serverId: number, stackName: string): Promise<StackDetails> {
-    const response = await getApiV1ServersServeridStacksStackname(serverId, stackName);
-    return response.data;
+    return await getApiV1ServersServeridStacksStackname(serverId, stackName);
   }
 
   static async updateComposeImages(
@@ -35,6 +33,6 @@ export class AgentUpdateService {
 
   static async testServerConnection(serverId: number): Promise<boolean> {
     const response = await postApiV1AdminServersIdTest(serverId);
-    return response.data.success === true;
+    return response.success === true;
   }
 }

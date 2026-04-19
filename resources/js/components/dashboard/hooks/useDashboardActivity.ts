@@ -30,8 +30,8 @@ export const useDashboardActivity = (): ActivitySummary => {
     days_back: 7,
   });
 
-  const recentOperations = recentResponse?.data?.data?.data ?? [];
-  const failedOperations = failedResponse?.data?.data?.data ?? [];
+  const recentOperations = recentResponse?.data?.data ?? [];
+  const failedOperations = failedResponse?.data?.data ?? [];
   const loading = recentLoading || failedLoading;
   const error = recentError || failedError ? 'Failed to load activity data' : null;
 

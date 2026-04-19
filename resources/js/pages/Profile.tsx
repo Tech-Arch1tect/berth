@@ -23,7 +23,7 @@ export default function Profile({ title }: ProfileProps) {
     isLoading: totpLoading,
     refetch: refetchTotpStatus,
   } = useGetApiV1TotpStatus();
-  const totpEnabled = totpStatusResponse?.data?.data?.enabled ?? null;
+  const totpEnabled = totpStatusResponse?.data?.enabled ?? null;
 
   const disableMutation = usePostApiV1TotpDisable();
 

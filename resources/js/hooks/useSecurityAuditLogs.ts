@@ -80,21 +80,21 @@ export function useSecurityAuditLogs({
     },
   });
 
-  const logs = logsResponse?.data?.data?.logs ?? [];
-  const stats = statsResponse?.data?.data ?? null;
+  const logs = logsResponse?.data?.logs ?? [];
+  const stats = statsResponse?.data ?? null;
 
-  const paginationMetadata: PaginationMetadata | null = logsResponse?.data?.data
+  const paginationMetadata: PaginationMetadata | null = logsResponse?.data
     ? {
-        total: logsResponse.data.data.total,
-        totalPages: logsResponse.data.data.total_pages,
-        currentPage: logsResponse.data.data.page,
+        total: logsResponse.data.total,
+        totalPages: logsResponse.data.total_pages,
+        currentPage: logsResponse.data.page,
       }
     : null;
 
   const fetchLogDetails = useCallback(async (id: number): Promise<SecurityAuditLogInfo | null> => {
     try {
       const response = await getApiV1AdminSecurityAuditLogsId(id);
-      const logData = response.data?.data;
+      const logData = response.data;
       if (logData) {
         setSelectedLog(logData as SecurityAuditLogInfo);
         return logData as SecurityAuditLogInfo;

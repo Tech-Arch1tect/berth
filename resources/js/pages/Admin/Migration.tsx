@@ -34,7 +34,7 @@ export default function Migration({ title }: Props) {
   const exportMutation = usePostApiV1AdminMigrationExport({
     mutation: {
       onSuccess: (response) => {
-        const blob = response.data;
+        const blob = response;
         const filename = `berth-backup-${Date.now()}.json`;
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -60,7 +60,7 @@ export default function Migration({ title }: Props) {
   const importMutation = usePostApiV1AdminMigrationImport({
     mutation: {
       onSuccess: (response) => {
-        setImportResult(response.data.data);
+        setImportResult(response.data);
         setImportPassword('');
         setBackupFile(null);
         setShowEncryptionSecret(true);

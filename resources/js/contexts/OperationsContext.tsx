@@ -155,7 +155,7 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchRunningOperations = useCallback(async () => {
     try {
       const response = await getApiV1RunningOperations();
-      const operations = response.data?.data?.operations ?? [];
+      const operations = response.data?.operations ?? [];
 
       setOperationStates((prev) => {
         const newMap = new Map(prev);

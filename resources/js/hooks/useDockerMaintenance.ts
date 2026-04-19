@@ -13,7 +13,6 @@ export const useMaintenanceInfo = (serverid: number, enabled: boolean = true) =>
       enabled: enabled && serverid > 0,
       refetchInterval: 30000,
       staleTime: 25000,
-      select: (response) => response.data,
     },
   });
 };
@@ -36,8 +35,7 @@ export const useDockerPrune = () => {
     mutate: ({ serverid, request }: { serverid: number; request: PruneRequest }) =>
       mutation.mutate({ serverid, data: request }),
     mutateAsync: async ({ serverid, request }: { serverid: number; request: PruneRequest }) => {
-      const response = await mutation.mutateAsync({ serverid, data: request });
-      return response.data;
+      return await mutation.mutateAsync({ serverid, data: request });
     },
   };
 };
@@ -60,8 +58,7 @@ export const useDeleteResource = () => {
     mutate: ({ serverid, request }: { serverid: number; request: DeleteRequest }) =>
       mutation.mutate({ serverid, data: request }),
     mutateAsync: async ({ serverid, request }: { serverid: number; request: DeleteRequest }) => {
-      const response = await mutation.mutateAsync({ serverid, data: request });
-      return response.data;
+      return await mutation.mutateAsync({ serverid, data: request });
     },
   };
 };

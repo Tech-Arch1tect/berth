@@ -48,7 +48,7 @@ export default function Layout({ children }: LayoutProps) {
   const terminalPanel = useTerminalPanel();
 
   const { data: versionResponse } = useGetApiV1Version();
-  const appVersion = versionResponse?.data?.data?.version ?? 'dev';
+  const appVersion = versionResponse?.data?.version ?? 'dev';
 
   useEffect(() => {
     setCsrfToken(csrfToken);

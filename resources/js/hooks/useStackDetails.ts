@@ -15,10 +15,9 @@ export const useStackDetails = ({ serverid, stackname }: UseStackDetailsParams) 
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       select: (response) => {
-        const data = response.data;
-        if (data?.services) {
-          data.services.sort((a, b) => a.name.localeCompare(b.name));
-          data.services.forEach((service) => {
+        if (response?.services) {
+          response.services.sort((a, b) => a.name.localeCompare(b.name));
+          response.services.forEach((service) => {
             if (service.containers) {
               service.containers.sort((a, b) => a.name.localeCompare(b.name));
             }
@@ -32,7 +31,7 @@ export const useStackDetails = ({ serverid, stackname }: UseStackDetailsParams) 
   return {
     ...query,
 
-    data: query.data?.data,
+    data: query.data,
 
     error: query.error ? new Error(String(query.error)) : null,
   };

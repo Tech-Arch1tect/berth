@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { isApiError } from '../lib/api';
 import {
   getApiV1ServersServeridStacksStacknameFiles,
   getApiV1ServersServeridStacksStacknameFilesRead,
@@ -38,8 +39,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
   const handleError = useCallback(
     (error: unknown) => {
       const message =
-        (error as { response?: { data?: { error?: string } }; message?: string })?.response?.data
-          ?.error ||
+        (isApiError<{ error?: string }>(error) ? error.data?.error : undefined) ||
         (error as { message?: string })?.message ||
         'An unknown error occurred';
       if (onError) {
@@ -59,7 +59,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           path ? { filePath: path } : undefined
         );
-        return response.data.data;
+        return response.data;
       } catch (error) {
         handleError(error);
         throw error;
@@ -79,7 +79,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           { filePath: path }
         );
-        return response.data.data;
+        return response.data;
       } catch (error) {
         handleError(error);
         throw error;
@@ -181,13 +181,12 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
     async (path: string, filename?: string): Promise<void> => {
       try {
         setLoading(true);
-        const response = await getApiV1ServersServeridStacksStacknameFilesDownload(
+        const blob = await getApiV1ServersServeridStacksStacknameFilesDownload(
           serverid,
           stackname,
           { filePath: path, filename }
         );
 
-        const blob = new Blob([response.data]);
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -242,7 +241,7 @@ export const useFiles = ({ serverid, stackname, onError }: UseFilesOptions) => {
           stackname,
           path ? { filePath: path } : undefined
         );
-        return response.data.data;
+        return response.data;
       } catch (error) {
         handleError(error);
         throw error;

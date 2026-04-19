@@ -97,21 +97,11 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers({
-    query: {
-      select: (response) => response.data,
-    },
-  });
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
   const servers = serversResponse?.data?.servers ?? [];
 
-  const { data: scopesResponse, isLoading: scopesLoading } = useGetApiV1ApiKeysIdScopes(
-    apiKeyIdNum,
-    {
-      query: {
-        select: (response) => response.data,
-      },
-    }
-  );
+  const { data: scopesResponse, isLoading: scopesLoading } =
+    useGetApiV1ApiKeysIdScopes(apiKeyIdNum);
   const scopes = scopesResponse?.data ?? [];
 
   const {

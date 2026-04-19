@@ -60,7 +60,6 @@ export function useDirectoryQuery(
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         retry: 1,
-        select: (response) => response.data,
       },
     }
   );
@@ -84,7 +83,6 @@ export function useFileContentQuery(
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         retry: 1,
-        select: (response) => response.data,
       },
     }
   );
