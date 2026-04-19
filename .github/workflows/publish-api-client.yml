@@ -61,7 +61,6 @@ jobs:
             },
             "license": "MIT",
             "peerDependencies": {
-              "axios": ">=1.0.0",
               "@tanstack/react-query": ">=5.0.0"
             },
             "peerDependenciesMeta": {
