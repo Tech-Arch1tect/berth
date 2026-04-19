@@ -10,7 +10,7 @@ export default defineConfig({
       target: './resources/js/api/generated',
       schemas: './resources/js/api/generated/models',
       client: 'react-query',
-      httpClient: 'axios',
+      httpClient: 'fetch',
       override: {
         mutator: {
           path: './resources/js/lib/api.ts',
@@ -19,6 +19,9 @@ export default defineConfig({
         query: {
           useQuery: true,
           useMutation: true,
+        },
+        fetch: {
+          includeHttpResponseReturnType: false,
         },
       },
     },

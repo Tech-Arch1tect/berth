@@ -27,23 +27,52 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Returns logs for a specific container in a stack
  * @summary Get container logs
  */
-export const getApiV1ServersServeridStacksStacknameContainersContainerNameLogs = (
+export const getGetApiV1ServersServeridStacksStacknameContainersContainerNameLogsUrl = (
+  serverid: number,
+  stackname: string,
+  containerName: string,
+  params?: GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/containers/${containerName}/logs?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/containers/${containerName}/logs`;
+};
+
+export const getApiV1ServersServeridStacksStacknameContainersContainerNameLogs = async (
   serverid: number,
   stackname: string,
   containerName: string,
   params?: GetApiV1ServersServeridStacksStacknameContainersContainerNameLogsParams,
-  signal?: AbortSignal
-) => {
-  return apiClient<LogsResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/containers/${containerName}/logs`,
-    method: 'GET',
-    params,
-    signal,
-  });
+  options?: RequestInit
+): Promise<LogsResponse> => {
+  return apiClient<LogsResponse>(
+    getGetApiV1ServersServeridStacksStacknameContainersContainerNameLogsUrl(
+      serverid,
+      stackname,
+      containerName,
+      params
+    ),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameContainersContainerNameLogsQueryKey = (
@@ -78,9 +107,10 @@ export const getGetApiV1ServersServeridStacksStacknameContainersContainerNameLog
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -99,7 +129,7 @@ export const getGetApiV1ServersServeridStacksStacknameContainersContainerNameLog
       stackname,
       containerName,
       params,
-      signal
+      { signal, ...requestOptions }
     );
 
   return {
@@ -153,6 +183,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -188,6 +219,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -211,6 +243,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -238,6 +271,7 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -261,18 +295,39 @@ export function useGetApiV1ServersServeridStacksStacknameContainersContainerName
  * Returns logs for all containers in a stack
  * @summary Get stack logs
  */
-export const getApiV1ServersServeridStacksStacknameLogs = (
+export const getGetApiV1ServersServeridStacksStacknameLogsUrl = (
+  serverid: number,
+  stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameLogsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/logs?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/logs`;
+};
+
+export const getApiV1ServersServeridStacksStacknameLogs = async (
   serverid: number,
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameLogsParams,
-  signal?: AbortSignal
-) => {
-  return apiClient<LogsResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/logs`,
-    method: 'GET',
-    params,
-    signal,
-  });
+  options?: RequestInit
+): Promise<LogsResponse> => {
+  return apiClient<LogsResponse>(
+    getGetApiV1ServersServeridStacksStacknameLogsUrl(serverid, stackname, params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameLogsQueryKey = (
@@ -301,9 +356,10 @@ export const getGetApiV1ServersServeridStacksStacknameLogsQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -312,7 +368,10 @@ export const getGetApiV1ServersServeridStacksStacknameLogsQueryOptions = <
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameLogs>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknameLogs(serverid, stackname, params, signal);
+    getApiV1ServersServeridStacksStacknameLogs(serverid, stackname, params, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -354,6 +413,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -380,6 +440,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -398,6 +459,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -420,6 +482,7 @@ export function useGetApiV1ServersServeridStacksStacknameLogs<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

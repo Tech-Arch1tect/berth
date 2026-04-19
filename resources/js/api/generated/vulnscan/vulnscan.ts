@@ -36,20 +36,31 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Returns the most recent vulnerability scan and summary for a stack. Requires stacks.read permission.
  * @summary Get latest scan for stack
  */
-export const getApiV1ServersServeridStacksStacknameVulnscan = (
+export const getGetApiV1ServersServeridStacksStacknameVulnscanUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan`;
+};
+
+export const getApiV1ServersServeridStacksStacknameVulnscan = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<GetLatestScanResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<GetLatestScanResponse> => {
+  return apiClient<GetLatestScanResponse>(
+    getGetApiV1ServersServeridStacksStacknameVulnscanUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryKey = (
@@ -73,9 +84,10 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -83,7 +95,11 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStacknameVulnscan(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameVulnscan(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -124,6 +140,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -149,6 +166,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -166,6 +184,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -187,6 +206,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -207,19 +227,28 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
  * Starts a vulnerability scan for a stack. Requires stacks.read permission.
  * @summary Start vulnerability scan
  */
-export const postApiV1ServersServeridStacksStacknameVulnscan = (
+export const getPostApiV1ServersServeridStacksStacknameVulnscanUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan`;
+};
+
+export const postApiV1ServersServeridStacksStacknameVulnscan = async (
   serverid: number,
   stackname: string,
   startScanRequest: StartScanRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<StartScanResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: startScanRequest,
-    signal,
-  });
+  options?: RequestInit
+): Promise<StartScanResponse> => {
+  return apiClient<StartScanResponse>(
+    getPostApiV1ServersServeridStacksStacknameVulnscanUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(startScanRequest),
+    }
+  );
 };
 
 export const getPostApiV1ServersServeridStacksStacknameVulnscanMutationOptions = <
@@ -232,6 +261,7 @@ export const getPostApiV1ServersServeridStacksStacknameVulnscanMutationOptions =
     { serverid: number; stackname: string; data: StartScanRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameVulnscan>>,
   TError,
@@ -239,11 +269,11 @@ export const getPostApiV1ServersServeridStacksStacknameVulnscanMutationOptions =
   TContext
 > => {
   const mutationKey = ['postApiV1ServersServeridStacksStacknameVulnscan'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameVulnscan>>,
@@ -251,7 +281,12 @@ export const getPostApiV1ServersServeridStacksStacknameVulnscanMutationOptions =
   > = (props) => {
     const { serverid, stackname, data } = props ?? {};
 
-    return postApiV1ServersServeridStacksStacknameVulnscan(serverid, stackname, data);
+    return postApiV1ServersServeridStacksStacknameVulnscan(
+      serverid,
+      stackname,
+      data,
+      requestOptions
+    );
   };
 
   return { mutationFn, ...mutationOptions };
@@ -277,6 +312,7 @@ export const usePostApiV1ServersServeridStacksStacknameVulnscan = <
       { serverid: number; stackname: string; data: StartScanRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -294,16 +330,25 @@ export const usePostApiV1ServersServeridStacksStacknameVulnscan = <
  * Returns all vulnerability scans for a stack with summaries. Requires stacks.read permission.
  * @summary Get scan history for stack
  */
-export const getApiV1ServersServeridStacksStacknameVulnscanHistory = (
+export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan/history`;
+};
+
+export const getApiV1ServersServeridStacksStacknameVulnscanHistory = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<GetScansHistoryResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan/history`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<GetScansHistoryResponse> => {
+  return apiClient<GetScansHistoryResponse>(
+    getGetApiV1ServersServeridStacksStacknameVulnscanHistoryUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryKey = (
@@ -327,9 +372,10 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryOption
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -338,7 +384,10 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryOption
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknameVulnscanHistory(serverid, stackname, signal);
+    getApiV1ServersServeridStacksStacknameVulnscanHistory(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -379,6 +428,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -404,6 +454,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -421,6 +472,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -442,6 +494,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -462,18 +515,39 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
  * Returns vulnerability trend data for a stack. Requires stacks.read permission.
  * @summary Get scan trend for stack
  */
-export const getApiV1ServersServeridStacksStacknameVulnscanTrend = (
+export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendUrl = (
+  serverid: number,
+  stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameVulnscanTrendParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan/trend?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan/trend`;
+};
+
+export const getApiV1ServersServeridStacksStacknameVulnscanTrend = async (
   serverid: number,
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameVulnscanTrendParams,
-  signal?: AbortSignal
-) => {
-  return apiClient<GetScanTrendResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/vulnscan/trend`,
-    method: 'GET',
-    params,
-    signal,
-  });
+  options?: RequestInit
+): Promise<GetScanTrendResponse> => {
+  return apiClient<GetScanTrendResponse>(
+    getGetApiV1ServersServeridStacksStacknameVulnscanTrendUrl(serverid, stackname, params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryKey = (
@@ -502,9 +576,10 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryOptions 
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -513,7 +588,10 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryOptions 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknameVulnscanTrend(serverid, stackname, params, signal);
+    getApiV1ServersServeridStacksStacknameVulnscanTrend(serverid, stackname, params, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -555,6 +633,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -581,6 +660,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -599,6 +679,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -621,6 +702,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -642,16 +724,25 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
  * Compares two vulnerability scans and returns new, fixed, and unchanged vulnerabilities. Both scans must be from the same stack. Requires stacks.read permission.
  * @summary Compare two scans
  */
-export const getApiV1VulnscanCompareBaseScanIdCompareScanId = (
+export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdUrl = (
+  baseScanId: number,
+  compareScanId: number
+) => {
+  return `/api/v1/vulnscan/compare/${baseScanId}/${compareScanId}`;
+};
+
+export const getApiV1VulnscanCompareBaseScanIdCompareScanId = async (
   baseScanId: number,
   compareScanId: number,
-  signal?: AbortSignal
-) => {
-  return apiClient<CompareScanResponse>({
-    url: `/api/v1/vulnscan/compare/${baseScanId}/${compareScanId}`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<CompareScanResponse> => {
+  return apiClient<CompareScanResponse>(
+    getGetApiV1VulnscanCompareBaseScanIdCompareScanIdUrl(baseScanId, compareScanId),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryKey = (
@@ -675,9 +766,10 @@ export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -686,7 +778,10 @@ export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryOptions = <
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>
   > = ({ signal }) =>
-    getApiV1VulnscanCompareBaseScanIdCompareScanId(baseScanId, compareScanId, signal);
+    getApiV1VulnscanCompareBaseScanIdCompareScanId(baseScanId, compareScanId, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -727,6 +822,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -752,6 +848,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -769,6 +866,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -790,6 +888,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -810,8 +909,18 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
  * Returns a specific vulnerability scan with all vulnerabilities. Requires stacks.read permission for the scanned stack.
  * @summary Get scan by ID
  */
-export const getApiV1VulnscanScanid = (scanid: number, signal?: AbortSignal) => {
-  return apiClient<GetScanResponse>({ url: `/api/v1/vulnscan/${scanid}`, method: 'GET', signal });
+export const getGetApiV1VulnscanScanidUrl = (scanid: number) => {
+  return `/api/v1/vulnscan/${scanid}`;
+};
+
+export const getApiV1VulnscanScanid = async (
+  scanid: number,
+  options?: RequestInit
+): Promise<GetScanResponse> => {
+  return apiClient<GetScanResponse>(getGetApiV1VulnscanScanidUrl(scanid), {
+    ...options,
+    method: 'GET',
+  });
 };
 
 export const getGetApiV1VulnscanScanidQueryKey = (scanid: number) => {
@@ -827,14 +936,15 @@ export const getGetApiV1VulnscanScanidQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanid>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1VulnscanScanidQueryKey(scanid);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1VulnscanScanid>>> = ({ signal }) =>
-    getApiV1VulnscanScanid(scanid, signal);
+    getApiV1VulnscanScanid(scanid, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!scanid, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
@@ -865,6 +975,7 @@ export function useGetApiV1VulnscanScanid<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -885,6 +996,7 @@ export function useGetApiV1VulnscanScanid<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -897,6 +1009,7 @@ export function useGetApiV1VulnscanScanid<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanid>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -913,6 +1026,7 @@ export function useGetApiV1VulnscanScanid<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanid>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -929,11 +1043,17 @@ export function useGetApiV1VulnscanScanid<
  * Returns vulnerability counts by severity for a scan. Requires stacks.read permission for the scanned stack.
  * @summary Get scan summary
  */
-export const getApiV1VulnscanScanidSummary = (scanid: number, signal?: AbortSignal) => {
-  return apiClient<GetScanSummaryResponse>({
-    url: `/api/v1/vulnscan/${scanid}/summary`,
+export const getGetApiV1VulnscanScanidSummaryUrl = (scanid: number) => {
+  return `/api/v1/vulnscan/${scanid}/summary`;
+};
+
+export const getApiV1VulnscanScanidSummary = async (
+  scanid: number,
+  options?: RequestInit
+): Promise<GetScanSummaryResponse> => {
+  return apiClient<GetScanSummaryResponse>(getGetApiV1VulnscanScanidSummaryUrl(scanid), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -950,15 +1070,16 @@ export const getGetApiV1VulnscanScanidSummaryQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1VulnscanScanidSummaryQueryKey(scanid);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>> = ({
     signal,
-  }) => getApiV1VulnscanScanidSummary(scanid, signal);
+  }) => getApiV1VulnscanScanidSummary(scanid, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!scanid, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
@@ -989,6 +1110,7 @@ export function useGetApiV1VulnscanScanidSummary<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1009,6 +1131,7 @@ export function useGetApiV1VulnscanScanidSummary<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1021,6 +1144,7 @@ export function useGetApiV1VulnscanScanidSummary<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1037,6 +1161,7 @@ export function useGetApiV1VulnscanScanidSummary<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

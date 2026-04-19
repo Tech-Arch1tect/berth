@@ -27,17 +27,25 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication.
  * @summary Login with username and password
  */
-export const postApiV1AuthLogin = (authLoginRequest: AuthLoginRequest, signal?: AbortSignal) => {
-  return apiClient<AuthTOTPRequiredResponse>({
-    url: `/api/v1/auth/login`,
+export const getPostApiV1AuthLoginUrl = () => {
+  return `/api/v1/auth/login`;
+};
+
+export const postApiV1AuthLogin = async (
+  authLoginRequest: AuthLoginRequest,
+  options?: RequestInit
+): Promise<AuthTOTPRequiredResponse> => {
+  return apiClient<AuthTOTPRequiredResponse>(getPostApiV1AuthLoginUrl(), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: authLoginRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authLoginRequest),
   });
 };
 
@@ -51,6 +59,7 @@ export const getPostApiV1AuthLoginMutationOptions = <
     { data: AuthLoginRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1AuthLogin>>,
   TError,
@@ -58,11 +67,11 @@ export const getPostApiV1AuthLoginMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1AuthLogin'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1AuthLogin>>,
@@ -70,7 +79,7 @@ export const getPostApiV1AuthLoginMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1AuthLogin(data);
+    return postApiV1AuthLogin(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -93,6 +102,7 @@ export const usePostApiV1AuthLogin = <TError = AuthErrorResponse | void, TContex
       { data: AuthLoginRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -107,13 +117,19 @@ export const usePostApiV1AuthLogin = <TError = AuthErrorResponse | void, TContex
  * Revokes the access token and refresh token, effectively logging the user out. The refresh token must be provided in the request body.
  * @summary Logout and revoke tokens
  */
-export const postApiV1AuthLogout = (authLogoutRequest: AuthLogoutRequest, signal?: AbortSignal) => {
-  return apiClient<AuthLogoutResponse>({
-    url: `/api/v1/auth/logout`,
+export const getPostApiV1AuthLogoutUrl = () => {
+  return `/api/v1/auth/logout`;
+};
+
+export const postApiV1AuthLogout = async (
+  authLogoutRequest: AuthLogoutRequest,
+  options?: RequestInit
+): Promise<AuthLogoutResponse> => {
+  return apiClient<AuthLogoutResponse>(getPostApiV1AuthLogoutUrl(), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: authLogoutRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authLogoutRequest),
   });
 };
 
@@ -127,6 +143,7 @@ export const getPostApiV1AuthLogoutMutationOptions = <
     { data: AuthLogoutRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1AuthLogout>>,
   TError,
@@ -134,11 +151,11 @@ export const getPostApiV1AuthLogoutMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1AuthLogout'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1AuthLogout>>,
@@ -146,7 +163,7 @@ export const getPostApiV1AuthLogoutMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1AuthLogout(data);
+    return postApiV1AuthLogout(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -169,6 +186,7 @@ export const usePostApiV1AuthLogout = <TError = AuthErrorResponse | void, TConte
       { data: AuthLogoutRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -183,16 +201,19 @@ export const usePostApiV1AuthLogout = <TError = AuthErrorResponse | void, TConte
  * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated.
  * @summary Refresh access token
  */
-export const postApiV1AuthRefresh = (
+export const getPostApiV1AuthRefreshUrl = () => {
+  return `/api/v1/auth/refresh`;
+};
+
+export const postApiV1AuthRefresh = async (
   authRefreshRequest: AuthRefreshRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<AuthRefreshResponse>({
-    url: `/api/v1/auth/refresh`,
+  options?: RequestInit
+): Promise<AuthRefreshResponse> => {
+  return apiClient<AuthRefreshResponse>(getPostApiV1AuthRefreshUrl(), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: authRefreshRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authRefreshRequest),
   });
 };
 
@@ -206,6 +227,7 @@ export const getPostApiV1AuthRefreshMutationOptions = <
     { data: AuthRefreshRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1AuthRefresh>>,
   TError,
@@ -213,11 +235,11 @@ export const getPostApiV1AuthRefreshMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1AuthRefresh'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1AuthRefresh>>,
@@ -225,7 +247,7 @@ export const getPostApiV1AuthRefreshMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1AuthRefresh(data);
+    return postApiV1AuthRefresh(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -248,6 +270,7 @@ export const usePostApiV1AuthRefresh = <TError = AuthErrorResponse | void, TCont
       { data: AuthRefreshRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -262,16 +285,19 @@ export const usePostApiV1AuthRefresh = <TError = AuthErrorResponse | void, TCont
  * Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app.
  * @summary Verify TOTP code to complete login
  */
-export const postApiV1AuthTotpVerify = (
+export const getPostApiV1AuthTotpVerifyUrl = () => {
+  return `/api/v1/auth/totp/verify`;
+};
+
+export const postApiV1AuthTotpVerify = async (
   authTOTPVerifyRequest: AuthTOTPVerifyRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<AuthLoginResponse>({
-    url: `/api/v1/auth/totp/verify`,
+  options?: RequestInit
+): Promise<AuthLoginResponse> => {
+  return apiClient<AuthLoginResponse>(getPostApiV1AuthTotpVerifyUrl(), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: authTOTPVerifyRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authTOTPVerifyRequest),
   });
 };
 
@@ -285,6 +311,7 @@ export const getPostApiV1AuthTotpVerifyMutationOptions = <
     { data: AuthTOTPVerifyRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1AuthTotpVerify>>,
   TError,
@@ -292,11 +319,11 @@ export const getPostApiV1AuthTotpVerifyMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1AuthTotpVerify'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1AuthTotpVerify>>,
@@ -304,7 +331,7 @@ export const getPostApiV1AuthTotpVerifyMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return postApiV1AuthTotpVerify(data);
+    return postApiV1AuthTotpVerify(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -327,6 +354,7 @@ export const usePostApiV1AuthTotpVerify = <TError = AuthErrorResponse | void, TC
       { data: AuthTOTPVerifyRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<

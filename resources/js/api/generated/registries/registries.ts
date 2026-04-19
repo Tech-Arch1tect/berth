@@ -34,15 +34,23 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Returns all registry credentials for a server. Requires registries.manage permission.
  * @summary List registry credentials
  */
-export const getApiV1ServersServeridRegistries = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<ListCredentialsResponse>({
-    url: `/api/v1/servers/${serverid}/registries`,
+export const getGetApiV1ServersServeridRegistriesUrl = (serverid: number) => {
+  return `/api/v1/servers/${serverid}/registries`;
+};
+
+export const getApiV1ServersServeridRegistries = async (
+  serverid: number,
+  options?: RequestInit
+): Promise<ListCredentialsResponse> => {
+  return apiClient<ListCredentialsResponse>(getGetApiV1ServersServeridRegistriesUrl(serverid), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -59,15 +67,16 @@ export const getGetApiV1ServersServeridRegistriesQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1ServersServeridRegistriesQueryKey(serverid);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>> = ({
     signal,
-  }) => getApiV1ServersServeridRegistries(serverid, signal);
+  }) => getApiV1ServersServeridRegistries(serverid, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!serverid, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
@@ -98,6 +107,7 @@ export function useGetApiV1ServersServeridRegistries<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -118,6 +128,7 @@ export function useGetApiV1ServersServeridRegistries<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -130,6 +141,7 @@ export function useGetApiV1ServersServeridRegistries<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -146,6 +158,7 @@ export function useGetApiV1ServersServeridRegistries<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -162,17 +175,20 @@ export function useGetApiV1ServersServeridRegistries<
  * Creates a new registry credential for a server. Requires registries.manage permission.
  * @summary Create registry credential
  */
-export const postApiV1ServersServeridRegistries = (
+export const getPostApiV1ServersServeridRegistriesUrl = (serverid: number) => {
+  return `/api/v1/servers/${serverid}/registries`;
+};
+
+export const postApiV1ServersServeridRegistries = async (
   serverid: number,
   createCredentialRequest: CreateCredentialRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<CreateCredentialResponse>({
-    url: `/api/v1/servers/${serverid}/registries`,
+  options?: RequestInit
+): Promise<CreateCredentialResponse> => {
+  return apiClient<CreateCredentialResponse>(getPostApiV1ServersServeridRegistriesUrl(serverid), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: createCredentialRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createCredentialRequest),
   });
 };
 
@@ -186,6 +202,7 @@ export const getPostApiV1ServersServeridRegistriesMutationOptions = <
     { serverid: number; data: CreateCredentialRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ServersServeridRegistries>>,
   TError,
@@ -193,11 +210,11 @@ export const getPostApiV1ServersServeridRegistriesMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1ServersServeridRegistries'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ServersServeridRegistries>>,
@@ -205,7 +222,7 @@ export const getPostApiV1ServersServeridRegistriesMutationOptions = <
   > = (props) => {
     const { serverid, data } = props ?? {};
 
-    return postApiV1ServersServeridRegistries(serverid, data);
+    return postApiV1ServersServeridRegistries(serverid, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -231,6 +248,7 @@ export const usePostApiV1ServersServeridRegistries = <
       { serverid: number; data: CreateCredentialRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -245,16 +263,22 @@ export const usePostApiV1ServersServeridRegistries = <
  * Deletes a registry credential. Requires registries.manage permission.
  * @summary Delete registry credential
  */
-export const deleteApiV1ServersServeridRegistriesId = (
+export const getDeleteApiV1ServersServeridRegistriesIdUrl = (serverid: number, id: number) => {
+  return `/api/v1/servers/${serverid}/registries/${id}`;
+};
+
+export const deleteApiV1ServersServeridRegistriesId = async (
   serverid: number,
   id: number,
-  signal?: AbortSignal
-) => {
-  return apiClient<DeleteCredentialResponse>({
-    url: `/api/v1/servers/${serverid}/registries/${id}`,
-    method: 'DELETE',
-    signal,
-  });
+  options?: RequestInit
+): Promise<DeleteCredentialResponse> => {
+  return apiClient<DeleteCredentialResponse>(
+    getDeleteApiV1ServersServeridRegistriesIdUrl(serverid, id),
+    {
+      ...options,
+      method: 'DELETE',
+    }
+  );
 };
 
 export const getDeleteApiV1ServersServeridRegistriesIdMutationOptions = <
@@ -267,6 +291,7 @@ export const getDeleteApiV1ServersServeridRegistriesIdMutationOptions = <
     { serverid: number; id: number },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteApiV1ServersServeridRegistriesId>>,
   TError,
@@ -274,11 +299,11 @@ export const getDeleteApiV1ServersServeridRegistriesIdMutationOptions = <
   TContext
 > => {
   const mutationKey = ['deleteApiV1ServersServeridRegistriesId'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteApiV1ServersServeridRegistriesId>>,
@@ -286,7 +311,7 @@ export const getDeleteApiV1ServersServeridRegistriesIdMutationOptions = <
   > = (props) => {
     const { serverid, id } = props ?? {};
 
-    return deleteApiV1ServersServeridRegistriesId(serverid, id);
+    return deleteApiV1ServersServeridRegistriesId(serverid, id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -312,6 +337,7 @@ export const useDeleteApiV1ServersServeridRegistriesId = <
       { serverid: number; id: number },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -329,15 +355,18 @@ export const useDeleteApiV1ServersServeridRegistriesId = <
  * Returns a specific registry credential by ID. Requires registries.manage permission.
  * @summary Get registry credential
  */
-export const getApiV1ServersServeridRegistriesId = (
+export const getGetApiV1ServersServeridRegistriesIdUrl = (serverid: number, id: number) => {
+  return `/api/v1/servers/${serverid}/registries/${id}`;
+};
+
+export const getApiV1ServersServeridRegistriesId = async (
   serverid: number,
   id: number,
-  signal?: AbortSignal
-) => {
-  return apiClient<GetCredentialResponse>({
-    url: `/api/v1/servers/${serverid}/registries/${id}`,
+  options?: RequestInit
+): Promise<GetCredentialResponse> => {
+  return apiClient<GetCredentialResponse>(getGetApiV1ServersServeridRegistriesIdUrl(serverid, id), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -359,16 +388,17 @@ export const getGetApiV1ServersServeridRegistriesIdQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ?? getGetApiV1ServersServeridRegistriesIdQueryKey(serverid, id);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>> = ({
     signal,
-  }) => getApiV1ServersServeridRegistriesId(serverid, id, signal);
+  }) => getApiV1ServersServeridRegistriesId(serverid, id, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!(serverid && id), ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
@@ -404,6 +434,7 @@ export function useGetApiV1ServersServeridRegistriesId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -429,6 +460,7 @@ export function useGetApiV1ServersServeridRegistriesId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -446,6 +478,7 @@ export function useGetApiV1ServersServeridRegistriesId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -467,6 +500,7 @@ export function useGetApiV1ServersServeridRegistriesId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -483,19 +517,25 @@ export function useGetApiV1ServersServeridRegistriesId<
  * Updates an existing registry credential. Requires registries.manage permission.
  * @summary Update registry credential
  */
-export const putApiV1ServersServeridRegistriesId = (
+export const getPutApiV1ServersServeridRegistriesIdUrl = (serverid: number, id: number) => {
+  return `/api/v1/servers/${serverid}/registries/${id}`;
+};
+
+export const putApiV1ServersServeridRegistriesId = async (
   serverid: number,
   id: number,
   updateCredentialRequest: UpdateCredentialRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<UpdateCredentialResponse>({
-    url: `/api/v1/servers/${serverid}/registries/${id}`,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    data: updateCredentialRequest,
-    signal,
-  });
+  options?: RequestInit
+): Promise<UpdateCredentialResponse> => {
+  return apiClient<UpdateCredentialResponse>(
+    getPutApiV1ServersServeridRegistriesIdUrl(serverid, id),
+    {
+      ...options,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(updateCredentialRequest),
+    }
+  );
 };
 
 export const getPutApiV1ServersServeridRegistriesIdMutationOptions = <
@@ -508,6 +548,7 @@ export const getPutApiV1ServersServeridRegistriesIdMutationOptions = <
     { serverid: number; id: number; data: UpdateCredentialRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof putApiV1ServersServeridRegistriesId>>,
   TError,
@@ -515,11 +556,11 @@ export const getPutApiV1ServersServeridRegistriesIdMutationOptions = <
   TContext
 > => {
   const mutationKey = ['putApiV1ServersServeridRegistriesId'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof putApiV1ServersServeridRegistriesId>>,
@@ -527,7 +568,7 @@ export const getPutApiV1ServersServeridRegistriesIdMutationOptions = <
   > = (props) => {
     const { serverid, id, data } = props ?? {};
 
-    return putApiV1ServersServeridRegistriesId(serverid, id, data);
+    return putApiV1ServersServeridRegistriesId(serverid, id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -553,6 +594,7 @@ export const usePutApiV1ServersServeridRegistriesId = <
       { serverid: number; id: number; data: UpdateCredentialRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<

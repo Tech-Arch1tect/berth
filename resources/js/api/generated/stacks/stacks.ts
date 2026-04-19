@@ -39,15 +39,23 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Returns all stacks on a server that the authenticated user has permission to access
  * @summary List server stacks
  */
-export const getApiV1ServersServeridStacks = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<ListStacksResponse>({
-    url: `/api/v1/servers/${serverid}/stacks`,
+export const getGetApiV1ServersServeridStacksUrl = (serverid: number) => {
+  return `/api/v1/servers/${serverid}/stacks`;
+};
+
+export const getApiV1ServersServeridStacks = async (
+  serverid: number,
+  options?: RequestInit
+): Promise<ListStacksResponse> => {
+  return apiClient<ListStacksResponse>(getGetApiV1ServersServeridStacksUrl(serverid), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -64,15 +72,16 @@ export const getGetApiV1ServersServeridStacksQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1ServersServeridStacksQueryKey(serverid);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>> = ({
     signal,
-  }) => getApiV1ServersServeridStacks(serverid, signal);
+  }) => getApiV1ServersServeridStacks(serverid, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!serverid, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>,
@@ -103,6 +112,7 @@ export function useGetApiV1ServersServeridStacks<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -123,6 +133,7 @@ export function useGetApiV1ServersServeridStacks<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -135,6 +146,7 @@ export function useGetApiV1ServersServeridStacks<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -151,6 +163,7 @@ export function useGetApiV1ServersServeridStacks<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1ServersServeridStacks>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -167,17 +180,20 @@ export function useGetApiV1ServersServeridStacks<
  * Creates a new stack on the server
  * @summary Create a new stack
  */
-export const postApiV1ServersServeridStacks = (
+export const getPostApiV1ServersServeridStacksUrl = (serverid: number) => {
+  return `/api/v1/servers/${serverid}/stacks`;
+};
+
+export const postApiV1ServersServeridStacks = async (
   serverid: number,
   createStackRequest: CreateStackRequest,
-  signal?: AbortSignal
-) => {
-  return apiClient<CreateStackResponse>({
-    url: `/api/v1/servers/${serverid}/stacks`,
+  options?: RequestInit
+): Promise<CreateStackResponse> => {
+  return apiClient<CreateStackResponse>(getPostApiV1ServersServeridStacksUrl(serverid), {
+    ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: createStackRequest,
-    signal,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createStackRequest),
   });
 };
 
@@ -191,6 +207,7 @@ export const getPostApiV1ServersServeridStacksMutationOptions = <
     { serverid: number; data: CreateStackRequest },
     TContext
   >;
+  request?: SecondParameter<typeof apiClient>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
   TError,
@@ -198,11 +215,11 @@ export const getPostApiV1ServersServeridStacksMutationOptions = <
   TContext
 > => {
   const mutationKey = ['postApiV1ServersServeridStacks'];
-  const { mutation: mutationOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postApiV1ServersServeridStacks>>,
@@ -210,7 +227,7 @@ export const getPostApiV1ServersServeridStacksMutationOptions = <
   > = (props) => {
     const { serverid, data } = props ?? {};
 
-    return postApiV1ServersServeridStacks(serverid, data);
+    return postApiV1ServersServeridStacks(serverid, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -236,6 +253,7 @@ export const usePostApiV1ServersServeridStacks = <
       { serverid: number; data: CreateStackRequest },
       TContext
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseMutationResult<
@@ -250,11 +268,17 @@ export const usePostApiV1ServersServeridStacks = <
  * Returns whether the authenticated user has permission to create stacks on the server
  * @summary Check if user can create stacks
  */
-export const getApiV1ServersServeridStacksCanCreate = (serverid: number, signal?: AbortSignal) => {
-  return apiClient<CanCreateStackResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/can-create`,
+export const getGetApiV1ServersServeridStacksCanCreateUrl = (serverid: number) => {
+  return `/api/v1/servers/${serverid}/stacks/can-create`;
+};
+
+export const getApiV1ServersServeridStacksCanCreate = async (
+  serverid: number,
+  options?: RequestInit
+): Promise<CanCreateStackResponse> => {
+  return apiClient<CanCreateStackResponse>(getGetApiV1ServersServeridStacksCanCreateUrl(serverid), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -275,16 +299,18 @@ export const getGetApiV1ServersServeridStacksCanCreateQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ?? getGetApiV1ServersServeridStacksCanCreateQueryKey(serverid);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>
-  > = ({ signal }) => getApiV1ServersServeridStacksCanCreate(serverid, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksCanCreate(serverid, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!serverid, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksCanCreate>>,
@@ -319,6 +345,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -343,6 +370,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -359,6 +387,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -379,6 +408,7 @@ export function useGetApiV1ServersServeridStacksCanCreate<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -395,16 +425,25 @@ export function useGetApiV1ServersServeridStacksCanCreate<
  * Returns detailed information about a specific stack including services and containers
  * @summary Get stack details
  */
-export const getApiV1ServersServeridStacksStackname = (
+export const getGetApiV1ServersServeridStacksStacknameUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}`;
+};
+
+export const getApiV1ServersServeridStacksStackname = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackDetails>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackDetails> => {
+  return apiClient<StackDetails>(
+    getGetApiV1ServersServeridStacksStacknameUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameQueryKey = (
@@ -428,9 +467,10 @@ export const getGetApiV1ServersServeridStacksStacknameQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -438,7 +478,8 @@ export const getGetApiV1ServersServeridStacksStacknameQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStackname>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStackname(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStackname(serverid, stackname, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -479,6 +520,7 @@ export function useGetApiV1ServersServeridStacksStackname<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -504,6 +546,7 @@ export function useGetApiV1ServersServeridStacksStackname<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -521,6 +564,7 @@ export function useGetApiV1ServersServeridStacksStackname<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -542,6 +586,7 @@ export function useGetApiV1ServersServeridStacksStackname<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -562,18 +607,39 @@ export function useGetApiV1ServersServeridStacksStackname<
  * Returns environment variables for all services in a stack. Use unmask=true to see sensitive values.
  * @summary Get stack environment variables
  */
-export const getApiV1ServersServeridStacksStacknameEnvironment = (
+export const getGetApiV1ServersServeridStacksStacknameEnvironmentUrl = (
+  serverid: number,
+  stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameEnvironmentParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/environment?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/environment`;
+};
+
+export const getApiV1ServersServeridStacksStacknameEnvironment = async (
   serverid: number,
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameEnvironmentParams,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackEnvironmentResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/environment`,
-    method: 'GET',
-    params,
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackEnvironmentResponse> => {
+  return apiClient<StackEnvironmentResponse>(
+    getGetApiV1ServersServeridStacksStacknameEnvironmentUrl(serverid, stackname, params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryKey = (
@@ -602,9 +668,10 @@ export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryOptions = 
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -613,7 +680,10 @@ export const getGetApiV1ServersServeridStacksStacknameEnvironmentQueryOptions = 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameEnvironment>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknameEnvironment(serverid, stackname, params, signal);
+    getApiV1ServersServeridStacksStacknameEnvironment(serverid, stackname, params, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -655,6 +725,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -681,6 +752,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -699,6 +771,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -721,6 +794,7 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -742,16 +816,25 @@ export function useGetApiV1ServersServeridStacksStacknameEnvironment<
  * Returns detailed image information for all containers in a stack
  * @summary Get container image details
  */
-export const getApiV1ServersServeridStacksStacknameImages = (
+export const getGetApiV1ServersServeridStacksStacknameImagesUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/images`;
+};
+
+export const getApiV1ServersServeridStacksStacknameImages = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackImagesResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/images`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackImagesResponse> => {
+  return apiClient<StackImagesResponse>(
+    getGetApiV1ServersServeridStacksStacknameImagesUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameImagesQueryKey = (
@@ -775,9 +858,10 @@ export const getGetApiV1ServersServeridStacksStacknameImagesQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -785,7 +869,11 @@ export const getGetApiV1ServersServeridStacksStacknameImagesQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameImages>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStacknameImages(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameImages(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -826,6 +914,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -851,6 +940,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -868,6 +958,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -889,6 +980,7 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -909,16 +1001,25 @@ export function useGetApiV1ServersServeridStacksStacknameImages<
  * Returns network information for a specific stack
  * @summary Get stack networks
  */
-export const getApiV1ServersServeridStacksStacknameNetworks = (
+export const getGetApiV1ServersServeridStacksStacknameNetworksUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/networks`;
+};
+
+export const getApiV1ServersServeridStacksStacknameNetworks = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackNetworksResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/networks`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackNetworksResponse> => {
+  return apiClient<StackNetworksResponse>(
+    getGetApiV1ServersServeridStacksStacknameNetworksUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameNetworksQueryKey = (
@@ -942,9 +1043,10 @@ export const getGetApiV1ServersServeridStacksStacknameNetworksQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -952,7 +1054,11 @@ export const getGetApiV1ServersServeridStacksStacknameNetworksQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameNetworks>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -993,6 +1099,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1018,6 +1125,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1035,6 +1143,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1056,6 +1165,7 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1076,16 +1186,25 @@ export function useGetApiV1ServersServeridStacksStacknameNetworks<
  * Returns the list of permissions the authenticated user has for a specific stack
  * @summary Check stack permissions
  */
-export const getApiV1ServersServeridStacksStacknamePermissions = (
+export const getGetApiV1ServersServeridStacksStacknamePermissionsUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/permissions`;
+};
+
+export const getApiV1ServersServeridStacksStacknamePermissions = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackPermissionsResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/permissions`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackPermissionsResponse> => {
+  return apiClient<StackPermissionsResponse>(
+    getGetApiV1ServersServeridStacksStacknamePermissionsUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryKey = (
@@ -1109,9 +1228,10 @@ export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryOptions = 
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -1120,7 +1240,10 @@ export const getGetApiV1ServersServeridStacksStacknamePermissionsQueryOptions = 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknamePermissions>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname, signal);
+    getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -1161,6 +1284,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1186,6 +1310,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1203,6 +1328,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1224,6 +1350,7 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1244,16 +1371,25 @@ export function useGetApiV1ServersServeridStacksStacknamePermissions<
  * Returns resource usage statistics for all containers in a stack
  * @summary Get stack statistics
  */
-export const getApiV1ServersServeridStacksStacknameStats = (
+export const getGetApiV1ServersServeridStacksStacknameStatsUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/stats`;
+};
+
+export const getApiV1ServersServeridStacksStacknameStats = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackStatsResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/stats`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackStatsResponse> => {
+  return apiClient<StackStatsResponse>(
+    getGetApiV1ServersServeridStacksStacknameStatsUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameStatsQueryKey = (
@@ -1277,9 +1413,10 @@ export const getGetApiV1ServersServeridStacksStacknameStatsQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -1287,7 +1424,8 @@ export const getGetApiV1ServersServeridStacksStacknameStatsQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameStats>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStacknameStats(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameStats(serverid, stackname, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -1328,6 +1466,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1353,6 +1492,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1370,6 +1510,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1391,6 +1532,7 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1411,16 +1553,25 @@ export function useGetApiV1ServersServeridStacksStacknameStats<
  * Returns volume information for a specific stack
  * @summary Get stack volumes
  */
-export const getApiV1ServersServeridStacksStacknameVolumes = (
+export const getGetApiV1ServersServeridStacksStacknameVolumesUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/volumes`;
+};
+
+export const getApiV1ServersServeridStacksStacknameVolumes = async (
   serverid: number,
   stackname: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<StackVolumesResponse>({
-    url: `/api/v1/servers/${serverid}/stacks/${stackname}/volumes`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<StackVolumesResponse> => {
+  return apiClient<StackVolumesResponse>(
+    getGetApiV1ServersServeridStacksStacknameVolumesUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStacksStacknameVolumesQueryKey = (
@@ -1444,9 +1595,10 @@ export const getGetApiV1ServersServeridStacksStacknameVolumesQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ??
@@ -1454,7 +1606,11 @@ export const getGetApiV1ServersServeridStacksStacknameVolumesQueryOptions = <
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVolumes>>
-  > = ({ signal }) => getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname, signal);
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -1495,6 +1651,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1520,6 +1677,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1537,6 +1695,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1558,6 +1717,7 @@ export function useGetApiV1ServersServeridStacksStacknameVolumes<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

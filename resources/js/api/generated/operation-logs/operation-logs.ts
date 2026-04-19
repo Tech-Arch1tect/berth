@@ -29,19 +29,35 @@ import type {
 
 import { apiClient } from '../../../lib/api';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Returns paginated list of operation logs for the authenticated user.
  * @summary List user's operation logs
  */
-export const getApiV1OperationLogs = (
+export const getGetApiV1OperationLogsUrl = (params?: GetApiV1OperationLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/operation-logs?${stringifiedParams}`
+    : `/api/v1/operation-logs`;
+};
+
+export const getApiV1OperationLogs = async (
   params?: GetApiV1OperationLogsParams,
-  signal?: AbortSignal
-) => {
-  return apiClient<PaginatedOperationLogsResponse>({
-    url: `/api/v1/operation-logs`,
+  options?: RequestInit
+): Promise<PaginatedOperationLogsResponse> => {
+  return apiClient<PaginatedOperationLogsResponse>(getGetApiV1OperationLogsUrl(params), {
+    ...options,
     method: 'GET',
-    params,
-    signal,
   });
 };
 
@@ -58,14 +74,15 @@ export const getGetApiV1OperationLogsQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogs>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1OperationLogsQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OperationLogs>>> = ({ signal }) =>
-    getApiV1OperationLogs(params, signal);
+    getApiV1OperationLogs(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1OperationLogs>>,
@@ -96,6 +113,7 @@ export function useGetApiV1OperationLogs<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -116,6 +134,7 @@ export function useGetApiV1OperationLogs<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -128,6 +147,7 @@ export function useGetApiV1OperationLogs<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogs>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -144,6 +164,7 @@ export function useGetApiV1OperationLogs<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogs>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -160,15 +181,21 @@ export function useGetApiV1OperationLogs<
  * Returns detailed information about a specific operation log by its operation ID. Only returns logs belonging to the authenticated user.
  * @summary Get operation log details by operation ID
  */
-export const getApiV1OperationLogsByOperationIdOperationId = (
+export const getGetApiV1OperationLogsByOperationIdOperationIdUrl = (operationId: string) => {
+  return `/api/v1/operation-logs/by-operation-id/${operationId}`;
+};
+
+export const getApiV1OperationLogsByOperationIdOperationId = async (
   operationId: string,
-  signal?: AbortSignal
-) => {
-  return apiClient<OperationLogDetailResponse>({
-    url: `/api/v1/operation-logs/by-operation-id/${operationId}`,
-    method: 'GET',
-    signal,
-  });
+  options?: RequestInit
+): Promise<OperationLogDetailResponse> => {
+  return apiClient<OperationLogDetailResponse>(
+    getGetApiV1OperationLogsByOperationIdOperationIdUrl(operationId),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1OperationLogsByOperationIdOperationIdQueryKey = (operationId: string) => {
@@ -188,16 +215,18 @@ export const getGetApiV1OperationLogsByOperationIdOperationIdQueryOptions = <
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
     queryOptions?.queryKey ?? getGetApiV1OperationLogsByOperationIdOperationIdQueryKey(operationId);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>
-  > = ({ signal }) => getApiV1OperationLogsByOperationIdOperationId(operationId, signal);
+  > = ({ signal }) =>
+    getApiV1OperationLogsByOperationIdOperationId(operationId, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!operationId, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1OperationLogsByOperationIdOperationId>>,
@@ -232,6 +261,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -256,6 +286,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -272,6 +303,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -292,6 +324,7 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
         TData
       >
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -311,11 +344,16 @@ export function useGetApiV1OperationLogsByOperationIdOperationId<
  * Returns aggregated statistics for the authenticated user's operation logs.
  * @summary Get user's operation logs statistics
  */
-export const getApiV1OperationLogsStats = (signal?: AbortSignal) => {
-  return apiClient<OperationLogStatsResponse>({
-    url: `/api/v1/operation-logs/stats`,
+export const getGetApiV1OperationLogsStatsUrl = () => {
+  return `/api/v1/operation-logs/stats`;
+};
+
+export const getApiV1OperationLogsStats = async (
+  options?: RequestInit
+): Promise<OperationLogStatsResponse> => {
+  return apiClient<OperationLogStatsResponse>(getGetApiV1OperationLogsStatsUrl(), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -330,14 +368,15 @@ export const getGetApiV1OperationLogsStatsQueryOptions = <
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsStats>>, TError, TData>
   >;
+  request?: SecondParameter<typeof apiClient>;
 }) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1OperationLogsStatsQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OperationLogsStats>>> = ({
     signal,
-  }) => getApiV1OperationLogsStats(signal);
+  }) => getApiV1OperationLogsStats({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1OperationLogsStats>>,
@@ -367,6 +406,7 @@ export function useGetApiV1OperationLogsStats<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -386,6 +426,7 @@ export function useGetApiV1OperationLogsStats<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -397,6 +438,7 @@ export function useGetApiV1OperationLogsStats<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsStats>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -412,6 +454,7 @@ export function useGetApiV1OperationLogsStats<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsStats>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -428,11 +471,17 @@ export function useGetApiV1OperationLogsStats<
  * Returns detailed information about a specific operation log including all messages. Only returns logs belonging to the authenticated user.
  * @summary Get operation log details
  */
-export const getApiV1OperationLogsId = (id: number, signal?: AbortSignal) => {
-  return apiClient<OperationLogDetailResponse>({
-    url: `/api/v1/operation-logs/${id}`,
+export const getGetApiV1OperationLogsIdUrl = (id: number) => {
+  return `/api/v1/operation-logs/${id}`;
+};
+
+export const getApiV1OperationLogsId = async (
+  id: number,
+  options?: RequestInit
+): Promise<OperationLogDetailResponse> => {
+  return apiClient<OperationLogDetailResponse>(getGetApiV1OperationLogsIdUrl(id), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -449,15 +498,16 @@ export const getGetApiV1OperationLogsIdQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsId>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   }
 ) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1OperationLogsIdQueryKey(id);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1OperationLogsId>>> = ({
     signal,
-  }) => getApiV1OperationLogsId(id, signal);
+  }) => getApiV1OperationLogsId(id, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1OperationLogsId>>,
@@ -488,6 +538,7 @@ export function useGetApiV1OperationLogsId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -508,6 +559,7 @@ export function useGetApiV1OperationLogsId<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -520,6 +572,7 @@ export function useGetApiV1OperationLogsId<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsId>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -536,6 +589,7 @@ export function useGetApiV1OperationLogsId<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1OperationLogsId>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -552,11 +606,16 @@ export function useGetApiV1OperationLogsId<
  * Returns list of currently running operations for the authenticated user.
  * @summary Get running operations
  */
-export const getApiV1RunningOperations = (signal?: AbortSignal) => {
-  return apiClient<RunningOperationsResponse>({
-    url: `/api/v1/running-operations`,
+export const getGetApiV1RunningOperationsUrl = () => {
+  return `/api/v1/running-operations`;
+};
+
+export const getApiV1RunningOperations = async (
+  options?: RequestInit
+): Promise<RunningOperationsResponse> => {
+  return apiClient<RunningOperationsResponse>(getGetApiV1RunningOperationsUrl(), {
+    ...options,
     method: 'GET',
-    signal,
   });
 };
 
@@ -571,14 +630,15 @@ export const getGetApiV1RunningOperationsQueryOptions = <
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof getApiV1RunningOperations>>, TError, TData>
   >;
+  request?: SecondParameter<typeof apiClient>;
 }) => {
-  const { query: queryOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetApiV1RunningOperationsQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1RunningOperations>>> = ({
     signal,
-  }) => getApiV1RunningOperations(signal);
+  }) => getApiV1RunningOperations({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getApiV1RunningOperations>>,
@@ -608,6 +668,7 @@ export function useGetApiV1RunningOperations<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -627,6 +688,7 @@ export function useGetApiV1RunningOperations<
         >,
         'initialData'
       >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -638,6 +700,7 @@ export function useGetApiV1RunningOperations<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1RunningOperations>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -653,6 +716,7 @@ export function useGetApiV1RunningOperations<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1RunningOperations>>, TError, TData>
     >;
+    request?: SecondParameter<typeof apiClient>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
