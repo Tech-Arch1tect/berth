@@ -84,7 +84,12 @@ func CoreFxOptions() fx.Option {
 		}),
 		fx.Invoke(func(e *echo.Echo, inSvc *inertia.Service, userProvider auth.UserProvider) {
 			e.Use(inSvc.Middleware())
-			e.Use(inertia.SharedContext(userProvider.GetUser))
+			e.Use(inertia.SharedContext(
+				userProvider.GetUser,
+				session.IsAuthenticated,
+				session.GetUserIDAsUint,
+				InertiaFlashMessages,
+			))
 		}),
 
 		fx.Invoke(func(lc fx.Lifecycle, cfg *config.Config, svc *inertia.Service) {

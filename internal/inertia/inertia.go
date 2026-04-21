@@ -18,6 +18,7 @@ type Service struct {
 	inertia  *gonertia.Inertia
 	manifest ViteManifest
 	logger   *zap.Logger
+	resolve  SessionStoreResolver
 }
 
 type ViteManifest map[string]ViteManifestEntry
@@ -30,12 +31,12 @@ type ViteManifestEntry struct {
 	Assets  []string `json:"assets,omitempty"`
 }
 
-func New(cfg *config.InertiaConfig, logger *zap.Logger) *Service {
-	return &Service{config: cfg, logger: logger}
+func New(cfg *config.InertiaConfig, resolve SessionStoreResolver, logger *zap.Logger) *Service {
+	return &Service{config: cfg, resolve: resolve, logger: logger}
 }
 
 func (s *Service) InitializeFromFile(rootViewPath string) error {
-	inst, err := gonertia.NewFromFile(rootViewPath, gonertia.WithFlashProvider(newscsFlashProvider()))
+	inst, err := gonertia.NewFromFile(rootViewPath, gonertia.WithFlashProvider(newscsFlashProvider(s.resolve)))
 	if err != nil {
 		return fmt.Errorf("inertia init from %q: %w", rootViewPath, err)
 	}

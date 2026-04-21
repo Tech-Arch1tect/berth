@@ -3,8 +3,6 @@ package inertia
 import (
 	"strings"
 
-	"berth/internal/session"
-
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
 )
@@ -17,7 +15,12 @@ func isStaticAssetPath(p string) bool {
 		strings.HasPrefix(p, "/.well-known/")
 }
 
-func SharedContext(lookupUser UserLookup) echo.MiddlewareFunc {
+func SharedContext(
+	lookupUser UserLookup,
+	isAuth IsAuthenticatedFunc,
+	getUserID UserIDFunc,
+	getFlash FlashMessagesFunc,
+) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if isStaticAssetPath(c.Request().URL.Path) {
@@ -26,20 +29,24 @@ func SharedContext(lookupUser UserLookup) echo.MiddlewareFunc {
 
 			ctx := c.Request().Context()
 
-			isAuth := session.IsAuthenticated(c)
-			userID := session.GetUserIDAsUint(c)
-			ctx = gonertia.SetProp(ctx, "authenticated", isAuth)
-			if isAuth && userID > 0 {
-				ctx = gonertia.SetProp(ctx, "userID", userID)
-				if lookupUser != nil {
-					if user, err := lookupUser(userID); err == nil && user != nil {
-						ctx = gonertia.SetProp(ctx, "currentUser", user)
+			authenticated := isAuth != nil && isAuth(c)
+			ctx = gonertia.SetProp(ctx, "authenticated", authenticated)
+			if authenticated && getUserID != nil {
+				userID := getUserID(c)
+				if userID > 0 {
+					ctx = gonertia.SetProp(ctx, "userID", userID)
+					if lookupUser != nil {
+						if user, err := lookupUser(userID); err == nil && user != nil {
+							ctx = gonertia.SetProp(ctx, "currentUser", user)
+						}
 					}
 				}
 			}
 
-			if flash := session.GetFlashMessages(c); flash != nil {
-				ctx = gonertia.SetProp(ctx, "flashMessages", flash)
+			if getFlash != nil {
+				if flash := getFlash(c); flash != nil {
+					ctx = gonertia.SetProp(ctx, "flashMessages", flash)
+				}
 			}
 
 			c.SetRequest(c.Request().WithContext(ctx))

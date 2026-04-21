@@ -209,7 +209,7 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 	db, err := app.OpenDatabase(cfg, logger, app.DatabaseModels()...)
 	require.NoError(t, err, "failed to initialize database")
 
-	inertiaSvc := inertia.New(&cfg.Inertia, logger)
+	inertiaSvc := inertia.New(&cfg.Inertia, app.SessionStoreResolver, logger)
 
 	mailSvc := e2etesting.NewCapturingMailService()
 

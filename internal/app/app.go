@@ -99,7 +99,7 @@ func NewApp(opts *AppOptions) *App {
 		panic(fmt.Errorf("failed to initialize database: %w", err))
 	}
 
-	inertiaSvc := inertia.New(&cfg.Inertia, logger)
+	inertiaSvc := inertia.New(&cfg.Inertia, SessionStoreResolver, logger)
 
 	e := NewEcho(cfg, logger)
 

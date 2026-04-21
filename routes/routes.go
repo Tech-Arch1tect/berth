@@ -141,7 +141,17 @@ func RegisterRoutes(p RouteParams) {
 	}
 	if p.InertiaService != nil {
 		web.Use(p.InertiaService.Middleware())
-		web.Use(inertia.SharedContext(p.UserProvider.GetUser))
+		web.Use(inertia.SharedContext(
+			p.UserProvider.GetUser,
+			session.IsAuthenticated,
+			session.GetUserIDAsUint,
+			func(c echo.Context) any {
+				if msgs := session.GetFlashMessages(c); msgs != nil {
+					return msgs
+				}
+				return nil
+			},
+		))
 	}
 
 	registerAuthRoutes(web, p.Cfg, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
