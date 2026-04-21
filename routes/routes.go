@@ -47,7 +47,7 @@ type RouteParams struct {
 	AuthHandler            *handlers.AuthHandler
 	MobileAuthHandler      *handlers.MobileAuthHandler
 	SessionHandler         *session.Handler
-	TOTPHandler            *handlers.TOTPHandler
+	TOTPHandler            *auth.TOTPHandler
 	VersionHandler         *version.Handler
 	MigrationHandler       *migration.Handler
 	OperationLogsHandler   *operationlogs.Handler
@@ -214,7 +214,7 @@ func RegisterRoutes(p RouteParams) {
 // WEB UI ROUTE HELPERS
 // ============================================================================
 
-func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handlers.AuthHandler, totpHandler *handlers.TOTPHandler, rateLimitStore *ratelimit.Store) {
+func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handlers.AuthHandler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
 	auth := web.Group("/auth")
 	auth.Use(newRateLimit(cfg, ratelimit.Config{
 		Store:     rateLimitStore,
@@ -253,7 +253,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 
 func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *dashboard.Handler, authHandler *handlers.AuthHandler,
-	sessionHandler *session.Handler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
+	sessionHandler *session.Handler, totpHandler *auth.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	registryAPIHandler *registry.APIHandler) {

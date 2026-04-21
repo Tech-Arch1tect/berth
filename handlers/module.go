@@ -20,7 +20,4 @@ var Module = fx.Options(
 	fx.Provide(func(db *gorm.DB, authSvc *auth.Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc *security.AuditService) *MobileAuthHandler {
 		return NewMobileAuthHandler(db, authSvc, tokensSvc, totpSvc, sessionSvc, logger, auditSvc)
 	}),
-	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *zap.Logger, auditSvc *security.AuditService) *TOTPHandler {
-		return NewTOTPHandler(db, inertiaSvc, totpSvc, authSvc, logger, auditSvc)
-	}),
 )

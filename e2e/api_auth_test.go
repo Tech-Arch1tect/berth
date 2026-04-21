@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/session"
 	"testing"
 
@@ -267,7 +268,7 @@ func TestAPITOTPStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status handlers.TOTPStatusResponse
+		var status auth.TOTPStatusResponse
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.True(t, status.Success)
 		assert.False(t, status.Data.Enabled)

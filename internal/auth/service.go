@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"berth/internal/auth/totp"
 	"berth/internal/config"
+	"berth/internal/inertia"
+	"berth/internal/security"
 	"berth/models"
 
 	"go.uber.org/fx"
@@ -80,4 +83,7 @@ func generateHexToken(length int) (string, error) {
 
 var Module = fx.Module("auth",
 	fx.Provide(NewService),
+	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *Service, logger *zap.Logger, auditSvc *security.AuditService) *TOTPHandler {
+		return NewTOTPHandler(db, inertiaSvc, totpSvc, authSvc, logger, auditSvc)
+	}),
 )

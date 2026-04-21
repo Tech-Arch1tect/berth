@@ -679,9 +679,9 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, TOTPSetupResponse{
+	return c.JSON(http.StatusOK, auth.TOTPSetupResponse{
 		Success: true,
-		Data: TOTPSetupData{
+		Data: auth.TOTPSetupData{
 			QRCodeURI: qrCodeURI,
 			Secret:    secret.Secret,
 		},
@@ -707,7 +707,7 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		})
 	}
 
-	var req TOTPEnableRequest
+	var req auth.TOTPEnableRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -754,9 +754,9 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, true)
 	}
 
-	return c.JSON(http.StatusOK, TOTPMessageResponse{
+	return c.JSON(http.StatusOK, auth.TOTPMessageResponse{
 		Success: true,
-		Data: TOTPMessageData{
+		Data: auth.TOTPMessageData{
 			Message: "Two-factor authentication has been enabled successfully",
 		},
 	})
@@ -781,7 +781,7 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 		})
 	}
 
-	var req TOTPDisableRequest
+	var req auth.TOTPDisableRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -837,9 +837,9 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, false)
 	}
 
-	return c.JSON(http.StatusOK, TOTPMessageResponse{
+	return c.JSON(http.StatusOK, auth.TOTPMessageResponse{
 		Success: true,
-		Data: TOTPMessageData{
+		Data: auth.TOTPMessageData{
 			Message: "Two-factor authentication has been disabled",
 		},
 	})
@@ -866,9 +866,9 @@ func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 
 	enabled := h.totpSvc.IsUserTOTPEnabled(userModel.ID)
 
-	return c.JSON(http.StatusOK, TOTPStatusResponse{
+	return c.JSON(http.StatusOK, auth.TOTPStatusResponse{
 		Success: true,
-		Data: TOTPStatusData{
+		Data: auth.TOTPStatusData{
 			Enabled: enabled,
 		},
 	})

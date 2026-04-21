@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 type TOTPEnableRequest struct {
 	Code string `json:"code" validate:"required"`

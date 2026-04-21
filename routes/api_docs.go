@@ -5,6 +5,7 @@ import (
 
 	"berth/handlers"
 	"berth/internal/apikey"
+	"berth/internal/auth"
 	"berth/internal/config"
 	"berth/internal/dto"
 	"berth/internal/files"
@@ -1268,7 +1269,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("totp").
 		Summary("Get TOTP status").
 		Description("Returns whether two-factor authentication is enabled for the authenticated user.").
-		Response(http.StatusOK, handlers.TOTPStatusResponse{}, "TOTP status").
+		Response(http.StatusOK, auth.TOTPStatusResponse{}, "TOTP status").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "session").
@@ -1278,7 +1279,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("totp").
 		Summary("Get TOTP setup information").
 		Description("Returns the QR code URI and secret for setting up two-factor authentication. Only available if TOTP is not already enabled.").
-		Response(http.StatusOK, handlers.TOTPSetupResponse{}, "TOTP setup information").
+		Response(http.StatusOK, auth.TOTPSetupResponse{}, "TOTP setup information").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusConflict, ErrorResponse{}, "TOTP already enabled").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
@@ -1289,8 +1290,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("totp").
 		Summary("Enable TOTP").
 		Description("Enables two-factor authentication after verifying the TOTP code from the authenticator app.").
-		Body(handlers.TOTPEnableRequest{}, "TOTP verification code").
-		Response(http.StatusOK, handlers.TOTPMessageResponse{}, "TOTP enabled successfully").
+		Body(auth.TOTPEnableRequest{}, "TOTP verification code").
+		Response(http.StatusOK, auth.TOTPMessageResponse{}, "TOTP enabled successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid TOTP code").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
@@ -1301,8 +1302,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("totp").
 		Summary("Disable TOTP").
 		Description("Disables two-factor authentication. Requires both the current TOTP code and password for security.").
-		Body(handlers.TOTPDisableRequest{}, "TOTP code and password").
-		Response(http.StatusOK, handlers.TOTPMessageResponse{}, "TOTP disabled successfully").
+		Body(auth.TOTPDisableRequest{}, "TOTP code and password").
+		Response(http.StatusOK, auth.TOTPMessageResponse{}, "TOTP disabled successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Invalid TOTP code or password").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").

@@ -1,16 +1,14 @@
-package handlers
+package auth
 
 import (
 	"net/http"
-	"time"
 
-	"berth/internal/security"
-	"berth/models"
-
-	"berth/internal/auth"
 	"berth/internal/auth/totp"
 	"berth/internal/inertia"
+	"berth/internal/security"
 	"berth/internal/session"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -24,12 +22,12 @@ type TOTPHandler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
 	totpSvc    *totp.Service
-	authSvc    *auth.Service
+	authSvc    *Service
 	logger     *zap.Logger
 	auditSvc   totpAuditLogger
 }
 
-func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *auth.Service, logger *zap.Logger, auditSvc totpAuditLogger) *TOTPHandler {
+func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *Service, logger *zap.Logger, auditSvc totpAuditLogger) *TOTPHandler {
 	return &TOTPHandler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
@@ -179,7 +177,7 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 					)
 				}
 			} else {
-				setRememberMeCookie(c, h.authSvc, rememberToken.Token, rememberToken.ExpiresAt)
+				setRememberCookie(c, h.authSvc, rememberToken.Token, rememberToken.ExpiresAt)
 				if h.logger != nil {
 					h.logger.Info("remember me token created after TOTP verification",
 						zap.Uint("user_id", userID),
@@ -202,30 +200,4 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusFound, "/")
-}
-
-func setRememberMeCookie(c echo.Context, authSvc *auth.Service, token string, expiresAt time.Time) {
-	sameSite := http.SameSiteLaxMode
-	switch authSvc.GetRememberMeCookieSameSite() {
-	case "strict":
-		sameSite = http.SameSiteStrictMode
-	case "none":
-		sameSite = http.SameSiteNoneMode
-	case "lax":
-		sameSite = http.SameSiteLaxMode
-	}
-
-	maxAge := int(time.Until(expiresAt).Seconds())
-
-	cookie := &http.Cookie{
-		Name:     "remember_me",
-		Value:    token,
-		Expires:  expiresAt,
-		MaxAge:   maxAge,
-		HttpOnly: true,
-		Secure:   authSvc.GetRememberMeCookieSecure(),
-		SameSite: sameSite,
-		Path:     "/",
-	}
-	c.SetCookie(cookie)
 }
