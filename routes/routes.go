@@ -21,6 +21,7 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
+	"berth/internal/version"
 	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 
@@ -47,7 +48,7 @@ type RouteParams struct {
 	MobileAuthHandler      *handlers.MobileAuthHandler
 	SessionHandler         *handlers.SessionHandler
 	TOTPHandler            *handlers.TOTPHandler
-	VersionHandler         *handlers.VersionHandler
+	VersionHandler         *version.Handler
 	MigrationHandler       *migration.Handler
 	OperationLogsHandler   *operationlogs.Handler
 	RBACHandler            *rbac.Handler
@@ -242,7 +243,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 
 func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
-	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *handlers.VersionHandler, stackHandler *stack.Handler,
+	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	registryAPIHandler *registry.APIHandler) {
@@ -369,7 +370,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
-	versionHandler *handlers.VersionHandler, registryAPIHandler *registry.APIHandler) {
+	versionHandler *version.Handler, registryAPIHandler *registry.APIHandler) {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)

@@ -17,6 +17,7 @@ import (
 	"berth/internal/security"
 	"berth/internal/server"
 	"berth/internal/stack"
+	"berth/internal/version"
 	"berth/internal/vulnscan"
 
 	"berth/internal/apidocs"
@@ -102,7 +103,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("system").
 		Summary("Get application version").
 		Description("Returns the current version of the Berth application.").
-		Response(http.StatusOK, handlers.GetVersionResponse{}, "Application version").
+		Response(http.StatusOK, version.GetVersionResponse{}, "Application version").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

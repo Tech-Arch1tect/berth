@@ -24,6 +24,7 @@ import (
 	"berth/internal/server"
 	"berth/internal/setup"
 	"berth/internal/stack"
+	"berth/internal/version"
 	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 	"berth/models"
@@ -163,6 +164,7 @@ func CoreFxOptions() fx.Option {
 		migration.Module,
 		queue.Module,
 		imageupdates.Module,
+		version.Module,
 		vulnscan.Module,
 		websocket.Module,
 
