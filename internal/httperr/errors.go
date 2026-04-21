@@ -1,4 +1,4 @@
-package handlers
+package httperr
 
 import (
 	"fmt"
@@ -21,7 +21,6 @@ func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
 			msg = he.Message
 		}
 
-		// For web requests (browsers), render error page
 		accept := c.Request().Header.Get("Accept")
 		if strings.Contains(accept, "text/html") || c.Request().Header.Get("X-Inertia") == "true" {
 			_ = inertiaSvc.Render(c, "Errors/Generic", map[string]any{
@@ -31,7 +30,6 @@ func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
 			return
 		}
 
-		// For API/JSON requests, return JSON
 		_ = c.JSON(code, map[string]any{
 			"error": fmt.Sprintf("%v", msg),
 			"code":  code,

@@ -8,6 +8,7 @@ import (
 	"berth/internal/apikey"
 	"berth/internal/auth"
 	"berth/internal/files"
+	"berth/internal/httperr"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
@@ -105,7 +106,7 @@ func RegisterRoutes(p RouteParams) {
 		HSTSMaxAge:         31536000,
 		ReferrerPolicy:     "strict-origin-when-cross-origin",
 	}))
-	handlers.SetupErrorHandler(e, p.InertiaService)
+	httperr.SetupErrorHandler(e, p.InertiaService)
 
 	// ============================================================================
 	// PUBLIC ROUTES
