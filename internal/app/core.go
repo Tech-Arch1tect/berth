@@ -10,6 +10,7 @@ import (
 	"berth/internal/common"
 	"berth/internal/config"
 	"berth/internal/crypto"
+	"berth/internal/dashboard"
 	"berth/internal/files"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
@@ -153,6 +154,7 @@ func CoreFxOptions() fx.Option {
 		setup.Module,
 		server.Module,
 		stack.Module,
+		dashboard.Module,
 		maintenance.Module,
 		security.Module,
 		handlers.Module,

@@ -1,13 +1,21 @@
 package handlers
 
 import (
+	"context"
+
 	"berth/internal/inertia"
 	"berth/internal/session"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
+
+type serverLister interface {
+	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
+}
 
 type StacksHandler struct {
 	inertiaSvc *inertia.Service

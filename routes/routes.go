@@ -7,6 +7,7 @@ import (
 	"berth/handlers"
 	"berth/internal/apikey"
 	"berth/internal/auth"
+	"berth/internal/dashboard"
 	"berth/internal/files"
 	"berth/internal/httperr"
 	"berth/internal/imageupdates"
@@ -42,7 +43,7 @@ type RouteParams struct {
 	fx.In
 
 	Srv                    *echo.Echo
-	DashboardHandler       *handlers.DashboardHandler
+	DashboardHandler       *dashboard.Handler
 	StacksHandler          *handlers.StacksHandler
 	AuthHandler            *handlers.AuthHandler
 	MobileAuthHandler      *handlers.MobileAuthHandler
@@ -242,7 +243,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 }
 
 func registerProtectedWebRoutes(web *echo.Group,
-	dashboardHandler *handlers.DashboardHandler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
+	dashboardHandler *dashboard.Handler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,

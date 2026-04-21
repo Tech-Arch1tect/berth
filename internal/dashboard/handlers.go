@@ -1,11 +1,12 @@
-package handlers
+package dashboard
 
 import (
-	"berth/models"
 	"context"
 
 	"berth/internal/inertia"
 	"berth/internal/session"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
@@ -16,15 +17,15 @@ type serverLister interface {
 	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
 }
 
-type DashboardHandler struct {
+type Handler struct {
 	inertiaSvc *inertia.Service
 	db         *gorm.DB
 	logger     *zap.Logger
 	serverSvc  serverLister
 }
 
-func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc serverLister) *DashboardHandler {
-	return &DashboardHandler{
+func NewHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc serverLister) *Handler {
+	return &Handler{
 		inertiaSvc: inertiaSvc,
 		db:         db,
 		logger:     logger,
@@ -32,7 +33,7 @@ func NewDashboardHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.L
 	}
 }
 
-func (h *DashboardHandler) Dashboard(c echo.Context) error {
+func (h *Handler) Dashboard(c echo.Context) error {
 	h.logger.Info("dashboard accessed",
 		zap.String("user_agent", c.Request().UserAgent()),
 		zap.String("remote_ip", c.RealIP()),

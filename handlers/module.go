@@ -15,9 +15,6 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(func(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc *server.Service) *DashboardHandler {
-		return NewDashboardHandler(inertiaSvc, db, logger, serverSvc)
-	}),
 	fx.Provide(func(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc *server.Service) *StacksHandler {
 		return NewStacksHandler(inertiaSvc, db, logger, serverSvc)
 	}),
