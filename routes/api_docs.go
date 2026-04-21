@@ -16,6 +16,7 @@ import (
 	"berth/internal/registry"
 	"berth/internal/security"
 	"berth/internal/server"
+	"berth/internal/session"
 	"berth/internal/stack"
 	"berth/internal/version"
 	"berth/internal/vulnscan"
@@ -89,8 +90,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("sessions").
 		Summary("List user sessions").
 		Description("Returns all active sessions for the authenticated user. The refresh token must be provided to identify the current session.").
-		Body(handlers.GetSessionsRequest{}, "Refresh token to identify current session").
-		Response(http.StatusOK, handlers.GetSessionsResponse{}, "List of active sessions").
+		Body(session.GetSessionsRequest{}, "Refresh token to identify current session").
+		Response(http.StatusOK, session.GetSessionsResponse{}, "List of active sessions").
 		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request or refresh token").
 		Response(http.StatusUnauthorized, handlers.AuthErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, handlers.AuthErrorResponse{}, "Failed to retrieve sessions").
@@ -1324,8 +1325,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("sessions").
 		Summary("Revoke a session").
 		Description("Revokes a specific session by ID. The user will be logged out from that device.").
-		Body(handlers.RevokeSessionRequest{}, "Session to revoke").
-		Response(http.StatusOK, handlers.SessionMessageResponse{}, "Session revoked successfully").
+		Body(session.RevokeSessionRequest{}, "Session to revoke").
+		Response(http.StatusOK, session.SessionMessageResponse{}, "Session revoked successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or session ID").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
@@ -1336,8 +1337,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("sessions").
 		Summary("Revoke all other sessions").
 		Description("Revokes all sessions except the current one. For JWT authentication, the refresh token must be provided in the request body.").
-		Body(handlers.RevokeAllOtherSessionsRequest{}, "Refresh token (required for JWT auth, not needed for session auth)").
-		Response(http.StatusOK, handlers.SessionMessageResponse{}, "All other sessions revoked successfully").
+		Body(session.RevokeAllOtherSessionsRequest{}, "Refresh token (required for JWT auth, not needed for session auth)").
+		Response(http.StatusOK, session.SessionMessageResponse{}, "All other sessions revoked successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").

@@ -73,4 +73,5 @@ func ProvideSessionService(db *gorm.DB, manager *Manager, t *tokens.Service, log
 var Module = fx.Module("session",
 	fx.Provide(ProvideSessionManager),
 	fx.Provide(ProvideSessionService),
+	fx.Provide(NewHandler),
 )

@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"berth/handlers"
+	"berth/internal/session"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -299,7 +300,7 @@ func TestAPISessions(t *testing.T) {
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: handlers.GetSessionsRequest{
+			Body: session.GetSessionsRequest{
 				RefreshToken: login.Data.RefreshToken,
 			},
 			Headers: map[string]string{
@@ -309,7 +310,7 @@ func TestAPISessions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, sessionsResp.StatusCode)
 
-		var sessions handlers.GetSessionsResponse
+		var sessions session.GetSessionsResponse
 		require.NoError(t, sessionsResp.GetJSON(&sessions))
 		assert.True(t, sessions.Success)
 		assert.GreaterOrEqual(t, len(sessions.Data.Sessions), 1)
@@ -352,7 +353,7 @@ func TestAPISessions(t *testing.T) {
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: handlers.RevokeAllOtherSessionsRequest{
+			Body: session.RevokeAllOtherSessionsRequest{
 				RefreshToken: login2.Data.RefreshToken,
 			},
 			Headers: map[string]string{

@@ -901,7 +901,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	var req GetSessionsRequest
+	var req session.GetSessionsRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -937,11 +937,11 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	sessionItems := make([]SessionItem, len(sessions))
+	sessionItems := make([]session.SessionItem, len(sessions))
 	for i, sess := range sessions {
 		deviceInfo := session.GetDeviceInfo(sess.UserAgent)
 
-		sessionItems[i] = SessionItem{
+		sessionItems[i] = session.SessionItem{
 			ID:         sess.ID,
 			UserID:     sess.UserID,
 			Token:      sess.Token,
@@ -964,9 +964,9 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, GetSessionsResponse{
+	return c.JSON(http.StatusOK, session.GetSessionsResponse{
 		Success: true,
-		Data: GetSessionsData{
+		Data: session.GetSessionsData{
 			Sessions: sessionItems,
 		},
 	})
@@ -999,7 +999,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
-	var req RevokeSessionRequest
+	var req session.RevokeSessionRequest
 
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
@@ -1039,9 +1039,9 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, SessionMessageResponse{
+	return c.JSON(http.StatusOK, session.SessionMessageResponse{
 		Success: true,
-		Data: SessionMessageData{
+		Data: session.SessionMessageData{
 			Message: "Session revoked successfully",
 		},
 	})
@@ -1096,7 +1096,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		}
 	} else {
 
-		var req RevokeAllOtherSessionsRequest
+		var req session.RevokeAllOtherSessionsRequest
 
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
@@ -1145,9 +1145,9 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, SessionMessageResponse{
+	return c.JSON(http.StatusOK, session.SessionMessageResponse{
 		Success: true,
-		Data: SessionMessageData{
+		Data: session.SessionMessageData{
 			Message: "All other sessions revoked successfully",
 		},
 	})

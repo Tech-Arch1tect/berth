@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"berth/handlers"
+	"berth/internal/session"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -253,7 +254,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		sessResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: handlers.GetSessionsRequest{
+			Body: session.GetSessionsRequest{
 				RefreshToken: login2.Data.RefreshToken,
 			},
 			Headers: map[string]string{
@@ -263,7 +264,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, sessResp.StatusCode)
 
-		var sessions handlers.GetSessionsResponse
+		var sessions session.GetSessionsResponse
 		require.NoError(t, sessResp.GetJSON(&sessions))
 		require.GreaterOrEqual(t, len(sessions.Data.Sessions), 2, "should have at least 2 sessions")
 
@@ -279,7 +280,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke",
-			Body:   handlers.RevokeSessionRequest{SessionID: targetSessionID},
+			Body:   session.RevokeSessionRequest{SessionID: targetSessionID},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},
@@ -292,7 +293,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		sessResp2, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: handlers.GetSessionsRequest{
+			Body: session.GetSessionsRequest{
 				RefreshToken: login2.Data.RefreshToken,
 			},
 			Headers: map[string]string{
@@ -300,7 +301,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		var sessions2 handlers.GetSessionsResponse
+		var sessions2 session.GetSessionsResponse
 		require.NoError(t, sessResp2.GetJSON(&sessions2))
 		assert.Less(t, len(sessions2.Data.Sessions), len(sessions.Data.Sessions), "session count should decrease after revocation")
 	})
@@ -312,7 +313,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke",
-			Body:   handlers.RevokeSessionRequest{SessionID: 0},
+			Body:   session.RevokeSessionRequest{SessionID: 0},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
@@ -337,7 +338,7 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: handlers.RevokeAllOtherSessionsRequest{
+			Body: session.RevokeAllOtherSessionsRequest{
 				RefreshToken: "garbage-token",
 			},
 			Headers: map[string]string{
@@ -359,7 +360,7 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: handlers.RevokeAllOtherSessionsRequest{
+			Body: session.RevokeAllOtherSessionsRequest{
 				RefreshToken: "",
 			},
 			Headers: map[string]string{
@@ -392,7 +393,7 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: handlers.RevokeAllOtherSessionsRequest{
+			Body: session.RevokeAllOtherSessionsRequest{
 				RefreshToken: login3.Data.RefreshToken,
 			},
 			Headers: map[string]string{

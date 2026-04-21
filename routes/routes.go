@@ -46,7 +46,7 @@ type RouteParams struct {
 	DashboardHandler       *dashboard.Handler
 	AuthHandler            *handlers.AuthHandler
 	MobileAuthHandler      *handlers.MobileAuthHandler
-	SessionHandler         *handlers.SessionHandler
+	SessionHandler         *session.Handler
 	TOTPHandler            *handlers.TOTPHandler
 	VersionHandler         *version.Handler
 	MigrationHandler       *migration.Handler
@@ -253,7 +253,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 
 func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *dashboard.Handler, authHandler *handlers.AuthHandler,
-	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
+	sessionHandler *session.Handler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
 	registryAPIHandler *registry.APIHandler) {

@@ -1,39 +1,39 @@
-package handlers
+package session
 
 import (
 	"net/http"
 
 	"berth/internal/inertia"
-	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
-type SessionHandler struct {
+type Handler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
-	sessionSvc *session.Service
+	sessionSvc *Service
 }
 
-func NewSessionHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc *session.Service) *SessionHandler {
-	return &SessionHandler{
+func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc *Service) *Handler {
+	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		sessionSvc: sessionSvc,
 	}
 }
 
-func (h *SessionHandler) Sessions(c echo.Context) error {
+func (h *Handler) Sessions(c echo.Context) error {
 	if h.sessionSvc == nil {
 		return echo.NewHTTPError(http.StatusServiceUnavailable, "Session service not available")
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID := GetUserIDAsUint(c)
 	if userID == 0 {
 		return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
 	}
 
-	manager := session.GetManager(c)
+	manager := GetManager(c)
 	currentToken := ""
 	if manager != nil {
 		currentToken = manager.Token(c.Request().Context())
@@ -46,14 +46,14 @@ func (h *SessionHandler) Sessions(c echo.Context) error {
 
 	sessionData := make([]map[string]any, len(sessions))
 	for i, sess := range sessions {
-		deviceInfo := session.GetDeviceInfo(sess.UserAgent)
+		deviceInfo := GetDeviceInfo(sess.UserAgent)
 
 		sessionData[i] = map[string]any{
 			"id":          sess.ID,
 			"current":     sess.Current,
 			"type":        sess.Type,
 			"ip_address":  sess.IPAddress,
-			"location":    session.GetLocationInfo(sess.IPAddress),
+			"location":    GetLocationInfo(sess.IPAddress),
 			"browser":     deviceInfo["browser"],
 			"os":          deviceInfo["os"],
 			"device_type": deviceInfo["device_type"],
