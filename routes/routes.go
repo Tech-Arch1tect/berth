@@ -44,7 +44,6 @@ type RouteParams struct {
 
 	Srv                    *echo.Echo
 	DashboardHandler       *dashboard.Handler
-	StacksHandler          *handlers.StacksHandler
 	AuthHandler            *handlers.AuthHandler
 	MobileAuthHandler      *handlers.MobileAuthHandler
 	SessionHandler         *handlers.SessionHandler
@@ -147,7 +146,7 @@ func RegisterRoutes(p RouteParams) {
 
 	registerAuthRoutes(web, p.Cfg, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
 	registerProtectedWebRoutes(web,
-		p.DashboardHandler, p.StacksHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
+		p.DashboardHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
 		p.VersionHandler, p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
 		p.OperationLogsHandler, p.APIKeyHandler,
 		p.RegistryAPIHandler)
@@ -243,7 +242,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 }
 
 func registerProtectedWebRoutes(web *echo.Group,
-	dashboardHandler *dashboard.Handler, stacksHandler *handlers.StacksHandler, authHandler *handlers.AuthHandler,
+	dashboardHandler *dashboard.Handler, authHandler *handlers.AuthHandler,
 	sessionHandler *handlers.SessionHandler, totpHandler *handlers.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
@@ -255,9 +254,9 @@ func registerProtectedWebRoutes(web *echo.Group,
 
 	// Inertia Pages
 	protected.GET("/", dashboardHandler.Dashboard)
-	protected.GET("/stacks", stacksHandler.Index)
 	protected.GET("/profile", authHandler.Profile)
 	if stackHandler != nil {
+		protected.GET("/stacks", stackHandler.Index)
 		protected.GET("/servers/:id/stacks", stackHandler.ShowServerStacks)
 		protected.GET("/servers/:serverid/stacks/:stackname", stackHandler.ShowStackDetails)
 	}

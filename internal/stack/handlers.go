@@ -1,10 +1,12 @@
 package stack
 
 import (
+	"context"
 	"strconv"
 
 	"berth/internal/common"
 	"berth/internal/rbac"
+	"berth/models"
 
 	"berth/internal/inertia"
 	"berth/internal/session"
@@ -12,18 +14,38 @@ import (
 	gonertia "github.com/romsar/gonertia/v3"
 )
 
+type serverLister interface {
+	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
+}
+
 type Handler struct {
 	inertiaSvc *inertia.Service
 	service    *Service
 	rbacSvc    *rbac.Service
+	serverSvc  serverLister
 }
 
-func NewHandler(inertiaSvc *inertia.Service, service *Service, rbacSvc *rbac.Service) *Handler {
+func NewHandler(inertiaSvc *inertia.Service, service *Service, rbacSvc *rbac.Service, serverSvc serverLister) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
 		service:    service,
 		rbacSvc:    rbacSvc,
+		serverSvc:  serverSvc,
 	}
+}
+
+func (h *Handler) Index(c echo.Context) error {
+	userID := session.GetUserIDAsUint(c)
+	ctx := c.Request().Context()
+	servers, err := h.serverSvc.ListServersForUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	return h.inertiaSvc.Render(c, "Stacks", gonertia.Props{
+		"title":   "All Stacks",
+		"servers": servers,
+	})
 }
 
 func (h *Handler) ShowServerStacks(c echo.Context) error {

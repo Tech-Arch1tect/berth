@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"berth/internal/security"
-	"berth/internal/server"
 
 	"berth/internal/auth"
 	"berth/internal/auth/tokens"
@@ -15,9 +14,6 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(func(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc *server.Service) *StacksHandler {
-		return NewStacksHandler(inertiaSvc, db, logger, serverSvc)
-	}),
 	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc *security.AuditService) *AuthHandler {
 		return NewAuthHandler(db, inertiaSvc, authSvc, totpSvc, logger, auditSvc)
 	}),
