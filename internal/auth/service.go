@@ -85,6 +85,7 @@ func generateHexToken(length int) (string, error) {
 
 var Module = fx.Module("auth",
 	fx.Provide(NewService),
+	fx.Provide(NewUserProvider),
 	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc *security.AuditService) *Handler {
 		return NewHandler(db, inertiaSvc, authSvc, totpSvc, logger, auditSvc)
 	}),

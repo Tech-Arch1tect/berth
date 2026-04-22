@@ -28,7 +28,6 @@ import (
 	"berth/internal/vulnscan"
 	"berth/internal/websocket"
 	"berth/models"
-	"berth/providers"
 	"berth/routes"
 	"berth/seeds"
 
@@ -145,10 +144,6 @@ func CoreFxOptions() fx.Option {
 			fx.As(new(SecurityLogAuditor)),
 		)),
 		fx.Invoke(RegisterAuditCallbacks),
-		fx.Provide(fx.Annotate(
-			providers.NewUserProvider,
-			fx.As(new(auth.UserProvider)),
-		)),
 		agent.Module,
 		rbac.Module,
 		fx.Provide(func(db *gorm.DB, logger *zap.Logger, rbacSvc *rbac.Service) *apikey.Service {
