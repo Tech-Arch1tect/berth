@@ -4,7 +4,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"berth/handlers"
 	"berth/internal/agent"
 	"berth/internal/apikey"
 	"berth/internal/common"
@@ -162,7 +161,6 @@ func CoreFxOptions() fx.Option {
 		dashboard.Module,
 		maintenance.Module,
 		security.Module,
-		handlers.Module,
 		files.Module,
 		logs.Module,
 		operations.Module,

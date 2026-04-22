@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"errors"
@@ -7,82 +7,32 @@ import (
 	"strings"
 	"time"
 
-	"berth/internal/security"
-	"berth/models"
-
-	"berth/internal/auth"
 	"berth/internal/auth/totp"
 	"berth/internal/inertia"
+	"berth/internal/security"
 	"berth/internal/session"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-type authAuditLogger interface {
+type webAuditLogger interface {
 	LogAuthEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
 }
 
-func (h *AuthHandler) setRememberMeCookie(c echo.Context, token string, expiresAt time.Time) {
-	sameSite := http.SameSiteLaxMode
-	switch h.authSvc.GetRememberMeCookieSameSite() {
-	case "strict":
-		sameSite = http.SameSiteStrictMode
-	case "none":
-		sameSite = http.SameSiteNoneMode
-	case "lax":
-		sameSite = http.SameSiteLaxMode
-	}
-
-	maxAge := int(time.Until(expiresAt).Seconds())
-
-	cookie := &http.Cookie{
-		Name:     "remember_me",
-		Value:    token,
-		Expires:  expiresAt,
-		MaxAge:   maxAge,
-		HttpOnly: true,
-		Secure:   h.authSvc.GetRememberMeCookieSecure(),
-		SameSite: sameSite,
-		Path:     "/",
-	}
-	c.SetCookie(cookie)
-}
-
-func (h *AuthHandler) clearRememberMeCookie(c echo.Context) {
-	sameSite := http.SameSiteLaxMode
-	switch h.authSvc.GetRememberMeCookieSameSite() {
-	case "strict":
-		sameSite = http.SameSiteStrictMode
-	case "none":
-		sameSite = http.SameSiteNoneMode
-	case "lax":
-		sameSite = http.SameSiteLaxMode
-	}
-
-	cookie := &http.Cookie{
-		Name:     "remember_me",
-		Value:    "",
-		Expires:  time.Unix(0, 0),
-		HttpOnly: true,
-		Secure:   h.authSvc.GetRememberMeCookieSecure(),
-		SameSite: sameSite,
-		Path:     "/",
-	}
-	c.SetCookie(cookie)
-}
-
-type AuthHandler struct {
+type Handler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
-	authSvc    *auth.Service
+	authSvc    *Service
 	totpSvc    *totp.Service
 	logger     *zap.Logger
-	auditSvc   authAuditLogger
+	auditSvc   webAuditLogger
 }
 
-func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc authAuditLogger) *AuthHandler {
-	return &AuthHandler{
+func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc webAuditLogger) *Handler {
+	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
 		authSvc:    authSvc,
@@ -92,7 +42,7 @@ func NewAuthHandler(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Serv
 	}
 }
 
-func (h *AuthHandler) ShowLogin(c echo.Context) error {
+func (h *Handler) ShowLogin(c echo.Context) error {
 	if session.IsAuthenticated(c) {
 		return c.Redirect(http.StatusFound, "/")
 	}
@@ -110,7 +60,7 @@ func (h *AuthHandler) ShowLogin(c echo.Context) error {
 	})
 }
 
-func (h *AuthHandler) Login(c echo.Context) error {
+func (h *Handler) Login(c echo.Context) error {
 	var req struct {
 		Username   string `form:"username" json:"username"`
 		Password   string `form:"password" json:"password"`
@@ -201,7 +151,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 					zap.Error(err),
 				)
 			} else {
-				h.setRememberMeCookie(c, rememberToken.Token, rememberToken.ExpiresAt)
+				setRememberCookie(c, h.authSvc, rememberToken.Token, rememberToken.ExpiresAt)
 				h.logger.Info("remember me token created",
 					zap.Uint("user_id", user.ID),
 					zap.Time("expires_at", rememberToken.ExpiresAt),
@@ -246,7 +196,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/")
 }
 
-func (h *AuthHandler) Logout(c echo.Context) error {
+func (h *Handler) Logout(c echo.Context) error {
 	userID := session.GetUserID(c)
 
 	var userIDPtr *uint
@@ -279,7 +229,7 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 			}
 		}
 
-		h.clearRememberMeCookie(c)
+		clearRememberCookie(c, h.authSvc)
 	}
 
 	_ = h.auditSvc.LogAuthEvent(
@@ -298,13 +248,13 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/auth/login")
 }
 
-func (h *AuthHandler) Profile(c echo.Context) error {
+func (h *Handler) Profile(c echo.Context) error {
 	return h.inertiaSvc.Render(c, "Profile", map[string]any{
 		"title": "Profile",
 	})
 }
 
-func (h *AuthHandler) ShowPasswordReset(c echo.Context) error {
+func (h *Handler) ShowPasswordReset(c echo.Context) error {
 	if session.IsAuthenticated(c) {
 		return c.Redirect(http.StatusFound, "/")
 	}
@@ -312,7 +262,7 @@ func (h *AuthHandler) ShowPasswordReset(c echo.Context) error {
 	return h.inertiaSvc.Render(c, "Auth/PasswordReset", map[string]any{})
 }
 
-func (h *AuthHandler) RequestPasswordReset(c echo.Context) error {
+func (h *Handler) RequestPasswordReset(c echo.Context) error {
 	var req struct {
 		Email string `form:"email" json:"email"`
 	}
@@ -365,7 +315,7 @@ func (h *AuthHandler) RequestPasswordReset(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/auth/login")
 }
 
-func (h *AuthHandler) ShowPasswordResetConfirm(c echo.Context) error {
+func (h *Handler) ShowPasswordResetConfirm(c echo.Context) error {
 	if session.IsAuthenticated(c) {
 		return c.Redirect(http.StatusFound, "/")
 	}
@@ -380,11 +330,11 @@ func (h *AuthHandler) ShowPasswordResetConfirm(c echo.Context) error {
 	if err != nil {
 		var message string
 		switch err {
-		case auth.ErrPasswordResetTokenExpired:
+		case ErrPasswordResetTokenExpired:
 			message = "This password reset link has expired. Please request a new one."
-		case auth.ErrPasswordResetTokenUsed:
+		case ErrPasswordResetTokenUsed:
 			message = "This password reset link has already been used."
-		case auth.ErrPasswordResetTokenInvalid:
+		case ErrPasswordResetTokenInvalid:
 			message = "Invalid password reset link."
 		default:
 			message = "Invalid password reset link."
@@ -398,7 +348,7 @@ func (h *AuthHandler) ShowPasswordResetConfirm(c echo.Context) error {
 	})
 }
 
-func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
+func (h *Handler) ConfirmPasswordReset(c echo.Context) error {
 	var req struct {
 		Token           string `form:"token" json:"token"`
 		Password        string `form:"password" json:"password"`
@@ -429,11 +379,11 @@ func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
 	if err != nil {
 		var message string
 		switch err {
-		case auth.ErrPasswordResetTokenExpired:
+		case ErrPasswordResetTokenExpired:
 			message = "This password reset link has expired. Please request a new one."
-		case auth.ErrPasswordResetTokenUsed:
+		case ErrPasswordResetTokenUsed:
 			message = "This password reset link has already been used."
-		case auth.ErrPasswordResetTokenInvalid:
+		case ErrPasswordResetTokenInvalid:
 			message = "Invalid password reset link."
 		default:
 			message = "Invalid password reset link."
@@ -474,7 +424,7 @@ func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/auth/login")
 }
 
-func (h *AuthHandler) ShowVerifyEmail(c echo.Context) error {
+func (h *Handler) ShowVerifyEmail(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {
 		session.AddFlashError(c, "Invalid verification link")
@@ -485,11 +435,11 @@ func (h *AuthHandler) ShowVerifyEmail(c echo.Context) error {
 	if err != nil {
 		var message string
 		switch err {
-		case auth.ErrEmailVerificationTokenExpired:
+		case ErrEmailVerificationTokenExpired:
 			message = "This verification link has expired. Please request a new one."
-		case auth.ErrEmailVerificationTokenUsed:
+		case ErrEmailVerificationTokenUsed:
 			message = "This email has already been verified."
-		case auth.ErrEmailVerificationTokenInvalid:
+		case ErrEmailVerificationTokenInvalid:
 			message = "Invalid verification link."
 		default:
 			message = "Invalid verification link."
@@ -503,7 +453,7 @@ func (h *AuthHandler) ShowVerifyEmail(c echo.Context) error {
 	})
 }
 
-func (h *AuthHandler) VerifyEmail(c echo.Context) error {
+func (h *Handler) VerifyEmail(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {
 		session.AddFlashError(c, "Invalid verification link")
@@ -514,11 +464,11 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 	if err != nil {
 		var message string
 		switch err {
-		case auth.ErrEmailVerificationTokenExpired:
+		case ErrEmailVerificationTokenExpired:
 			message = "This verification link has expired. Please request a new one."
-		case auth.ErrEmailVerificationTokenUsed:
+		case ErrEmailVerificationTokenUsed:
 			message = "This email has already been verified."
-		case auth.ErrEmailVerificationTokenInvalid:
+		case ErrEmailVerificationTokenInvalid:
 			message = "Invalid verification link."
 		default:
 			message = "Invalid verification link."
@@ -535,7 +485,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 
 	if err := h.authSvc.VerifyEmail(token); err != nil {
 		var message string
-		if err == auth.ErrEmailVerificationTokenExpired || err == auth.ErrEmailVerificationTokenUsed || err == auth.ErrEmailVerificationTokenInvalid {
+		if err == ErrEmailVerificationTokenExpired || err == ErrEmailVerificationTokenUsed || err == ErrEmailVerificationTokenInvalid {
 			message = "Invalid verification link."
 		} else {
 			message = "Something went wrong. Please try again."
@@ -559,7 +509,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/auth/login")
 }
 
-func (h *AuthHandler) ResendVerification(c echo.Context) error {
+func (h *Handler) ResendVerification(c echo.Context) error {
 	var req struct {
 		Email string `form:"email" json:"email"`
 	}

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"berth/handlers"
 	"berth/internal/apikey"
 	"berth/internal/auth"
 	"berth/internal/dashboard"
@@ -44,7 +43,7 @@ type RouteParams struct {
 
 	Srv                    *echo.Echo
 	DashboardHandler       *dashboard.Handler
-	AuthHandler            *handlers.AuthHandler
+	AuthHandler            *auth.Handler
 	MobileAuthHandler      *auth.APIHandler
 	SessionHandler         *session.Handler
 	TOTPHandler            *auth.TOTPHandler
@@ -214,7 +213,7 @@ func RegisterRoutes(p RouteParams) {
 // WEB UI ROUTE HELPERS
 // ============================================================================
 
-func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handlers.AuthHandler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
+func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.Handler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
 	auth := web.Group("/auth")
 	auth.Use(newRateLimit(cfg, ratelimit.Config{
 		Store:     rateLimitStore,
@@ -252,7 +251,7 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *handle
 }
 
 func registerProtectedWebRoutes(web *echo.Group,
-	dashboardHandler *dashboard.Handler, authHandler *handlers.AuthHandler,
+	dashboardHandler *dashboard.Handler, authHandler *auth.Handler,
 	sessionHandler *session.Handler, totpHandler *auth.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
 	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
 	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
