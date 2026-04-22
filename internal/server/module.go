@@ -2,7 +2,7 @@ package server
 
 import (
 	"berth/internal/agent"
-	"berth/internal/crypto"
+	"berth/internal/pkg/crypto"
 	"berth/internal/rbac"
 
 	"go.uber.org/fx"

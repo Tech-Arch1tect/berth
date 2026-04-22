@@ -1,7 +1,7 @@
 package server
 
 import (
-	berthcrypto "berth/internal/crypto"
+	berthcrypto "berth/internal/pkg/crypto"
 	"berth/models"
 	"context"
 	"crypto/tls"

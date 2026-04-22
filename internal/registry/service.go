@@ -1,8 +1,8 @@
 package registry
 
 import (
-	"berth/internal/crypto"
 	"berth/internal/patterns"
+	"berth/internal/pkg/crypto"
 	"berth/models"
 	"errors"
 	"fmt"

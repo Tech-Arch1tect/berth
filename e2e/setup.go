@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"berth/internal/app"
-	"berth/internal/crypto"
+	"berth/internal/pkg/crypto"
 	"berth/models"
 
 	e2etesting "berth/e2e/internal/harness"

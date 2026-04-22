@@ -3,7 +3,7 @@ package imageupdates
 import (
 	"berth/internal/compose"
 	"berth/internal/config"
-	"berth/internal/crypto"
+	"berth/internal/pkg/crypto"
 	"berth/models"
 	"context"
 	"encoding/json"
