@@ -3,7 +3,6 @@ package routes
 import (
 	"net/http"
 
-	"berth/handlers"
 	"berth/internal/apikey"
 	"berth/internal/auth"
 	"berth/internal/config"
@@ -45,34 +44,34 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("auth").
 		Summary("Login with username and password").
 		Description("Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication.").
-		Body(handlers.AuthLoginRequest{}, "Login credentials").
-		Response(http.StatusOK, handlers.AuthLoginResponse{}, "Login successful - returns access and refresh tokens").
-		Response(http.StatusOK, handlers.AuthTOTPRequiredResponse{}, "TOTP verification required - use temporary token with /auth/totp/verify").
-		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request format").
-		Response(http.StatusUnauthorized, handlers.AuthErrorResponse{}, "Invalid credentials").
-		Response(http.StatusForbidden, handlers.AuthErrorResponse{}, "Email not verified").
+		Body(auth.AuthLoginRequest{}, "Login credentials").
+		Response(http.StatusOK, auth.AuthLoginResponse{}, "Login successful - returns access and refresh tokens").
+		Response(http.StatusOK, auth.AuthTOTPRequiredResponse{}, "TOTP verification required - use temporary token with /auth/totp/verify").
+		Response(http.StatusBadRequest, auth.AuthErrorResponse{}, "Invalid request format").
+		Response(http.StatusUnauthorized, auth.AuthErrorResponse{}, "Invalid credentials").
+		Response(http.StatusForbidden, auth.AuthErrorResponse{}, "Email not verified").
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/auth/refresh").
 		Tags("auth").
 		Summary("Refresh access token").
 		Description("Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated.").
-		Body(handlers.AuthRefreshRequest{}, "Refresh token").
-		Response(http.StatusOK, handlers.AuthRefreshResponse{}, "New access and refresh tokens").
-		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request format").
-		Response(http.StatusUnauthorized, handlers.AuthErrorResponse{}, "Invalid or expired refresh token").
-		Response(http.StatusInternalServerError, handlers.AuthErrorResponse{}, "Token refresh failed").
+		Body(auth.AuthRefreshRequest{}, "Refresh token").
+		Response(http.StatusOK, auth.AuthRefreshResponse{}, "New access and refresh tokens").
+		Response(http.StatusBadRequest, auth.AuthErrorResponse{}, "Invalid request format").
+		Response(http.StatusUnauthorized, auth.AuthErrorResponse{}, "Invalid or expired refresh token").
+		Response(http.StatusInternalServerError, auth.AuthErrorResponse{}, "Token refresh failed").
 		Build()
 
 	apiDoc.Document("POST", "/api/v1/auth/totp/verify").
 		Tags("auth").
 		Summary("Verify TOTP code to complete login").
 		Description("Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app.").
-		Body(handlers.AuthTOTPVerifyRequest{}, "TOTP verification code").
-		Response(http.StatusOK, handlers.AuthLoginResponse{}, "TOTP verified - returns access and refresh tokens").
-		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request format").
-		Response(http.StatusUnauthorized, handlers.AuthErrorResponse{}, "Invalid or expired token, or invalid TOTP code").
-		Response(http.StatusInternalServerError, handlers.AuthErrorResponse{}, "Token generation failed").
+		Body(auth.AuthTOTPVerifyRequest{}, "TOTP verification code").
+		Response(http.StatusOK, auth.AuthLoginResponse{}, "TOTP verified - returns access and refresh tokens").
+		Response(http.StatusBadRequest, auth.AuthErrorResponse{}, "Invalid request format").
+		Response(http.StatusUnauthorized, auth.AuthErrorResponse{}, "Invalid or expired token, or invalid TOTP code").
+		Response(http.StatusInternalServerError, auth.AuthErrorResponse{}, "Token generation failed").
 		Security("bearerAuth").
 		Build()
 
@@ -80,10 +79,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("auth").
 		Summary("Logout and revoke tokens").
 		Description("Revokes the access token and refresh token, effectively logging the user out. The refresh token must be provided in the request body.").
-		Body(handlers.AuthLogoutRequest{}, "Refresh token to revoke").
-		Response(http.StatusOK, handlers.AuthLogoutResponse{}, "Logout successful").
-		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request format").
-		Response(http.StatusInternalServerError, handlers.AuthErrorResponse{}, "Failed to revoke tokens").
+		Body(auth.AuthLogoutRequest{}, "Refresh token to revoke").
+		Response(http.StatusOK, auth.AuthLogoutResponse{}, "Logout successful").
+		Response(http.StatusBadRequest, auth.AuthErrorResponse{}, "Invalid request format").
+		Response(http.StatusInternalServerError, auth.AuthErrorResponse{}, "Failed to revoke tokens").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -93,10 +92,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns all active sessions for the authenticated user. The refresh token must be provided to identify the current session.").
 		Body(session.GetSessionsRequest{}, "Refresh token to identify current session").
 		Response(http.StatusOK, session.GetSessionsResponse{}, "List of active sessions").
-		Response(http.StatusBadRequest, handlers.AuthErrorResponse{}, "Invalid request or refresh token").
-		Response(http.StatusUnauthorized, handlers.AuthErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, handlers.AuthErrorResponse{}, "Failed to retrieve sessions").
-		Response(http.StatusServiceUnavailable, handlers.AuthErrorResponse{}, "Session service not available").
+		Response(http.StatusBadRequest, auth.AuthErrorResponse{}, "Invalid request or refresh token").
+		Response(http.StatusUnauthorized, auth.AuthErrorResponse{}, "Not authenticated").
+		Response(http.StatusInternalServerError, auth.AuthErrorResponse{}, "Failed to retrieve sessions").
+		Response(http.StatusServiceUnavailable, auth.AuthErrorResponse{}, "Session service not available").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1315,7 +1314,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("profile").
 		Summary("Get current user profile").
 		Description("Returns the profile information for the authenticated user including roles and TOTP status.").
-		Response(http.StatusOK, handlers.GetProfileResponse{}, "User profile").
+		Response(http.StatusOK, auth.GetProfileResponse{}, "User profile").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").

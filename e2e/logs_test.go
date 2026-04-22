@@ -3,7 +3,7 @@ package e2e
 import (
 	"testing"
 
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/logs"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -22,14 +22,14 @@ func TestLogsEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -168,14 +168,14 @@ func TestLogsEndpointsErrorCases(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -233,14 +233,14 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, adminUser)
 
-	adminLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	adminLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: adminUser.Username,
 		Password: adminUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, adminLoginResp.StatusCode)
 
-	var adminLogin handlers.AuthLoginResponse
+	var adminLogin auth.AuthLoginResponse
 	require.NoError(t, adminLoginResp.GetJSON(&adminLogin))
 	adminToken := adminLogin.Data.AccessToken
 
@@ -251,14 +251,14 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, regularUser)
 
-	regularLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	regularLoginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: regularUser.Username,
 		Password: regularUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, regularLoginResp.StatusCode)
 
-	var regularLogin handlers.AuthLoginResponse
+	var regularLogin auth.AuthLoginResponse
 	require.NoError(t, regularLoginResp.GetJSON(&regularLogin))
 	regularToken := regularLogin.Data.AccessToken
 

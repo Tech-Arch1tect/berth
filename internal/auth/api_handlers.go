@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"crypto/sha256"
@@ -7,36 +7,35 @@ import (
 	"net/http"
 	"time"
 
-	"berth/internal/dto"
-	"berth/internal/security"
-	"berth/models"
-
-	"berth/internal/auth"
 	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
+	"berth/internal/dto"
+	"berth/internal/security"
 	"berth/internal/session"
+	"berth/models"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-type mobileAuthAuditLogger interface {
+type apiAuditLogger interface {
 	LogAPIEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
 	LogAuthEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
 }
 
-type MobileAuthHandler struct {
+type APIHandler struct {
 	db         *gorm.DB
-	authSvc    *auth.Service
+	authSvc    *Service
 	tokens     *tokens.Service
 	totpSvc    *totp.Service
 	sessionSvc *session.Service
 	logger     *zap.Logger
-	auditSvc   mobileAuthAuditLogger
+	auditSvc   apiAuditLogger
 }
 
-func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc mobileAuthAuditLogger) *MobileAuthHandler {
-	return &MobileAuthHandler{
+func NewAPIHandler(db *gorm.DB, authSvc *Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc apiAuditLogger) *APIHandler {
+	return &APIHandler{
 		db:         db,
 		authSvc:    authSvc,
 		tokens:     tokensSvc,
@@ -47,7 +46,7 @@ func NewMobileAuthHandler(db *gorm.DB, authSvc *auth.Service, tokensSvc *tokens.
 	}
 }
 
-func (h *MobileAuthHandler) Login(c echo.Context) error {
+func (h *APIHandler) Login(c echo.Context) error {
 	var req AuthLoginRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Warn("mobile login - invalid request format",
@@ -232,7 +231,7 @@ func (h *MobileAuthHandler) Login(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
+func (h *APIHandler) RefreshToken(c echo.Context) error {
 	var req AuthRefreshRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
@@ -323,8 +322,8 @@ func (h *MobileAuthHandler) RefreshToken(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) Profile(c echo.Context) error {
-	user := auth.GetCurrentUser(c)
+func (h *APIHandler) Profile(c echo.Context) error {
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -359,7 +358,7 @@ func (h *MobileAuthHandler) Profile(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) Logout(c echo.Context) error {
+func (h *APIHandler) Logout(c echo.Context) error {
 	var req AuthLogoutRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Warn("logout - invalid request format",
@@ -425,7 +424,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 		})
 	}
 
-	user := auth.GetCurrentUser(c)
+	user := GetCurrentUser(c)
 	if user != nil {
 		if userModel, ok := user.(models.User); ok {
 			_ = h.auditSvc.LogAPIEvent(
@@ -454,7 +453,7 @@ func (h *MobileAuthHandler) Logout(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
+func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	var req AuthTOTPVerifyRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
@@ -620,8 +619,8 @@ func (h *MobileAuthHandler) VerifyTOTP(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
-	user := auth.GetCurrentUser(c)
+func (h *APIHandler) GetTOTPSetup(c echo.Context) error {
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -679,17 +678,17 @@ func (h *MobileAuthHandler) GetTOTPSetup(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, auth.TOTPSetupResponse{
+	return c.JSON(http.StatusOK, TOTPSetupResponse{
 		Success: true,
-		Data: auth.TOTPSetupData{
+		Data: TOTPSetupData{
 			QRCodeURI: qrCodeURI,
 			Secret:    secret.Secret,
 		},
 	})
 }
 
-func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
-	user := auth.GetCurrentUser(c)
+func (h *APIHandler) EnableTOTP(c echo.Context) error {
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -707,7 +706,7 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		})
 	}
 
-	var req auth.TOTPEnableRequest
+	var req TOTPEnableRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -754,16 +753,16 @@ func (h *MobileAuthHandler) EnableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, true)
 	}
 
-	return c.JSON(http.StatusOK, auth.TOTPMessageResponse{
+	return c.JSON(http.StatusOK, TOTPMessageResponse{
 		Success: true,
-		Data: auth.TOTPMessageData{
+		Data: TOTPMessageData{
 			Message: "Two-factor authentication has been enabled successfully",
 		},
 	})
 }
 
-func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
-	user := auth.GetCurrentUser(c)
+func (h *APIHandler) DisableTOTP(c echo.Context) error {
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -781,7 +780,7 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 		})
 	}
 
-	var req auth.TOTPDisableRequest
+	var req TOTPDisableRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
 			Success: false,
@@ -837,16 +836,16 @@ func (h *MobileAuthHandler) DisableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, false)
 	}
 
-	return c.JSON(http.StatusOK, auth.TOTPMessageResponse{
+	return c.JSON(http.StatusOK, TOTPMessageResponse{
 		Success: true,
-		Data: auth.TOTPMessageData{
+		Data: TOTPMessageData{
 			Message: "Two-factor authentication has been disabled",
 		},
 	})
 }
 
-func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
-	user := auth.GetCurrentUser(c)
+func (h *APIHandler) GetTOTPStatus(c echo.Context) error {
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -866,15 +865,15 @@ func (h *MobileAuthHandler) GetTOTPStatus(c echo.Context) error {
 
 	enabled := h.totpSvc.IsUserTOTPEnabled(userModel.ID)
 
-	return c.JSON(http.StatusOK, auth.TOTPStatusResponse{
+	return c.JSON(http.StatusOK, TOTPStatusResponse{
 		Success: true,
-		Data: auth.TOTPStatusData{
+		Data: TOTPStatusData{
 			Enabled: enabled,
 		},
 	})
 }
 
-func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
+func (h *APIHandler) GetSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
 		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Success: false,
@@ -883,7 +882,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	user := auth.GetCurrentUser(c)
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -972,7 +971,7 @@ func (h *MobileAuthHandler) GetSessions(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
+func (h *APIHandler) RevokeSession(c echo.Context) error {
 	if h.sessionSvc == nil {
 		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Success: false,
@@ -981,7 +980,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
-	user := auth.GetCurrentUser(c)
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -1047,7 +1046,7 @@ func (h *MobileAuthHandler) RevokeSession(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
+func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
 		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
 			Success: false,
@@ -1056,7 +1055,7 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 		})
 	}
 
-	user := auth.GetCurrentUser(c)
+	user := GetCurrentUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
 			Success: false,
@@ -1153,12 +1152,12 @@ func (h *MobileAuthHandler) RevokeAllOtherSessions(c echo.Context) error {
 	})
 }
 
-func (h *MobileAuthHandler) generateSessionTokenFromID(refreshTokenID uint) string {
+func (h *APIHandler) generateSessionTokenFromID(refreshTokenID uint) string {
 	hash := sha256.Sum256(fmt.Appendf(nil, "refresh_token_id_%d", refreshTokenID))
 	return hex.EncodeToString(hash[:])
 }
 
-func (h *MobileAuthHandler) trackJWTSession(c echo.Context, userID uint, accessToken string, refreshTokenData *tokens.RefreshTokenData) {
+func (h *APIHandler) trackJWTSession(c echo.Context, userID uint, accessToken string, refreshTokenData *tokens.RefreshTokenData) {
 	if h.sessionSvc == nil {
 		return
 	}

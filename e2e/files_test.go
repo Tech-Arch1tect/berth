@@ -3,7 +3,7 @@ package e2e
 import (
 	"testing"
 
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/files"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -22,14 +22,14 @@ func TestFileEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

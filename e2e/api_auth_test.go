@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"berth/handlers"
 	"berth/internal/auth"
 	"berth/internal/session"
 	"testing"
@@ -24,14 +23,14 @@ func TestAPILogin(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var loginResp handlers.AuthLoginResponse
+		var loginResp auth.AuthLoginResponse
 		require.NoError(t, resp.GetJSON(&loginResp))
 
 		assert.True(t, loginResp.Success)
@@ -53,14 +52,14 @@ func TestAPILogin(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: "wrongpassword",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_credentials", errResp.Error)
@@ -68,14 +67,14 @@ func TestAPILogin(t *testing.T) {
 
 	t.Run("nonexistent user returns error", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "nonexistent",
 			Password: "password",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_credentials", errResp.Error)
@@ -95,23 +94,23 @@ func TestAPIRefresh(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: login.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 200, refreshResp.StatusCode)
 
-		var refresh handlers.AuthRefreshResponse
+		var refresh auth.AuthRefreshResponse
 		require.NoError(t, refreshResp.GetJSON(&refresh))
 
 		assert.True(t, refresh.Success)
@@ -123,13 +122,13 @@ func TestAPIRefresh(t *testing.T) {
 
 	t.Run("invalid refresh token returns error", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: "invalid-token",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
 		assert.Equal(t, "invalid_token", errResp.Error)
@@ -149,20 +148,20 @@ func TestAPILogout(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		logoutResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/logout",
-			Body: handlers.AuthLogoutRequest{
+			Body: auth.AuthLogoutRequest{
 				RefreshToken: login.Data.RefreshToken,
 			},
 			Headers: map[string]string{
@@ -172,12 +171,12 @@ func TestAPILogout(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, logoutResp.StatusCode)
 
-		var logout handlers.AuthLogoutResponse
+		var logout auth.AuthLogoutResponse
 		require.NoError(t, logoutResp.GetJSON(&logout))
 		assert.True(t, logout.Success)
 		assert.Contains(t, logout.Data.Message, "Logout successful")
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: login.Data.RefreshToken,
 		})
 		require.NoError(t, err)
@@ -198,14 +197,14 @@ func TestAPIProfile(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -218,7 +217,7 @@ func TestAPIProfile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile handlers.GetProfileResponse
+		var profile auth.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 		assert.Equal(t, user.Email, profile.Data.Email)
@@ -248,14 +247,14 @@ func TestAPITOTPStatus(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		statusResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -288,14 +287,14 @@ func TestAPISessions(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -335,20 +334,20 @@ func TestAPISessions(t *testing.T) {
 		}
 		app.AuthHelper.CreateTestUser(t, user)
 
-		login1Resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		login1Resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login1 handlers.AuthLoginResponse
+		var login1 auth.AuthLoginResponse
 		require.NoError(t, login1Resp.GetJSON(&login1))
 
-		login2Resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		login2Resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login2 handlers.AuthLoginResponse
+		var login2 auth.AuthLoginResponse
 		require.NoError(t, login2Resp.GetJSON(&login2))
 
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -364,13 +363,13 @@ func TestAPISessions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, revokeResp.StatusCode)
 
-		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: login1.Data.RefreshToken,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, refreshResp.StatusCode)
 
-		refreshResp2, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		refreshResp2, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: login2.Data.RefreshToken,
 		})
 		require.NoError(t, err)

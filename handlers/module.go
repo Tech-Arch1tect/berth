@@ -4,10 +4,8 @@ import (
 	"berth/internal/security"
 
 	"berth/internal/auth"
-	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
 	"berth/internal/inertia"
-	"berth/internal/session"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -16,8 +14,5 @@ import (
 var Module = fx.Options(
 	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *auth.Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc *security.AuditService) *AuthHandler {
 		return NewAuthHandler(db, inertiaSvc, authSvc, totpSvc, logger, auditSvc)
-	}),
-	fx.Provide(func(db *gorm.DB, authSvc *auth.Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc *security.AuditService) *MobileAuthHandler {
-		return NewMobileAuthHandler(db, authSvc, tokensSvc, totpSvc, sessionSvc, logger, auditSvc)
 	}),
 )

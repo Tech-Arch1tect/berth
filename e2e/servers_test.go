@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/server"
 	"berth/models"
 	"strconv"
@@ -40,14 +40,14 @@ func TestServerEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -164,14 +164,14 @@ func TestServerCRUDOperations(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -279,12 +279,12 @@ func TestServerTestConnection(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

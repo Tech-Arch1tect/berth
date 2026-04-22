@@ -3,7 +3,7 @@ package e2e
 import (
 	"testing"
 
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/security"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -22,14 +22,14 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -120,14 +120,14 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -163,14 +163,14 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -233,14 +233,14 @@ func TestMigrationExportJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -305,14 +305,14 @@ func TestMigrationImportJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -358,14 +358,14 @@ func TestAdminOperationLogDetailJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -443,14 +443,14 @@ func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

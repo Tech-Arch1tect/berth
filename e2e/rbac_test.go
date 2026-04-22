@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/dto"
 	"berth/internal/rbac"
 	"testing"
@@ -50,14 +50,14 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -170,14 +170,14 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -288,14 +288,14 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, adminUser)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: adminUser.Username,
 		Password: adminUser.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -395,14 +395,14 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -619,14 +619,14 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 	}
 	app.CreateAdminTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -707,14 +707,14 @@ func TestRBACEndpointsNonAdmin(t *testing.T) {
 	}
 	app.AuthHelper.CreateTestUser(t, user)
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

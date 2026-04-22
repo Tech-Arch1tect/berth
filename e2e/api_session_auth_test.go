@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"berth/handlers"
 	"berth/internal/auth"
 	"net/http"
 	"testing"
@@ -30,7 +29,7 @@ func TestAPISessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile handlers.GetProfileResponse
+		var profile auth.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 		assert.Equal(t, user.Email, profile.Data.Email)
@@ -120,14 +119,14 @@ func TestBothAuthMethodsWork(t *testing.T) {
 
 	t.Run("profile endpoint via JWT", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/profile", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username,
 			Password: user.Password,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login handlers.AuthLoginResponse
+		var login auth.AuthLoginResponse
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -140,7 +139,7 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile handlers.GetProfileResponse
+		var profile auth.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 	})
@@ -153,7 +152,7 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile handlers.GetProfileResponse
+		var profile auth.GetProfileResponse
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 	})

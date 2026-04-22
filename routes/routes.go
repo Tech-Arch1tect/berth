@@ -45,7 +45,7 @@ type RouteParams struct {
 	Srv                    *echo.Echo
 	DashboardHandler       *dashboard.Handler
 	AuthHandler            *handlers.AuthHandler
-	MobileAuthHandler      *handlers.MobileAuthHandler
+	MobileAuthHandler      *auth.APIHandler
 	SessionHandler         *session.Handler
 	TOTPHandler            *auth.TOTPHandler
 	VersionHandler         *version.Handler
@@ -366,7 +366,7 @@ func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manage
 // API ROUTE HELPERS
 // ============================================================================
 
-func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *handlers.MobileAuthHandler) {
+func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler) {
 	authApi := api.Group("/auth")
 	authApi.Use(authApiRateLimit)
 
@@ -376,7 +376,7 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 }
 
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
-	rbacMiddleware *rbac.Middleware, mobileAuthHandler *handlers.MobileAuthHandler, serverUserAPIHandler *server.UserAPIHandler,
+	rbacMiddleware *rbac.Middleware, mobileAuthHandler *auth.APIHandler, serverUserAPIHandler *server.UserAPIHandler,
 	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,

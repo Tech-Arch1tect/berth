@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"berth/handlers"
+	"berth/internal/auth"
 	"berth/internal/session"
 	"testing"
 
@@ -11,35 +11,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func apiLogin(t *testing.T, app *TestApp, username, email, password string) handlers.AuthLoginResponse {
+func apiLogin(t *testing.T, app *TestApp, username, email, password string) auth.AuthLoginResponse {
 	t.Helper()
 	app.AuthHelper.CreateTestUser(t, &e2etesting.TestUser{
 		Username: username,
 		Email:    email,
 		Password: password,
 	})
-	resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: username,
 		Password: password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode)
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, resp.GetJSON(&login))
 	require.True(t, login.Success)
 	return login
 }
 
-func apiRefresh(t *testing.T, app *TestApp, refreshToken string) (handlers.AuthRefreshResponse, int) {
+func apiRefresh(t *testing.T, app *TestApp, refreshToken string) (auth.AuthRefreshResponse, int) {
 	t.Helper()
-	resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+	resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 		RefreshToken: refreshToken,
 	})
 	require.NoError(t, err)
 	if resp.StatusCode != 200 {
-		return handlers.AuthRefreshResponse{}, resp.StatusCode
+		return auth.AuthRefreshResponse{}, resp.StatusCode
 	}
-	var refresh handlers.AuthRefreshResponse
+	var refresh auth.AuthRefreshResponse
 	require.NoError(t, resp.GetJSON(&refresh))
 	return refresh, resp.StatusCode
 }
@@ -62,7 +62,7 @@ func apiLogout(t *testing.T, app *TestApp, accessToken, refreshToken string) int
 	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method: "POST",
 		Path:   "/api/v1/auth/logout",
-		Body: handlers.AuthLogoutRequest{
+		Body: auth.AuthLogoutRequest{
 			RefreshToken: refreshToken,
 		},
 		Headers: map[string]string{
@@ -163,26 +163,26 @@ func TestJWTRefreshValidation(t *testing.T) {
 
 	t.Run("empty refresh token", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: "",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "validation_error", errResp.Error)
 	})
 
 	t.Run("garbage refresh token", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: "not-a-real-token-at-all",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "invalid_token", errResp.Error)
 	})
@@ -211,7 +211,7 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/auth/logout",
-			Body:   handlers.AuthLogoutRequest{RefreshToken: ""},
+			Body:   auth.AuthLogoutRequest{RefreshToken: ""},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
@@ -219,7 +219,7 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "validation_error", errResp.Error)
 	})
@@ -243,12 +243,12 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/sessions/revoke", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		apiLogin(t, app, "jwtsessrev1", "jwtsessrev1@example.com", "password123")
 
-		resp2, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp2, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "jwtsessrev1",
 			Password: "password123",
 		})
 		require.NoError(t, err)
-		var login2 handlers.AuthLoginResponse
+		var login2 auth.AuthLoginResponse
 		require.NoError(t, resp2.GetJSON(&login2))
 
 		sessResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -321,7 +321,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "validation_error", errResp.Error)
 	})
@@ -348,7 +348,7 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp handlers.AuthErrorResponse
+		var errResp auth.AuthErrorResponse
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.Equal(t, "invalid_token", errResp.Error)
 	})
@@ -376,18 +376,18 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 
 		login1 := apiLogin(t, app, "jwtrevall3", "jwtrevall3@example.com", "password123")
 
-		resp2, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp2, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "jwtrevall3", Password: "password123",
 		})
 		require.NoError(t, err)
-		var login2 handlers.AuthLoginResponse
+		var login2 auth.AuthLoginResponse
 		require.NoError(t, resp2.GetJSON(&login2))
 
-		resp3, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp3, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "jwtrevall3", Password: "password123",
 		})
 		require.NoError(t, err)
-		var login3 handlers.AuthLoginResponse
+		var login3 auth.AuthLoginResponse
 		require.NoError(t, resp3.GetJSON(&login3))
 
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -421,7 +421,7 @@ func TestJWTLoginValidation(t *testing.T) {
 
 	t.Run("empty username", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "",
 			Password: "password123",
 		})
@@ -436,7 +436,7 @@ func TestJWTLoginValidation(t *testing.T) {
 			Email:    "jwtloginval1@example.com",
 			Password: "password123",
 		})
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "jwtloginval1",
 			Password: "",
 		})

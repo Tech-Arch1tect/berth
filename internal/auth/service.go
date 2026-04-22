@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 
+	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
 	"berth/internal/config"
 	"berth/internal/inertia"
 	"berth/internal/security"
+	"berth/internal/session"
 	"berth/models"
 
 	"go.uber.org/fx"
@@ -85,5 +87,8 @@ var Module = fx.Module("auth",
 	fx.Provide(NewService),
 	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *Service, logger *zap.Logger, auditSvc *security.AuditService) *TOTPHandler {
 		return NewTOTPHandler(db, inertiaSvc, totpSvc, authSvc, logger, auditSvc)
+	}),
+	fx.Provide(func(db *gorm.DB, authSvc *Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc *security.AuditService) *APIHandler {
+		return NewAPIHandler(db, authSvc, tokensSvc, totpSvc, sessionSvc, logger, auditSvc)
 	}),
 )

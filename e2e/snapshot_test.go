@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
-	"berth/handlers"
+	"berth/internal/auth"
 
 	"github.com/stretchr/testify/require"
 )
@@ -31,12 +31,12 @@ func jwtLogin(t *testing.T, app *TestApp, username, email, password string, admi
 	} else {
 		app.AuthHelper.CreateTestUser(t, user)
 	}
-	resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: username, Password: password,
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode)
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, resp.GetJSON(&login))
 	return login.Data.AccessToken
 }
@@ -335,7 +335,7 @@ func TestSnapshotUnauthenticatedAPI(t *testing.T) {
 	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
 
 	t.Run("POST /api/v1/auth/login bad_creds", func(t *testing.T) {
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "nonexistent",
 			Password: "badpassword",
 		})
@@ -383,24 +383,24 @@ func TestSnapshotAPIAuth(t *testing.T) {
 	app.AuthHelper.CreateTestUser(t, user)
 
 	t.Run("POST /api/v1/auth/login", func(t *testing.T) {
-		resp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: user.Username, Password: user.Password,
 		})
 		require.NoError(t, err)
 		sr.RecordAndAssert(t, "POST", "/api/v1/auth/login", resp)
 	})
 
-	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", handlers.AuthLoginRequest{
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 		Username: user.Username, Password: user.Password,
 	})
 	require.NoError(t, err)
-	var login handlers.AuthLoginResponse
+	var login auth.AuthLoginResponse
 	require.NoError(t, loginResp.GetJSON(&login))
 	accessToken := login.Data.AccessToken
 	refreshToken := login.Data.RefreshToken
 
 	t.Run("POST /api/v1/auth/refresh", func(t *testing.T) {
-		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", handlers.AuthRefreshRequest{
+		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: refreshToken,
 		})
 		require.NoError(t, err)
@@ -415,7 +415,7 @@ func TestSnapshotAPIAuth(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/auth/logout", func(t *testing.T) {
-		resp := jwtRequestJSON(t, app, accessToken, "POST", "/api/v1/auth/logout", handlers.AuthLogoutRequest{
+		resp := jwtRequestJSON(t, app, accessToken, "POST", "/api/v1/auth/logout", auth.AuthLogoutRequest{
 			RefreshToken: refreshToken,
 		})
 		sr.RecordAndAssert(t, "POST", "/api/v1/auth/logout", resp)

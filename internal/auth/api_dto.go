@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import "berth/internal/dto"
 
@@ -71,4 +71,9 @@ type AuthErrorResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error"`
 	Message string `json:"message"`
+}
+
+type GetProfileResponse struct {
+	Success bool         `json:"success"`
+	Data    dto.UserInfo `json:"data"`
 }
