@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	e2etesting "berth/e2e/internal/harness"
 
@@ -419,6 +421,64 @@ func extractTokenFromCapturedMail(t *testing.T, app *TestApp) string {
 	resetURL, ok := last.Data["ResetURL"].(string)
 	require.True(t, ok, "ResetURL should be a string")
 	return extractTokenFromURL(t, resetURL)
+}
+
+func TestPasswordResetExpiredLink(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "pwreset_expired",
+		Email:    "pwreset_expired@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	app.Mail.Reset()
+	_, err := app.AuthHelper.RequestPasswordReset(user.Email)
+	require.NoError(t, err)
+	token := extractTokenFromCapturedMail(t, app)
+
+	err = app.DB.Table("password_reset_tokens").
+		Where("token = ?", token).
+		Update("expires_at", time.Now().Add(-time.Hour)).Error
+	require.NoError(t, err, "failed to backdate password reset token")
+
+	t.Run("GET /auth/password-reset/confirm with expired token redirects with expired flash", func(t *testing.T) {
+		TagTest(t, "GET", "/auth/password-reset/confirm", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+		resp, err := client.Get("/auth/password-reset/confirm?token=" + token)
+		require.NoError(t, err)
+		resp.AssertRedirect(t, "/auth/password-reset")
+
+		pageResp, err := client.Get("/auth/password-reset")
+		require.NoError(t, err)
+		assert.Contains(t, string(pageResp.Body), "expired",
+			"expired-token GET should surface the 'expired' flash message")
+	})
+
+	t.Run("POST /auth/password-reset/confirm with expired token redirects with expired flash", func(t *testing.T) {
+		TagTest(t, "POST", "/auth/password-reset/confirm", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+		if _, err := client.Get("/auth/password-reset/confirm"); err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.PostForm("/auth/password-reset/confirm", url.Values{
+			"token":            {token},
+			"password":         {"newpassword123"},
+			"password_confirm": {"newpassword123"},
+		})
+		require.NoError(t, err)
+		resp.AssertRedirect(t, "/auth/password-reset")
+
+		pageResp, err := client.Get("/auth/password-reset")
+		require.NoError(t, err)
+		assert.Contains(t, string(pageResp.Body), "expired",
+			"expired-token POST should surface the 'expired' flash message")
+	})
 }
 
 func verifyUser(t *testing.T, app *TestApp, user *e2etesting.TestUser) {

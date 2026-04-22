@@ -1,11 +1,14 @@
 package e2e
 
 import (
+	"testing"
+	"time"
+
 	"berth/internal/auth"
 	"berth/internal/session"
-	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
+	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -428,4 +431,65 @@ func TestAPITOTPVerify(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})
+
+	t.Run("login with TOTP enabled + valid code returns access and refresh tokens", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+
+		user := &e2etesting.TestUser{
+			Username: "api_totp_roundtrip",
+			Email:    "api_totp_roundtrip@example.com",
+			Password: "password123",
+		}
+		app.AuthHelper.CreateTestUser(t, user)
+		secret := seedValidTOTPSecret(t, app, user.ID)
+
+		loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+			Username: user.Username,
+			Password: user.Password,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, loginResp.StatusCode)
+
+		var totpChallenge auth.AuthTOTPRequiredResponse
+		require.NoError(t, loginResp.GetJSON(&totpChallenge))
+		require.True(t, totpChallenge.Data.TOTPRequired, "login must signal TOTP is required")
+		require.NotEmpty(t, totpChallenge.Data.TemporaryToken, "login must issue a temporary token")
+
+		code, err := totp.GenerateCode(secret, time.Now())
+		require.NoError(t, err)
+
+		verifyResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/auth/totp/verify",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + totpChallenge.Data.TemporaryToken,
+				"Content-Type":  "application/json",
+			},
+			Body: auth.AuthTOTPVerifyRequest{Code: code},
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, verifyResp.StatusCode)
+
+		var verify auth.AuthLoginResponse
+		require.NoError(t, verifyResp.GetJSON(&verify))
+		assert.True(t, verify.Success)
+		assert.NotEmpty(t, verify.Data.AccessToken)
+		assert.NotEmpty(t, verify.Data.RefreshToken)
+		assert.Equal(t, "Bearer", verify.Data.TokenType)
+		assert.Greater(t, verify.Data.ExpiresIn, 0)
+		assert.NotEqual(t, totpChallenge.Data.TemporaryToken, verify.Data.AccessToken,
+			"access token must not be the temp TOTP-pending token")
+	})
+}
+
+func seedValidTOTPSecret(t *testing.T, app *TestApp, userID uint) string {
+	t.Helper()
+	const secret = "JBSWY3DPEHPK3PXP"
+	err := app.DB.Table("totp_secrets").Create(map[string]any{
+		"user_id": userID,
+		"secret":  secret,
+		"enabled": true,
+	}).Error
+	require.NoError(t, err, "failed to seed TOTP secret")
+	return secret
 }

@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	e2etesting "berth/e2e/internal/harness"
 
@@ -373,6 +375,59 @@ func TestEmailVerificationDisabledByDefault(t *testing.T) {
 	resp, err := app.AuthHelper.Login(user.Username, user.Password)
 	require.NoError(t, err)
 	app.AuthHelper.AssertLoginSuccess(t, resp)
+}
+
+func TestEmailVerificationExpiredLink(t *testing.T) {
+	t.Parallel()
+	app := setupVerificationApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "ev_expired",
+		Email:    "ev_expired@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	app.Mail.Reset()
+	_, err := app.AuthHelper.ResendVerification(user.Email)
+	require.NoError(t, err)
+	token := extractVerificationTokenFromCapturedMail(t, app)
+
+	err = app.DB.Table("email_verification_tokens").
+		Where("token = ?", token).
+		Update("expires_at", time.Now().Add(-time.Hour)).Error
+	require.NoError(t, err, "failed to backdate email verification token")
+
+	t.Run("GET /auth/verify-email with expired token redirects with expired flash", func(t *testing.T) {
+		TagTest(t, "GET", "/auth/verify-email", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+		resp, err := client.Get("/auth/verify-email?token=" + token)
+		require.NoError(t, err)
+		resp.AssertRedirect(t, "/auth/login")
+
+		loginResp, err := client.Get("/auth/login")
+		require.NoError(t, err)
+		assert.Contains(t, string(loginResp.Body), "expired",
+			"expired-token GET should surface the 'expired' flash message")
+	})
+
+	t.Run("POST /auth/verify-email with expired token redirects with expired flash", func(t *testing.T) {
+		TagTest(t, "POST", "/auth/verify-email", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
+		if _, err := client.Get("/auth/login"); err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Post(fmt.Sprintf("/auth/verify-email?token=%s", token), nil)
+		require.NoError(t, err)
+		resp.AssertRedirect(t, "/auth/login")
+
+		loginResp, err := client.Get("/auth/login")
+		require.NoError(t, err)
+		assert.Contains(t, string(loginResp.Body), "expired",
+			"expired-token POST should surface the 'expired' flash message")
+	})
 }
 
 func extractVerificationTokenFromURL(t *testing.T, verificationURL string) string {

@@ -295,3 +295,44 @@ func TestRememberMeNewLoginReplacesOldToken(t *testing.T) {
 		app.SessionHelper.AssertSessionExists(t, user.ID)
 	})
 }
+
+func TestRememberMeCookieAttributes(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+	user := app.CreateVerifiedTestUser(t)
+
+	t.Run("login with remember_me sets cookie with expected attributes", func(t *testing.T) {
+		TagTest(t, "POST", "/auth/login", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+		_, cookie := loginWithRememberMeClient(t, app, user.Username, user.Password)
+
+		assert.Equal(t, "/", cookie.Path, "cookie must be scoped to the root path")
+		assert.True(t, cookie.HttpOnly, "cookie must be HttpOnly to mitigate XSS")
+		assert.Equal(t, http.SameSiteLaxMode, cookie.SameSite, "SameSite must match configured value")
+		assert.Equal(t, app.Config.Auth.RememberMeCookieSecure, cookie.Secure)
+		assert.NotEmpty(t, cookie.Value)
+
+		require.False(t, cookie.Expires.IsZero(), "remember_me cookie must set an Expires attribute")
+		delta := time.Until(cookie.Expires) - app.Config.Auth.RememberMeExpiry
+		if delta < 0 {
+			delta = -delta
+		}
+		assert.Less(t, delta, time.Minute,
+			"Expires should be approximately now + RememberMeExpiry (delta=%s)", delta)
+	})
+
+	t.Run("logout clears remember_me cookie", func(t *testing.T) {
+		TagTest(t, "POST", "/auth/logout", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+		client, _ := loginWithRememberMeClient(t, app, user.Username, user.Password)
+
+		resp, err := client.Post("/auth/logout", nil)
+		require.NoError(t, err)
+
+		cleared := extractRememberMeCookie(resp)
+		require.NotNil(t, cleared, "logout must emit a remember_me Set-Cookie header to clear it")
+		assert.Empty(t, cleared.Value, "cleared cookie must have an empty value")
+		assert.True(t, cleared.Expires.Before(time.Now()),
+			"cleared cookie Expires must be in the past (got %s)", cleared.Expires)
+	})
+}
