@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"

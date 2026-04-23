@@ -5,13 +5,13 @@ import (
 
 	"berth/internal/apikey"
 	"berth/internal/auth"
-	"berth/internal/config"
 	"berth/internal/dto"
 	"berth/internal/files"
 	"berth/internal/imageupdates"
 	"berth/internal/logs"
 	"berth/internal/maintenance"
 	"berth/internal/migration"
+	"berth/internal/pkg/config"
 	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/internal/security"
@@ -21,7 +21,7 @@ import (
 	"berth/internal/version"
 	"berth/internal/vulnscan"
 
-	"berth/internal/apidocs"
+	"berth/internal/pkg/apidocs"
 	"github.com/labstack/echo/v4"
 )
 

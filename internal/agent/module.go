@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

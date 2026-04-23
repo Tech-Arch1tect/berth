@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"berth/internal/apidocs"
 	"berth/internal/app"
+	"berth/internal/pkg/apidocs"
 	"berth/routes"
 )
 

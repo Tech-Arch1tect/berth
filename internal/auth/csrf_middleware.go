@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"

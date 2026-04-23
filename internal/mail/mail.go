@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	textTemplate "text/template"
 
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 	"github.com/wneessen/go-mail"
 	"go.uber.org/zap"
 )

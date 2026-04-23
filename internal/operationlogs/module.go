@@ -1,7 +1,7 @@
 package operationlogs
 
 import (
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"berth/internal/inertia"
 	"go.uber.org/fx"

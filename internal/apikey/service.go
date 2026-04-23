@@ -1,7 +1,7 @@
 package apikey
 
 import (
-	"berth/internal/patterns"
+	"berth/internal/pkg/patterns"
 	"berth/models"
 	"context"
 	"crypto/rand"

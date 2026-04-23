@@ -8,7 +8,7 @@ import (
 	"time"
 
 	e2etesting "berth/e2e/internal/harness"
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

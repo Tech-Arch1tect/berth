@@ -2,7 +2,7 @@ package auth
 
 import (
 	"berth/internal/apikey"
-	"berth/internal/patterns"
+	"berth/internal/pkg/patterns"
 
 	"github.com/labstack/echo/v4"
 )

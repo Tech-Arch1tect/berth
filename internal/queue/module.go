@@ -1,8 +1,8 @@
 package queue
 
 import (
-	"berth/internal/config"
 	"berth/internal/operations"
+	"berth/internal/pkg/config"
 	"berth/internal/rbac"
 	"berth/internal/security"
 

@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

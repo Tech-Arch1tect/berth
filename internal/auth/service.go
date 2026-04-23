@@ -8,8 +8,8 @@ import (
 
 	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
-	"berth/internal/config"
 	"berth/internal/inertia"
+	"berth/internal/pkg/config"
 	"berth/internal/security"
 	"berth/internal/session"
 	"berth/models"

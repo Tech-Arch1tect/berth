@@ -2,7 +2,7 @@ package rbac
 
 import (
 	"berth/internal/auth"
-	"berth/internal/patterns"
+	"berth/internal/pkg/patterns"
 	"berth/models"
 	"context"
 	"errors"

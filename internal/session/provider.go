@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"berth/internal/auth/tokens"
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 
 	"github.com/alexedwards/scs/v2"
 	"go.uber.org/fx"

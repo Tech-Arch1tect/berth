@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"berth/internal/apidocs"
-	"berth/internal/config"
+	"berth/internal/pkg/apidocs"
+	"berth/internal/pkg/config"
 	"berth/internal/ssl"
 	"berth/routes"
 

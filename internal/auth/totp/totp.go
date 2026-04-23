@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"berth/internal/config"
+	"berth/internal/pkg/config"
 	"berth/models"
 
 	"github.com/pquerna/otp/totp"
