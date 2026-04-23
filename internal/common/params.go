@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"berth/internal/validation"
+	"berth/internal/pkg/validation"
 
 	"github.com/labstack/echo/v4"
 )
