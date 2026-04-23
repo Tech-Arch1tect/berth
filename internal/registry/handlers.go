@@ -1,13 +1,15 @@
 package registry
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
 	"berth/internal/rbac"
 	"berth/internal/server"
 	"berth/models"
 
 	"berth/internal/inertia"
 	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -28,7 +30,7 @@ func NewHandler(service *Service, rbacSvc *rbac.Service, serverSvc *server.Servi
 }
 
 func (h *Handler) ShowRegistries(c echo.Context) error {
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 
 	server, err := h.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
-		return common.SendNotFound(c, "Server not found")
+		return response.SendNotFound(c, "Server not found")
 	}
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {

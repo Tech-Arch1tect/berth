@@ -1,7 +1,8 @@
 package security
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
 	"berth/models"
 	"net/http"
 	"strconv"
@@ -68,7 +69,7 @@ type ListLogsRequest struct {
 func (h *Handler) ListLogs(c echo.Context) error {
 	var req ListLogsRequest
 	if err := c.Bind(&req); err != nil {
-		return common.SendBadRequest(c, "Invalid request parameters")
+		return response.SendBadRequest(c, "Invalid request parameters")
 	}
 
 	if req.Page < 1 {
@@ -121,13 +122,13 @@ func (h *Handler) ListLogs(c echo.Context) error {
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		return common.SendInternalError(c, "Failed to count logs")
+		return response.SendInternalError(c, "Failed to count logs")
 	}
 
 	offset := (req.Page - 1) * req.PerPage
 	var logs []models.SecurityAuditLog
 	if err := query.Order("created_at DESC").Limit(req.PerPage).Offset(offset).Find(&logs).Error; err != nil {
-		return common.SendInternalError(c, "Failed to fetch logs")
+		return response.SendInternalError(c, "Failed to fetch logs")
 	}
 
 	totalPages := int(total) / req.PerPage
@@ -148,7 +149,7 @@ func (h *Handler) ListLogs(c echo.Context) error {
 }
 
 func (h *Handler) GetLog(c echo.Context) error {
-	id, err := common.ParseUintParam(c, "id")
+	id, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -156,9 +157,9 @@ func (h *Handler) GetLog(c echo.Context) error {
 	var log models.SecurityAuditLog
 	if err := h.db.First(&log, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return common.SendNotFound(c, "Log not found")
+			return response.SendNotFound(c, "Log not found")
 		}
-		return common.SendInternalError(c, "Failed to fetch log")
+		return response.SendInternalError(c, "Failed to fetch log")
 	}
 
 	return c.JSON(http.StatusOK, GetLogAPIResponse{

@@ -1,8 +1,8 @@
 package migration
 
 import (
-	"berth/internal/common"
 	"berth/internal/rbac"
+	"berth/internal/session"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"berth/internal/inertia"
+
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
@@ -32,7 +33,7 @@ func NewHandler(inertiaSvc *inertia.Service, logger *zap.Logger, service *Servic
 }
 
 func (h *Handler) Index(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (h *Handler) Index(c echo.Context) error {
 }
 
 func (h *Handler) Export(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (h *Handler) Export(c echo.Context) error {
 }
 
 func (h *Handler) Import(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}

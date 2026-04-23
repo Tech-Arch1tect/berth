@@ -1,12 +1,11 @@
 package websocket
 
 import (
+	"berth/internal/pkg/origin"
 	"context"
 	"encoding/json"
 	"sync"
 	"time"
-
-	"berth/internal/common"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -43,7 +42,7 @@ type PermissionChecker interface {
 	HasStackPermission(ctx context.Context, userID int, serverID int, stackname string, permission string) bool
 }
 
-func NewHub(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin common.CheckOriginFunc) *Hub {
+func NewHub(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin origin.CheckOriginFunc) *Hub {
 	return &Hub{
 		register:          make(chan *UserConnection),
 		unregister:        make(chan *UserConnection),

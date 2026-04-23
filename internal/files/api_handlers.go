@@ -1,11 +1,14 @@
 package files
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"berth/internal/security"
 	"berth/models"
 
 	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -29,78 +32,78 @@ func NewAPIHandler(db *gorm.DB, service *Service, auditSvc fileAuditLogger) *API
 }
 
 func (h *APIHandler) ListDirectory(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	filePath := common.GetQueryParam(c, "filePath")
+	filePath := echoparams.GetQueryParam(c, "filePath")
 
 	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, DirectoryListingResponse{
+	return response.SendSuccess(c, DirectoryListingResponse{
 		Success: true,
 		Data:    *result,
 	})
 }
 
 func (h *APIHandler) ReadFile(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	filePath := common.GetQueryParam(c, "filePath")
+	filePath := echoparams.GetQueryParam(c, "filePath")
 	if filePath == "" {
-		return common.SendBadRequest(c, "filePath parameter is required")
+		return response.SendBadRequest(c, "filePath parameter is required")
 	}
 
 	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileContentResponse{
+	return response.SendSuccess(c, FileContentResponse{
 		Success: true,
 		Data:    *result,
 	})
 }
 
 func (h *APIHandler) WriteFile(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req WriteFileRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.Path == "" {
-		return common.SendBadRequest(c, "path is required")
+		return response.SendBadRequest(c, "path is required")
 	}
 
 	if err := h.service.WriteFile(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -118,58 +121,58 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) CreateDirectory(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req CreateDirectoryRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.Path == "" {
-		return common.SendBadRequest(c, "path is required")
+		return response.SendBadRequest(c, "path is required")
 	}
 
 	if err := h.service.CreateDirectory(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Delete(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req DeleteRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.Path == "" {
-		return common.SendBadRequest(c, "path is required")
+		return response.SendBadRequest(c, "path is required")
 	}
 
 	if err := h.service.Delete(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -187,31 +190,31 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Rename(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req RenameRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.OldPath == "" || req.NewPath == "" {
-		return common.SendBadRequest(c, "oldPath and newPath are required")
+		return response.SendBadRequest(c, "oldPath and newPath are required")
 	}
 
 	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -231,43 +234,43 @@ func (h *APIHandler) Rename(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Copy(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req CopyRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.SourcePath == "" || req.TargetPath == "" {
-		return common.SendBadRequest(c, "sourcePath and targetPath are required")
+		return response.SendBadRequest(c, "sourcePath and targetPath are required")
 	}
 
 	if err := h.service.Copy(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) UploadFile(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -276,11 +279,11 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		return common.SendBadRequest(c, "file is required")
+		return response.SendBadRequest(c, "file is required")
 	}
 
 	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, filePath, file); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -301,30 +304,30 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		)
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "File uploaded successfully"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "File uploaded successfully"}})
 }
 
 func (h *APIHandler) DownloadFile(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
-	filePath := common.GetQueryParam(c, "filePath")
+	filePath := echoparams.GetQueryParam(c, "filePath")
 	if filePath == "" {
-		return common.SendBadRequest(c, "filePath parameter is required")
+		return response.SendBadRequest(c, "filePath parameter is required")
 	}
 
-	filename := common.GetQueryParam(c, "filename")
+	filename := echoparams.GetQueryParam(c, "filename")
 
 	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, filePath, filename)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 	defer result.Body.Close()
 
@@ -354,74 +357,74 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 }
 
 func (h *APIHandler) Chmod(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req ChmodRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.Path == "" {
-		return common.SendBadRequest(c, "path is required")
+		return response.SendBadRequest(c, "path is required")
 	}
 
 	if req.Mode == "" {
-		return common.SendBadRequest(c, "mode is required")
+		return response.SendBadRequest(c, "mode is required")
 	}
 
 	if err := h.service.Chmod(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) Chown(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req ChownRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	if req.Path == "" {
-		return common.SendBadRequest(c, "path is required")
+		return response.SendBadRequest(c, "path is required")
 	}
 
 	if req.OwnerID == nil && req.GroupID == nil {
-		return common.SendBadRequest(c, "owner_id or group_id is required")
+		return response.SendBadRequest(c, "owner_id or group_id is required")
 	}
 
 	if err := h.service.Chown(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
 }
 
 func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -433,10 +436,10 @@ func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
 
 	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, DirectoryStatsResponse{
+	return response.SendSuccess(c, DirectoryStatsResponse{
 		Success: true,
 		Data:    *stats,
 	})

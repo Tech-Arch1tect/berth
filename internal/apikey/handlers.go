@@ -1,14 +1,16 @@
 package apikey
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/response"
 	"berth/internal/security"
+	"berth/internal/session"
 	"berth/models"
 	"net/http"
 	"strconv"
 	"time"
 
 	"berth/internal/inertia"
+
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -48,14 +50,14 @@ func (h *Handler) ShowAPIKeyScopes(c echo.Context) error {
 }
 
 func (h *Handler) ListAPIKeys(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	apiKeys, err := h.service.ListAPIKeys(userID)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve API keys", err)
+		return response.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve API keys", err)
 	}
 
 	responses := make([]models.APIKeyInfo, len(apiKeys))
@@ -70,19 +72,19 @@ func (h *Handler) ListAPIKeys(c echo.Context) error {
 }
 
 func (h *Handler) GetAPIKey(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
 	}
 
 	apiKey, err := h.service.GetAPIKey(uint(apiKeyID), userID)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
+		return response.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
 	return c.JSON(http.StatusOK, GetAPIKeyResponse{
@@ -92,38 +94,38 @@ func (h *Handler) GetAPIKey(c echo.Context) error {
 }
 
 func (h *Handler) CreateAPIKey(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	var req CreateAPIKeyRequest
 	if err := c.Bind(&req); err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid request", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid request", err)
 	}
 
 	if req.Name == "" {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Name is required", nil)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Name is required", nil)
 	}
 	if len(req.Name) > 255 {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Name must be less than 255 characters", nil)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Name must be less than 255 characters", nil)
 	}
 
 	var expiresAt *time.Time
 	if req.ExpiresAt != nil && *req.ExpiresAt != "" {
 		parsedTime, err := time.Parse("2006-01-02T15:04:05Z07:00", *req.ExpiresAt)
 		if err != nil {
-			return common.ErrorResponse(c, http.StatusBadRequest, "Invalid expiration date format", err)
+			return response.ErrorResponse(c, http.StatusBadRequest, "Invalid expiration date format", err)
 		}
 		expiresAt = &parsedTime
 	}
 
 	plainKey, apiKey, err := h.service.GenerateAPIKey(userID, req.Name, expiresAt)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusInternalServerError, "Failed to create API key", err)
+		return response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create API key", err)
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -152,14 +154,14 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 }
 
 func (h *Handler) RevokeAPIKey(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
 	}
 
 	apiKey, _ := h.service.GetAPIKey(uint(apiKeyID), userID)
@@ -170,10 +172,10 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 
 	err = h.service.RevokeAPIKey(uint(apiKeyID), userID)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
+		return response.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -198,19 +200,19 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 }
 
 func (h *Handler) ListScopes(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
 	}
 
 	scopes, err := h.service.ListScopes(uint(apiKeyID), userID)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
+		return response.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
 	responses := make([]models.APIKeyScopeInfo, len(scopes))
@@ -225,45 +227,45 @@ func (h *Handler) ListScopes(c echo.Context) error {
 }
 
 func (h *Handler) AddScope(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid API key ID", err)
 	}
 
 	var req AddScopeRequest
 	if err := c.Bind(&req); err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid request", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid request", err)
 	}
 
 	if req.StackPattern == "" {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Stack pattern is required", nil)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Stack pattern is required", nil)
 	}
 	if len(req.StackPattern) > 255 {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Stack pattern must be less than 255 characters", nil)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Stack pattern must be less than 255 characters", nil)
 	}
 
 	for _, r := range req.StackPattern {
 		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') &&
 			r != '-' && r != '_' && r != '.' && r != '*' {
-			return common.ErrorResponse(c, http.StatusBadRequest, "Stack pattern contains invalid characters. Only alphanumeric, dash, underscore, dot, and asterisk are allowed", nil)
+			return response.ErrorResponse(c, http.StatusBadRequest, "Stack pattern contains invalid characters. Only alphanumeric, dash, underscore, dot, and asterisk are allowed", nil)
 		}
 	}
 	if req.Permission == "" {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Permission is required", nil)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Permission is required", nil)
 	}
 
 	ctx := c.Request().Context()
 	err = h.service.AddScope(ctx, uint(apiKeyID), userID, req.ServerID, req.StackPattern, req.Permission)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, err.Error(), err)
+		return response.ErrorResponse(c, http.StatusBadRequest, err.Error(), err)
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -292,24 +294,24 @@ func (h *Handler) AddScope(c echo.Context) error {
 }
 
 func (h *Handler) RemoveScope(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
+		return response.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", err)
 	}
 
 	scopeID, err := strconv.ParseUint(c.Param("scopeId"), 10, 32)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusBadRequest, "Invalid scope ID", err)
+		return response.ErrorResponse(c, http.StatusBadRequest, "Invalid scope ID", err)
 	}
 
 	apiKeyID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 
 	err = h.service.RemoveScope(uint(scopeID), userID)
 	if err != nil {
-		return common.ErrorResponse(c, http.StatusNotFound, "Scope not found", err)
+		return response.ErrorResponse(c, http.StatusNotFound, "Scope not found", err)
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username

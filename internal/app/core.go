@@ -6,7 +6,6 @@ import (
 
 	"berth/internal/agent"
 	"berth/internal/apikey"
-	"berth/internal/common"
 	"berth/internal/dashboard"
 	"berth/internal/files"
 	"berth/internal/imageupdates"
@@ -17,6 +16,7 @@ import (
 	"berth/internal/operations"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
+	"berth/internal/pkg/origin"
 	"berth/internal/queue"
 	"berth/internal/rbac"
 	"berth/internal/registry"
@@ -112,8 +112,8 @@ func CoreFxOptions() fx.Option {
 		fx.Provide(func(cfg *config.Config) *crypto.Crypto {
 			return crypto.NewCrypto(cfg.Custom.EncryptionSecret)
 		}),
-		fx.Provide(func(cfg *config.Config) common.CheckOriginFunc {
-			return common.NewOriginChecker(cfg.App.URL)
+		fx.Provide(func(cfg *config.Config) origin.CheckOriginFunc {
+			return origin.NewOriginChecker(cfg.App.URL)
 		}),
 		fx.Provide(func(cfg *config.Config, logger *zap.Logger) (*operations.AuditLogger, error) {
 			operationLogDir := filepath.Join(cfg.Custom.LogDir, "operations")

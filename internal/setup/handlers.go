@@ -1,13 +1,15 @@
 package setup
 
 import (
-	"berth/internal/common"
 	"net/http"
 	"strings"
 
 	"berth/internal/auth"
 	"berth/internal/inertia"
+	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"berth/internal/session"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -32,11 +34,11 @@ func (h *Handler) ShowSetup(c echo.Context) error {
 	adminExists, err := h.setupSvc.AdminExists()
 	if err != nil {
 		h.logger.Error("failed to check admin existence", zap.Error(err))
-		return common.SendInternalError(c, "Failed to check setup status")
+		return response.SendInternalError(c, "Failed to check setup status")
 	}
 
 	if adminExists {
-		return common.SendNotFound(c, "Setup already completed")
+		return response.SendNotFound(c, "Setup already completed")
 	}
 
 	return h.inertiaSvc.Render(c, "Setup/Admin", map[string]any{
@@ -53,7 +55,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	}
 
 	if adminExists {
-		return common.SendNotFound(c, "Setup already completed")
+		return response.SendNotFound(c, "Setup already completed")
 	}
 
 	var req struct {
@@ -63,7 +65,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 		PasswordConfirm string `form:"password_confirm" json:"password_confirm"`
 	}
 
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
@@ -92,7 +94,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	user, err := h.setupSvc.CreateAdmin(req.Username, req.Email, hashedPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return common.SendError(c, http.StatusConflict, "Setup already completed")
+			return response.SendError(c, http.StatusConflict, "Setup already completed")
 		}
 		h.logger.Error("failed to create admin user", zap.Error(err))
 		session.AddFlashError(c, "Failed to create admin user")

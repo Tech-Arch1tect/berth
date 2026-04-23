@@ -1,7 +1,9 @@
 package vulnscan
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/session"
 	"net/http"
 	"strconv"
 
@@ -22,12 +24,12 @@ func NewHandler(service *Service, logger *zap.Logger) *Handler {
 }
 
 func (h *Handler) StartScan(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackName, err := common.GetServerIDAndStackName(c)
+	serverID, stackName, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func (h *Handler) StartScan(c echo.Context) error {
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, StartScanResponse{
@@ -62,19 +64,19 @@ func (h *Handler) StartScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScan(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	scanID, err := common.ParseUintParam(c, "scanid")
+	scanID, err := echoparams.ParseUintParam(c, "scanid")
 	if err != nil {
 		return err
 	}
 
 	scan, err := h.service.GetScan(c.Request().Context(), userID, scanID)
 	if err != nil {
-		return common.SendNotFound(c, "scan not found")
+		return response.SendNotFound(c, "scan not found")
 	}
 
 	return c.JSON(http.StatusOK, GetScanResponse{
@@ -84,19 +86,19 @@ func (h *Handler) GetScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScansForStack(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackName, err := common.GetServerIDAndStackName(c)
+	serverID, stackName, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	scans, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, GetScansHistoryResponse{
@@ -106,24 +108,24 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetLatestScanForStack(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackName, err := common.GetServerIDAndStackName(c)
+	serverID, stackName, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	scan, err := h.service.GetLatestScanForStack(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
-		return common.SendNotFound(c, "no scans found for stack")
+		return response.SendNotFound(c, "no scans found for stack")
 	}
 
 	summary, err := h.service.GetVulnerabilitySummary(scan.ID)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, GetLatestScanResponse{
@@ -136,24 +138,24 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetScanSummary(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	scanID, err := common.ParseUintParam(c, "scanid")
+	scanID, err := echoparams.ParseUintParam(c, "scanid")
 	if err != nil {
 		return err
 	}
 
 	_, err = h.service.GetScan(c.Request().Context(), userID, scanID)
 	if err != nil {
-		return common.SendNotFound(c, "scan not found")
+		return response.SendNotFound(c, "scan not found")
 	}
 
 	summary, err := h.service.GetVulnerabilitySummary(scanID)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, GetScanSummaryResponse{
@@ -163,19 +165,19 @@ func (h *Handler) GetScanSummary(c echo.Context) error {
 }
 
 func (h *Handler) CompareScans(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	baseScanID, err := common.ParseUintParam(c, "baseScanId")
+	baseScanID, err := echoparams.ParseUintParam(c, "baseScanId")
 	if err != nil {
-		return common.SendBadRequest(c, "invalid base scan ID")
+		return response.SendBadRequest(c, "invalid base scan ID")
 	}
 
-	compareScanID, err := common.ParseUintParam(c, "compareScanId")
+	compareScanID, err := echoparams.ParseUintParam(c, "compareScanId")
 	if err != nil {
-		return common.SendBadRequest(c, "invalid compare scan ID")
+		return response.SendBadRequest(c, "invalid compare scan ID")
 	}
 
 	comparison, err := h.service.CompareScans(c.Request().Context(), userID, baseScanID, compareScanID)
@@ -186,7 +188,7 @@ func (h *Handler) CompareScans(c echo.Context) error {
 			zap.Uint("base_scan_id", baseScanID),
 			zap.Uint("compare_scan_id", compareScanID),
 		)
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, CompareScanResponse{
@@ -196,12 +198,12 @@ func (h *Handler) CompareScans(c echo.Context) error {
 }
 
 func (h *Handler) GetScanTrend(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackName, err := common.GetServerIDAndStackName(c)
+	serverID, stackName, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -221,7 +223,7 @@ func (h *Handler) GetScanTrend(c echo.Context) error {
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, GetScanTrendResponse{

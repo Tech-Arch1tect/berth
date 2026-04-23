@@ -1,9 +1,11 @@
 package stack
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
 	"berth/internal/rbac"
 	"berth/internal/security"
+	"berth/internal/session"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -32,45 +34,45 @@ func NewAPIHandler(service *Service, logger *zap.Logger, auditService stackAudit
 }
 
 func (h *APIHandler) ListServerStacks(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userID, serverID)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, ListStacksResponse{
+	return response.SendSuccess(c, ListStacksResponse{
 		Success: true,
 		Data:    ListStacksData{Stacks: stacks},
 	})
 }
 
 func (h *APIHandler) CreateStack(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	var req CreateStackRequest
 	if err := c.Bind(&req); err != nil {
-		return common.SendBadRequest(c, "invalid request body")
+		return response.SendBadRequest(c, "invalid request body")
 	}
 
 	if req.Name == "" {
-		return common.SendBadRequest(c, "stack name is required")
+		return response.SendBadRequest(c, "stack name is required")
 	}
 
 	h.logger.Debug("creating stack via API",
@@ -83,15 +85,15 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "permission denied") {
-			return common.SendForbidden(c, errMsg)
+			return response.SendForbidden(c, errMsg)
 		}
 		if strings.Contains(errMsg, "already exists") {
-			return common.SendConflict(c, errMsg)
+			return response.SendConflict(c, errMsg)
 		}
-		return common.SendBadRequest(c, errMsg)
+		return response.SendBadRequest(c, errMsg)
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -107,7 +109,7 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 		nil,
 	)
 
-	return common.SendCreated(c, CreateStackResponse{
+	return response.SendCreated(c, CreateStackResponse{
 		Success: true,
 		Data: CreateStackData{
 			Stack:   stack,
@@ -117,97 +119,97 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackDetails(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, stackDetails)
+	return response.SendSuccess(c, stackDetails)
 }
 
 func (h *APIHandler) GetStackNetworks(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	networks, err := h.service.GetStackNetworks(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, StackNetworksResponse{
+	return response.SendSuccess(c, StackNetworksResponse{
 		Success: true,
 		Data:    StackNetworksData{Networks: networks},
 	})
 }
 
 func (h *APIHandler) GetStackVolumes(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	volumes, err := h.service.GetStackVolumes(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, StackVolumesResponse{
+	return response.SendSuccess(c, StackVolumesResponse{
 		Success: true,
 		Data:    StackVolumesData{Volumes: volumes},
 	})
 }
 
 func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, StackImagesResponse{
+	return response.SendSuccess(c, StackImagesResponse{
 		Success: true,
 		Data:    StackImagesData{Images: imageDetails},
 	})
 }
 
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -223,11 +225,11 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 
 	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname, unmask)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	if unmask {
-		user, _ := common.GetCurrentUser(c, h.db)
+		user, _ := session.LoadCurrentUser(c, h.db)
 		username := ""
 		if user != nil {
 			username = user.Username
@@ -257,117 +259,117 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 		}()),
 	)
 
-	return common.SendSuccess(c, StackEnvironmentResponse{
+	return response.SendSuccess(c, StackEnvironmentResponse{
 		Success: true,
 		Data:    StackEnvironmentData{Services: environmentVariables},
 	})
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	stackStats, err := h.service.GetStackStats(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, StackStatsResponse{
+	return response.SendSuccess(c, StackStatsResponse{
 		Success: true,
 		Data:    StackStatsData{StackStats: *stackStats},
 	})
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	permissions, err := h.service.rbacSvc.GetUserStackPermissions(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to get user permissions")
+		return response.SendInternalError(c, "Failed to get user permissions")
 	}
 
-	return common.SendSuccess(c, StackPermissionsResponse{
+	return response.SendSuccess(c, StackPermissionsResponse{
 		Success: true,
 		Data:    StackPermissionsData{Permissions: permissions},
 	})
 }
 
 func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermStacksCreate)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to check permissions")
+		return response.SendInternalError(c, "Failed to check permissions")
 	}
 
-	return common.SendSuccess(c, CanCreateStackResponse{
+	return response.SendSuccess(c, CanCreateStackResponse{
 		Success: true,
 		Data:    CanCreateStackData{CanCreate: canCreate},
 	})
 }
 
 func (h *APIHandler) GetComposeConfig(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, composeConfig)
+	return response.SendSuccess(c, composeConfig)
 }
 
 func (h *APIHandler) UpdateCompose(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	var req UpdateComposeRequest
 	if err := c.Bind(&req); err != nil {
-		return common.SendBadRequest(c, "invalid request body")
+		return response.SendBadRequest(c, "invalid request body")
 	}
 
 	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, &req)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, result)
+	return response.SendSuccess(c, result)
 }

@@ -1,9 +1,11 @@
 package maintenance
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
 	"berth/internal/rbac"
 	"berth/internal/security"
+	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -42,42 +44,42 @@ func NewAPIHandler(service *Service, auditService maintenanceAuditLogger, db *go
 }
 
 func (h *APIHandler) GetSystemInfo(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	info, err := h.service.GetSystemInfo(c.Request().Context(), userID, serverID)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, MaintenanceInfo(*info))
+	return response.SendSuccess(c, MaintenanceInfo(*info))
 }
 
 func (h *APIHandler) PruneDocker(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	var request PruneRequest
 	if err := c.Bind(&request); err != nil {
-		return common.SendBadRequest(c, "Invalid request body")
+		return response.SendBadRequest(c, "Invalid request body")
 	}
 
 	if request.Type == "" {
-		return common.SendBadRequest(c, "Prune type is required")
+		return response.SendBadRequest(c, "Prune type is required")
 	}
 
 	validTypes := map[string]bool{
@@ -90,15 +92,15 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 	}
 
 	if !validTypes[request.Type] {
-		return common.SendBadRequest(c, "Invalid prune type")
+		return response.SendBadRequest(c, "Invalid prune type")
 	}
 
 	result, err := h.service.PruneDocker(c.Request().Context(), userID, serverID, &request)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -118,31 +120,31 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		},
 	})
 
-	return common.SendSuccess(c, PruneResult(*result))
+	return response.SendSuccess(c, PruneResult(*result))
 }
 
 func (h *APIHandler) DeleteResource(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	var request DeleteRequest
 	if err := c.Bind(&request); err != nil {
-		return common.SendBadRequest(c, "Invalid request body")
+		return response.SendBadRequest(c, "Invalid request body")
 	}
 
 	if request.Type == "" {
-		return common.SendBadRequest(c, "Resource type is required")
+		return response.SendBadRequest(c, "Resource type is required")
 	}
 
 	if request.ID == "" {
-		return common.SendBadRequest(c, "Resource ID is required")
+		return response.SendBadRequest(c, "Resource ID is required")
 	}
 
 	validTypes := map[string]bool{
@@ -153,15 +155,15 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 	}
 
 	if !validTypes[request.Type] {
-		return common.SendBadRequest(c, "Invalid resource type")
+		return response.SendBadRequest(c, "Invalid resource type")
 	}
 
 	result, err := h.service.DeleteResource(c.Request().Context(), userID, serverID, &request)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	user, _ := common.GetCurrentUser(c, h.db)
+	user, _ := session.LoadCurrentUser(c, h.db)
 	username := ""
 	if user != nil {
 		username = user.Username
@@ -180,31 +182,31 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 		},
 	})
 
-	return common.SendSuccess(c, DeleteResult(*result))
+	return response.SendSuccess(c, DeleteResult(*result))
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to check read permissions")
+		return response.SendInternalError(c, "Failed to check read permissions")
 	}
 
 	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceWrite)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to check write permissions")
+		return response.SendInternalError(c, "Failed to check write permissions")
 	}
 
-	return common.SendSuccess(c, PermissionsResponse{
+	return response.SendSuccess(c, PermissionsResponse{
 		Success: true,
 		Data: PermissionsResponseData{
 			Maintenance: MaintenancePermissions{

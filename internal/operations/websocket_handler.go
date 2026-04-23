@@ -1,13 +1,15 @@
 package operations
 
 import (
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/origin"
+	"berth/internal/pkg/response"
+	"berth/internal/session"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
-
-	"berth/internal/common"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -20,7 +22,7 @@ type WebSocketHandler struct {
 	logger   *zap.Logger
 }
 
-func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc, logger *zap.Logger) *WebSocketHandler {
+func NewWebSocketHandler(service *Service, checkOrigin origin.CheckOriginFunc, logger *zap.Logger) *WebSocketHandler {
 	return &WebSocketHandler{
 		service: service,
 		logger:  logger,
@@ -33,17 +35,17 @@ func NewWebSocketHandler(service *Service, checkOrigin common.CheckOriginFunc, l
 }
 
 func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 	operationIDStr := c.Param("operationId")
 
 	if serverID == 0 || stackname == "" {
-		return common.SendBadRequest(c, "Server ID and stack name are required")
+		return response.SendBadRequest(c, "Server ID and stack name are required")
 	}
 
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}

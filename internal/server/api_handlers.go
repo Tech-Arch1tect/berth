@@ -1,7 +1,9 @@
 package server
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -20,7 +22,7 @@ func NewAPIHandler(service *Service) *APIHandler {
 func (h *APIHandler) ListServers(c echo.Context) error {
 	servers, err := h.service.ListServers()
 	if err != nil {
-		return common.SendInternalError(c, "Failed to fetch servers")
+		return response.SendInternalError(c, "Failed to fetch servers")
 	}
 
 	return c.JSON(http.StatusOK, AdminListServersResponse{
@@ -32,33 +34,33 @@ func (h *APIHandler) ListServers(c echo.Context) error {
 }
 
 func (h *APIHandler) GetServer(c echo.Context) error {
-	id, err := common.ParseUintParam(c, "id")
+	id, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
 
 	server, err := h.service.GetServerResponse(id)
 	if err != nil {
-		return common.SendNotFound(c, "Server not found")
+		return response.SendNotFound(c, "Server not found")
 	}
 
-	return common.SendSuccess(c, map[string]any{
+	return response.SendSuccess(c, map[string]any{
 		"server": server,
 	})
 }
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
 	var req AdminCreateServerRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
 	server := req.ToServer()
 	if err := h.service.CreateServer(server); err != nil {
 		if err.Error() == "access token is required" {
-			return common.SendBadRequest(c, err.Error())
+			return response.SendBadRequest(c, err.Error())
 		}
-		return common.SendInternalError(c, "Failed to create server")
+		return response.SendInternalError(c, "Failed to create server")
 	}
 
 	return c.JSON(http.StatusCreated, AdminCreateServerResponse{
@@ -70,13 +72,13 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 }
 
 func (h *APIHandler) UpdateServer(c echo.Context) error {
-	id, err := common.ParseUintParam(c, "id")
+	id, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
 
 	var req AdminUpdateServerRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
@@ -85,14 +87,14 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	if updates.AccessToken == "" {
 		existing, err := h.service.GetServer(id)
 		if err != nil {
-			return common.SendNotFound(c, "Server not found")
+			return response.SendNotFound(c, "Server not found")
 		}
 		updates.AccessToken = existing.AccessToken
 	}
 
 	server, err := h.service.UpdateServer(id, updates)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to update server")
+		return response.SendInternalError(c, "Failed to update server")
 	}
 
 	return c.JSON(http.StatusOK, AdminUpdateServerResponse{
@@ -104,13 +106,13 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 }
 
 func (h *APIHandler) DeleteServer(c echo.Context) error {
-	id, err := common.ParseUintParam(c, "id")
+	id, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
 
 	if err := h.service.DeleteServer(id); err != nil {
-		return common.SendInternalError(c, "Failed to delete server")
+		return response.SendInternalError(c, "Failed to delete server")
 	}
 
 	return c.JSON(http.StatusOK, AdminDeleteServerResponse{
@@ -122,18 +124,18 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 }
 
 func (h *APIHandler) TestConnection(c echo.Context) error {
-	id, err := common.ParseUintParam(c, "id")
+	id, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
 		return err
 	}
 
 	server, err := h.service.GetServer(id)
 	if err != nil {
-		return common.SendNotFound(c, "Server not found")
+		return response.SendNotFound(c, "Server not found")
 	}
 
 	if err := h.service.TestServerConnection(server); err != nil {
-		return common.SendError(c, 503, "Connection test failed: "+err.Error())
+		return response.SendError(c, 503, "Connection test failed: "+err.Error())
 	}
 
 	return c.JSON(http.StatusOK, AdminTestConnectionResponse{

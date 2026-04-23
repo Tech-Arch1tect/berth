@@ -1,7 +1,9 @@
 package logs
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/session"
 	"strconv"
 	"strings"
 
@@ -19,12 +21,12 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) GetStackLogs(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
@@ -34,41 +36,41 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 		ServerID:   serverID,
 		StackName:  stackname,
 		Tail:       h.parseIntParam(c, "tail", 100),
-		Since:      common.GetQueryParam(c, "since"),
+		Since:      echoparams.GetQueryParam(c, "since"),
 		Timestamps: h.parseBoolParam(c, "timestamps", true),
 	}
 
 	logsData, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
-			return common.SendForbidden(c, err.Error())
+			return response.SendForbidden(c, err.Error())
 		}
 		if strings.Contains(err.Error(), "record not found") {
-			return common.SendNotFound(c, "Server not found")
+			return response.SendNotFound(c, "Server not found")
 		}
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, LogsResponse{
+	return response.SendSuccess(c, LogsResponse{
 		Success: true,
 		Data:    *logsData,
 	})
 }
 
 func (h *Handler) GetContainerLogs(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, stackname, err := common.GetServerIDAndStackName(c)
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
 	if err != nil {
 		return err
 	}
 
 	containerName := c.Param("containerName")
 	if containerName == "" {
-		return common.SendBadRequest(c, "Container name is required")
+		return response.SendBadRequest(c, "Container name is required")
 	}
 
 	req := LogRequest{
@@ -77,22 +79,22 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 		StackName:     stackname,
 		ContainerName: containerName,
 		Tail:          h.parseIntParam(c, "tail", 100),
-		Since:         common.GetQueryParam(c, "since"),
+		Since:         echoparams.GetQueryParam(c, "since"),
 		Timestamps:    h.parseBoolParam(c, "timestamps", true),
 	}
 
 	logsData, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
-			return common.SendForbidden(c, err.Error())
+			return response.SendForbidden(c, err.Error())
 		}
 		if strings.Contains(err.Error(), "record not found") {
-			return common.SendNotFound(c, "Server not found")
+			return response.SendNotFound(c, "Server not found")
 		}
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
-	return common.SendSuccess(c, LogsResponse{
+	return response.SendSuccess(c, LogsResponse{
 		Success: true,
 		Data:    *logsData,
 	})

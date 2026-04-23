@@ -1,7 +1,10 @@
 package operations
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
+	"berth/internal/session"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -18,33 +21,33 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) StartOperation(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
 	stackname := c.Param("stackname")
 	if stackname == "" {
-		return common.SendBadRequest(c, "Stack name is required")
+		return response.SendBadRequest(c, "Stack name is required")
 	}
 
 	var req OperationRequest
-	if err := common.BindRequest(c, &req); err != nil {
+	if err := validation.BindRequest(c, &req); err != nil {
 		return err
 	}
 
-	response, err := h.service.StartOperation(c.Request().Context(), userID, serverID, stackname, req)
+	resp, err := h.service.StartOperation(c.Request().Context(), userID, serverID, stackname, req)
 	if err != nil {
-		return common.SendInternalError(c, err.Error())
+		return response.SendInternalError(c, err.Error())
 	}
 
 	startTime := time.Now()
-	h.service.auditSvc.LogOperationStart(userID, serverID, stackname, response.OperationID, req, startTime)
+	h.service.auditSvc.LogOperationStart(userID, serverID, stackname, resp.OperationID, req, startTime)
 
-	return common.SendSuccess(c, response)
+	return response.SendSuccess(c, resp)
 }

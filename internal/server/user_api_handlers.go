@@ -1,7 +1,9 @@
 package server
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/echoparams"
+	"berth/internal/pkg/response"
+	"berth/internal/session"
 	"berth/models"
 
 	"github.com/labstack/echo/v4"
@@ -39,7 +41,7 @@ func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {
 }
 
 func (h *UserAPIHandler) ListServers(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
@@ -47,10 +49,10 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 	ctx := c.Request().Context()
 	servers, err := h.service.ListServersForUser(ctx, userID)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to fetch servers")
+		return response.SendInternalError(c, "Failed to fetch servers")
 	}
 
-	return common.SendSuccess(c, ListServersResponse{
+	return response.SendSuccess(c, ListServersResponse{
 		Success: true,
 		Data: ListServersResponseData{
 			Servers: servers,
@@ -59,12 +61,12 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 }
 
 func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
-	userID, err := common.GetCurrentUserID(c)
+	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
 		return err
 	}
 
-	serverID, err := common.ParseUintParam(c, "serverid")
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
@@ -72,10 +74,10 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 	ctx := c.Request().Context()
 	statistics, err := h.service.GetServerStatistics(ctx, userID, serverID)
 	if err != nil {
-		return common.SendInternalError(c, "Failed to fetch server statistics")
+		return response.SendInternalError(c, "Failed to fetch server statistics")
 	}
 
-	return common.SendSuccess(c, ServerStatisticsResponse{
+	return response.SendSuccess(c, ServerStatisticsResponse{
 		Success: true,
 		Data: ServerStatisticsResponseData{
 			Statistics: *statistics,

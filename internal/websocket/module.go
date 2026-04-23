@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"berth/internal/common"
+	"berth/internal/pkg/origin"
 	"berth/internal/rbac"
 	"berth/internal/server"
 
@@ -13,7 +13,7 @@ var Module = fx.Options(
 	fx.Provide(func(rbacService *rbac.Service) PermissionChecker {
 		return NewRBACPermissionChecker(rbacService)
 	}),
-	fx.Provide(func(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin common.CheckOriginFunc) *Hub {
+	fx.Provide(func(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin origin.CheckOriginFunc) *Hub {
 		return NewHub(permissionChecker, logger, checkOrigin)
 	}),
 	fx.Provide(NewHandler),
