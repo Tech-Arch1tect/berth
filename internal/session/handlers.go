@@ -3,7 +3,7 @@ package session
 import (
 	"net/http"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"

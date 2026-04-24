@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"berth/internal/rbac"
 	"go.uber.org/fx"
 	"go.uber.org/zap"

@@ -3,7 +3,7 @@ package apikey
 import (
 	"berth/internal/security"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )

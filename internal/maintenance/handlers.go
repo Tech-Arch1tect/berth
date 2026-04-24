@@ -6,7 +6,7 @@ import (
 	"berth/internal/rbac"
 	"berth/internal/session"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"

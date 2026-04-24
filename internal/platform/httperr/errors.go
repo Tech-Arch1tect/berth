@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"github.com/labstack/echo/v4"
 )
 

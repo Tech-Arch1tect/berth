@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"berth/internal/auth/totp"
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"berth/internal/security"
 	"berth/internal/session"
 	"berth/models"

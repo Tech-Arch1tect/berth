@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"berth/internal/server"
 
 	"go.uber.org/fx"

@@ -5,7 +5,7 @@ import (
 	"berth/internal/pkg/response"
 	"berth/internal/security"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"

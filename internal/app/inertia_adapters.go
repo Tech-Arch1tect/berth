@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"

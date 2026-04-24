@@ -34,8 +34,8 @@ import (
 	"berth/internal/auth"
 	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
-	"berth/internal/inertia"
 	"berth/internal/middleware/ratelimit"
+	"berth/internal/platform/inertia"
 	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"

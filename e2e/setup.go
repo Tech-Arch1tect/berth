@@ -19,9 +19,9 @@ import (
 
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/auth"
-	"berth/internal/inertia"
 	"berth/internal/logging"
 	"berth/internal/pkg/config"
+	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"

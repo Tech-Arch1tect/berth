@@ -3,7 +3,7 @@ package dashboard
 import (
 	"context"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"berth/internal/session"
 	"berth/models"
 

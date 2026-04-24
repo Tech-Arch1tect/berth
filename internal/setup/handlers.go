@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"berth/internal/auth"
-	"berth/internal/inertia"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
+	"berth/internal/platform/inertia"
 	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"

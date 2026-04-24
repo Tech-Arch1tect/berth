@@ -3,7 +3,7 @@ package operationlogs
 import (
 	"berth/internal/pkg/config"
 
-	"berth/internal/inertia"
+	"berth/internal/platform/inertia"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
