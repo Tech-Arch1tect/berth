@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"berth/internal/logging"
 	"berth/internal/pkg/config"
+	"berth/internal/platform/logging"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"

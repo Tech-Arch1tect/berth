@@ -1,7 +1,7 @@
 package maintenance
 
 import (
-	"berth/internal/agent"
+	"berth/internal/platform/agent"
 	"berth/internal/rbac"
 	"berth/internal/security"
 	"berth/internal/server"

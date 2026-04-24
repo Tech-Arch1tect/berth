@@ -4,7 +4,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"berth/internal/agent"
 	"berth/internal/apikey"
 	"berth/internal/dashboard"
 	"berth/internal/files"
@@ -17,6 +16,7 @@ import (
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/origin"
+	"berth/internal/platform/agent"
 	"berth/internal/platform/queue"
 	"berth/internal/rbac"
 	"berth/internal/registry"
@@ -34,8 +34,8 @@ import (
 	"berth/internal/auth"
 	"berth/internal/auth/tokens"
 	"berth/internal/auth/totp"
-	"berth/internal/middleware/ratelimit"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/middleware/ratelimit"
 	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"

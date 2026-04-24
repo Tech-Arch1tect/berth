@@ -1,7 +1,7 @@
 package stack
 
 import (
-	"berth/internal/agent"
+	"berth/internal/platform/agent"
 	"berth/internal/platform/inertia"
 	"berth/internal/rbac"
 	"berth/internal/security"

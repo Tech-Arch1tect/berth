@@ -3,7 +3,7 @@ package operations
 import (
 	"time"
 
-	"berth/internal/logging"
+	"berth/internal/platform/logging"
 	"berth/models"
 
 	"go.uber.org/zap"

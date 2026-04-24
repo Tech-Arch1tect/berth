@@ -1,7 +1,7 @@
 package vulnscan
 
 import (
-	"berth/internal/agent"
+	"berth/internal/platform/agent"
 	"berth/internal/rbac"
 	"berth/internal/server"
 	"context"

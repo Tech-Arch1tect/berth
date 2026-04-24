@@ -1,9 +1,9 @@
 package imageupdates
 
 import (
-	"berth/internal/agent"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
+	"berth/internal/platform/agent"
 	"berth/internal/rbac"
 	"berth/internal/server"
 

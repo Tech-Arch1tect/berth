@@ -1,7 +1,7 @@
 package security
 
 import (
-	"berth/internal/logging"
+	"berth/internal/platform/logging"
 	"berth/models"
 	"time"
 

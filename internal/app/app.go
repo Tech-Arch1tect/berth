@@ -15,8 +15,8 @@ import (
 	"berth/routes"
 
 	"berth/internal/auth"
-	"berth/internal/logging"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/logging"
 	"berth/internal/platform/mail"
 
 	"github.com/labstack/echo/v4"
