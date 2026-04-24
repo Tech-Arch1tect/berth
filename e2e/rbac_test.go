@@ -1,9 +1,9 @@
 package e2e
 
 import (
-	"berth/internal/auth"
-	"berth/internal/dto"
-	"berth/internal/rbac"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/dto"
+	"berth/internal/domain/rbac"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"

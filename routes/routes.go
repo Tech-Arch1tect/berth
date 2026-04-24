@@ -4,33 +4,33 @@ import (
 	"net/http"
 	"time"
 
-	"berth/internal/apikey"
-	"berth/internal/auth"
-	"berth/internal/dashboard"
-	"berth/internal/files"
-	"berth/internal/imageupdates"
-	"berth/internal/logs"
-	"berth/internal/maintenance"
-	"berth/internal/migration"
-	"berth/internal/operationlogs"
-	"berth/internal/operations"
+	"berth/internal/domain/apikey"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/dashboard"
+	"berth/internal/domain/dataexport"
+	"berth/internal/domain/files"
+	"berth/internal/domain/imageupdates"
+	"berth/internal/domain/logs"
+	"berth/internal/domain/maintenance"
+	"berth/internal/domain/operationlogs"
+	"berth/internal/domain/operations"
+	"berth/internal/domain/rbac"
+	"berth/internal/domain/registry"
+	"berth/internal/domain/security"
+	"berth/internal/domain/server"
+	"berth/internal/domain/setup"
+	"berth/internal/domain/stack"
+	"berth/internal/domain/version"
+	"berth/internal/domain/vulnscan"
+	"berth/internal/domain/websocket"
 	"berth/internal/platform/httperr"
-	"berth/internal/rbac"
-	"berth/internal/registry"
-	"berth/internal/security"
-	"berth/internal/server"
-	"berth/internal/setup"
-	"berth/internal/stack"
-	"berth/internal/version"
-	"berth/internal/vulnscan"
-	"berth/internal/websocket"
 
-	"berth/internal/auth/tokens"
-	"berth/internal/auth/totp"
+	"berth/internal/domain/auth/tokens"
+	"berth/internal/domain/auth/totp"
+	"berth/internal/domain/session"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/middleware/ratelimit"
-	"berth/internal/session"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -48,7 +48,7 @@ type RouteParams struct {
 	SessionHandler         *session.Handler
 	TOTPHandler            *auth.TOTPHandler
 	VersionHandler         *version.Handler
-	MigrationHandler       *migration.Handler
+	MigrationHandler       *dataexport.Handler
 	OperationLogsHandler   *operationlogs.Handler
 	RBACHandler            *rbac.Handler
 	RBACAPIHandler         *rbac.APIHandler
@@ -290,7 +290,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 
 func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, inertiaService *inertia.Service,
 	rbacHandler *rbac.Handler, operationLogsHandler *operationlogs.Handler, serverHandler *server.Handler,
-	migrationHandler *migration.Handler, securityHandler *security.Handler) {
+	migrationHandler *dataexport.Handler, securityHandler *security.Handler) {
 
 	if rbacHandler == nil || rbacMiddleware == nil {
 		return
@@ -509,7 +509,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
 	rbacMiddleware *rbac.Middleware, rbacAPIHandler *rbac.APIHandler, operationLogsHandler *operationlogs.Handler,
-	serverAPIHandler *server.APIHandler, migrationHandler *migration.Handler, securityHandler *security.Handler) {
+	serverAPIHandler *server.APIHandler, migrationHandler *dataexport.Handler, securityHandler *security.Handler) {
 
 	if rbacAPIHandler == nil || rbacMiddleware == nil {
 		return

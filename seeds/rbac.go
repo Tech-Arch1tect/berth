@@ -1,7 +1,7 @@
 package seeds
 
 import (
-	"berth/internal/rbac"
+	"berth/internal/domain/rbac"
 	"berth/models"
 
 	"gorm.io/gorm"

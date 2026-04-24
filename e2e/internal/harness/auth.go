@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )

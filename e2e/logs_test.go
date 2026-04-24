@@ -3,8 +3,8 @@ package e2e
 import (
 	"testing"
 
-	"berth/internal/auth"
-	"berth/internal/logs"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/logs"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"

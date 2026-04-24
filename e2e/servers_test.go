@@ -1,8 +1,8 @@
 package e2e
 
 import (
-	"berth/internal/auth"
-	"berth/internal/server"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/server"
 	"berth/models"
 	"strconv"
 	"testing"

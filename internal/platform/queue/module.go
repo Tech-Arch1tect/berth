@@ -1,10 +1,10 @@
 package queue
 
 import (
-	"berth/internal/operations"
+	"berth/internal/domain/operations"
+	"berth/internal/domain/rbac"
+	"berth/internal/domain/security"
 	"berth/internal/pkg/config"
-	"berth/internal/rbac"
-	"berth/internal/security"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

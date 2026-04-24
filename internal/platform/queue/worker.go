@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"berth/internal/operations"
+	"berth/internal/domain/operations"
 	"berth/models"
 	"context"
 	"sync"

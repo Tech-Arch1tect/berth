@@ -14,15 +14,15 @@ import (
 	"berth/internal/platform/ssl"
 	"berth/routes"
 
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/logging"
 	"berth/internal/platform/mail"
 
 	"github.com/labstack/echo/v4"
 
-	"berth/internal/imageupdates"
-	"berth/internal/vulnscan"
+	"berth/internal/domain/imageupdates"
+	"berth/internal/domain/vulnscan"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

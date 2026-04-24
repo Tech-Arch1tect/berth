@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/pquerna/otp/totp"

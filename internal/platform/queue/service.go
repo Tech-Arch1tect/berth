@@ -1,8 +1,8 @@
 package queue
 
 import (
-	"berth/internal/operations"
-	"berth/internal/rbac"
+	"berth/internal/domain/operations"
+	"berth/internal/domain/rbac"
 	"berth/models"
 	"context"
 	"encoding/json"

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 
 	"github.com/stretchr/testify/require"
 )

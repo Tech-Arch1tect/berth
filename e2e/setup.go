@@ -18,7 +18,7 @@ import (
 	"berth/models"
 
 	e2etesting "berth/e2e/internal/harness"
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/logging"

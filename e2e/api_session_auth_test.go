@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"berth/internal/auth"
+	"berth/internal/domain/auth"
 	"net/http"
 	"testing"
 

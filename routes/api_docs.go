@@ -3,23 +3,23 @@ package routes
 import (
 	"net/http"
 
-	"berth/internal/apikey"
-	"berth/internal/auth"
-	"berth/internal/dto"
-	"berth/internal/files"
-	"berth/internal/imageupdates"
-	"berth/internal/logs"
-	"berth/internal/maintenance"
-	"berth/internal/migration"
+	"berth/internal/domain/apikey"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/dataexport"
+	"berth/internal/domain/dto"
+	"berth/internal/domain/files"
+	"berth/internal/domain/imageupdates"
+	"berth/internal/domain/logs"
+	"berth/internal/domain/maintenance"
+	"berth/internal/domain/rbac"
+	"berth/internal/domain/registry"
+	"berth/internal/domain/security"
+	"berth/internal/domain/server"
+	"berth/internal/domain/session"
+	"berth/internal/domain/stack"
+	"berth/internal/domain/version"
+	"berth/internal/domain/vulnscan"
 	"berth/internal/pkg/config"
-	"berth/internal/rbac"
-	"berth/internal/registry"
-	"berth/internal/security"
-	"berth/internal/server"
-	"berth/internal/session"
-	"berth/internal/stack"
-	"berth/internal/version"
-	"berth/internal/vulnscan"
 
 	"berth/internal/pkg/apidocs"
 	"github.com/labstack/echo/v4"
@@ -1089,7 +1089,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("Export data").
 		Description("Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.").
-		Body(migration.ExportRequest{}, "Export password (min 12 characters)").
+		Body(dataexport.ExportRequest{}, "Export password (min 12 characters)").
 		ResponseBinary(http.StatusOK, "application/octet-stream", "Encrypted backup file").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or password too short").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
@@ -1105,7 +1105,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		BodyMultipart("Backup file and decryption password").
 		Field("password", true).
 		FileField("backup_file", true).
-		Response(http.StatusOK, migration.ImportResponse{}, "Import completed successfully").
+		Response(http.StatusOK, dataexport.ImportResponse{}, "Import completed successfully").
 		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or missing file/password").
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").

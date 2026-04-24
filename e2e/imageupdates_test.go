@@ -3,7 +3,7 @@ package e2e
 import (
 	"testing"
 
-	"berth/internal/imageupdates"
+	"berth/internal/domain/imageupdates"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
