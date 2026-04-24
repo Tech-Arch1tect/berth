@@ -1,8 +1,8 @@
 package queue
 
 import (
+	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
-	"berth/models"
 	"context"
 	"sync"
 	"time"
@@ -42,14 +42,14 @@ func (w *StackWorker) process(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.QueuedOperation) {
+func (w *StackWorker) processOperation(ctx context.Context, queuedOp *QueuedOperation) {
 	w.logger.Info("processing queued operation",
 		zap.String("stack_key", w.stackKey),
 		zap.String("operation_id", queuedOp.OperationID),
 		zap.String("command", queuedOp.Command),
 	)
 
-	if !w.markOperationStatus(queuedOp.OperationID, models.OperationStatusRunning) {
+	if !w.markOperationStatus(queuedOp.OperationID, operationlogs.OperationStatusRunning) {
 		w.logger.Warn("failed to mark operation as running",
 			zap.String("operation_id", queuedOp.OperationID),
 		)
@@ -57,7 +57,7 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 	}
 
 	startTime := time.Now()
-	operationLog := &models.OperationLog{
+	operationLog := &operationlogs.OperationLog{
 		UserID:      queuedOp.UserID,
 		ServerID:    queuedOp.ServerID,
 		StackName:   queuedOp.StackName,
@@ -65,7 +65,7 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		Command:     queuedOp.Command,
 		Options:     queuedOp.Options,
 		Services:    queuedOp.Services,
-		Status:      models.OperationStatusRunning,
+		Status:      operationlogs.OperationStatusRunning,
 		QueuedAt:    &queuedOp.QueuedAt,
 		StartTime:   startTime,
 	}
@@ -113,11 +113,11 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		"end_time": endTime,
 		"success":  success,
 		"duration": duration,
-		"status":   models.OperationStatusCompleted,
+		"status":   operationlogs.OperationStatusCompleted,
 	}
 
 	if !success {
-		updates["status"] = models.OperationStatusFailed
+		updates["status"] = operationlogs.OperationStatusFailed
 	}
 
 	updates["exit_code"] = *exitCode
@@ -130,9 +130,9 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 		)
 	}
 
-	finalStatus := models.OperationStatusCompleted
+	finalStatus := operationlogs.OperationStatusCompleted
 	if !success {
-		finalStatus = models.OperationStatusFailed
+		finalStatus = operationlogs.OperationStatusFailed
 	}
 
 	w.markOperationStatus(queuedOp.OperationID, finalStatus)
@@ -160,8 +160,8 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *models.Que
 	}
 }
 
-func (w *StackWorker) markOperationStatus(operationID string, status models.OperationStatus) bool {
-	err := w.service.db.Model(&models.QueuedOperation{}).
+func (w *StackWorker) markOperationStatus(operationID string, status operationlogs.OperationStatus) bool {
+	err := w.service.db.Model(&QueuedOperation{}).
 		Where("operation_id = ?", operationID).
 		Update("status", status).Error
 

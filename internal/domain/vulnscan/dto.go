@@ -1,7 +1,5 @@
 package vulnscan
 
-import "berth/models"
-
 type StartScanRequest struct {
 	Services []string `json:"services,omitempty"`
 }
@@ -12,7 +10,7 @@ type StartScanResponse struct {
 }
 
 type StartScanData struct {
-	Scan models.ImageScan `json:"scan"`
+	Scan ImageScan `json:"scan"`
 }
 
 type GetScanResponse struct {
@@ -21,7 +19,7 @@ type GetScanResponse struct {
 }
 
 type GetScanData struct {
-	Scan models.ImageScan `json:"scan"`
+	Scan ImageScan `json:"scan"`
 }
 
 type GetScansHistoryResponse struct {
@@ -39,7 +37,7 @@ type GetLatestScanResponse struct {
 }
 
 type GetLatestScanData struct {
-	Scan    models.ImageScan      `json:"scan"`
+	Scan    ImageScan             `json:"scan"`
 	Summary *VulnerabilitySummary `json:"summary"`
 }
 

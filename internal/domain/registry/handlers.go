@@ -5,7 +5,6 @@ import (
 	"berth/internal/domain/server"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"berth/models"
 
 	"berth/internal/domain/session"
 	"berth/internal/platform/inertia"
@@ -38,7 +37,7 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 	userID := session.GetUserIDAsUint(c)
 	ctx := c.Request().Context()
 
-	server, err := h.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	srv, err := h.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
 		return response.SendNotFound(c, "Server not found")
 	}
@@ -59,13 +58,13 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 
 	credentials, err := h.service.GetCredentials(serverID)
 	if err != nil {
-		credentials = []models.ServerRegistryCredential{}
+		credentials = []server.ServerRegistryCredential{}
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Registries", map[string]any{
-		"title":       "Registry Credentials - " + server.Name,
+		"title":       "Registry Credentials - " + srv.Name,
 		"server_id":   serverID,
-		"server_name": server.Name,
+		"server_name": srv.Name,
 		"credentials": credentials,
 	})
 }

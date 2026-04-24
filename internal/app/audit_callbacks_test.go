@@ -1,11 +1,12 @@
 package app
 
 import (
+	"berth/internal/domain/operationlogs"
 	"sync"
 	"testing"
 	"time"
 
-	"berth/models"
+	"berth/internal/domain/security"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,49 +16,49 @@ import (
 
 type spyOperationAuditor struct {
 	mu      sync.Mutex
-	creates []*models.OperationLog
-	updates []*models.OperationLog
+	creates []*operationlogs.OperationLog
+	updates []*operationlogs.OperationLog
 }
 
-func (s *spyOperationAuditor) LogOperationCreate(log *models.OperationLog) {
+func (s *spyOperationAuditor) LogOperationCreate(log *operationlogs.OperationLog) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.creates = append(s.creates, log)
 }
 
-func (s *spyOperationAuditor) LogOperationUpdate(log *models.OperationLog) {
+func (s *spyOperationAuditor) LogOperationUpdate(log *operationlogs.OperationLog) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.updates = append(s.updates, log)
 }
 
-func (s *spyOperationAuditor) getCreates() []*models.OperationLog {
+func (s *spyOperationAuditor) getCreates() []*operationlogs.OperationLog {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]*models.OperationLog{}, s.creates...)
+	return append([]*operationlogs.OperationLog{}, s.creates...)
 }
 
-func (s *spyOperationAuditor) getUpdates() []*models.OperationLog {
+func (s *spyOperationAuditor) getUpdates() []*operationlogs.OperationLog {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]*models.OperationLog{}, s.updates...)
+	return append([]*operationlogs.OperationLog{}, s.updates...)
 }
 
 type spySecurityAuditor struct {
 	mu     sync.Mutex
-	events []*models.SecurityAuditLog
+	events []*security.SecurityAuditLog
 }
 
-func (s *spySecurityAuditor) LogSecurityEvent(log *models.SecurityAuditLog) {
+func (s *spySecurityAuditor) LogSecurityEvent(log *security.SecurityAuditLog) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.events = append(s.events, log)
 }
 
-func (s *spySecurityAuditor) getEvents() []*models.SecurityAuditLog {
+func (s *spySecurityAuditor) getEvents() []*security.SecurityAuditLog {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]*models.SecurityAuditLog{}, s.events...)
+	return append([]*security.SecurityAuditLog{}, s.events...)
 }
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -65,7 +66,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 
-	err = db.AutoMigrate(&models.OperationLog{}, &models.SecurityAuditLog{})
+	err = db.AutoMigrate(&operationlogs.OperationLog{}, &security.SecurityAuditLog{})
 	require.NoError(t, err)
 
 	return db
@@ -80,7 +81,7 @@ func TestRegisterAuditCallbacks_OperationLogCreate(t *testing.T) {
 		OperationAuditLogger: spy,
 	})
 
-	log := &models.OperationLog{
+	log := &operationlogs.OperationLog{
 		UserID:      1,
 		ServerID:    1,
 		StackName:   "test-stack",
@@ -110,7 +111,7 @@ func TestRegisterAuditCallbacks_OperationLogUpdate(t *testing.T) {
 		OperationAuditLogger: spy,
 	})
 
-	log := &models.OperationLog{
+	log := &operationlogs.OperationLog{
 		UserID:      1,
 		ServerID:    1,
 		StackName:   "test-stack",
@@ -149,10 +150,10 @@ func TestRegisterAuditCallbacks_SecurityAuditLogCreate(t *testing.T) {
 		SecurityAuditLogger: spy,
 	})
 
-	log := &models.SecurityAuditLog{
+	log := &security.SecurityAuditLog{
 		EventType:     "auth.login",
-		EventCategory: models.CategoryAuth,
-		Severity:      models.SeverityLow,
+		EventCategory: security.CategoryAuth,
+		Severity:      security.SeverityLow,
 		Success:       true,
 		ActorUsername: "testuser",
 	}
@@ -165,7 +166,7 @@ func TestRegisterAuditCallbacks_SecurityAuditLogCreate(t *testing.T) {
 
 	event := spy.getEvents()[0]
 	assert.Equal(t, "auth.login", event.EventType)
-	assert.Equal(t, models.CategoryAuth, event.EventCategory)
+	assert.Equal(t, security.CategoryAuth, event.EventCategory)
 	assert.Equal(t, "testuser", event.ActorUsername)
 }
 
@@ -176,7 +177,7 @@ func TestRegisterAuditCallbacks_NilLoggersNoError(t *testing.T) {
 		DB: db,
 	})
 
-	log := &models.OperationLog{
+	log := &operationlogs.OperationLog{
 		UserID:      1,
 		ServerID:    1,
 		StackName:   "test-stack",
@@ -199,10 +200,10 @@ func TestRegisterAuditCallbacks_DoesNotFireForOtherTables(t *testing.T) {
 		SecurityAuditLogger:  secSpy,
 	})
 
-	secLog := &models.SecurityAuditLog{
+	secLog := &security.SecurityAuditLog{
 		EventType:     "auth.login",
-		EventCategory: models.CategoryAuth,
-		Severity:      models.SeverityLow,
+		EventCategory: security.CategoryAuth,
+		Severity:      security.SeverityLow,
 		Success:       true,
 	}
 	err := db.Create(secLog).Error
@@ -215,7 +216,7 @@ func TestRegisterAuditCallbacks_DoesNotFireForOtherTables(t *testing.T) {
 	assert.Empty(t, opSpy.getCreates(), "operation create callback should not fire for security audit log")
 	assert.Empty(t, opSpy.getUpdates(), "operation update callback should not fire for security audit log")
 
-	opLog := &models.OperationLog{
+	opLog := &operationlogs.OperationLog{
 		UserID:      1,
 		ServerID:    1,
 		StackName:   "test-stack",

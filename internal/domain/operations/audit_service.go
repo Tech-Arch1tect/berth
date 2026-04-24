@@ -1,7 +1,7 @@
 package operations
 
 import (
-	"berth/models"
+	"berth/internal/domain/operationlogs"
 	"encoding/json"
 	"time"
 
@@ -23,7 +23,7 @@ func NewAuditService(db *gorm.DB, logger *zap.Logger, summaryParser *SummaryPars
 	}
 }
 
-func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName string, operationID string, request OperationRequest, startTime time.Time) (*models.OperationLog, error) {
+func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName string, operationID string, request OperationRequest, startTime time.Time) (*operationlogs.OperationLog, error) {
 	s.logger.Debug("logging operation start",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -49,7 +49,7 @@ func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName s
 		)
 	}
 
-	log := &models.OperationLog{
+	log := &operationlogs.OperationLog{
 		UserID:      userID,
 		ServerID:    serverID,
 		StackName:   stackName,
@@ -91,7 +91,7 @@ func (s *AuditService) LogOperationMessage(operationLogID uint, messageType stri
 		zap.Int("message_length", len(messageData)),
 	)
 
-	message := &models.OperationLogMessage{
+	message := &operationlogs.OperationLogMessage{
 		OperationLogID: operationLogID,
 		MessageType:    messageType,
 		MessageData:    messageData,
@@ -110,7 +110,7 @@ func (s *AuditService) LogOperationMessage(operationLogID uint, messageType stri
 	}
 
 	now := time.Now()
-	if err := s.db.Model(&models.OperationLog{}).Where("id = ?", operationLogID).Update("last_message_at", now).Error; err != nil {
+	if err := s.db.Model(&operationlogs.OperationLog{}).Where("id = ?", operationLogID).Update("last_message_at", now).Error; err != nil {
 		s.logger.Error("failed to update last_message_at",
 			zap.Error(err),
 			zap.Uint("operation_log_id", operationLogID),
@@ -120,8 +120,8 @@ func (s *AuditService) LogOperationMessage(operationLogID uint, messageType stri
 	return nil
 }
 
-func (s *AuditService) FindOperationLogByOperationID(operationID string) (*models.OperationLog, error) {
-	var log models.OperationLog
+func (s *AuditService) FindOperationLogByOperationID(operationID string) (*operationlogs.OperationLog, error) {
+	var log operationlogs.OperationLog
 	err := s.db.Where("operation_id = ?", operationID).First(&log).Error
 	if err != nil {
 		s.logger.Debug("operation log not found",
@@ -135,7 +135,7 @@ func (s *AuditService) FindOperationLogByOperationID(operationID string) (*model
 
 func (s *AuditService) GetOperationMessageCount(operationLogID uint) (int64, error) {
 	var count int64
-	err := s.db.Model(&models.OperationLogMessage{}).Where("operation_log_id = ?", operationLogID).Count(&count).Error
+	err := s.db.Model(&operationlogs.OperationLogMessage{}).Where("operation_log_id = ?", operationLogID).Count(&count).Error
 	if err != nil {
 		s.logger.Error("failed to count operation messages",
 			zap.Error(err),
@@ -154,7 +154,7 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 		zap.Int("exit_code", exitCode),
 	)
 
-	log := &models.OperationLog{}
+	log := &operationlogs.OperationLog{}
 	if err := s.db.First(log, operationLogID).Error; err != nil {
 		s.logger.Error("failed to find operation log",
 			zap.Error(err),
@@ -213,7 +213,7 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 		)
 	}
 
-	var messages []models.OperationLogMessage
+	var messages []operationlogs.OperationLogMessage
 	if err := s.db.Where("operation_log_id = ?", operationLogID).
 		Order("sequence_number ASC").
 		Find(&messages).Error; err != nil {

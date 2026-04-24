@@ -1,9 +1,9 @@
 package queue
 
 import (
+	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
 	"berth/internal/domain/rbac"
-	"berth/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -46,7 +46,7 @@ type Service struct {
 
 type StackWorker struct {
 	stackKey string // "serverID:stackName"
-	queue    chan *models.QueuedOperation
+	queue    chan *QueuedOperation
 	active   bool
 	logger   *zap.Logger
 	service  *Service
@@ -72,7 +72,7 @@ func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queueP
 	return service
 }
 
-func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID uint, stackName string, req operations.OperationRequest) (*models.QueuedOperationResponse, error) {
+func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID uint, stackName string, req operations.OperationRequest) (*QueuedOperationResponse, error) {
 	s.logger.Debug("enqueuing single operation",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -115,7 +115,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 	}
 
 	operationID := s.generateOperationID()
-	queuedOp := &models.QueuedOperation{
+	queuedOp := &QueuedOperation{
 		OperationID: operationID,
 		UserID:      userID,
 		ServerID:    serverID,
@@ -123,7 +123,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 		Command:     req.Command,
 		Options:     s.serializeStringArray(req.Options),
 		Services:    s.serializeStringArray(req.Services),
-		Status:      models.OperationStatusQueued,
+		Status:      operationlogs.OperationStatusQueued,
 		QueuedAt:    time.Now(),
 	}
 
@@ -154,7 +154,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 	return &response, nil
 }
 
-func (s *Service) submitToWorker(serverID uint, stackName string, queuedOp *models.QueuedOperation) {
+func (s *Service) submitToWorker(serverID uint, stackName string, queuedOp *QueuedOperation) {
 	stackKey := fmt.Sprintf("%d:%s", serverID, stackName)
 
 	s.workerMutex.Lock()
@@ -165,7 +165,7 @@ func (s *Service) submitToWorker(serverID uint, stackName string, queuedOp *mode
 
 		worker = &StackWorker{
 			stackKey: stackKey,
-			queue:    make(chan *models.QueuedOperation, 100),
+			queue:    make(chan *QueuedOperation, 100),
 			active:   true,
 			logger:   s.logger,
 			service:  s,
@@ -192,9 +192,9 @@ func (s *Service) submitToWorker(serverID uint, stackName string, queuedOp *mode
 
 func (s *Service) getQueuePosition(serverID uint, stackName string, operationID string) int {
 	var count int64
-	s.db.Model(&models.QueuedOperation{}).
+	s.db.Model(&QueuedOperation{}).
 		Where("server_id = ? AND stack_name = ? AND status = ? AND queued_at <= (SELECT queued_at FROM queued_operations WHERE operation_id = ?)",
-			serverID, stackName, models.OperationStatusQueued, operationID).
+			serverID, stackName, operationlogs.OperationStatusQueued, operationID).
 		Count(&count)
 
 	return int(count)
@@ -203,8 +203,8 @@ func (s *Service) getQueuePosition(serverID uint, stackName string, operationID 
 func (s *Service) processExistingQueue() {
 	s.logger.Info("processing existing queued operations")
 
-	var queuedOps []models.QueuedOperation
-	err := s.db.Where("status = ?", models.OperationStatusQueued).
+	var queuedOps []QueuedOperation
+	err := s.db.Where("status = ?", operationlogs.OperationStatusQueued).
 		Order("queued_at ASC").
 		Find(&queuedOps).Error
 

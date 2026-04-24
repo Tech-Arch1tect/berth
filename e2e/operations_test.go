@@ -1,10 +1,10 @@
 package e2e
 
 import (
+	"berth/internal/domain/operationlogs"
 	"testing"
 
 	"berth/internal/domain/auth"
-	"berth/internal/domain/dto"
 	"berth/internal/domain/logs"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -98,7 +98,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp dto.PaginatedOperationLogsResponse
+		var logsResp operationlogs.PaginatedOperationLogsResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
 		assert.True(t, logsResp.Success)
 		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
@@ -116,7 +116,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp dto.OperationLogStatsResponse
+		var statsResp operationlogs.OperationLogStatsResponse
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))
@@ -201,7 +201,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp dto.PaginatedOperationLogsResponse
+		var logsResp operationlogs.PaginatedOperationLogsResponse
 		require.NoError(t, resp.GetJSON(&logsResp))
 		assert.True(t, logsResp.Success)
 		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
@@ -219,7 +219,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp dto.OperationLogStatsResponse
+		var statsResp operationlogs.OperationLogStatsResponse
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))

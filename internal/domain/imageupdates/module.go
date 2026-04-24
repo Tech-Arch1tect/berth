@@ -1,11 +1,11 @@
 package imageupdates
 
 import (
+	"berth/internal/domain/agent"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
-	"berth/internal/platform/agent"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

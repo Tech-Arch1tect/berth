@@ -1,7 +1,7 @@
 package operations
 
 import (
-	"berth/models"
+	"berth/internal/domain/operationlogs"
 	"fmt"
 	"go.uber.org/zap"
 	"strings"
@@ -21,7 +21,7 @@ func (p *SummaryParser) GenerateSummary(
 	command string,
 	success bool,
 	exitCode int,
-	messages []models.OperationLogMessage,
+	messages []operationlogs.OperationLogMessage,
 ) string {
 	if !success {
 		return p.generateFailureSummary(command, exitCode)
@@ -49,7 +49,7 @@ func (p *SummaryParser) generateFailureSummary(command string, exitCode int) str
 	return fmt.Sprintf("Operation '%s' failed with exit code %d", command, exitCode)
 }
 
-func (p *SummaryParser) parsePullSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parsePullSummary(messages []operationlogs.OperationLogMessage) string {
 	servicesWithUpdates := make(map[string]bool)
 	allServices := make(map[string]bool)
 	hasLayerActivity := false
@@ -132,7 +132,7 @@ func (p *SummaryParser) formatServiceList(services []string) string {
 	return fmt.Sprintf("%s and %d others", first, remaining)
 }
 
-func (p *SummaryParser) parseUpSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parseUpSummary(messages []operationlogs.OperationLogMessage) string {
 	containersStarted := make(map[string]bool)
 	networksCreated := make(map[string]bool)
 	volumesCreated := make(map[string]bool)
@@ -218,7 +218,7 @@ func (p *SummaryParser) formatResourceList(resourceType string, resources []stri
 	return fmt.Sprintf("%d %ss (%s and %d others)", len(resources), resourceType, first, remaining)
 }
 
-func (p *SummaryParser) parseDownSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parseDownSummary(messages []operationlogs.OperationLogMessage) string {
 	containersStopped := make(map[string]bool)
 	containersRemoved := make(map[string]bool)
 	networksRemoved := make(map[string]bool)
@@ -301,7 +301,7 @@ func (p *SummaryParser) parseDownSummary(messages []models.OperationLogMessage) 
 	return strings.Join(parts, "; ")
 }
 
-func (p *SummaryParser) parseRestartSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parseRestartSummary(messages []operationlogs.OperationLogMessage) string {
 	containersRestarted := make(map[string]bool)
 
 	for _, msg := range messages {
@@ -328,7 +328,7 @@ func (p *SummaryParser) parseRestartSummary(messages []models.OperationLogMessag
 	return fmt.Sprintf("Restarted %s", p.formatServiceList(restartedList))
 }
 
-func (p *SummaryParser) parseStartSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parseStartSummary(messages []operationlogs.OperationLogMessage) string {
 	containersStarted := make(map[string]bool)
 
 	for _, msg := range messages {
@@ -354,7 +354,7 @@ func (p *SummaryParser) parseStartSummary(messages []models.OperationLogMessage)
 	return fmt.Sprintf("Started %s", p.formatServiceList(startedList))
 }
 
-func (p *SummaryParser) parseStopSummary(messages []models.OperationLogMessage) string {
+func (p *SummaryParser) parseStopSummary(messages []operationlogs.OperationLogMessage) string {
 	containersStopped := make(map[string]bool)
 
 	for _, msg := range messages {

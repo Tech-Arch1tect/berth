@@ -2,7 +2,7 @@ package logs
 
 import (
 	"berth/internal/domain/rbac"
-	"berth/models"
+	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,11 +15,11 @@ import (
 )
 
 type logsAgentClient interface {
-	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type logsServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
 }
 
 type logsPermissionChecker interface {
@@ -204,7 +204,7 @@ func (s *Service) validateAccess(ctx context.Context, userID, serverID uint, sta
 	return nil
 }
 
-func (s *Service) makeLogRequest(ctx context.Context, serverModel *models.Server, endpoint string, req LogRequest) (*LogsData, error) {
+func (s *Service) makeLogRequest(ctx context.Context, serverModel *server.Server, endpoint string, req LogRequest) (*LogsData, error) {
 	params := url.Values{}
 
 	if req.Tail > 0 {

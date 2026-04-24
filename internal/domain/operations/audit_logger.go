@@ -1,10 +1,10 @@
 package operations
 
 import (
+	"berth/internal/domain/operationlogs"
 	"time"
 
 	"berth/internal/platform/logging"
-	"berth/models"
 
 	"go.uber.org/zap"
 )
@@ -39,7 +39,7 @@ func NewAuditLogger(enabled bool, logDir string, logger *zap.Logger, maxSizeByte
 	}, nil
 }
 
-func (a *AuditLogger) LogOperationCreate(log *models.OperationLog) {
+func (a *AuditLogger) LogOperationCreate(log *operationlogs.OperationLog) {
 	entry := AuditLogEntry{
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
 		LogID:       log.ID,
@@ -56,7 +56,7 @@ func (a *AuditLogger) LogOperationCreate(log *models.OperationLog) {
 	a.fileLogger.Log(entry)
 }
 
-func (a *AuditLogger) LogOperationUpdate(log *models.OperationLog) {
+func (a *AuditLogger) LogOperationUpdate(log *operationlogs.OperationLog) {
 	status := "unknown"
 	if log.Success != nil {
 		if *log.Success {

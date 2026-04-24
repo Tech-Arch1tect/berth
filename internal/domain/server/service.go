@@ -2,7 +2,6 @@ package server
 
 import (
 	berthcrypto "berth/internal/pkg/crypto"
-	"berth/models"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -23,7 +22,7 @@ type accessChecker interface {
 }
 
 type serverAgentClient interface {
-	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type Service struct {
@@ -44,13 +43,13 @@ func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, rbacSvc accessChecker, 
 	}
 }
 
-func (s *Service) ListServers() ([]models.ServerInfo, error) {
-	var servers []models.Server
+func (s *Service) ListServers() ([]ServerInfo, error) {
+	var servers []Server
 	if err := s.db.Find(&servers).Error; err != nil {
 		return nil, err
 	}
 
-	responses := make([]models.ServerInfo, len(servers))
+	responses := make([]ServerInfo, len(servers))
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
 	}
@@ -58,8 +57,8 @@ func (s *Service) ListServers() ([]models.ServerInfo, error) {
 	return responses, nil
 }
 
-func (s *Service) GetServer(id uint) (*models.Server, error) {
-	var server models.Server
+func (s *Service) GetServer(id uint) (*Server, error) {
+	var server Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		return nil, err
 	}
@@ -73,13 +72,13 @@ func (s *Service) GetServer(id uint) (*models.Server, error) {
 	return &server, nil
 }
 
-func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID uint) (*models.Server, error) {
+func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID uint) (*Server, error) {
 	s.logger.Debug("getting active server for user",
 		zap.Uint("server_id", id),
 		zap.Uint("user_id", userID),
 	)
 
-	var server models.Server
+	var server Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		s.logger.Error("failed to find server for user access",
 			zap.Error(err),
@@ -138,8 +137,8 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 	return &server, nil
 }
 
-func (s *Service) GetServerResponse(id uint) (*models.ServerInfo, error) {
-	var server models.Server
+func (s *Service) GetServerResponse(id uint) (*ServerInfo, error) {
+	var server Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		return nil, err
 	}
@@ -148,7 +147,7 @@ func (s *Service) GetServerResponse(id uint) (*models.ServerInfo, error) {
 	return &response, nil
 }
 
-func (s *Service) CreateServer(server *models.Server) error {
+func (s *Service) CreateServer(server *Server) error {
 	s.logger.Info("creating new server",
 		zap.String("name", server.Name),
 		zap.String("host", server.Host),
@@ -191,14 +190,14 @@ func (s *Service) CreateServer(server *models.Server) error {
 	return nil
 }
 
-func (s *Service) UpdateServer(id uint, updates *models.Server) (*models.Server, error) {
+func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 	s.logger.Info("updating server",
 		zap.Uint("server_id", id),
 		zap.String("name", updates.Name),
 		zap.String("host", updates.Host),
 	)
 
-	var server models.Server
+	var server Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		s.logger.Error("failed to find server for update",
 			zap.Error(err),
@@ -252,7 +251,7 @@ func (s *Service) DeleteServer(id uint) error {
 		zap.Uint("server_id", id),
 	)
 
-	var server models.Server
+	var server Server
 	if err := s.db.First(&server, id).Error; err != nil {
 		s.logger.Error("failed to find server for deletion",
 			zap.Error(err),
@@ -278,7 +277,7 @@ func (s *Service) DeleteServer(id uint) error {
 	return nil
 }
 
-func (s *Service) TestServerConnection(server *models.Server) error {
+func (s *Service) TestServerConnection(server *Server) error {
 	s.logger.Info("testing server connection",
 		zap.Uint("server_id", server.ID),
 		zap.String("server_name", server.Name),
@@ -341,7 +340,7 @@ func (s *Service) TestServerConnection(server *models.Server) error {
 	return nil
 }
 
-func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error) {
+func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]ServerInfo, error) {
 	s.logger.Debug("listing servers for user",
 		zap.Uint("user_id", userID),
 	)
@@ -359,10 +358,10 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models
 		s.logger.Debug("user has no accessible servers",
 			zap.Uint("user_id", userID),
 		)
-		return []models.ServerInfo{}, nil
+		return []ServerInfo{}, nil
 	}
 
-	var servers []models.Server
+	var servers []Server
 	if err := s.db.Where("id IN ? AND is_active = ?", serverIDs, true).Find(&servers).Error; err != nil {
 		s.logger.Error("failed to query servers for user",
 			zap.Error(err),
@@ -372,7 +371,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models
 		return nil, err
 	}
 
-	responses := make([]models.ServerInfo, len(servers))
+	responses := make([]ServerInfo, len(servers))
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
 	}
@@ -386,7 +385,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]models
 	return responses, nil
 }
 
-func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID uint) (*models.StackStatistics, error) {
+func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID uint) (*StackStatistics, error) {
 
 	accessibleServerIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
 	if err != nil {
@@ -405,7 +404,7 @@ func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID
 	}
 
 	if len(patterns) == 0 {
-		return &models.StackStatistics{
+		return &StackStatistics{
 			TotalStacks:     0,
 			HealthyStacks:   0,
 			UnhealthyStacks: 0,
@@ -430,7 +429,7 @@ func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID
 		return nil, fmt.Errorf("agent returned error: %s", resp.Status)
 	}
 
-	var stackSummary models.StackStatistics
+	var stackSummary StackStatistics
 	if err := json.NewDecoder(resp.Body).Decode(&stackSummary); err != nil {
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}

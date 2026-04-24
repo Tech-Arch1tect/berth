@@ -1,9 +1,9 @@
 package vulnscan
 
 import (
+	"berth/internal/domain/agent"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
-	"berth/internal/platform/agent"
 	"context"
 
 	"go.uber.org/fx"

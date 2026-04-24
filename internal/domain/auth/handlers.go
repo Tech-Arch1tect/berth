@@ -10,8 +10,8 @@ import (
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
+	usermodel "berth/internal/domain/user"
 	"berth/internal/platform/inertia"
-	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -83,7 +83,7 @@ func (h *Handler) Login(c echo.Context) error {
 		zap.String("user_agent", c.Request().UserAgent()),
 	)
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Where("username = ?", req.Username).First(&user).Error; err != nil {
 		h.logger.Warn("login failed - user not found",
 			zap.String("username", req.Username),
@@ -206,7 +206,7 @@ func (h *Handler) Logout(c echo.Context) error {
 		if userIDUint, ok := userID.(uint); ok && userIDUint > 0 {
 			userIDPtr = &userIDUint
 
-			var user models.User
+			var user usermodel.User
 			if err := h.db.First(&user, userIDUint).Error; err == nil {
 				username = user.Username
 			}
@@ -277,7 +277,7 @@ func (h *Handler) RequestPasswordReset(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/password-reset")
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			session.AddFlashInfo(c, "If an account with that email exists, you will receive a password reset email shortly.")
@@ -392,7 +392,7 @@ func (h *Handler) ConfirmPasswordReset(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/password-reset")
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Where("email = ?", tokenData.Email).First(&user).Error; err != nil {
 		session.AddFlashError(c, "User not found")
 		return c.Redirect(http.StatusFound, "/auth/password-reset")
@@ -477,7 +477,7 @@ func (h *Handler) VerifyEmail(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Where("email = ?", tokenData.Email).First(&user).Error; err != nil {
 		session.AddFlashError(c, "User not found")
 		return c.Redirect(http.StatusFound, "/auth/login")
@@ -529,7 +529,7 @@ func (h *Handler) ResendVerification(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			session.AddFlashInfo(c, "If an account with that email exists, a verification email will be sent.")

@@ -1,4 +1,4 @@
-package models
+package user
 
 import "berth/internal/platform/db"
 

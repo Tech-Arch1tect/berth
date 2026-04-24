@@ -6,8 +6,8 @@ import (
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
+	usermodel "berth/internal/domain/user"
 	"berth/internal/platform/inertia"
-	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -41,7 +41,7 @@ func NewTOTPHandler(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Serv
 func (h *TOTPHandler) ShowSetup(c echo.Context) error {
 	userID := session.GetUserIDAsUint(c)
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.First(&user, userID).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "User not found")
 	}
@@ -57,7 +57,7 @@ func (h *TOTPHandler) ShowSetup(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/profile")
 	}
 
-	var secret *models.TOTPSecret
+	var secret *totp.TOTPSecret
 	if existing != nil {
 		secret = existing
 	} else {
@@ -118,7 +118,7 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 
 	userID := session.GetUserIDAsUint(c)
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.First(&user, userID).Error; err != nil {
 		session.AddFlashError(c, "User not found")
 		return c.Redirect(http.StatusFound, "/auth/totp/verify")

@@ -1,7 +1,6 @@
 package operationlogs
 
 import (
-	"berth/internal/domain/dto"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -77,7 +76,7 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation logs")
 	}
 
-	return response.SendSuccess(c, dto.PaginatedOperationLogsResponse{
+	return response.SendSuccess(c, PaginatedOperationLogsResponse{
 		Success: true,
 		Data:    *result,
 	})
@@ -106,7 +105,7 @@ func (h *Handler) ListUserOperationLogs(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation logs")
 	}
 
-	return response.SendSuccess(c, dto.PaginatedOperationLogsResponse{
+	return response.SendSuccess(c, PaginatedOperationLogsResponse{
 		Success: true,
 		Data:    *result,
 	})
@@ -127,7 +126,7 @@ func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, dto.OperationLogDetailResponse{
+	return response.SendSuccess(c, OperationLogDetailResponse{
 		Success: true,
 		Data:    *result,
 	})
@@ -153,7 +152,7 @@ func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, dto.OperationLogDetailResponse{
+	return response.SendSuccess(c, OperationLogDetailResponse{
 		Success: true,
 		Data:    *result,
 	})
@@ -166,7 +165,7 @@ func (h *Handler) GetOperationLogsStats(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return response.SendSuccess(c, dto.OperationLogStatsResponse{
+	return response.SendSuccess(c, OperationLogStatsResponse{
 		Success: true,
 		Data:    *stats,
 	})
@@ -184,7 +183,7 @@ func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return response.SendSuccess(c, dto.OperationLogStatsResponse{
+	return response.SendSuccess(c, OperationLogStatsResponse{
 		Success: true,
 		Data:    *stats,
 	})
@@ -202,9 +201,9 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve running operations")
 	}
 
-	return response.SendSuccess(c, dto.RunningOperationsResponse{
+	return response.SendSuccess(c, RunningOperationsResponse{
 		Success: true,
-		Data: dto.RunningOperationsData{
+		Data: RunningOperationsData{
 			Operations: operations,
 		},
 	})
@@ -230,7 +229,7 @@ func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, dto.OperationLogDetailResponse{
+	return response.SendSuccess(c, OperationLogDetailResponse{
 		Success: true,
 		Data:    *result,
 	})

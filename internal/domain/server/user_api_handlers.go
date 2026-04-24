@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -21,7 +20,7 @@ type ListServersResponse struct {
 }
 
 type ListServersResponseData struct {
-	Servers []models.ServerInfo `json:"servers"`
+	Servers []ServerInfo `json:"servers"`
 }
 
 type ServerStatisticsResponse struct {
@@ -30,7 +29,7 @@ type ServerStatisticsResponse struct {
 }
 
 type ServerStatisticsResponseData struct {
-	Statistics models.StackStatistics `json:"statistics"`
+	Statistics StackStatistics `json:"statistics"`
 }
 
 func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {

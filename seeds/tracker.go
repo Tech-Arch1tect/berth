@@ -1,4 +1,4 @@
-package models
+package seeds
 
 import "berth/internal/platform/db"
 

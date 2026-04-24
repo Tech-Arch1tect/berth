@@ -3,9 +3,9 @@ package dashboard
 import (
 	"context"
 
+	"berth/internal/domain/server"
 	"berth/internal/domain/session"
 	"berth/internal/platform/inertia"
-	"berth/models"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
@@ -14,7 +14,7 @@ import (
 )
 
 type serverLister interface {
-	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
+	ListServersForUser(ctx context.Context, userID uint) ([]server.ServerInfo, error)
 }
 
 type Handler struct {

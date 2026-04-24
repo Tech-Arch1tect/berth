@@ -1,10 +1,10 @@
 package stack
 
 import (
+	"berth/internal/domain/agent"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
-	"berth/internal/platform/agent"
 	"berth/internal/platform/inertia"
 
 	"go.uber.org/fx"

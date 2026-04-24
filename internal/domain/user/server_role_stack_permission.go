@@ -1,4 +1,4 @@
-package models
+package user
 
 import "berth/internal/platform/db"
 
@@ -8,7 +8,6 @@ type ServerRoleStackPermission struct {
 	RoleID       uint       `json:"role_id" gorm:"not null"`
 	PermissionID uint       `json:"permission_id" gorm:"not null"`
 	StackPattern string     `json:"stack_pattern" gorm:"not null;default:'*'"`
-	Server       Server     `json:"server" gorm:"foreignKey:ServerID"`
 	Role         Role       `json:"role" gorm:"foreignKey:RoleID"`
 	Permission   Permission `json:"permission" gorm:"foreignKey:PermissionID"`
 }

@@ -1,8 +1,6 @@
-package models
+package session
 
-import (
-	"time"
-)
+import "time"
 
 type SessionType string
 

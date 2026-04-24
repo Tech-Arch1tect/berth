@@ -1,9 +1,11 @@
 package rbac
 
 import (
+	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
+	"berth/internal/domain/server"
+	usermodel "berth/internal/domain/user"
 	"berth/internal/pkg/patterns"
-	"berth/models"
 	"context"
 	"errors"
 
@@ -29,7 +31,7 @@ func (s *Service) HasRole(userID uint, roleName string) (bool, error) {
 		zap.String("role_name", roleName),
 	)
 
-	var user models.User
+	var user usermodel.User
 	err := s.db.Preload("Roles", "name = ?", roleName).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -58,7 +60,7 @@ func (s *Service) HasRole(userID uint, roleName string) (bool, error) {
 }
 
 func (s *Service) HasPermission(userID uint, resource, action string) (bool, error) {
-	var user models.User
+	var user usermodel.User
 	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -76,7 +78,7 @@ func (s *Service) HasPermission(userID uint, resource, action string) (bool, err
 }
 
 func (s *Service) HasPermissionByName(userID uint, permissionName string) (bool, error) {
-	var user models.User
+	var user usermodel.User
 	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -99,7 +101,7 @@ func (s *Service) AssignRole(userID uint, roleID uint) error {
 		zap.Uint("role_id", roleID),
 	)
 
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		s.logger.Error("failed to find user for role assignment",
 			zap.Error(err),
@@ -119,7 +121,7 @@ func (s *Service) AssignRole(userID uint, roleID uint) error {
 		}
 	}
 
-	var role models.Role
+	var role usermodel.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
 		s.logger.Error("failed to find role for assignment",
 			zap.Error(err),
@@ -153,7 +155,7 @@ func (s *Service) RevokeRole(userID uint, roleID uint) error {
 		zap.Uint("role_id", roleID),
 	)
 
-	var user models.User
+	var user usermodel.User
 	if err := s.db.First(&user, userID).Error; err != nil {
 		s.logger.Error("failed to find user for role revocation",
 			zap.Error(err),
@@ -162,7 +164,7 @@ func (s *Service) RevokeRole(userID uint, roleID uint) error {
 		return err
 	}
 
-	var role models.Role
+	var role usermodel.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
 		s.logger.Error("failed to find role for revocation",
 			zap.Error(err),
@@ -190,36 +192,36 @@ func (s *Service) RevokeRole(userID uint, roleID uint) error {
 	return nil
 }
 
-func (s *Service) GetUserRoles(userID uint) ([]models.Role, error) {
-	var user models.User
+func (s *Service) GetUserRoles(userID uint) ([]usermodel.Role, error) {
+	var user usermodel.User
 	err := s.db.Preload("Roles").First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Role{}, nil
+			return []usermodel.Role{}, nil
 		}
 		return nil, err
 	}
 	return user.Roles, nil
 }
 
-func (s *Service) GetUserPermissions(userID uint) ([]models.ServerRoleStackPermission, error) {
-	var user models.User
+func (s *Service) GetUserPermissions(userID uint) ([]usermodel.ServerRoleStackPermission, error) {
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.ServerRoleStackPermission{}, nil
+			return []usermodel.ServerRoleStackPermission{}, nil
 		}
 		return nil, err
 	}
 
 	for _, role := range user.Roles {
 		if role.IsAdmin {
-			var allPermissions []models.ServerRoleStackPermission
+			var allPermissions []usermodel.ServerRoleStackPermission
 			err := s.db.Preload("Permission").Find(&allPermissions).Error
 			return allPermissions, err
 		}
 	}
 
-	var permissions []models.ServerRoleStackPermission
+	var permissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ?", userID).
@@ -228,8 +230,8 @@ func (s *Service) GetUserPermissions(userID uint) ([]models.ServerRoleStackPermi
 	return permissions, err
 }
 
-func (s *Service) GetRoleByName(roleName string) (*models.Role, error) {
-	var role models.Role
+func (s *Service) GetRoleByName(roleName string) (*usermodel.Role, error) {
+	var role usermodel.Role
 	err := s.db.Where("name = ?", roleName).First(&role).Error
 	if err != nil {
 		return nil, err
@@ -245,13 +247,13 @@ func (s *Service) AssignUserRole(userID uint, roleName string) error {
 	return s.AssignRole(userID, role.ID)
 }
 
-func (s *Service) GetAllRoles() ([]models.Role, error) {
-	var roles []models.Role
+func (s *Service) GetAllRoles() ([]usermodel.Role, error) {
+	var roles []usermodel.Role
 	err := s.db.Find(&roles).Error
 	return roles, err
 }
 
-func (s *Service) CreateRole(name, description string) (*models.Role, error) {
+func (s *Service) CreateRole(name, description string) (*usermodel.Role, error) {
 	s.logger.Info("creating new role",
 		zap.String("name", name),
 		zap.String("description", description),
@@ -262,7 +264,7 @@ func (s *Service) CreateRole(name, description string) (*models.Role, error) {
 		return nil, errors.New("role name is required")
 	}
 
-	var existingRole models.Role
+	var existingRole usermodel.Role
 	if err := s.db.Where("name = ?", name).First(&existingRole).Error; err == nil {
 		s.logger.Warn("role creation failed: name already exists",
 			zap.String("name", name),
@@ -271,7 +273,7 @@ func (s *Service) CreateRole(name, description string) (*models.Role, error) {
 		return nil, errors.New("role with this name already exists")
 	}
 
-	role := models.Role{
+	role := usermodel.Role{
 		Name:        name,
 		Description: description,
 		IsAdmin:     false,
@@ -293,12 +295,12 @@ func (s *Service) CreateRole(name, description string) (*models.Role, error) {
 	return &role, nil
 }
 
-func (s *Service) UpdateRole(roleID uint, name, description string) (*models.Role, error) {
+func (s *Service) UpdateRole(roleID uint, name, description string) (*usermodel.Role, error) {
 	if name == "" {
 		return nil, errors.New("role name is required")
 	}
 
-	var role models.Role
+	var role usermodel.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
 		return nil, err
 	}
@@ -308,7 +310,7 @@ func (s *Service) UpdateRole(roleID uint, name, description string) (*models.Rol
 	}
 
 	if role.Name != name {
-		var existingRole models.Role
+		var existingRole usermodel.Role
 		if err := s.db.Where("name = ? AND id != ?", name, roleID).First(&existingRole).Error; err == nil {
 			return nil, errors.New("role with this name already exists")
 		}
@@ -329,7 +331,7 @@ func (s *Service) DeleteRole(roleID uint) error {
 		zap.Uint("role_id", roleID),
 	)
 
-	var role models.Role
+	var role usermodel.Role
 	if err := s.db.First(&role, roleID).Error; err != nil {
 		s.logger.Error("failed to find role for deletion",
 			zap.Error(err),
@@ -347,7 +349,7 @@ func (s *Service) DeleteRole(roleID uint) error {
 	}
 
 	var userCount int64
-	if err := s.db.Model(&models.User{}).Joins("JOIN user_roles ON users.id = user_roles.user_id").Where("user_roles.role_id = ?", roleID).Count(&userCount).Error; err != nil {
+	if err := s.db.Model(&usermodel.User{}).Joins("JOIN user_roles ON users.id = user_roles.user_id").Where("user_roles.role_id = ?", roleID).Count(&userCount).Error; err != nil {
 		s.logger.Error("failed to check role usage before deletion",
 			zap.Error(err),
 			zap.Uint("role_id", roleID),
@@ -364,7 +366,7 @@ func (s *Service) DeleteRole(roleID uint) error {
 		return errors.New("cannot delete role that is assigned to users")
 	}
 
-	if err := s.db.Where("role_id = ?", roleID).Delete(&models.ServerRoleStackPermission{}).Error; err != nil {
+	if err := s.db.Where("role_id = ?", roleID).Delete(&usermodel.ServerRoleStackPermission{}).Error; err != nil {
 		s.logger.Error("failed to clean up role permissions",
 			zap.Error(err),
 			zap.Uint("role_id", roleID),
@@ -408,7 +410,7 @@ func (s *Service) GetUserAccessibleServerIDs(ctx context.Context, userID uint) (
 }
 
 func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Debug("user not found for server access check",
@@ -426,7 +428,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	for _, role := range user.Roles {
 		if role.IsAdmin {
 			var allServerIDs []uint
-			err := s.db.Model(&models.Server{}).Pluck("id", &allServerIDs).Error
+			err := s.db.Model(&server.Server{}).Pluck("id", &allServerIDs).Error
 			if err != nil {
 				s.logger.Error("failed to get all server IDs for admin user",
 					zap.Error(err),
@@ -442,7 +444,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 		}
 	}
 
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ?", userID).
@@ -477,7 +479,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	return serverIDs, nil
 }
 
-func (s *Service) filterServerIDsByAPIKeyScopes(apiKey *models.APIKey, serverIDs []uint) []uint {
+func (s *Service) filterServerIDsByAPIKeyScopes(apiKey *apikey.APIKey, serverIDs []uint) []uint {
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID == nil {
 			return serverIDs
@@ -549,7 +551,7 @@ func (s *Service) UserHasStackPermission(ctx context.Context, userID uint, serve
 }
 
 func (s *Service) checkUserStackPermission(userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Debug("user not found for permission check",
@@ -575,7 +577,7 @@ func (s *Service) checkUserStackPermission(userID uint, serverID uint, stackname
 		}
 	}
 
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
@@ -613,7 +615,7 @@ func (s *Service) checkUserStackPermission(userID uint, serverID uint, stackname
 	return false, nil
 }
 
-func (s *Service) checkAPIKeyStackScope(apiKey *models.APIKey, serverID uint, stackname string, permissionName string) bool {
+func (s *Service) checkAPIKeyStackScope(apiKey *apikey.APIKey, serverID uint, stackname string, permissionName string) bool {
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID != nil && *scope.ServerID != serverID {
 			continue
@@ -645,7 +647,7 @@ func (s *Service) GetUserStackPermissions(ctx context.Context, userID uint, serv
 }
 
 func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackname string) ([]string, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []string{}, nil
@@ -659,7 +661,7 @@ func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackn
 		}
 	}
 
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
@@ -684,7 +686,7 @@ func (s *Service) getUserStackPermissionsRBAC(userID uint, serverID uint, stackn
 	return permissions, nil
 }
 
-func (s *Service) filterPermissionsByAPIKeyScopes(apiKey *models.APIKey, serverID uint, stackname string, userPermissions []string) []string {
+func (s *Service) filterPermissionsByAPIKeyScopes(apiKey *apikey.APIKey, serverID uint, stackname string, userPermissions []string) []string {
 	apiKeyPermissions := make(map[string]bool)
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID != nil && *scope.ServerID != serverID {
@@ -728,7 +730,7 @@ func (s *Service) UserHasServerAccess(ctx context.Context, userID uint, serverID
 }
 
 func (s *Service) checkUserServerAccess(userID uint, serverID uint) (bool, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -743,7 +745,7 @@ func (s *Service) checkUserServerAccess(userID uint, serverID uint) (bool, error
 	}
 
 	var count int64
-	err := s.db.Model(&models.ServerRoleStackPermission{}).
+	err := s.db.Model(&usermodel.ServerRoleStackPermission{}).
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).
 		Count(&count).Error
@@ -755,7 +757,7 @@ func (s *Service) checkUserServerAccess(userID uint, serverID uint) (bool, error
 	return count > 0, nil
 }
 
-func (s *Service) checkAPIKeyServerAccess(apiKey *models.APIKey, serverID uint) bool {
+func (s *Service) checkAPIKeyServerAccess(apiKey *apikey.APIKey, serverID uint) bool {
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID == nil || *scope.ServerID == serverID {
 			return true
@@ -784,7 +786,7 @@ func (s *Service) UserHasAnyStackPermission(ctx context.Context, userID uint, se
 }
 
 func (s *Service) checkUserAnyStackPermission(userID uint, serverID uint, permissionName string) (bool, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -799,7 +801,7 @@ func (s *Service) checkUserAnyStackPermission(userID uint, serverID uint, permis
 	}
 
 	var count int64
-	err := s.db.Model(&models.ServerRoleStackPermission{}).
+	err := s.db.Model(&usermodel.ServerRoleStackPermission{}).
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Joins("JOIN permissions ON permissions.id = server_role_stack_permissions.permission_id").
 		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ? AND permissions.name = ?", userID, serverID, permissionName).
@@ -812,7 +814,7 @@ func (s *Service) checkUserAnyStackPermission(userID uint, serverID uint, permis
 	return count > 0, nil
 }
 
-func (s *Service) checkAPIKeyServerPermission(apiKey *models.APIKey, serverID uint, permissionName string) bool {
+func (s *Service) checkAPIKeyServerPermission(apiKey *apikey.APIKey, serverID uint, permissionName string) bool {
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID != nil && *scope.ServerID != serverID {
 			continue
@@ -829,8 +831,8 @@ func (s *Service) CheckUserStackPermission(ctx context.Context, userID uint, ser
 	return s.UserHasStackPermission(ctx, userID, serverID, stackname, permissionName)
 }
 
-func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]models.ServerRoleStackPermission, error) {
-	var permissions []models.ServerRoleStackPermission
+func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]usermodel.ServerRoleStackPermission, error) {
+	var permissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").Where("role_id = ?", roleID).Find(&permissions).Error
 	return permissions, err
 }
@@ -843,7 +845,7 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 		zap.String("permission_name", permissionName),
 	)
 
-	var permission models.Permission
+	var permission usermodel.Permission
 	if err := s.db.Where("name = ?", permissionName).First(&permission).Error; err != nil {
 		s.logger.Error("permission not found for role assignment",
 			zap.Error(err),
@@ -852,7 +854,7 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 		return errors.New("permission not found")
 	}
 
-	var existing models.ServerRoleStackPermission
+	var existing usermodel.ServerRoleStackPermission
 	if err := s.db.Where("role_id = ? AND server_id = ? AND stack_pattern = ? AND permission_id = ?",
 		roleID, serverID, stackname, permission.ID).First(&existing).Error; err == nil {
 		s.logger.Warn("role stack permission already exists",
@@ -864,7 +866,7 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 		return errors.New("permission already exists")
 	}
 
-	srsp := models.ServerRoleStackPermission{
+	srsp := usermodel.ServerRoleStackPermission{
 		RoleID:       roleID,
 		ServerID:     serverID,
 		StackPattern: stackname,
@@ -894,11 +896,11 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 }
 
 func (s *Service) DeleteRoleStackPermission(permissionID uint) error {
-	return s.db.Delete(&models.ServerRoleStackPermission{}, permissionID).Error
+	return s.db.Delete(&usermodel.ServerRoleStackPermission{}, permissionID).Error
 }
 
 func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]string, error) {
-	var user models.User
+	var user usermodel.User
 	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []string{}, nil
@@ -912,7 +914,7 @@ func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]
 		}
 	}
 
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	err := s.db.Preload("Permission").
 		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
 		Where("user_roles.user_id = ? AND server_role_stack_permissions.server_id = ?", userID, serverID).

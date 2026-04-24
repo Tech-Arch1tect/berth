@@ -5,7 +5,7 @@ import (
 	"berth/internal/domain/files"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/registry"
-	"berth/models"
+	"berth/internal/domain/server"
 	"bufio"
 	"context"
 	"crypto/tls"
@@ -23,8 +23,8 @@ import (
 )
 
 type opsServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
-	GetServer(id uint) (*models.Server, error)
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetServer(id uint) (*server.Server, error)
 }
 
 type opsPermissionChecker interface {
@@ -363,7 +363,7 @@ func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer i
 	return nil
 }
 
-func (s *Service) makeAgentRequest(ctx context.Context, serverModel *models.Server, method, endpoint string, body []byte) (*http.Response, error) {
+func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Server, method, endpoint string, body []byte) (*http.Response, error) {
 	isStreamRequest := strings.Contains(endpoint, "/stream")
 
 	s.logger.Debug("making agent request",

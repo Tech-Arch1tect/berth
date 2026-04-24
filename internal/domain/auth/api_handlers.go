@@ -12,7 +12,7 @@ import (
 	"berth/internal/domain/dto"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
-	"berth/models"
+	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -73,7 +73,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 		zap.String("user_agent", c.Request().UserAgent()),
 	)
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Preload("Roles").Where("username = ?", req.Username).First(&user).Error; err != nil {
 		h.logger.Warn("mobile login failed - user not found",
 			zap.String("username", req.Username),
@@ -296,7 +296,7 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.First(&user, oldToken.UserID).Error; err == nil {
 		_ = h.auditSvc.LogAPIEvent(
 			security.EventAPITokenRefreshed,
@@ -332,7 +332,7 @@ func (h *APIHandler) Profile(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -341,7 +341,7 @@ func (h *APIHandler) Profile(c echo.Context) error {
 		})
 	}
 
-	var fullUser models.User
+	var fullUser usermodel.User
 	if err := h.db.Preload("Roles").Where("id = ?", userModel.ID).First(&fullUser).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -426,7 +426,7 @@ func (h *APIHandler) Logout(c echo.Context) error {
 
 	user := GetCurrentUser(c)
 	if user != nil {
-		if userModel, ok := user.(models.User); ok {
+		if userModel, ok := user.(usermodel.User); ok {
 			_ = h.auditSvc.LogAPIEvent(
 				security.EventAPITokenRevoked,
 				&userModel.ID,
@@ -499,7 +499,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	if err := h.totpSvc.VerifyUserCode(claims.UserID, req.Code); err != nil {
-		var user models.User
+		var user usermodel.User
 		if dbErr := h.db.First(&user, claims.UserID).Error; dbErr == nil {
 			_ = h.auditSvc.LogAPIEvent(
 				security.EventAPIAuthFailed,
@@ -537,7 +537,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 		})
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.First(&user, claims.UserID).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -629,7 +629,7 @@ func (h *APIHandler) GetTOTPSetup(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -655,7 +655,7 @@ func (h *APIHandler) GetTOTPSetup(c echo.Context) error {
 		})
 	}
 
-	var secret *models.TOTPSecret
+	var secret *totp.TOTPSecret
 	if existing != nil {
 		secret = existing
 	} else {
@@ -697,7 +697,7 @@ func (h *APIHandler) EnableTOTP(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -771,7 +771,7 @@ func (h *APIHandler) DisableTOTP(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -854,7 +854,7 @@ func (h *APIHandler) GetTOTPStatus(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -891,7 +891,7 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -989,7 +989,7 @@ func (h *APIHandler) RevokeSession(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,
@@ -1064,7 +1064,7 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 		})
 	}
 
-	userModel, ok := user.(models.User)
+	userModel, ok := user.(usermodel.User)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
 			Success: false,

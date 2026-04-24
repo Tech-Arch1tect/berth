@@ -1,10 +1,10 @@
 package files
 
 import (
+	"berth/internal/domain/agent"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
-	"berth/internal/platform/agent"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

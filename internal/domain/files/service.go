@@ -2,7 +2,7 @@ package files
 
 import (
 	"berth/internal/domain/rbac"
-	"berth/models"
+	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,13 +25,13 @@ func validateFileMode(mode string) error {
 }
 
 type filesAgentClient interface {
-	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
-	MakeMultipartRequest(ctx context.Context, server *models.Server, method, endpoint, path string, fileHeader *multipart.FileHeader) (*http.Response, error)
+	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeMultipartRequest(ctx context.Context, server *server.Server, method, endpoint, path string, fileHeader *multipart.FileHeader) (*http.Response, error)
 }
 
 type filesServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
-	GetServer(id uint) (*models.Server, error)
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetServer(id uint) (*server.Server, error)
 }
 
 type filesPermissionChecker interface {

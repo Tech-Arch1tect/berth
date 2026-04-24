@@ -1,10 +1,10 @@
 package dto
 
 import (
-	"berth/models"
 	"time"
 
 	"berth/internal/domain/auth/totp"
+	"berth/internal/domain/user"
 )
 
 func FormatTimePtr(t *time.Time) *string {
@@ -15,9 +15,9 @@ func FormatTimePtr(t *time.Time) *string {
 	return &formatted
 }
 
-func ConvertUserToUserInfo(user models.User, totpSvc *totp.Service) UserInfo {
-	roleInfos := make([]RoleInfo, len(user.Roles))
-	for i, role := range user.Roles {
+func ConvertUserToUserInfo(u user.User, totpSvc *totp.Service) UserInfo {
+	roleInfos := make([]RoleInfo, len(u.Roles))
+	for i, role := range u.Roles {
 		roleInfos[i] = RoleInfo{
 			ID:          role.ID,
 			Name:        role.Name,
@@ -27,19 +27,19 @@ func ConvertUserToUserInfo(user models.User, totpSvc *totp.Service) UserInfo {
 	}
 
 	return UserInfo{
-		ID:              user.ID,
-		Username:        user.Username,
-		Email:           user.Email,
-		EmailVerifiedAt: FormatTimePtr(user.EmailVerifiedAt),
-		LastLoginAt:     FormatTimePtr(user.LastLoginAt),
-		TOTPEnabled:     totpSvc.IsUserTOTPEnabled(user.ID),
-		CreatedAt:       user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:       user.UpdatedAt.Format(time.RFC3339),
+		ID:              u.ID,
+		Username:        u.Username,
+		Email:           u.Email,
+		EmailVerifiedAt: FormatTimePtr(u.EmailVerifiedAt),
+		LastLoginAt:     FormatTimePtr(u.LastLoginAt),
+		TOTPEnabled:     totpSvc.IsUserTOTPEnabled(u.ID),
+		CreatedAt:       u.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       u.UpdatedAt.Format(time.RFC3339),
 		Roles:           roleInfos,
 	}
 }
 
-func ConvertPermissionToPermissionInfo(permission models.Permission) PermissionInfo {
+func ConvertPermissionToPermissionInfo(permission user.Permission) PermissionInfo {
 	return PermissionInfo{
 		ID:           permission.ID,
 		Name:         permission.Name,
@@ -50,7 +50,7 @@ func ConvertPermissionToPermissionInfo(permission models.Permission) PermissionI
 	}
 }
 
-func ConvertRoleToRoleWithPermissions(role models.Role) RoleWithPermissions {
+func ConvertRoleToRoleWithPermissions(role user.Role) RoleWithPermissions {
 	return RoleWithPermissions{
 		ID:          role.ID,
 		Name:        role.Name,

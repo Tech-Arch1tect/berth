@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"berth/models"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -11,6 +10,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"time"
+
+	"berth/internal/domain/server"
 
 	"go.uber.org/zap"
 )
@@ -27,7 +28,7 @@ func NewService(logger *zap.Logger, operationTimeoutSeconds int) *Service {
 	}
 }
 
-func (s *Service) getClient(server *models.Server) *http.Client {
+func (s *Service) getClient(server *server.Server) *http.Client {
 	client := &http.Client{
 		Timeout: time.Duration(s.operationTimeoutSeconds) * time.Second,
 	}
@@ -45,7 +46,7 @@ func (s *Service) getClient(server *models.Server) *http.Client {
 	return client
 }
 
-func (s *Service) MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error) {
+func (s *Service) MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
 	url := server.GetAPIURL() + endpoint
 
 	s.logger.Debug("making agent request",
@@ -110,7 +111,7 @@ func (s *Service) MakeRequest(ctx context.Context, server *models.Server, method
 	return resp, nil
 }
 
-func (s *Service) MakeMultipartRequest(ctx context.Context, server *models.Server, method, endpoint, path string, fileHeader *multipart.FileHeader) (*http.Response, error) {
+func (s *Service) MakeMultipartRequest(ctx context.Context, server *server.Server, method, endpoint, path string, fileHeader *multipart.FileHeader) (*http.Response, error) {
 	url := server.GetAPIURL() + endpoint
 
 	s.logger.Debug("making multipart agent request",
@@ -210,7 +211,7 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *models.Serve
 	return resp, nil
 }
 
-func (s *Service) HealthCheck(ctx context.Context, server *models.Server) error {
+func (s *Service) HealthCheck(ctx context.Context, server *server.Server) error {
 	s.logger.Debug("performing health check",
 		zap.Uint("server_id", server.ID),
 		zap.String("server_name", server.Name),

@@ -6,17 +6,11 @@ import (
 	"time"
 
 	"berth/internal/pkg/config"
-	"berth/models"
 
 	"github.com/pquerna/otp/totp"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-)
-
-type (
-	TOTPSecret = models.TOTPSecret
-	UsedCode   = models.UsedCode
 )
 
 var (

@@ -21,7 +21,7 @@ func TestInternalLayering(t *testing.T) {
 	internalDir := filepath.Join(repoRoot, "internal")
 
 	bannedPrefixes := map[string][]string{
-		"pkg":      {"berth/internal/platform/", "berth/internal/domain/", "berth/internal/app", "berth/models"},
+		"pkg":      {"berth/internal/platform/", "berth/internal/domain/", "berth/internal/app"},
 		"platform": {"berth/internal/domain/", "berth/internal/app"},
 		"domain":   {"berth/internal/app"},
 	}

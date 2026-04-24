@@ -1,9 +1,11 @@
 package app
 
 import (
+	"berth/internal/domain/user"
 	"context"
 	"path/filepath"
 
+	"berth/internal/domain/agent"
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/dashboard"
 	"berth/internal/domain/dataexport"
@@ -26,8 +28,6 @@ import (
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/origin"
-	"berth/internal/platform/agent"
-	"berth/models"
 	"berth/routes"
 	"berth/seeds"
 
@@ -46,18 +46,18 @@ import (
 
 func DatabaseModels() []any {
 	return []any{
-		&models.User{}, &models.Role{}, &models.Permission{},
-		&models.Server{}, &models.ServerRoleStackPermission{}, &models.ServerRegistryCredential{},
-		&models.APIKey{}, &models.APIKeyScope{},
-		&models.OperationLog{}, &models.OperationLogMessage{},
-		&models.SecurityAuditLog{},
-		&models.SeedTracker{},
-		&models.QueuedOperation{}, &models.UserSession{},
-		&models.ContainerImageUpdate{},
-		&models.ImageScan{}, &models.ImageVulnerability{}, &models.ScanScope{},
-		&models.TOTPSecret{}, &models.UsedCode{},
-		&models.PasswordResetToken{}, &models.EmailVerificationToken{}, &models.RememberMeToken{},
-		&tokens.RevokedToken{}, &models.RefreshToken{},
+		&user.User{}, &user.Role{}, &user.Permission{},
+		&server.Server{}, &user.ServerRoleStackPermission{}, &server.ServerRegistryCredential{},
+		&apikey.APIKey{}, &apikey.APIKeyScope{},
+		&operationlogs.OperationLog{}, &operationlogs.OperationLogMessage{},
+		&security.SecurityAuditLog{},
+		&seeds.SeedTracker{},
+		&queue.QueuedOperation{}, &session.UserSession{},
+		&imageupdates.ContainerImageUpdate{},
+		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{},
+		&totp.TOTPSecret{}, &totp.UsedCode{},
+		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
+		&tokens.RevokedToken{}, &tokens.RefreshToken{},
 	}
 }
 
@@ -151,6 +151,9 @@ func CoreFxOptions() fx.Option {
 		}),
 		apikey.Module,
 		setup.Module,
+		fx.Provide(func(db *gorm.DB, crypto *crypto.Crypto, rbacSvc *rbac.Service, agentSvc *agent.Service, logger *zap.Logger) *server.Service {
+			return server.NewService(db, crypto, rbacSvc, agentSvc, logger)
+		}),
 		server.Module,
 		stack.Module,
 		dashboard.Module,

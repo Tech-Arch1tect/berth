@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"berth/models"
+	"berth/internal/domain/server"
 	"time"
 )
 
@@ -58,7 +58,7 @@ type ErrorResponse struct {
 	Error   string `json:"error"`
 }
 
-func ToResponse(cred *models.ServerRegistryCredential) RegistryCredentialInfo {
+func ToResponse(cred *server.ServerRegistryCredential) RegistryCredentialInfo {
 	return RegistryCredentialInfo{
 		ID:           cred.ID,
 		CreatedAt:    cred.CreatedAt,
@@ -71,7 +71,7 @@ func ToResponse(cred *models.ServerRegistryCredential) RegistryCredentialInfo {
 	}
 }
 
-func ToResponseList(creds []models.ServerRegistryCredential) []RegistryCredentialInfo {
+func ToResponseList(creds []server.ServerRegistryCredential) []RegistryCredentialInfo {
 	result := make([]RegistryCredentialInfo, len(creds))
 	for i, cred := range creds {
 		result[i] = ToResponse(&cred)

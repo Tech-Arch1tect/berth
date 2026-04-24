@@ -3,8 +3,9 @@ package rbac
 import (
 	"net/http"
 
+	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
-	"berth/models"
+	usermodel "berth/internal/domain/user"
 
 	"berth/internal/domain/session"
 	"github.com/labstack/echo/v4"
@@ -131,7 +132,7 @@ func (m *Middleware) RequireRoleJWT(roleName string) echo.MiddlewareFunc {
 				})
 			}
 
-			userModel, ok := user.(models.User)
+			userModel, ok := user.(usermodel.User)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
@@ -166,7 +167,7 @@ func (m *Middleware) RequirePermissionJWT(resource, action string) echo.Middlewa
 				})
 			}
 
-			userModel, ok := user.(models.User)
+			userModel, ok := user.(usermodel.User)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
@@ -201,7 +202,7 @@ func (m *Middleware) RequirePermissionByNameJWT(permissionName string) echo.Midd
 				})
 			}
 
-			userModel, ok := user.(models.User)
+			userModel, ok := user.(usermodel.User)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
@@ -249,7 +250,7 @@ func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc 
 				})
 			}
 
-			userModel, ok := user.(models.User)
+			userModel, ok := user.(usermodel.User)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
@@ -318,7 +319,7 @@ func (m *Middleware) RequireUserScopeJWT(scopeName string) echo.MiddlewareFunc {
 				})
 			}
 
-			_, ok := user.(models.User)
+			_, ok := user.(usermodel.User)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
@@ -364,7 +365,7 @@ func (m *Middleware) RequireUserScopeJWT(scopeName string) echo.MiddlewareFunc {
 	}
 }
 
-func (m *Middleware) checkAPIKeyHasAdminScope(apiKey *models.APIKey, scopeName string) bool {
+func (m *Middleware) checkAPIKeyHasAdminScope(apiKey *apikey.APIKey, scopeName string) bool {
 	for _, scope := range apiKey.Scopes {
 		if scope.Permission.Name == scopeName {
 			return true

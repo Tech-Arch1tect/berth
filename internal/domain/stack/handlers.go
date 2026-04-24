@@ -1,13 +1,13 @@
 package stack
 
 import (
+	"berth/internal/domain/server"
 	"context"
 	"strconv"
 
 	"berth/internal/domain/rbac"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"berth/models"
 
 	"berth/internal/domain/session"
 	"berth/internal/platform/inertia"
@@ -17,7 +17,7 @@ import (
 )
 
 type serverLister interface {
-	ListServersForUser(ctx context.Context, userID uint) ([]models.ServerInfo, error)
+	ListServersForUser(ctx context.Context, userID uint) ([]server.ServerInfo, error)
 }
 
 type Handler struct {

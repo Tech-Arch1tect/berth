@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/response"
-	"berth/models"
 	"net/http"
 	"strconv"
 	"time"
@@ -60,7 +59,7 @@ func (h *Handler) ListAPIKeys(c echo.Context) error {
 		return response.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve API keys", err)
 	}
 
-	responses := make([]models.APIKeyInfo, len(apiKeys))
+	responses := make([]APIKeyInfo, len(apiKeys))
 	for i, key := range apiKeys {
 		responses[i] = key.ToResponse()
 	}
@@ -215,7 +214,7 @@ func (h *Handler) ListScopes(c echo.Context) error {
 		return response.ErrorResponse(c, http.StatusNotFound, "API key not found", err)
 	}
 
-	responses := make([]models.APIKeyScopeInfo, len(scopes))
+	responses := make([]APIKeyScopeInfo, len(scopes))
 	for i, scope := range scopes {
 		responses[i] = scope.ToResponse()
 	}

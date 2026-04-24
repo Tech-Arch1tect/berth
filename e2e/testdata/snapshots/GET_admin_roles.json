@@ -24,8 +24,7 @@
             "id": "\u003c\u003cID\u003e\u003e",
             "is_admin": true,
             "name": "admin",
-            "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-            "users": null
+            "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
           }
         ],
         "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
@@ -40,8 +39,7 @@
           "id": "\u003c\u003cID\u003e\u003e",
           "is_admin": true,
           "name": "admin",
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "users": null
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         },
         {
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
@@ -50,8 +48,7 @@
           "id": "\u003c\u003cID\u003e\u003e",
           "is_admin": false,
           "name": "user",
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "users": null
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         },
         {
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
@@ -60,8 +57,7 @@
           "id": "\u003c\u003cID\u003e\u003e",
           "is_admin": false,
           "name": "developer",
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "users": null
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         },
         {
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
@@ -70,8 +66,7 @@
           "id": "\u003c\u003cID\u003e\u003e",
           "is_admin": false,
           "name": "viewer",
-          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
-          "users": null
+          "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         }
       ],
       "title": "Role Management",

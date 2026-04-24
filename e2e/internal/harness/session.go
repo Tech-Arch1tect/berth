@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"berth/models"
+	"berth/internal/domain/session"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -65,10 +65,10 @@ func (h *SessionHelper) AssertSessionCount(t *testing.T, userID uint, expectedCo
 }
 
 func (h *SessionHelper) CreateTestSession(t *testing.T, userID uint, token string) {
-	sess := models.UserSession{
+	sess := session.UserSession{
 		UserID:    userID,
 		Token:     token,
-		Type:      models.SessionTypeWeb,
+		Type:      session.SessionTypeWeb,
 		IPAddress: "127.0.0.1",
 		UserAgent: "Test User Agent",
 		ExpiresAt: time.Now().Add(time.Hour),

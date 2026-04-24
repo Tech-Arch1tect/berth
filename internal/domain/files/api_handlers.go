@@ -2,10 +2,10 @@ package files
 
 import (
 	"berth/internal/domain/security"
+	"berth/internal/domain/user"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"berth/models"
 
 	"berth/internal/domain/session"
 
@@ -107,7 +107,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser models.User
+	var actorUser user.User
 	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
 		_ = h.auditSvc.LogFileEvent(
 			security.EventFileUploaded,
@@ -176,7 +176,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser models.User
+	var actorUser user.User
 	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
 		_ = h.auditSvc.LogFileEvent(
 			security.EventFileDeleted,
@@ -218,7 +218,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser models.User
+	var actorUser user.User
 	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
 		_ = h.auditSvc.LogFileEvent(
 			security.EventFileRenamed,
@@ -287,7 +287,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser models.User
+	var actorUser user.User
 	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
 		_ = h.auditSvc.LogFileEvent(
 			security.EventFileUploaded,
@@ -332,7 +332,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 	defer result.Body.Close()
 
 	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser models.User
+	var actorUser user.User
 	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
 		_ = h.auditSvc.LogFileEvent(
 			security.EventFileDownloaded,

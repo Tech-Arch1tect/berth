@@ -2,10 +2,10 @@ package registry
 
 import (
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"berth/models"
 	"context"
 	"encoding/json"
 	"errors"
@@ -175,14 +175,14 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		"image_pattern": credential.ImagePattern,
 	})
 
-	auditLog := &models.SecurityAuditLog{
+	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_created",
-		EventCategory:  models.CategoryRegistry,
-		Severity:       models.SeverityMedium,
+		EventCategory:  security.CategoryRegistry,
+		Severity:       security.SeverityMedium,
 		ActorUserID:    &userID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
-		TargetType:     models.TargetTypeRegistryCredential,
+		TargetType:     security.TargetTypeRegistryCredential,
 		TargetID:       &credential.ID,
 		TargetName:     credential.RegistryURL,
 		Success:        true,
@@ -259,14 +259,14 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		"image_pattern": credential.ImagePattern,
 	})
 
-	auditLog := &models.SecurityAuditLog{
+	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_updated",
-		EventCategory:  models.CategoryRegistry,
-		Severity:       models.SeverityMedium,
+		EventCategory:  security.CategoryRegistry,
+		Severity:       security.SeverityMedium,
 		ActorUserID:    &userID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
-		TargetType:     models.TargetTypeRegistryCredential,
+		TargetType:     security.TargetTypeRegistryCredential,
 		TargetID:       &credID,
 		TargetName:     credential.RegistryURL,
 		Success:        true,
@@ -334,14 +334,14 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 			"error":         err.Error(),
 		})
 
-		auditLog := &models.SecurityAuditLog{
+		auditLog := &security.SecurityAuditLog{
 			EventType:      "registry_credential_deleted",
-			EventCategory:  models.CategoryRegistry,
-			Severity:       models.SeverityMedium,
+			EventCategory:  security.CategoryRegistry,
+			Severity:       security.SeverityMedium,
 			ActorUserID:    &userID,
 			ActorIP:        c.RealIP(),
 			ActorUserAgent: c.Request().UserAgent(),
-			TargetType:     models.TargetTypeRegistryCredential,
+			TargetType:     security.TargetTypeRegistryCredential,
 			TargetID:       &credID,
 			TargetName:     existing.RegistryURL,
 			Success:        false,
@@ -360,14 +360,14 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		"username":      existing.Username,
 	})
 
-	auditLog := &models.SecurityAuditLog{
+	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_deleted",
-		EventCategory:  models.CategoryRegistry,
-		Severity:       models.SeverityMedium,
+		EventCategory:  security.CategoryRegistry,
+		Severity:       security.SeverityMedium,
 		ActorUserID:    &userID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
-		TargetType:     models.TargetTypeRegistryCredential,
+		TargetType:     security.TargetTypeRegistryCredential,
 		TargetID:       &credID,
 		TargetName:     existing.RegistryURL,
 		Success:        true,

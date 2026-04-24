@@ -1,17 +1,15 @@
 package server
 
-import "berth/models"
-
 type AdminListServersResponse struct {
 	Success bool                         `json:"success"`
 	Data    AdminListServersResponseData `json:"data"`
 }
 
 type AdminListServersResponseData struct {
-	Servers []models.ServerInfo `json:"servers"`
+	Servers []ServerInfo `json:"servers"`
 }
 
-type AdminCreateServerRequest = models.ServerCreateRequest
+type AdminCreateServerRequest = ServerCreateRequest
 
 type AdminCreateServerResponse struct {
 	Success bool                          `json:"success"`
@@ -19,10 +17,10 @@ type AdminCreateServerResponse struct {
 }
 
 type AdminCreateServerResponseData struct {
-	Server models.ServerInfo `json:"server"`
+	Server ServerInfo `json:"server"`
 }
 
-type AdminUpdateServerRequest = models.ServerUpdateRequest
+type AdminUpdateServerRequest = ServerUpdateRequest
 
 type AdminUpdateServerResponse struct {
 	Success bool                          `json:"success"`
@@ -30,7 +28,7 @@ type AdminUpdateServerResponse struct {
 }
 
 type AdminUpdateServerResponseData struct {
-	Server models.ServerInfo `json:"server"`
+	Server ServerInfo `json:"server"`
 }
 
 type AdminDeleteServerResponse struct {

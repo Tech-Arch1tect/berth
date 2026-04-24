@@ -3,7 +3,6 @@ package e2e
 import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/server"
-	"berth/models"
 	"strconv"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 )
 
 type (
-	ServerInfo = models.ServerInfo
+	ServerInfo = server.ServerInfo
 
 	ListServersResponse      = server.ListServersResponse
 	ServerStatisticsResponse = server.ServerStatisticsResponse

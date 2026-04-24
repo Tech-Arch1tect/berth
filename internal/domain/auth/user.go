@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"berth/models"
+	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -24,7 +24,7 @@ func NewUserProvider(db *gorm.DB) UserProvider {
 }
 
 func (p *gormUserProvider) GetUser(userID uint) (any, error) {
-	var user models.User
+	var user usermodel.User
 	if err := p.db.Preload("Roles").First(&user, userID).Error; err != nil {
 		return nil, err
 	}

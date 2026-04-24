@@ -3,7 +3,6 @@ package security
 import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"berth/models"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogInfo {
+func toLogResponse(log *SecurityAuditLog) SecurityAuditLogInfo {
 	return SecurityAuditLogInfo{
 		ID:             log.ID,
 		CreatedAt:      log.CreatedAt,
@@ -37,7 +36,7 @@ func toLogResponse(log *models.SecurityAuditLog) SecurityAuditLogInfo {
 	}
 }
 
-func toLogResponseList(logs []models.SecurityAuditLog) []SecurityAuditLogInfo {
+func toLogResponseList(logs []SecurityAuditLog) []SecurityAuditLogInfo {
 	result := make([]SecurityAuditLogInfo, len(logs))
 	for i, log := range logs {
 		result[i] = toLogResponse(&log)
@@ -79,7 +78,7 @@ func (h *Handler) ListLogs(c echo.Context) error {
 		req.PerPage = 50
 	}
 
-	query := h.db.Model(&models.SecurityAuditLog{})
+	query := h.db.Model(&SecurityAuditLog{})
 
 	if req.EventType != "" {
 		query = query.Where("event_type = ?", req.EventType)
@@ -126,7 +125,7 @@ func (h *Handler) ListLogs(c echo.Context) error {
 	}
 
 	offset := (req.Page - 1) * req.PerPage
-	var logs []models.SecurityAuditLog
+	var logs []SecurityAuditLog
 	if err := query.Order("created_at DESC").Limit(req.PerPage).Offset(offset).Find(&logs).Error; err != nil {
 		return response.SendInternalError(c, "Failed to fetch logs")
 	}
@@ -154,7 +153,7 @@ func (h *Handler) GetLog(c echo.Context) error {
 		return err
 	}
 
-	var log models.SecurityAuditLog
+	var log SecurityAuditLog
 	if err := h.db.First(&log, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return response.SendNotFound(c, "Log not found")
@@ -171,16 +170,16 @@ func (h *Handler) GetLog(c echo.Context) error {
 func (h *Handler) GetStats(c echo.Context) error {
 	var stats StatsResponseData
 
-	h.db.Model(&models.SecurityAuditLog{}).Count(&stats.TotalEvents)
+	h.db.Model(&SecurityAuditLog{}).Count(&stats.TotalEvents)
 
-	h.db.Model(&models.SecurityAuditLog{}).Where("success = ?", false).Count(&stats.FailedEvents)
+	h.db.Model(&SecurityAuditLog{}).Where("success = ?", false).Count(&stats.FailedEvents)
 
 	now := time.Now()
-	h.db.Model(&models.SecurityAuditLog{}).
+	h.db.Model(&SecurityAuditLog{}).
 		Where("created_at >= ?", now.Add(-24*time.Hour)).
 		Count(&stats.EventsLast24Hours)
 
-	h.db.Model(&models.SecurityAuditLog{}).
+	h.db.Model(&SecurityAuditLog{}).
 		Where("created_at >= ?", now.Add(-7*24*time.Hour)).
 		Count(&stats.EventsLast7Days)
 
@@ -189,7 +188,7 @@ func (h *Handler) GetStats(c echo.Context) error {
 		EventCategory string
 		Count         int64
 	}
-	h.db.Model(&models.SecurityAuditLog{}).
+	h.db.Model(&SecurityAuditLog{}).
 		Select("event_category, COUNT(*) as count").
 		Group("event_category").
 		Scan(&categoryRows)
@@ -202,7 +201,7 @@ func (h *Handler) GetStats(c echo.Context) error {
 		Severity string
 		Count    int64
 	}
-	h.db.Model(&models.SecurityAuditLog{}).
+	h.db.Model(&SecurityAuditLog{}).
 		Select("severity, COUNT(*) as count").
 		Group("severity").
 		Scan(&severityRows)
@@ -214,7 +213,7 @@ func (h *Handler) GetStats(c echo.Context) error {
 		EventType string
 		Count     int64
 	}
-	h.db.Model(&models.SecurityAuditLog{}).
+	h.db.Model(&SecurityAuditLog{}).
 		Select("event_type, COUNT(*) as count").
 		Group("event_type").
 		Order("count DESC").

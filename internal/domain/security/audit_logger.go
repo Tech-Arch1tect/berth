@@ -2,7 +2,6 @@ package security
 
 import (
 	"berth/internal/platform/logging"
-	"berth/models"
 	"time"
 
 	"go.uber.org/zap"
@@ -44,7 +43,7 @@ func NewAuditLogger(enabled bool, logDir string, logger *zap.Logger, maxSizeByte
 	}, nil
 }
 
-func (a *AuditLogger) LogSecurityEvent(log *models.SecurityAuditLog) {
+func (a *AuditLogger) LogSecurityEvent(log *SecurityAuditLog) {
 	entry := AuditLogEntry{
 		Timestamp:     time.Now().UTC().Format(time.RFC3339),
 		LogID:         log.ID,

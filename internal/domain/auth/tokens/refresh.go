@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"time"
 
-	"berth/models"
-
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -31,7 +29,7 @@ func (s *Service) IssueRefresh(userID uint, info SessionInfo) (*RefreshTokenData
 		}
 	}
 
-	row := models.RefreshToken{
+	row := RefreshToken{
 		UserID:     userID,
 		TokenHash:  hash,
 		ExpiresAt:  expiresAt,
@@ -51,10 +49,10 @@ func (s *Service) IssueRefresh(userID uint, info SessionInfo) (*RefreshTokenData
 	}, nil
 }
 
-func (s *Service) ValidateRefresh(tokenString string) (*models.RefreshToken, error) {
+func (s *Service) ValidateRefresh(tokenString string) (*RefreshToken, error) {
 	hash := s.hashRefresh(tokenString)
 
-	var row models.RefreshToken
+	var row RefreshToken
 	err := s.db.Where("token_hash = ?", hash).First(&row).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -109,14 +107,14 @@ func (s *Service) RotateRefresh(tokenString string) (*RotationResult, error) {
 
 func (s *Service) RevokeRefresh(tokenString string) error {
 	hash := s.hashRefresh(tokenString)
-	if err := s.db.Where("token_hash = ?", hash).Delete(&models.RefreshToken{}).Error; err != nil {
+	if err := s.db.Where("token_hash = ?", hash).Delete(&RefreshToken{}).Error; err != nil {
 		return fmt.Errorf("revoke refresh: %w", err)
 	}
 	return nil
 }
 
 func (s *Service) RevokeRefreshTokenByID(id uint) error {
-	if err := s.db.Where("id = ?", id).Delete(&models.RefreshToken{}).Error; err != nil {
+	if err := s.db.Where("id = ?", id).Delete(&RefreshToken{}).Error; err != nil {
 		return fmt.Errorf("revoke refresh by id: %w", err)
 	}
 	return nil
@@ -126,13 +124,13 @@ func (s *Service) cleanupExpiredRefreshTokens() error {
 	now := time.Now()
 
 	var expiredIDs []uint
-	if err := s.db.Model(&models.RefreshToken{}).
+	if err := s.db.Model(&RefreshToken{}).
 		Where("expires_at < ?", now).
 		Pluck("id", &expiredIDs).Error; err != nil {
 		return fmt.Errorf("pluck expired refresh ids: %w", err)
 	}
 
-	if err := s.db.Where("expires_at < ?", now).Delete(&models.RefreshToken{}).Error; err != nil {
+	if err := s.db.Where("expires_at < ?", now).Delete(&RefreshToken{}).Error; err != nil {
 		return fmt.Errorf("delete expired refresh: %w", err)
 	}
 

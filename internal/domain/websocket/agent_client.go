@@ -1,19 +1,19 @@
 package websocket
 
 import (
+	"berth/internal/domain/server"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
-	"berth/models"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
 
 type AgentClient struct {
-	server    *models.Server
+	server    *server.Server
 	conn      *websocket.Conn
 	hub       *Hub
 	reconnect chan bool
@@ -38,7 +38,7 @@ func NewAgentManager(hub *Hub, logger *zap.Logger) *AgentManager {
 	}
 }
 
-func (am *AgentManager) ConnectToAgent(server *models.Server) error {
+func (am *AgentManager) ConnectToAgent(server *server.Server) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 

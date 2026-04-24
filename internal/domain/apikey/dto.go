@@ -1,7 +1,5 @@
 package apikey
 
-import "berth/models"
-
 type CreateAPIKeyRequest struct {
 	Name      string  `json:"name"`
 	ExpiresAt *string `json:"expires_at,omitempty"`
@@ -14,19 +12,19 @@ type AddScopeRequest struct {
 }
 
 type ListAPIKeysResponse struct {
-	Success bool                `json:"success"`
-	Data    []models.APIKeyInfo `json:"data"`
+	Success bool         `json:"success"`
+	Data    []APIKeyInfo `json:"data"`
 }
 
 type GetAPIKeyResponse struct {
-	Success bool              `json:"success"`
-	Data    models.APIKeyInfo `json:"data"`
+	Success bool       `json:"success"`
+	Data    APIKeyInfo `json:"data"`
 }
 
 type CreateAPIKeyResponseData struct {
-	Message  string            `json:"message,omitempty"`
-	APIKey   models.APIKeyInfo `json:"api_key"`
-	PlainKey string            `json:"plain_key"`
+	Message  string     `json:"message,omitempty"`
+	APIKey   APIKeyInfo `json:"api_key"`
+	PlainKey string     `json:"plain_key"`
 }
 
 type CreateAPIKeyResponse struct {
@@ -35,8 +33,8 @@ type CreateAPIKeyResponse struct {
 }
 
 type ListScopesResponse struct {
-	Success bool                     `json:"success"`
-	Data    []models.APIKeyScopeInfo `json:"data"`
+	Success bool              `json:"success"`
+	Data    []APIKeyScopeInfo `json:"data"`
 }
 
 type MessageData struct {

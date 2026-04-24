@@ -2,13 +2,14 @@ package seeds
 
 import (
 	"berth/internal/domain/rbac"
-	"berth/models"
+	"berth/internal/domain/server"
+	"berth/internal/domain/user"
 
 	"gorm.io/gorm"
 )
 
 func SeedRBACData(db *gorm.DB) error {
-	permissions := []models.Permission{
+	permissions := []user.Permission{
 		// stack/server-level permissions
 		{Name: rbac.PermStacksRead, Resource: "stacks", Action: "read", Description: "View stacks and containers", IsAPIKeyOnly: false},
 		{Name: rbac.PermStacksManage, Resource: "stacks", Action: "manage", Description: "Start/stop/deploy/remove stacks", IsAPIKeyOnly: false},
@@ -39,7 +40,7 @@ func SeedRBACData(db *gorm.DB) error {
 	}
 
 	for _, permission := range permissions {
-		var existingPerm models.Permission
+		var existingPerm user.Permission
 		result := db.Where("name = ?", permission.Name).First(&existingPerm)
 
 		if result.Error == gorm.ErrRecordNotFound {
@@ -59,14 +60,14 @@ func SeedRBACData(db *gorm.DB) error {
 		}
 	}
 
-	var seedTracker models.SeedTracker
+	var seedTracker SeedTracker
 	result := db.Where("name = ?", "roles_seeded").First(&seedTracker)
 	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
 		return result.Error
 	}
 
 	if result.Error == gorm.ErrRecordNotFound {
-		roles := []models.Role{
+		roles := []user.Role{
 			{Name: rbac.RoleAdmin, Description: "System administrator with full access", IsAdmin: true},
 			{Name: rbac.RoleUser, Description: "Standard user with basic permissions", IsAdmin: false},
 			{Name: rbac.RoleDeveloper, Description: "Developer with full server access", IsAdmin: false},
@@ -79,7 +80,7 @@ func SeedRBACData(db *gorm.DB) error {
 			}
 		}
 
-		if err := db.Create(&models.SeedTracker{Name: "roles_seeded"}).Error; err != nil {
+		if err := db.Create(&SeedTracker{Name: "roles_seeded"}).Error; err != nil {
 			return err
 		}
 	}
@@ -93,7 +94,7 @@ func SeedRBACData(db *gorm.DB) error {
 
 func seedServerPermissions(db *gorm.DB) error {
 	var serverCount int64
-	if err := db.Model(&models.Server{}).Count(&serverCount).Error; err != nil {
+	if err := db.Model(&server.Server{}).Count(&serverCount).Error; err != nil {
 		return err
 	}
 
@@ -101,22 +102,22 @@ func seedServerPermissions(db *gorm.DB) error {
 		return nil
 	}
 
-	var servers []models.Server
+	var servers []server.Server
 	if err := db.Limit(3).Find(&servers).Error; err != nil {
 		return err
 	}
 
-	var developerRole models.Role
+	var developerRole user.Role
 	if err := db.Where("name = ?", rbac.RoleDeveloper).First(&developerRole).Error; err != nil {
 		return nil
 	}
 
-	var viewerRole models.Role
+	var viewerRole user.Role
 	if err := db.Where("name = ?", rbac.RoleViewer).First(&viewerRole).Error; err != nil {
 		return nil
 	}
 
-	var permissions []models.Permission
+	var permissions []user.Permission
 	if err := db.Find(&permissions).Error; err != nil {
 		return err
 	}
@@ -126,9 +127,9 @@ func seedServerPermissions(db *gorm.DB) error {
 		permissionMap[permission.Name] = permission.ID
 	}
 
-	for _, server := range servers {
+	for _, srv := range servers {
 		var existingCount int64
-		if err := db.Model(&models.ServerRoleStackPermission{}).Where("server_id = ?", server.ID).Count(&existingCount).Error; err != nil {
+		if err := db.Model(&user.ServerRoleStackPermission{}).Where("server_id = ?", srv.ID).Count(&existingCount).Error; err != nil {
 			return err
 		}
 
@@ -136,17 +137,17 @@ func seedServerPermissions(db *gorm.DB) error {
 			continue
 		}
 
-		developerPermissions := []models.ServerRoleStackPermission{
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksManage], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesRead], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesWrite], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
+		developerPermissions := []user.ServerRoleStackPermission{
+			{ServerID: srv.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
+			{ServerID: srv.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermStacksManage], StackPattern: "*"},
+			{ServerID: srv.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesRead], StackPattern: "*"},
+			{ServerID: srv.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermFilesWrite], StackPattern: "*"},
+			{ServerID: srv.ID, RoleID: developerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
 		}
 
-		viewerPermissions := []models.ServerRoleStackPermission{
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
-			{ServerID: server.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
+		viewerPermissions := []user.ServerRoleStackPermission{
+			{ServerID: srv.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermStacksRead], StackPattern: "*"},
+			{ServerID: srv.ID, RoleID: viewerRole.ID, PermissionID: permissionMap[rbac.PermLogsRead], StackPattern: "*"},
 		}
 
 		allPermissions := append(developerPermissions, viewerPermissions...)

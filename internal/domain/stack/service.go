@@ -2,8 +2,8 @@ package stack
 
 import (
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/server"
 	"berth/internal/pkg/validation"
-	"berth/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,12 +13,12 @@ import (
 )
 
 type stackAgentClient interface {
-	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type stackServerProvider interface {
-	GetServerResponse(id uint) (*models.ServerInfo, error)
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*models.Server, error)
+	GetServerResponse(id uint) (*server.ServerInfo, error)
+	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
 }
 
 type stackPermissionChecker interface {
@@ -43,7 +43,7 @@ func NewService(agentSvc stackAgentClient, serverSvc stackServerProvider, rbacSv
 	}
 }
 
-func (s *Service) GetServerInfo(serverID uint) (*models.ServerInfo, error) {
+func (s *Service) GetServerInfo(serverID uint) (*server.ServerInfo, error) {
 	return s.serverSvc.GetServerResponse(serverID)
 }
 
@@ -173,7 +173,7 @@ func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, n
 	return stack, nil
 }
 
-func (s *Service) createStackOnAgent(ctx context.Context, server *models.Server, name string) (*Stack, error) {
+func (s *Service) createStackOnAgent(ctx context.Context, server *server.Server, name string) (*Stack, error) {
 	s.logger.Debug("creating stack on agent",
 		zap.Uint("server_id", server.ID),
 		zap.String("server_name", server.Name),
@@ -268,7 +268,7 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 	return stackDetails, nil
 }
 
-func (s *Service) fetchStacksFromAgent(ctx context.Context, server *models.Server) ([]Stack, error) {
+func (s *Service) fetchStacksFromAgent(ctx context.Context, server *server.Server) ([]Stack, error) {
 	s.logger.Debug("fetching stacks from agent",
 		zap.Uint("server_id", server.ID),
 		zap.String("server_name", server.Name),
@@ -312,7 +312,7 @@ func (s *Service) fetchStacksFromAgent(ctx context.Context, server *models.Serve
 	return stacks, nil
 }
 
-func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *models.Server, stackname string) (*StackDetails, error) {
+func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *server.Server, stackname string) (*StackDetails, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -385,7 +385,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 	return networks, nil
 }
 
-func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *models.Server, stackname string) ([]Network, error) {
+func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *server.Server, stackname string) ([]Network, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/networks", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -450,7 +450,7 @@ func (s *Service) GetContainerImageDetails(ctx context.Context, userID uint, ser
 	return imageDetails, nil
 }
 
-func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *models.Server, stackname string) ([]Volume, error) {
+func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *server.Server, stackname string) ([]Volume, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/volumes", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -497,7 +497,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 	return environmentVariables, nil
 }
 
-func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *models.Server, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
+func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, server *server.Server, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
 	url := fmt.Sprintf("/stacks/%s/environment", stackname)
 	if unmask {
 		url += "?unmask=true"
@@ -597,7 +597,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 	return &stackStats, nil
 }
 
-func (s *Service) fetchContainerImageDetailsFromAgent(ctx context.Context, server *models.Server, stackname string) ([]ContainerImageDetails, error) {
+func (s *Service) fetchContainerImageDetailsFromAgent(ctx context.Context, server *server.Server, stackname string) ([]ContainerImageDetails, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/images", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -640,7 +640,7 @@ func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID ui
 	return s.fetchComposeConfigFromAgent(ctx, server, stackname)
 }
 
-func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *models.Server, stackname string) (*RawComposeConfig, error) {
+func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *server.Server, stackname string) (*RawComposeConfig, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", fmt.Sprintf("/stacks/%s/compose", stackname), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -683,7 +683,7 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 	return s.updateComposeOnAgent(ctx, server, stackname, req)
 }
 
-func (s *Service) updateComposeOnAgent(ctx context.Context, server *models.Server, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
+func (s *Service) updateComposeOnAgent(ctx context.Context, server *server.Server, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
 	resp, err := s.agentSvc.MakeRequest(ctx, server, "PATCH", fmt.Sprintf("/stacks/%s/compose", stackname), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)

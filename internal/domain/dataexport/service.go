@@ -1,7 +1,8 @@
 package dataexport
 
 import (
-	"berth/models"
+	"berth/internal/domain/server"
+	"berth/internal/domain/user"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -23,16 +24,16 @@ type Service struct {
 }
 
 type ExportData struct {
-	Version              string                             `json:"version"`
-	ExportedAt           time.Time                          `json:"exported_at"`
-	EncryptionSecret     string                             `json:"encryption_secret"`
-	Users                []models.User                      `json:"users"`
-	Roles                []models.Role                      `json:"roles"`
-	Permissions          []models.Permission                `json:"permissions"`
-	Servers              []models.Server                    `json:"servers"`
-	UserRoles            []UserRoleMapping                  `json:"user_roles"`
-	ServerRoleStackPerms []models.ServerRoleStackPermission `json:"server_role_stack_permissions"`
-	TOTPSecrets          []TOTPSecret                       `json:"totp_secrets"`
+	Version              string                           `json:"version"`
+	ExportedAt           time.Time                        `json:"exported_at"`
+	EncryptionSecret     string                           `json:"encryption_secret"`
+	Users                []user.User                      `json:"users"`
+	Roles                []user.Role                      `json:"roles"`
+	Permissions          []user.Permission                `json:"permissions"`
+	Servers              []server.Server                  `json:"servers"`
+	UserRoles            []UserRoleMapping                `json:"user_roles"`
+	ServerRoleStackPerms []user.ServerRoleStackPermission `json:"server_role_stack_permissions"`
+	TOTPSecrets          []TOTPSecret                     `json:"totp_secrets"`
 }
 
 type UserRoleMapping struct {
@@ -255,7 +256,7 @@ func (s *Service) importData(data *ExportData) (*ImportSummary, error) {
 	}
 	summary.PermissionsImported = len(data.Permissions)
 
-	if err := s.resetAutoIncrement(tx, "permissions", getMaxID(data.Permissions, func(p models.Permission) uint { return p.ID })); err != nil {
+	if err := s.resetAutoIncrement(tx, "permissions", getMaxID(data.Permissions, func(p user.Permission) uint { return p.ID })); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to reset permissions sequence: %w", err)
 	}
@@ -271,7 +272,7 @@ func (s *Service) importData(data *ExportData) (*ImportSummary, error) {
 	}
 	summary.RolesImported = len(data.Roles)
 
-	if err := s.resetAutoIncrement(tx, "roles", getMaxID(data.Roles, func(r models.Role) uint { return r.ID })); err != nil {
+	if err := s.resetAutoIncrement(tx, "roles", getMaxID(data.Roles, func(r user.Role) uint { return r.ID })); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to reset roles sequence: %w", err)
 	}
@@ -287,7 +288,7 @@ func (s *Service) importData(data *ExportData) (*ImportSummary, error) {
 	}
 	summary.UsersImported = len(data.Users)
 
-	if err := s.resetAutoIncrement(tx, "users", getMaxID(data.Users, func(u models.User) uint { return u.ID })); err != nil {
+	if err := s.resetAutoIncrement(tx, "users", getMaxID(data.Users, func(u user.User) uint { return u.ID })); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to reset users sequence: %w", err)
 	}
@@ -303,7 +304,7 @@ func (s *Service) importData(data *ExportData) (*ImportSummary, error) {
 	}
 	summary.ServersImported = len(data.Servers)
 
-	if err := s.resetAutoIncrement(tx, "servers", getMaxID(data.Servers, func(s models.Server) uint { return s.ID })); err != nil {
+	if err := s.resetAutoIncrement(tx, "servers", getMaxID(data.Servers, func(s server.Server) uint { return s.ID })); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to reset servers sequence: %w", err)
 	}
@@ -325,7 +326,7 @@ func (s *Service) importData(data *ExportData) (*ImportSummary, error) {
 		}
 	}
 
-	if err := s.resetAutoIncrement(tx, "server_role_stack_permissions", getMaxID(data.ServerRoleStackPerms, func(srsp models.ServerRoleStackPermission) uint { return srsp.ID })); err != nil {
+	if err := s.resetAutoIncrement(tx, "server_role_stack_permissions", getMaxID(data.ServerRoleStackPerms, func(srsp user.ServerRoleStackPermission) uint { return srsp.ID })); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to reset server_role_stack_permissions sequence: %w", err)
 	}

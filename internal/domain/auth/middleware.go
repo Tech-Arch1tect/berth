@@ -2,13 +2,13 @@ package auth
 
 import (
 	"berth/internal/domain/apikey"
-	"berth/models"
 	"context"
 	"net/http"
 	"strings"
 
 	tokens "berth/internal/domain/auth/tokens"
 	"berth/internal/domain/session"
+	usermodel "berth/internal/domain/user"
 	"github.com/labstack/echo/v4"
 )
 
@@ -102,8 +102,8 @@ func GetAuthType(c echo.Context) AuthType {
 	return ""
 }
 
-func GetAPIKey(c echo.Context) *models.APIKey {
-	if apiKey, ok := c.Get(APIKeyKey).(*models.APIKey); ok {
+func GetAPIKey(c echo.Context) *apikey.APIKey {
+	if apiKey, ok := c.Get(APIKeyKey).(*apikey.APIKey); ok {
 		return apiKey
 	}
 	return nil
@@ -116,9 +116,9 @@ func GetUserID(c echo.Context) uint {
 	return 0
 }
 
-func GetUser(c echo.Context) *models.User {
+func GetUser(c echo.Context) *usermodel.User {
 	if user := GetCurrentUser(c); user != nil {
-		if userModel, ok := user.(models.User); ok {
+		if userModel, ok := user.(usermodel.User); ok {
 			return &userModel
 		}
 	}
@@ -137,8 +137,8 @@ func IsSessionAuth(c echo.Context) bool {
 	return GetAuthType(c) == AuthTypeSession
 }
 
-func GetAPIKeyFromContext(ctx context.Context) *models.APIKey {
-	if apiKey, ok := ctx.Value(APIKeyContextKey).(*models.APIKey); ok {
+func GetAPIKeyFromContext(ctx context.Context) *apikey.APIKey {
+	if apiKey, ok := ctx.Value(APIKeyContextKey).(*apikey.APIKey); ok {
 		return apiKey
 	}
 	return nil

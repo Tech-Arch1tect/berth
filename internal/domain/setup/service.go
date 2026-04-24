@@ -2,7 +2,7 @@ package setup
 
 import (
 	"berth/internal/domain/rbac"
-	"berth/models"
+	"berth/internal/domain/user"
 	"errors"
 
 	"go.uber.org/zap"
@@ -31,7 +31,7 @@ func (s *Service) AdminExists() (bool, error) {
 	s.logger.Debug("checking if admin user exists")
 
 	var count int64
-	err := s.db.Model(&models.User{}).
+	err := s.db.Model(&user.User{}).
 		Joins("JOIN user_roles ON users.id = user_roles.user_id").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("roles.name = ?", rbac.RoleAdmin).
@@ -53,7 +53,7 @@ func (s *Service) AdminExists() (bool, error) {
 	return exists, nil
 }
 
-func (s *Service) CreateAdmin(username, email, password string) (*models.User, error) {
+func (s *Service) CreateAdmin(username, email, password string) (*user.User, error) {
 	s.logger.Info("creating admin user",
 		zap.String("username", username),
 		zap.String("email", email),
@@ -76,7 +76,7 @@ func (s *Service) CreateAdmin(username, email, password string) (*models.User, e
 		return nil, errors.New("admin user already exists")
 	}
 
-	user := models.User{
+	user := user.User{
 		Username: username,
 		Email:    email,
 		Password: password,

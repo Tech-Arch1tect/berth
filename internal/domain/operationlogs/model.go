@@ -1,17 +1,29 @@
-package models
+package operationlogs
 
 import (
 	"time"
 
+	"berth/internal/domain/server"
+	"berth/internal/domain/user"
 	"berth/internal/platform/db"
+)
+
+type OperationStatus string
+
+const (
+	OperationStatusQueued    OperationStatus = "queued"
+	OperationStatusRunning   OperationStatus = "running"
+	OperationStatusCompleted OperationStatus = "completed"
+	OperationStatusFailed    OperationStatus = "failed"
+	OperationStatusCancelled OperationStatus = "cancelled"
 )
 
 type OperationLog struct {
 	db.BaseModel
 	UserID        uint            `json:"user_id" gorm:"not null;index"`
-	User          User            `json:"user" gorm:"foreignKey:UserID"`
+	User          user.User       `json:"user" gorm:"foreignKey:UserID"`
 	ServerID      uint            `json:"server_id" gorm:"not null;index"`
-	Server        Server          `json:"server" gorm:"foreignKey:ServerID"`
+	Server        server.Server   `json:"server" gorm:"foreignKey:ServerID"`
 	StackName     string          `json:"stack_name" gorm:"not null;index"`
 	OperationID   string          `json:"operation_id" gorm:"not null;index"`
 	Command       string          `json:"command" gorm:"not null"`

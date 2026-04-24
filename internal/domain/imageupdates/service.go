@@ -2,9 +2,9 @@ package imageupdates
 
 import (
 	"berth/internal/domain/compose"
+	"berth/internal/domain/server"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
-	"berth/models"
 	"context"
 	"encoding/json"
 	"errors"
@@ -17,11 +17,11 @@ import (
 )
 
 type agentClient interface {
-	MakeRequest(ctx context.Context, server *models.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type serverProvider interface {
-	GetServer(id uint) (*models.Server, error)
+	GetServer(id uint) (*server.Server, error)
 }
 
 type Service struct {
@@ -112,14 +112,14 @@ func (s *Service) checkLoop() {
 func (s *Service) checkAllServers() {
 	s.logger.Info("starting image update check for all servers")
 
-	var servers []models.Server
+	var servers []server.Server
 	if err := s.db.Find(&servers).Error; err != nil {
 		s.logger.Error("failed to fetch servers for image update check", zap.Error(err))
 		return
 	}
 
-	for _, server := range servers {
-		s.checkServer(server.ID)
+	for _, srv := range servers {
+		s.checkServer(srv.ID)
 	}
 
 	s.logger.Info("completed image update check for all servers",
@@ -130,7 +130,7 @@ func (s *Service) checkAllServers() {
 func (s *Service) checkServer(serverID uint) {
 	s.logger.Debug("checking server for image updates", zap.Uint("server_id", serverID))
 
-	server, err := s.serverSvc.GetServer(serverID)
+	srv, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		s.logger.Error("failed to get server",
 			zap.Uint("server_id", serverID),
@@ -139,7 +139,7 @@ func (s *Service) checkServer(serverID uint) {
 		return
 	}
 
-	var credentials []models.ServerRegistryCredential
+	var credentials []server.ServerRegistryCredential
 	if err := s.db.Where("server_id = ?", serverID).Find(&credentials).Error; err != nil {
 		s.logger.Error("failed to fetch registry credentials",
 			zap.Uint("server_id", serverID),
@@ -181,11 +181,11 @@ func (s *Service) checkServer(serverID uint) {
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Minute)
 	defer cancel()
 
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "POST", "/images/check-updates", reqPayload)
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "POST", "/images/check-updates", reqPayload)
 	if err != nil {
 		s.logger.Error("failed to request image updates from agent",
 			zap.Uint("server_id", serverID),
-			zap.String("server_name", server.Name),
+			zap.String("server_name", srv.Name),
 			zap.Error(err),
 		)
 		return
@@ -242,7 +242,7 @@ func (s *Service) processUpdateResults(serverID uint, results []ContainerImageCh
 			updateAvailable = false
 		}
 
-		update := models.ContainerImageUpdate{
+		update := ContainerImageUpdate{
 			ServerID:          serverID,
 			StackName:         result.StackName,
 			ContainerName:     result.ContainerName,
@@ -254,7 +254,7 @@ func (s *Service) processUpdateResults(serverID uint, results []ContainerImageCh
 			CheckError:        result.Error,
 		}
 
-		var existing models.ContainerImageUpdate
+		var existing ContainerImageUpdate
 		err := s.db.Where("server_id = ? AND stack_name = ? AND container_name = ?",
 			serverID, result.StackName, result.ContainerName).
 			First(&existing).Error
@@ -314,7 +314,7 @@ func (s *Service) cleanupStaleRecords(serverID uint, currentResults []ContainerI
 		currentContainers[key] = true
 	}
 
-	var existingRecords []models.ContainerImageUpdate
+	var existingRecords []ContainerImageUpdate
 	if err := s.db.Where("server_id = ?", serverID).Find(&existingRecords).Error; err != nil {
 		s.logger.Error("failed to fetch existing records for cleanup",
 			zap.Uint("server_id", serverID),
@@ -345,8 +345,8 @@ func (s *Service) cleanupStaleRecords(serverID uint, currentResults []ContainerI
 	}
 }
 
-func (s *Service) GetAvailableUpdates() ([]models.ContainerImageUpdate, error) {
-	var updates []models.ContainerImageUpdate
+func (s *Service) GetAvailableUpdates() ([]ContainerImageUpdate, error) {
+	var updates []ContainerImageUpdate
 	err := s.db.Preload("Server").
 		Where("update_available = ?", true).
 		Order("last_checked_at DESC").
@@ -361,8 +361,8 @@ func (s *Service) GetAvailableUpdates() ([]models.ContainerImageUpdate, error) {
 	return updates, nil
 }
 
-func (s *Service) GetServerUpdates(serverID uint) ([]models.ContainerImageUpdate, error) {
-	var updates []models.ContainerImageUpdate
+func (s *Service) GetServerUpdates(serverID uint) ([]ContainerImageUpdate, error) {
+	var updates []ContainerImageUpdate
 	err := s.db.Where("server_id = ?", serverID).
 		Order("stack_name ASC, container_name ASC").
 		Find(&updates).Error
@@ -391,8 +391,8 @@ func (s *Service) GetServerUpdates(serverID uint) ([]models.ContainerImageUpdate
 	return enrichedUpdates, nil
 }
 
-func (s *Service) enrichWithLiveDigests(serverID uint, updates []models.ContainerImageUpdate) ([]models.ContainerImageUpdate, error) {
-	server, err := s.serverSvc.GetServer(serverID)
+func (s *Service) enrichWithLiveDigests(serverID uint, updates []ContainerImageUpdate) ([]ContainerImageUpdate, error) {
+	srv, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +400,7 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []models.Containe
 	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
 	defer cancel()
 
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", "/stacks", nil)
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", "/stacks", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +441,7 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []models.Containe
 		}
 	}
 
-	enriched := make([]models.ContainerImageUpdate, 0)
+	enriched := make([]ContainerImageUpdate, 0)
 	for _, update := range updates {
 		key := update.StackName + "|" + update.ContainerName
 		if liveDigest, found := liveDigests[key]; found {

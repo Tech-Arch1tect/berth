@@ -15,10 +15,11 @@ import (
 
 	"berth/internal/app"
 	"berth/internal/pkg/crypto"
-	"berth/models"
 
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/auth"
+	"berth/internal/domain/server"
+	"berth/internal/domain/user"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/logging"
@@ -354,7 +355,7 @@ func (a *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 	return user
 }
 
-func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *models.Server {
+func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *server.Server {
 	crypto := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
 	encryptedToken, err := crypto.Encrypt("test-access-token")
 	require.NoError(t, err, "failed to encrypt access tokene")
@@ -374,7 +375,7 @@ func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL strin
 	}
 
 	skipSSL := true
-	server := &models.Server{
+	srv := &server.Server{
 		Name:                name,
 		Host:                host,
 		Port:                port,
@@ -383,27 +384,27 @@ func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL strin
 		IsActive:            true,
 	}
 
-	err = a.DB.Create(server).Error
+	err = a.DB.Create(srv).Error
 	require.NoError(t, err, "failed to create test server")
 
-	return server
+	return srv
 }
 
-func (a *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAgent, *models.Server) {
+func (a *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAgent, *server.Server) {
 	mockAgent := NewMockAgent()
 	t.Cleanup(mockAgent.Close)
 
-	server := a.CreateTestServer(t, name, mockAgent.URL)
-	return mockAgent, server
+	srv := a.CreateTestServer(t, name, mockAgent.URL)
+	return mockAgent, srv
 }
 
-func (a *TestApp) CreateAdminTestUser(t *testing.T, user *e2etesting.TestUser) {
-	a.AuthHelper.CreateTestUser(t, user)
+func (a *TestApp) CreateAdminTestUser(t *testing.T, u *e2etesting.TestUser) {
+	a.AuthHelper.CreateTestUser(t, u)
 
-	var adminRole models.Role
+	var adminRole user.Role
 	err := a.DB.Where("name = ?", "admin").First(&adminRole).Error
 	require.NoError(t, err, "failed to find admin role")
 
-	err = a.DB.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", user.ID, adminRole.ID).Error
+	err = a.DB.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", u.ID, adminRole.ID).Error
 	require.NoError(t, err, "failed to assign admin role to user")
 }

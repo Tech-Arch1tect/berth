@@ -1,9 +1,7 @@
-package dto
-
-import "berth/models"
+package operationlogs
 
 type OperationLogInfo struct {
-	models.OperationLog
+	OperationLog
 	UserName        string `json:"user_name"`
 	ServerName      string `json:"server_name"`
 	TriggerSource   string `json:"trigger_source"`
@@ -14,8 +12,8 @@ type OperationLogInfo struct {
 }
 
 type OperationLogDetailData struct {
-	Log      OperationLogInfo             `json:"log"`
-	Messages []models.OperationLogMessage `json:"messages"`
+	Log      OperationLogInfo      `json:"log"`
+	Messages []OperationLogMessage `json:"messages"`
 }
 
 type OperationLogDetailResponse struct {

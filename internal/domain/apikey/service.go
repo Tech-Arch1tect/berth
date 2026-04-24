@@ -1,8 +1,9 @@
 package apikey
 
 import (
+	"berth/internal/domain/server"
+	"berth/internal/domain/user"
 	"berth/internal/pkg/patterns"
-	"berth/models"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -41,7 +42,7 @@ func NewService(db *gorm.DB, logger *zap.Logger, rbacService RBACService) *Servi
 	}
 }
 
-func (s *Service) GenerateAPIKey(userID uint, name string, expiresAt *time.Time) (string, *models.APIKey, error) {
+func (s *Service) GenerateAPIKey(userID uint, name string, expiresAt *time.Time) (string, *APIKey, error) {
 	s.logger.Info("generating new API key",
 		zap.Uint("user_id", userID),
 		zap.String("name", name),
@@ -71,7 +72,7 @@ func (s *Service) GenerateAPIKey(userID uint, name string, expiresAt *time.Time)
 		displayPrefix = KeyPrefix + keyValue[:8]
 	}
 
-	apiKey := models.APIKey{
+	apiKey := APIKey{
 		UserID:    userID,
 		Name:      name,
 		KeyPrefix: displayPrefix,
@@ -99,7 +100,7 @@ func (s *Service) GenerateAPIKey(userID uint, name string, expiresAt *time.Time)
 	return fullKey, &apiKey, nil
 }
 
-func (s *Service) ValidateAPIKey(key string) (*models.User, *models.APIKey, error) {
+func (s *Service) ValidateAPIKey(key string) (*user.User, *APIKey, error) {
 	if key == "" {
 		return nil, nil, errors.New("API key is required")
 	}
@@ -107,7 +108,7 @@ func (s *Service) ValidateAPIKey(key string) (*models.User, *models.APIKey, erro
 	hash := sha256.Sum256([]byte(key))
 	keyHash := base64.StdEncoding.EncodeToString(hash[:])
 
-	var apiKey models.APIKey
+	var apiKey APIKey
 	err := s.db.Preload("User.Roles").
 		Preload("Scopes.Permission").
 		Preload("Scopes.Server").
@@ -154,8 +155,8 @@ func (s *Service) ValidateAPIKey(key string) (*models.User, *models.APIKey, erro
 	return &apiKey.User, &apiKey, nil
 }
 
-func (s *Service) ListAPIKeys(userID uint) ([]models.APIKey, error) {
-	var apiKeys []models.APIKey
+func (s *Service) ListAPIKeys(userID uint) ([]APIKey, error) {
+	var apiKeys []APIKey
 	err := s.db.Preload("Scopes").
 		Where("user_id = ?", userID).
 		Order("created_at DESC").
@@ -172,8 +173,8 @@ func (s *Service) ListAPIKeys(userID uint) ([]models.APIKey, error) {
 	return apiKeys, nil
 }
 
-func (s *Service) GetAPIKey(apiKeyID uint, userID uint) (*models.APIKey, error) {
-	var apiKey models.APIKey
+func (s *Service) GetAPIKey(apiKeyID uint, userID uint) (*APIKey, error) {
+	var apiKey APIKey
 	err := s.db.Preload("Scopes.Permission").
 		Preload("Scopes.Server").
 		Where("id = ? AND user_id = ?", apiKeyID, userID).
@@ -200,7 +201,7 @@ func (s *Service) RevokeAPIKey(apiKeyID uint, userID uint) error {
 		zap.Uint("user_id", userID),
 	)
 
-	result := s.db.Delete(&models.APIKey{}, "id = ? AND user_id = ?", apiKeyID, userID)
+	result := s.db.Delete(&APIKey{}, "id = ? AND user_id = ?", apiKeyID, userID)
 
 	if result.Error != nil {
 		s.logger.Error("failed to revoke API key",
@@ -232,7 +233,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		zap.String("permission_name", permissionName),
 	)
 
-	var apiKey models.APIKey
+	var apiKey APIKey
 	err := s.db.Where("id = ? AND user_id = ?", apiKeyID, userID).First(&apiKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -241,7 +242,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		return err
 	}
 
-	var permission models.Permission
+	var permission user.Permission
 	err = s.db.Where("name = ?", permissionName).First(&permission).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -252,8 +253,8 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 
 	if permission.IsAPIKeyOnly {
 		if strings.HasPrefix(permission.Name, "admin.") {
-			var user models.User
-			err = s.db.Preload("Roles").First(&user, userID).Error
+			var u user.User
+			err = s.db.Preload("Roles").First(&u, userID).Error
 			if err != nil {
 				s.logger.Error("failed to load user roles",
 					zap.Error(err),
@@ -263,7 +264,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 			}
 
 			isAdmin := false
-			for _, role := range user.Roles {
+			for _, role := range u.Roles {
 				if role.IsAdmin {
 					isAdmin = true
 					break
@@ -280,8 +281,8 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		}
 	} else if serverID != nil {
 
-		var server models.Server
-		err = s.db.First(&server, *serverID).Error
+		var srv server.Server
+		err = s.db.First(&srv, *serverID).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("server not found")
@@ -363,7 +364,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		}
 	}
 
-	var existing models.APIKeyScope
+	var existing APIKeyScope
 	query := s.db.Where("api_key_id = ? AND stack_pattern = ? AND permission_id = ?",
 		apiKeyID, stackPattern, permission.ID)
 
@@ -378,7 +379,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		return errors.New("this scope already exists for the API key")
 	}
 
-	scope := models.APIKeyScope{
+	scope := APIKeyScope{
 		APIKeyID:     apiKeyID,
 		ServerID:     serverID,
 		StackPattern: stackPattern,
@@ -410,7 +411,7 @@ func (s *Service) RemoveScope(scopeID uint, userID uint) error {
 	result := s.db.Where("id = ? AND api_key_id IN (?)",
 		scopeID,
 		s.db.Table("api_keys").Select("id").Where("user_id = ?", userID),
-	).Delete(&models.APIKeyScope{})
+	).Delete(&APIKeyScope{})
 
 	if result.Error != nil {
 		s.logger.Error("failed to remove API key scope",
@@ -431,7 +432,7 @@ func (s *Service) RemoveScope(scopeID uint, userID uint) error {
 	return nil
 }
 
-func (s *Service) CheckAPIKeyPermission(apiKey *models.APIKey, userHasPermission bool, serverID uint, stackName string, permissionName string) (bool, error) {
+func (s *Service) CheckAPIKeyPermission(apiKey *APIKey, userHasPermission bool, serverID uint, stackName string, permissionName string) (bool, error) {
 	s.logger.Debug("checking API key permission",
 		zap.Uint("api_key_id", apiKey.ID),
 		zap.Uint("user_id", apiKey.UserID),
@@ -477,9 +478,9 @@ func (s *Service) CheckAPIKeyPermission(apiKey *models.APIKey, userHasPermission
 	return false, nil
 }
 
-func (s *Service) ListScopes(apiKeyID uint, userID uint) ([]models.APIKeyScope, error) {
+func (s *Service) ListScopes(apiKeyID uint, userID uint) ([]APIKeyScope, error) {
 
-	var apiKey models.APIKey
+	var apiKey APIKey
 	err := s.db.Where("id = ? AND user_id = ?", apiKeyID, userID).First(&apiKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -488,7 +489,7 @@ func (s *Service) ListScopes(apiKeyID uint, userID uint) ([]models.APIKeyScope, 
 		return nil, err
 	}
 
-	var scopes []models.APIKeyScope
+	var scopes []APIKeyScope
 	err = s.db.Preload("Permission").
 		Preload("Server").
 		Where("api_key_id = ?", apiKeyID).

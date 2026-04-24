@@ -12,18 +12,11 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/inertia"
-	"berth/models"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-)
-
-type (
-	PasswordResetToken     = models.PasswordResetToken
-	RememberMeToken        = models.RememberMeToken
-	EmailVerificationToken = models.EmailVerificationToken
 )
 
 var (

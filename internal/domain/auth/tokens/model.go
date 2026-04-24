@@ -1,8 +1,6 @@
-package models
+package tokens
 
-import (
-	"time"
-)
+import "time"
 
 type RefreshToken struct {
 	ID         uint      `json:"id" gorm:"primaryKey"`

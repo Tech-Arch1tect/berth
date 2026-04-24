@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"berth/models"
+	"berth/internal/domain/server"
 	"context"
 
 	"go.uber.org/fx"
@@ -9,8 +9,8 @@ import (
 )
 
 type wsServerProvider interface {
-	ListServers() ([]models.ServerInfo, error)
-	GetServer(id uint) (*models.Server, error)
+	ListServers() ([]server.ServerInfo, error)
+	GetServer(id uint) (*server.Server, error)
 }
 
 type ServiceManager struct {

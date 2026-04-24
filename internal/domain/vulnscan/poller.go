@@ -1,7 +1,6 @@
 package vulnscan
 
 import (
-	"berth/models"
 	"context"
 	"time"
 
@@ -64,8 +63,8 @@ func (p *Poller) pollActiveScans() {
 		p.logger.Error("failed to cleanup stale scans", zap.Error(err))
 	}
 
-	var scans []models.ImageScan
-	if err := p.db.Where("status IN ?", []string{models.ScanStatusPending, models.ScanStatusRunning}).
+	var scans []ImageScan
+	if err := p.db.Where("status IN ?", []string{ScanStatusPending, ScanStatusRunning}).
 		Find(&scans).Error; err != nil {
 		p.logger.Error("failed to query active scans", zap.Error(err))
 		return

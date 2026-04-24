@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"berth/models"
-
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -64,7 +62,7 @@ func (s *AuditService) Log(event LogEvent) error {
 	category := GetEventCategory(event.EventType)
 	severity := GetEventSeverity(event.EventType)
 
-	auditLog := models.SecurityAuditLog{
+	auditLog := SecurityAuditLog{
 		EventType:     event.EventType,
 		EventCategory: category,
 		Severity:      severity,
@@ -127,7 +125,7 @@ func (s *AuditService) LogUserManagementEvent(eventType string, actorUserID uint
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
 		TargetUserID:  &targetUserID,
-		TargetType:    models.TargetTypeUser,
+		TargetType:    TargetTypeUser,
 		TargetID:      &targetUserID,
 		TargetName:    targetUsername,
 		Metadata:      metadata,
@@ -155,7 +153,7 @@ func (s *AuditService) LogServerEvent(eventType string, actorUserID uint, actorU
 		ActorUserID:   &actorUserID,
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
-		TargetType:    models.TargetTypeServer,
+		TargetType:    TargetTypeServer,
 		TargetID:      &serverID,
 		TargetName:    serverName,
 		ServerID:      &serverID,
@@ -184,7 +182,7 @@ func (s *AuditService) LogFileEvent(eventType string, actorUserID uint, actorUse
 		ActorUserID:   &actorUserID,
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
-		TargetType:    models.TargetTypeFile,
+		TargetType:    TargetTypeFile,
 		TargetName:    filePath,
 		ServerID:      &serverID,
 		StackName:     stackName,
@@ -199,7 +197,7 @@ func (s *AuditService) LogAPIKeyEvent(eventType string, actorUserID uint, actorU
 		ActorUserID:   &actorUserID,
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
-		TargetType:    models.TargetTypeAPIKey,
+		TargetType:    TargetTypeAPIKey,
 		TargetID:      &apiKeyID,
 		TargetName:    apiKeyName,
 		Metadata:      metadata,
@@ -213,7 +211,7 @@ func (s *AuditService) LogAPIKeyScopeEvent(eventType string, actorUserID uint, a
 		ActorUserID:   &actorUserID,
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
-		TargetType:    models.TargetTypeAPIKeyScope,
+		TargetType:    TargetTypeAPIKeyScope,
 		TargetID:      &scopeID,
 		Metadata:      metadata,
 	})
@@ -226,7 +224,7 @@ func (s *AuditService) LogStackEvent(eventType string, actorUserID uint, actorUs
 		ActorUserID:   &actorUserID,
 		ActorUsername: actorUsername,
 		ActorIP:       ip,
-		TargetType:    models.TargetTypeStack,
+		TargetType:    TargetTypeStack,
 		TargetName:    stackName,
 		ServerID:      &serverID,
 		StackName:     stackName,
@@ -252,8 +250,8 @@ func (s *AuditService) LogAuthorizationDenied(actorUserID *uint, actorUsername s
 	})
 }
 
-func (s *AuditService) GetLogs(filters AuditLogFilters) ([]models.SecurityAuditLog, error) {
-	query := s.db.Model(&models.SecurityAuditLog{})
+func (s *AuditService) GetLogs(filters AuditLogFilters) ([]SecurityAuditLog, error) {
+	query := s.db.Model(&SecurityAuditLog{})
 
 	if filters.EventType != "" {
 		query = query.Where("event_type = ?", filters.EventType)
@@ -292,7 +290,7 @@ func (s *AuditService) GetLogs(filters AuditLogFilters) ([]models.SecurityAuditL
 		query = query.Offset(filters.Offset)
 	}
 
-	var logs []models.SecurityAuditLog
+	var logs []SecurityAuditLog
 	if err := query.Find(&logs).Error; err != nil {
 		return nil, err
 	}
@@ -300,8 +298,8 @@ func (s *AuditService) GetLogs(filters AuditLogFilters) ([]models.SecurityAuditL
 	return logs, nil
 }
 
-func (s *AuditService) GetLogByID(id uint) (*models.SecurityAuditLog, error) {
-	var log models.SecurityAuditLog
+func (s *AuditService) GetLogByID(id uint) (*SecurityAuditLog, error) {
+	var log SecurityAuditLog
 	if err := s.db.First(&log, id).Error; err != nil {
 		return nil, err
 	}
@@ -309,7 +307,7 @@ func (s *AuditService) GetLogByID(id uint) (*models.SecurityAuditLog, error) {
 }
 
 func (s *AuditService) CountLogs(filters AuditLogFilters) (int64, error) {
-	query := s.db.Model(&models.SecurityAuditLog{})
+	query := s.db.Model(&SecurityAuditLog{})
 
 	if filters.EventType != "" {
 		query = query.Where("event_type = ?", filters.EventType)
@@ -350,7 +348,7 @@ func (s *AuditService) CountLogs(filters AuditLogFilters) (int64, error) {
 func (s *AuditService) DeleteOldLogs(retentionDays int) (int64, error) {
 	cutoffDate := time.Now().AddDate(0, 0, -retentionDays)
 
-	result := s.db.Where("created_at < ?", cutoffDate).Delete(&models.SecurityAuditLog{})
+	result := s.db.Where("created_at < ?", cutoffDate).Delete(&SecurityAuditLog{})
 	if result.Error != nil {
 		s.logger.Error("failed to delete old audit logs",
 			zap.Int("retention_days", retentionDays),

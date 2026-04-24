@@ -1,9 +1,9 @@
 package registry
 
 import (
+	"berth/internal/domain/server"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/patterns"
-	"berth/models"
 	"errors"
 	"fmt"
 
@@ -36,7 +36,7 @@ func (s *Service) Logger() *zap.Logger {
 }
 
 // CreateCredential creates a new registry credential with encrypted password
-func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, imagePattern, username, password string) (*models.ServerRegistryCredential, error) {
+func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, imagePattern, username, password string) (*server.ServerRegistryCredential, error) {
 	s.logger.Info("creating registry credential",
 		zap.Uint("server_id", serverID),
 		zap.String("stack_pattern", stackPattern),
@@ -58,7 +58,7 @@ func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, ima
 		return nil, errors.New("password is required")
 	}
 
-	var existing models.ServerRegistryCredential
+	var existing server.ServerRegistryCredential
 	err := s.db.Where("server_id = ? AND stack_pattern = ? AND registry_url = ?", serverID, stackPattern, registryURL).First(&existing).Error
 	if err == nil {
 		s.logger.Warn("registry credential already exists",
@@ -90,7 +90,7 @@ func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, ima
 		return nil, fmt.Errorf("failed to encrypt password: %w", err)
 	}
 
-	credential := models.ServerRegistryCredential{
+	credential := server.ServerRegistryCredential{
 		ServerID:     serverID,
 		StackPattern: stackPattern,
 		RegistryURL:  registryURL,
@@ -120,12 +120,12 @@ func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, ima
 }
 
 // UpdateCredential updates an existing registry credential
-func (s *Service) UpdateCredential(credID uint, stackPattern, registryURL, imagePattern, username, password string) (*models.ServerRegistryCredential, error) {
+func (s *Service) UpdateCredential(credID uint, stackPattern, registryURL, imagePattern, username, password string) (*server.ServerRegistryCredential, error) {
 	s.logger.Info("updating registry credential",
 		zap.Uint("credential_id", credID),
 	)
 
-	var credential models.ServerRegistryCredential
+	var credential server.ServerRegistryCredential
 	if err := s.db.First(&credential, credID).Error; err != nil {
 		s.logger.Error("failed to find credential for update",
 			zap.Error(err),
@@ -183,7 +183,7 @@ func (s *Service) DeleteCredential(credID uint) error {
 		zap.Uint("credential_id", credID),
 	)
 
-	var credential models.ServerRegistryCredential
+	var credential server.ServerRegistryCredential
 	if err := s.db.First(&credential, credID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("no credential found to delete",
@@ -214,8 +214,8 @@ func (s *Service) DeleteCredential(credID uint) error {
 }
 
 // GetCredentials retrieves all credentials for a server (with masked passwords)
-func (s *Service) GetCredentials(serverID uint) ([]models.ServerRegistryCredential, error) {
-	var credentials []models.ServerRegistryCredential
+func (s *Service) GetCredentials(serverID uint) ([]server.ServerRegistryCredential, error) {
+	var credentials []server.ServerRegistryCredential
 	err := s.db.Where("server_id = ?", serverID).Find(&credentials).Error
 	if err != nil {
 		s.logger.Error("failed to get credentials for server",
@@ -229,8 +229,8 @@ func (s *Service) GetCredentials(serverID uint) ([]models.ServerRegistryCredenti
 }
 
 // GetCredential retrieves a specific credential by ID
-func (s *Service) GetCredential(credID uint) (*models.ServerRegistryCredential, error) {
-	var credential models.ServerRegistryCredential
+func (s *Service) GetCredential(credID uint) (*server.ServerRegistryCredential, error) {
+	var credential server.ServerRegistryCredential
 	err := s.db.First(&credential, credID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -253,7 +253,7 @@ func (s *Service) GetCredentialForStack(serverID uint, stackName, registryURL st
 		zap.String("registry_url", registryURL),
 	)
 
-	var credentials []models.ServerRegistryCredential
+	var credentials []server.ServerRegistryCredential
 	err := s.db.Where("server_id = ? AND registry_url = ?", serverID, registryURL).
 		Order("stack_pattern").
 		Find(&credentials).Error
@@ -266,7 +266,7 @@ func (s *Service) GetCredentialForStack(serverID uint, stackName, registryURL st
 		return nil, err
 	}
 
-	var matchedCredential *models.ServerRegistryCredential
+	var matchedCredential *server.ServerRegistryCredential
 	for i := range credentials {
 		if patterns.Matches(stackName, credentials[i].StackPattern) {
 			if matchedCredential == nil ||
@@ -309,7 +309,7 @@ func (s *Service) GetCredentialForStack(serverID uint, stackName, registryURL st
 
 // GetDecryptedCredentialByID retrieves and decrypts a credential by ID
 func (s *Service) GetDecryptedCredentialByID(credID uint) (*RegistryCredential, error) {
-	var credential models.ServerRegistryCredential
+	var credential server.ServerRegistryCredential
 	err := s.db.First(&credential, credID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -338,14 +338,14 @@ func (s *Service) GetDecryptedCredentialByID(credID uint) (*RegistryCredential, 
 	}, nil
 }
 
-func (s *Service) GetCredentialsForStack(serverID uint, stackName string) ([]models.ServerRegistryCredential, error) {
-	var credentials []models.ServerRegistryCredential
+func (s *Service) GetCredentialsForStack(serverID uint, stackName string) ([]server.ServerRegistryCredential, error) {
+	var credentials []server.ServerRegistryCredential
 	err := s.db.Where("server_id = ?", serverID).Find(&credentials).Error
 	if err != nil {
 		return nil, err
 	}
 
-	var matched []models.ServerRegistryCredential
+	var matched []server.ServerRegistryCredential
 	for _, cred := range credentials {
 		if patterns.Matches(stackName, cred.StackPattern) {
 			matched = append(matched, cred)

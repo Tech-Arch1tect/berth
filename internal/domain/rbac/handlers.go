@@ -4,10 +4,11 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"berth/models"
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/totp"
+	"berth/internal/domain/server"
+	usermodel "berth/internal/domain/user"
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
@@ -35,13 +36,13 @@ func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc
 }
 
 func (h *Handler) ListUsers(c echo.Context) error {
-	var users []models.User
+	var users []usermodel.User
 	if err := h.db.Preload("Roles").Find(&users).Error; err != nil {
 		return response.SendInternalError(c, "failed to fetch users")
 	}
 
 	type UserWithTOTP struct {
-		models.User
+		usermodel.User
 		TOTPEnabled bool `json:"totp_enabled"`
 	}
 
@@ -65,12 +66,12 @@ func (h *Handler) ShowUserRoles(c echo.Context) error {
 		return err
 	}
 
-	var user models.User
+	var user usermodel.User
 	if err := h.db.Preload("Roles").First(&user, uint(userID)).Error; err != nil {
 		return response.SendNotFound(c, "user not found")
 	}
 
-	var allRoles []models.Role
+	var allRoles []usermodel.Role
 	if err := h.db.Find(&allRoles).Error; err != nil {
 		return response.SendInternalError(c, "failed to fetch roles")
 	}
@@ -100,7 +101,7 @@ func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 		return err
 	}
 
-	var role models.Role
+	var role usermodel.Role
 	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
 		return response.SendNotFound(c, "role not found")
 	}
@@ -109,17 +110,17 @@ func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 		return response.SendBadRequest(c, "cannot manage server permissions for admin role")
 	}
 
-	var servers []models.Server
+	var servers []server.Server
 	if err := h.db.Find(&servers).Error; err != nil {
 		return response.SendInternalError(c, "failed to fetch servers")
 	}
 
-	var permissions []models.Permission
+	var permissions []usermodel.Permission
 	if err := h.db.Where("is_api_key_only = ?", false).Find(&permissions).Error; err != nil {
 		return response.SendInternalError(c, "failed to fetch permissions")
 	}
 
-	var serverRoleStackPermissions []models.ServerRoleStackPermission
+	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
 		return response.SendInternalError(c, "failed to fetch role stack permissions")
 	}
