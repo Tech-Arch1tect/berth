@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"berth/internal/platform/db"
+)
 
 const (
 	ScanStatusPending   = "pending"
@@ -11,7 +15,7 @@ const (
 )
 
 type ImageScan struct {
-	BaseModel
+	db.BaseModel
 	ServerID      uint       `json:"server_id" gorm:"not null;index:idx_server_stack"`
 	StackName     string     `json:"stack_name" gorm:"not null;index:idx_server_stack"`
 	AgentScanID   string     `json:"agent_scan_id" gorm:"index"`

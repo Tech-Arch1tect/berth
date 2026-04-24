@@ -1,7 +1,9 @@
 package models
 
+import "berth/internal/platform/db"
+
 type APIKeyScope struct {
-	BaseModel
+	db.BaseModel
 	APIKeyID     uint       `json:"api_key_id" gorm:"not null;index"`
 	ServerID     *uint      `json:"server_id" gorm:"index"`
 	StackPattern string     `json:"stack_pattern" gorm:"not null;default:'*'"`

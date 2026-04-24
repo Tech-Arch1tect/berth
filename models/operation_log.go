@@ -2,10 +2,12 @@ package models
 
 import (
 	"time"
+
+	"berth/internal/platform/db"
 )
 
 type OperationLog struct {
-	BaseModel
+	db.BaseModel
 	UserID        uint            `json:"user_id" gorm:"not null;index"`
 	User          User            `json:"user" gorm:"foreignKey:UserID"`
 	ServerID      uint            `json:"server_id" gorm:"not null;index"`
@@ -27,7 +29,7 @@ type OperationLog struct {
 }
 
 type OperationLogMessage struct {
-	BaseModel
+	db.BaseModel
 	OperationLogID uint         `json:"operation_log_id" gorm:"not null;index"`
 	OperationLog   OperationLog `json:"operation_log" gorm:"foreignKey:OperationLogID"`
 	MessageType    string       `json:"message_type" gorm:"not null;index"`

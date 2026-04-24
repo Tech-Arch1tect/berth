@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"berth/internal/platform/db"
+
 	"gorm.io/gorm"
 )
 
 type ServerRegistryCredential struct {
-	BaseModel
+	db.BaseModel
 	ServerID     uint   `json:"server_id" gorm:"not null;index:idx_server_stack_registry,unique"`
 	StackPattern string `json:"stack_pattern" gorm:"not null;default:'*';index:idx_server_stack_registry,unique"`
 	RegistryURL  string `json:"registry_url" gorm:"not null;index:idx_server_stack_registry,unique"`

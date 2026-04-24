@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+
+	"berth/internal/platform/db"
 )
 
 type StackStatistics struct {
@@ -11,7 +13,7 @@ type StackStatistics struct {
 }
 
 type Server struct {
-	BaseModel
+	db.BaseModel
 	Name                string `json:"name" gorm:"not null"`
 	Description         string `json:"description"`
 	Host                string `json:"host" gorm:"not null"`

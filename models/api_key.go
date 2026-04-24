@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"berth/internal/platform/db"
+
 	"gorm.io/gorm"
 )
 
 type APIKey struct {
-	BaseModel
+	db.BaseModel
 	UserID     uint          `json:"user_id" gorm:"not null;index"`
 	Name       string        `json:"name" gorm:"not null"`
 	KeyPrefix  string        `json:"key_prefix" gorm:"not null;size:12"`

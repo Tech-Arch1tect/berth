@@ -3,11 +3,13 @@ package models
 import (
 	"time"
 
+	"berth/internal/platform/db"
+
 	"gorm.io/gorm"
 )
 
 type SecurityAuditLog struct {
-	BaseModel
+	db.BaseModel
 
 	EventType     string `json:"event_type" gorm:"not null;index"`
 	EventCategory string `json:"event_category" gorm:"not null;index"`

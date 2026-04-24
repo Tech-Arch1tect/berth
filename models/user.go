@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"berth/internal/platform/db"
+
 	"gorm.io/gorm"
 )
 
 type User struct {
-	BaseModel
+	db.BaseModel
 	Username        string     `json:"username" gorm:"uniqueIndex;not null"`
 	Email           string     `json:"email" gorm:"uniqueIndex;not null"`
 	Password        string     `json:"-" gorm:"not null"`

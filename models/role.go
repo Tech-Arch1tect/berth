@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"berth/internal/platform/db"
+
 	"gorm.io/gorm"
 )
 
 type Role struct {
-	BaseModel
+	db.BaseModel
 	Name        string `json:"name" gorm:"uniqueIndex;not null"`
 	Description string `json:"description"`
 	IsAdmin     bool   `json:"is_admin" gorm:"default:false"`

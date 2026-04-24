@@ -1,7 +1,9 @@
 package models
 
+import "berth/internal/platform/db"
+
 type ServerRoleStackPermission struct {
-	BaseModel
+	db.BaseModel
 	ServerID     uint       `json:"server_id" gorm:"not null"`
 	RoleID       uint       `json:"role_id" gorm:"not null"`
 	PermissionID uint       `json:"permission_id" gorm:"not null"`

@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/json"
 	"time"
+
+	"berth/internal/platform/db"
 )
 
 type OperationStatus string
@@ -16,7 +18,7 @@ const (
 )
 
 type QueuedOperation struct {
-	BaseModel
+	db.BaseModel
 	OperationID string          `json:"operation_id" gorm:"not null;uniqueIndex"`
 	UserID      uint            `json:"user_id" gorm:"not null;index"`
 	User        User            `json:"user" gorm:"foreignKey:UserID"`

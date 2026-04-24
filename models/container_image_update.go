@@ -1,9 +1,13 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"berth/internal/platform/db"
+)
 
 type ContainerImageUpdate struct {
-	BaseModel
+	db.BaseModel
 	ServerID          uint       `json:"server_id" gorm:"not null;index:idx_server_stack_container"`
 	StackName         string     `json:"stack_name" gorm:"not null;index:idx_server_stack_container"`
 	ContainerName     string     `json:"container_name" gorm:"not null;index:idx_server_stack_container"`

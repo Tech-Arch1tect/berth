@@ -1,7 +1,9 @@
 package models
 
+import "berth/internal/platform/db"
+
 type Permission struct {
-	BaseModel
+	db.BaseModel
 	Name         string `json:"name" gorm:"uniqueIndex;not null"`
 	Resource     string `json:"resource" gorm:"not null"`
 	Action       string `json:"action" gorm:"not null"`
