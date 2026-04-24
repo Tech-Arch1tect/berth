@@ -11,13 +11,13 @@ import (
 
 	"berth/internal/pkg/apidocs"
 	"berth/internal/pkg/config"
-	"berth/internal/ssl"
+	"berth/internal/platform/ssl"
 	"berth/routes"
 
 	"berth/internal/auth"
 	"berth/internal/inertia"
 	"berth/internal/logging"
-	"berth/internal/mail"
+	"berth/internal/platform/mail"
 
 	"github.com/labstack/echo/v4"
 

@@ -17,7 +17,7 @@ import (
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/origin"
-	"berth/internal/queue"
+	"berth/internal/platform/queue"
 	"berth/internal/rbac"
 	"berth/internal/registry"
 	"berth/internal/security"
