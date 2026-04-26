@@ -115,8 +115,7 @@ func RegisterRoutes(p RouteParams) {
 	p.Srv.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
 	if p.SetupHandler != nil {
-		p.Srv.GET("/setup/admin", p.SetupHandler.ShowSetup)
-		p.Srv.POST("/setup/admin", p.SetupHandler.CreateAdmin)
+		p.SetupHandler.RegisterPublicRoutes(p.Srv)
 	}
 
 	// ============================================================================
@@ -262,7 +261,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
 
 	// Inertia Pages
-	protected.GET("/", dashboardHandler.Dashboard)
+	dashboardHandler.RegisterProtectedWebRoutes(protected)
 	protected.GET("/profile", authHandler.Profile)
 	if stackHandler != nil {
 		protected.GET("/stacks", stackHandler.Index)
@@ -279,7 +278,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.GET("/operation-logs", operationLogsHandler.ShowUserOperationLogs)
 	}
 	if sessionHandler != nil {
-		protected.GET("/sessions", sessionHandler.Sessions)
+		sessionHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if apiKeyHandler != nil {
 		protected.GET("/api-keys", apiKeyHandler.ShowAPIKeys)
@@ -387,7 +386,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 	// Version
 	if versionHandler != nil {
-		apiProtected.GET("/version", versionHandler.GetVersion)
+		versionHandler.RegisterAPIRoutes(apiProtected)
 	}
 
 	// Profile (accessible via JWT, Session, or API Key)
