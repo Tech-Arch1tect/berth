@@ -213,8 +213,8 @@ func RegisterRoutes(p RouteParams) {
 // ============================================================================
 
 func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.Handler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
-	auth := web.Group("/auth")
-	auth.Use(newRateLimit(cfg, ratelimit.Config{
+	authGroup := web.Group("/auth")
+	authGroup.Use(newRateLimit(cfg, ratelimit.Config{
 		Store:     rateLimitStore,
 		Name:      "web_auth_group",
 		Rate:      60,
@@ -234,19 +234,8 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.H
 		})
 	}
 
-	auth.GET("/login", authHandler.ShowLogin)
-	auth.POST("/login", authHandler.Login, tightAuth("web_auth_login", 5))
-	auth.POST("/logout", authHandler.Logout)
-	auth.GET("/password-reset", authHandler.ShowPasswordReset)
-	auth.POST("/password-reset", authHandler.RequestPasswordReset, tightAuth("web_auth_password_reset", 5))
-	auth.GET("/password-reset/confirm", authHandler.ShowPasswordResetConfirm)
-	auth.POST("/password-reset/confirm", authHandler.ConfirmPasswordReset, tightAuth("web_auth_password_reset_confirm", 5))
-	auth.GET("/verify-email", authHandler.ShowVerifyEmail)
-	auth.POST("/verify-email", authHandler.VerifyEmail, tightAuth("web_auth_verify_email", 5))
-	auth.POST("/resend-verification", authHandler.ResendVerification, tightAuth("web_auth_resend_verification", 3))
-
-	auth.GET("/totp/verify", totpHandler.ShowVerify)
-	auth.POST("/totp/verify", totpHandler.VerifyTOTP, tightAuth("web_auth_totp_verify", 3))
+	authHandler.RegisterPublicWebAuthRoutes(authGroup, tightAuth)
+	totpHandler.RegisterPublicWebAuthRoutes(authGroup, tightAuth)
 }
 
 func registerProtectedWebRoutes(web *echo.Group,
@@ -262,7 +251,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 
 	// Inertia Pages
 	dashboardHandler.RegisterProtectedWebRoutes(protected)
-	protected.GET("/profile", authHandler.Profile)
+	authHandler.RegisterProtectedWebRoutes(protected)
 	if stackHandler != nil {
 		protected.GET("/stacks", stackHandler.Index)
 		protected.GET("/servers/:id/stacks", stackHandler.ShowServerStacks)
@@ -284,7 +273,7 @@ func registerProtectedWebRoutes(web *echo.Group,
 		protected.GET("/api-keys", apiKeyHandler.ShowAPIKeys)
 		protected.GET("/api-keys/:id/scopes", apiKeyHandler.ShowAPIKeyScopes)
 	}
-	protected.GET("/auth/totp/setup", totpHandler.ShowSetup)
+	totpHandler.RegisterProtectedWebRoutes(protected)
 }
 
 func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, inertiaService *inertia.Service,
@@ -367,10 +356,7 @@ func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manage
 func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler) {
 	authApi := api.Group("/auth")
 	authApi.Use(authApiRateLimit)
-
-	authApi.POST("/login", mobileAuthHandler.Login)
-	authApi.POST("/refresh", mobileAuthHandler.RefreshToken)
-	authApi.POST("/totp/verify", mobileAuthHandler.VerifyTOTP)
+	mobileAuthHandler.RegisterPublicAPIRoutes(authApi)
 }
 
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
@@ -389,20 +375,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		versionHandler.RegisterAPIRoutes(apiProtected)
 	}
 
-	// Profile (accessible via JWT, Session, or API Key)
-	apiProtected.GET("/profile", mobileAuthHandler.Profile)
-	apiProtected.POST("/auth/logout", mobileAuthHandler.Logout, rbacMiddleware.RequireAPIKeyDenied())
-
-	// TOTP (JWT/Session only, API Key denied)
-	apiProtected.GET("/totp/setup", mobileAuthHandler.GetTOTPSetup, rbacMiddleware.RequireAPIKeyDenied())
-	apiProtected.POST("/totp/enable", mobileAuthHandler.EnableTOTP, rbacMiddleware.RequireAPIKeyDenied())
-	apiProtected.POST("/totp/disable", mobileAuthHandler.DisableTOTP, rbacMiddleware.RequireAPIKeyDenied())
-	apiProtected.GET("/totp/status", mobileAuthHandler.GetTOTPStatus, rbacMiddleware.RequireAPIKeyDenied())
-
-	// Sessions (JWT/Session only, API Key denied)
-	apiProtected.POST("/sessions", mobileAuthHandler.GetSessions, rbacMiddleware.RequireAPIKeyDenied())
-	apiProtected.POST("/sessions/revoke", mobileAuthHandler.RevokeSession, rbacMiddleware.RequireAPIKeyDenied())
-	apiProtected.POST("/sessions/revoke-all-others", mobileAuthHandler.RevokeAllOtherSessions, rbacMiddleware.RequireAPIKeyDenied())
+	mobileAuthHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 
 	// Servers
 	if serverUserAPIHandler != nil {
