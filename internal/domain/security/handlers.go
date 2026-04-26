@@ -52,19 +52,6 @@ func NewHandler(db *gorm.DB) *Handler {
 	return &Handler{db: db}
 }
 
-type ListLogsRequest struct {
-	EventType     string `query:"event_type"`
-	EventCategory string `query:"event_category"`
-	Severity      string `query:"severity"`
-	ActorUserID   string `query:"actor_user_id"`
-	Success       string `query:"success"`
-	StartDate     string `query:"start_date"`
-	EndDate       string `query:"end_date"`
-	Search        string `query:"search"`
-	Page          int    `query:"page"`
-	PerPage       int    `query:"per_page"`
-}
-
 func (h *Handler) ListLogs(c echo.Context) error {
 	var req ListLogsRequest
 	if err := c.Bind(&req); err != nil {

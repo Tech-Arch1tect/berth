@@ -2,6 +2,19 @@ package security
 
 import "time"
 
+type ListLogsRequest struct {
+	EventType     string `query:"event_type"`
+	EventCategory string `query:"event_category"`
+	Severity      string `query:"severity"`
+	ActorUserID   string `query:"actor_user_id"`
+	Success       string `query:"success"`
+	StartDate     string `query:"start_date"`
+	EndDate       string `query:"end_date"`
+	Search        string `query:"search"`
+	Page          int    `query:"page"`
+	PerPage       int    `query:"per_page"`
+}
+
 type SecurityAuditLogInfo struct {
 	ID             uint      `json:"id"`
 	CreatedAt      time.Time `json:"created_at"`

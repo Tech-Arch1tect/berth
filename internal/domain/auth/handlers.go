@@ -61,11 +61,7 @@ func (h *Handler) ShowLogin(c echo.Context) error {
 }
 
 func (h *Handler) Login(c echo.Context) error {
-	var req struct {
-		Username   string `form:"username" json:"username"`
-		Password   string `form:"password" json:"password"`
-		RememberMe bool   `form:"remember_me" json:"remember_me"`
-	}
+	var req LoginFormRequest
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")
@@ -263,9 +259,7 @@ func (h *Handler) ShowPasswordReset(c echo.Context) error {
 }
 
 func (h *Handler) RequestPasswordReset(c echo.Context) error {
-	var req struct {
-		Email string `form:"email" json:"email"`
-	}
+	var req PasswordResetRequestForm
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")
@@ -349,11 +343,7 @@ func (h *Handler) ShowPasswordResetConfirm(c echo.Context) error {
 }
 
 func (h *Handler) ConfirmPasswordReset(c echo.Context) error {
-	var req struct {
-		Token           string `form:"token" json:"token"`
-		Password        string `form:"password" json:"password"`
-		PasswordConfirm string `form:"password_confirm" json:"password_confirm"`
-	}
+	var req PasswordResetConfirmForm
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")
@@ -510,9 +500,7 @@ func (h *Handler) VerifyEmail(c echo.Context) error {
 }
 
 func (h *Handler) ResendVerification(c echo.Context) error {
-	var req struct {
-		Email string `form:"email" json:"email"`
-	}
+	var req ResendVerificationForm
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")

@@ -1,6 +1,6 @@
 package auth
 
-import "berth/internal/domain/dto"
+import "berth/internal/domain/user"
 
 type AuthLoginRequest struct {
 	Username string `json:"username" validate:"required"`
@@ -25,12 +25,12 @@ type AuthLoginResponse struct {
 }
 
 type AuthLoginData struct {
-	AccessToken      string       `json:"access_token"`
-	RefreshToken     string       `json:"refresh_token"`
-	TokenType        string       `json:"token_type"`
-	ExpiresIn        int          `json:"expires_in"`
-	RefreshExpiresIn int          `json:"refresh_expires_in"`
-	User             dto.UserInfo `json:"user"`
+	AccessToken      string        `json:"access_token"`
+	RefreshToken     string        `json:"refresh_token"`
+	TokenType        string        `json:"token_type"`
+	ExpiresIn        int           `json:"expires_in"`
+	RefreshExpiresIn int           `json:"refresh_expires_in"`
+	User             user.UserInfo `json:"user"`
 }
 
 type AuthTOTPRequiredResponse struct {
@@ -74,6 +74,6 @@ type AuthErrorResponse struct {
 }
 
 type GetProfileResponse struct {
-	Success bool         `json:"success"`
-	Data    dto.UserInfo `json:"data"`
+	Success bool          `json:"success"`
+	Data    user.UserInfo `json:"data"`
 }

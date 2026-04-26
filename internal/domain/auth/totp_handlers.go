@@ -124,9 +124,7 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/auth/totp/verify")
 	}
 
-	var req struct {
-		Code string `form:"code" json:"code"`
-	}
+	var req TOTPVerifyForm
 
 	if err := c.Bind(&req); err != nil {
 		session.AddFlashError(c, "Invalid request")

@@ -2,8 +2,8 @@ package e2e
 
 import (
 	"berth/internal/domain/auth"
-	"berth/internal/domain/dto"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/user"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -12,10 +12,10 @@ import (
 )
 
 type (
-	UserInfo            = dto.UserInfo
-	RoleInfo            = dto.RoleInfo
-	RoleWithPermissions = dto.RoleWithPermissions
-	PermissionInfo      = dto.PermissionInfo
+	UserInfo            = user.UserInfo
+	RoleInfo            = user.RoleInfo
+	RoleWithPermissions = user.RoleWithPermissions
+	PermissionInfo      = user.PermissionInfo
 	CreateUserResponse  = rbac.CreateUserResponse
 	AssignRoleResponse  = rbac.AssignRoleResponse
 	RevokeRoleResponse  = rbac.RevokeRoleResponse

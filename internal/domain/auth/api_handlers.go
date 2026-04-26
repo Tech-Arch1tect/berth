@@ -9,7 +9,6 @@ import (
 
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/auth/totp"
-	"berth/internal/domain/dto"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
@@ -216,7 +215,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 		nil,
 	)
 
-	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
+	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
 	return c.JSON(http.StatusOK, AuthLoginResponse{
 		Success: true,
@@ -350,7 +349,7 @@ func (h *APIHandler) Profile(c echo.Context) error {
 		})
 	}
 
-	userInfo := dto.ConvertUserToUserInfo(fullUser, h.totpSvc)
+	userInfo := usermodel.ToUserInfo(fullUser, h.totpSvc.IsUserTOTPEnabled(fullUser.ID))
 
 	return c.JSON(http.StatusOK, GetProfileResponse{
 		Success: true,
@@ -614,7 +613,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 			TokenType:        "Bearer",
 			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
 			RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
-			User:             dto.ConvertUserToUserInfo(user, h.totpSvc),
+			User:             usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID)),
 		},
 	})
 }

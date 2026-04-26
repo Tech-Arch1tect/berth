@@ -1,7 +1,6 @@
 package rbac
 
 import (
-	"berth/internal/domain/dto"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -47,9 +46,9 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to fetch users")
 	}
 
-	userInfos := make([]dto.UserInfo, len(users))
-	for i, user := range users {
-		userInfos[i] = dto.ConvertUserToUserInfo(user, h.totpSvc)
+	userInfos := make([]usermodel.UserInfo, len(users))
+	for i, u := range users {
+		userInfos[i] = usermodel.ToUserInfo(u, h.totpSvc.IsUserTOTPEnabled(u.ID))
 	}
 
 	return c.JSON(http.StatusOK, ListUsersResponse{
@@ -127,7 +126,7 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 		},
 	)
 
-	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
+	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
 	return c.JSON(http.StatusCreated, CreateUserResponse{
 		Success: true,
@@ -151,11 +150,11 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to fetch roles")
 	}
 
-	userInfo := dto.ConvertUserToUserInfo(user, h.totpSvc)
+	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
-	roleInfos := make([]dto.RoleInfo, len(allRoles))
+	roleInfos := make([]usermodel.RoleInfo, len(allRoles))
 	for i, role := range allRoles {
-		roleInfos[i] = dto.RoleInfo{
+		roleInfos[i] = usermodel.RoleInfo{
 			ID:          role.ID,
 			Name:        role.Name,
 			Description: role.Description,
@@ -261,9 +260,9 @@ func (h *APIHandler) ListRoles(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to fetch roles")
 	}
 
-	roleInfos := make([]dto.RoleWithPermissions, len(roles))
+	roleInfos := make([]usermodel.RoleWithPermissions, len(roles))
 	for i, role := range roles {
-		roleInfos[i] = dto.ConvertRoleToRoleWithPermissions(role)
+		roleInfos[i] = usermodel.ToRoleWithPermissions(role)
 	}
 
 	return c.JSON(http.StatusOK, ListRolesResponse{
@@ -311,7 +310,7 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, CreateRoleResponse{
 		Success: true,
-		Data:    dto.ConvertRoleToRoleWithPermissions(*role),
+		Data:    usermodel.ToRoleWithPermissions(*role),
 	})
 }
 
@@ -357,7 +356,7 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, UpdateRoleResponse{
 		Success: true,
-		Data:    dto.ConvertRoleToRoleWithPermissions(*role),
+		Data:    usermodel.ToRoleWithPermissions(*role),
 	})
 }
 
@@ -429,12 +428,7 @@ func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
 		return response.SendInternalError(c, "failed to fetch role stack permissions")
 	}
 
-	roleInfo := dto.RoleInfo{
-		ID:          role.ID,
-		Name:        role.Name,
-		Description: role.Description,
-		IsAdmin:     role.IsAdmin,
-	}
+	roleInfo := usermodel.ToRoleInfo(role)
 
 	serverInfos := make([]ServerInfo, len(servers))
 	for i, s := range servers {
@@ -448,9 +442,9 @@ func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
 		}
 	}
 
-	permissionInfos := make([]dto.PermissionInfo, len(permissions))
+	permissionInfos := make([]usermodel.PermissionInfo, len(permissions))
 	for i, p := range permissions {
-		permissionInfos[i] = dto.ConvertPermissionToPermissionInfo(p)
+		permissionInfos[i] = usermodel.ToPermissionInfo(p)
 	}
 
 	permissionRules := make([]StackPermissionRule, len(serverRoleStackPermissions))
@@ -633,16 +627,9 @@ func (h *APIHandler) ListPermissions(c echo.Context) error {
 		return response.SendInternalError(c, "Failed to fetch permissions")
 	}
 
-	permissionInfos := make([]dto.PermissionInfo, len(permissions))
+	permissionInfos := make([]usermodel.PermissionInfo, len(permissions))
 	for i, p := range permissions {
-		permissionInfos[i] = dto.PermissionInfo{
-			ID:           p.ID,
-			Name:         p.Name,
-			Resource:     p.Resource,
-			Action:       p.Action,
-			Description:  p.Description,
-			IsAPIKeyOnly: p.IsAPIKeyOnly,
-		}
+		permissionInfos[i] = usermodel.ToPermissionInfo(p)
 	}
 
 	return c.JSON(http.StatusOK, ListPermissionsResponse{

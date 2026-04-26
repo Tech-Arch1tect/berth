@@ -58,12 +58,7 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 		return response.SendNotFound(c, "Setup already completed")
 	}
 
-	var req struct {
-		Username        string `form:"username" json:"username"`
-		Email           string `form:"email" json:"email"`
-		Password        string `form:"password" json:"password"`
-		PasswordConfirm string `form:"password_confirm" json:"password_confirm"`
-	}
+	var req CreateInitialAdminForm
 
 	if err := validation.BindRequest(c, &req); err != nil {
 		return err

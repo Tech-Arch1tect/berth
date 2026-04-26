@@ -1,6 +1,6 @@
 package rbac
 
-import "berth/internal/domain/dto"
+import "berth/internal/domain/user"
 
 type CreateUserRequest struct {
 	Username        string `json:"username"`
@@ -10,8 +10,8 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	Success bool         `json:"success"`
-	Data    dto.UserInfo `json:"data"`
+	Success bool          `json:"success"`
+	Data    user.UserInfo `json:"data"`
 }
 
 type AssignRoleRequest struct {
@@ -44,8 +44,8 @@ type CreateRoleRequest struct {
 }
 
 type CreateRoleResponse struct {
-	Success bool                    `json:"success"`
-	Data    dto.RoleWithPermissions `json:"data"`
+	Success bool                     `json:"success"`
+	Data    user.RoleWithPermissions `json:"data"`
 }
 
 type UpdateRoleRequest struct {
@@ -54,8 +54,8 @@ type UpdateRoleRequest struct {
 }
 
 type UpdateRoleResponse struct {
-	Success bool                    `json:"success"`
-	Data    dto.RoleWithPermissions `json:"data"`
+	Success bool                     `json:"success"`
+	Data    user.RoleWithPermissions `json:"data"`
 }
 
 type DeleteRoleResponse struct {
@@ -81,9 +81,9 @@ type StackPermissionRule struct {
 }
 
 type ListRoleStackPermissionsData struct {
-	Role            dto.RoleInfo          `json:"role"`
+	Role            user.RoleInfo         `json:"role"`
 	Servers         []ServerInfo          `json:"servers"`
-	Permissions     []dto.PermissionInfo  `json:"permissions"`
+	Permissions     []user.PermissionInfo `json:"permissions"`
 	PermissionRules []StackPermissionRule `json:"permissionRules"`
 }
 
@@ -109,7 +109,7 @@ type DeleteStackPermissionResponse struct {
 }
 
 type ListRolesResponseData struct {
-	Roles []dto.RoleWithPermissions `json:"roles"`
+	Roles []user.RoleWithPermissions `json:"roles"`
 }
 
 type ListRolesResponse struct {
@@ -118,7 +118,7 @@ type ListRolesResponse struct {
 }
 
 type ListUsersResponseData struct {
-	Users []dto.UserInfo `json:"users"`
+	Users []user.UserInfo `json:"users"`
 }
 
 type ListUsersResponse struct {
@@ -127,8 +127,8 @@ type ListUsersResponse struct {
 }
 
 type GetUserRolesResponseData struct {
-	User     dto.UserInfo   `json:"user"`
-	AllRoles []dto.RoleInfo `json:"all_roles"`
+	User     user.UserInfo   `json:"user"`
+	AllRoles []user.RoleInfo `json:"all_roles"`
 }
 
 type GetUserRolesResponse struct {
@@ -137,7 +137,7 @@ type GetUserRolesResponse struct {
 }
 
 type ListPermissionsResponseData struct {
-	Permissions []dto.PermissionInfo `json:"permissions"`
+	Permissions []user.PermissionInfo `json:"permissions"`
 }
 
 type ListPermissionsResponse struct {
