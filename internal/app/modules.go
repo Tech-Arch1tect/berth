@@ -79,7 +79,6 @@ func assembleFxOptions(
 		}),
 		fx.Invoke(RegisterHTTPLifecycle),
 
-		fx.Invoke(func(svc *imageupdates.Service) {}),
 		fx.Invoke(vulnscan.StartPoller),
 	}
 
