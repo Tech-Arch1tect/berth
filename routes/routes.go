@@ -155,9 +155,8 @@ func RegisterRoutes(p RouteParams) {
 	registerAuthRoutes(web, p.Cfg, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
 	registerProtectedWebRoutes(web,
 		p.DashboardHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
-		p.VersionHandler, p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
-		p.OperationLogsHandler, p.APIKeyHandler,
-		p.RegistryAPIHandler)
+		p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
+		p.OperationLogsHandler, p.APIKeyHandler)
 	registerAdminWebRoutes(web, p.RBACMiddleware, p.InertiaService,
 		p.RBACHandler, p.OperationLogsHandler, p.ServerHandler,
 		p.MigrationHandler, p.SecurityHandler)
@@ -240,38 +239,34 @@ func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.H
 
 func registerProtectedWebRoutes(web *echo.Group,
 	dashboardHandler *dashboard.Handler, authHandler *auth.Handler,
-	sessionHandler *session.Handler, totpHandler *auth.TOTPHandler, versionHandler *version.Handler, stackHandler *stack.Handler,
-	maintenanceHandler *maintenance.Handler, registryHandler *registry.Handler,
-	operationLogsHandler *operationlogs.Handler, apiKeyHandler *apikey.Handler,
-	registryAPIHandler *registry.APIHandler) {
+	sessionHandler *session.Handler, totpHandler *auth.TOTPHandler,
+	stackHandler *stack.Handler, maintenanceHandler *maintenance.Handler,
+	registryHandler *registry.Handler, operationLogsHandler *operationlogs.Handler,
+	apiKeyHandler *apikey.Handler) {
 
 	protected := web.Group("")
 	protected.Use(session.RequireAuthWeb("/auth/login"))
 	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
 
-	// Inertia Pages
 	dashboardHandler.RegisterProtectedWebRoutes(protected)
 	authHandler.RegisterProtectedWebRoutes(protected)
 	if stackHandler != nil {
-		protected.GET("/stacks", stackHandler.Index)
-		protected.GET("/servers/:id/stacks", stackHandler.ShowServerStacks)
-		protected.GET("/servers/:serverid/stacks/:stackname", stackHandler.ShowStackDetails)
+		stackHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if maintenanceHandler != nil {
-		protected.GET("/servers/:serverid/maintenance", maintenanceHandler.ShowMaintenance)
+		maintenanceHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if registryHandler != nil {
-		protected.GET("/servers/:serverid/registries", registryHandler.ShowRegistries)
+		registryHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if operationLogsHandler != nil {
-		protected.GET("/operation-logs", operationLogsHandler.ShowUserOperationLogs)
+		operationLogsHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if sessionHandler != nil {
 		sessionHandler.RegisterProtectedWebRoutes(protected)
 	}
 	if apiKeyHandler != nil {
-		protected.GET("/api-keys", apiKeyHandler.ShowAPIKeys)
-		protected.GET("/api-keys/:id/scopes", apiKeyHandler.ShowAPIKeyScopes)
+		apiKeyHandler.RegisterProtectedWebRoutes(protected)
 	}
 	totpHandler.RegisterProtectedWebRoutes(protected)
 }
@@ -287,17 +282,12 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 	admin := web.Group("/admin")
 	admin.Use(rbacMiddleware.RequireRole(rbac.RoleAdmin))
 
-	// Inertia Pages
-	admin.GET("/users", rbacHandler.ListUsers)
-	admin.GET("/users/:id/roles", rbacHandler.ShowUserRoles)
-	admin.GET("/roles", rbacHandler.ListRoles)
-	admin.GET("/roles/:id/stack-permissions", rbacHandler.RoleServerStackPermissions)
+	rbacHandler.RegisterAdminWebRoutes(admin)
 	if serverHandler != nil {
-		admin.GET("/servers", serverHandler.Index)
-		admin.GET("/servers/:id", serverHandler.Show)
+		serverHandler.RegisterAdminWebRoutes(admin)
 	}
 	if migrationHandler != nil {
-		admin.GET("/migration", migrationHandler.Index)
+		migrationHandler.RegisterAdminWebRoutes(admin)
 	}
 	admin.GET("/agent-update", func(c echo.Context) error {
 		return inertiaService.Render(c, "Admin/AgentUpdate", map[string]any{
@@ -305,7 +295,7 @@ func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, in
 		})
 	})
 	if operationLogsHandler != nil {
-		admin.GET("/operation-logs", operationLogsHandler.ShowOperationLogs)
+		operationLogsHandler.RegisterAdminWebRoutes(admin)
 	}
 	if securityHandler != nil {
 		admin.GET("/security-audit-logs", func(c echo.Context) error {
@@ -340,12 +330,10 @@ func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manage
 	wsUIGroup.Use(session.Middleware(sessionManager))
 	wsUIGroup.Use(requireWebSocketAuth())
 
-	wsUIGroup.GET("/stack-status/:server_id", wsHandler.HandleWebUIWebSocket)
-	wsUIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleWebUITerminalWebSocket)
+	wsHandler.RegisterWebUIRoutes(wsUIGroup)
 
 	if operationsWSHandler != nil {
-		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations", operationsWSHandler.HandleOperationWebSocket)
-		wsUIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
+		operationsWSHandler.RegisterWebSocketRoutes(wsUIGroup)
 	}
 }
 
@@ -370,112 +358,44 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(auth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
 
-	// Version
 	if versionHandler != nil {
 		versionHandler.RegisterAPIRoutes(apiProtected)
 	}
 
 	mobileAuthHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 
-	// Servers
 	if serverUserAPIHandler != nil {
-		apiProtected.GET("/servers", serverUserAPIHandler.ListServers, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
-		apiProtected.GET("/servers/:serverid/statistics", serverUserAPIHandler.GetServerStatistics, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
+		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
 	}
-
-	// Stacks
 	if stackAPIHandler != nil {
-		apiProtected.GET("/servers/:serverid/stacks", stackAPIHandler.ListServerStacks)
-		apiProtected.POST("/servers/:serverid/stacks", stackAPIHandler.CreateStack)
-		apiProtected.GET("/servers/:serverid/stacks/can-create", stackAPIHandler.CheckCanCreateStack)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname", stackAPIHandler.GetStackDetails)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/permissions", stackAPIHandler.CheckPermissions)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/networks", stackAPIHandler.GetStackNetworks)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/volumes", stackAPIHandler.GetStackVolumes)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/environment", stackAPIHandler.GetStackEnvironmentVariables)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/images", stackAPIHandler.GetContainerImageDetails)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.GetComposeConfig)
-		apiProtected.PATCH("/servers/:serverid/stacks/:stackname/compose", stackAPIHandler.UpdateCompose)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/stats", stackAPIHandler.GetStackStats)
+		stackAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// Vulnerability Scanning
 	if vulnscanHandler != nil {
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.StartScan)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan", vulnscanHandler.GetLatestScanForStack)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan/history", vulnscanHandler.GetScansForStack)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/vulnscan/trend", vulnscanHandler.GetScanTrend)
-		apiProtected.GET("/vulnscan/:scanid", vulnscanHandler.GetScan)
-		apiProtected.GET("/vulnscan/:scanid/summary", vulnscanHandler.GetScanSummary)
-		apiProtected.GET("/vulnscan/compare/:baseScanId/:compareScanId", vulnscanHandler.CompareScans)
+		vulnscanHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// Files
 	if filesAPIHandler != nil {
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/files", filesAPIHandler.ListDirectory)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/files/read", filesAPIHandler.ReadFile)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/write", filesAPIHandler.WriteFile)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/upload", filesAPIHandler.UploadFile)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/mkdir", filesAPIHandler.CreateDirectory)
-		apiProtected.DELETE("/servers/:serverid/stacks/:stackname/files/delete", filesAPIHandler.Delete)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/rename", filesAPIHandler.Rename)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/copy", filesAPIHandler.Copy)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/chmod", filesAPIHandler.Chmod)
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/files/chown", filesAPIHandler.Chown)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/files/download", filesAPIHandler.DownloadFile)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/files/stats", filesAPIHandler.GetDirectoryStats)
+		filesAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// Logs
 	if logsHandler != nil {
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/logs", logsHandler.GetStackLogs)
-		apiProtected.GET("/servers/:serverid/stacks/:stackname/containers/:containerName/logs", logsHandler.GetContainerLogs)
+		logsHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// Operations
 	if operationsHandler != nil {
-		apiProtected.POST("/servers/:serverid/stacks/:stackname/operations", operationsHandler.StartOperation)
+		operationsHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
 	if operationLogsHandler != nil {
-		apiProtected.GET("/operation-logs", operationLogsHandler.ListUserOperationLogs, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
-		apiProtected.GET("/operation-logs/stats", operationLogsHandler.GetUserOperationLogsStats, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
-		apiProtected.GET("/operation-logs/by-operation-id/:operationId", operationLogsHandler.GetOperationLogDetailsByOperationID, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
-		apiProtected.GET("/operation-logs/:id", operationLogsHandler.GetUserOperationLogDetails, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
-		apiProtected.GET("/running-operations", operationLogsHandler.GetRunningOperations, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
+		operationLogsHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
 	}
-
-	// Maintenance
 	if maintenanceAPIHandler != nil {
-		apiProtected.GET("/servers/:serverid/maintenance/permissions", maintenanceAPIHandler.CheckPermissions)
-		apiProtected.GET("/servers/:serverid/maintenance/info", maintenanceAPIHandler.GetSystemInfo)
-		apiProtected.POST("/servers/:serverid/maintenance/prune", maintenanceAPIHandler.PruneDocker)
-		apiProtected.DELETE("/servers/:serverid/maintenance/resource", maintenanceAPIHandler.DeleteResource)
+		maintenanceAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// Image Updates
 	if imageUpdatesAPIHandler != nil {
-		apiProtected.GET("/image-updates", imageUpdatesAPIHandler.ListAvailableUpdates)
-		apiProtected.GET("/servers/:serverid/image-updates", imageUpdatesAPIHandler.ListServerUpdates)
+		imageUpdatesAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
-
-	// API Keys
 	if apiKeyHandler != nil {
-		apiProtected.GET("/api-keys", apiKeyHandler.ListAPIKeys, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.GET("/api-keys/:id", apiKeyHandler.GetAPIKey, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.POST("/api-keys", apiKeyHandler.CreateAPIKey, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.DELETE("/api-keys/:id", apiKeyHandler.RevokeAPIKey, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.GET("/api-keys/:id/scopes", apiKeyHandler.ListScopes, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.POST("/api-keys/:id/scopes", apiKeyHandler.AddScope, rbacMiddleware.RequireAPIKeyDenied())
-		apiProtected.DELETE("/api-keys/:id/scopes/:scopeId", apiKeyHandler.RemoveScope, rbacMiddleware.RequireAPIKeyDenied())
+		apiKeyHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 	}
-
-	// Registry Credentials
 	if registryAPIHandler != nil {
-		apiProtected.GET("/servers/:serverid/registries", registryAPIHandler.ListCredentials)
-		apiProtected.GET("/servers/:serverid/registries/:id", registryAPIHandler.GetCredential)
-		apiProtected.POST("/servers/:serverid/registries", registryAPIHandler.CreateCredential)
-		apiProtected.PUT("/servers/:serverid/registries/:id", registryAPIHandler.UpdateCredential)
-		apiProtected.DELETE("/servers/:serverid/registries/:id", registryAPIHandler.DeleteCredential)
+		registryAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
 }
 
@@ -493,53 +413,22 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 
 	apiAdmin := apiProtected.Group("/admin")
 
-	// Users
-	apiAdmin.GET("/users", rbacAPIHandler.ListUsers, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminUsersRead))
-	apiAdmin.POST("/users", rbacAPIHandler.CreateUser, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminUsersWrite))
-	apiAdmin.GET("/users/:id/roles", rbacAPIHandler.GetUserRoles, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminUsersRead))
-	apiAdmin.POST("/users/assign-role", rbacAPIHandler.AssignRole, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminUsersWrite))
-	apiAdmin.POST("/users/revoke-role", rbacAPIHandler.RevokeRole, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminUsersWrite))
-
-	// Roles
-	apiAdmin.GET("/roles", rbacAPIHandler.ListRoles, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesRead))
-	apiAdmin.POST("/roles", rbacAPIHandler.CreateRole, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesWrite))
-	apiAdmin.PUT("/roles/:id", rbacAPIHandler.UpdateRole, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesWrite))
-	apiAdmin.DELETE("/roles/:id", rbacAPIHandler.DeleteRole, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesWrite))
-	apiAdmin.GET("/roles/:roleId/stack-permissions", rbacAPIHandler.ListRoleServerStackPermissions, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesRead))
-	apiAdmin.POST("/roles/:roleId/stack-permissions", rbacAPIHandler.CreateRoleStackPermission, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesWrite))
-	apiAdmin.DELETE("/roles/:roleId/stack-permissions/:permissionId", rbacAPIHandler.DeleteRoleStackPermission, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminRolesWrite))
-
-	// Permissions
-	apiAdmin.GET("/permissions", rbacAPIHandler.ListPermissions, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminPermissionsRead))
-
-	// Operation Logs
+	rbacAPIHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware)
 	if operationLogsHandler != nil {
-		apiAdmin.GET("/operation-logs", operationLogsHandler.ListOperationLogs, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminLogsRead))
-		apiAdmin.GET("/operation-logs/stats", operationLogsHandler.GetOperationLogsStats, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminLogsRead))
-		apiAdmin.GET("/operation-logs/:id", operationLogsHandler.GetOperationLogDetails, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminLogsRead))
+		operationLogsHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminLogsRead))
 	}
-
-	// Servers
 	if serverAPIHandler != nil {
-		apiAdmin.GET("/servers", serverAPIHandler.ListServers, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersRead))
-		apiAdmin.GET("/servers/:id", serverAPIHandler.GetServer, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersRead))
-		apiAdmin.POST("/servers", serverAPIHandler.CreateServer, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
-		apiAdmin.PUT("/servers/:id", serverAPIHandler.UpdateServer, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
-		apiAdmin.DELETE("/servers/:id", serverAPIHandler.DeleteServer, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
-		apiAdmin.POST("/servers/:id/test", serverAPIHandler.TestConnection, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
+		serverAPIHandler.RegisterAdminAPIRoutes(apiAdmin,
+			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersRead),
+			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
 	}
-
-	// Migration
 	if migrationHandler != nil {
-		apiAdmin.POST("/migration/export", migrationHandler.Export, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemExport))
-		apiAdmin.POST("/migration/import", migrationHandler.Import, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemImport))
+		migrationHandler.RegisterAdminAPIRoutes(apiAdmin,
+			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemExport),
+			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemImport))
 	}
-
-	// Security Audit
 	if securityHandler != nil {
-		apiAdmin.GET("/security-audit-logs", securityHandler.ListLogs, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminAuditRead))
-		apiAdmin.GET("/security-audit-logs/stats", securityHandler.GetStats, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminAuditRead))
-		apiAdmin.GET("/security-audit-logs/:id", securityHandler.GetLog, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminAuditRead))
+		securityHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminAuditRead))
 	}
 }
 
@@ -552,11 +441,9 @@ func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySv
 	wsAPIGroup := wsGroup.Group("/api")
 	wsAPIGroup.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
-	wsAPIGroup.GET("/stack-status/:server_id", wsHandler.HandleFlutterWebSocket)
-	wsAPIGroup.GET("/servers/:serverid/terminal", wsHandler.HandleFlutterTerminalWebSocket)
+	wsHandler.RegisterAPIRoutes(wsAPIGroup)
 
 	if operationsWSHandler != nil {
-		wsAPIGroup.GET("/servers/:serverid/stacks/:stackname/operations", operationsWSHandler.HandleOperationWebSocket)
-		wsAPIGroup.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", operationsWSHandler.HandleOperationWebSocket)
+		operationsWSHandler.RegisterWebSocketRoutes(wsAPIGroup)
 	}
 }
