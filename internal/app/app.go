@@ -9,23 +9,14 @@ import (
 	"syscall"
 	"time"
 
-	"berth/internal/pkg/apidocs"
 	"berth/internal/pkg/config"
-	"berth/internal/platform/ssl"
-	"berth/routes"
-
-	"berth/internal/domain/auth"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/logging"
-	"berth/internal/platform/mail"
-
-	"github.com/labstack/echo/v4"
-
-	"berth/internal/domain/imageupdates"
-	"berth/internal/domain/vulnscan"
+	"berth/internal/platform/ssl"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -41,104 +32,22 @@ type AppOptions struct {
 	ExtraFxOptions        []fx.Option
 }
 
-func LoadConfig() (*config.Config, error) {
-	var cfg config.Config
-	if err := config.LoadConfig(&cfg); err != nil {
-		return nil, err
-	}
-
-	if cfg.Custom.EncryptionSecret == "" {
-		panic("CUSTOM_ENCRYPTION_SECRET is required but not set. Please set this environment variable with a secure secret key (minimum 32 characters). You can generate one with: openssl rand -base64 32")
-	}
-
-	if len(cfg.Custom.EncryptionSecret) < 16 {
-		panic("CUSTOM_ENCRYPTION_SECRET must be at least 16 characters long for security. Please use a longer secret key. You can generate one with: openssl rand -base64 32")
-	}
-
-	return &cfg, nil
-}
-
 func NewApp(opts *AppOptions) *App {
 	if opts == nil {
 		opts = &AppOptions{}
 	}
 
-	var cfg *config.Config
-	var err error
-	if opts.Config != nil {
-		cfg = opts.Config
-	} else {
-		if !opts.SkipConfigEnforcement {
-			config.EnforceRequiredSettings()
-		}
-		cfg, err = LoadConfig()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	var certFile, keyFile string
-	if opts.CertFile != "" && opts.KeyFile != "" {
-		certFile = opts.CertFile
-		keyFile = opts.KeyFile
-	} else {
-		certManager := ssl.NewCertificateManager()
-		certFile, keyFile, err = certManager.EnsureCertificates()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	logger, err := logging.NewLogger(cfg)
-	if err != nil {
-		panic(fmt.Errorf("failed to create logger: %w", err))
-	}
-
-	db, err := OpenDatabase(cfg, logger, DatabaseModels()...)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize database: %w", err))
-	}
-
+	cfg := resolveConfig(opts)
+	certFile, keyFile := resolveCertificates(opts)
+	logger := mustNewLogger(cfg)
+	db := mustOpenDatabase(cfg, logger)
 	inertiaSvc := inertia.New(&cfg.Inertia, SessionStoreResolver, logger)
-
 	e := NewEcho(cfg, logger)
 
-	fxOptions := []fx.Option{
-		fx.NopLogger,
-
-		fx.Supply(cfg),
-		fx.Supply(logger),
-		fx.Supply(db),
-		fx.Supply(inertiaSvc),
-		fx.Supply(e),
-		fx.Supply(&SSLConfig{
-			Enabled:  true,
-			CertFile: certFile,
-			KeyFile:  keyFile,
-		}),
-
-		fx.Provide(mail.NewClient),
-		fx.Provide(func(c *mail.Client) auth.MailService { return c }),
-
-		CoreFxOptions(),
-
-		fx.Provide(apidocs.NewOpenAPI),
-		fx.Invoke(routes.RegisterAPIDocs),
-		fx.Invoke(func(e *echo.Echo, apiDoc *apidocs.OpenAPI, cfg *config.Config) {
-			routes.RegisterOpenAPIEndpoints(e, apiDoc, cfg)
-		}),
-		fx.Invoke(RegisterHTTPLifecycle),
-
-		fx.Invoke(func(svc *imageupdates.Service) {}),
-		fx.Invoke(vulnscan.StartPoller),
-	}
-
-	if len(opts.ExtraFxOptions) > 0 {
-		fxOptions = append(fxOptions, opts.ExtraFxOptions...)
-	}
+	fxOpts := assembleFxOptions(cfg, logger, db, inertiaSvc, e, certFile, keyFile, opts.ExtraFxOptions)
 
 	return &App{
-		fx:     fx.New(fxOptions...),
+		fx:     fx.New(fxOpts...),
 		logger: logger,
 	}
 }
@@ -171,4 +80,45 @@ func (a *App) Stop() {
 
 func Run() {
 	NewApp(nil).Run()
+}
+
+func resolveConfig(opts *AppOptions) *config.Config {
+	if opts.Config != nil {
+		return opts.Config
+	}
+	if !opts.SkipConfigEnforcement {
+		config.EnforceRequiredSettings()
+	}
+	cfg, err := LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
+func resolveCertificates(opts *AppOptions) (string, string) {
+	if opts.CertFile != "" && opts.KeyFile != "" {
+		return opts.CertFile, opts.KeyFile
+	}
+	certFile, keyFile, err := ssl.NewCertificateManager().EnsureCertificates()
+	if err != nil {
+		panic(err)
+	}
+	return certFile, keyFile
+}
+
+func mustNewLogger(cfg *config.Config) *zap.Logger {
+	logger, err := logging.NewLogger(cfg)
+	if err != nil {
+		panic(fmt.Errorf("failed to create logger: %w", err))
+	}
+	return logger
+}
+
+func mustOpenDatabase(cfg *config.Config, logger *zap.Logger) *gorm.DB {
+	db, err := OpenDatabase(cfg, logger, DatabaseModels()...)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize database: %w", err))
+	}
+	return db
 }

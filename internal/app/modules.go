@@ -1,12 +1,14 @@
 package app
 
 import (
-	"berth/internal/domain/user"
 	"context"
 	"path/filepath"
 
 	"berth/internal/domain/agent"
 	"berth/internal/domain/apikey"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/auth/tokens"
+	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/dashboard"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
@@ -20,23 +22,21 @@ import (
 	"berth/internal/domain/registry"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
+	"berth/internal/domain/session"
 	"berth/internal/domain/setup"
 	"berth/internal/domain/stack"
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
 	"berth/internal/domain/websocket"
+	"berth/internal/pkg/apidocs"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/origin"
+	"berth/internal/platform/inertia"
+	"berth/internal/platform/mail"
+	"berth/internal/platform/middleware/ratelimit"
 	"berth/routes"
 	"berth/seeds"
-
-	"berth/internal/domain/auth"
-	"berth/internal/domain/auth/tokens"
-	"berth/internal/domain/auth/totp"
-	"berth/internal/domain/session"
-	"berth/internal/platform/inertia"
-	"berth/internal/platform/middleware/ratelimit"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
@@ -44,21 +44,47 @@ import (
 	"gorm.io/gorm"
 )
 
-func DatabaseModels() []any {
-	return []any{
-		&user.User{}, &user.Role{}, &user.Permission{},
-		&server.Server{}, &user.ServerRoleStackPermission{}, &server.ServerRegistryCredential{},
-		&apikey.APIKey{}, &apikey.APIKeyScope{},
-		&operationlogs.OperationLog{}, &operationlogs.OperationLogMessage{},
-		&security.SecurityAuditLog{},
-		&seeds.SeedTracker{},
-		&queue.QueuedOperation{}, &session.UserSession{},
-		&imageupdates.ContainerImageUpdate{},
-		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{},
-		&totp.TOTPSecret{}, &totp.UsedCode{},
-		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
-		&tokens.RevokedToken{}, &tokens.RefreshToken{},
+func assembleFxOptions(
+	cfg *config.Config,
+	logger *zap.Logger,
+	db *gorm.DB,
+	inertiaSvc *inertia.Service,
+	e *echo.Echo,
+	certFile, keyFile string,
+	extra []fx.Option,
+) []fx.Option {
+	opts := []fx.Option{
+		fx.NopLogger,
+
+		fx.Supply(cfg),
+		fx.Supply(logger),
+		fx.Supply(db),
+		fx.Supply(inertiaSvc),
+		fx.Supply(e),
+		fx.Supply(&SSLConfig{
+			Enabled:  true,
+			CertFile: certFile,
+			KeyFile:  keyFile,
+		}),
+
+		fx.Provide(mail.NewClient),
+		fx.Provide(func(c *mail.Client) auth.MailService { return c }),
+
+		CoreFxOptions(),
+
+		fx.Provide(apidocs.NewOpenAPI),
+		fx.Invoke(routes.RegisterAPIDocs),
+		fx.Invoke(func(e *echo.Echo, apiDoc *apidocs.OpenAPI, cfg *config.Config) {
+			routes.RegisterOpenAPIEndpoints(e, apiDoc, cfg)
+		}),
+		fx.Invoke(RegisterHTTPLifecycle),
+
+		fx.Invoke(func(svc *imageupdates.Service) {}),
+		fx.Invoke(vulnscan.StartPoller),
 	}
+
+	opts = append(opts, extra...)
+	return opts
 }
 
 func CoreFxOptions() fx.Option {
