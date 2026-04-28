@@ -58,6 +58,9 @@ func (s *Service) Reset() error {
 		return fmt.Errorf("list tables: %w", err)
 	}
 	for _, t := range tables {
+		if strings.HasPrefix(t, "sqlite_") {
+			continue
+		}
 		if err := s.db.Migrator().DropTable(t); err != nil {
 			return fmt.Errorf("drop table %s: %w", t, err)
 		}
