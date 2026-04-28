@@ -109,10 +109,7 @@ export class ApiHelpers {
 }
 
 export class AuthHelpers {
-  constructor(
-    private readonly page: Page,
-    private readonly request: APIRequestContext
-  ) {}
+  constructor(private readonly page: Page) {}
 
   async loginViaUI(user: Pick<TestUser, 'username' | 'password'>): Promise<void> {
     await this.page.goto('/auth/login');
@@ -124,13 +121,16 @@ export class AuthHelpers {
     ]);
   }
 
-  async loginViaApi(user: Pick<TestUser, 'username' | 'password'>): Promise<void> {
-    const showLogin = await this.request.get('/auth/login');
+  async loginDirectly(user: Pick<TestUser, 'username' | 'password'>): Promise<void> {
+    const showLogin = await this.page.request.get('/auth/login');
     expect(showLogin.ok(), 'GET /auth/login').toBeTruthy();
-    const csrfToken = await this.csrfToken();
 
-    const res = await this.request.post('/auth/login', {
-      headers: { 'X-CSRF-Token': csrfToken },
+    const cookies = await this.page.context().cookies();
+    const csrf = cookies.find((c) => c.name === '_csrf');
+    if (!csrf) throw new Error('_csrf cookie not present after GET /auth/login');
+
+    const res = await this.page.request.post('/auth/login', {
+      headers: { 'X-CSRF-Token': csrf.value },
       form: {
         username: user.username,
         password: user.password,
@@ -139,13 +139,6 @@ export class AuthHelpers {
     });
     expect([302, 303]).toContain(res.status());
     expect(res.headers()['location']).not.toContain('/auth/login');
-  }
-
-  private async csrfToken(): Promise<string> {
-    const cookies = await this.request.storageState();
-    const csrf = cookies.cookies.find((c) => c.name === '_csrf');
-    if (!csrf) throw new Error('_csrf cookie not present after GET /auth/login');
-    return csrf.value;
   }
 }
 
@@ -258,9 +251,9 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     await use(api);
   },
 
-  auth: async ({ page, request, api: _api }, use) => {
+  auth: async ({ page, api: _api }, use) => {
     void _api;
-    await use(new AuthHelpers(page, request));
+    await use(new AuthHelpers(page));
   },
 });
 

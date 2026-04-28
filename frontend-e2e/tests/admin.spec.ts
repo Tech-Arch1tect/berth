@@ -3,7 +3,7 @@ import { test, expect } from '../fixtures/test';
 test.describe('admin access control', () => {
   test('non-admin sees 403 page on /admin/users', async ({ page, api, auth }) => {
     const user = await api.seedUser();
-    await auth.loginViaUI(user);
+    await auth.loginDirectly(user);
 
     await page.goto('/admin/users');
     await expect(page.getByRole('heading', { name: '403' })).toBeVisible();
@@ -12,7 +12,7 @@ test.describe('admin access control', () => {
 
   test('non-admin sees 403 page on /admin/servers', async ({ page, api, auth }) => {
     const user = await api.seedUser();
-    await auth.loginViaUI(user);
+    await auth.loginDirectly(user);
 
     await page.goto('/admin/servers');
     await expect(page.getByRole('heading', { name: '403' })).toBeVisible();
@@ -31,7 +31,7 @@ test.describe('admin users page', () => {
     await api.seedUser({ username: 'staff-alice', email: 'alice@berth.test' });
     await api.seedUser({ username: 'staff-bob', email: 'bob@berth.test' });
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto('/admin/users');
 
     const table = page.getByRole('table');
@@ -42,7 +42,7 @@ test.describe('admin users page', () => {
 
   test('admin creates a new user via the form', async ({ page, api, auth }) => {
     const admin = await api.seedAdmin();
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto('/admin/users');
 
     await page.getByRole('button', { name: 'Create User' }).click();
@@ -61,7 +61,7 @@ test.describe('admin servers page', () => {
     const admin = await api.seedAdmin();
     const server = await api.seedServerWithAgent('production-1');
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto('/admin/servers');
 
     await expect(page.getByText('production-1')).toBeVisible();
@@ -70,7 +70,7 @@ test.describe('admin servers page', () => {
 
   test('admin creates a new server via the form', async ({ page, api, auth }) => {
     const admin = await api.seedAdmin();
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto('/admin/servers');
 
     await page.getByRole('button', { name: 'Add Server', exact: true }).click();

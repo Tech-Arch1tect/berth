@@ -53,7 +53,7 @@ test.describe('stack details page', () => {
     const server = await api.seedServerWithAgent('atlas-prod');
     await mockStackDetailEndpoints(api, server);
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
 
     await expect(page.getByText(STACK_NAME).first()).toBeVisible();
@@ -91,7 +91,7 @@ test.describe('stack details page', () => {
       images: [],
     });
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
 
     await expect(page.getByText('broken').first()).toBeVisible();
@@ -103,7 +103,7 @@ test.describe('stack details page', () => {
     const server = await api.seedServerWithAgent('atlas-prod');
     await mockStackDetailEndpoints(api, server);
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
 
     const toolbar = page.locator('header, nav, [role="banner"]').first();

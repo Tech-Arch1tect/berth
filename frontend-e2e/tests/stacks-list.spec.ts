@@ -6,7 +6,7 @@ test.describe('server stacks list', () => {
     const server = await api.seedServerWithAgent('atlas-prod');
     await api.registerAgentHandler(server.agentId, '/stacks', 200, []);
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks`);
 
     await expect(page.getByRole('heading', { name: /atlas-prod.*Docker Stacks/i })).toBeVisible();
@@ -38,7 +38,7 @@ test.describe('server stacks list', () => {
       },
     ]);
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks`);
 
     await expect(page.getByText('web-frontend')).toBeVisible();
@@ -55,7 +55,7 @@ test.describe('server stacks list', () => {
       { name: 'data-pipeline', path: '/s/d', compose_file: 'c.yml', is_healthy: true, total_containers: 1, running_containers: 1 },
     ]);
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto(`/servers/${server.serverId}/stacks`);
     await expect(page.getByText('data-pipeline')).toBeVisible();
 

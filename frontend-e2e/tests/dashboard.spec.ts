@@ -3,9 +3,9 @@ import { test, expect } from '../fixtures/test';
 test.describe('dashboard', () => {
   test('shows empty state when no servers are configured', async ({ page, api, auth }) => {
     const admin = await api.seedAdmin();
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
+    await page.goto('/');
 
-    await expect(page).toHaveURL('/');
     await expect(page.getByText(/no servers configured/i).first()).toBeVisible();
   });
 
@@ -18,8 +18,8 @@ test.describe('dashboard', () => {
       unhealthy_stacks: 1,
     });
 
-    await auth.loginViaUI(admin);
-    await expect(page).toHaveURL('/');
+    await auth.loginDirectly(admin);
+    await page.goto('/');
 
     await expect(page.getByText('atlas-prod').first()).toBeVisible();
 
@@ -46,7 +46,7 @@ test.describe('dashboard', () => {
       unhealthy_stacks: 0,
     });
 
-    await auth.loginViaUI(admin);
+    await auth.loginDirectly(admin);
     await page.goto('/');
 
     await expect(page.getByText('atlas-staging').first()).toBeVisible();
