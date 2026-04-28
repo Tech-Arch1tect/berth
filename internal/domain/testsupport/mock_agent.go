@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 )
 
@@ -38,8 +39,13 @@ func NewMockAgent() *MockAgent {
 }
 
 func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/api")
+	if path == "" {
+		path = "/"
+	}
+
 	ma.mu.RLock()
-	handler, exists := ma.handlers[r.URL.Path]
+	handler, exists := ma.handlers[path]
 	ma.mu.RUnlock()
 
 	if exists {
