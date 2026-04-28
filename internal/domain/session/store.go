@@ -20,3 +20,11 @@ func NewDatabaseStore(db *gorm.DB) (scs.Store, error) {
 	store, err := gormstore.NewWithCleanupInterval(db, 0)
 	return store, err
 }
+
+func MigrateDatabaseStore(db *gorm.DB) error {
+	if db == nil {
+		return fmt.Errorf("database connection cannot be nil")
+	}
+	_, err := gormstore.NewWithCleanupInterval(db, 0)
+	return err
+}

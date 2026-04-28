@@ -25,28 +25,40 @@ import (
 
 type DatabaseModels []any
 
+type EnsureSchemaFunc func(*gorm.DB) error
+
 type Service struct {
-	db      *gorm.DB
-	authSvc *auth.Service
-	rbacSvc *rbac.Service
-	crypto  *crypto.Crypto
-	models  DatabaseModels
-	logger  *zap.Logger
+	db             *gorm.DB
+	authSvc        *auth.Service
+	rbacSvc        *rbac.Service
+	crypto         *crypto.Crypto
+	models         DatabaseModels
+	externalSchema []EnsureSchemaFunc
+	logger         *zap.Logger
 
 	mu      sync.Mutex
 	agents  map[uint64]*MockAgent
 	agentID uint64
 }
 
-func NewService(db *gorm.DB, authSvc *auth.Service, rbacSvc *rbac.Service, crypto *crypto.Crypto, models DatabaseModels, logger *zap.Logger) *Service {
+func NewService(
+	db *gorm.DB,
+	authSvc *auth.Service,
+	rbacSvc *rbac.Service,
+	crypto *crypto.Crypto,
+	models DatabaseModels,
+	externalSchema []EnsureSchemaFunc,
+	logger *zap.Logger,
+) *Service {
 	return &Service{
-		db:      db,
-		authSvc: authSvc,
-		rbacSvc: rbacSvc,
-		crypto:  crypto,
-		models:  models,
-		logger:  logger,
-		agents:  make(map[uint64]*MockAgent),
+		db:             db,
+		authSvc:        authSvc,
+		rbacSvc:        rbacSvc,
+		crypto:         crypto,
+		models:         models,
+		externalSchema: externalSchema,
+		logger:         logger,
+		agents:         make(map[uint64]*MockAgent),
 	}
 }
 
@@ -68,6 +80,11 @@ func (s *Service) Reset() error {
 
 	if err := s.db.AutoMigrate(s.models...); err != nil {
 		return fmt.Errorf("re-migrate: %w", err)
+	}
+	for _, ensure := range s.externalSchema {
+		if err := ensure(s.db); err != nil {
+			return fmt.Errorf("ensure external schema: %w", err)
+		}
 	}
 	if err := seeds.SeedRBACData(s.db); err != nil {
 		return fmt.Errorf("reseed rbac: %w", err)
