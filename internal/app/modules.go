@@ -80,6 +80,8 @@ func assembleFxOptions(
 		fx.Invoke(RegisterHTTPLifecycle),
 
 		fx.Invoke(vulnscan.StartPoller),
+
+		testSupportModule(),
 	}
 
 	opts = append(opts, extra...)

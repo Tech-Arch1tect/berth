@@ -156,6 +156,7 @@ type AppCustomConfig struct {
 	ImageUpdateCheckInterval           string `env:"IMAGE_UPDATE_CHECK_INTERVAL" envDefault:"6h"`
 	ImageUpdateCheckDisabledRegistries string `env:"IMAGE_UPDATE_CHECK_DISABLED_REGISTRIES" envDefault:""`
 	OpenAPIEnabled                     bool   `env:"OPENAPI_ENABLED" envDefault:"true"`
+	E2EMode                            bool   `env:"E2E_MODE" envDefault:"false"`
 }
 
 func LoadConfig(cfg any) error {
