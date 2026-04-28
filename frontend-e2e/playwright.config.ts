@@ -1,18 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
-export const E2E_BASE_URL = process.env.BERTH_E2E_BASE_URL ?? 'https://127.0.0.1:18080';
-
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
+  workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   globalSetup: './global-setup.ts',
   globalTeardown: './global-teardown.ts',
   use: {
-    baseURL: E2E_BASE_URL,
     ignoreHTTPSErrors: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

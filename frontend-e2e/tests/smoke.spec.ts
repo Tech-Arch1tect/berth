@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/test';
 
-test('test endpoints respond and Inertia renders post-reset', async ({ page, request }) => {
-  const reset = await request.post('/__test__/reset');
-  expect(reset.status()).toBe(204);
+test('test endpoints respond and Inertia renders post-reset', async ({ page, api }) => {
+  void api;
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/auth\/login/);
