@@ -86,3 +86,75 @@ test.describe('admin servers page', () => {
     await expect(page.getByText('https://10.0.0.5:9999')).toBeVisible();
   });
 });
+
+test.describe('admin pages render', () => {
+  test('user roles page renders for an existing user', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto(`/admin/users/${admin.id}/roles`);
+    await expect(page.getByText(/current roles/i)).toBeVisible();
+    await expect(page.getByText(/available roles/i)).toBeVisible();
+  });
+
+  test('roles page lists the seeded role descriptions', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/roles');
+    await expect(page).toHaveTitle(/Role Management/i);
+    const table = page.getByRole('table');
+    await expect(table.getByText(/system administrator with full access/i)).toBeVisible();
+    await expect(table.getByText(/standard user with basic permissions/i)).toBeVisible();
+  });
+
+  test('role stack permissions page renders for a non-admin role', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    const rolesRes = await page.request.get('/api/v1/admin/roles');
+    expect(rolesRes.ok()).toBeTruthy();
+    const rolesBody = (await rolesRes.json()) as {
+      data: { roles: Array<{ id: number; name: string; is_admin: boolean }> };
+    };
+    const userRole = rolesBody.data.roles.find((r) => r.is_admin === false);
+    expect(userRole, 'expected a seeded non-admin role').toBeDefined();
+
+    await page.goto(`/admin/roles/${userRole!.id}/stack-permissions`);
+    await expect(
+      page.getByText(/manage stack-based permissions for the/i)
+    ).toBeVisible();
+  });
+
+  test('security audit logs page renders', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/security-audit-logs');
+    await expect(page).toHaveTitle(/Security Audit Logs/i);
+  });
+
+  test('agent update page renders', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/agent-update');
+    await expect(page.getByRole('heading', { name: /agent updates/i })).toBeVisible();
+  });
+
+  test('admin operation logs page renders', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/operation-logs');
+    await expect(page).toHaveTitle(/Operation Logs/i);
+  });
+
+  test('migration page renders', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/migration');
+    await expect(page.getByText(/data migration/i)).toBeVisible();
+  });
+});

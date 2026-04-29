@@ -65,3 +65,13 @@ test.describe('server stacks list', () => {
     await expect(page.getByText('data-pipeline')).not.toBeVisible();
   });
 });
+
+test.describe('global stacks page', () => {
+  test('renders for an authenticated user with no servers', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/stacks');
+    await expect(page).toHaveTitle(/All Stacks/i);
+  });
+});
