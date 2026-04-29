@@ -44,7 +44,9 @@ async function mockStackDetailEndpoints(api: ApiHelpers, server: SeededServer): 
   await api.registerAgentHandler(server.agentId, `/stacks/${STACK_NAME}/environment`, 200, {
     services: {},
   });
-  await api.registerAgentHandler(server.agentId, `/stacks/${STACK_NAME}/images`, 200, { images: [] });
+  await api.registerAgentHandler(server.agentId, `/stacks/${STACK_NAME}/images`, 200, {
+    images: [],
+  });
 }
 
 test.describe('stack details page', () => {

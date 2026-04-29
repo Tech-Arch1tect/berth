@@ -121,9 +121,7 @@ test.describe('admin pages render', () => {
     expect(userRole, 'expected a seeded non-admin role').toBeDefined();
 
     await page.goto(`/admin/roles/${userRole!.id}/stack-permissions`);
-    await expect(
-      page.getByText(/manage stack-based permissions for the/i)
-    ).toBeVisible();
+    await expect(page.getByText(/manage stack-based permissions for the/i)).toBeVisible();
   });
 
   test('security audit logs page renders', async ({ page, api, auth }) => {

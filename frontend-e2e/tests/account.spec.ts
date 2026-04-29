@@ -24,5 +24,4 @@ test.describe('account pages', () => {
     await page.goto('/api-keys');
     await expect(page.getByRole('heading', { level: 1, name: 'API Keys' })).toBeVisible();
   });
-
 });

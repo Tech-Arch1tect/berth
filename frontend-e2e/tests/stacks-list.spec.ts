@@ -51,8 +51,22 @@ test.describe('server stacks list', () => {
     const admin = await api.seedAdmin();
     const server = await api.seedServerWithAgent('atlas-prod');
     await api.registerAgentHandler(server.agentId, '/stacks', 200, [
-      { name: 'web-frontend', path: '/s/w', compose_file: 'c.yml', is_healthy: true, total_containers: 1, running_containers: 1 },
-      { name: 'data-pipeline', path: '/s/d', compose_file: 'c.yml', is_healthy: true, total_containers: 1, running_containers: 1 },
+      {
+        name: 'web-frontend',
+        path: '/s/w',
+        compose_file: 'c.yml',
+        is_healthy: true,
+        total_containers: 1,
+        running_containers: 1,
+      },
+      {
+        name: 'data-pipeline',
+        path: '/s/d',
+        compose_file: 'c.yml',
+        is_healthy: true,
+        total_containers: 1,
+        running_containers: 1,
+      },
     ]);
 
     await auth.loginDirectly(admin);
