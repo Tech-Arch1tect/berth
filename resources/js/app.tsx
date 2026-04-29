@@ -20,28 +20,45 @@ const queryClient = new QueryClient({
   },
 });
 
+type InertiaPageModule = {
+  default: React.ComponentType<unknown> & {
+    layout?: (page: React.ReactElement) => React.ReactElement;
+  };
+};
+
+const oldPages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
+  string,
+  InertiaPageModule
+>;
+const newPages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/pages/**/*.tsx'], {
+  eager: true,
+}) as Record<string, InertiaPageModule>;
+
+const pageMap: Record<string, string> = {};
+
+function resolvePage(name: string): InertiaPageModule['default'] {
+  const mappedPath = pageMap[name];
+  if (mappedPath) {
+    const moved = newPages[mappedPath];
+    if (!moved) {
+      throw new Error(`Page "${name}" mapped to "${mappedPath}" but file is missing`);
+    }
+    return moved.default;
+  }
+  const fallback = oldPages[`./pages/${name}.tsx`];
+  if (!fallback) {
+    throw new Error(`Page not found: ${name}`);
+  }
+  return fallback.default;
+}
+
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,
   resolve: (name) => {
-    const pages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
-      string,
-      {
-        default: React.ComponentType<unknown> & {
-          layout?: (page: React.ReactElement) => React.ReactElement;
-        };
-      }
-    >;
-    const page = pages[`./pages/${name}.tsx`];
-    if (!page) {
-      throw new Error(`Page not found: ${name}`);
-    }
-
-    const Component = page.default;
-
+    const Component = resolvePage(name);
     if (!Component.layout) {
       Component.layout = (page) => <Layout>{page}</Layout>;
     }
-
     return Component;
   },
   setup({ el, App, props }) {

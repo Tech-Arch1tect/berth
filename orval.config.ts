@@ -13,7 +13,7 @@ export default defineConfig({
       httpClient: 'fetch',
       override: {
         mutator: {
-          path: './resources/js/lib/api.ts',
+          path: './resources/js/api/client.ts',
           name: 'apiClient',
         },
         query: {

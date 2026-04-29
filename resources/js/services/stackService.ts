@@ -1,4 +1,4 @@
-import { isApiError } from '../lib/api';
+import { isApiError } from '../api/client';
 import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStacknameNetworks,

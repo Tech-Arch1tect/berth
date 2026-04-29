@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { isApiError } from '../lib/api';
+import { isApiError } from '../api/client';
 import {
   getApiV1ServersServeridStacksStacknameFiles,
   getApiV1ServersServeridStacksStacknameFilesRead,
