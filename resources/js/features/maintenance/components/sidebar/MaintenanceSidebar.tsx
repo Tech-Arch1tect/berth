@@ -7,9 +7,9 @@ import {
   ChartBarIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import { formatBytes } from '../../../shared/utils/formatters';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { formatBytes } from '../../../../shared/utils/formatters';
 
 interface MaintenanceSidebarProps {
   activeTab: string;

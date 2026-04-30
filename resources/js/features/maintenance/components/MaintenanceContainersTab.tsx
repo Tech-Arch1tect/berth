@@ -1,11 +1,11 @@
 import React from 'react';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { Table } from '../../shared/components/Table';
-import { formatBytes } from '../../shared/utils/formatters';
-import { getContainerStatusBadge } from '../../features/stacks/utils/statusHelpers';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Table } from '../../../shared/components/Table';
+import { formatBytes } from '../../../shared/utils/formatters';
+import { getContainerStatusBadge } from '../../stacks/utils/statusHelpers';
 import { CircleStackIcon, TrashIcon } from '@heroicons/react/24/outline';
-import type { ContainerInfo } from '../../api/generated/models';
+import type { ContainerInfo } from '../../../api/generated/models';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 

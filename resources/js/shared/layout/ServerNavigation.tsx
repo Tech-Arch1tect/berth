@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { CircleStackIcon, WrenchScrewdriverIcon, KeyIcon } from '@heroicons/react/24/outline';
-import { useMaintenancePermissions } from '../../hooks/useMaintenancePermissions';
+import { useMaintenancePermissions } from '../../features/maintenance/hooks/useMaintenancePermissions';
 import { useRegistryPermissions } from '../../features/registries/hooks/useRegistryPermissions';
 import { theme } from '../theme';
 import { cn } from '../utils/cn';

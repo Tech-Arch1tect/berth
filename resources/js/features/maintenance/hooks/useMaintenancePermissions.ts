@@ -1,4 +1,4 @@
-import { useGetApiV1ServersServeridMaintenancePermissions } from '../api/generated/maintenance/maintenance';
+import { useGetApiV1ServersServeridMaintenancePermissions } from '../../../api/generated/maintenance/maintenance';
 
 interface UseMaintenancePermissionsOptions {
   serverid: number;

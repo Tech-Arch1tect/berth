@@ -4,8 +4,8 @@ import {
   getGetApiV1ServersServeridMaintenanceInfoQueryKey,
   usePostApiV1ServersServeridMaintenancePrune,
   useDeleteApiV1ServersServeridMaintenanceResource,
-} from '../api/generated/maintenance/maintenance';
-import type { PruneRequest, DeleteRequest } from '../api/generated/models';
+} from '../../../api/generated/maintenance/maintenance';
+import type { PruneRequest, DeleteRequest } from '../../../api/generated/models';
 
 export const useMaintenanceInfo = (serverid: number, enabled: boolean = true) => {
   return useGetApiV1ServersServeridMaintenanceInfo(serverid, {

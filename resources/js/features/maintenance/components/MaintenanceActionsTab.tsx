@@ -1,7 +1,7 @@
 import React from 'react';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { formatBytes } from '../../shared/utils/formatters';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { formatBytes } from '../../../shared/utils/formatters';
 import {
   TrashIcon,
   InformationCircleIcon,
@@ -14,7 +14,7 @@ import {
   CubeIcon,
   WrenchIcon,
 } from '@heroicons/react/24/outline';
-import type { MaintenanceInfo } from '../../api/generated/models';
+import type { MaintenanceInfo } from '../../../api/generated/models';
 
 type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 

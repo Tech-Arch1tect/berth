@@ -1,8 +1,8 @@
 import React from 'react';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { StatCard } from '../../shared/components/StatCard';
-import { formatBytes, formatNumber } from '../../shared/utils/formatters';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { StatCard } from '../../../shared/components/StatCard';
+import { formatBytes, formatNumber } from '../../../shared/utils/formatters';
 import {
   ServerIcon,
   DocumentDuplicateIcon,
@@ -11,7 +11,7 @@ import {
   GlobeAltIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import type { MaintenanceInfo } from '../../api/generated/models';
+import type { MaintenanceInfo } from '../../../api/generated/models';
 
 interface MaintenanceOverviewProps {
   maintenanceInfo: MaintenanceInfo;

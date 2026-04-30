@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import { ServerNavigation } from '../../shared/layout/ServerNavigation';
-import { Server } from '../../shared/types/server';
-import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
-import { EmptyState } from '../../shared/components/EmptyState';
-import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
-import { Breadcrumb } from '../../shared/components/Breadcrumb';
-import { PanelLayout } from '../../shared/components/PanelLayout';
+import { ServerNavigation } from '../../../shared/layout/ServerNavigation';
+import { Server } from '../../../shared/types/server';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { Breadcrumb } from '../../../shared/components/Breadcrumb';
+import { PanelLayout } from '../../../shared/components/PanelLayout';
 import {
   useMaintenanceInfo,
   useDockerPrune,
   useDeleteResource,
-} from '../../hooks/useDockerMaintenance';
-import { showToast } from '../../shared/utils/toast';
-import { formatBytes } from '../../shared/utils/formatters';
+} from '../hooks/useDockerMaintenance';
+import { showToast } from '../../../shared/utils/toast';
+import { formatBytes } from '../../../shared/utils/formatters';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
   MaintenanceToolbar,
@@ -26,7 +26,7 @@ import {
   MaintenanceVolumesTab,
   MaintenanceNetworksTab,
   MaintenanceActionsTab,
-} from '../../components/maintenance';
+} from '../components';
 
 interface MaintenanceProps {
   title: string;
