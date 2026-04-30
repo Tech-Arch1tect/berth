@@ -11,9 +11,9 @@ import {
   StopIcon,
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import type { OperationLogStatsData } from '../../../api/generated/models';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import type { OperationLogStatsData } from '../../../../api/generated/models';
 
 interface OperationLogsSidebarProps {
   stats: OperationLogStatsData | null;

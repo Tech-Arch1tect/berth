@@ -1,25 +1,25 @@
 import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import Layout from '../shared/layout/Layout';
-import { PanelLayout } from '../shared/components/PanelLayout';
+import Layout from '../../../shared/layout/Layout';
+import { PanelLayout } from '../../../shared/components/PanelLayout';
 import {
   OperationLogsSidebar,
   OperationLogsToolbar,
   OperationLogsStatusBar,
   OperationLogsContent,
-} from '../components/operation-logs';
+} from '../components';
 import {
   useGetApiV1OperationLogs,
   useGetApiV1OperationLogsStats,
   getApiV1OperationLogsId,
   getGetApiV1OperationLogsQueryKey,
   getGetApiV1OperationLogsStatsQueryKey,
-} from '../api/generated/operation-logs/operation-logs';
+} from '../../../api/generated/operation-logs/operation-logs';
 import type {
   GetApiV1OperationLogsParams,
   GetApiV1OperationLogsStatus,
-} from '../api/generated/models';
+} from '../../../api/generated/models';
 
 interface Props {
   title: string;

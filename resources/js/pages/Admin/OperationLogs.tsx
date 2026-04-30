@@ -7,7 +7,7 @@ import {
   OperationLogsToolbar,
   OperationLogsStatusBar,
   OperationLogsContent,
-} from '../../components/operation-logs';
+} from '../../features/operation-logs/components';
 import {
   useGetApiV1AdminOperationLogs,
   useGetApiV1AdminOperationLogsStats,

@@ -7,13 +7,13 @@ import {
   CpuChipIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 import type {
   OperationLogInfo,
   PaginationInfo,
   OperationLogDetailData,
-} from '../../../api/generated/models';
+} from '../../../../api/generated/models';
 import { OperationDetailPanel } from '../panels/OperationDetailPanel';
 
 const DETAIL_PANEL_MIN_WIDTH = 320;
