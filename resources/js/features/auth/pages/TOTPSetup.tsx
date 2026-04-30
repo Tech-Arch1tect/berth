@@ -1,10 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { usePostApiV1TotpEnable } from '../../api/generated/totp/totp';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { usePostApiV1TotpEnable } from '../../../api/generated/totp/totp';
 
 interface Props {
   title: string;

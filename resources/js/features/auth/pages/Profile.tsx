@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import FlashMessages from '../shared/components/flash/FlashMessages';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { User } from '../shared/types';
-import { cn } from '../shared/utils/cn';
-import { theme } from '../shared/theme';
-import { Modal } from '../shared/components/Modal';
-import { useGetApiV1TotpStatus, usePostApiV1TotpDisable } from '../api/generated/totp/totp';
+import { User } from '../../../shared/types';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Modal } from '../../../shared/components/Modal';
+import { useGetApiV1TotpStatus, usePostApiV1TotpDisable } from '../../../api/generated/totp/totp';
 
 interface ProfileProps {
   title: string;

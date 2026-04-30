@@ -1,8 +1,8 @@
 import { useForm, Head, Link } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface VerifyEmailProps {
   token: string;

@@ -40,6 +40,13 @@ const pageMap: Record<string, string> = {
   'Setup/Admin': './features/setup/pages/Admin.tsx',
   'APIKeys/Index': './features/apikeys/pages/Index.tsx',
   'APIKeys/Scopes': './features/apikeys/pages/Scopes.tsx',
+  'Auth/Login': './features/auth/pages/Login.tsx',
+  'Auth/PasswordReset': './features/auth/pages/PasswordReset.tsx',
+  'Auth/PasswordResetConfirm': './features/auth/pages/PasswordResetConfirm.tsx',
+  'Auth/TOTPSetup': './features/auth/pages/TOTPSetup.tsx',
+  'Auth/TOTPVerify': './features/auth/pages/TOTPVerify.tsx',
+  'Auth/VerifyEmail': './features/auth/pages/VerifyEmail.tsx',
+  Profile: './features/auth/pages/Profile.tsx',
 };
 
 function resolvePage(name: string): InertiaPageModule['default'] {
