@@ -38,6 +38,8 @@ const pageMap: Record<string, string> = {
   'Errors/Generic': './shared/errors/pages/Generic.tsx',
   'Sessions/Index': './features/sessions/pages/Index.tsx',
   'Setup/Admin': './features/setup/pages/Admin.tsx',
+  'APIKeys/Index': './features/apikeys/pages/Index.tsx',
+  'APIKeys/Scopes': './features/apikeys/pages/Scopes.tsx',
 };
 
 function resolvePage(name: string): InertiaPageModule['default'] {

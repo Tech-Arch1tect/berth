@@ -24,4 +24,14 @@ test.describe('account pages', () => {
     await page.goto('/api-keys');
     await expect(page.getByRole('heading', { level: 1, name: 'API Keys' })).toBeVisible();
   });
+
+  test('api key scopes page renders for a logged-in user', async ({ page, api, auth }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/api-keys/1/scopes');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Manage API Key Scopes' })
+    ).toBeVisible();
+  });
 });

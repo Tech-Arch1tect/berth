@@ -1,4 +1,4 @@
-import FlashMessages from '../../shared/components/flash/FlashMessages';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
 import { Head, useForm, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
@@ -13,20 +13,20 @@ import {
   ClockIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { EmptyState } from '../../shared/components/EmptyState';
-import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
-import { Modal } from '../../shared/components/Modal';
-import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { Modal } from '../../../shared/components/Modal';
+import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
 import {
   useGetApiV1ApiKeys,
   usePostApiV1ApiKeys,
   useDeleteApiV1ApiKeysId,
   getGetApiV1ApiKeysQueryKey,
-} from '../../api/generated/api-keys/api-keys';
+} from '../../../api/generated/api-keys/api-keys';
 import { useQueryClient } from '@tanstack/react-query';
-import type { APIKeyInfo } from '../../api/generated/models';
+import type { APIKeyInfo } from '../../../api/generated/models';
 
 interface NewAPIKeyModal {
   name: string;
