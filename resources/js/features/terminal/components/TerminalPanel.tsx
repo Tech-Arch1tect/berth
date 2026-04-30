@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
+import { useTerminalPanel } from '../contexts/TerminalPanelContext';
 import { Terminal } from './Terminal';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { StorageManager } from '../../shared/utils/storage';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { StorageManager } from '../../../shared/utils/storage';
 
 export const TerminalPanel: React.FC = () => {
   const { state, closeTerminal, setActiveTab, togglePanel, setPanelHeight } = useTerminalPanel();

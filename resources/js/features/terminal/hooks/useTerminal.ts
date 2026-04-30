@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useWebSocket } from '../shared/hooks/useWebSocket';
-import type { WebSocketMessage } from '../shared/types/websocket';
+import { useWebSocket } from '../../../shared/hooks/useWebSocket';
+import type { WebSocketMessage } from '../../../shared/types/websocket';
 import type {
   UseTerminalOptions,
   TerminalSession,
@@ -8,7 +8,7 @@ import type {
   TerminalOutputEvent,
   TerminalCloseEvent,
   TerminalSuccessEvent,
-} from '../types/terminal';
+} from '../types';
 
 const getWebSocketUrl = (serverid: number): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

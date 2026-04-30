@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { useTerminal } from '../../hooks/useTerminal';
-import { useDarkMode } from '../../shared/hooks/useDarkMode';
+import { useTerminal } from '../hooks/useTerminal';
+import { useDarkMode } from '../../../shared/hooks/useDarkMode';
 import toast from 'react-hot-toast';
 import '@xterm/xterm/css/xterm.css';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface TerminalProps {
   serverid: number;

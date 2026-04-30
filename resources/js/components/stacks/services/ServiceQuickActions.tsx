@@ -13,7 +13,7 @@ import type { ComposeService } from '../../../api/generated/models';
 import { OperationRequest } from '../../../types/operations';
 import { cn } from '../../../shared/utils/cn';
 import { useServerStack } from '../../../shared/contexts/ServerStackContext';
-import { useTerminalPanel } from '../../../contexts/TerminalPanelContext';
+import { useTerminalPanel } from '../../../features/terminal/contexts/TerminalPanelContext';
 import {
   getServiceActionState,
   hasStoppedContainers,
