@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 
 interface RegistriesStatusBarProps {
   credentialCount: number;

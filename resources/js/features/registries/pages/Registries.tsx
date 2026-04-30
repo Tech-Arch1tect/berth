@@ -1,24 +1,24 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { ServerNavigation } from '../../shared/layout/ServerNavigation';
-import { Breadcrumb } from '../../shared/components/Breadcrumb';
-import { Modal } from '../../shared/components/Modal';
-import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
-import { theme } from '../../shared/theme';
-import { PanelLayout } from '../../shared/components/PanelLayout';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { ServerNavigation } from '../../../shared/layout/ServerNavigation';
+import { Breadcrumb } from '../../../shared/components/Breadcrumb';
+import { Modal } from '../../../shared/components/Modal';
+import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { theme } from '../../../shared/theme';
+import { PanelLayout } from '../../../shared/components/PanelLayout';
 import {
   RegistriesToolbar,
   RegistriesSidebar,
   RegistriesContent,
   RegistriesStatusBar,
-} from '../../components/registries';
+} from '../components';
 import {
   usePostApiV1ServersServeridRegistries,
   usePutApiV1ServersServeridRegistriesId,
   useDeleteApiV1ServersServeridRegistriesId,
-} from '../../api/generated/registries/registries';
-import type { RegistryCredentialInfo } from '../../api/generated/models';
+} from '../../../api/generated/registries/registries';
+import type { RegistryCredentialInfo } from '../../../api/generated/models';
 
 interface Props {
   title?: string;

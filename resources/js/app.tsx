@@ -57,6 +57,7 @@ const pageMap: Record<string, string> = {
   'Admin/AgentUpdate': './features/admin/agent-update/pages/AgentUpdate.tsx',
   'Admin/SecurityAuditLogs': './features/admin/security-audit-logs/pages/SecurityAuditLogs.tsx',
   OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
+  'Servers/Registries': './features/registries/pages/Registries.tsx',
 };
 
 function resolvePage(name: string): InertiaPageModule['default'] {

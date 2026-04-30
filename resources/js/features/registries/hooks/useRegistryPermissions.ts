@@ -1,4 +1,4 @@
-import { useGetApiV1ServersServeridRegistries } from '../api/generated/registries/registries';
+import { useGetApiV1ServersServeridRegistries } from '../../../api/generated/registries/registries';
 
 interface UseRegistryPermissionsProps {
   serverId: number;

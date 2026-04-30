@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import { KeyIcon, PlusIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import type { RegistryCredentialInfo } from '../../../api/generated/models';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import type { RegistryCredentialInfo } from '../../../../api/generated/models';
 
 interface RegistriesContentProps {
   credentials: RegistryCredentialInfo[];
