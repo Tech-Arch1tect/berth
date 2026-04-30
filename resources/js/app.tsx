@@ -50,6 +50,10 @@ const pageMap: Record<string, string> = {
   'Admin/Migration': './features/admin/dataexport/pages/Migration.tsx',
   'Admin/OperationLogs': './features/admin/operation-logs/pages/OperationLogs.tsx',
   'Admin/Servers': './features/admin/servers/pages/Servers.tsx',
+  'Admin/Users': './features/admin/users/pages/Users.tsx',
+  'Admin/UserRoles': './features/admin/users/pages/UserRoles.tsx',
+  'Admin/Roles': './features/admin/users/pages/Roles.tsx',
+  'Admin/RoleStackPermissions': './features/admin/users/pages/RoleStackPermissions.tsx',
   OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
 };
 

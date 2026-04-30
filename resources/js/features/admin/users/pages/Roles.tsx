@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
-import { Table } from '../../shared/components/Table';
+import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
+import { Table } from '../../../../shared/components/Table';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import {
   usePostApiV1AdminRoles,
   usePutApiV1AdminRolesId,
   useDeleteApiV1AdminRolesId,
-} from '../../api/generated/admin/admin';
+} from '../../../../api/generated/admin/admin';
 
 interface Role {
   id: number;

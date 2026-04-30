@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
+import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 import {
   usePostApiV1AdminUsersAssignRole,
   usePostApiV1AdminUsersRevokeRole,
-} from '../../api/generated/admin/admin';
+} from '../../../../api/generated/admin/admin';
 
 interface User {
   id: number;
