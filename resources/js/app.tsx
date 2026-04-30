@@ -48,6 +48,7 @@ const pageMap: Record<string, string> = {
   'Auth/VerifyEmail': './features/auth/pages/VerifyEmail.tsx',
   Profile: './features/auth/pages/Profile.tsx',
   'Admin/Migration': './features/admin/dataexport/pages/Migration.tsx',
+  'Admin/OperationLogs': './features/admin/operation-logs/pages/OperationLogs.tsx',
   OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
 };
 
