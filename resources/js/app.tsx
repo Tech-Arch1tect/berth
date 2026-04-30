@@ -49,6 +49,7 @@ const pageMap: Record<string, string> = {
   Profile: './features/auth/pages/Profile.tsx',
   'Admin/Migration': './features/admin/dataexport/pages/Migration.tsx',
   'Admin/OperationLogs': './features/admin/operation-logs/pages/OperationLogs.tsx',
+  'Admin/Servers': './features/admin/servers/pages/Servers.tsx',
   OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
 };
 
