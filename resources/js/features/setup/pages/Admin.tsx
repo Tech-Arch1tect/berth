@@ -1,8 +1,8 @@
 import React from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
+import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface FormData {
   username: string;

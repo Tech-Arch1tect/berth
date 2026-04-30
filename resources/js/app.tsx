@@ -37,6 +37,7 @@ const newPages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/
 const pageMap: Record<string, string> = {
   'Errors/Generic': './shared/errors/pages/Generic.tsx',
   'Sessions/Index': './features/sessions/pages/Index.tsx',
+  'Setup/Admin': './features/setup/pages/Admin.tsx',
 };
 
 function resolvePage(name: string): InertiaPageModule['default'] {
