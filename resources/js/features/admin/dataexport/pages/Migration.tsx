@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import FlashMessages from '../../shared/components/flash/FlashMessages';
-import { Modal } from '../../shared/components/Modal';
-import { Tabs } from '../../shared/components/Tabs';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
+import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { Modal } from '../../../../shared/components/Modal';
+import { Tabs } from '../../../../shared/components/Tabs';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 import {
   usePostApiV1AdminMigrationExport,
   usePostApiV1AdminMigrationImport,
-} from '../../api/generated/admin/admin';
-import type { ImportResponseData } from '../../api/generated/models';
+} from '../../../../api/generated/admin/admin';
+import type { ImportResponseData } from '../../../../api/generated/models';
 
 interface Props {
   title: string;
