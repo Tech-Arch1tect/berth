@@ -1,8 +1,8 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import type { SecurityAuditLogInfo } from '../../../api/generated/models';
-import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../../utils/securityAuditHelpers';
+import { cn } from '../../../../../shared/utils/cn';
+import { theme } from '../../../../../shared/theme';
+import type { SecurityAuditLogInfo } from '../../../../../api/generated/models';
+import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 
 interface SecurityAuditDetailPanelProps {
   log: SecurityAuditLogInfo | null;

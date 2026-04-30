@@ -1,8 +1,8 @@
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { Modal } from '../../shared/components/Modal';
-import type { SecurityAuditLogInfo } from '../../api/generated/models';
-import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { Modal } from '../../../../shared/components/Modal';
+import type { SecurityAuditLogInfo } from '../../../../api/generated/models';
+import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../utils/securityAuditHelpers';
 
 interface Props {
   log: SecurityAuditLogInfo | null;

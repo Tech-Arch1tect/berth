@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import type { SecurityAuditLogInfo } from '../../../api/generated/models';
+import { cn } from '../../../../../shared/utils/cn';
+import { theme } from '../../../../../shared/theme';
+import type { SecurityAuditLogInfo } from '../../../../../api/generated/models';
 import { SecurityAuditDetailPanel } from '../panels/SecurityAuditDetailPanel';
-import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../../utils/securityAuditHelpers';
+import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 
 const DETAIL_PANEL_MIN_WIDTH = 320;
 const DETAIL_PANEL_MAX_WIDTH_PERCENT = 50;

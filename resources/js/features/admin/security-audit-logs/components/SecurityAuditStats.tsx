@@ -1,6 +1,6 @@
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import type { StatsResponseData } from '../../api/generated/models';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import type { StatsResponseData } from '../../../../api/generated/models';
 
 interface Props {
   stats: StatsResponseData | null;

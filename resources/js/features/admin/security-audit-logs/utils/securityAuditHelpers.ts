@@ -1,5 +1,5 @@
-import { cn } from '../shared/utils/cn';
-import { theme } from '../shared/theme';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 
 export function getSeverityBadgeStyle(severity: string): string {
   switch (severity) {

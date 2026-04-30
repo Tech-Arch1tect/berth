@@ -3,8 +3,8 @@ import {
   useGetApiV1AdminSecurityAuditLogs,
   useGetApiV1AdminSecurityAuditLogsStats,
   getApiV1AdminSecurityAuditLogsId,
-} from '../api/generated/admin/admin';
-import type { SecurityAuditLogInfo, StatsResponseData } from '../api/generated/models';
+} from '../../../../api/generated/admin/admin';
+import type { SecurityAuditLogInfo, StatsResponseData } from '../../../../api/generated/models';
 
 interface UseSecurityAuditLogsParams {
   page: number;

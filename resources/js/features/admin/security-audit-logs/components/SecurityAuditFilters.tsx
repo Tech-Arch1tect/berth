@@ -1,6 +1,6 @@
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import type { AuditLogFilters } from '../../hooks/useAuditLogFilters';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import type { AuditLogFilters } from '../hooks/useAuditLogFilters';
 
 interface Props {
   values: AuditLogFilters;

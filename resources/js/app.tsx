@@ -55,6 +55,7 @@ const pageMap: Record<string, string> = {
   'Admin/Roles': './features/admin/users/pages/Roles.tsx',
   'Admin/RoleStackPermissions': './features/admin/users/pages/RoleStackPermissions.tsx',
   'Admin/AgentUpdate': './features/admin/agent-update/pages/AgentUpdate.tsx',
+  'Admin/SecurityAuditLogs': './features/admin/security-audit-logs/pages/SecurityAuditLogs.tsx',
   OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
 };
 

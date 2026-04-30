@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { PanelLayout } from '../../shared/components/PanelLayout';
+import { PanelLayout } from '../../../../shared/components/PanelLayout';
 import {
   SecurityAuditLogsSidebar,
   SecurityAuditLogsToolbar,
   SecurityAuditLogsStatusBar,
   SecurityAuditLogsContent,
-} from '../../components/security-audit-logs';
-import { useSecurityAuditLogs } from '../../hooks/useSecurityAuditLogs';
+} from '../components';
+import { useSecurityAuditLogs } from '../hooks/useSecurityAuditLogs';
 
 interface Props {
   title: string;

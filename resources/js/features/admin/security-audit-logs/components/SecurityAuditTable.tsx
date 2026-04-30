@@ -1,9 +1,9 @@
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { Table } from '../../shared/components/Table';
-import type { SecurityAuditLogInfo } from '../../api/generated/models';
-import type { UsePaginationReturn } from '../../shared/hooks/usePagination';
-import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { Table } from '../../../../shared/components/Table';
+import type { SecurityAuditLogInfo } from '../../../../api/generated/models';
+import type { UsePaginationReturn } from '../../../../shared/hooks/usePagination';
+import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../utils/securityAuditHelpers';
 
 interface Props {
   logs: SecurityAuditLogInfo[];

@@ -11,9 +11,9 @@ import {
   KeyIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import type { StatsResponseData } from '../../../api/generated/models';
+import { cn } from '../../../../../shared/utils/cn';
+import { theme } from '../../../../../shared/theme';
+import type { StatsResponseData } from '../../../../../api/generated/models';
 
 interface SecurityAuditLogsSidebarProps {
   stats: StatsResponseData | null;
