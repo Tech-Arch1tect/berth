@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import type { LogFilterOptions } from '../types/logs';
-import type { LogEntry } from '../api/generated/models';
+import type { LogFilterOptions } from '../types';
+import type { LogEntry } from '../../../api/generated/models';
 import {
   getApiV1ServersServeridStacksStacknameLogs,
   getApiV1ServersServeridStacksStacknameContainersContainerNameLogs,
-} from '../api/generated/logs/logs';
+} from '../../../api/generated/logs/logs';
 
 interface UseLogsOptions {
   serverid: number;

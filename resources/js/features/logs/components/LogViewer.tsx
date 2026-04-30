@@ -1,6 +1,6 @@
 import React from 'react';
-import { LogViewerProps } from '../../types/logs';
-import { useLogViewerState } from '../../hooks/useLogViewerState';
+import { LogViewerProps } from '../types';
+import { useLogViewerState } from '../hooks/useLogViewerState';
 import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
@@ -10,10 +10,10 @@ import {
   PauseIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
-import { useServerStack } from '../../shared/contexts/ServerStackContext';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { useServerStack } from '../../../shared/contexts/ServerStackContext';
 
 const LogViewer: React.FC<LogViewerProps> = ({
   containerName,

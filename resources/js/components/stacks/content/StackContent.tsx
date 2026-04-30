@@ -14,7 +14,7 @@ import { VolumeDetailPanel } from '../panels/VolumeDetailPanel';
 import { EnvironmentPanel } from '../panels/EnvironmentPanel';
 import { OperationRequest } from '../../../types/operations';
 import StackStats from '../StackStats';
-import LogViewer from '../../logs/LogViewer';
+import LogViewer from '../../../features/logs/components/LogViewer';
 import { FileManager } from '../../files/FileManager';
 import { VulnerabilityScanPanel } from '../../vulnerability-scan';
 import { StackImagesTab } from '../images';

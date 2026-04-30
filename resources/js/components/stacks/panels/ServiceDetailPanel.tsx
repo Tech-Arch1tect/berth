@@ -21,7 +21,7 @@ import {
   getContainerHealthStatus,
   formatHealthLog,
 } from '../../../features/stacks/utils/statusHelpers';
-import LogViewer from '../../logs/LogViewer';
+import LogViewer from '../../../features/logs/components/LogViewer';
 
 interface ServiceDetailPanelProps {
   service: ComposeService;
