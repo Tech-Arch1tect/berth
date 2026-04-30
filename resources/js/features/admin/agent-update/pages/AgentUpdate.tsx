@@ -1,17 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import { Modal } from '../../shared/components/Modal';
-import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { useAgentDiscovery } from '../../hooks/useAgentDiscovery';
-import { useServerSelection } from '../../shared/hooks/useServerSelection';
-import { useAgentUpdateExecution } from '../../hooks/useAgentUpdateExecution';
-import {
-  AgentDiscoveryTable,
-  UpdateConfigForm,
-  UpdateProgressTable,
-} from '../../components/agent-update';
+import { Modal } from '../../../../shared/components/Modal';
+import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { useAgentDiscovery } from '../hooks/useAgentDiscovery';
+import { useServerSelection } from '../../../../shared/hooks/useServerSelection';
+import { useAgentUpdateExecution } from '../hooks/useAgentUpdateExecution';
+import { AgentDiscoveryTable, UpdateConfigForm, UpdateProgressTable } from '../components';
 
 interface Props {
   title?: string;

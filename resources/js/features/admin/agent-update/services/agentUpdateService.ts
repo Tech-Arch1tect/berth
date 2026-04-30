@@ -1,10 +1,13 @@
 import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStackname,
-} from '../api/generated/stacks/stacks';
-import { patchApiV1ServersServeridStacksStacknameCompose } from '../api/generated/compose/compose';
-import { getApiV1AdminServers, postApiV1AdminServersIdTest } from '../api/generated/admin/admin';
-import type { Stack, StackDetails, ServerInfo } from '../api/generated/models';
+} from '../../../../api/generated/stacks/stacks';
+import { patchApiV1ServersServeridStacksStacknameCompose } from '../../../../api/generated/compose/compose';
+import {
+  getApiV1AdminServers,
+  postApiV1AdminServersIdTest,
+} from '../../../../api/generated/admin/admin';
+import type { Stack, StackDetails, ServerInfo } from '../../../../api/generated/models';
 
 export class AgentUpdateService {
   static async getServers(): Promise<ServerInfo[]> {

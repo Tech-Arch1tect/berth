@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { ServerWithAgentStack, UpdateStatus, AgentUpdateProgress } from '../types/agent-update';
+import { ServerWithAgentStack, UpdateStatus, AgentUpdateProgress } from '../types';
 import { AgentUpdateService } from '../services/agentUpdateService';
 
 export const TIMEOUTS = {

@@ -4,7 +4,7 @@ import {
   XCircleIcon,
   MinusCircleIcon,
 } from '@heroicons/react/24/outline';
-import { UpdateStatus } from '../../types/agent-update';
+import { UpdateStatus } from '../types';
 
 interface StatusIconProps {
   status: UpdateStatus;

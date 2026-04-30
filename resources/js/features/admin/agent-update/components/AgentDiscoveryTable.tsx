@@ -1,7 +1,7 @@
 import { CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { ServerWithAgentStack } from '../../types/agent-update';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { ServerWithAgentStack } from '../types';
 
 interface AgentDiscoveryTableProps {
   servers: ServerWithAgentStack[];

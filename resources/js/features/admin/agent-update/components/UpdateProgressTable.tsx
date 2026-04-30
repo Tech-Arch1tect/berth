@@ -1,6 +1,6 @@
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { AgentUpdateProgress } from '../../types/agent-update';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { AgentUpdateProgress } from '../types';
 import { StatusIcon, getStatusLabel } from './StatusIcon';
 
 interface UpdateProgressTableProps {

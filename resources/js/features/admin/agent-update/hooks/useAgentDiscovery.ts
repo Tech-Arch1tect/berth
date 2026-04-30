@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ServerWithAgentStack } from '../types/agent-update';
+import { ServerWithAgentStack } from '../types';
 import { AgentUpdateService } from '../services/agentUpdateService';
 
 interface UseAgentDiscoveryOptions {
