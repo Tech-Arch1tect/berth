@@ -5,8 +5,8 @@ import {
   parseDockerfileCommand,
   getCommandType,
 } from './utils/image-helpers';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface ImageHistoryLayerProps {
   layer: ImageHistoryLayerType;

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { ServerNavigation } from '../../components/layout/ServerNavigation';
-import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { Modal } from '../../components/common/Modal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { theme } from '../../theme';
-import { PanelLayout } from '../../components/common/PanelLayout';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { ServerNavigation } from '../../shared/layout/ServerNavigation';
+import { Breadcrumb } from '../../shared/components/Breadcrumb';
+import { Modal } from '../../shared/components/Modal';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { theme } from '../../shared/theme';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import {
   RegistriesToolbar,
   RegistriesSidebar,

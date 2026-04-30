@@ -1,8 +1,8 @@
 import React from 'react';
 import type { Network } from '../../../api/generated/models';
 import { GlobeAltIcon, ServerIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface NetworkDetailPanelProps {
   network: Network;

@@ -2,8 +2,8 @@ import React from 'react';
 import { OpenTab } from '../../../types/files';
 import { FileViewer } from '../FileViewer';
 import { MonacoEditor } from './MonacoEditor';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface EditorContentProps {
   tab: OpenTab;

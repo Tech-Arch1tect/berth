@@ -3,14 +3,14 @@ import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import type { Stack } from '../../../api/generated/models';
-import { Server } from '../../../types/server';
+import { Server } from '../../../shared/types/server';
 import { CompactStatistics } from './CompactStatistics';
 import { StackCard } from '../../dashboard/StackCard';
-import { EmptyState } from '../../common/EmptyState';
-import { LoadingSpinner } from '../../common/LoadingSpinner';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface StacksContentProps {
   stacks: Stack[];

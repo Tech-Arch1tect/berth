@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../../utils/cn';
-import { Server } from '../../../types/server';
+import { cn } from '../../../shared/utils/cn';
+import { Server } from '../../../shared/types/server';
 import { HealthSummary } from '../types/dashboard';
 import { SECTION_IDS } from '../content/DashboardPage';
 import {

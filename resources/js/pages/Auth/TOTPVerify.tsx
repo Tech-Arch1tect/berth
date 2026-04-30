@@ -1,7 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 
 interface Props {
   title: string;

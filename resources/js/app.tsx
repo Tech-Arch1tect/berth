@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OperationsProvider } from './contexts/OperationsContext';
 import { TerminalPanelProvider } from './contexts/TerminalPanelContext';
 import { TerminalPanel } from './components/terminal/TerminalPanel';
-import Layout from './components/layout/Layout';
+import Layout from './shared/layout/Layout';
 
 const appName = 'Berth';
 
@@ -34,7 +34,9 @@ const newPages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/
   eager: true,
 }) as Record<string, InertiaPageModule>;
 
-const pageMap: Record<string, string> = {};
+const pageMap: Record<string, string> = {
+  'Errors/Generic': './shared/errors/pages/Generic.tsx',
+};
 
 function resolvePage(name: string): InertiaPageModule['default'] {
   const mappedPath = pageMap[name];

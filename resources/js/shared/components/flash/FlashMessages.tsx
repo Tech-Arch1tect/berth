@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
-import { FlashMessage as FlashMessageType } from '../types';
+import { FlashMessage as FlashMessageType } from '../../types';
 import FlashMessage from './FlashMessage';
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 
 interface FlashMessagesProps {
   className?: string;

@@ -1,10 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import { SortOption } from '../types/stack';
-import { Server } from '../types/server';
+import { Server } from '../shared/types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
-import { StorageManager } from '../utils/storage';
-import { PanelLayout } from '../components/common/PanelLayout';
+import { StorageManager } from '../shared/utils/storage';
+import { PanelLayout } from '../shared/components/PanelLayout';
 import { StacksToolbar } from '../components/stacks/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/stacks/sidebar/StacksSidebar';
 import { StacksContent } from '../components/stacks/content/StacksContent';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useWebSocket } from './useWebSocket';
-import type { WebSocketMessage } from '../types/websocket';
+import { useWebSocket } from '../shared/hooks/useWebSocket';
+import type { WebSocketMessage } from '../shared/types/websocket';
 import type {
   UseTerminalOptions,
   TerminalSession,

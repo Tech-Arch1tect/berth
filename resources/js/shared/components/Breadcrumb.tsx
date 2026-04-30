@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { HomeIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 export interface BreadcrumbItem {
   label: string;

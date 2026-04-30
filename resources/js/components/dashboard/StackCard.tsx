@@ -6,8 +6,8 @@ import {
   XCircleIcon,
   FolderIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import type { Stack } from '../../api/generated/models';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { UpdateAvailableBadge } from '../image-updates';

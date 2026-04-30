@@ -12,9 +12,9 @@ import {
   ClockIcon,
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { getServiceHealthStatus } from '../../../utils/statusHelpers';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { getServiceHealthStatus } from '../../../features/stacks/utils/statusHelpers';
 
 interface OverviewPanelProps {
   stackPath: string;

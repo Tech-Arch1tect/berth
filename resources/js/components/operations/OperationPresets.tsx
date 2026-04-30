@@ -1,7 +1,7 @@
 import React from 'react';
 import { OperationPreset, OperationRequest } from '../../types/operations';
-import { theme } from '../../theme';
-import { cn } from '../../utils/cn';
+import { theme } from '../../shared/theme';
+import { cn } from '../../shared/utils/cn';
 
 interface OperationPresetsProps {
   onOperationSelect: (operation: OperationRequest) => void;

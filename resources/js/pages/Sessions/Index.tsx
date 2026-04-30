@@ -1,4 +1,4 @@
-import FlashMessages from '../../components/FlashMessages';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
 import { Head, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -13,10 +13,10 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { EmptyState } from '../../components/common/EmptyState';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
 import { useState } from 'react';
 import {
   usePostApiV1SessionsRevoke,

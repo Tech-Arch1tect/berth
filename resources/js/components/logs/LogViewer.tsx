@@ -10,10 +10,10 @@ import {
   PauseIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { LoadingSpinner } from '../common/LoadingSpinner';
-import { useServerStack } from '../../contexts/ServerStackContext';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
+import { useServerStack } from '../../shared/contexts/ServerStackContext';
 
 const LogViewer: React.FC<LogViewerProps> = ({
   containerName,

@@ -12,11 +12,11 @@ import {
   GlobeAltIcon,
   ServerIcon,
 } from '@heroicons/react/24/outline';
-import { theme } from '../../theme';
+import { theme } from '../../shared/theme';
 import type { ContainerStats } from '../../api/generated/models';
-import { cn } from '../../utils/cn';
-import { formatBytes, formatNumber } from '../../utils/formatters';
-import { EmptyState } from '../common/EmptyState';
+import { cn } from '../../shared/utils/cn';
+import { formatBytes, formatNumber } from '../../shared/utils/formatters';
+import { EmptyState } from '../../shared/components/EmptyState';
 import { MemoryProgressBar } from './MemoryProgressBar';
 
 interface StackStatsProps {

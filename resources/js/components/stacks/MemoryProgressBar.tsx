@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { cn } from '../../utils/cn';
-import { formatBytes } from '../../utils/formatters';
+import { cn } from '../../shared/utils/cn';
+import { formatBytes } from '../../shared/utils/formatters';
 
 type Severity = 'neutral' | 'success' | 'info' | 'warning' | 'danger';
 

@@ -1,6 +1,6 @@
-import { cn } from './cn';
-import { theme } from '../theme';
-import type { Container, ComposeService, HealthLog } from '../api/generated/models';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import type { Container, ComposeService, HealthLog } from '../../../api/generated/models';
 import type { ComponentType, SVGProps } from 'react';
 import {
   CheckCircleIcon,

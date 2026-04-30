@@ -1,6 +1,6 @@
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { Modal } from '../common/Modal';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { Modal } from '../../shared/components/Modal';
 import type { SecurityAuditLogInfo } from '../../api/generated/models';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 

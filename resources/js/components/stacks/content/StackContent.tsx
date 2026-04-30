@@ -18,8 +18,8 @@ import LogViewer from '../../logs/LogViewer';
 import { FileManager } from '../../files/FileManager';
 import { VulnerabilityScanPanel } from '../../vulnerability-scan';
 import { StackImagesTab } from '../images';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { CubeIcon } from '@heroicons/react/24/outline';
 
 interface StackContentProps {

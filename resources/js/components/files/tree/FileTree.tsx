@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import type { FileEntry } from '../../../api/generated/models';
 import { FileTreeNode } from './FileTreeNode';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface FileTreeProps {
   entries: FileEntry[];

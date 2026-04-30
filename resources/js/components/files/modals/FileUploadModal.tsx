@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import type { DirectoryStats } from '../../../api/generated/models';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { Modal } from '../../common/Modal';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Modal } from '../../../shared/components/Modal';
 
 interface FileUploadModalProps {
   isOpen: boolean;

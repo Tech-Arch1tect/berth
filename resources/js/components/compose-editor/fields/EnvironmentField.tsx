@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PlusIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface EnvironmentFieldProps {
   environment: Record<string, string>;

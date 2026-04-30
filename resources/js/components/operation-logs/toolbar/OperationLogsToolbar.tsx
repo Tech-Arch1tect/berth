@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface OperationLogsToolbarProps {
   searchTerm: string;

@@ -1,9 +1,9 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { Table } from '../common/Table';
-import { formatDate } from '../../utils/formatters';
-import { getResourceStatusBadge } from '../../utils/statusHelpers';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { Table } from '../../shared/components/Table';
+import { formatDate } from '../../shared/utils/formatters';
+import { getResourceStatusBadge } from '../../features/stacks/utils/statusHelpers';
 import { GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { NetworkInfo } from '../../api/generated/models';
 

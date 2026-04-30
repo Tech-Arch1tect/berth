@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { cn } from '../../../utils/cn';
-import { LoadingSpinner } from '../../common/LoadingSpinner';
+import { cn } from '../../../shared/utils/cn';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface MonacoEditorProps {
   value: string;

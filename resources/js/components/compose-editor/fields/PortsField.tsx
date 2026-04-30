@@ -1,8 +1,8 @@
 import React from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../shared/utils/cn';
 import { hasEnvVars } from '../../../utils/composeNormaliser';
-import { theme } from '../../../theme';
+import { theme } from '../../../shared/theme';
 import { ComposePort } from '../../../types/compose';
 
 interface PortsFieldProps {

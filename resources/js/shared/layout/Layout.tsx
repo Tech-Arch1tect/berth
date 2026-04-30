@@ -22,15 +22,15 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-import { User } from '../../types';
+import { User } from '../types';
 import { setCsrfToken } from '../../api/client';
-import { useDarkMode } from '../../hooks/useDarkMode';
-import { Toaster } from '../../utils/toast';
-import { GlobalOperationsTracker } from '../operations/GlobalOperationsTracker';
+import { useDarkMode } from '../hooks/useDarkMode';
+import { Toaster } from '../utils/toast';
+import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
 import { useTerminalPanel } from '../../contexts/TerminalPanelContext';
-import { theme } from '../../theme';
-import { cn } from '../../utils/cn';
-import { StorageManager } from '../../utils/storage';
+import { theme } from '../theme';
+import { cn } from '../utils/cn';
+import { StorageManager } from '../utils/storage';
 
 interface LayoutProps {
   children: ReactNode;

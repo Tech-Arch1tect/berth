@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { ServerNavigation } from '../../components/layout/ServerNavigation';
-import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { ServerNavigation } from '../../shared/layout/ServerNavigation';
+import { Breadcrumb } from '../../shared/components/Breadcrumb';
 import { SortOption } from '../../types/stack';
-import { Server } from '../../types/server';
+import { Server } from '../../shared/types/server';
 import { useServerStacks } from '../../hooks/useServerStacks';
 import { useCanCreateStack } from '../../hooks/useCanCreateStack';
-import { StorageManager } from '../../utils/storage';
-import { PanelLayout } from '../../components/common/PanelLayout';
+import { StorageManager } from '../../shared/utils/storage';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import { StacksToolbar } from '../../components/stacks/toolbar/StacksToolbar';
 import { StacksSidebar } from '../../components/stacks/sidebar/StacksSidebar';
 import { StacksContent } from '../../components/stacks/content/StacksContent';

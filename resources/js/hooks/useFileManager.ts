@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useFiles } from './useFiles';
 import { useFileMutations } from './useFileQueries';
 import { useOperations } from './useOperations';
-import { showToast } from '../utils/toast';
+import { showToast } from '../shared/utils/toast';
 import type {
   FileEntry,
   CreateDirectoryRequest,

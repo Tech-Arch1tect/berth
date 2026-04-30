@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { Modal } from '../../components/common/Modal';
-import { Tabs } from '../../components/common/Tabs';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { Modal } from '../../shared/components/Modal';
+import { Tabs } from '../../shared/components/Tabs';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import {
   usePostApiV1AdminMigrationExport,
   usePostApiV1AdminMigrationImport,

@@ -1,9 +1,9 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { Table } from '../common/Table';
-import { formatBytes } from '../../utils/formatters';
-import { getContainerStatusBadge } from '../../utils/statusHelpers';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { Table } from '../../shared/components/Table';
+import { formatBytes } from '../../shared/utils/formatters';
+import { getContainerStatusBadge } from '../../features/stacks/utils/statusHelpers';
 import { CircleStackIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { ContainerInfo } from '../../api/generated/models';
 

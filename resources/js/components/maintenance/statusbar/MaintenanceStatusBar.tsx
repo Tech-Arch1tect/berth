@@ -1,7 +1,7 @@
 import type { FC } from 'react';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { formatBytes } from '../../../utils/formatters';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { formatBytes } from '../../../shared/utils/formatters';
 
 interface MaintenanceStatusBarProps {
   summary?: {

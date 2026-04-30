@@ -1,8 +1,8 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 export interface ModalProps {
   isOpen: boolean;

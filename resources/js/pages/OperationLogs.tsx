@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import Layout from '../components/layout/Layout';
-import { PanelLayout } from '../components/common/PanelLayout';
+import Layout from '../shared/layout/Layout';
+import { PanelLayout } from '../shared/components/PanelLayout';
 import {
   OperationLogsSidebar,
   OperationLogsToolbar,

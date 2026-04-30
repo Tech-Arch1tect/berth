@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from '../common/Modal';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { Modal } from '../../shared/components/Modal';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 
 interface CreateStackModalProps {
   isOpen: boolean;

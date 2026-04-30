@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import type { FileContent } from '../../api/generated/models';
 import { MonacoEditor } from './editor/MonacoEditor';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 
 interface FileViewerProps {
   file: FileContent;

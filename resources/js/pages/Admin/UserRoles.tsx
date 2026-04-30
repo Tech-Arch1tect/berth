@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import {
   usePostApiV1AdminUsersAssignRole,
   usePostApiV1AdminUsersRevokeRole,

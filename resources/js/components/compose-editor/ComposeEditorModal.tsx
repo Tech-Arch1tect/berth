@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Modal } from '../common/Modal';
-import { LoadingSpinner } from '../common/LoadingSpinner';
+import { Modal } from '../../shared/components/Modal';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
 import { ComposeEditorProvider, useComposeEditor, EditorSection } from './ComposeEditorProvider';
 import { useComposeEditorData } from './hooks/useComposeEditorData';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import { PortsField } from './fields/PortsField';
 import { VolumeMountsField } from './fields/VolumeMountsField';
 import { HealthcheckField } from './fields/HealthcheckField';

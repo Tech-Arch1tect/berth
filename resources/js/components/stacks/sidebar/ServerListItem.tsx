@@ -1,6 +1,6 @@
-import { Server } from '../../../types/server';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { Server } from '../../../shared/types/server';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface ServerListItemProps {
   server: Server;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 
 interface FileManagerToolbarProps {
   canRead: boolean;

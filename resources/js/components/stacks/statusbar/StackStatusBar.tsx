@@ -1,8 +1,8 @@
 import React from 'react';
 import type { ComposeService } from '../../../api/generated/models';
-import { WebSocketConnectionStatus } from '../../../types/websocket';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { WebSocketConnectionStatus } from '../../../shared/types/websocket';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface StackStatusBarProps {
   services: ComposeService[];

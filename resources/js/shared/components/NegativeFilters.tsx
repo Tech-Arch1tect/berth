@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { XMarkIcon, MinusCircleIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { StorageManager } from '../../utils/storage';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
+import { StorageManager } from '../utils/storage';
 
 interface NegativeFiltersProps {
   filters: string[];

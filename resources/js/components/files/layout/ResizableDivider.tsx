@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../shared/utils/cn';
 
 interface ResizableDividerProps {
   onResize: (delta: number) => void;

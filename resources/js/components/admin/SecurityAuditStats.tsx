@@ -1,5 +1,5 @@
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import type { StatsResponseData } from '../../api/generated/models';
 
 interface Props {

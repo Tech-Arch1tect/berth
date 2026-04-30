@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 export interface EmptyStateProps {
   icon?: React.ComponentType<{ className?: string }>;

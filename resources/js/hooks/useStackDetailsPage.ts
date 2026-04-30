@@ -7,8 +7,8 @@ import { useStackStats } from './useStackStats';
 import { useStackWebSocket } from './useStackWebSocket';
 import { useOperations } from './useOperations';
 import { useStackPermissions } from './useStackPermissions';
-import { showToast } from '../utils/toast';
-import { PERM_LOGS_READ, PERM_FILES_READ } from '../constants/permissions';
+import { showToast } from '../shared/utils/toast';
+import { PERM_LOGS_READ, PERM_FILES_READ } from '../shared/constants/permissions';
 import { OperationRequest } from '../types/operations';
 import {
   generateStackDocumentation,

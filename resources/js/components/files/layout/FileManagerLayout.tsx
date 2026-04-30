@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { ResizableDivider } from './ResizableDivider';
 import { SidebarPanel } from './SidebarPanel';
 import { EditorPanel } from './EditorPanel';

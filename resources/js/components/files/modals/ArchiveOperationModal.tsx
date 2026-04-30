@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { FileEntry } from '../../../api/generated/models';
 import { CreateArchiveRequest, ExtractArchiveRequest, ArchiveFormat } from '../../../types/files';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { Modal } from '../../common/Modal';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Modal } from '../../../shared/components/Modal';
 
 interface ArchiveOperationModalProps {
   isOpen: boolean;

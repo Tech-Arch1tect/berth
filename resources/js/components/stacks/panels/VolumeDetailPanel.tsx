@@ -1,8 +1,8 @@
 import React from 'react';
 import type { Volume } from '../../../api/generated/models';
 import { CircleStackIcon, ServerIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface VolumeDetailPanelProps {
   volume: Volume;

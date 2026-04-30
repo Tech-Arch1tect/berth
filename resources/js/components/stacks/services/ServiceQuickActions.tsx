@@ -8,18 +8,18 @@ import {
   StopCircleIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
-import { theme } from '../../../theme';
+import { theme } from '../../../shared/theme';
 import type { ComposeService } from '../../../api/generated/models';
 import { OperationRequest } from '../../../types/operations';
-import { cn } from '../../../utils/cn';
-import { useServerStack } from '../../../contexts/ServerStackContext';
+import { cn } from '../../../shared/utils/cn';
+import { useServerStack } from '../../../shared/contexts/ServerStackContext';
 import { useTerminalPanel } from '../../../contexts/TerminalPanelContext';
 import {
   getServiceActionState,
   hasStoppedContainers,
   hasCreatedContainers,
   type ActionState,
-} from '../../../utils/statusHelpers';
+} from '../../../features/stacks/utils/statusHelpers';
 
 interface ServiceQuickActionsProps {
   service: ComposeService;

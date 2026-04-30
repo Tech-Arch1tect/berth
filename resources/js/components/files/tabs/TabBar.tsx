@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { OpenTab } from '../../../types/files';
 import { Tab } from './Tab';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface TabBarProps {
   tabs: OpenTab[];

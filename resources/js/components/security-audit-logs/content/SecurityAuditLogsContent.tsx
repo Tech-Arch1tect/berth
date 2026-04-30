@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import type { SecurityAuditLogInfo } from '../../../api/generated/models';
 import { SecurityAuditDetailPanel } from '../panels/SecurityAuditDetailPanel';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../../utils/securityAuditHelpers';

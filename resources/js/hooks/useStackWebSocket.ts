@@ -1,12 +1,12 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useWebSocket } from './useWebSocket';
+import { useWebSocket } from '../shared/hooks/useWebSocket';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
   ContainerStatusEvent,
   StackStatusEvent,
   UseStackWebSocketOptions,
   WebSocketMessage,
-} from '../types/websocket';
+} from '../shared/types/websocket';
 
 export const useStackWebSocket = ({
   serverid,

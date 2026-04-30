@@ -1,4 +1,4 @@
-import type { BaseWebSocketMessage } from './websocket';
+import type { BaseWebSocketMessage } from '../shared/types/websocket';
 
 export interface TerminalStartMessage {
   type: 'terminal_start';

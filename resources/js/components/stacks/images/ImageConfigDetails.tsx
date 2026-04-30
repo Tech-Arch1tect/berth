@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ImageConfig } from '../../../api/generated/models';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface ImageConfigDetailsProps {
   config: ImageConfig;

@@ -13,10 +13,10 @@ import {
   XCircleIcon as XCircleIconSolid,
 } from '@heroicons/react/24/solid';
 import React, { useEffect, useRef, useState } from 'react';
-import { theme } from '../../theme';
-import { cn } from '../../utils/cn';
+import { theme } from '../../shared/theme';
+import { cn } from '../../shared/utils/cn';
 import { StreamMessage } from '../../types/operations';
-import { EmptyState } from '../common/EmptyState';
+import { EmptyState } from '../../shared/components/EmptyState';
 
 interface OperationLogsProps {
   logs: StreamMessage[];

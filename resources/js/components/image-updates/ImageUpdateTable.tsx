@@ -5,8 +5,8 @@ import {
   ClipboardIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import type { ImageUpdate } from '../../api/generated/models';
 
 interface ImageUpdateTableProps {

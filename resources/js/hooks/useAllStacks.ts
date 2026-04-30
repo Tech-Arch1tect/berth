@@ -1,7 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
 import type { Stack } from '../api/generated/models';
-import { Server } from '../types/server';
+import { Server } from '../shared/types/server';
 
 export interface StackWithServer extends Stack {
   server: Server;

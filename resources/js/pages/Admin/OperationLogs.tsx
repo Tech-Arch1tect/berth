@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { PanelLayout } from '../../components/common/PanelLayout';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import {
   OperationLogsSidebar,
   OperationLogsToolbar,

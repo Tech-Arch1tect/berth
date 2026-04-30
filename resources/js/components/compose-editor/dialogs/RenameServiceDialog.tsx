@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { PencilIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import { Modal } from '../../common/Modal';
-import { LoadingSpinner } from '../../common/LoadingSpinner';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { Modal } from '../../../shared/components/Modal';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { ComposeServiceConfig } from '../../../types/compose';
 
 interface RenameServiceDialogProps {

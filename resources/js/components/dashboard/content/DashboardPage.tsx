@@ -12,14 +12,14 @@ import {
   ArrowTopRightOnSquareIcon,
   NoSymbolIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { Server } from '../../../types/server';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Server } from '../../../shared/types/server';
 import { HealthSummary } from '../types/dashboard';
 import { ActivitySummary } from '../hooks/useDashboardActivity';
 import type { OperationLogInfo } from '../../../api/generated/models';
 import { useServerStatistics } from '../../../hooks/useServerStatistics';
-import { LoadingSpinner } from '../../common/LoadingSpinner';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface DashboardPageProps {
   servers: Server[];

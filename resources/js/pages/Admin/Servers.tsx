@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { Modal } from '../../components/common/Modal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Table } from '../../components/common/Table';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { Modal } from '../../shared/components/Modal';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { Table } from '../../shared/components/Table';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
 import {
   usePostApiV1AdminServers,
   usePutApiV1AdminServersId,

@@ -1,11 +1,11 @@
 import { useStackImages } from '../../../hooks/useStackImages';
 import { ContainerImageCard } from './ContainerImageCard';
 import { ArrowPathIcon, Square2StackIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { EmptyState } from '../../common/EmptyState';
-import { LoadingSpinner } from '../../common/LoadingSpinner';
-import { useServerStack } from '../../../contexts/ServerStackContext';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { useServerStack } from '../../../shared/contexts/ServerStackContext';
 import type { ContainerImageDetails } from '../../../api/generated/models';
 
 export const StackImagesTab: React.FC = () => {

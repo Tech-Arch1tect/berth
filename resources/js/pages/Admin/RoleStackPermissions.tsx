@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { Modal } from '../../components/common/Modal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { EmptyState } from '../../components/common/EmptyState';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { Breadcrumb } from '../../shared/components/Breadcrumb';
+import { Modal } from '../../shared/components/Modal';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { EmptyState } from '../../shared/components/EmptyState';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import {
   usePostApiV1AdminRolesRoleIdStackPermissions,

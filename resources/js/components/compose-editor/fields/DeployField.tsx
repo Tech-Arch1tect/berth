@@ -5,8 +5,8 @@ import {
   PlusIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { DeployChange, UpdateRollbackConfig } from '../../../types/compose';
 import { DurationInput } from '../primitives/DurationInput';
 import { MemorySizeInput } from '../primitives/MemorySizeInput';

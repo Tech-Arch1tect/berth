@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { ArrowPathIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface DashboardToolbarProps {
   title: string;

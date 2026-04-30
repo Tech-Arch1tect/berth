@@ -1,7 +1,7 @@
 import React from 'react';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../shared/utils/cn';
 import type { ComposeService } from '../../../api/generated/models';
-import { getServiceHealthStatus } from '../../../utils/statusHelpers';
+import { getServiceHealthStatus } from '../../../features/stacks/utils/statusHelpers';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 interface ServiceItemProps {

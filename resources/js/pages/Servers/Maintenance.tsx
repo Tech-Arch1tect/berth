@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import { ServerNavigation } from '../../components/layout/ServerNavigation';
-import { Server } from '../../types/server';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { EmptyState } from '../../components/common/EmptyState';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { PanelLayout } from '../../components/common/PanelLayout';
+import { ServerNavigation } from '../../shared/layout/ServerNavigation';
+import { Server } from '../../shared/types/server';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { Breadcrumb } from '../../shared/components/Breadcrumb';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import {
   useMaintenanceInfo,
   useDockerPrune,
   useDeleteResource,
 } from '../../hooks/useDockerMaintenance';
-import { showToast } from '../../utils/toast';
-import { formatBytes } from '../../utils/formatters';
+import { showToast } from '../../shared/utils/toast';
+import { formatBytes } from '../../shared/utils/formatters';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
   MaintenanceToolbar,

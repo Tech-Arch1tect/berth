@@ -6,11 +6,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { SidebarSection } from './SidebarSection';
 import { ServerListItem } from './ServerListItem';
-import { NegativeFilters } from '../../common/NegativeFilters';
-import { Server } from '../../../types/server';
+import { NegativeFilters } from '../../../shared/components/NegativeFilters';
+import { Server } from '../../../shared/types/server';
 import { SortOption } from '../../../types/stack';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 
 interface StacksSidebarProps {
   servers?: Server[];

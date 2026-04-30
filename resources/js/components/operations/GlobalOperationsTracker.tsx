@@ -10,10 +10,10 @@ import {
 import { useOperationsContext } from '../../contexts/OperationsContext';
 import { OperationBuilder } from './OperationBuilder';
 import { useOperations } from '../../hooks/useOperations';
-import { Modal } from '../common/Modal';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { EmptyState } from '../common/EmptyState';
+import { Modal } from '../../shared/components/Modal';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { EmptyState } from '../../shared/components/EmptyState';
 
 interface OperationTrackerProps {
   stackname: string;

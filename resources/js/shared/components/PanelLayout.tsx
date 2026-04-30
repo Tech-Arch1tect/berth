@@ -7,8 +7,8 @@ import {
   type ReactNode,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 interface PanelLayoutProps {
   toolbar: ReactNode;

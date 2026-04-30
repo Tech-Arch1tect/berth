@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../components/FlashMessages';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Table } from '../../components/common/Table';
+import FlashMessages from '../../shared/components/flash/FlashMessages';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { ConfirmationModal } from '../../shared/components/ConfirmationModal';
+import { Table } from '../../shared/components/Table';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import {
   usePostApiV1AdminRoles,

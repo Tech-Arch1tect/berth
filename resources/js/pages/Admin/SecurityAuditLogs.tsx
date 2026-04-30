@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { PanelLayout } from '../../components/common/PanelLayout';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import {
   SecurityAuditLogsSidebar,
   SecurityAuditLogsToolbar,

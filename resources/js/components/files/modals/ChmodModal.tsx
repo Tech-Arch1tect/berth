@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { FileEntry, ChmodRequest } from '../../../api/generated/models';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
-import { Modal } from '../../common/Modal';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Modal } from '../../../shared/components/Modal';
 
 interface ChmodModalProps {
   isOpen: boolean;

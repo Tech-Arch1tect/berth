@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import type { ComposeService } from '../../../api/generated/models';
-import { WebSocketConnectionStatus } from '../../../types/websocket';
+import { WebSocketConnectionStatus } from '../../../shared/types/websocket';
 import { OperationRequest } from '../../../types/operations';
 import { StackQuickActions } from '../services/StackQuickActions';
 import {
@@ -17,8 +17,8 @@ import {
   ArrowDownTrayIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { SidebarSelection } from '../sidebar/types';
 
 interface StackToolbarProps {

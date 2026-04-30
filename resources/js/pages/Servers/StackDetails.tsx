@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
-import { Server } from '../../types/server';
+import { Server } from '../../shared/types/server';
 import { useStackDetailsPage } from '../../hooks/useStackDetailsPage';
 import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
-import { EmptyState } from '../../components/common/EmptyState';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { ServerStackProvider } from '../../contexts/ServerStackContext';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
+import { ServerStackProvider } from '../../shared/contexts/ServerStackContext';
 import { ImageUpdateBanner } from '../../components/image-updates';
 import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import Layout from '../../components/layout/Layout';
+import Layout from '../../shared/layout/Layout';
 import { ComposeEditorModal } from '../../components/compose-editor/ComposeEditorModal';
 
 import {
@@ -17,8 +17,8 @@ import {
   PERM_LOGS_READ,
   PERM_FILES_READ,
   PERM_FILES_WRITE,
-} from '../../constants/permissions';
-import { PanelLayout } from '../../components/common/PanelLayout';
+} from '../../shared/constants/permissions';
+import { PanelLayout } from '../../shared/components/PanelLayout';
 import { StackSidebar } from '../../components/stacks/sidebar/StackSidebar';
 import { SidebarSelection } from '../../components/stacks/sidebar/types';
 import { StackToolbar } from '../../components/stacks/toolbar/StackToolbar';

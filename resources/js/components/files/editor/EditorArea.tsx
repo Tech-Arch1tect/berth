@@ -3,7 +3,7 @@ import { OpenTab } from '../../../types/files';
 import { WelcomeScreen } from './WelcomeScreen';
 import { EditorHeader } from './EditorHeader';
 import { EditorContent } from './EditorContent';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../../shared/utils/cn';
 
 interface EditorAreaProps {
   activeTab: OpenTab | null;

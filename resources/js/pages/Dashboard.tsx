@@ -1,16 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
 import { useQueries } from '@tanstack/react-query';
-import { Server } from '../types/server';
+import { Server } from '../shared/types/server';
 import { useDashboardHealth, useDashboardActivity } from '../components/dashboard';
-import { PanelLayout } from '../components/common/PanelLayout';
+import { PanelLayout } from '../shared/components/PanelLayout';
 import { DashboardSidebar } from '../components/dashboard/sidebar/DashboardSidebar';
 import { DashboardPage, SECTION_IDS } from '../components/dashboard/content/DashboardPage';
 import { DashboardToolbar } from '../components/dashboard/toolbar/DashboardToolbar';
 import { DashboardStatusBar } from '../components/dashboard/statusbar/DashboardStatusBar';
-import Layout from '../components/layout/Layout';
-import FlashMessages from '../components/FlashMessages';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import Layout from '../shared/layout/Layout';
+import FlashMessages from '../shared/components/flash/FlashMessages';
+import { LoadingSpinner } from '../shared/components/LoadingSpinner';
 import {
   getApiV1ServersServeridStatistics,
   getGetApiV1ServersServeridStatisticsQueryKey,

@@ -14,13 +14,13 @@ import {
   ChevronRightIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import {
   getContainerStatus,
   getContainerHealthStatus,
   formatHealthLog,
-} from '../../../utils/statusHelpers';
+} from '../../../features/stacks/utils/statusHelpers';
 import LogViewer from '../../logs/LogViewer';
 
 interface ServiceDetailPanelProps {

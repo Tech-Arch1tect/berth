@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { FileEntry } from '../../../api/generated/models';
-import { cn } from '../../../utils/cn';
-import { theme } from '../../../theme';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface FileDetailsPanelProps {

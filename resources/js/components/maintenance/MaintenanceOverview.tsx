@@ -1,8 +1,8 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
-import { StatCard } from '../common/StatCard';
-import { formatBytes, formatNumber } from '../../utils/formatters';
+import { cn } from '../../shared/utils/cn';
+import { theme } from '../../shared/theme';
+import { StatCard } from '../../shared/components/StatCard';
+import { formatBytes, formatNumber } from '../../shared/utils/formatters';
 import {
   ServerIcon,
   DocumentDuplicateIcon,

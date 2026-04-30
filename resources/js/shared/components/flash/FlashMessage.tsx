@@ -1,6 +1,6 @@
-import { FlashMessage as FlashMessageType } from '../types';
-import { cn } from '../utils/cn';
-import { theme } from '../theme';
+import { FlashMessage as FlashMessageType } from '../../types';
+import { cn } from '../../utils/cn';
+import { theme } from '../../theme';
 
 interface FlashMessageProps {
   flash: FlashMessageType;

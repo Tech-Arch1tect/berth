@@ -2,8 +2,8 @@ import React from 'react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Modal } from './Modal';
 import { LoadingSpinner } from './LoadingSpinner';
-import { cn } from '../../utils/cn';
-import { theme } from '../../theme';
+import { cn } from '../utils/cn';
+import { theme } from '../theme';
 
 export interface ConfirmationModalProps {
   isOpen: boolean;

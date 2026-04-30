@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import ServerCard from '../dashboard/ServerCard';
-import EmptyServerState from '../dashboard/EmptyServerState';
-import { EmptyState } from '../common/EmptyState';
-import { Server } from '../../types/server';
-import { theme } from '../../theme';
-import { cn } from '../../utils/cn';
+import ServerCard from '../../components/dashboard/ServerCard';
+import EmptyServerState from '../../components/dashboard/EmptyServerState';
+import { EmptyState } from '../components/EmptyState';
+import { Server } from '../types/server';
+import { theme } from '../theme';
+import { cn } from '../utils/cn';
 
 interface ServerListProps {
   servers: Server[];

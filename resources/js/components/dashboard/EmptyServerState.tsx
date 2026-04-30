@@ -1,6 +1,6 @@
 import { ServerIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { theme } from '../../theme';
-import { cn } from '../../utils/cn';
+import { theme } from '../../shared/theme';
+import { cn } from '../../shared/utils/cn';
 
 export default function EmptyServerState() {
   return (
