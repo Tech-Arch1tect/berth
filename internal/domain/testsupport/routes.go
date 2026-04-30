@@ -15,6 +15,7 @@ func RegisterRoutes(e *echo.Echo, h *Handler, cfg *config.Config) {
 	g := e.Group("/__test__", guard(cfg))
 	g.POST("/reset", h.Reset)
 	g.POST("/users", h.SeedUser)
+	g.POST("/users/:id/totp", h.EnableTOTP)
 	g.POST("/servers", h.SeedServer)
 	g.POST("/agents/:id/handlers", h.RegisterAgentHandler)
 	g.POST("/agents/:id/reset", h.ResetAgent)

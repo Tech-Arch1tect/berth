@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"berth/internal/domain/auth"
+	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
@@ -139,6 +140,15 @@ func (s *Service) SeedUser(in SeedUserInput) (*SeedUserResult, error) {
 	}
 
 	return &SeedUserResult{ID: u.ID, Username: u.Username, Email: u.Email}, nil
+}
+
+func (s *Service) EnableTOTP(userID uint) error {
+	const seededSecret = "JBSWY3DPEHPK3PXP"
+	row := &totp.TOTPSecret{UserID: userID, Secret: seededSecret, Enabled: true}
+	if err := s.db.Create(row).Error; err != nil {
+		return fmt.Errorf("create TOTP secret: %w", err)
+	}
+	return nil
 }
 
 type SeedServerInput struct {

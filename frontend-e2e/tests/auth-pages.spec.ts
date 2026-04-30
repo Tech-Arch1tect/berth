@@ -29,3 +29,19 @@ test.describe('TOTP setup page', () => {
     await expect(page.getByText(/setup two-factor authentication/i)).toBeVisible();
   });
 });
+
+test.describe('TOTP verify page', () => {
+  test('renders code prompt for a TOTP-enabled user awaiting second factor', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin();
+    await api.enableTOTP(admin.id);
+    await auth.loginDirectly(admin);
+
+    await page.goto('/auth/totp/verify');
+    await expect(page.getByRole('heading', { name: /two-factor authentication/i })).toBeVisible();
+    await expect(page.getByPlaceholder('123456')).toBeVisible();
+  });
+});

@@ -37,6 +37,17 @@ func (h *Handler) SeedUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, res)
 }
 
+func (h *Handler) EnableTOTP(c echo.Context) error {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid user id")
+	}
+	if err := h.svc.EnableTOTP(uint(id)); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) SeedServer(c echo.Context) error {
 	var in SeedServerInput
 	if err := c.Bind(&in); err != nil {

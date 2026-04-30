@@ -79,6 +79,11 @@ export class ApiHelpers {
     return this.seedUser({ ...opts, admin: true });
   }
 
+  async enableTOTP(userId: number): Promise<void> {
+    const res = await this.request.post(`/__test__/users/${userId}/totp`);
+    expect(res.status(), 'enable TOTP').toBe(204);
+  }
+
   async seedServerWithAgent(name = `server-${Date.now()}`): Promise<SeededServer> {
     const res = await this.request.post('/__test__/servers', { data: { name } });
     expect(res.status(), 'seed server').toBe(201);
