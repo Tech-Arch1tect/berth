@@ -5,9 +5,8 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { ListUsersResponseData } from './listUsersResponseData';
+import type { UserInfo } from './userInfo';
 
-export interface ListUsersResponse {
-  data: ListUsersResponseData;
-  success: boolean;
+export interface ListUsersData {
+  users: UserInfo[];
 }

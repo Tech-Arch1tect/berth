@@ -5,8 +5,13 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Error } from './error';
+import type { Meta } from './meta';
 import type { RoleWithPermissions } from './roleWithPermissions';
 
-export interface ListRolesResponseData {
-  roles: RoleWithPermissions[];
+export interface ResponseRoleWithPermissions {
+  data: RoleWithPermissions;
+  error?: Error | null;
+  meta?: Meta | null;
+  success: boolean;
 }

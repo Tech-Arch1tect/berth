@@ -8,7 +8,7 @@
 import type { RoleInfo } from './roleInfo';
 import type { UserInfo } from './userInfo';
 
-export interface GetUserRolesResponseData {
+export interface GetUserRolesData {
   all_roles: RoleInfo[];
   user: UserInfo;
 }

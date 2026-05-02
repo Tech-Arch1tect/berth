@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { Error } from './error';
-import type { MessageData2 } from './messageData2';
+import type { ListPermissionsData } from './listPermissionsData';
 import type { Meta } from './meta';
 
-export interface ResponseMessageData2 {
-  data: MessageData2;
+export interface ResponseListPermissionsData {
+  data: ListPermissionsData;
   error?: Error | null;
   meta?: Meta | null;
   success: boolean;

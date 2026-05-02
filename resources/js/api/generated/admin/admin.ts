@@ -23,45 +23,40 @@ import type {
 
 import type {
   AssignRoleRequest,
-  AssignRoleResponse,
   CreateRoleRequest,
-  CreateRoleResponse,
   CreateStackPermissionRequest,
-  CreateStackPermissionResponse,
   CreateUserRequest,
-  CreateUserResponse,
-  DeleteRoleResponse,
-  DeleteStackPermissionResponse,
   ErrorResponse,
   ExportRequest,
   GetApiV1AdminOperationLogsParams,
   GetApiV1AdminPermissionsParams,
   GetApiV1AdminSecurityAuditLogsParams,
-  GetUserRolesResponse,
   ImportResponse,
-  ListPermissionsResponse,
-  ListRoleStackPermissionsResponse,
-  ListRolesResponse,
-  ListUsersResponse,
   PostApiV1AdminMigrationImportBody,
   ResponseAdminCreateServerData,
   ResponseAdminListServersData,
   ResponseAdminUpdateServerData,
   ResponseEmpty,
   ResponseGetServerData,
+  ResponseGetUserRolesData,
+  ResponseListPermissionsData,
+  ResponseListRoleStackPermissionsData,
+  ResponseListRolesData,
+  ResponseListUsersData,
   ResponseMessageData,
+  ResponseMessageData2,
   ResponseOperationLogDetailData,
   ResponseOperationLogInfo,
   ResponseOperationLogStatsData,
+  ResponseRoleWithPermissions,
   ResponseSecurityAuditLogInfo,
   ResponseSecurityAuditLogInfo2,
   ResponseStatsResponseData,
+  ResponseUserInfo,
   RevokeRoleRequest,
-  RevokeRoleResponse,
   ServerCreateRequest,
   ServerUpdateRequest,
   UpdateRoleRequest,
-  UpdateRoleResponse,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -673,8 +668,8 @@ export const getGetApiV1AdminPermissionsUrl = (params?: GetApiV1AdminPermissions
 export const getApiV1AdminPermissions = async (
   params?: GetApiV1AdminPermissionsParams,
   options?: RequestInit
-): Promise<ListPermissionsResponse> => {
-  return apiClient<ListPermissionsResponse>(getGetApiV1AdminPermissionsUrl(params), {
+): Promise<ResponseListPermissionsData> => {
+  return apiClient<ResponseListPermissionsData>(getGetApiV1AdminPermissionsUrl(params), {
     ...options,
     method: 'GET',
   });
@@ -686,7 +681,7 @@ export const getGetApiV1AdminPermissionsQueryKey = (params?: GetApiV1AdminPermis
 
 export const getGetApiV1AdminPermissionsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminPermissionsParams,
   options?: {
@@ -714,11 +709,11 @@ export const getGetApiV1AdminPermissionsQueryOptions = <
 export type GetApiV1AdminPermissionsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminPermissions>>
 >;
-export type GetApiV1AdminPermissionsQueryError = ErrorResponse | void;
+export type GetApiV1AdminPermissionsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params: undefined | GetApiV1AdminPermissionsParams,
   options: {
@@ -739,7 +734,7 @@ export function useGetApiV1AdminPermissions<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminPermissionsParams,
   options?: {
@@ -760,7 +755,7 @@ export function useGetApiV1AdminPermissions<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminPermissionsParams,
   options?: {
@@ -777,7 +772,7 @@ export function useGetApiV1AdminPermissions<
 
 export function useGetApiV1AdminPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminPermissionsParams,
   options?: {
@@ -805,8 +800,8 @@ export const getGetApiV1AdminRolesUrl = () => {
   return `/api/v1/admin/roles`;
 };
 
-export const getApiV1AdminRoles = async (options?: RequestInit): Promise<ListRolesResponse> => {
-  return apiClient<ListRolesResponse>(getGetApiV1AdminRolesUrl(), {
+export const getApiV1AdminRoles = async (options?: RequestInit): Promise<ResponseListRolesData> => {
+  return apiClient<ResponseListRolesData>(getGetApiV1AdminRolesUrl(), {
     ...options,
     method: 'GET',
   });
@@ -818,7 +813,7 @@ export const getGetApiV1AdminRolesQueryKey = () => {
 
 export const getGetApiV1AdminRolesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
   request?: SecondParameter<typeof apiClient>;
@@ -840,11 +835,11 @@ export const getGetApiV1AdminRolesQueryOptions = <
 export type GetApiV1AdminRolesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminRoles>>
 >;
-export type GetApiV1AdminRolesQueryError = ErrorResponse | void;
+export type GetApiV1AdminRolesQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>> &
@@ -862,7 +857,7 @@ export function useGetApiV1AdminRoles<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<
@@ -882,7 +877,7 @@ export function useGetApiV1AdminRoles<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
@@ -896,7 +891,7 @@ export function useGetApiV1AdminRoles<
 
 export function useGetApiV1AdminRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminRoles>>, TError, TData>>;
@@ -924,8 +919,8 @@ export const getPostApiV1AdminRolesUrl = () => {
 export const postApiV1AdminRoles = async (
   createRoleRequest: CreateRoleRequest,
   options?: RequestInit
-): Promise<CreateRoleResponse> => {
-  return apiClient<CreateRoleResponse>(getPostApiV1AdminRolesUrl(), {
+): Promise<ResponseRoleWithPermissions> => {
+  return apiClient<ResponseRoleWithPermissions>(getPostApiV1AdminRolesUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -934,7 +929,7 @@ export const postApiV1AdminRoles = async (
 };
 
 export const getPostApiV1AdminRolesMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -973,12 +968,12 @@ export type PostApiV1AdminRolesMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminRoles>>
 >;
 export type PostApiV1AdminRolesMutationBody = CreateRoleRequest;
-export type PostApiV1AdminRolesMutationError = ErrorResponse | void;
+export type PostApiV1AdminRolesMutationError = ResponseEmpty | void;
 
 /**
  * @summary Create a new role
  */
-export const usePostApiV1AdminRoles = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminRoles = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminRoles>>,
@@ -1008,15 +1003,15 @@ export const getDeleteApiV1AdminRolesIdUrl = (id: number) => {
 export const deleteApiV1AdminRolesId = async (
   id: number,
   options?: RequestInit
-): Promise<DeleteRoleResponse> => {
-  return apiClient<DeleteRoleResponse>(getDeleteApiV1AdminRolesIdUrl(id), {
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(getDeleteApiV1AdminRolesIdUrl(id), {
     ...options,
     method: 'DELETE',
   });
 };
 
 export const getDeleteApiV1AdminRolesIdMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1055,12 +1050,12 @@ export type DeleteApiV1AdminRolesIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>
 >;
 
-export type DeleteApiV1AdminRolesIdMutationError = ErrorResponse | void;
+export type DeleteApiV1AdminRolesIdMutationError = ResponseEmpty | void;
 
 /**
  * @summary Delete a role
  */
-export const useDeleteApiV1AdminRolesId = <TError = ErrorResponse | void, TContext = unknown>(
+export const useDeleteApiV1AdminRolesId = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteApiV1AdminRolesId>>,
@@ -1091,8 +1086,8 @@ export const putApiV1AdminRolesId = async (
   id: number,
   updateRoleRequest: UpdateRoleRequest,
   options?: RequestInit
-): Promise<UpdateRoleResponse> => {
-  return apiClient<UpdateRoleResponse>(getPutApiV1AdminRolesIdUrl(id), {
+): Promise<ResponseRoleWithPermissions> => {
+  return apiClient<ResponseRoleWithPermissions>(getPutApiV1AdminRolesIdUrl(id), {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -1101,7 +1096,7 @@ export const putApiV1AdminRolesId = async (
 };
 
 export const getPutApiV1AdminRolesIdMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1140,12 +1135,12 @@ export type PutApiV1AdminRolesIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof putApiV1AdminRolesId>>
 >;
 export type PutApiV1AdminRolesIdMutationBody = UpdateRoleRequest;
-export type PutApiV1AdminRolesIdMutationError = ErrorResponse | void;
+export type PutApiV1AdminRolesIdMutationError = ResponseEmpty | void;
 
 /**
  * @summary Update a role
  */
-export const usePutApiV1AdminRolesId = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePutApiV1AdminRolesId = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof putApiV1AdminRolesId>>,
@@ -1175,8 +1170,8 @@ export const getGetApiV1AdminRolesRoleIdStackPermissionsUrl = (roleId: number) =
 export const getApiV1AdminRolesRoleIdStackPermissions = async (
   roleId: number,
   options?: RequestInit
-): Promise<ListRoleStackPermissionsResponse> => {
-  return apiClient<ListRoleStackPermissionsResponse>(
+): Promise<ResponseListRoleStackPermissionsData> => {
+  return apiClient<ResponseListRoleStackPermissionsData>(
     getGetApiV1AdminRolesRoleIdStackPermissionsUrl(roleId),
     {
       ...options,
@@ -1191,7 +1186,7 @@ export const getGetApiV1AdminRolesRoleIdStackPermissionsQueryKey = (roleId: numb
 
 export const getGetApiV1AdminRolesRoleIdStackPermissionsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   roleId: number,
   options?: {
@@ -1225,11 +1220,11 @@ export const getGetApiV1AdminRolesRoleIdStackPermissionsQueryOptions = <
 export type GetApiV1AdminRolesRoleIdStackPermissionsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>
 >;
-export type GetApiV1AdminRolesRoleIdStackPermissionsQueryError = ErrorResponse | void;
+export type GetApiV1AdminRolesRoleIdStackPermissionsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminRolesRoleIdStackPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   roleId: number,
   options: {
@@ -1254,7 +1249,7 @@ export function useGetApiV1AdminRolesRoleIdStackPermissions<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminRolesRoleIdStackPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   roleId: number,
   options?: {
@@ -1279,7 +1274,7 @@ export function useGetApiV1AdminRolesRoleIdStackPermissions<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminRolesRoleIdStackPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   roleId: number,
   options?: {
@@ -1300,7 +1295,7 @@ export function useGetApiV1AdminRolesRoleIdStackPermissions<
 
 export function useGetApiV1AdminRolesRoleIdStackPermissions<
   TData = Awaited<ReturnType<typeof getApiV1AdminRolesRoleIdStackPermissions>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   roleId: number,
   options?: {
@@ -1336,20 +1331,17 @@ export const postApiV1AdminRolesRoleIdStackPermissions = async (
   roleId: number,
   createStackPermissionRequest: CreateStackPermissionRequest,
   options?: RequestInit
-): Promise<CreateStackPermissionResponse> => {
-  return apiClient<CreateStackPermissionResponse>(
-    getPostApiV1AdminRolesRoleIdStackPermissionsUrl(roleId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(createStackPermissionRequest),
-    }
-  );
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(getPostApiV1AdminRolesRoleIdStackPermissionsUrl(roleId), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createStackPermissionRequest),
+  });
 };
 
 export const getPostApiV1AdminRolesRoleIdStackPermissionsMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1388,13 +1380,13 @@ export type PostApiV1AdminRolesRoleIdStackPermissionsMutationResult = NonNullabl
   Awaited<ReturnType<typeof postApiV1AdminRolesRoleIdStackPermissions>>
 >;
 export type PostApiV1AdminRolesRoleIdStackPermissionsMutationBody = CreateStackPermissionRequest;
-export type PostApiV1AdminRolesRoleIdStackPermissionsMutationError = ErrorResponse | void;
+export type PostApiV1AdminRolesRoleIdStackPermissionsMutationError = ResponseEmpty | void;
 
 /**
  * @summary Create a role stack permission
  */
 export const usePostApiV1AdminRolesRoleIdStackPermissions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -1433,8 +1425,8 @@ export const deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = async (
   roleId: number,
   permissionId: number,
   options?: RequestInit
-): Promise<DeleteStackPermissionResponse> => {
-  return apiClient<DeleteStackPermissionResponse>(
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(
     getDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdUrl(roleId, permissionId),
     {
       ...options,
@@ -1444,7 +1436,7 @@ export const deleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = async (
 };
 
 export const getDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1488,13 +1480,13 @@ export type DeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationResul
 >;
 
 export type DeleteApiV1AdminRolesRoleIdStackPermissionsPermissionIdMutationError =
-  ErrorResponse | void;
+  ResponseEmpty | void;
 
 /**
  * @summary Delete a role stack permission
  */
 export const useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -2166,8 +2158,8 @@ export const getDeleteApiV1AdminServersIdUrl = (id: number) => {
 export const deleteApiV1AdminServersId = async (
   id: number,
   options?: RequestInit
-): Promise<ResponseMessageData> => {
-  return apiClient<ResponseMessageData>(getDeleteApiV1AdminServersIdUrl(id), {
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getDeleteApiV1AdminServersIdUrl(id), {
     ...options,
     method: 'DELETE',
   });
@@ -2467,8 +2459,8 @@ export const getPostApiV1AdminServersIdTestUrl = (id: number) => {
 export const postApiV1AdminServersIdTest = async (
   id: number,
   options?: RequestInit
-): Promise<ResponseMessageData> => {
-  return apiClient<ResponseMessageData>(getPostApiV1AdminServersIdTestUrl(id), {
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getPostApiV1AdminServersIdTestUrl(id), {
     ...options,
     method: 'POST',
   });
@@ -2546,8 +2538,8 @@ export const getGetApiV1AdminUsersUrl = () => {
   return `/api/v1/admin/users`;
 };
 
-export const getApiV1AdminUsers = async (options?: RequestInit): Promise<ListUsersResponse> => {
-  return apiClient<ListUsersResponse>(getGetApiV1AdminUsersUrl(), {
+export const getApiV1AdminUsers = async (options?: RequestInit): Promise<ResponseListUsersData> => {
+  return apiClient<ResponseListUsersData>(getGetApiV1AdminUsersUrl(), {
     ...options,
     method: 'GET',
   });
@@ -2559,7 +2551,7 @@ export const getGetApiV1AdminUsersQueryKey = () => {
 
 export const getGetApiV1AdminUsersQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
   request?: SecondParameter<typeof apiClient>;
@@ -2581,11 +2573,11 @@ export const getGetApiV1AdminUsersQueryOptions = <
 export type GetApiV1AdminUsersQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminUsers>>
 >;
-export type GetApiV1AdminUsersQueryError = ErrorResponse | void;
+export type GetApiV1AdminUsersQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminUsers<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>> &
@@ -2603,7 +2595,7 @@ export function useGetApiV1AdminUsers<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminUsers<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<
@@ -2623,7 +2615,7 @@ export function useGetApiV1AdminUsers<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminUsers<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
@@ -2637,7 +2629,7 @@ export function useGetApiV1AdminUsers<
 
 export function useGetApiV1AdminUsers<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminUsers>>, TError, TData>>;
@@ -2665,8 +2657,8 @@ export const getPostApiV1AdminUsersUrl = () => {
 export const postApiV1AdminUsers = async (
   createUserRequest: CreateUserRequest,
   options?: RequestInit
-): Promise<CreateUserResponse> => {
-  return apiClient<CreateUserResponse>(getPostApiV1AdminUsersUrl(), {
+): Promise<ResponseUserInfo> => {
+  return apiClient<ResponseUserInfo>(getPostApiV1AdminUsersUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -2675,7 +2667,7 @@ export const postApiV1AdminUsers = async (
 };
 
 export const getPostApiV1AdminUsersMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2714,12 +2706,12 @@ export type PostApiV1AdminUsersMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminUsers>>
 >;
 export type PostApiV1AdminUsersMutationBody = CreateUserRequest;
-export type PostApiV1AdminUsersMutationError = ErrorResponse | void;
+export type PostApiV1AdminUsersMutationError = ResponseEmpty | void;
 
 /**
  * @summary Create a new user
  */
-export const usePostApiV1AdminUsers = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminUsers = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminUsers>>,
@@ -2749,8 +2741,8 @@ export const getPostApiV1AdminUsersAssignRoleUrl = () => {
 export const postApiV1AdminUsersAssignRole = async (
   assignRoleRequest: AssignRoleRequest,
   options?: RequestInit
-): Promise<AssignRoleResponse> => {
-  return apiClient<AssignRoleResponse>(getPostApiV1AdminUsersAssignRoleUrl(), {
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(getPostApiV1AdminUsersAssignRoleUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -2759,7 +2751,7 @@ export const postApiV1AdminUsersAssignRole = async (
 };
 
 export const getPostApiV1AdminUsersAssignRoleMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2798,12 +2790,12 @@ export type PostApiV1AdminUsersAssignRoleMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>
 >;
 export type PostApiV1AdminUsersAssignRoleMutationBody = AssignRoleRequest;
-export type PostApiV1AdminUsersAssignRoleMutationError = ErrorResponse | void;
+export type PostApiV1AdminUsersAssignRoleMutationError = ResponseEmpty | void;
 
 /**
  * @summary Assign a role to a user
  */
-export const usePostApiV1AdminUsersAssignRole = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminUsersAssignRole = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminUsersAssignRole>>,
@@ -2833,8 +2825,8 @@ export const getPostApiV1AdminUsersRevokeRoleUrl = () => {
 export const postApiV1AdminUsersRevokeRole = async (
   revokeRoleRequest: RevokeRoleRequest,
   options?: RequestInit
-): Promise<RevokeRoleResponse> => {
-  return apiClient<RevokeRoleResponse>(getPostApiV1AdminUsersRevokeRoleUrl(), {
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(getPostApiV1AdminUsersRevokeRoleUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -2843,7 +2835,7 @@ export const postApiV1AdminUsersRevokeRole = async (
 };
 
 export const getPostApiV1AdminUsersRevokeRoleMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2882,12 +2874,12 @@ export type PostApiV1AdminUsersRevokeRoleMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>
 >;
 export type PostApiV1AdminUsersRevokeRoleMutationBody = RevokeRoleRequest;
-export type PostApiV1AdminUsersRevokeRoleMutationError = ErrorResponse | void;
+export type PostApiV1AdminUsersRevokeRoleMutationError = ResponseEmpty | void;
 
 /**
  * @summary Revoke a role from a user
  */
-export const usePostApiV1AdminUsersRevokeRole = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminUsersRevokeRole = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminUsersRevokeRole>>,
@@ -2917,8 +2909,8 @@ export const getGetApiV1AdminUsersIdRolesUrl = (id: number) => {
 export const getApiV1AdminUsersIdRoles = async (
   id: number,
   options?: RequestInit
-): Promise<GetUserRolesResponse> => {
-  return apiClient<GetUserRolesResponse>(getGetApiV1AdminUsersIdRolesUrl(id), {
+): Promise<ResponseGetUserRolesData> => {
+  return apiClient<ResponseGetUserRolesData>(getGetApiV1AdminUsersIdRolesUrl(id), {
     ...options,
     method: 'GET',
   });
@@ -2930,7 +2922,7 @@ export const getGetApiV1AdminUsersIdRolesQueryKey = (id: number) => {
 
 export const getGetApiV1AdminUsersIdRolesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -2958,11 +2950,11 @@ export const getGetApiV1AdminUsersIdRolesQueryOptions = <
 export type GetApiV1AdminUsersIdRolesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>
 >;
-export type GetApiV1AdminUsersIdRolesQueryError = ErrorResponse | void;
+export type GetApiV1AdminUsersIdRolesQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminUsersIdRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options: {
@@ -2983,7 +2975,7 @@ export function useGetApiV1AdminUsersIdRoles<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminUsersIdRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -3004,7 +2996,7 @@ export function useGetApiV1AdminUsersIdRoles<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminUsersIdRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -3021,7 +3013,7 @@ export function useGetApiV1AdminUsersIdRoles<
 
 export function useGetApiV1AdminUsersIdRoles<
   TData = Awaited<ReturnType<typeof getApiV1AdminUsersIdRoles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
