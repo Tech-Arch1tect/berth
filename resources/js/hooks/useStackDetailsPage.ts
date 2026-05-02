@@ -5,11 +5,11 @@ import { useStackVolumes } from './useStackVolumes';
 import { useStackEnvironmentVariables } from './useStackEnvironmentVariables';
 import { useStackStats } from './useStackStats';
 import { useStackWebSocket } from './useStackWebSocket';
-import { useOperations } from './useOperations';
+import { useOperations } from '../features/operations/hooks/useOperations';
 import { useStackPermissions } from './useStackPermissions';
 import { showToast } from '../shared/utils/toast';
 import { PERM_LOGS_READ, PERM_FILES_READ } from '../shared/constants/permissions';
-import { OperationRequest } from '../types/operations';
+import { OperationRequest } from '../features/operations/types';
 import {
   generateStackDocumentation,
   downloadMarkdown,

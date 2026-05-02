@@ -9,7 +9,7 @@ import {
 import type { ComponentType, SVGProps } from 'react';
 import { theme } from '../../../shared/theme';
 import type { ComposeService } from '../../../api/generated/models';
-import { OperationRequest } from '../../../types/operations';
+import { OperationRequest } from '../../../features/operations/types';
 import { cn } from '../../../shared/utils/cn';
 import {
   getStackActionState,

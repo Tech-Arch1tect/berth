@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   useGetApiV1RunningOperations,
   getGetApiV1RunningOperationsQueryKey,
-} from '../api/generated/operation-logs/operation-logs';
-import type { RunningOperationsResponse } from '../api/generated/models';
+} from '../../../api/generated/operation-logs/operation-logs';
+import type { RunningOperationsResponse } from '../../../api/generated/models';
 
 export const useRunningOperations = () => {
   const queryClient = useQueryClient();

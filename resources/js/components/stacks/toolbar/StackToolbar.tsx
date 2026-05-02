@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import type { ComposeService } from '../../../api/generated/models';
 import { WebSocketConnectionStatus } from '../../../shared/types/websocket';
-import { OperationRequest } from '../../../types/operations';
+import { OperationRequest } from '../../../features/operations/types';
 import { StackQuickActions } from '../services/StackQuickActions';
 import {
   ArrowPathIcon,

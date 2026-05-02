@@ -7,13 +7,13 @@ import {
   ClockIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { useOperationsContext } from '../../contexts/OperationsContext';
+import { useOperationsContext } from '../contexts/OperationsContext';
 import { OperationBuilder } from './OperationBuilder';
-import { useOperations } from '../../hooks/useOperations';
-import { Modal } from '../../shared/components/Modal';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { EmptyState } from '../../shared/components/EmptyState';
+import { useOperations } from '../hooks/useOperations';
+import { Modal } from '../../../shared/components/Modal';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { EmptyState } from '../../../shared/components/EmptyState';
 
 interface OperationTrackerProps {
   stackname: string;

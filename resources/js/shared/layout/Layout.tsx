@@ -26,7 +26,7 @@ import { User } from '../types';
 import { setCsrfToken } from '../../api/client';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { Toaster } from '../utils/toast';
-import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
+import { GlobalOperationsTracker } from '../../features/operations/components/GlobalOperationsTracker';
 import { useTerminalPanel } from '../../features/terminal/contexts/TerminalPanelContext';
 import { theme } from '../theme';
 import { cn } from '../utils/cn';

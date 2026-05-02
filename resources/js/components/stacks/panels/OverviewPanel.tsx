@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ComposeService, Container, Network, Volume } from '../../../api/generated/models';
-import { OperationRequest } from '../../../types/operations';
+import { OperationRequest } from '../../../features/operations/types';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import {
   CubeIcon,

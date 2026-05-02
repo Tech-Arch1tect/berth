@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { DockerOperationRequest } from '../../types/operations';
-import { theme } from '../../shared/theme';
-import { cn } from '../../shared/utils/cn';
+import { DockerOperationRequest } from '../types';
+import { theme } from '../../../shared/theme';
+import { cn } from '../../../shared/utils/cn';
 
 interface OperationBuilderProps {
   onOperationBuild: (operation: DockerOperationRequest) => void;

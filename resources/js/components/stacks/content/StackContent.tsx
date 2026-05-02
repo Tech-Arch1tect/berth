@@ -12,7 +12,7 @@ import { ServiceDetailPanel } from '../panels/ServiceDetailPanel';
 import { NetworkDetailPanel } from '../panels/NetworkDetailPanel';
 import { VolumeDetailPanel } from '../panels/VolumeDetailPanel';
 import { EnvironmentPanel } from '../panels/EnvironmentPanel';
-import { OperationRequest } from '../../../types/operations';
+import { OperationRequest } from '../../../features/operations/types';
 import StackStats from '../StackStats';
 import LogViewer from '../../../features/logs/components/LogViewer';
 import { FileManager } from '../../../features/files/components/FileManager';

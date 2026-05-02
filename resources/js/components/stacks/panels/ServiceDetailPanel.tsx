@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { ComposeService, Container, HealthStatus } from '../../../api/generated/models';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
-import { OperationRequest } from '../../../types/operations';
+import { OperationRequest } from '../../../features/operations/types';
 import {
   ClockIcon,
   CpuChipIcon,

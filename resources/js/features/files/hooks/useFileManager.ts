@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useFiles } from './useFiles';
 import { useFileMutations } from './useFileQueries';
-import { useOperations } from '../../../hooks/useOperations';
+import { useOperations } from '../../operations/hooks/useOperations';
 import { showToast } from '../../../shared/utils/toast';
 import type {
   FileEntry,

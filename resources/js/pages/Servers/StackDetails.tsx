@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import { Server } from '../../shared/types/server';
 import { useStackDetailsPage } from '../../hooks/useStackDetailsPage';
-import { GlobalOperationsTracker } from '../../components/operations/GlobalOperationsTracker';
+import { GlobalOperationsTracker } from '../../features/operations/components/GlobalOperationsTracker';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
 import { ServerStackProvider } from '../../shared/contexts/ServerStackContext';

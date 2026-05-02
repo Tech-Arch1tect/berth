@@ -3,7 +3,7 @@ import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { OperationsProvider } from './contexts/OperationsContext';
+import { OperationsProvider } from './features/operations/contexts/OperationsContext';
 import { TerminalPanelProvider } from './features/terminal/contexts/TerminalPanelContext';
 import { TerminalPanel } from './features/terminal/components/TerminalPanel';
 import Layout from './shared/layout/Layout';

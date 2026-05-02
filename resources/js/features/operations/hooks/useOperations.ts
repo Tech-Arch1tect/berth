@@ -5,9 +5,9 @@ import {
   OperationStatus,
   StreamMessage,
   WebSocketMessage,
-} from '../types/operations';
+} from '../types';
 import { useOperationsContext, NewOperationInput } from '../contexts/OperationsContext';
-import { getApiV1OperationLogsByOperationIdOperationId } from '../api/generated/operation-logs/operation-logs';
+import { getApiV1OperationLogsByOperationIdOperationId } from '../../../api/generated/operation-logs/operation-logs';
 
 interface UseOperationsOptions {
   serverid: string;

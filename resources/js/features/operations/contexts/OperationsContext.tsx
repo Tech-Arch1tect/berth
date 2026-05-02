@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { StreamMessage } from '../types/operations';
-import StorageManager from '../shared/utils/storage';
-import { getApiV1RunningOperations } from '../api/generated/operation-logs/operation-logs';
-import type { OperationLogInfo } from '../api/generated/models';
+import { StreamMessage } from '../types';
+import StorageManager from '../../../shared/utils/storage';
+import { getApiV1RunningOperations } from '../../../api/generated/operation-logs/operation-logs';
+import type { OperationLogInfo } from '../../../api/generated/models';
 
 type RunningOperation = OperationLogInfo;
 
