@@ -7,10 +7,10 @@ import {
   CheckCircleIcon,
   CubeIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
-import { Server } from '../../../shared/types/server';
-import { HealthSummary } from '../types/dashboard';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
+import { Server } from '../../../../shared/types/server';
+import { HealthSummary } from '../../types';
 
 interface OverviewPanelProps {
   servers: Server[];

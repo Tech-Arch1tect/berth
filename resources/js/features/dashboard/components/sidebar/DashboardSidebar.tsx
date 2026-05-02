@@ -1,7 +1,7 @@
 import React from 'react';
-import { cn } from '../../../shared/utils/cn';
-import { Server } from '../../../shared/types/server';
-import { HealthSummary } from '../types/dashboard';
+import { cn } from '../../../../shared/utils/cn';
+import { Server } from '../../../../shared/types/server';
+import { HealthSummary } from '../../types';
 import { SECTION_IDS } from '../content/DashboardPage';
 import {
   ViewColumnsIcon,

@@ -1,5 +1,5 @@
 import { useQueries } from '@tanstack/react-query';
-import { HealthSummary, DashboardServer } from '../types/dashboard';
+import { HealthSummary, DashboardServer } from '../types';
 import {
   getApiV1ServersServeridStatistics,
   getGetApiV1ServersServeridStatisticsQueryKey,

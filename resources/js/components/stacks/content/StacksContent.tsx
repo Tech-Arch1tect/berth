@@ -8,7 +8,7 @@ import { theme } from '../../../shared/theme';
 import type { Stack } from '../../../api/generated/models';
 import { Server } from '../../../shared/types/server';
 import { CompactStatistics } from './CompactStatistics';
-import { StackCard } from '../../dashboard/StackCard';
+import { StackCard } from '../../../features/dashboard/components/StackCard';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 

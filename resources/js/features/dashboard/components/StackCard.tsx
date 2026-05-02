@@ -6,11 +6,11 @@ import {
   XCircleIcon,
   FolderIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import type { Stack } from '../../api/generated/models';
-import { useStackImageUpdates } from '../../features/image-updates/hooks/useStackImageUpdates';
-import { UpdateAvailableBadge } from '../../features/image-updates/components';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import type { Stack } from '../../../api/generated/models';
+import { useStackImageUpdates } from '../../image-updates/hooks/useStackImageUpdates';
+import { UpdateAvailableBadge } from '../../image-updates/components';
 
 interface StackCardProps {
   stack: Stack;

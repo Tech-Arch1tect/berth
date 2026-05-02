@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { HealthSummary } from '../types/dashboard';
-import { cn } from '../../../shared/utils/cn';
-import { theme } from '../../../shared/theme';
+import { HealthSummary } from '../../types';
+import { cn } from '../../../../shared/utils/cn';
+import { theme } from '../../../../shared/theme';
 
 interface DashboardStatusBarProps {
   healthSummary: HealthSummary;

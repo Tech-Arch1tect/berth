@@ -20,9 +20,9 @@ export { StackCard } from './StackCard';
 export { default as EmptyServerState } from './EmptyServerState';
 
 // Hooks
-export { useDashboardHealth } from './hooks/useDashboardHealth';
-export { useDashboardActivity } from './hooks/useDashboardActivity';
+export { useDashboardHealth } from '../hooks/useDashboardHealth';
+export { useDashboardActivity } from '../hooks/useDashboardActivity';
 
 // Types
-export type { HealthSummary, DashboardStat } from './types/dashboard';
-export type { ActivitySummary } from './hooks/useDashboardActivity';
+export type { HealthSummary, DashboardStat } from '../types';
+export type { ActivitySummary } from '../hooks/useDashboardActivity';

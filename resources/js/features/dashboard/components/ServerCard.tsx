@@ -5,10 +5,10 @@ import {
   NoSymbolIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import { Server } from '../../shared/types/server';
-import { useServerStatistics } from '../../hooks/useServerStatistics';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import { Server } from '../../../shared/types/server';
+import { useServerStatistics } from '../../../hooks/useServerStatistics';
 
 interface ServerCardProps {
   server: Server;
