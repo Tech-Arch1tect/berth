@@ -15,7 +15,7 @@ import { EnvironmentPanel } from '../panels/EnvironmentPanel';
 import { OperationRequest } from '../../../types/operations';
 import StackStats from '../StackStats';
 import LogViewer from '../../../features/logs/components/LogViewer';
-import { FileManager } from '../../files/FileManager';
+import { FileManager } from '../../../features/files/components/FileManager';
 import { VulnerabilityScanPanel } from '../../vulnerability-scan';
 import { StackImagesTab } from '../images';
 import { cn } from '../../../shared/utils/cn';
