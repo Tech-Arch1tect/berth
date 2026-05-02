@@ -27,12 +27,7 @@ type ImageUpdate struct {
 	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
-type ImageUpdatesResponse struct {
-	Success bool                  `json:"success"`
-	Data    ImageUpdatesDataInner `json:"data"`
-}
-
-type ImageUpdatesDataInner struct {
+type ImageUpdatesData struct {
 	Updates []ImageUpdate `json:"updates"`
 }
 
@@ -59,7 +54,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 	ctx := c.Request().Context()
 	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return response.SendUnauthorized(c, "Authentication required")
+		return response.Unauthorized(c, "Authentication required")
 	}
 
 	allUpdates, err := h.service.GetAvailableUpdates()
@@ -68,7 +63,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 			zap.Error(err),
 			zap.Uint("user_id", userID),
 		)
-		return response.SendError(c, 500, "Failed to fetch updates")
+		return response.Internal(c, "Failed to fetch updates")
 	}
 
 	accessibleServerIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
@@ -77,7 +72,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 			zap.Error(err),
 			zap.Uint("user_id", userID),
 		)
-		return response.SendInternalError(c, "Failed to check server access")
+		return response.Internal(c, "Failed to check server access")
 	}
 
 	serverIDMap := make(map[uint]bool)
@@ -134,22 +129,19 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return response.SendSuccess(c, ImageUpdatesResponse{
-		Success: true,
-		Data:    ImageUpdatesDataInner{Updates: accessibleUpdates},
-	})
+	return response.OK(c, ImageUpdatesData{Updates: accessibleUpdates})
 }
 
 func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 	ctx := c.Request().Context()
 	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
-		return response.SendUnauthorized(c, "Authentication required")
+		return response.Unauthorized(c, "Authentication required")
 	}
 
 	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
-		return response.SendBadRequest(c, "Invalid server ID")
+		return response.BadRequest(c, "Invalid server ID")
 	}
 
 	serverIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
@@ -158,7 +150,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 			zap.Error(err),
 			zap.Uint("user_id", userID),
 		)
-		return response.SendInternalError(c, "Failed to check server access")
+		return response.Internal(c, "Failed to check server access")
 	}
 
 	hasServerAccess := false
@@ -174,7 +166,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 			zap.Uint("user_id", userID),
 			zap.Uint("server_id", serverID),
 		)
-		return response.SendForbidden(c, "You do not have access to this server")
+		return response.Forbidden(c, "You do not have access to this server")
 	}
 
 	allUpdates, err := h.service.GetServerUpdates(serverID)
@@ -183,7 +175,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
 		)
-		return response.SendError(c, 500, "Failed to fetch updates")
+		return response.Internal(c, "Failed to fetch updates")
 	}
 
 	accessibleUpdates := make([]ImageUpdate, 0)
@@ -229,8 +221,5 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		zap.Int("accessible_updates", len(accessibleUpdates)),
 	)
 
-	return response.SendSuccess(c, ImageUpdatesResponse{
-		Success: true,
-		Data:    ImageUpdatesDataInner{Updates: accessibleUpdates},
-	})
+	return response.OK(c, ImageUpdatesData{Updates: accessibleUpdates})
 }

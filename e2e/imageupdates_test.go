@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"berth/internal/domain/imageupdates"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result imageupdates.ImageUpdatesResponse
+		var result response.Response[imageupdates.ImageUpdatesData]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.NotNil(t, result.Data.Updates)

@@ -492,9 +492,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("image-updates").
 		Summary("List available image updates").
 		Description("Returns all container images with available updates across servers the user can access").
-		Response(http.StatusOK, imageupdates.ImageUpdatesResponse{}, "List of available image updates").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[imageupdates.ImageUpdatesData]{}, "List of available image updates").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -503,11 +503,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List server image updates").
 		Description("Returns container images with available updates for a specific server").
 		PathParam("serverid", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, imageupdates.ImageUpdatesResponse{}, "List of server image updates").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid server ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[imageupdates.ImageUpdatesData]{}, "List of server image updates").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
