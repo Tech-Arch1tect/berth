@@ -11,37 +11,12 @@ type AddScopeRequest struct {
 	Permission   string `json:"permission"`
 }
 
-type ListAPIKeysResponse struct {
-	Success bool         `json:"success"`
-	Data    []APIKeyInfo `json:"data"`
-}
-
-type GetAPIKeyResponse struct {
-	Success bool       `json:"success"`
-	Data    APIKeyInfo `json:"data"`
-}
-
-type CreateAPIKeyResponseData struct {
+type CreateAPIKeyData struct {
 	Message  string     `json:"message,omitempty"`
 	APIKey   APIKeyInfo `json:"api_key"`
 	PlainKey string     `json:"plain_key"`
 }
 
-type CreateAPIKeyResponse struct {
-	Success bool                     `json:"success"`
-	Data    CreateAPIKeyResponseData `json:"data"`
-}
-
-type ListScopesResponse struct {
-	Success bool              `json:"success"`
-	Data    []APIKeyScopeInfo `json:"data"`
-}
-
 type MessageData struct {
 	Message string `json:"message"`
-}
-
-type MessageResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
 }

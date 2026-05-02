@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result apikey.ListAPIKeysResponse
+		var result response.Response[[]apikey.APIKeyInfo]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Empty(t, result.Data)
@@ -49,7 +50,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Equal(t, "Test API Key", result.Data.APIKey.Name)
@@ -71,7 +72,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result apikey.ListAPIKeysResponse
+		var result response.Response[[]apikey.APIKeyInfo]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Len(t, result.Data, 1)
@@ -86,7 +87,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result apikey.GetAPIKeyResponse
+		var result response.Response[apikey.APIKeyInfo]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Equal(t, createdAPIKeyID, result.Data.ID)
@@ -108,7 +109,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result apikey.ListScopesResponse
+		var result response.Response[[]apikey.APIKeyScopeInfo]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Empty(t, result.Data)
@@ -126,7 +127,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var result apikey.MessageResponse
+		var result response.Response[apikey.MessageData]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 	})
@@ -161,7 +162,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result apikey.ListScopesResponse
+		var result response.Response[[]apikey.APIKeyScopeInfo]
 		require.NoError(t, resp.GetJSON(&result))
 		assert.True(t, result.Success)
 		assert.Len(t, result.Data, 1)
@@ -181,7 +182,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 
 		getResp, err := sessionClient.Get("/api/v1/api-keys/" + itoa(createdAPIKeyID) + "/scopes")
 		require.NoError(t, err)
-		var result apikey.ListScopesResponse
+		var result response.Response[[]apikey.APIKeyScopeInfo]
 		require.NoError(t, getResp.GetJSON(&result))
 		assert.Empty(t, result.Data)
 	})

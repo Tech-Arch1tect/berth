@@ -1185,9 +1185,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("api-keys").
 		Summary("List API keys").
 		Description("Returns all API keys belonging to the authenticated user.").
-		Response(http.StatusOK, apikey.ListAPIKeysResponse{}, "List of API keys").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[[]apikey.APIKeyInfo]{}, "List of API keys").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1196,10 +1196,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get API key").
 		Description("Returns details of a specific API key.").
 		PathParam("id", "API key ID").TypeInt().Required().
-		Response(http.StatusOK, apikey.GetAPIKeyResponse{}, "API key details").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid API key ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "API key not found").
+		Response(http.StatusOK, response.Response[apikey.APIKeyInfo]{}, "API key details").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid API key ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "API key not found").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1208,10 +1208,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Create API key").
 		Description("Creates a new API key for the authenticated user. The plain key is only returned once at creation time.").
 		Body(apikey.CreateAPIKeyRequest{}, "API key creation request").
-		Response(http.StatusCreated, apikey.CreateAPIKeyResponse{}, "API key created successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[apikey.CreateAPIKeyData]{}, "API key created successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1220,10 +1220,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Revoke API key").
 		Description("Revokes (deletes) an API key. This action cannot be undone.").
 		PathParam("id", "API key ID").TypeInt().Required().
-		Response(http.StatusOK, apikey.MessageResponse{}, "API key revoked successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid API key ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "API key not found").
+		Response(http.StatusOK, response.Response[apikey.MessageData]{}, "API key revoked successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid API key ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "API key not found").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1232,10 +1232,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List API key scopes").
 		Description("Returns all scopes configured for a specific API key.").
 		PathParam("id", "API key ID").TypeInt().Required().
-		Response(http.StatusOK, apikey.ListScopesResponse{}, "List of scopes").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid API key ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "API key not found").
+		Response(http.StatusOK, response.Response[[]apikey.APIKeyScopeInfo]{}, "List of scopes").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid API key ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "API key not found").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1245,10 +1245,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Adds a new permission scope to an API key. The scope limits what the API key can access.").
 		PathParam("id", "API key ID").TypeInt().Required().
 		Body(apikey.AddScopeRequest{}, "Scope details").
-		Response(http.StatusCreated, apikey.MessageResponse{}, "Scope added successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "API key not found").
+		Response(http.StatusCreated, response.Response[apikey.MessageData]{}, "Scope added successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Security("bearerAuth", "session").
 		Build()
 
@@ -1258,10 +1257,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Removes a permission scope from an API key.").
 		PathParam("id", "API key ID").TypeInt().Required().
 		PathParam("scopeId", "Scope ID").TypeInt().Required().
-		Response(http.StatusOK, apikey.MessageResponse{}, "Scope removed successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid scope ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "Scope not found").
+		Response(http.StatusOK, response.Response[apikey.MessageData]{}, "Scope removed successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid scope ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Scope not found").
 		Security("bearerAuth", "session").
 		Build()
 

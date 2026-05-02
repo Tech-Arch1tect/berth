@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/stack"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
 
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		return result.Data.APIKey.ID, result.Data.PlainKey
 	}
@@ -290,7 +291,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 			"name": "mismatched-scope-key",
 		})
 		require.NoError(t, err)
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
@@ -364,7 +365,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 			"name": "files-read-key",
 		})
 		require.NoError(t, err)
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
@@ -396,7 +397,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 			"name": "no-files-key",
 		})
 		require.NoError(t, err)
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
@@ -459,7 +460,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 			"name": "logs-read-key",
 		})
 		require.NoError(t, err)
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
@@ -491,7 +492,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 			"name": "no-logs-key",
 		})
 		require.NoError(t, err)
-		var result apikey.CreateAPIKeyResponse
+		var result response.Response[apikey.CreateAPIKeyData]
 		require.NoError(t, resp.GetJSON(&result))
 		plainKey := result.Data.PlainKey
 		keyID := result.Data.APIKey.ID
