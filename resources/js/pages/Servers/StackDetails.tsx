@@ -6,8 +6,8 @@ import { GlobalOperationsTracker } from '../../features/operations/components/Gl
 import { EmptyState } from '../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
 import { ServerStackProvider } from '../../shared/contexts/ServerStackContext';
-import { ImageUpdateBanner } from '../../components/image-updates';
-import { useStackImageUpdates } from '../../hooks/useStackImageUpdates';
+import { ImageUpdateBanner } from '../../features/image-updates/components';
+import { useStackImageUpdates } from '../../features/image-updates/hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Layout from '../../shared/layout/Layout';
 import { ComposeEditorModal } from '../../components/compose-editor/ComposeEditorModal';

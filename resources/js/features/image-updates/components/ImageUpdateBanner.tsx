@@ -5,9 +5,9 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '../../shared/utils/cn';
-import { theme } from '../../shared/theme';
-import type { ImageUpdate } from '../../api/generated/models';
+import { cn } from '../../../shared/utils/cn';
+import { theme } from '../../../shared/theme';
+import type { ImageUpdate } from '../../../api/generated/models';
 import { ImageUpdateTable } from './ImageUpdateTable';
 
 interface ImageUpdateBannerProps {

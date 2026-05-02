@@ -1,7 +1,7 @@
 import {
   useGetApiV1ImageUpdates,
   useGetApiV1ServersServeridImageUpdates,
-} from '../api/generated/image-updates/image-updates';
+} from '../../../api/generated/image-updates/image-updates';
 
 interface UseAvailableUpdatesOptions {
   enabled?: boolean;

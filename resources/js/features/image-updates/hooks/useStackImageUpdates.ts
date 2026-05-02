@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useServerImageUpdates } from './useImageUpdates';
-import type { ImageUpdate } from '../api/generated/models';
+import type { ImageUpdate } from '../../../api/generated/models';
 
 interface UseStackImageUpdatesOptions {
   serverid: number;
