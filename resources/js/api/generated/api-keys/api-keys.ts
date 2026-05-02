@@ -29,7 +29,7 @@ import type {
   ResponseAPIKeyScopeInfo,
   ResponseCreateAPIKeyData,
   ResponseEmpty,
-  ResponseMessageData,
+  ResponseMessageData2,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -243,8 +243,8 @@ export const getDeleteApiV1ApiKeysIdUrl = (id: number) => {
 export const deleteApiV1ApiKeysId = async (
   id: number,
   options?: RequestInit
-): Promise<ResponseMessageData> => {
-  return apiClient<ResponseMessageData>(getDeleteApiV1ApiKeysIdUrl(id), {
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getDeleteApiV1ApiKeysIdUrl(id), {
     ...options,
     method: 'DELETE',
   });
@@ -585,8 +585,8 @@ export const postApiV1ApiKeysIdScopes = async (
   id: number,
   addScopeRequest: AddScopeRequest,
   options?: RequestInit
-): Promise<ResponseMessageData> => {
-  return apiClient<ResponseMessageData>(getPostApiV1ApiKeysIdScopesUrl(id), {
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getPostApiV1ApiKeysIdScopesUrl(id), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -670,8 +670,8 @@ export const deleteApiV1ApiKeysIdScopesScopeId = async (
   id: number,
   scopeId: number,
   options?: RequestInit
-): Promise<ResponseMessageData> => {
-  return apiClient<ResponseMessageData>(getDeleteApiV1ApiKeysIdScopesScopeIdUrl(id, scopeId), {
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getDeleteApiV1ApiKeysIdScopesScopeIdUrl(id, scopeId), {
     ...options,
     method: 'DELETE',
   });

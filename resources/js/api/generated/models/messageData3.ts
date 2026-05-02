@@ -6,6 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface AdminTestConnectionResponseData {
+export interface MessageData3 {
   message: string;
 }

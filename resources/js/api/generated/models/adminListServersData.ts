@@ -7,6 +7,6 @@
  */
 import type { ServerInfo } from './serverInfo';
 
-export interface AdminUpdateServerResponseData {
-  server: ServerInfo;
+export interface AdminListServersData {
+  servers: ServerInfo[];
 }

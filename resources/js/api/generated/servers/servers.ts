@@ -18,7 +18,11 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { ErrorResponse, ListServersResponse, ServerStatisticsResponse } from '../models';
+import type {
+  ResponseEmpty,
+  ResponseListServersData,
+  ResponseServerStatisticsData,
+} from '../models';
 
 import { apiClient } from '../../client';
 
@@ -32,8 +36,8 @@ export const getGetApiV1ServersUrl = () => {
   return `/api/v1/servers`;
 };
 
-export const getApiV1Servers = async (options?: RequestInit): Promise<ListServersResponse> => {
-  return apiClient<ListServersResponse>(getGetApiV1ServersUrl(), {
+export const getApiV1Servers = async (options?: RequestInit): Promise<ResponseListServersData> => {
+  return apiClient<ResponseListServersData>(getGetApiV1ServersUrl(), {
     ...options,
     method: 'GET',
   });
@@ -45,7 +49,7 @@ export const getGetApiV1ServersQueryKey = () => {
 
 export const getGetApiV1ServersQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;
   request?: SecondParameter<typeof apiClient>;
@@ -65,11 +69,11 @@ export const getGetApiV1ServersQueryOptions = <
 };
 
 export type GetApiV1ServersQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Servers>>>;
-export type GetApiV1ServersQueryError = ErrorResponse | void;
+export type GetApiV1ServersQueryError = ResponseEmpty | void;
 
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>> &
@@ -87,7 +91,7 @@ export function useGetApiV1Servers<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>> &
@@ -105,7 +109,7 @@ export function useGetApiV1Servers<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;
@@ -119,7 +123,7 @@ export function useGetApiV1Servers<
 
 export function useGetApiV1Servers<
   TData = Awaited<ReturnType<typeof getApiV1Servers>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Servers>>, TError, TData>>;
@@ -147,11 +151,14 @@ export const getGetApiV1ServersServeridStatisticsUrl = (serverid: number) => {
 export const getApiV1ServersServeridStatistics = async (
   serverid: number,
   options?: RequestInit
-): Promise<ServerStatisticsResponse> => {
-  return apiClient<ServerStatisticsResponse>(getGetApiV1ServersServeridStatisticsUrl(serverid), {
-    ...options,
-    method: 'GET',
-  });
+): Promise<ResponseServerStatisticsData> => {
+  return apiClient<ResponseServerStatisticsData>(
+    getGetApiV1ServersServeridStatisticsUrl(serverid),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridStatisticsQueryKey = (serverid: number) => {
@@ -160,7 +167,7 @@ export const getGetApiV1ServersServeridStatisticsQueryKey = (serverid: number) =
 
 export const getGetApiV1ServersServeridStatisticsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -188,11 +195,11 @@ export const getGetApiV1ServersServeridStatisticsQueryOptions = <
 export type GetApiV1ServersServeridStatisticsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>
 >;
-export type GetApiV1ServersServeridStatisticsQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStatisticsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStatistics<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options: {
@@ -213,7 +220,7 @@ export function useGetApiV1ServersServeridStatistics<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStatistics<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -234,7 +241,7 @@ export function useGetApiV1ServersServeridStatistics<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStatistics<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -251,7 +258,7 @@ export function useGetApiV1ServersServeridStatistics<
 
 export function useGetApiV1ServersServeridStatistics<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStatistics>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
