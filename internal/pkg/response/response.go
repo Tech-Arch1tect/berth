@@ -51,7 +51,7 @@ func SendInternalError(c echo.Context, message string) error {
 	return SendError(c, http.StatusInternalServerError, message)
 }
 
-type Response struct {
+type legacyResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message,omitempty"`
 	Data    any    `json:"data,omitempty"`
@@ -59,14 +59,14 @@ type Response struct {
 }
 
 func SuccessResponse(c echo.Context, data any) error {
-	return c.JSON(http.StatusOK, Response{
+	return c.JSON(http.StatusOK, legacyResponse{
 		Success: true,
 		Data:    data,
 	})
 }
 
 func ErrorResponse(c echo.Context, statusCode int, message string, err error) error {
-	resp := Response{
+	resp := legacyResponse{
 		Success: false,
 		Message: message,
 	}
