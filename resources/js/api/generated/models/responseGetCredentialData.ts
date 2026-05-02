@@ -5,9 +5,13 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Error } from './error';
 import type { GetCredentialData } from './getCredentialData';
+import type { Meta } from './meta';
 
-export interface GetCredentialResponse {
+export interface ResponseGetCredentialData {
   data: GetCredentialData;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }

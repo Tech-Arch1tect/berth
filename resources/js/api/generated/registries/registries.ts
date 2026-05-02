@@ -23,13 +23,11 @@ import type {
 
 import type {
   CreateCredentialRequest,
-  CreateCredentialResponse,
-  DeleteCredentialResponse,
-  ErrorResponse,
-  GetCredentialResponse,
-  ListCredentialsResponse,
+  ResponseDeleteCredentialMessageData,
+  ResponseEmpty,
+  ResponseGetCredentialData,
+  ResponseListCredentialsData,
   UpdateCredentialRequest,
-  UpdateCredentialResponse,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -47,8 +45,8 @@ export const getGetApiV1ServersServeridRegistriesUrl = (serverid: number) => {
 export const getApiV1ServersServeridRegistries = async (
   serverid: number,
   options?: RequestInit
-): Promise<ListCredentialsResponse> => {
-  return apiClient<ListCredentialsResponse>(getGetApiV1ServersServeridRegistriesUrl(serverid), {
+): Promise<ResponseListCredentialsData> => {
+  return apiClient<ResponseListCredentialsData>(getGetApiV1ServersServeridRegistriesUrl(serverid), {
     ...options,
     method: 'GET',
   });
@@ -60,7 +58,7 @@ export const getGetApiV1ServersServeridRegistriesQueryKey = (serverid: number) =
 
 export const getGetApiV1ServersServeridRegistriesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -88,11 +86,11 @@ export const getGetApiV1ServersServeridRegistriesQueryOptions = <
 export type GetApiV1ServersServeridRegistriesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>
 >;
-export type GetApiV1ServersServeridRegistriesQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridRegistriesQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridRegistries<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options: {
@@ -113,7 +111,7 @@ export function useGetApiV1ServersServeridRegistries<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridRegistries<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -134,7 +132,7 @@ export function useGetApiV1ServersServeridRegistries<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridRegistries<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -151,7 +149,7 @@ export function useGetApiV1ServersServeridRegistries<
 
 export function useGetApiV1ServersServeridRegistries<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistries>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   options?: {
@@ -183,8 +181,8 @@ export const postApiV1ServersServeridRegistries = async (
   serverid: number,
   createCredentialRequest: CreateCredentialRequest,
   options?: RequestInit
-): Promise<CreateCredentialResponse> => {
-  return apiClient<CreateCredentialResponse>(getPostApiV1ServersServeridRegistriesUrl(serverid), {
+): Promise<ResponseGetCredentialData> => {
+  return apiClient<ResponseGetCredentialData>(getPostApiV1ServersServeridRegistriesUrl(serverid), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -193,7 +191,7 @@ export const postApiV1ServersServeridRegistries = async (
 };
 
 export const getPostApiV1ServersServeridRegistriesMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -232,13 +230,13 @@ export type PostApiV1ServersServeridRegistriesMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1ServersServeridRegistries>>
 >;
 export type PostApiV1ServersServeridRegistriesMutationBody = CreateCredentialRequest;
-export type PostApiV1ServersServeridRegistriesMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridRegistriesMutationError = ResponseEmpty | void;
 
 /**
  * @summary Create registry credential
  */
 export const usePostApiV1ServersServeridRegistries = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -271,8 +269,8 @@ export const deleteApiV1ServersServeridRegistriesId = async (
   serverid: number,
   id: number,
   options?: RequestInit
-): Promise<DeleteCredentialResponse> => {
-  return apiClient<DeleteCredentialResponse>(
+): Promise<ResponseDeleteCredentialMessageData> => {
+  return apiClient<ResponseDeleteCredentialMessageData>(
     getDeleteApiV1ServersServeridRegistriesIdUrl(serverid, id),
     {
       ...options,
@@ -282,7 +280,7 @@ export const deleteApiV1ServersServeridRegistriesId = async (
 };
 
 export const getDeleteApiV1ServersServeridRegistriesIdMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -321,13 +319,13 @@ export type DeleteApiV1ServersServeridRegistriesIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteApiV1ServersServeridRegistriesId>>
 >;
 
-export type DeleteApiV1ServersServeridRegistriesIdMutationError = ErrorResponse | void;
+export type DeleteApiV1ServersServeridRegistriesIdMutationError = ResponseEmpty | void;
 
 /**
  * @summary Delete registry credential
  */
 export const useDeleteApiV1ServersServeridRegistriesId = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -363,11 +361,14 @@ export const getApiV1ServersServeridRegistriesId = async (
   serverid: number,
   id: number,
   options?: RequestInit
-): Promise<GetCredentialResponse> => {
-  return apiClient<GetCredentialResponse>(getGetApiV1ServersServeridRegistriesIdUrl(serverid, id), {
-    ...options,
-    method: 'GET',
-  });
+): Promise<ResponseGetCredentialData> => {
+  return apiClient<ResponseGetCredentialData>(
+    getGetApiV1ServersServeridRegistriesIdUrl(serverid, id),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetApiV1ServersServeridRegistriesIdQueryKey = (serverid: number, id: number) => {
@@ -376,7 +377,7 @@ export const getGetApiV1ServersServeridRegistriesIdQueryKey = (serverid: number,
 
 export const getGetApiV1ServersServeridRegistriesIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   id: number,
@@ -410,11 +411,11 @@ export const getGetApiV1ServersServeridRegistriesIdQueryOptions = <
 export type GetApiV1ServersServeridRegistriesIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>
 >;
-export type GetApiV1ServersServeridRegistriesIdQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridRegistriesIdQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridRegistriesId<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   id: number,
@@ -440,7 +441,7 @@ export function useGetApiV1ServersServeridRegistriesId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridRegistriesId<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   id: number,
@@ -466,7 +467,7 @@ export function useGetApiV1ServersServeridRegistriesId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridRegistriesId<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   id: number,
@@ -488,7 +489,7 @@ export function useGetApiV1ServersServeridRegistriesId<
 
 export function useGetApiV1ServersServeridRegistriesId<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridRegistriesId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   id: number,
@@ -526,8 +527,8 @@ export const putApiV1ServersServeridRegistriesId = async (
   id: number,
   updateCredentialRequest: UpdateCredentialRequest,
   options?: RequestInit
-): Promise<UpdateCredentialResponse> => {
-  return apiClient<UpdateCredentialResponse>(
+): Promise<ResponseGetCredentialData> => {
+  return apiClient<ResponseGetCredentialData>(
     getPutApiV1ServersServeridRegistriesIdUrl(serverid, id),
     {
       ...options,
@@ -539,7 +540,7 @@ export const putApiV1ServersServeridRegistriesId = async (
 };
 
 export const getPutApiV1ServersServeridRegistriesIdMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -578,13 +579,13 @@ export type PutApiV1ServersServeridRegistriesIdMutationResult = NonNullable<
   Awaited<ReturnType<typeof putApiV1ServersServeridRegistriesId>>
 >;
 export type PutApiV1ServersServeridRegistriesIdMutationBody = UpdateCredentialRequest;
-export type PutApiV1ServersServeridRegistriesIdMutationError = ErrorResponse | void;
+export type PutApiV1ServersServeridRegistriesIdMutationError = ResponseEmpty | void;
 
 /**
  * @summary Update registry credential
  */
 export const usePutApiV1ServersServeridRegistriesId = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {

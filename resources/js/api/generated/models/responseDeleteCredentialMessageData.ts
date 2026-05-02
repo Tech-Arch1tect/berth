@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DeleteCredentialMessageData } from './deleteCredentialMessageData';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface DeleteCredentialResponse {
+export interface ResponseDeleteCredentialMessageData {
   data: DeleteCredentialMessageData;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }
