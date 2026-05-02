@@ -45,8 +45,8 @@ function OperationLogs({ title }: Props) {
   const { data: logsResponse, isLoading: logsLoading } = useGetApiV1OperationLogs(logsParams);
   const { data: statsResponse, isLoading: statsLoading } = useGetApiV1OperationLogsStats();
 
-  const logs = logsResponse?.data?.data ?? [];
-  const pagination = logsResponse?.data?.pagination ?? null;
+  const logs = logsResponse?.data ?? [];
+  const meta = logsResponse?.meta ?? null;
   const stats = statsResponse?.data ?? null;
 
   const fetchLogDetail = useCallback(async (logId: number) => {
@@ -124,7 +124,7 @@ function OperationLogs({ title }: Props) {
           <OperationLogsContent
             logs={logs}
             loading={logsLoading || statsLoading}
-            pagination={pagination}
+            meta={meta}
             currentPage={currentPage}
             showUser={false}
             onPageChange={handlePageChange}
@@ -133,7 +133,7 @@ function OperationLogs({ title }: Props) {
         }
         statusBar={
           <OperationLogsStatusBar
-            pagination={pagination}
+            meta={meta}
             hasActiveFilters={hasActiveFilters}
             activeFilterCount={activeFilterCount}
             lastUpdated={lastUpdated}

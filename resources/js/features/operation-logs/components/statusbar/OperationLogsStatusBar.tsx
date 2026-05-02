@@ -2,17 +2,17 @@ import React from 'react';
 import { FunnelIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
-import type { PaginationInfo } from '../../../../api/generated/models';
+import type { Meta } from '../../../../api/generated/models';
 
 interface OperationLogsStatusBarProps {
-  pagination: PaginationInfo | null;
+  meta: Meta | null;
   hasActiveFilters: boolean;
   activeFilterCount: number;
   lastUpdated: Date | null;
 }
 
 export const OperationLogsStatusBar: React.FC<OperationLogsStatusBarProps> = ({
-  pagination,
+  meta,
   hasActiveFilters,
   activeFilterCount,
   lastUpdated,
@@ -25,6 +25,9 @@ export const OperationLogsStatusBar: React.FC<OperationLogsStatusBarProps> = ({
     });
   };
 
+  const showCounts =
+    meta != null && meta.page != null && meta.pageSize != null && meta.totalCount != null;
+
   return (
     <div
       className={cn(
@@ -35,22 +38,19 @@ export const OperationLogsStatusBar: React.FC<OperationLogsStatusBarProps> = ({
     >
       {/* Left side - Results count */}
       <div className="flex items-center gap-4">
-        {pagination && (
+        {showCounts && (
           <span className={theme.text.muted}>
             Showing{' '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {((pagination.current_page - 1) * pagination.page_size + 1).toLocaleString()}
+              {((meta.page! - 1) * meta.pageSize! + 1).toLocaleString()}
             </span>
             {' - '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {Math.min(
-                pagination.current_page * pagination.page_size,
-                pagination.total
-              ).toLocaleString()}
+              {Math.min(meta.page! * meta.pageSize!, meta.totalCount!).toLocaleString()}
             </span>
             {' of '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {pagination.total.toLocaleString()}
+              {meta.totalCount!.toLocaleString()}
             </span>{' '}
             operations
           </span>

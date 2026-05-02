@@ -10,8 +10,8 @@ import {
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import type {
+  Meta,
   OperationLogInfo,
-  PaginationInfo,
   OperationLogDetailData,
 } from '../../../../api/generated/models';
 import { OperationDetailPanel } from '../panels/OperationDetailPanel';
@@ -24,7 +24,7 @@ const DETAIL_PANEL_STORAGE_KEY = 'berth-operation-logs-detail-width';
 interface OperationLogsContentProps {
   logs: OperationLogInfo[];
   loading: boolean;
-  pagination: PaginationInfo | null;
+  meta: Meta | null;
   currentPage: number;
   showUser?: boolean;
   onPageChange: (page: number) => void;
@@ -206,12 +206,16 @@ const OperationRow: React.FC<{
 export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
   logs,
   loading,
-  pagination,
+  meta,
   currentPage,
   showUser = false,
   onPageChange,
   onFetchDetail,
 }) => {
+  const totalPages =
+    meta && meta.totalCount != null && meta.pageSize != null && meta.pageSize > 0
+      ? Math.max(1, Math.ceil(meta.totalCount / meta.pageSize))
+      : 0;
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [detail, setDetail] = useState<OperationLogDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -420,7 +424,7 @@ export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
         </div>
 
         {/* Pagination */}
-        {pagination && pagination.total_pages > 1 && (
+        {totalPages > 1 && meta?.page != null && (
           <div
             className={cn(
               'flex-shrink-0 flex items-center justify-between px-4 py-2',
@@ -430,7 +434,7 @@ export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
           >
             <button
               onClick={() => onPageChange(currentPage - 1)}
-              disabled={!pagination.has_prev}
+              disabled={meta.page <= 1}
               className={cn(
                 'px-3 py-1.5 rounded text-sm font-medium transition-colors',
                 'border border-zinc-300 dark:border-zinc-600',
@@ -442,11 +446,11 @@ export const OperationLogsContent: React.FC<OperationLogsContentProps> = ({
               Previous
             </button>
             <span className={cn('text-sm', theme.text.muted)}>
-              Page {pagination.current_page} of {pagination.total_pages}
+              Page {meta.page} of {totalPages}
             </span>
             <button
               onClick={() => onPageChange(currentPage + 1)}
-              disabled={!pagination.has_next}
+              disabled={meta.page >= totalPages}
               className={cn(
                 'px-3 py-1.5 rounded text-sm font-medium transition-colors',
                 'border border-zinc-300 dark:border-zinc-600',
