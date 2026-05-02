@@ -1,8 +1,7 @@
 package version
 
 import (
-	"net/http"
-
+	"berth/internal/pkg/response"
 	appversion "berth/version"
 
 	"github.com/labstack/echo/v4"
@@ -15,10 +14,7 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) GetVersion(c echo.Context) error {
-	return c.JSON(http.StatusOK, GetVersionResponse{
-		Success: true,
-		Data: VersionData{
-			Version: appversion.Version,
-		},
+	return response.OK(c, VersionData{
+		Version: appversion.Version,
 	})
 }

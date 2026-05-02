@@ -20,6 +20,7 @@ import (
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
 	"berth/internal/pkg/config"
+	"berth/internal/pkg/response"
 
 	"berth/internal/pkg/apidocs"
 	"github.com/labstack/echo/v4"
@@ -104,7 +105,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("system").
 		Summary("Get application version").
 		Description("Returns the current version of the Berth application.").
-		Response(http.StatusOK, version.GetVersionResponse{}, "Application version").
+		Response(http.StatusOK, response.Response[version.VersionData]{}, "Application version").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
