@@ -7,6 +7,6 @@
  */
 import type { MaintenancePermissions } from './maintenancePermissions';
 
-export interface PermissionsResponseData {
+export interface PermissionsData {
   maintenance: MaintenancePermissions;
 }
