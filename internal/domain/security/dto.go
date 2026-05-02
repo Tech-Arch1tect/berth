@@ -38,24 +38,6 @@ type SecurityAuditLogInfo struct {
 	SessionID      string    `json:"session_id"`
 }
 
-type ListLogsResponseData struct {
-	Logs       []SecurityAuditLogInfo `json:"logs"`
-	Total      int64                  `json:"total"`
-	Page       int                    `json:"page"`
-	PerPage    int                    `json:"per_page"`
-	TotalPages int                    `json:"total_pages"`
-}
-
-type ListLogsAPIResponse struct {
-	Success bool                 `json:"success"`
-	Data    ListLogsResponseData `json:"data"`
-}
-
-type GetLogAPIResponse struct {
-	Success bool                 `json:"success"`
-	Data    SecurityAuditLogInfo `json:"data"`
-}
-
 type EventTypeCount struct {
 	EventType string `json:"event_type"`
 	Count     int64  `json:"count"`
@@ -69,9 +51,4 @@ type StatsResponseData struct {
 	RecentEventTypes  []EventTypeCount `json:"recent_event_types"`
 	EventsLast24Hours int64            `json:"events_last_24_hours"`
 	EventsLast7Days   int64            `json:"events_last_7_days"`
-}
-
-type GetStatsAPIResponse struct {
-	Success bool              `json:"success"`
-	Data    StatsResponseData `json:"data"`
 }

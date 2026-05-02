@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/security"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -45,11 +46,16 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp security.ListLogsAPIResponse
+		var logsResp response.Response[[]security.SecurityAuditLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
-		assert.GreaterOrEqual(t, logsResp.Data.Total, int64(1))
-		assert.Equal(t, 1, logsResp.Data.Page)
-		assert.Equal(t, 50, logsResp.Data.PerPage)
+		assert.True(t, logsResp.Success)
+		require.NotNil(t, logsResp.Meta)
+		require.NotNil(t, logsResp.Meta.TotalCount)
+		require.NotNil(t, logsResp.Meta.Page)
+		require.NotNil(t, logsResp.Meta.PageSize)
+		assert.GreaterOrEqual(t, *logsResp.Meta.TotalCount, 1)
+		assert.Equal(t, 1, *logsResp.Meta.Page)
+		assert.Equal(t, 50, *logsResp.Meta.PageSize)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports pagination", func(t *testing.T) {
@@ -64,10 +70,12 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp security.ListLogsAPIResponse
+		var logsResp response.Response[[]security.SecurityAuditLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
-		assert.Equal(t, 5, logsResp.Data.PerPage)
-		assert.LessOrEqual(t, len(logsResp.Data.Logs), 5)
+		require.NotNil(t, logsResp.Meta)
+		require.NotNil(t, logsResp.Meta.PageSize)
+		assert.Equal(t, 5, *logsResp.Meta.PageSize)
+		assert.LessOrEqual(t, len(logsResp.Data), 5)
 	})
 
 	t.Run("GET /api/v1/admin/security-audit-logs supports filtering by event_type", func(t *testing.T) {
@@ -82,9 +90,9 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp security.ListLogsAPIResponse
+		var logsResp response.Response[[]security.SecurityAuditLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
-		for _, log := range logsResp.Data.Logs {
+		for _, log := range logsResp.Data {
 			assert.Equal(t, "api.token.issued", log.EventType)
 		}
 	})
@@ -101,9 +109,9 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp security.ListLogsAPIResponse
+		var logsResp response.Response[[]security.SecurityAuditLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
-		for _, log := range logsResp.Data.Logs {
+		for _, log := range logsResp.Data {
 			assert.True(t, log.Success)
 		}
 	})
@@ -143,8 +151,9 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp security.GetStatsAPIResponse
+		var statsResp response.Response[security.StatsResponseData]
 		require.NoError(t, resp.GetJSON(&statsResp))
+		assert.True(t, statsResp.Success)
 		assert.GreaterOrEqual(t, statsResp.Data.TotalEvents, int64(1))
 		assert.NotNil(t, statsResp.Data.EventsByCategory)
 		assert.NotNil(t, statsResp.Data.EventsBySeverity)
@@ -184,10 +193,10 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, listResp.StatusCode)
 
-	var logsResp security.ListLogsAPIResponse
+	var logsResp response.Response[[]security.SecurityAuditLogInfo]
 	require.NoError(t, listResp.GetJSON(&logsResp))
-	require.NotEmpty(t, logsResp.Data.Logs)
-	logID := logsResp.Data.Logs[0].ID
+	require.NotEmpty(t, logsResp.Data)
+	logID := logsResp.Data[0].ID
 
 	t.Run("GET /api/v1/admin/security-audit-logs/:id returns log details", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
@@ -201,8 +210,9 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logResp security.GetLogAPIResponse
+		var logResp response.Response[security.SecurityAuditLogInfo]
 		require.NoError(t, resp.GetJSON(&logResp))
+		assert.True(t, logResp.Success)
 		assert.Equal(t, logID, logResp.Data.ID)
 		assert.NotEmpty(t, logResp.Data.EventType)
 		assert.NotEmpty(t, logResp.Data.EventCategory)

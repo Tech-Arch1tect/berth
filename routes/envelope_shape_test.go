@@ -28,10 +28,6 @@ var legacyEnvelopeAllowlist = map[string]bool{
 	"POST /api/v1/totp/enable":                true,
 	"POST /api/v1/totp/disable":               true,
 
-	"GET /api/v1/admin/security-audit-logs":       true,
-	"GET /api/v1/admin/security-audit-logs/stats": true,
-	"GET /api/v1/admin/security-audit-logs/{id}":  true,
-
 	"GET /api/v1/servers/{serverid}/stacks/{stackname}/logs":                            true,
 	"GET /api/v1/servers/{serverid}/stacks/{stackname}/containers/{containerName}/logs": true,
 

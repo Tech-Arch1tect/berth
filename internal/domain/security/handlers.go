@@ -3,7 +3,6 @@ package security
 import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -55,7 +54,7 @@ func NewHandler(db *gorm.DB) *Handler {
 func (h *Handler) ListLogs(c echo.Context) error {
 	var req ListLogsRequest
 	if err := c.Bind(&req); err != nil {
-		return response.SendBadRequest(c, "Invalid request parameters")
+		return response.BadRequest(c, "Invalid request parameters")
 	}
 
 	if req.Page < 1 {
@@ -108,29 +107,20 @@ func (h *Handler) ListLogs(c echo.Context) error {
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		return response.SendInternalError(c, "Failed to count logs")
+		return response.Internal(c, "Failed to count logs")
 	}
 
 	offset := (req.Page - 1) * req.PerPage
 	var logs []SecurityAuditLog
 	if err := query.Order("created_at DESC").Limit(req.PerPage).Offset(offset).Find(&logs).Error; err != nil {
-		return response.SendInternalError(c, "Failed to fetch logs")
+		return response.Internal(c, "Failed to fetch logs")
 	}
 
-	totalPages := int(total) / req.PerPage
-	if int(total)%req.PerPage > 0 {
-		totalPages++
-	}
-
-	return c.JSON(http.StatusOK, ListLogsAPIResponse{
-		Success: true,
-		Data: ListLogsResponseData{
-			Logs:       toLogResponseList(logs),
-			Total:      total,
-			Page:       req.Page,
-			PerPage:    req.PerPage,
-			TotalPages: totalPages,
-		},
+	totalCount := int(total)
+	return response.Paginated(c, toLogResponseList(logs), response.Meta{
+		Page:       &req.Page,
+		PageSize:   &req.PerPage,
+		TotalCount: &totalCount,
 	})
 }
 
@@ -143,15 +133,12 @@ func (h *Handler) GetLog(c echo.Context) error {
 	var log SecurityAuditLog
 	if err := h.db.First(&log, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return response.SendNotFound(c, "Log not found")
+			return response.NotFound(c, "Log not found")
 		}
-		return response.SendInternalError(c, "Failed to fetch log")
+		return response.Internal(c, "Failed to fetch log")
 	}
 
-	return c.JSON(http.StatusOK, GetLogAPIResponse{
-		Success: true,
-		Data:    toLogResponse(&log),
-	})
+	return response.OK(c, toLogResponse(&log))
 }
 
 func (h *Handler) GetStats(c echo.Context) error {
@@ -214,8 +201,5 @@ func (h *Handler) GetStats(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, GetStatsAPIResponse{
-		Success: true,
-		Data:    stats,
-	})
+	return response.OK(c, stats)
 }

@@ -814,11 +814,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("start_date", "Filter by start date (RFC3339 format)").Optional().
 		QueryParam("end_date", "Filter by end date (RFC3339 format)").Optional().
 		QueryParam("search", "Search in actor username, target name, or event type").Optional().
-		Response(http.StatusOK, security.ListLogsAPIResponse{}, "Paginated list of security audit logs").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request parameters").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[[]security.SecurityAuditLogInfo]{}, "Paginated list of security audit logs").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request parameters").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -826,10 +826,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("Get security audit statistics").
 		Description("Returns aggregated statistics for security audit logs. Requires admin permissions.").
-		Response(http.StatusOK, security.GetStatsAPIResponse{}, "Security audit statistics").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[security.StatsResponseData]{}, "Security audit statistics").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -838,12 +838,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get security audit log details").
 		Description("Returns detailed information about a specific security audit log. Requires admin permissions.").
 		PathParam("id", "Security audit log ID").TypeInt().Required().
-		Response(http.StatusOK, security.GetLogAPIResponse{}, "Security audit log details").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid log ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Log not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[security.SecurityAuditLogInfo]{}, "Security audit log details").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid log ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Log not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

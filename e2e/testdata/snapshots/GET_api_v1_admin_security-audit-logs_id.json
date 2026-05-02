@@ -6,7 +6,11 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "code": 404,
-    "error": "Log not found"
+    "data": {},
+    "error": {
+      "code": "not_found",
+      "message": "Log not found"
+    },
+    "success": false
   }
 }
