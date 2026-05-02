@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../../shared/utils/cn';
 import { theme } from '../../../../../shared/theme';
-import type { SecurityAuditLogInfo } from '../../../../../api/generated/models';
+import type { Meta, SecurityAuditLogInfo } from '../../../../../api/generated/models';
 import { SecurityAuditDetailPanel } from '../panels/SecurityAuditDetailPanel';
 import { getSeverityBadgeStyle, getCategoryBadgeStyle } from '../../utils/securityAuditHelpers';
 
@@ -11,17 +11,10 @@ const DETAIL_PANEL_MAX_WIDTH_PERCENT = 50;
 const DETAIL_PANEL_DEFAULT_WIDTH = 400;
 const DETAIL_PANEL_STORAGE_KEY = 'berth-security-audit-logs-detail-width';
 
-interface PaginationInfo {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
 interface SecurityAuditLogsContentProps {
   logs: SecurityAuditLogInfo[];
   loading: boolean;
-  pagination: PaginationInfo | null;
+  meta: Meta | null;
   currentPage: number;
   onPageChange: (page: number) => void;
   onFetchDetail: (logId: number) => Promise<SecurityAuditLogInfo | null>;
@@ -109,11 +102,15 @@ const AuditLogRow: React.FC<{
 export const SecurityAuditLogsContent: React.FC<SecurityAuditLogsContentProps> = ({
   logs,
   loading,
-  pagination,
+  meta,
   currentPage,
   onPageChange,
   onFetchDetail,
 }) => {
+  const totalPages =
+    meta && meta.totalCount != null && meta.pageSize != null && meta.pageSize > 0
+      ? Math.max(1, Math.ceil(meta.totalCount / meta.pageSize))
+      : 0;
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [detail, setDetail] = useState<SecurityAuditLogInfo | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -311,7 +308,7 @@ export const SecurityAuditLogsContent: React.FC<SecurityAuditLogsContentProps> =
         </div>
 
         {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
+        {totalPages > 1 && meta?.page != null && (
           <div
             className={cn(
               'flex-shrink-0 flex items-center justify-between px-4 py-2',
@@ -333,11 +330,11 @@ export const SecurityAuditLogsContent: React.FC<SecurityAuditLogsContentProps> =
               Previous
             </button>
             <span className={cn('text-sm', theme.text.muted)}>
-              Page {pagination.currentPage} of {pagination.totalPages}
+              Page {meta.page} of {totalPages}
             </span>
             <button
               onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= pagination.totalPages}
+              disabled={currentPage >= totalPages}
               className={cn(
                 'px-3 py-1.5 rounded text-sm font-medium transition-colors',
                 'border border-zinc-300 dark:border-zinc-600',

@@ -1,23 +1,17 @@
 import { FunnelIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../../shared/utils/cn';
 import { theme } from '../../../../../shared/theme';
-
-interface PaginationInfo {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
+import type { Meta } from '../../../../../api/generated/models';
 
 interface SecurityAuditLogsStatusBarProps {
-  pagination: PaginationInfo | null;
+  meta: Meta | null;
   hasActiveFilters: boolean;
   activeFilterCount: number;
   lastUpdated: Date | null;
 }
 
 export const SecurityAuditLogsStatusBar: React.FC<SecurityAuditLogsStatusBarProps> = ({
-  pagination,
+  meta,
   hasActiveFilters,
   activeFilterCount,
   lastUpdated,
@@ -30,6 +24,9 @@ export const SecurityAuditLogsStatusBar: React.FC<SecurityAuditLogsStatusBarProp
     });
   };
 
+  const showCounts =
+    meta != null && meta.page != null && meta.pageSize != null && meta.totalCount != null;
+
   return (
     <div
       className={cn(
@@ -40,22 +37,19 @@ export const SecurityAuditLogsStatusBar: React.FC<SecurityAuditLogsStatusBarProp
     >
       {/* Left side - Results count */}
       <div className="flex items-center gap-4">
-        {pagination && (
+        {showCounts && (
           <span className={theme.text.muted}>
             Showing{' '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {((pagination.currentPage - 1) * pagination.pageSize + 1).toLocaleString()}
+              {((meta.page! - 1) * meta.pageSize! + 1).toLocaleString()}
             </span>
             {' - '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {Math.min(
-                pagination.currentPage * pagination.pageSize,
-                pagination.total
-              ).toLocaleString()}
+              {Math.min(meta.page! * meta.pageSize!, meta.totalCount!).toLocaleString()}
             </span>
             {' of '}
             <span className={cn('font-medium', theme.text.standard)}>
-              {pagination.total.toLocaleString()}
+              {meta.totalCount!.toLocaleString()}
             </span>{' '}
             events
           </span>

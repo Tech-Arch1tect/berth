@@ -4,7 +4,11 @@ import {
   useGetApiV1AdminSecurityAuditLogsStats,
   getApiV1AdminSecurityAuditLogsId,
 } from '../../../../api/generated/admin/admin';
-import type { SecurityAuditLogInfo, StatsResponseData } from '../../../../api/generated/models';
+import type {
+  Meta,
+  SecurityAuditLogInfo,
+  StatsResponseData,
+} from '../../../../api/generated/models';
 
 interface UseSecurityAuditLogsParams {
   page: number;
@@ -17,19 +21,13 @@ interface UseSecurityAuditLogsParams {
   endDate?: string;
 }
 
-interface PaginationMetadata {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-}
-
 interface UseSecurityAuditLogsReturn {
   logs: SecurityAuditLogInfo[];
   stats: StatsResponseData | null;
   selectedLog: SecurityAuditLogInfo | null;
   loading: boolean;
   statsLoading: boolean;
-  paginationMetadata: PaginationMetadata | null;
+  meta: Meta | null;
   fetchLogDetails: (id: number) => Promise<SecurityAuditLogInfo | null>;
   clearSelectedLog: () => void;
   refetch: () => void;
@@ -82,16 +80,7 @@ export function useSecurityAuditLogs({
 
   const logs = logsResponse?.data ?? [];
   const stats = statsResponse?.data ?? null;
-
-  const meta = logsResponse?.meta;
-  const paginationMetadata: PaginationMetadata | null =
-    meta && meta.totalCount != null && meta.pageSize != null && meta.page != null
-      ? {
-          total: meta.totalCount,
-          totalPages: Math.max(1, Math.ceil(meta.totalCount / meta.pageSize)),
-          currentPage: meta.page,
-        }
-      : null;
+  const meta = logsResponse?.meta ?? null;
 
   const fetchLogDetails = useCallback(async (id: number): Promise<SecurityAuditLogInfo | null> => {
     try {
@@ -118,7 +107,7 @@ export function useSecurityAuditLogs({
     selectedLog,
     loading,
     statsLoading,
-    paginationMetadata,
+    meta,
     fetchLogDetails,
     clearSelectedLog,
     refetch,

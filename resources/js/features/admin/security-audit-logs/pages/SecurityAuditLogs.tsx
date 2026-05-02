@@ -26,7 +26,7 @@ export default function SecurityAuditLogs({ title }: Props) {
 
   const pageSize = 50;
 
-  const { logs, stats, loading, paginationMetadata, fetchLogDetails, refetch, refetchStats } =
+  const { logs, stats, loading, meta, fetchLogDetails, refetch, refetchStats } =
     useSecurityAuditLogs({
       page: currentPage,
       perPage: pageSize,
@@ -138,16 +138,7 @@ export default function SecurityAuditLogs({ title }: Props) {
           <SecurityAuditLogsContent
             logs={logs}
             loading={loading}
-            pagination={
-              paginationMetadata
-                ? {
-                    total: paginationMetadata.total,
-                    totalPages: paginationMetadata.totalPages,
-                    currentPage: paginationMetadata.currentPage,
-                    pageSize,
-                  }
-                : null
-            }
+            meta={meta}
             currentPage={currentPage}
             onPageChange={handlePageChange}
             onFetchDetail={fetchLogDetails}
@@ -155,16 +146,7 @@ export default function SecurityAuditLogs({ title }: Props) {
         }
         statusBar={
           <SecurityAuditLogsStatusBar
-            pagination={
-              paginationMetadata
-                ? {
-                    total: paginationMetadata.total,
-                    totalPages: paginationMetadata.totalPages,
-                    currentPage: paginationMetadata.currentPage,
-                    pageSize,
-                  }
-                : null
-            }
+            meta={meta}
             hasActiveFilters={hasActiveFilters}
             activeFilterCount={activeFilterCount}
             lastUpdated={lastUpdated}
