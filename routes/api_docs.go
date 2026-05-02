@@ -362,10 +362,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(vulnscan.StartScanRequest{}, "Optional list of services to scan").
-		Response(http.StatusOK, vulnscan.StartScanResponse{}, "Scan started").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.StartScanData]{}, "Scan started").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -375,11 +375,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns the most recent vulnerability scan and summary for a stack. Requires stacks.read permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, vulnscan.GetLatestScanResponse{}, "Latest scan with summary").
-		Response(http.StatusNotFound, ErrorResponse{}, "No scans found for stack").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.GetLatestScanData]{}, "Latest scan with summary").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "No scans found for stack").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -389,10 +389,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns all vulnerability scans for a stack with summaries. Requires stacks.read permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, vulnscan.GetScansHistoryResponse{}, "Scan history with summaries").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.GetScansHistoryData]{}, "Scan history with summaries").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -403,10 +403,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("limit", "Maximum number of scans to include (default 10, max 50)").TypeInt().
-		Response(http.StatusOK, vulnscan.GetScanTrendResponse{}, "Scan trend data").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.GetScanTrendData]{}, "Scan trend data").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -415,10 +415,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get scan by ID").
 		Description("Returns a specific vulnerability scan with all vulnerabilities. Requires stacks.read permission for the scanned stack.").
 		PathParam("scanid", "Scan ID").TypeInt().Required().
-		Response(http.StatusOK, vulnscan.GetScanResponse{}, "Scan details with vulnerabilities").
-		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
+		Response(http.StatusOK, response.Response[vulnscan.GetScanData]{}, "Scan details with vulnerabilities").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Scan not found").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -427,11 +427,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get scan summary").
 		Description("Returns vulnerability counts by severity for a scan. Requires stacks.read permission for the scanned stack.").
 		PathParam("scanid", "Scan ID").TypeInt().Required().
-		Response(http.StatusOK, vulnscan.GetScanSummaryResponse{}, "Vulnerability summary").
-		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.GetScanSummaryData]{}, "Vulnerability summary").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Scan not found").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -441,12 +441,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Compares two vulnerability scans and returns new, fixed, and unchanged vulnerabilities. Both scans must be from the same stack. Requires stacks.read permission.").
 		PathParam("baseScanId", "Base scan ID").TypeInt().Required().
 		PathParam("compareScanId", "Comparison scan ID").TypeInt().Required().
-		Response(http.StatusOK, vulnscan.CompareScanResponse{}, "Scan comparison").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid scan ID").
-		Response(http.StatusNotFound, ErrorResponse{}, "Scan not found").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[vulnscan.CompareScanData]{}, "Scan comparison").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid scan ID").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Scan not found").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

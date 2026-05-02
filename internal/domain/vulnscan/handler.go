@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -54,13 +53,10 @@ func (h *Handler) StartScan(c echo.Context) error {
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, StartScanResponse{
-		Success: true,
-		Data:    StartScanData{Scan: *scan},
-	})
+	return response.OK(c, StartScanData{Scan: *scan})
 }
 
 func (h *Handler) GetScan(c echo.Context) error {
@@ -76,13 +72,10 @@ func (h *Handler) GetScan(c echo.Context) error {
 
 	scan, err := h.service.GetScan(c.Request().Context(), userID, scanID)
 	if err != nil {
-		return response.SendNotFound(c, "scan not found")
+		return response.NotFound(c, "scan not found")
 	}
 
-	return c.JSON(http.StatusOK, GetScanResponse{
-		Success: true,
-		Data:    GetScanData{Scan: *scan},
-	})
+	return response.OK(c, GetScanData{Scan: *scan})
 }
 
 func (h *Handler) GetScansForStack(c echo.Context) error {
@@ -98,13 +91,10 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 
 	scans, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, GetScansHistoryResponse{
-		Success: true,
-		Data:    GetScansHistoryData{Scans: scans},
-	})
+	return response.OK(c, GetScansHistoryData{Scans: scans})
 }
 
 func (h *Handler) GetLatestScanForStack(c echo.Context) error {
@@ -120,20 +110,17 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 
 	scan, err := h.service.GetLatestScanForStack(c.Request().Context(), userID, serverID, stackName)
 	if err != nil {
-		return response.SendNotFound(c, "no scans found for stack")
+		return response.NotFound(c, "no scans found for stack")
 	}
 
 	summary, err := h.service.GetVulnerabilitySummary(scan.ID)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, GetLatestScanResponse{
-		Success: true,
-		Data: GetLatestScanData{
-			Scan:    *scan,
-			Summary: summary,
-		},
+	return response.OK(c, GetLatestScanData{
+		Scan:    *scan,
+		Summary: summary,
 	})
 }
 
@@ -150,18 +137,15 @@ func (h *Handler) GetScanSummary(c echo.Context) error {
 
 	_, err = h.service.GetScan(c.Request().Context(), userID, scanID)
 	if err != nil {
-		return response.SendNotFound(c, "scan not found")
+		return response.NotFound(c, "scan not found")
 	}
 
 	summary, err := h.service.GetVulnerabilitySummary(scanID)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, GetScanSummaryResponse{
-		Success: true,
-		Data:    GetScanSummaryData{Summary: *summary},
-	})
+	return response.OK(c, GetScanSummaryData{Summary: *summary})
 }
 
 func (h *Handler) CompareScans(c echo.Context) error {
@@ -172,12 +156,12 @@ func (h *Handler) CompareScans(c echo.Context) error {
 
 	baseScanID, err := echoparams.ParseUintParam(c, "baseScanId")
 	if err != nil {
-		return response.SendBadRequest(c, "invalid base scan ID")
+		return response.BadRequest(c, "invalid base scan ID")
 	}
 
 	compareScanID, err := echoparams.ParseUintParam(c, "compareScanId")
 	if err != nil {
-		return response.SendBadRequest(c, "invalid compare scan ID")
+		return response.BadRequest(c, "invalid compare scan ID")
 	}
 
 	comparison, err := h.service.CompareScans(c.Request().Context(), userID, baseScanID, compareScanID)
@@ -188,13 +172,10 @@ func (h *Handler) CompareScans(c echo.Context) error {
 			zap.Uint("base_scan_id", baseScanID),
 			zap.Uint("compare_scan_id", compareScanID),
 		)
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, CompareScanResponse{
-		Success: true,
-		Data:    CompareScanData{Comparison: *comparison},
-	})
+	return response.OK(c, CompareScanData{Comparison: *comparison})
 }
 
 func (h *Handler) GetScanTrend(c echo.Context) error {
@@ -223,15 +204,12 @@ func (h *Handler) GetScanTrend(c echo.Context) error {
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, GetScanTrendResponse{
-		Success: true,
-		Data: GetScanTrendData{
-			StackTrend:    trend.StackTrend,
-			PerImageTrend: trend.PerImageTrend,
-			ScopeWarning:  trend.ScopeWarning,
-		},
+	return response.OK(c, GetScanTrendData{
+		StackTrend:    trend.StackTrend,
+		PerImageTrend: trend.PerImageTrend,
+		ScopeWarning:  trend.ScopeWarning,
 	})
 }

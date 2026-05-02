@@ -28,14 +28,6 @@ var legacyEnvelopeAllowlist = map[string]bool{
 	"POST /api/v1/totp/enable":                true,
 	"POST /api/v1/totp/disable":               true,
 
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/vulnscan":        true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/vulnscan":         true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/vulnscan/history": true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/vulnscan/trend":   true,
-	"GET /api/v1/vulnscan/{scanid}":                                      true,
-	"GET /api/v1/vulnscan/{scanid}/summary":                              true,
-	"GET /api/v1/vulnscan/compare/{baseScanId}/{compareScanId}":          true,
-
 	"GET /api/v1/servers/{serverid}/stacks/{stackname}/files":           true,
 	"GET /api/v1/servers/{serverid}/stacks/{stackname}/files/read":      true,
 	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/write":    true,
