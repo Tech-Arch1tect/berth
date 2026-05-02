@@ -80,16 +80,18 @@ export function useSecurityAuditLogs({
     },
   });
 
-  const logs = logsResponse?.data?.logs ?? [];
+  const logs = logsResponse?.data ?? [];
   const stats = statsResponse?.data ?? null;
 
-  const paginationMetadata: PaginationMetadata | null = logsResponse?.data
-    ? {
-        total: logsResponse.data.total,
-        totalPages: logsResponse.data.total_pages,
-        currentPage: logsResponse.data.page,
-      }
-    : null;
+  const meta = logsResponse?.meta;
+  const paginationMetadata: PaginationMetadata | null =
+    meta && meta.totalCount != null && meta.pageSize != null && meta.page != null
+      ? {
+          total: meta.totalCount,
+          totalPages: Math.max(1, Math.ceil(meta.totalCount / meta.pageSize)),
+          currentPage: meta.page,
+        }
+      : null;
 
   const fetchLogDetails = useCallback(async (id: number): Promise<SecurityAuditLogInfo | null> => {
     try {
