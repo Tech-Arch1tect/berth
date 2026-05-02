@@ -43,9 +43,6 @@ import type {
   ListRoleStackPermissionsResponse,
   ListRolesResponse,
   ListUsersResponse,
-  OperationLogDetailResponse,
-  OperationLogStatsResponse,
-  PaginatedOperationLogsResponse,
   PostApiV1AdminMigrationImportBody,
   ResponseAdminCreateServerData,
   ResponseAdminListServersData,
@@ -53,6 +50,9 @@ import type {
   ResponseEmpty,
   ResponseGetServerData,
   ResponseMessageData,
+  ResponseOperationLogDetailData,
+  ResponseOperationLogInfo,
+  ResponseOperationLogStatsData,
   ResponseSecurityAuditLogInfo,
   ResponseSecurityAuditLogInfo2,
   ResponseStatsResponseData,
@@ -262,8 +262,8 @@ export const getGetApiV1AdminOperationLogsUrl = (params?: GetApiV1AdminOperation
 export const getApiV1AdminOperationLogs = async (
   params?: GetApiV1AdminOperationLogsParams,
   options?: RequestInit
-): Promise<PaginatedOperationLogsResponse> => {
-  return apiClient<PaginatedOperationLogsResponse>(getGetApiV1AdminOperationLogsUrl(params), {
+): Promise<ResponseOperationLogInfo> => {
+  return apiClient<ResponseOperationLogInfo>(getGetApiV1AdminOperationLogsUrl(params), {
     ...options,
     method: 'GET',
   });
@@ -277,7 +277,7 @@ export const getGetApiV1AdminOperationLogsQueryKey = (
 
 export const getGetApiV1AdminOperationLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminOperationLogsParams,
   options?: {
@@ -305,11 +305,11 @@ export const getGetApiV1AdminOperationLogsQueryOptions = <
 export type GetApiV1AdminOperationLogsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>
 >;
-export type GetApiV1AdminOperationLogsQueryError = ErrorResponse | void;
+export type GetApiV1AdminOperationLogsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminOperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params: undefined | GetApiV1AdminOperationLogsParams,
   options: {
@@ -330,7 +330,7 @@ export function useGetApiV1AdminOperationLogs<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminOperationLogsParams,
   options?: {
@@ -351,7 +351,7 @@ export function useGetApiV1AdminOperationLogs<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminOperationLogsParams,
   options?: {
@@ -368,7 +368,7 @@ export function useGetApiV1AdminOperationLogs<
 
 export function useGetApiV1AdminOperationLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogs>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   params?: GetApiV1AdminOperationLogsParams,
   options?: {
@@ -398,8 +398,8 @@ export const getGetApiV1AdminOperationLogsStatsUrl = () => {
 
 export const getApiV1AdminOperationLogsStats = async (
   options?: RequestInit
-): Promise<OperationLogStatsResponse> => {
-  return apiClient<OperationLogStatsResponse>(getGetApiV1AdminOperationLogsStatsUrl(), {
+): Promise<ResponseOperationLogStatsData> => {
+  return apiClient<ResponseOperationLogStatsData>(getGetApiV1AdminOperationLogsStatsUrl(), {
     ...options,
     method: 'GET',
   });
@@ -411,7 +411,7 @@ export const getGetApiV1AdminOperationLogsStatsQueryKey = () => {
 
 export const getGetApiV1AdminOperationLogsStatsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<
     UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>, TError, TData>
@@ -436,11 +436,11 @@ export const getGetApiV1AdminOperationLogsStatsQueryOptions = <
 export type GetApiV1AdminOperationLogsStatsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>
 >;
-export type GetApiV1AdminOperationLogsStatsQueryError = ErrorResponse | void;
+export type GetApiV1AdminOperationLogsStatsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminOperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<
@@ -460,7 +460,7 @@ export function useGetApiV1AdminOperationLogsStats<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<
@@ -480,7 +480,7 @@ export function useGetApiV1AdminOperationLogsStats<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<
@@ -496,7 +496,7 @@ export function useGetApiV1AdminOperationLogsStats<
 
 export function useGetApiV1AdminOperationLogsStats<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<
@@ -526,8 +526,8 @@ export const getGetApiV1AdminOperationLogsIdUrl = (id: number) => {
 export const getApiV1AdminOperationLogsId = async (
   id: number,
   options?: RequestInit
-): Promise<OperationLogDetailResponse> => {
-  return apiClient<OperationLogDetailResponse>(getGetApiV1AdminOperationLogsIdUrl(id), {
+): Promise<ResponseOperationLogDetailData> => {
+  return apiClient<ResponseOperationLogDetailData>(getGetApiV1AdminOperationLogsIdUrl(id), {
     ...options,
     method: 'GET',
   });
@@ -539,7 +539,7 @@ export const getGetApiV1AdminOperationLogsIdQueryKey = (id: number) => {
 
 export const getGetApiV1AdminOperationLogsIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -567,11 +567,11 @@ export const getGetApiV1AdminOperationLogsIdQueryOptions = <
 export type GetApiV1AdminOperationLogsIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>
 >;
-export type GetApiV1AdminOperationLogsIdQueryError = ErrorResponse | void;
+export type GetApiV1AdminOperationLogsIdQueryError = ResponseEmpty | void;
 
 export function useGetApiV1AdminOperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options: {
@@ -592,7 +592,7 @@ export function useGetApiV1AdminOperationLogsId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -613,7 +613,7 @@ export function useGetApiV1AdminOperationLogsId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1AdminOperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {
@@ -630,7 +630,7 @@ export function useGetApiV1AdminOperationLogsId<
 
 export function useGetApiV1AdminOperationLogsId<
   TData = Awaited<ReturnType<typeof getApiV1AdminOperationLogsId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   id: number,
   options?: {

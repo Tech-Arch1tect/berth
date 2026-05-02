@@ -5,10 +5,13 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Error } from './error';
+import type { Meta } from './meta';
 import type { OperationLogInfo } from './operationLogInfo';
-import type { PaginationInfo } from './paginationInfo';
 
-export interface PaginatedOperationLogsData {
+export interface ResponseOperationLogInfo {
   data: OperationLogInfo[];
-  pagination: PaginationInfo;
+  error?: Error | null;
+  meta?: Meta | null;
+  success: boolean;
 }
