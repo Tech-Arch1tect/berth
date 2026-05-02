@@ -16,7 +16,7 @@ import { OperationRequest } from '../../../features/operations/types';
 import StackStats from '../StackStats';
 import LogViewer from '../../../features/logs/components/LogViewer';
 import { FileManager } from '../../../features/files/components/FileManager';
-import { VulnerabilityScanPanel } from '../../vulnerability-scan';
+import { VulnerabilityScanPanel } from '../../../features/vulnerability-scan/components';
 import { StackImagesTab } from '../images';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
