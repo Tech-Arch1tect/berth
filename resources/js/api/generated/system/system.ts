@@ -18,7 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { GetVersionResponse } from '../models';
+import type { ResponseEmpty, ResponseVersionData } from '../models';
 
 import { apiClient } from '../../client';
 
@@ -32,8 +32,8 @@ export const getGetApiV1VersionUrl = () => {
   return `/api/v1/version`;
 };
 
-export const getApiV1Version = async (options?: RequestInit): Promise<GetVersionResponse> => {
-  return apiClient<GetVersionResponse>(getGetApiV1VersionUrl(), {
+export const getApiV1Version = async (options?: RequestInit): Promise<ResponseVersionData> => {
+  return apiClient<ResponseVersionData>(getGetApiV1VersionUrl(), {
     ...options,
     method: 'GET',
   });
@@ -45,7 +45,7 @@ export const getGetApiV1VersionQueryKey = () => {
 
 export const getGetApiV1VersionQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1Version>>,
-  TError = void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Version>>, TError, TData>>;
   request?: SecondParameter<typeof apiClient>;
@@ -65,11 +65,11 @@ export const getGetApiV1VersionQueryOptions = <
 };
 
 export type GetApiV1VersionQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Version>>>;
-export type GetApiV1VersionQueryError = void;
+export type GetApiV1VersionQueryError = ResponseEmpty | void;
 
 export function useGetApiV1Version<
   TData = Awaited<ReturnType<typeof getApiV1Version>>,
-  TError = void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Version>>, TError, TData>> &
@@ -87,7 +87,7 @@ export function useGetApiV1Version<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Version<
   TData = Awaited<ReturnType<typeof getApiV1Version>>,
-  TError = void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Version>>, TError, TData>> &
@@ -105,7 +105,7 @@ export function useGetApiV1Version<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Version<
   TData = Awaited<ReturnType<typeof getApiV1Version>>,
-  TError = void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Version>>, TError, TData>>;
@@ -119,7 +119,7 @@ export function useGetApiV1Version<
 
 export function useGetApiV1Version<
   TData = Awaited<ReturnType<typeof getApiV1Version>>,
-  TError = void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Version>>, TError, TData>>;

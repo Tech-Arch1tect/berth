@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DeletedAt } from './deletedAt';
-import type { User } from './user';
 
 export interface Role {
   created_at: string;
@@ -17,5 +16,4 @@ export interface Role {
   is_admin: boolean;
   name: string;
   updated_at: string;
-  users: User[];
 }
