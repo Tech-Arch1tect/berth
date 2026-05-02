@@ -16,46 +16,16 @@ type RegistryCredentialInfo struct {
 	Username     string    `json:"username"`
 }
 
-type ListCredentialsResponse struct {
-	Success bool                `json:"success"`
-	Data    ListCredentialsData `json:"data"`
-}
-
 type ListCredentialsData struct {
 	Credentials []RegistryCredentialInfo `json:"credentials"`
-}
-
-type GetCredentialResponse struct {
-	Success bool              `json:"success"`
-	Data    GetCredentialData `json:"data"`
 }
 
 type GetCredentialData struct {
 	Credential RegistryCredentialInfo `json:"credential"`
 }
 
-type CreateCredentialResponse struct {
-	Success bool              `json:"success"`
-	Data    GetCredentialData `json:"data"`
-}
-
-type UpdateCredentialResponse struct {
-	Success bool              `json:"success"`
-	Data    GetCredentialData `json:"data"`
-}
-
 type DeleteCredentialMessageData struct {
 	Message string `json:"message"`
-}
-
-type DeleteCredentialResponse struct {
-	Success bool                        `json:"success"`
-	Data    DeleteCredentialMessageData `json:"data"`
-}
-
-type ErrorResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error"`
 }
 
 func ToResponse(cred *server.ServerRegistryCredential) RegistryCredentialInfo {

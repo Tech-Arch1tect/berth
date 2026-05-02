@@ -116,10 +116,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List registry credentials").
 		Description("Returns all registry credentials for a server. Requires registries.manage permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, registry.ListCredentialsResponse{}, "List of registry credentials").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[registry.ListCredentialsData]{}, "List of registry credentials").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -129,11 +129,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns a specific registry credential by ID. Requires registries.manage permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("id", "Credential ID").TypeInt().Required().
-		Response(http.StatusOK, registry.GetCredentialResponse{}, "Registry credential details").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[registry.GetCredentialData]{}, "Registry credential details").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Credential not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -143,11 +143,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Creates a new registry credential for a server. Requires registries.manage permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		Body(registry.CreateCredentialRequest{}, "Registry credential details").
-		Response(http.StatusCreated, registry.CreateCredentialResponse{}, "Created registry credential").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[registry.GetCredentialData]{}, "Created registry credential").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -158,12 +158,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("id", "Credential ID").TypeInt().Required().
 		Body(registry.UpdateCredentialRequest{}, "Updated registry credential details").
-		Response(http.StatusOK, registry.UpdateCredentialResponse{}, "Updated registry credential").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[registry.GetCredentialData]{}, "Updated registry credential").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Credential not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -173,11 +173,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Deletes a registry credential. Requires registries.manage permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("id", "Credential ID").TypeInt().Required().
-		Response(http.StatusOK, registry.DeleteCredentialResponse{}, "Credential deleted successfully").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusNotFound, ErrorResponse{}, "Credential not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[registry.DeleteCredentialMessageData]{}, "Credential deleted successfully").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Credential not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

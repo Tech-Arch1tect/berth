@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 
 	"berth/internal/domain/session"
 
@@ -63,22 +62,19 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions to manage registry credentials")
+		return response.Forbidden(c, "Insufficient permissions to manage registry credentials")
 	}
 
 	credentials, err := h.service.GetCredentials(serverID)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch registry credentials")
+		return response.Internal(c, "Failed to fetch registry credentials")
 	}
 
-	return c.JSON(http.StatusOK, ListCredentialsResponse{
-		Success: true,
-		Data: ListCredentialsData{
-			Credentials: ToResponseList(credentials),
-		},
+	return response.OK(c, ListCredentialsData{
+		Credentials: ToResponseList(credentials),
 	})
 }
 
@@ -98,29 +94,26 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions to manage registry credentials")
+		return response.Forbidden(c, "Insufficient permissions to manage registry credentials")
 	}
 
 	credential, err := h.service.GetCredential(credID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return response.SendNotFound(c, "Registry credential not found")
+			return response.NotFound(c, "Registry credential not found")
 		}
-		return response.SendInternalError(c, "Failed to fetch registry credential")
+		return response.Internal(c, "Failed to fetch registry credential")
 	}
 
 	if credential.ServerID != serverID {
-		return response.SendNotFound(c, "Registry credential not found")
+		return response.NotFound(c, "Registry credential not found")
 	}
 
-	return c.JSON(http.StatusOK, GetCredentialResponse{
-		Success: true,
-		Data: GetCredentialData{
-			Credential: ToResponse(credential),
-		},
+	return response.OK(c, GetCredentialData{
+		Credential: ToResponse(credential),
 	})
 }
 
@@ -135,10 +128,10 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions to manage registry credentials")
+		return response.Forbidden(c, "Insufficient permissions to manage registry credentials")
 	}
 
 	var req CreateCredentialRequest
@@ -151,12 +144,12 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 
 	if req.RegistryURL == "" || req.Username == "" || req.Password == "" {
-		return response.SendBadRequest(c, "registry_url, username, and password are required")
+		return response.BadRequest(c, "registry_url, username, and password are required")
 	}
 
 	credential, err := h.service.CreateCredential(serverID, req.StackPattern, req.RegistryURL, req.ImagePattern, req.Username, req.Password)
 	if err != nil {
-		return response.SendBadRequest(c, err.Error())
+		return response.BadRequest(c, err.Error())
 	}
 
 	h.service.Logger().Info("registry credential created",
@@ -191,11 +184,8 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return c.JSON(http.StatusCreated, CreateCredentialResponse{
-		Success: true,
-		Data: GetCredentialData{
-			Credential: ToResponse(credential),
-		},
+	return response.Created(c, GetCredentialData{
+		Credential: ToResponse(credential),
 	})
 }
 
@@ -215,22 +205,22 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions to manage registry credentials")
+		return response.Forbidden(c, "Insufficient permissions to manage registry credentials")
 	}
 
 	existing, err := h.service.GetCredential(credID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return response.SendNotFound(c, "Registry credential not found")
+			return response.NotFound(c, "Registry credential not found")
 		}
-		return response.SendInternalError(c, "Failed to fetch registry credential")
+		return response.Internal(c, "Failed to fetch registry credential")
 	}
 
 	if existing.ServerID != serverID {
-		return response.SendNotFound(c, "Registry credential not found")
+		return response.NotFound(c, "Registry credential not found")
 	}
 
 	var req UpdateCredentialRequest
@@ -240,7 +230,7 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 
 	credential, err := h.service.UpdateCredential(credID, req.StackPattern, req.RegistryURL, req.ImagePattern, req.Username, req.Password)
 	if err != nil {
-		return response.SendBadRequest(c, err.Error())
+		return response.BadRequest(c, err.Error())
 	}
 
 	h.service.Logger().Info("registry credential updated",
@@ -275,11 +265,8 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return c.JSON(http.StatusOK, UpdateCredentialResponse{
-		Success: true,
-		Data: GetCredentialData{
-			Credential: ToResponse(credential),
-		},
+	return response.OK(c, GetCredentialData{
+		Credential: ToResponse(credential),
 	})
 }
 
@@ -299,22 +286,22 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions to manage registry credentials")
+		return response.Forbidden(c, "Insufficient permissions to manage registry credentials")
 	}
 
 	existing, err := h.service.GetCredential(credID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return response.SendNotFound(c, "Registry credential not found")
+			return response.NotFound(c, "Registry credential not found")
 		}
-		return response.SendInternalError(c, "Failed to fetch registry credential")
+		return response.Internal(c, "Failed to fetch registry credential")
 	}
 
 	if existing.ServerID != serverID {
-		return response.SendNotFound(c, "Registry credential not found")
+		return response.NotFound(c, "Registry credential not found")
 	}
 
 	h.service.Logger().Info("registry credential deleted",
@@ -351,7 +338,7 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		}
 		h.db.Create(auditLog)
 
-		return response.SendInternalError(c, "Failed to delete registry credential")
+		return response.Internal(c, "Failed to delete registry credential")
 	}
 
 	metadataJSON, _ := json.Marshal(map[string]any{
@@ -376,10 +363,7 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	}
 	h.db.Create(auditLog)
 
-	return c.JSON(http.StatusOK, DeleteCredentialResponse{
-		Success: true,
-		Data: DeleteCredentialMessageData{
-			Message: "Registry credential deleted successfully",
-		},
+	return response.OK(c, DeleteCredentialMessageData{
+		Message: "Registry credential deleted successfully",
 	})
 }
