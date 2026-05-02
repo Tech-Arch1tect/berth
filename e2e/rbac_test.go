@@ -4,6 +4,7 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/user"
+	"berth/internal/pkg/response"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -16,20 +17,6 @@ type (
 	RoleInfo            = user.RoleInfo
 	RoleWithPermissions = user.RoleWithPermissions
 	PermissionInfo      = user.PermissionInfo
-	CreateUserResponse  = rbac.CreateUserResponse
-	AssignRoleResponse  = rbac.AssignRoleResponse
-	RevokeRoleResponse  = rbac.RevokeRoleResponse
-
-	CreateRoleResponse               = rbac.CreateRoleResponse
-	UpdateRoleResponse               = rbac.UpdateRoleResponse
-	DeleteRoleResponse               = rbac.DeleteRoleResponse
-	ListRoleStackPermissionsResponse = rbac.ListRoleStackPermissionsResponse
-	CreateStackPermissionResponse    = rbac.CreateStackPermissionResponse
-	DeleteStackPermissionResponse    = rbac.DeleteStackPermissionResponse
-	ListRolesResponse                = rbac.ListRolesResponse
-	ListUsersResponse                = rbac.ListUsersResponse
-	GetUserRolesResponse             = rbac.GetUserRolesResponse
-	ListPermissionsResponse          = rbac.ListPermissionsResponse
 )
 
 type StackPermissionsResponse struct {
@@ -73,7 +60,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var usersResp ListUsersResponse
+		var usersResp response.Response[rbac.ListUsersData]
 		require.NoError(t, resp.GetJSON(&usersResp))
 		assert.NotEmpty(t, usersResp.Data.Users)
 	})
@@ -99,7 +86,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var createResp CreateUserResponse
+		var createResp response.Response[UserInfo]
 		require.NoError(t, resp.GetJSON(&createResp))
 		assert.True(t, createResp.Success)
 		assert.Equal(t, "testcreateduser", createResp.Data.Username)
@@ -139,7 +126,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var rolesResp GetUserRolesResponse
+		var rolesResp response.Response[rbac.GetUserRolesData]
 		require.NoError(t, resp.GetJSON(&rolesResp))
 		assert.Equal(t, "testcreateduser", rolesResp.Data.User.Username)
 		assert.NotEmpty(t, rolesResp.Data.AllRoles)
@@ -193,7 +180,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var rolesResp ListRolesResponse
+		var rolesResp response.Response[rbac.ListRolesData]
 		require.NoError(t, resp.GetJSON(&rolesResp))
 		assert.NotEmpty(t, rolesResp.Data.Roles)
 
@@ -226,7 +213,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var createResp CreateRoleResponse
+		var createResp response.Response[RoleWithPermissions]
 		require.NoError(t, resp.GetJSON(&createResp))
 		assert.True(t, createResp.Success)
 		assert.Equal(t, "testrole", createResp.Data.Name)
@@ -252,7 +239,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var updateResp UpdateRoleResponse
+		var updateResp response.Response[RoleWithPermissions]
 		require.NoError(t, resp.GetJSON(&updateResp))
 		assert.True(t, updateResp.Success)
 		assert.Equal(t, "testrole-updated", updateResp.Data.Name)
@@ -271,7 +258,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var deleteResp DeleteRoleResponse
+		var deleteResp response.Response[rbac.MessageData]
 		require.NoError(t, resp.GetJSON(&deleteResp))
 		assert.True(t, deleteResp.Success)
 	})
@@ -316,7 +303,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 201, createResp.StatusCode)
 
-	var createUserResp CreateUserResponse
+	var createUserResp response.Response[UserInfo]
 	require.NoError(t, createResp.GetJSON(&createUserResp))
 	createdUser := createUserResp.Data
 
@@ -335,7 +322,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 201, roleResp.StatusCode)
 
-	var createRoleResp CreateRoleResponse
+	var createRoleResp response.Response[RoleWithPermissions]
 	require.NoError(t, roleResp.GetJSON(&createRoleResp))
 	createdRole := createRoleResp.Data
 
@@ -356,7 +343,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var assignResp AssignRoleResponse
+		var assignResp response.Response[rbac.MessageData]
 		require.NoError(t, resp.GetJSON(&assignResp))
 		assert.True(t, assignResp.Success)
 	})
@@ -378,7 +365,7 @@ func TestRBACAssignRevokeRoleJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var revokeResp RevokeRoleResponse
+		var revokeResp response.Response[rbac.MessageData]
 		require.NoError(t, resp.GetJSON(&revokeResp))
 		assert.True(t, revokeResp.Success)
 	})
@@ -421,7 +408,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 201, roleResp.StatusCode)
 
-	var createRoleResp CreateRoleResponse
+	var createRoleResp response.Response[RoleWithPermissions]
 	require.NoError(t, roleResp.GetJSON(&createRoleResp))
 	createdRole := createRoleResp.Data
 
@@ -437,7 +424,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stackPermResp ListRoleStackPermissionsResponse
+		var stackPermResp response.Response[rbac.ListRoleStackPermissionsData]
 		require.NoError(t, resp.GetJSON(&stackPermResp))
 		assert.True(t, stackPermResp.Success)
 		assert.NotEmpty(t, stackPermResp.Data.Role.Name)
@@ -455,7 +442,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		var roles ListRolesResponse
+		var roles response.Response[rbac.ListRolesData]
 		require.NoError(t, rolesResp.GetJSON(&roles))
 
 		var adminRoleID uint
@@ -491,7 +478,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, permResp.StatusCode)
 
-	var permList ListPermissionsResponse
+	var permList response.Response[rbac.ListPermissionsData]
 	require.NoError(t, permResp.GetJSON(&permList))
 	require.True(t, permList.Success)
 	require.NotEmpty(t, permList.Data.Permissions, "should have permissions")
@@ -517,7 +504,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var createResp CreateStackPermissionResponse
+		var createResp response.Response[rbac.MessageData]
 		require.NoError(t, resp.GetJSON(&createResp))
 		assert.True(t, createResp.Success)
 
@@ -531,7 +518,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, getResp.StatusCode)
 
-		var stackPermResp ListRoleStackPermissionsResponse
+		var stackPermResp response.Response[rbac.ListRoleStackPermissionsData]
 		require.NoError(t, getResp.GetJSON(&stackPermResp))
 		require.NotEmpty(t, stackPermResp.Data.PermissionRules, "should have permission rules")
 
@@ -588,7 +575,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var deleteResp DeleteStackPermissionResponse
+		var deleteResp response.Response[rbac.MessageData]
 		require.NoError(t, resp.GetJSON(&deleteResp))
 		assert.True(t, deleteResp.Success)
 
@@ -602,7 +589,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, getResp.StatusCode)
 
-		var stackPermResp ListRoleStackPermissionsResponse
+		var stackPermResp response.Response[rbac.ListRoleStackPermissionsData]
 		require.NoError(t, getResp.GetJSON(&stackPermResp))
 		assert.Empty(t, stackPermResp.Data.PermissionRules)
 	})
@@ -642,7 +629,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permResp ListPermissionsResponse
+		var permResp response.Response[rbac.ListPermissionsData]
 		require.NoError(t, resp.GetJSON(&permResp))
 		assert.True(t, permResp.Success)
 		assert.NotEmpty(t, permResp.Data.Permissions)
@@ -660,7 +647,7 @@ func TestRBACPermissionsEndpointJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permResp ListPermissionsResponse
+		var permResp response.Response[rbac.ListPermissionsData]
 		require.NoError(t, resp.GetJSON(&permResp))
 		assert.True(t, permResp.Success)
 

@@ -9,23 +9,9 @@ type CreateUserRequest struct {
 	PasswordConfirm string `json:"password_confirm"`
 }
 
-type CreateUserResponse struct {
-	Success bool          `json:"success"`
-	Data    user.UserInfo `json:"data"`
-}
-
 type AssignRoleRequest struct {
 	UserID uint `json:"user_id"`
 	RoleID uint `json:"role_id"`
-}
-
-type MessageData struct {
-	Message string `json:"message"`
-}
-
-type AssignRoleResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
 }
 
 type RevokeRoleRequest struct {
@@ -33,19 +19,9 @@ type RevokeRoleRequest struct {
 	RoleID uint `json:"role_id"`
 }
 
-type RevokeRoleResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
-}
-
 type CreateRoleRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-}
-
-type CreateRoleResponse struct {
-	Success bool                     `json:"success"`
-	Data    user.RoleWithPermissions `json:"data"`
 }
 
 type UpdateRoleRequest struct {
@@ -53,14 +29,14 @@ type UpdateRoleRequest struct {
 	Description string `json:"description"`
 }
 
-type UpdateRoleResponse struct {
-	Success bool                     `json:"success"`
-	Data    user.RoleWithPermissions `json:"data"`
+type CreateStackPermissionRequest struct {
+	ServerID     uint   `json:"server_id"`
+	PermissionID uint   `json:"permission_id"`
+	StackPattern string `json:"stack_pattern"`
 }
 
-type DeleteRoleResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
+type MessageData struct {
+	Message string `json:"message"`
 }
 
 type ServerInfo struct {
@@ -80,6 +56,19 @@ type StackPermissionRule struct {
 	IsStackBased bool   `json:"is_stack_based"`
 }
 
+type ListUsersData struct {
+	Users []user.UserInfo `json:"users"`
+}
+
+type GetUserRolesData struct {
+	User     user.UserInfo   `json:"user"`
+	AllRoles []user.RoleInfo `json:"all_roles"`
+}
+
+type ListRolesData struct {
+	Roles []user.RoleWithPermissions `json:"roles"`
+}
+
 type ListRoleStackPermissionsData struct {
 	Role            user.RoleInfo         `json:"role"`
 	Servers         []ServerInfo          `json:"servers"`
@@ -87,60 +76,6 @@ type ListRoleStackPermissionsData struct {
 	PermissionRules []StackPermissionRule `json:"permissionRules"`
 }
 
-type ListRoleStackPermissionsResponse struct {
-	Success bool                         `json:"success"`
-	Data    ListRoleStackPermissionsData `json:"data"`
-}
-
-type CreateStackPermissionRequest struct {
-	ServerID     uint   `json:"server_id"`
-	PermissionID uint   `json:"permission_id"`
-	StackPattern string `json:"stack_pattern"`
-}
-
-type CreateStackPermissionResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
-}
-
-type DeleteStackPermissionResponse struct {
-	Success bool        `json:"success"`
-	Data    MessageData `json:"data"`
-}
-
-type ListRolesResponseData struct {
-	Roles []user.RoleWithPermissions `json:"roles"`
-}
-
-type ListRolesResponse struct {
-	Success bool                  `json:"success"`
-	Data    ListRolesResponseData `json:"data"`
-}
-
-type ListUsersResponseData struct {
-	Users []user.UserInfo `json:"users"`
-}
-
-type ListUsersResponse struct {
-	Success bool                  `json:"success"`
-	Data    ListUsersResponseData `json:"data"`
-}
-
-type GetUserRolesResponseData struct {
-	User     user.UserInfo   `json:"user"`
-	AllRoles []user.RoleInfo `json:"all_roles"`
-}
-
-type GetUserRolesResponse struct {
-	Success bool                     `json:"success"`
-	Data    GetUserRolesResponseData `json:"data"`
-}
-
-type ListPermissionsResponseData struct {
+type ListPermissionsData struct {
 	Permissions []user.PermissionInfo `json:"permissions"`
-}
-
-type ListPermissionsResponse struct {
-	Success bool                        `json:"success"`
-	Data    ListPermissionsResponseData `json:"data"`
 }

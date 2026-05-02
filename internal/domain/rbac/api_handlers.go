@@ -6,7 +6,6 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"net/http"
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/totp"
@@ -43,7 +42,7 @@ func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc
 func (h *APIHandler) ListUsers(c echo.Context) error {
 	var users []usermodel.User
 	if err := h.db.Preload("Roles").Find(&users).Error; err != nil {
-		return response.SendInternalError(c, "Failed to fetch users")
+		return response.Internal(c, "Failed to fetch users")
 	}
 
 	userInfos := make([]usermodel.UserInfo, len(users))
@@ -51,12 +50,7 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 		userInfos[i] = usermodel.ToUserInfo(u, h.totpSvc.IsUserTOTPEnabled(u.ID))
 	}
 
-	return c.JSON(http.StatusOK, ListUsersResponse{
-		Success: true,
-		Data: ListUsersResponseData{
-			Users: userInfos,
-		},
-	})
+	return response.OK(c, ListUsersData{Users: userInfos})
 }
 
 func (h *APIHandler) CreateUser(c echo.Context) error {
@@ -66,25 +60,25 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 	}
 
 	if req.Username == "" || req.Email == "" || req.Password == "" {
-		return response.SendBadRequest(c, "username, email and password are required")
+		return response.BadRequest(c, "username, email and password are required")
 	}
 
 	if req.Password != req.PasswordConfirm {
-		return response.SendBadRequest(c, "passwords do not match")
+		return response.BadRequest(c, "passwords do not match")
 	}
 
 	if err := h.authSvc.ValidatePassword(req.Password); err != nil {
-		return response.SendBadRequest(c, err.Error())
+		return response.BadRequest(c, err.Error())
 	}
 
 	var existingUser usermodel.User
 	if err := h.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error; err == nil {
-		return response.SendBadRequest(c, "user with this username or email already exists")
+		return response.BadRequest(c, "user with this username or email already exists")
 	}
 
 	hashedPassword, err := h.authSvc.HashPassword(req.Password)
 	if err != nil {
-		return response.SendInternalError(c, "failed to process password")
+		return response.Internal(c, "failed to process password")
 	}
 
 	user := usermodel.User{
@@ -94,17 +88,17 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 	}
 
 	if err := h.db.Create(&user).Error; err != nil {
-		return response.SendInternalError(c, "failed to create user")
+		return response.Internal(c, "failed to create user")
 	}
 
 	if h.authSvc.IsEmailVerificationRequired() {
 		if err := h.authSvc.RequestEmailVerification(user.Email); err != nil {
-			return response.SendInternalError(c, "user created but failed to send verification email")
+			return response.Internal(c, "user created but failed to send verification email")
 		}
 	}
 
 	if err := h.db.Preload("Roles").First(&user, user.ID).Error; err != nil {
-		return response.SendInternalError(c, "failed to load created user")
+		return response.Internal(c, "failed to load created user")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -128,10 +122,7 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 
 	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
-	return c.JSON(http.StatusCreated, CreateUserResponse{
-		Success: true,
-		Data:    userInfo,
-	})
+	return response.Created(c, userInfo)
 }
 
 func (h *APIHandler) GetUserRoles(c echo.Context) error {
@@ -142,12 +133,12 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 
 	var user usermodel.User
 	if err := h.db.Preload("Roles").First(&user, userID).Error; err != nil {
-		return response.SendNotFound(c, "User not found")
+		return response.NotFound(c, "User not found")
 	}
 
 	var allRoles []usermodel.Role
 	if err := h.db.Find(&allRoles).Error; err != nil {
-		return response.SendInternalError(c, "Failed to fetch roles")
+		return response.Internal(c, "Failed to fetch roles")
 	}
 
 	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
@@ -161,12 +152,9 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, GetUserRolesResponse{
-		Success: true,
-		Data: GetUserRolesResponseData{
-			User:     userInfo,
-			AllRoles: roleInfos,
-		},
+	return response.OK(c, GetUserRolesData{
+		User:     userInfo,
+		AllRoles: roleInfos,
 	})
 }
 
@@ -183,7 +171,7 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 	h.db.First(&role, req.RoleID)
 
 	if err := h.rbacSvc.AssignRole(req.UserID, req.RoleID); err != nil {
-		return response.SendInternalError(c, "Failed to assign role")
+		return response.Internal(c, "Failed to assign role")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -206,10 +194,7 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, AssignRoleResponse{
-		Success: true,
-		Data:    MessageData{Message: "Role assigned successfully"},
-	})
+	return response.OK(c, MessageData{Message: "Role assigned successfully"})
 }
 
 func (h *APIHandler) RevokeRole(c echo.Context) error {
@@ -225,7 +210,7 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 	h.db.First(&role, req.RoleID)
 
 	if err := h.rbacSvc.RevokeRole(req.UserID, req.RoleID); err != nil {
-		return response.SendInternalError(c, "Failed to revoke role")
+		return response.Internal(c, "Failed to revoke role")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -248,16 +233,13 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, RevokeRoleResponse{
-		Success: true,
-		Data:    MessageData{Message: "Role revoked successfully"},
-	})
+	return response.OK(c, MessageData{Message: "Role revoked successfully"})
 }
 
 func (h *APIHandler) ListRoles(c echo.Context) error {
 	roles, err := h.rbacSvc.GetAllRoles()
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch roles")
+		return response.Internal(c, "Failed to fetch roles")
 	}
 
 	roleInfos := make([]usermodel.RoleWithPermissions, len(roles))
@@ -265,12 +247,7 @@ func (h *APIHandler) ListRoles(c echo.Context) error {
 		roleInfos[i] = usermodel.ToRoleWithPermissions(role)
 	}
 
-	return c.JSON(http.StatusOK, ListRolesResponse{
-		Success: true,
-		Data: ListRolesResponseData{
-			Roles: roleInfos,
-		},
-	})
+	return response.OK(c, ListRolesData{Roles: roleInfos})
 }
 
 func (h *APIHandler) CreateRole(c echo.Context) error {
@@ -280,12 +257,12 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 	}
 
 	if req.Name == "" {
-		return response.SendBadRequest(c, "name is required")
+		return response.BadRequest(c, "name is required")
 	}
 
 	role, err := h.rbacSvc.CreateRole(req.Name, req.Description)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to create role")
+		return response.Internal(c, "Failed to create role")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -308,10 +285,7 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusCreated, CreateRoleResponse{
-		Success: true,
-		Data:    usermodel.ToRoleWithPermissions(*role),
-	})
+	return response.Created(c, usermodel.ToRoleWithPermissions(*role))
 }
 
 func (h *APIHandler) UpdateRole(c echo.Context) error {
@@ -326,12 +300,12 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 	}
 
 	if req.Name == "" {
-		return response.SendBadRequest(c, "name is required")
+		return response.BadRequest(c, "name is required")
 	}
 
 	role, err := h.rbacSvc.UpdateRole(roleID, req.Name, req.Description)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to update role")
+		return response.Internal(c, "Failed to update role")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -354,10 +328,7 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, UpdateRoleResponse{
-		Success: true,
-		Data:    usermodel.ToRoleWithPermissions(*role),
-	})
+	return response.OK(c, usermodel.ToRoleWithPermissions(*role))
 }
 
 func (h *APIHandler) DeleteRole(c echo.Context) error {
@@ -371,7 +342,7 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 	roleName := role.Name
 
 	if err := h.rbacSvc.DeleteRole(roleID); err != nil {
-		return response.SendInternalError(c, "Failed to delete role")
+		return response.Internal(c, "Failed to delete role")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -392,10 +363,7 @@ func (h *APIHandler) DeleteRole(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, DeleteRoleResponse{
-		Success: true,
-		Data:    MessageData{Message: "Role deleted successfully"},
-	})
+	return response.OK(c, MessageData{Message: "Role deleted successfully"})
 }
 
 func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
@@ -406,26 +374,26 @@ func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
 
 	var role usermodel.Role
 	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
-		return response.SendNotFound(c, "role not found")
+		return response.NotFound(c, "role not found")
 	}
 
 	if role.IsAdmin {
-		return response.SendBadRequest(c, "cannot manage server permissions for admin role")
+		return response.BadRequest(c, "cannot manage server permissions for admin role")
 	}
 
 	var servers []server.Server
 	if err := h.db.Find(&servers).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch servers")
+		return response.Internal(c, "failed to fetch servers")
 	}
 
 	var permissions []usermodel.Permission
 	if err := h.db.Find(&permissions).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch permissions")
+		return response.Internal(c, "failed to fetch permissions")
 	}
 
 	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch role stack permissions")
+		return response.Internal(c, "failed to fetch role stack permissions")
 	}
 
 	roleInfo := usermodel.ToRoleInfo(role)
@@ -458,14 +426,11 @@ func (h *APIHandler) ListRoleServerStackPermissions(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, ListRoleStackPermissionsResponse{
-		Success: true,
-		Data: ListRoleStackPermissionsData{
-			Role:            roleInfo,
-			Servers:         serverInfos,
-			Permissions:     permissionInfos,
-			PermissionRules: permissionRules,
-		},
+	return response.OK(c, ListRoleStackPermissionsData{
+		Role:            roleInfo,
+		Servers:         serverInfos,
+		Permissions:     permissionInfos,
+		PermissionRules: permissionRules,
 	})
 }
 
@@ -481,7 +446,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 	}
 
 	if req.ServerID == 0 || req.PermissionID == 0 {
-		return response.SendBadRequest(c, "server_id and permission_id are required")
+		return response.BadRequest(c, "server_id and permission_id are required")
 	}
 
 	if req.StackPattern == "" {
@@ -493,7 +458,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		req.ServerID, roleID, req.PermissionID, req.StackPattern).First(&existing)
 
 	if result.Error == nil {
-		return response.SendBadRequest(c, "Permission already exists for this server and stack pattern")
+		return response.BadRequest(c, "Permission already exists for this server and stack pattern")
 	}
 
 	permission := usermodel.ServerRoleStackPermission{
@@ -504,7 +469,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 	}
 
 	if err := h.db.Create(&permission).Error; err != nil {
-		return response.SendInternalError(c, "Failed to create role stack permission")
+		return response.Internal(c, "Failed to create role stack permission")
 	}
 
 	var role usermodel.Role
@@ -540,10 +505,7 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusCreated, CreateStackPermissionResponse{
-		Success: true,
-		Data:    MessageData{Message: "Role stack permission created successfully"},
-	})
+	return response.Created(c, MessageData{Message: "Role stack permission created successfully"})
 }
 
 func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
@@ -559,7 +521,7 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 	h.db.First(&srv, stackPerm.ServerID)
 
 	if err := h.rbacSvc.DeleteRoleStackPermission(permissionID); err != nil {
-		return response.SendInternalError(c, "Failed to delete role stack permission")
+		return response.Internal(c, "Failed to delete role stack permission")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -591,10 +553,7 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, DeleteStackPermissionResponse{
-		Success: true,
-		Data:    MessageData{Message: "Role stack permission deleted successfully"},
-	})
+	return response.OK(c, MessageData{Message: "Role stack permission deleted successfully"})
 }
 
 func (h *APIHandler) GetUserPermissions(c echo.Context) error {
@@ -605,10 +564,10 @@ func (h *APIHandler) GetUserPermissions(c echo.Context) error {
 
 	permissions, err := h.rbacSvc.GetUserPermissions(userID)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch permissions")
+		return response.Internal(c, "Failed to fetch permissions")
 	}
 
-	return response.SendSuccess(c, map[string]any{
+	return response.OK(c, map[string]any{
 		"permissions": permissions,
 	})
 }
@@ -624,7 +583,7 @@ func (h *APIHandler) ListPermissions(c echo.Context) error {
 
 	var permissions []usermodel.Permission
 	if err := query.Find(&permissions).Error; err != nil {
-		return response.SendInternalError(c, "Failed to fetch permissions")
+		return response.Internal(c, "Failed to fetch permissions")
 	}
 
 	permissionInfos := make([]usermodel.PermissionInfo, len(permissions))
@@ -632,10 +591,5 @@ func (h *APIHandler) ListPermissions(c echo.Context) error {
 		permissionInfos[i] = usermodel.ToPermissionInfo(p)
 	}
 
-	return c.JSON(http.StatusOK, ListPermissionsResponse{
-		Success: true,
-		Data: ListPermissionsResponseData{
-			Permissions: permissionInfos,
-		},
-	})
+	return response.OK(c, ListPermissionsData{Permissions: permissionInfos})
 }

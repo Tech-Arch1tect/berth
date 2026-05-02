@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"berth/internal/pkg/response"
 	"net/http"
 	"strings"
 	"testing"
@@ -107,7 +108,7 @@ func TestMiddlewareChainCompleteness(t *testing.T) {
 		require.Equal(t, http.StatusCreated, resp.StatusCode,
 			"full chain should accept: body=%s", resp.GetString())
 
-		var createResp CreateRoleResponse
+		var createResp response.Response[RoleWithPermissions]
 		require.NoError(t, resp.GetJSON(&createResp))
 		assert.True(t, createResp.Success)
 		assert.Equal(t, "mwchain-happy", createResp.Data.Name)

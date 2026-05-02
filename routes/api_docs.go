@@ -18,6 +18,7 @@ import (
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
 	"berth/internal/domain/stack"
+	"berth/internal/domain/user"
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
 	"berth/internal/pkg/config"
@@ -870,10 +871,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("List all users").
 		Description("List all users. Requires admin permissions.").
-		Response(http.StatusOK, rbac.ListUsersResponse{}, "List of users").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.ListUsersData]{}, "List of users").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -882,11 +883,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get user with roles").
 		Description("Returns user details and all available roles. Requires admin permissions.").
 		PathParam("id", "User ID").TypeInt().Required().
-		Response(http.StatusOK, rbac.GetUserRolesResponse{}, "User with roles").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "User not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.GetUserRolesData]{}, "User with roles").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "User not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -895,11 +896,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Create a new user").
 		Description("Creates a new user account. Requires admin permissions.").
 		Body(rbac.CreateUserRequest{}, "User details").
-		Response(http.StatusCreated, rbac.CreateUserResponse{}, "User created successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or user already exists").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[user.UserInfo]{}, "User created successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or user already exists").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -908,11 +909,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Assign a role to a user").
 		Description("Assigns a role to a user. Requires admin permissions.").
 		Body(rbac.AssignRoleRequest{}, "User and role IDs").
-		Response(http.StatusOK, rbac.AssignRoleResponse{}, "Role assigned successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.MessageData]{}, "Role assigned successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -921,11 +922,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Revoke a role from a user").
 		Description("Revokes a role from a user. Requires admin permissions.").
 		Body(rbac.RevokeRoleRequest{}, "User and role IDs").
-		Response(http.StatusOK, rbac.RevokeRoleResponse{}, "Role revoked successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.MessageData]{}, "Role revoked successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -934,10 +935,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("List all roles").
 		Description("List all roles. Requires admin permissions.").
-		Response(http.StatusOK, rbac.ListRolesResponse{}, "List of roles").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.ListRolesData]{}, "List of roles").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -946,11 +947,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Create a new role").
 		Description("Creates a new role. Requires admin permissions.").
 		Body(rbac.CreateRoleRequest{}, "Role details").
-		Response(http.StatusCreated, rbac.CreateRoleResponse{}, "Role created successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[user.RoleWithPermissions]{}, "Role created successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -960,11 +961,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Updates an existing role. Requires admin permissions.").
 		PathParam("id", "Role ID").TypeInt().Required().
 		Body(rbac.UpdateRoleRequest{}, "Role details").
-		Response(http.StatusOK, rbac.UpdateRoleResponse{}, "Role updated successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[user.RoleWithPermissions]{}, "Role updated successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -973,11 +974,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Delete a role").
 		Description("Deletes a role. Requires admin permissions.").
 		PathParam("id", "Role ID").TypeInt().Required().
-		Response(http.StatusOK, rbac.DeleteRoleResponse{}, "Role deleted successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.MessageData]{}, "Role deleted successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -987,12 +988,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List role stack permissions").
 		Description("Returns the role details, available servers, permissions, and current permission rules. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
-		Response(http.StatusOK, rbac.ListRoleStackPermissionsResponse{}, "Role stack permissions").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Cannot manage permissions for admin role").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Role not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.ListRoleStackPermissionsData]{}, "Role stack permissions").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Cannot manage permissions for admin role").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Role not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1002,11 +1003,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Creates a new permission rule for a role on a server with a stack pattern. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
 		Body(rbac.CreateStackPermissionRequest{}, "Permission rule details").
-		Response(http.StatusCreated, rbac.CreateStackPermissionResponse{}, "Permission rule created").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or permission already exists").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[rbac.MessageData]{}, "Permission rule created").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or permission already exists").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1016,11 +1017,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Deletes a permission rule from a role. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
 		PathParam("permissionId", "Permission rule ID").TypeInt().Required().
-		Response(http.StatusOK, rbac.DeleteStackPermissionResponse{}, "Permission rule deleted").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.MessageData]{}, "Permission rule deleted").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1030,10 +1031,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List all permissions").
 		Description("Returns list of all permissions. Use ?type=role to filter out API-key-only permissions. Requires admin access.").
 		QueryParam("type", "Filter type - use 'role' to exclude API-key-only permissions").Optional().
-		Response(http.StatusOK, rbac.ListPermissionsResponse{}, "List of permissions").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[rbac.ListPermissionsData]{}, "List of permissions").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
