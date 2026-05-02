@@ -26,11 +26,7 @@ type InertiaPageModule = {
   };
 };
 
-const oldPages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
-  string,
-  InertiaPageModule
->;
-const newPages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/pages/**/*.tsx'], {
+const pages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/pages/**/*.tsx'], {
   eager: true,
 }) as Record<string, InertiaPageModule>;
 
@@ -67,18 +63,14 @@ const pageMap: Record<string, string> = {
 
 function resolvePage(name: string): InertiaPageModule['default'] {
   const mappedPath = pageMap[name];
-  if (mappedPath) {
-    const moved = newPages[mappedPath];
-    if (!moved) {
-      throw new Error(`Page "${name}" mapped to "${mappedPath}" but file is missing`);
-    }
-    return moved.default;
-  }
-  const fallback = oldPages[`./pages/${name}.tsx`];
-  if (!fallback) {
+  if (!mappedPath) {
     throw new Error(`Page not found: ${name}`);
   }
-  return fallback.default;
+  const module = pages[mappedPath];
+  if (!module) {
+    throw new Error(`Page "${name}" mapped to "${mappedPath}" but file is missing`);
+  }
+  return module.default;
 }
 
 createInertiaApp({
