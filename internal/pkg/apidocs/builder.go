@@ -107,6 +107,12 @@ func (o *OpenAPI) JSON() ([]byte, error) {
 	return json.MarshalIndent(o.spec, "", "  ")
 }
 
+func (o *OpenAPI) Spec() *openapi3.T {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+	return o.spec
+}
+
 func (o *OpenAPI) YAML() ([]byte, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -232,6 +238,37 @@ func getTypeKey(t reflect.Type) string {
 	return t.String()
 }
 
+func sanitiseSchemaName(name string) string {
+	open := strings.Index(name, "[")
+	if open < 0 {
+		return name
+	}
+	closeIdx := strings.LastIndex(name, "]")
+	if closeIdx <= open {
+		return name
+	}
+
+	base := name[:open]
+	args := name[open+1 : closeIdx]
+
+	parts := strings.Split(args, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		switch p {
+		case "", "struct {}":
+			out = append(out, "Empty")
+			continue
+		}
+		if dot := strings.LastIndex(p, "."); dot >= 0 {
+			p = p[dot+1:]
+		}
+		p = sanitiseSchemaName(p)
+		out = append(out, p)
+	}
+	return base + "_" + strings.Join(out, "_")
+}
+
 func (o *OpenAPI) generateSchemaFromType(t reflect.Type, visited map[string]bool, inline bool) *openapi3.SchemaRef {
 	if t.Kind() == reflect.Pointer {
 		elemType := t.Elem()
@@ -304,9 +341,9 @@ func (o *OpenAPI) generateStructSchema(t reflect.Type, visited map[string]bool, 
 			return &openapi3.SchemaRef{Ref: "#/components/schemas/" + registeredName}
 		}
 
-		schemaName := t.Name()
+		schemaName := sanitiseSchemaName(t.Name())
 		if existingTypeKey, nameExists := o.schemaNameRegistry[schemaName]; nameExists && existingTypeKey != typeKey {
-			baseName := t.Name()
+			baseName := schemaName
 			suffix := 2
 			for {
 				schemaName = baseName + strconv.Itoa(suffix)
