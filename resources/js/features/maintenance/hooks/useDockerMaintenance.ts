@@ -13,6 +13,7 @@ export const useMaintenanceInfo = (serverid: number, enabled: boolean = true) =>
       enabled: enabled && serverid > 0,
       refetchInterval: 30000,
       staleTime: 25000,
+      select: (response) => response.data,
     },
   });
 };

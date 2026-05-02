@@ -65,8 +65,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
         },
       });
 
-      if (result.error) {
-        showToast.error(`Failed to delete ${deleteConfirm.type}: ${result.error}`);
+      if (result.data?.error) {
+        showToast.error(`Failed to delete ${deleteConfirm.type}: ${result.data.error}`);
       } else {
         showToast.success(
           `Successfully deleted ${deleteConfirm.type}: ${deleteConfirm.name || deleteConfirm.id}`
@@ -95,12 +95,13 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
         },
       });
 
-      if (result.error) {
-        showToast.error(`Cleanup failed: ${result.error}`);
+      const pruneData = result.data;
+      if (pruneData?.error) {
+        showToast.error(`Cleanup failed: ${pruneData.error}`);
       } else {
-        const itemCount = result.items_deleted ? result.items_deleted.length : 0;
-        const spaceFreed = formatBytes(result.space_reclaimed || 0);
-        if (itemCount === 0 && (result.space_reclaimed || 0) === 0) {
+        const itemCount = pruneData?.items_deleted ? pruneData.items_deleted.length : 0;
+        const spaceFreed = formatBytes(pruneData?.space_reclaimed || 0);
+        if (itemCount === 0 && (pruneData?.space_reclaimed || 0) === 0) {
           showToast.success(`Cleanup completed: No items needed to be removed`);
         } else {
           showToast.success(`Cleanup completed: ${itemCount} items removed, ${spaceFreed} freed`);
