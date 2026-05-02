@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/files"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -111,7 +112,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var listing files.DirectoryListingResponse
+		var listing response.Response[files.DirectoryListing]
 		require.NoError(t, resp.GetJSON(&listing))
 		assert.True(t, listing.Success)
 		assert.Equal(t, ".", listing.Data.Path)
@@ -130,7 +131,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var content files.FileContentResponse
+		var content response.Response[files.FileContent]
 		require.NoError(t, resp.GetJSON(&content))
 		assert.True(t, content.Success)
 		assert.Equal(t, "docker-compose.yml", content.Data.Path)
@@ -290,7 +291,7 @@ func TestFileEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stats files.DirectoryStatsResponse
+		var stats response.Response[files.DirectoryStats]
 		require.NoError(t, resp.GetJSON(&stats))
 		assert.True(t, stats.Success)
 		assert.Equal(t, ".", stats.Data.Path)

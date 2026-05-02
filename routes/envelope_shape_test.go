@@ -28,18 +28,6 @@ var legacyEnvelopeAllowlist = map[string]bool{
 	"POST /api/v1/totp/enable":                true,
 	"POST /api/v1/totp/disable":               true,
 
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/files":           true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/files/read":      true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/write":    true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/upload":   true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/mkdir":    true,
-	"DELETE /api/v1/servers/{serverid}/stacks/{stackname}/files/delete": true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/rename":   true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/copy":     true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/chmod":    true,
-	"POST /api/v1/servers/{serverid}/stacks/{stackname}/files/chown":    true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/files/stats":     true,
-
 	"GET /api/v1/servers/{serverid}/stacks":                         true,
 	"GET /api/v1/servers/{serverid}/stacks/can-create":              true,
 	"POST /api/v1/servers/{serverid}/stacks":                        true,

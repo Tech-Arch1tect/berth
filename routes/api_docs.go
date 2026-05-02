@@ -571,11 +571,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "Directory path to list").Optional().
-		Response(http.StatusOK, files.DirectoryListingResponse{}, "Directory listing").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.DirectoryListing]{}, "Directory listing").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -586,11 +586,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "File path to read").Required().
-		Response(http.StatusOK, files.FileContentResponse{}, "File contents").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileContent]{}, "File contents").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Path parameter is required").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -601,11 +601,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.WriteFileRequest{}, "File write request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "File written successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "File written successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -619,11 +619,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		FileField("file", true).
 		Field("filePath", false).
 		Done().
-		Response(http.StatusOK, files.FileMessageResponse{}, "File uploaded successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "File is required").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "File uploaded successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "File is required").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -634,11 +634,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.CreateDirectoryRequest{}, "Directory creation request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "Directory created successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "Directory created successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -649,11 +649,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.DeleteRequest{}, "Delete request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory deleted successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "File or directory deleted successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -664,11 +664,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.RenameRequest{}, "Rename request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory renamed successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "File or directory renamed successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -679,11 +679,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.CopyRequest{}, "Copy request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "File or directory copied successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "File or directory copied successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -694,11 +694,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.ChmodRequest{}, "Chmod request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "Permissions changed successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "Permissions changed successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -709,11 +709,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(files.ChownRequest{}, "Chown request").
-		Response(http.StatusOK, files.FileMessageResponse{}, "Ownership changed successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.FileMessageData]{}, "Ownership changed successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -726,10 +726,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("filePath", "File path to download").Required().
 		QueryParam("filename", "Optional filename for the downloaded file").Optional().
 		ResponseBinary(http.StatusOK, "application/octet-stream", "File content").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Path parameter is required").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Path parameter is required").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -740,10 +740,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("filePath", "Directory path").Optional().
-		Response(http.StatusOK, files.DirectoryStatsResponse{}, "Directory statistics").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[files.DirectoryStats]{}, "Directory statistics").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

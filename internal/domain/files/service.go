@@ -15,6 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type agentErrorBody struct {
+	Error string `json:"error"`
+}
+
 var validFileModeRegex = regexp.MustCompile(`^0?[0-7]{3}$`)
 
 func validateFileMode(mode string) error {
@@ -267,7 +271,7 @@ func (s *Service) GetDirectoryStats(ctx context.Context, userID uint, serverID u
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		var errResp ErrorResponse
+		var errResp agentErrorBody
 		if json.Unmarshal(body, &errResp) == nil {
 			return nil, fmt.Errorf("agent error: %s", errResp.Error)
 		}
@@ -685,7 +689,7 @@ func (s *Service) handleAgentError(resp *http.Response) error {
 		return fmt.Errorf("access denied")
 	}
 
-	var errorResp ErrorResponse
+	var errorResp agentErrorBody
 	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
 		return fmt.Errorf("agent error: %s", errorResp.Error)
 	}

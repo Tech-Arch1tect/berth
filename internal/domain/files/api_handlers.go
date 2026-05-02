@@ -46,13 +46,10 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 
 	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, DirectoryListingResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return response.OK(c, *result)
 }
 
 func (h *APIHandler) ReadFile(c echo.Context) error {
@@ -68,18 +65,15 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 
 	filePath := echoparams.GetQueryParam(c, "filePath")
 	if filePath == "" {
-		return response.SendBadRequest(c, "filePath parameter is required")
+		return response.BadRequest(c, "filePath parameter is required")
 	}
 
 	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, FileContentResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return response.OK(c, *result)
 }
 
 func (h *APIHandler) WriteFile(c echo.Context) error {
@@ -99,11 +93,11 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 	}
 
 	if req.Path == "" {
-		return response.SendBadRequest(c, "path is required")
+		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.WriteFile(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -121,7 +115,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		)
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) CreateDirectory(c echo.Context) error {
@@ -141,14 +135,14 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 	}
 
 	if req.Path == "" {
-		return response.SendBadRequest(c, "path is required")
+		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.CreateDirectory(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) Delete(c echo.Context) error {
@@ -168,11 +162,11 @@ func (h *APIHandler) Delete(c echo.Context) error {
 	}
 
 	if req.Path == "" {
-		return response.SendBadRequest(c, "path is required")
+		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.Delete(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -190,7 +184,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		)
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) Rename(c echo.Context) error {
@@ -210,11 +204,11 @@ func (h *APIHandler) Rename(c echo.Context) error {
 	}
 
 	if req.OldPath == "" || req.NewPath == "" {
-		return response.SendBadRequest(c, "oldPath and newPath are required")
+		return response.BadRequest(c, "oldPath and newPath are required")
 	}
 
 	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -234,7 +228,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 		)
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) Copy(c echo.Context) error {
@@ -254,14 +248,14 @@ func (h *APIHandler) Copy(c echo.Context) error {
 	}
 
 	if req.SourcePath == "" || req.TargetPath == "" {
-		return response.SendBadRequest(c, "sourcePath and targetPath are required")
+		return response.BadRequest(c, "sourcePath and targetPath are required")
 	}
 
 	if err := h.service.Copy(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) UploadFile(c echo.Context) error {
@@ -279,11 +273,11 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		return response.SendBadRequest(c, "file is required")
+		return response.BadRequest(c, "file is required")
 	}
 
 	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, filePath, file); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	actorUserID := session.GetUserIDAsUint(c)
@@ -304,7 +298,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		)
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "File uploaded successfully"}})
+	return response.OK(c, FileMessageData{Message: "File uploaded successfully"})
 }
 
 func (h *APIHandler) DownloadFile(c echo.Context) error {
@@ -320,14 +314,14 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	filePath := echoparams.GetQueryParam(c, "filePath")
 	if filePath == "" {
-		return response.SendBadRequest(c, "filePath parameter is required")
+		return response.BadRequest(c, "filePath parameter is required")
 	}
 
 	filename := echoparams.GetQueryParam(c, "filename")
 
 	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, filePath, filename)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 	defer result.Body.Close()
 
@@ -373,18 +367,18 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 	}
 
 	if req.Path == "" {
-		return response.SendBadRequest(c, "path is required")
+		return response.BadRequest(c, "path is required")
 	}
 
 	if req.Mode == "" {
-		return response.SendBadRequest(c, "mode is required")
+		return response.BadRequest(c, "mode is required")
 	}
 
 	if err := h.service.Chmod(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) Chown(c echo.Context) error {
@@ -404,18 +398,18 @@ func (h *APIHandler) Chown(c echo.Context) error {
 	}
 
 	if req.Path == "" {
-		return response.SendBadRequest(c, "path is required")
+		return response.BadRequest(c, "path is required")
 	}
 
 	if req.OwnerID == nil && req.GroupID == nil {
-		return response.SendBadRequest(c, "owner_id or group_id is required")
+		return response.BadRequest(c, "owner_id or group_id is required")
 	}
 
 	if err := h.service.Chown(c.Request().Context(), userID, serverID, stackname, req); err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, FileMessageResponse{Success: true, Data: FileMessageData{Message: "success"}})
+	return response.OK(c, FileMessageData{Message: "success"})
 }
 
 func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
@@ -436,11 +430,8 @@ func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
 
 	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, filePath)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, DirectoryStatsResponse{
-		Success: true,
-		Data:    *stats,
-	})
+	return response.OK(c, *stats)
 }
