@@ -4,7 +4,6 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -22,15 +21,10 @@ func NewAPIHandler(service *Service) *APIHandler {
 func (h *APIHandler) ListServers(c echo.Context) error {
 	servers, err := h.service.ListServers()
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch servers")
+		return response.Internal(c, "Failed to fetch servers")
 	}
 
-	return c.JSON(http.StatusOK, AdminListServersResponse{
-		Success: true,
-		Data: AdminListServersResponseData{
-			Servers: servers,
-		},
-	})
+	return response.OK(c, AdminListServersData{Servers: servers})
 }
 
 func (h *APIHandler) GetServer(c echo.Context) error {
@@ -41,12 +35,10 @@ func (h *APIHandler) GetServer(c echo.Context) error {
 
 	server, err := h.service.GetServerResponse(id)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return response.NotFound(c, "Server not found")
 	}
 
-	return response.SendSuccess(c, map[string]any{
-		"server": server,
-	})
+	return response.OK(c, GetServerData{Server: *server})
 }
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
@@ -58,17 +50,12 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 	server := req.ToServer()
 	if err := h.service.CreateServer(server); err != nil {
 		if err.Error() == "access token is required" {
-			return response.SendBadRequest(c, err.Error())
+			return response.BadRequest(c, err.Error())
 		}
-		return response.SendInternalError(c, "Failed to create server")
+		return response.Internal(c, "Failed to create server")
 	}
 
-	return c.JSON(http.StatusCreated, AdminCreateServerResponse{
-		Success: true,
-		Data: AdminCreateServerResponseData{
-			Server: server.ToResponse(),
-		},
-	})
+	return response.Created(c, AdminCreateServerData{Server: server.ToResponse()})
 }
 
 func (h *APIHandler) UpdateServer(c echo.Context) error {
@@ -87,22 +74,17 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	if updates.AccessToken == "" {
 		existing, err := h.service.GetServer(id)
 		if err != nil {
-			return response.SendNotFound(c, "Server not found")
+			return response.NotFound(c, "Server not found")
 		}
 		updates.AccessToken = existing.AccessToken
 	}
 
 	server, err := h.service.UpdateServer(id, updates)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to update server")
+		return response.Internal(c, "Failed to update server")
 	}
 
-	return c.JSON(http.StatusOK, AdminUpdateServerResponse{
-		Success: true,
-		Data: AdminUpdateServerResponseData{
-			Server: server.ToResponse(),
-		},
-	})
+	return response.OK(c, AdminUpdateServerData{Server: server.ToResponse()})
 }
 
 func (h *APIHandler) DeleteServer(c echo.Context) error {
@@ -112,15 +94,10 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 	}
 
 	if err := h.service.DeleteServer(id); err != nil {
-		return response.SendInternalError(c, "Failed to delete server")
+		return response.Internal(c, "Failed to delete server")
 	}
 
-	return c.JSON(http.StatusOK, AdminDeleteServerResponse{
-		Success: true,
-		Data: AdminDeleteServerResponseData{
-			Message: "Server deleted successfully",
-		},
-	})
+	return response.OK(c, MessageData{Message: "Server deleted successfully"})
 }
 
 func (h *APIHandler) TestConnection(c echo.Context) error {
@@ -131,17 +108,12 @@ func (h *APIHandler) TestConnection(c echo.Context) error {
 
 	server, err := h.service.GetServer(id)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return response.NotFound(c, "Server not found")
 	}
 
 	if err := h.service.TestServerConnection(server); err != nil {
-		return response.SendError(c, 503, "Connection test failed: "+err.Error())
+		return response.ServiceUnavailable(c, "Connection test failed: "+err.Error())
 	}
 
-	return c.JSON(http.StatusOK, AdminTestConnectionResponse{
-		Success: true,
-		Data: AdminTestConnectionResponseData{
-			Message: "Connection successful",
-		},
-	})
+	return response.OK(c, MessageData{Message: "Connection successful"})
 }

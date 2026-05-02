@@ -3,6 +3,7 @@ package e2e
 import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/server"
+	"berth/internal/pkg/response"
 	"strconv"
 	"testing"
 
@@ -11,22 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type (
-	ServerInfo = server.ServerInfo
-
-	ListServersResponse      = server.ListServersResponse
-	ServerStatisticsResponse = server.ServerStatisticsResponse
-
-	AdminListServersResponse    = server.AdminListServersResponse
-	AdminCreateServerResponse   = server.AdminCreateServerResponse
-	AdminUpdateServerResponse   = server.AdminUpdateServerResponse
-	AdminDeleteServerResponse   = server.AdminDeleteServerResponse
-	AdminTestConnectionResponse = server.AdminTestConnectionResponse
-)
-
-type SingleServerResponse struct {
-	Server ServerInfo `json:"server"`
-}
+type ServerInfo = server.ServerInfo
 
 func TestServerEndpointsJWT(t *testing.T) {
 	t.Parallel()
@@ -71,8 +57,9 @@ func TestServerEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serversResp ListServersResponse
+		var serversResp response.Response[server.ListServersData]
 		require.NoError(t, resp.GetJSON(&serversResp))
+		assert.True(t, serversResp.Success)
 		assert.NotEmpty(t, serversResp.Data.Servers)
 
 		var found bool
@@ -98,8 +85,9 @@ func TestServerEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp ServerStatisticsResponse
+		var statsResp response.Response[server.ServerStatisticsData]
 		require.NoError(t, resp.GetJSON(&statsResp))
+		assert.True(t, statsResp.Success)
 	})
 
 	t.Run("GET /api/v1/admin/servers returns all servers", func(t *testing.T) {
@@ -114,7 +102,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serversResp AdminListServersResponse
+		var serversResp response.Response[server.AdminListServersData]
 		require.NoError(t, resp.GetJSON(&serversResp))
 		assert.True(t, serversResp.Success)
 		assert.NotEmpty(t, serversResp.Data.Servers)
@@ -132,10 +120,11 @@ func TestServerEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serverResp SingleServerResponse
+		var serverResp response.Response[server.GetServerData]
 		require.NoError(t, resp.GetJSON(&serverResp))
-		assert.Equal(t, testServer.ID, serverResp.Server.ID)
-		assert.Equal(t, "test-server-jwt", serverResp.Server.Name)
+		assert.True(t, serverResp.Success)
+		assert.Equal(t, testServer.ID, serverResp.Data.Server.ID)
+		assert.Equal(t, "test-server-jwt", serverResp.Data.Server.Name)
 	})
 
 	t.Run("GET /api/v1/admin/servers/:id returns 404 for non-existent server", func(t *testing.T) {
@@ -198,7 +187,7 @@ func TestServerCRUDOperations(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
 
-		var serverResp AdminCreateServerResponse
+		var serverResp response.Response[server.AdminCreateServerData]
 		require.NoError(t, resp.GetJSON(&serverResp))
 		assert.True(t, serverResp.Success)
 		assert.Equal(t, "new-test-server", serverResp.Data.Server.Name)
@@ -229,7 +218,7 @@ func TestServerCRUDOperations(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serverResp AdminUpdateServerResponse
+		var serverResp response.Response[server.AdminUpdateServerData]
 		require.NoError(t, resp.GetJSON(&serverResp))
 		assert.True(t, serverResp.Success)
 		assert.Equal(t, "updated-test-server", serverResp.Data.Server.Name)
@@ -251,9 +240,10 @@ func TestServerCRUDOperations(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var deleteResp AdminDeleteServerResponse
+		var deleteResp response.Response[server.MessageData]
 		require.NoError(t, resp.GetJSON(&deleteResp))
 		assert.True(t, deleteResp.Success)
+		assert.Equal(t, "Server deleted successfully", deleteResp.Data.Message)
 
 		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
@@ -340,8 +330,9 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serversResp ListServersResponse
+		var serversResp response.Response[server.ListServersData]
 		require.NoError(t, resp.GetJSON(&serversResp))
+		assert.True(t, serversResp.Success)
 		assert.NotEmpty(t, serversResp.Data.Servers)
 	})
 
@@ -351,7 +342,7 @@ func TestServerEndpointsSessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var serversResp AdminListServersResponse
+		var serversResp response.Response[server.AdminListServersData]
 		require.NoError(t, resp.GetJSON(&serversResp))
 		assert.True(t, serversResp.Success)
 		assert.NotEmpty(t, serversResp.Data.Servers)

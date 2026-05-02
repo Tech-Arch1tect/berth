@@ -14,21 +14,11 @@ type UserAPIHandler struct {
 	db      *gorm.DB
 }
 
-type ListServersResponse struct {
-	Success bool                    `json:"success"`
-	Data    ListServersResponseData `json:"data"`
-}
-
-type ListServersResponseData struct {
+type ListServersData struct {
 	Servers []ServerInfo `json:"servers"`
 }
 
-type ServerStatisticsResponse struct {
-	Success bool                         `json:"success"`
-	Data    ServerStatisticsResponseData `json:"data"`
-}
-
-type ServerStatisticsResponseData struct {
+type ServerStatisticsData struct {
 	Statistics StackStatistics `json:"statistics"`
 }
 
@@ -48,15 +38,10 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 	ctx := c.Request().Context()
 	servers, err := h.service.ListServersForUser(ctx, userID)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch servers")
+		return response.Internal(c, "Failed to fetch servers")
 	}
 
-	return response.SendSuccess(c, ListServersResponse{
-		Success: true,
-		Data: ListServersResponseData{
-			Servers: servers,
-		},
-	})
+	return response.OK(c, ListServersData{Servers: servers})
 }
 
 func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
@@ -73,13 +58,8 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 	ctx := c.Request().Context()
 	statistics, err := h.service.GetServerStatistics(ctx, userID, serverID)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch server statistics")
+		return response.Internal(c, "Failed to fetch server statistics")
 	}
 
-	return response.SendSuccess(c, ServerStatisticsResponse{
-		Success: true,
-		Data: ServerStatisticsResponseData{
-			Statistics: *statistics,
-		},
-	})
+	return response.OK(c, ServerStatisticsData{Statistics: *statistics})
 }

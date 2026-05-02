@@ -185,9 +185,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("servers").
 		Summary("List accessible servers").
 		Description("Returns all servers the authenticated user has permission to access").
-		Response(http.StatusOK, server.ListServersResponse{}, "List of servers").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[server.ListServersData]{}, "List of servers").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -196,11 +196,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get server statistics").
 		Description("Returns stack statistics for a specific server").
 		PathParam("serverid", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, server.ServerStatisticsResponse{}, "Server statistics").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid server ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[server.ServerStatisticsData]{}, "Server statistics").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1025,10 +1024,22 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("List all servers").
 		Description("Returns list of all servers. Requires admin access.").
-		Response(http.StatusOK, server.AdminListServersResponse{}, "List of servers").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[server.AdminListServersData]{}, "List of servers").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/servers/{id}").
+		Tags("admin").
+		Summary("Get a server").
+		Description("Returns a single server by ID. Requires admin access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[server.GetServerData]{}, "Server details").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1037,11 +1048,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Create a new server").
 		Description("Create a new server connection. Requires admin access.").
 		Body(server.AdminCreateServerRequest{}, "Server details").
-		Response(http.StatusCreated, server.AdminCreateServerResponse{}, "Server created").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[server.AdminCreateServerData]{}, "Server created").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1051,12 +1062,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Update an existing server connection. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
 		Body(server.AdminUpdateServerRequest{}, "Server details").
-		Response(http.StatusOK, server.AdminUpdateServerResponse{}, "Server updated").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[server.AdminUpdateServerData]{}, "Server updated").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1065,11 +1076,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Delete a server").
 		Description("Delete a server connection. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, server.AdminDeleteServerResponse{}, "Server deleted").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[server.MessageData]{}, "Server deleted").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1078,11 +1089,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Test server connection").
 		Description("Test the connection to a server. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, server.AdminTestConnectionResponse{}, "Connection successful").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
-		Response(http.StatusServiceUnavailable, ErrorResponse{}, "Connection test failed").
+		Response(http.StatusOK, response.Response[server.MessageData]{}, "Connection successful").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Connection test failed").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

@@ -1,50 +1,25 @@
 package server
 
-type AdminListServersResponse struct {
-	Success bool                         `json:"success"`
-	Data    AdminListServersResponseData `json:"data"`
-}
-
-type AdminListServersResponseData struct {
-	Servers []ServerInfo `json:"servers"`
-}
-
 type AdminCreateServerRequest = ServerCreateRequest
-
-type AdminCreateServerResponse struct {
-	Success bool                          `json:"success"`
-	Data    AdminCreateServerResponseData `json:"data"`
-}
-
-type AdminCreateServerResponseData struct {
-	Server ServerInfo `json:"server"`
-}
 
 type AdminUpdateServerRequest = ServerUpdateRequest
 
-type AdminUpdateServerResponse struct {
-	Success bool                          `json:"success"`
-	Data    AdminUpdateServerResponseData `json:"data"`
+type AdminListServersData struct {
+	Servers []ServerInfo `json:"servers"`
 }
 
-type AdminUpdateServerResponseData struct {
+type GetServerData struct {
 	Server ServerInfo `json:"server"`
 }
 
-type AdminDeleteServerResponse struct {
-	Success bool                          `json:"success"`
-	Data    AdminDeleteServerResponseData `json:"data"`
+type AdminCreateServerData struct {
+	Server ServerInfo `json:"server"`
 }
 
-type AdminDeleteServerResponseData struct {
-	Message string `json:"message"`
+type AdminUpdateServerData struct {
+	Server ServerInfo `json:"server"`
 }
 
-type AdminTestConnectionResponse struct {
-	Success bool                            `json:"success"`
-	Data    AdminTestConnectionResponseData `json:"data"`
-}
-
-type AdminTestConnectionResponseData struct {
+type MessageData struct {
 	Message string `json:"message"`
 }
