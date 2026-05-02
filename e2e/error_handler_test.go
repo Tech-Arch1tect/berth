@@ -40,23 +40,32 @@ func triggerAPIAuthError(t *testing.T, app *TestApp, headers map[string]string) 
 	return resp
 }
 
-func assertJSONEnvelope(t *testing.T, resp *e2etesting.Response, wantCode int, wantMessage string) {
+func assertJSONEnvelope(t *testing.T, resp *e2etesting.Response, wantStatus int, wantErrorCode, wantMessage string) {
 	t.Helper()
 	require.Contains(t, resp.Header.Get("Content-Type"), "application/json")
-	assert.Equal(t, wantCode, resp.StatusCode)
+	assert.Equal(t, wantStatus, resp.StatusCode)
 
 	var body map[string]any
 	require.NoError(t, json.Unmarshal(resp.Body, &body))
 
-	errStr, ok := body["error"].(string)
-	require.True(t, ok, "error must be a string: %v", body)
-	assert.Equal(t, wantMessage, errStr)
+	success, ok := body["success"].(bool)
+	require.True(t, ok, "success must be a bool: %v", body)
+	assert.False(t, success, "success must be false on error")
 
-	codeNum, ok := body["code"].(float64)
-	require.True(t, ok, "code must be a number: %v", body)
-	assert.Equal(t, float64(wantCode), codeNum)
+	data, ok := body["data"].(map[string]any)
+	require.True(t, ok, "data must be an object: %v", body)
+	assert.Empty(t, data, "data must be an empty object on error")
 
-	assert.Len(t, body, 2)
+	errObj, ok := body["error"].(map[string]any)
+	require.True(t, ok, "error must be an object: %v", body)
+
+	codeStr, ok := errObj["code"].(string)
+	require.True(t, ok, "error.code must be a string: %v", errObj)
+	assert.Equal(t, wantErrorCode, codeStr)
+
+	messageStr, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message must be a string: %v", errObj)
+	assert.Equal(t, wantMessage, messageStr)
 }
 
 func assertInertiaErrorHTML(t *testing.T, resp *e2etesting.Response, wantCode int, wantMessage string) {
@@ -98,48 +107,49 @@ func TestHTTPErrorHandler_JSONBranch(t *testing.T) {
 	t.Run("CSRF rejection returns JSON envelope", func(t *testing.T) {
 		TagTest(t, "DELETE", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
 		resp := triggerCSRFError(t, app, map[string]string{"Accept": "application/json"})
-		assertJSONEnvelope(t, resp, csrfErrorStatusCode, csrfErrorMessage)
+		assertJSONEnvelope(t, resp, csrfErrorStatusCode, "bad_request", csrfErrorMessage)
 	})
 
 	t.Run("API auth rejection returns JSON envelope", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/error-handler", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
 		resp := triggerAPIAuthError(t, app, map[string]string{"Accept": "application/json"})
-		assertJSONEnvelope(t, resp, http.StatusUnauthorized, "Authentication required")
+		assertJSONEnvelope(t, resp, http.StatusUnauthorized, "unauthorized", "Authentication required")
 	})
 
 	t.Run("Accept */* routes to JSON", func(t *testing.T) {
 		TagTest(t, "DELETE", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp := triggerCSRFError(t, app, map[string]string{"Accept": "*/*"})
-		assertJSONEnvelope(t, resp, csrfErrorStatusCode, csrfErrorMessage)
+		assertJSONEnvelope(t, resp, csrfErrorStatusCode, "bad_request", csrfErrorMessage)
 	})
 
 	t.Run("Accept application/xml routes to JSON", func(t *testing.T) {
 		TagTest(t, "DELETE", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp := triggerCSRFError(t, app, map[string]string{"Accept": "application/xml"})
-		assertJSONEnvelope(t, resp, csrfErrorStatusCode, csrfErrorMessage)
+		assertJSONEnvelope(t, resp, csrfErrorStatusCode, "bad_request", csrfErrorMessage)
 	})
 
 	t.Run("missing Accept routes to JSON", func(t *testing.T) {
 		TagTest(t, "DELETE", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp := triggerCSRFError(t, app, nil)
-		assertJSONEnvelope(t, resp, csrfErrorStatusCode, csrfErrorMessage)
+		assertJSONEnvelope(t, resp, csrfErrorStatusCode, "bad_request", csrfErrorMessage)
 	})
 
-	t.Run("envelope has exactly error and code", func(t *testing.T) {
+	t.Run("envelope shape matches Response[struct{}]", func(t *testing.T) {
 		TagTest(t, "DELETE", "/auth/login", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
 		resp := triggerCSRFError(t, app, map[string]string{"Accept": "application/json"})
 
 		var body map[string]any
 		require.NoError(t, json.Unmarshal(resp.Body, &body))
 
+		assert.Contains(t, body, "success")
+		assert.Contains(t, body, "data")
 		assert.Contains(t, body, "error")
-		assert.Contains(t, body, "code")
-		assert.Len(t, body, 2)
+		assert.NotContains(t, body, "code", "top-level code is the legacy shape")
 
-		_, isString := body["error"].(string)
-		_, isNumber := body["code"].(float64)
-		assert.True(t, isString)
-		assert.True(t, isNumber)
+		errObj, ok := body["error"].(map[string]any)
+		require.True(t, ok)
+		assert.Contains(t, errObj, "code")
+		assert.Contains(t, errObj, "message")
 	})
 }
 
@@ -220,6 +230,8 @@ func TestHTTPErrorHandler_StatusPropagation(t *testing.T) {
 
 		var body map[string]any
 		require.NoError(t, json.Unmarshal(resp.Body, &body))
-		assert.Equal(t, float64(http.StatusUnauthorized), body["code"])
+		errObj, ok := body["error"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, "unauthorized", errObj["code"])
 	})
 }
