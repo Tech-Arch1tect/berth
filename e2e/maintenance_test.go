@@ -5,13 +5,14 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/maintenance"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type SystemInfoResponse struct {
+type SystemInfoData struct {
 	SystemInfo struct {
 		Version       string `json:"version"`
 		APIVersion    string `json:"api_version"`
@@ -105,7 +106,7 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp maintenance.PermissionsResponse
+		var permsResp response.Response[maintenance.PermissionsData]
 		require.NoError(t, resp.GetJSON(&permsResp))
 
 		assert.True(t, permsResp.Success)
@@ -125,7 +126,7 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp maintenance.PermissionsResponse
+		var permsResp response.Response[maintenance.PermissionsData]
 		require.NoError(t, resp.GetJSON(&permsResp))
 
 		assert.True(t, permsResp.Success)
@@ -219,10 +220,11 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var infoResp SystemInfoResponse
+		var infoResp response.Response[SystemInfoData]
 		require.NoError(t, resp.GetJSON(&infoResp))
-		assert.Equal(t, "24.0.7", infoResp.SystemInfo.Version)
-		assert.Equal(t, "1.43", infoResp.SystemInfo.APIVersion)
+		assert.True(t, infoResp.Success)
+		assert.Equal(t, "24.0.7", infoResp.Data.SystemInfo.Version)
+		assert.Equal(t, "1.43", infoResp.Data.SystemInfo.APIVersion)
 	})
 }
 

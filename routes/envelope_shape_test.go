@@ -28,11 +28,6 @@ var legacyEnvelopeAllowlist = map[string]bool{
 	"POST /api/v1/totp/enable":                true,
 	"POST /api/v1/totp/disable":               true,
 
-	"GET /api/v1/servers/{serverid}/maintenance/permissions": true,
-	"GET /api/v1/servers/{serverid}/maintenance/info":        true,
-	"POST /api/v1/servers/{serverid}/maintenance/prune":      true,
-	"DELETE /api/v1/servers/{serverid}/maintenance/resource": true,
-
 	"GET /api/v1/image-updates":                    true,
 	"GET /api/v1/servers/{serverid}/image-updates": true,
 

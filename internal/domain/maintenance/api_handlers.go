@@ -16,12 +16,7 @@ type MaintenancePermissions struct {
 	Write bool `json:"write"`
 }
 
-type PermissionsResponse struct {
-	Success bool                    `json:"success"`
-	Data    PermissionsResponseData `json:"data"`
-}
-
-type PermissionsResponseData struct {
+type PermissionsData struct {
 	Maintenance MaintenancePermissions `json:"maintenance"`
 }
 
@@ -56,10 +51,10 @@ func (h *APIHandler) GetSystemInfo(c echo.Context) error {
 
 	info, err := h.service.GetSystemInfo(c.Request().Context(), userID, serverID)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, MaintenanceInfo(*info))
+	return response.OK(c, MaintenanceInfo(*info))
 }
 
 func (h *APIHandler) PruneDocker(c echo.Context) error {
@@ -79,7 +74,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 	}
 
 	if request.Type == "" {
-		return response.SendBadRequest(c, "Prune type is required")
+		return response.BadRequest(c, "Prune type is required")
 	}
 
 	validTypes := map[string]bool{
@@ -92,12 +87,12 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 	}
 
 	if !validTypes[request.Type] {
-		return response.SendBadRequest(c, "Invalid prune type")
+		return response.BadRequest(c, "Invalid prune type")
 	}
 
 	result, err := h.service.PruneDocker(c.Request().Context(), userID, serverID, &request)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	user, _ := session.LoadCurrentUser(c, h.db)
@@ -120,7 +115,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		},
 	})
 
-	return response.SendSuccess(c, PruneResult(*result))
+	return response.OK(c, PruneResult(*result))
 }
 
 func (h *APIHandler) DeleteResource(c echo.Context) error {
@@ -136,15 +131,15 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 
 	var request DeleteRequest
 	if err := c.Bind(&request); err != nil {
-		return response.SendBadRequest(c, "Invalid request body")
+		return response.BadRequest(c, "Invalid request body")
 	}
 
 	if request.Type == "" {
-		return response.SendBadRequest(c, "Resource type is required")
+		return response.BadRequest(c, "Resource type is required")
 	}
 
 	if request.ID == "" {
-		return response.SendBadRequest(c, "Resource ID is required")
+		return response.BadRequest(c, "Resource ID is required")
 	}
 
 	validTypes := map[string]bool{
@@ -155,12 +150,12 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 	}
 
 	if !validTypes[request.Type] {
-		return response.SendBadRequest(c, "Invalid resource type")
+		return response.BadRequest(c, "Invalid resource type")
 	}
 
 	result, err := h.service.DeleteResource(c.Request().Context(), userID, serverID, &request)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	user, _ := session.LoadCurrentUser(c, h.db)
@@ -182,7 +177,7 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 		},
 	})
 
-	return response.SendSuccess(c, DeleteResult(*result))
+	return response.OK(c, DeleteResult(*result))
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
@@ -198,21 +193,18 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 
 	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check read permissions")
+		return response.Internal(c, "Failed to check read permissions")
 	}
 
 	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceWrite)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check write permissions")
+		return response.Internal(c, "Failed to check write permissions")
 	}
 
-	return response.SendSuccess(c, PermissionsResponse{
-		Success: true,
-		Data: PermissionsResponseData{
-			Maintenance: MaintenancePermissions{
-				Read:  hasReadPermission,
-				Write: hasWritePermission,
-			},
+	return response.OK(c, PermissionsData{
+		Maintenance: MaintenancePermissions{
+			Read:  hasReadPermission,
+			Write: hasWritePermission,
 		},
 	})
 }
