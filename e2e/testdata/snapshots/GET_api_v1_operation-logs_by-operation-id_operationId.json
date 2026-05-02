@@ -6,7 +6,11 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "code": 404,
-    "error": "Operation log not found"
+    "data": {},
+    "error": {
+      "code": "not_found",
+      "message": "Operation log not found"
+    },
+    "success": false
   }
 }

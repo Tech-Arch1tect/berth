@@ -42,7 +42,7 @@ func (s *Service) calculatePartialDuration(log OperationLog) *int {
 	return &duration
 }
 
-func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*PaginatedOperationLogsData, error) {
+func (s *Service) ListOperationLogs(params ListOperationLogsParams) ([]OperationLogInfo, int64, error) {
 	offset := (params.Page - 1) * params.PageSize
 
 	query := s.db.Model(&OperationLog{}).
@@ -90,13 +90,13 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*PaginatedO
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		s.logger.Error("failed to count operation logs", zap.Error(err))
-		return nil, err
+		return nil, 0, err
 	}
 
 	var logs []OperationLog
 	if err := query.Offset(offset).Limit(params.PageSize).Find(&logs).Error; err != nil {
 		s.logger.Error("failed to fetch operation logs", zap.Error(err))
-		return nil, err
+		return nil, 0, err
 	}
 
 	var response []OperationLogInfo
@@ -132,19 +132,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) (*PaginatedO
 		})
 	}
 
-	totalPages := (int(total) + params.PageSize - 1) / params.PageSize
-
-	return &PaginatedOperationLogsData{
-		Data: response,
-		Pagination: PaginationInfo{
-			CurrentPage: params.Page,
-			PageSize:    params.PageSize,
-			Total:       total,
-			TotalPages:  totalPages,
-			HasNext:     params.Page < totalPages,
-			HasPrev:     params.Page > 1,
-		},
-	}, nil
+	return response, total, nil
 }
 
 func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*OperationLogDetailData, error) {

@@ -16,11 +16,6 @@ type OperationLogDetailData struct {
 	Messages []OperationLogMessage `json:"messages"`
 }
 
-type OperationLogDetailResponse struct {
-	Success bool                   `json:"success"`
-	Data    OperationLogDetailData `json:"data"`
-}
-
 type OperationLogStatsData struct {
 	TotalOperations      int64 `json:"total_operations"`
 	IncompleteOperations int64 `json:"incomplete_operations"`
@@ -29,35 +24,6 @@ type OperationLogStatsData struct {
 	RecentOperations     int64 `json:"recent_operations"`
 }
 
-type OperationLogStatsResponse struct {
-	Success bool                  `json:"success"`
-	Data    OperationLogStatsData `json:"data"`
-}
-
-type PaginationInfo struct {
-	CurrentPage int   `json:"current_page"`
-	PageSize    int   `json:"page_size"`
-	Total       int64 `json:"total"`
-	TotalPages  int   `json:"total_pages"`
-	HasNext     bool  `json:"has_next"`
-	HasPrev     bool  `json:"has_prev"`
-}
-
-type PaginatedOperationLogsData struct {
-	Data       []OperationLogInfo `json:"data"`
-	Pagination PaginationInfo     `json:"pagination"`
-}
-
-type PaginatedOperationLogsResponse struct {
-	Success bool                       `json:"success"`
-	Data    PaginatedOperationLogsData `json:"data"`
-}
-
 type RunningOperationsData struct {
 	Operations []OperationLogInfo `json:"operations"`
-}
-
-type RunningOperationsResponse struct {
-	Success bool                  `json:"success"`
-	Data    RunningOperationsData `json:"data"`
 }

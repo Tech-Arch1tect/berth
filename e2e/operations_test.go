@@ -99,10 +99,12 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp operationlogs.PaginatedOperationLogsResponse
+		var logsResp response.Response[[]operationlogs.OperationLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
 		assert.True(t, logsResp.Success)
-		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
+		require.NotNil(t, logsResp.Meta)
+		require.NotNil(t, logsResp.Meta.Page)
+		assert.GreaterOrEqual(t, *logsResp.Meta.Page, 1)
 	})
 
 	t.Run("GET /api/v1/operation-logs/stats returns user stats", func(t *testing.T) {
@@ -117,7 +119,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp operationlogs.OperationLogStatsResponse
+		var statsResp response.Response[operationlogs.OperationLogStatsData]
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))
@@ -202,10 +204,12 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp operationlogs.PaginatedOperationLogsResponse
+		var logsResp response.Response[[]operationlogs.OperationLogInfo]
 		require.NoError(t, resp.GetJSON(&logsResp))
 		assert.True(t, logsResp.Success)
-		assert.GreaterOrEqual(t, logsResp.Data.Pagination.CurrentPage, 1)
+		require.NotNil(t, logsResp.Meta)
+		require.NotNil(t, logsResp.Meta.Page)
+		assert.GreaterOrEqual(t, *logsResp.Meta.Page, 1)
 	})
 
 	t.Run("GET /api/v1/admin/operation-logs/stats returns global stats", func(t *testing.T) {
@@ -220,7 +224,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp operationlogs.OperationLogStatsResponse
+		var statsResp response.Response[operationlogs.OperationLogStatsData]
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.GreaterOrEqual(t, statsResp.Data.TotalOperations, int64(0))

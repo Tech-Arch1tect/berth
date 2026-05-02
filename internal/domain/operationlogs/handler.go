@@ -70,16 +70,13 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 		"status":     c.QueryParam("status"),
 	})
 
-	result, err := h.service.ListOperationLogs(params)
+	logs, total, err := h.service.ListOperationLogs(params)
 	if err != nil {
 		h.logger.Error("failed to list operation logs", zap.Error(err))
-		return response.SendInternalError(c, "Failed to retrieve operation logs")
+		return response.Internal(c, "Failed to retrieve operation logs")
 	}
 
-	return response.SendSuccess(c, PaginatedOperationLogsResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return paginatedLogs(c, logs, params.Page, params.PageSize, total)
 }
 
 func (h *Handler) ListUserOperationLogs(c echo.Context) error {
@@ -99,15 +96,21 @@ func (h *Handler) ListUserOperationLogs(c echo.Context) error {
 	})
 	params.UserID = userID
 
-	result, err := h.service.ListOperationLogs(params)
+	logs, total, err := h.service.ListOperationLogs(params)
 	if err != nil {
 		h.logger.Error("failed to list user operation logs", zap.Error(err), zap.Uint("user_id", userID))
-		return response.SendInternalError(c, "Failed to retrieve operation logs")
+		return response.Internal(c, "Failed to retrieve operation logs")
 	}
 
-	return response.SendSuccess(c, PaginatedOperationLogsResponse{
-		Success: true,
-		Data:    *result,
+	return paginatedLogs(c, logs, params.Page, params.PageSize, total)
+}
+
+func paginatedLogs(c echo.Context, logs []OperationLogInfo, page, pageSize int, total int64) error {
+	totalCount := int(total)
+	return response.Paginated(c, logs, response.Meta{
+		Page:       &page,
+		PageSize:   &pageSize,
+		TotalCount: &totalCount,
 	})
 }
 
@@ -120,16 +123,13 @@ func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 	result, err := h.service.GetOperationLogDetails(logID, nil)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return response.SendNotFound(c, "Operation log not found")
+			return response.NotFound(c, "Operation log not found")
 		}
 		h.logger.Error("failed to get operation log details", zap.Error(err), zap.Uint("log_id", logID))
-		return response.SendInternalError(c, "Failed to retrieve operation log details")
+		return response.Internal(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, OperationLogDetailResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return response.OK(c, *result)
 }
 
 func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
@@ -146,29 +146,23 @@ func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
 	result, err := h.service.GetOperationLogDetails(logID, &userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return response.SendNotFound(c, "Operation log not found")
+			return response.NotFound(c, "Operation log not found")
 		}
 		h.logger.Error("failed to get user operation log details", zap.Error(err), zap.Uint("log_id", logID), zap.Uint("user_id", userID))
-		return response.SendInternalError(c, "Failed to retrieve operation log details")
+		return response.Internal(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, OperationLogDetailResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return response.OK(c, *result)
 }
 
 func (h *Handler) GetOperationLogsStats(c echo.Context) error {
 	stats, err := h.service.GetOperationLogsStats()
 	if err != nil {
 		h.logger.Error("failed to get operation logs stats", zap.Error(err))
-		return response.SendInternalError(c, "Failed to retrieve operation logs statistics")
+		return response.Internal(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return response.SendSuccess(c, OperationLogStatsResponse{
-		Success: true,
-		Data:    *stats,
-	})
+	return response.OK(c, *stats)
 }
 
 func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
@@ -180,13 +174,10 @@ func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
 	stats, err := h.service.GetUserOperationLogsStats(userID)
 	if err != nil {
 		h.logger.Error("failed to get user operation logs stats", zap.Error(err), zap.Uint("user_id", userID))
-		return response.SendInternalError(c, "Failed to retrieve operation logs statistics")
+		return response.Internal(c, "Failed to retrieve operation logs statistics")
 	}
 
-	return response.SendSuccess(c, OperationLogStatsResponse{
-		Success: true,
-		Data:    *stats,
-	})
+	return response.OK(c, *stats)
 }
 
 func (h *Handler) GetRunningOperations(c echo.Context) error {
@@ -198,15 +189,10 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 	operations, err := h.service.GetRunningOperations(userID)
 	if err != nil {
 		h.logger.Error("failed to get running operations", zap.Error(err), zap.Uint("user_id", userID))
-		return response.SendInternalError(c, "Failed to retrieve running operations")
+		return response.Internal(c, "Failed to retrieve running operations")
 	}
 
-	return response.SendSuccess(c, RunningOperationsResponse{
-		Success: true,
-		Data: RunningOperationsData{
-			Operations: operations,
-		},
-	})
+	return response.OK(c, RunningOperationsData{Operations: operations})
 }
 
 func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
@@ -217,20 +203,17 @@ func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
 
 	operationID := c.Param("operationId")
 	if operationID == "" {
-		return response.SendBadRequest(c, "Operation ID is required")
+		return response.BadRequest(c, "Operation ID is required")
 	}
 
 	result, err := h.service.GetOperationLogDetailsByOperationID(operationID, &userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return response.SendNotFound(c, "Operation log not found")
+			return response.NotFound(c, "Operation log not found")
 		}
 		h.logger.Error("failed to get operation log details by operation_id", zap.Error(err), zap.String("operation_id", operationID), zap.Uint("user_id", userID))
-		return response.SendInternalError(c, "Failed to retrieve operation log details")
+		return response.Internal(c, "Failed to retrieve operation log details")
 	}
 
-	return response.SendSuccess(c, OperationLogDetailResponse{
-		Success: true,
-		Data:    *result,
-	})
+	return response.OK(c, *result)
 }

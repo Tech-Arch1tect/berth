@@ -767,10 +767,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("command", "Filter by command").Optional().
 		QueryParam("status", "Filter by status").Enum("complete", "incomplete", "failed", "success").Optional().
 		QueryParam("days_back", "Only return logs from the last N days").TypeInt().Min(1).Optional().
-		Response(http.StatusOK, operationlogs.PaginatedOperationLogsResponse{}, "Paginated list of operation logs").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[[]operationlogs.OperationLogInfo]{}, "Paginated list of operation logs").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -778,10 +778,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("admin").
 		Summary("Get operation logs statistics").
 		Description("Returns aggregated statistics for all operation logs. Requires admin permissions.").
-		Response(http.StatusOK, operationlogs.OperationLogStatsResponse{}, "Operation logs statistics").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.OperationLogStatsData]{}, "Operation logs statistics").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -790,12 +790,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get operation log details").
 		Description("Returns detailed information about a specific operation log including all messages. Requires admin permissions.").
 		PathParam("id", "Operation log ID").TypeInt().Required().
-		Response(http.StatusOK, operationlogs.OperationLogDetailResponse{}, "Operation log details with messages").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid operation log ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Operation log not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.OperationLogDetailData]{}, "Operation log details with messages").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid operation log ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Operation log not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1139,9 +1139,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("command", "Filter by command").Optional().
 		QueryParam("status", "Filter by status").Enum("complete", "incomplete", "failed", "success").Optional().
 		QueryParam("days_back", "Only return logs from the last N days").TypeInt().Min(1).Optional().
-		Response(http.StatusOK, operationlogs.PaginatedOperationLogsResponse{}, "Paginated list of operation logs").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[[]operationlogs.OperationLogInfo]{}, "Paginated list of operation logs").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1149,9 +1149,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("operation-logs").
 		Summary("Get user's operation logs statistics").
 		Description("Returns aggregated statistics for the authenticated user's operation logs.").
-		Response(http.StatusOK, operationlogs.OperationLogStatsResponse{}, "Operation logs statistics").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.OperationLogStatsData]{}, "Operation logs statistics").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1160,11 +1160,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get operation log details").
 		Description("Returns detailed information about a specific operation log including all messages. Only returns logs belonging to the authenticated user.").
 		PathParam("id", "Operation log ID").TypeInt().Required().
-		Response(http.StatusOK, operationlogs.OperationLogDetailResponse{}, "Operation log details with messages").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid operation log ID").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "Operation log not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.OperationLogDetailData]{}, "Operation log details with messages").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid operation log ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Operation log not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1173,11 +1173,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Get operation log details by operation ID").
 		Description("Returns detailed information about a specific operation log by its operation ID. Only returns logs belonging to the authenticated user.").
 		PathParam("operationId", "Operation ID (UUID)").Required().
-		Response(http.StatusOK, operationlogs.OperationLogDetailResponse{}, "Operation log details with messages").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Operation ID is required").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusNotFound, ErrorResponse{}, "Operation log not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.OperationLogDetailData]{}, "Operation log details with messages").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Operation ID is required").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Operation log not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1185,9 +1185,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Tags("operation-logs").
 		Summary("Get running operations").
 		Description("Returns list of currently running operations for the authenticated user.").
-		Response(http.StatusOK, operationlogs.RunningOperationsResponse{}, "List of running operations").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[operationlogs.RunningOperationsData]{}, "List of running operations").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
