@@ -7,6 +7,6 @@
  */
 import type { ImageUpdate } from './imageUpdate';
 
-export interface ImageUpdatesDataInner {
+export interface ImageUpdatesData {
   updates: ImageUpdate[];
 }
