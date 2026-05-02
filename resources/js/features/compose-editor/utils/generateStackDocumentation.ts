@@ -1,0 +1,65 @@
+import type { StackDetails, ComposeService, Container, Port } from '../../../api/generated/models';
+
+export const generateStackDocumentation = (stackDetails: StackDetails): string => {
+  const { name, path, compose_file, services, server_name } = stackDetails;
+
+  let doc = `# ${name} Stack Documentation\n\n`;
+  doc += `**Generated**: ${new Date().toLocaleString()}\n\n`;
+
+  // Stack Information
+  doc += `## Stack Information\n\n`;
+  doc += `- **Name**: ${name}\n`;
+  doc += `- **Server**: ${server_name}\n`;
+  doc += `- **Path**: ${path}\n`;
+  doc += `- **Compose File**: ${compose_file}\n\n`;
+
+  // Services
+  doc += `## Services\n\n`;
+
+  services.forEach((service: ComposeService) => {
+    doc += `### ${service.name}\n\n`;
+
+    if (service.image) {
+      doc += `- **Image**: ${service.image}\n`;
+    }
+
+    // Container status
+    if (service.containers && service.containers.length > 0) {
+      const running = service.containers.filter((c: Container) => c.state === 'running').length;
+      doc += `- **Containers**: ${running}/${service.containers.length} running\n`;
+
+      service.containers.forEach((container: Container) => {
+        doc += `  - ${container.name} (${container.state})\n`;
+
+        if (container.ports && container.ports.length > 0) {
+          const ports = container.ports.map((p: Port) => `${p.public}:${p.private}/${p.type}`);
+          doc += `    - **Ports**: ${ports.join(', ')}\n`;
+        }
+
+        if (container.health?.status) {
+          doc += `    - **Health**: ${container.health.status}\n`;
+        }
+      });
+    }
+
+    doc += '\n';
+  });
+
+  return doc;
+};
+
+export const downloadMarkdown = (content: string, filename: string): void => {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+export const copyToClipboard = async (content: string): Promise<void> => {
+  await navigator.clipboard.writeText(content);
+};

@@ -10,7 +10,7 @@ import { ImageUpdateBanner } from '../../features/image-updates/components';
 import { useStackImageUpdates } from '../../features/image-updates/hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Layout from '../../shared/layout/Layout';
-import { ComposeEditorModal } from '../../components/compose-editor/ComposeEditorModal';
+import { ComposeEditorModal } from '../../features/compose-editor/components/ComposeEditorModal';
 
 import {
   PERM_STACKS_MANAGE,

@@ -14,7 +14,7 @@ import {
   generateStackDocumentation,
   downloadMarkdown,
   copyToClipboard,
-} from '../utils/generateStackDocumentation';
+} from '../features/compose-editor/utils/generateStackDocumentation';
 
 export type StackTab =
   | 'services'
