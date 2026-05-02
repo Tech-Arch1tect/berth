@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { APIKeyInfo } from './aPIKeyInfo';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface GetAPIKeyResponse {
+export interface ResponseAPIKeyInfo2 {
   data: APIKeyInfo;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }
