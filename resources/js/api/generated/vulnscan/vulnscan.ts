@@ -22,16 +22,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  CompareScanResponse,
-  ErrorResponse,
   GetApiV1ServersServeridStacksStacknameVulnscanTrendParams,
-  GetLatestScanResponse,
-  GetScanResponse,
-  GetScanSummaryResponse,
-  GetScanTrendResponse,
-  GetScansHistoryResponse,
+  ResponseCompareScanData,
+  ResponseEmpty,
+  ResponseGetLatestScanData,
+  ResponseGetScanData,
+  ResponseGetScanSummaryData,
+  ResponseGetScanTrendData,
+  ResponseGetScansHistoryData,
+  ResponseStartScanData,
   StartScanRequest,
-  StartScanResponse,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -53,8 +53,8 @@ export const getApiV1ServersServeridStacksStacknameVulnscan = async (
   serverid: number,
   stackname: string,
   options?: RequestInit
-): Promise<GetLatestScanResponse> => {
-  return apiClient<GetLatestScanResponse>(
+): Promise<ResponseGetLatestScanData> => {
+  return apiClient<ResponseGetLatestScanData>(
     getGetApiV1ServersServeridStacksStacknameVulnscanUrl(serverid, stackname),
     {
       ...options,
@@ -72,7 +72,7 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -116,11 +116,11 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameVulnscanQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>
 >;
-export type GetApiV1ServersServeridStacksStacknameVulnscanQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameVulnscanQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscan<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -146,7 +146,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscan<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -172,7 +172,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscan<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -194,7 +194,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscan<
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscan<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscan>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -239,8 +239,8 @@ export const postApiV1ServersServeridStacksStacknameVulnscan = async (
   stackname: string,
   startScanRequest: StartScanRequest,
   options?: RequestInit
-): Promise<StartScanResponse> => {
-  return apiClient<StartScanResponse>(
+): Promise<ResponseStartScanData> => {
+  return apiClient<ResponseStartScanData>(
     getPostApiV1ServersServeridStacksStacknameVulnscanUrl(serverid, stackname),
     {
       ...options,
@@ -252,7 +252,7 @@ export const postApiV1ServersServeridStacksStacknameVulnscan = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameVulnscanMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -296,13 +296,13 @@ export type PostApiV1ServersServeridStacksStacknameVulnscanMutationResult = NonN
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameVulnscan>>
 >;
 export type PostApiV1ServersServeridStacksStacknameVulnscanMutationBody = StartScanRequest;
-export type PostApiV1ServersServeridStacksStacknameVulnscanMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameVulnscanMutationError = ResponseEmpty | void;
 
 /**
  * @summary Start vulnerability scan
  */
 export const usePostApiV1ServersServeridStacksStacknameVulnscan = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -341,8 +341,8 @@ export const getApiV1ServersServeridStacksStacknameVulnscanHistory = async (
   serverid: number,
   stackname: string,
   options?: RequestInit
-): Promise<GetScansHistoryResponse> => {
-  return apiClient<GetScansHistoryResponse>(
+): Promise<ResponseGetScansHistoryData> => {
+  return apiClient<ResponseGetScansHistoryData>(
     getGetApiV1ServersServeridStacksStacknameVulnscanHistoryUrl(serverid, stackname),
     {
       ...options,
@@ -360,7 +360,7 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryKey = 
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -404,11 +404,11 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryOption
 export type GetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>
 >;
-export type GetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameVulnscanHistoryQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -434,7 +434,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -460,7 +460,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -482,7 +482,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscanHistory<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanHistory>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -540,8 +540,8 @@ export const getApiV1ServersServeridStacksStacknameVulnscanTrend = async (
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameVulnscanTrendParams,
   options?: RequestInit
-): Promise<GetScanTrendResponse> => {
-  return apiClient<GetScanTrendResponse>(
+): Promise<ResponseGetScanTrendData> => {
+  return apiClient<ResponseGetScanTrendData>(
     getGetApiV1ServersServeridStacksStacknameVulnscanTrendUrl(serverid, stackname, params),
     {
       ...options,
@@ -563,7 +563,7 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -608,11 +608,11 @@ export const getGetApiV1ServersServeridStacksStacknameVulnscanTrendQueryOptions 
 export type GetApiV1ServersServeridStacksStacknameVulnscanTrendQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>
 >;
-export type GetApiV1ServersServeridStacksStacknameVulnscanTrendQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameVulnscanTrendQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -639,7 +639,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -666,7 +666,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -689,7 +689,7 @@ export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
 
 export function useGetApiV1ServersServeridStacksStacknameVulnscanTrend<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameVulnscanTrend>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -735,8 +735,8 @@ export const getApiV1VulnscanCompareBaseScanIdCompareScanId = async (
   baseScanId: number,
   compareScanId: number,
   options?: RequestInit
-): Promise<CompareScanResponse> => {
-  return apiClient<CompareScanResponse>(
+): Promise<ResponseCompareScanData> => {
+  return apiClient<ResponseCompareScanData>(
     getGetApiV1VulnscanCompareBaseScanIdCompareScanIdUrl(baseScanId, compareScanId),
     {
       ...options,
@@ -754,7 +754,7 @@ export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryKey = (
 
 export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   baseScanId: number,
   compareScanId: number,
@@ -798,11 +798,11 @@ export const getGetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryOptions = <
 export type GetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>
 >;
-export type GetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryError = ErrorResponse | void;
+export type GetApiV1VulnscanCompareBaseScanIdCompareScanIdQueryError = ResponseEmpty | void;
 
 export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   baseScanId: number,
   compareScanId: number,
@@ -828,7 +828,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   baseScanId: number,
   compareScanId: number,
@@ -854,7 +854,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   baseScanId: number,
   compareScanId: number,
@@ -876,7 +876,7 @@ export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
 
 export function useGetApiV1VulnscanCompareBaseScanIdCompareScanId<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanCompareBaseScanIdCompareScanId>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   baseScanId: number,
   compareScanId: number,
@@ -916,8 +916,8 @@ export const getGetApiV1VulnscanScanidUrl = (scanid: number) => {
 export const getApiV1VulnscanScanid = async (
   scanid: number,
   options?: RequestInit
-): Promise<GetScanResponse> => {
-  return apiClient<GetScanResponse>(getGetApiV1VulnscanScanidUrl(scanid), {
+): Promise<ResponseGetScanData> => {
+  return apiClient<ResponseGetScanData>(getGetApiV1VulnscanScanidUrl(scanid), {
     ...options,
     method: 'GET',
   });
@@ -929,7 +929,7 @@ export const getGetApiV1VulnscanScanidQueryKey = (scanid: number) => {
 
 export const getGetApiV1VulnscanScanidQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -956,11 +956,11 @@ export const getGetApiV1VulnscanScanidQueryOptions = <
 export type GetApiV1VulnscanScanidQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1VulnscanScanid>>
 >;
-export type GetApiV1VulnscanScanidQueryError = ErrorResponse | void;
+export type GetApiV1VulnscanScanidQueryError = ResponseEmpty | void;
 
 export function useGetApiV1VulnscanScanid<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options: {
@@ -981,7 +981,7 @@ export function useGetApiV1VulnscanScanid<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanScanid<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1002,7 +1002,7 @@ export function useGetApiV1VulnscanScanid<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanScanid<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1019,7 +1019,7 @@ export function useGetApiV1VulnscanScanid<
 
 export function useGetApiV1VulnscanScanid<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanid>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1050,8 +1050,8 @@ export const getGetApiV1VulnscanScanidSummaryUrl = (scanid: number) => {
 export const getApiV1VulnscanScanidSummary = async (
   scanid: number,
   options?: RequestInit
-): Promise<GetScanSummaryResponse> => {
-  return apiClient<GetScanSummaryResponse>(getGetApiV1VulnscanScanidSummaryUrl(scanid), {
+): Promise<ResponseGetScanSummaryData> => {
+  return apiClient<ResponseGetScanSummaryData>(getGetApiV1VulnscanScanidSummaryUrl(scanid), {
     ...options,
     method: 'GET',
   });
@@ -1063,7 +1063,7 @@ export const getGetApiV1VulnscanScanidSummaryQueryKey = (scanid: number) => {
 
 export const getGetApiV1VulnscanScanidSummaryQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1091,11 +1091,11 @@ export const getGetApiV1VulnscanScanidSummaryQueryOptions = <
 export type GetApiV1VulnscanScanidSummaryQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>
 >;
-export type GetApiV1VulnscanScanidSummaryQueryError = ErrorResponse | void;
+export type GetApiV1VulnscanScanidSummaryQueryError = ResponseEmpty | void;
 
 export function useGetApiV1VulnscanScanidSummary<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options: {
@@ -1116,7 +1116,7 @@ export function useGetApiV1VulnscanScanidSummary<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanScanidSummary<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1137,7 +1137,7 @@ export function useGetApiV1VulnscanScanidSummary<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1VulnscanScanidSummary<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
@@ -1154,7 +1154,7 @@ export function useGetApiV1VulnscanScanidSummary<
 
 export function useGetApiV1VulnscanScanidSummary<
   TData = Awaited<ReturnType<typeof getApiV1VulnscanScanidSummary>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   scanid: number,
   options?: {
