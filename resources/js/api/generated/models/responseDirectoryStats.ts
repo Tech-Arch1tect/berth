@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DirectoryStats } from './directoryStats';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface DirectoryStatsResponse {
+export interface ResponseDirectoryStats {
   data: DirectoryStats;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }

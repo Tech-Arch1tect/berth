@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DirectoryListing } from './directoryListing';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface DirectoryListingResponse {
+export interface ResponseDirectoryListing {
   data: DirectoryListing;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }

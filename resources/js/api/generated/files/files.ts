@@ -27,17 +27,17 @@ import type {
   CopyRequest,
   CreateDirectoryRequest,
   DeleteRequest2,
-  DirectoryListingResponse,
-  DirectoryStatsResponse,
-  ErrorResponse,
-  FileContentResponse,
-  FileMessageResponse,
   GetApiV1ServersServeridStacksStacknameFilesDownloadParams,
   GetApiV1ServersServeridStacksStacknameFilesParams,
   GetApiV1ServersServeridStacksStacknameFilesReadParams,
   GetApiV1ServersServeridStacksStacknameFilesStatsParams,
   PostApiV1ServersServeridStacksStacknameFilesUploadBody,
   RenameRequest,
+  ResponseDirectoryListing,
+  ResponseDirectoryStats,
+  ResponseEmpty,
+  ResponseFileContent,
+  ResponseFileMessageData,
   WriteFileRequest,
 } from '../models';
 
@@ -74,8 +74,8 @@ export const getApiV1ServersServeridStacksStacknameFiles = async (
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameFilesParams,
   options?: RequestInit
-): Promise<DirectoryListingResponse> => {
-  return apiClient<DirectoryListingResponse>(
+): Promise<ResponseDirectoryListing> => {
+  return apiClient<ResponseDirectoryListing>(
     getGetApiV1ServersServeridStacksStacknameFilesUrl(serverid, stackname, params),
     {
       ...options,
@@ -97,7 +97,7 @@ export const getGetApiV1ServersServeridStacksStacknameFilesQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameFilesQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -142,11 +142,11 @@ export const getGetApiV1ServersServeridStacksStacknameFilesQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameFilesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>
 >;
-export type GetApiV1ServersServeridStacksStacknameFilesQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameFilesQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameFiles<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -173,7 +173,7 @@ export function useGetApiV1ServersServeridStacksStacknameFiles<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFiles<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -200,7 +200,7 @@ export function useGetApiV1ServersServeridStacksStacknameFiles<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFiles<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -223,7 +223,7 @@ export function useGetApiV1ServersServeridStacksStacknameFiles<
 
 export function useGetApiV1ServersServeridStacksStacknameFiles<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFiles>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -270,8 +270,8 @@ export const postApiV1ServersServeridStacksStacknameFilesChmod = async (
   stackname: string,
   chmodRequest: ChmodRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesChmodUrl(serverid, stackname),
     {
       ...options,
@@ -283,7 +283,7 @@ export const postApiV1ServersServeridStacksStacknameFilesChmod = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesChmodMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -327,13 +327,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesChmodMutationResult = No
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesChmod>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesChmodMutationBody = ChmodRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesChmodMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesChmodMutationError = ResponseEmpty | void;
 
 /**
  * @summary Change file permissions
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesChmod = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -373,8 +373,8 @@ export const postApiV1ServersServeridStacksStacknameFilesChown = async (
   stackname: string,
   chownRequest: ChownRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesChownUrl(serverid, stackname),
     {
       ...options,
@@ -386,7 +386,7 @@ export const postApiV1ServersServeridStacksStacknameFilesChown = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesChownMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -430,13 +430,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesChownMutationResult = No
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesChown>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesChownMutationBody = ChownRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesChownMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesChownMutationError = ResponseEmpty | void;
 
 /**
  * @summary Change file ownership
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesChown = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -476,8 +476,8 @@ export const postApiV1ServersServeridStacksStacknameFilesCopy = async (
   stackname: string,
   copyRequest: CopyRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesCopyUrl(serverid, stackname),
     {
       ...options,
@@ -489,7 +489,7 @@ export const postApiV1ServersServeridStacksStacknameFilesCopy = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesCopyMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -533,13 +533,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesCopyMutationResult = Non
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesCopy>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesCopyMutationBody = CopyRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesCopyMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesCopyMutationError = ResponseEmpty | void;
 
 /**
  * @summary Copy file or directory
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesCopy = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -579,8 +579,8 @@ export const deleteApiV1ServersServeridStacksStacknameFilesDelete = async (
   stackname: string,
   deleteRequest2: DeleteRequest2,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getDeleteApiV1ServersServeridStacksStacknameFilesDeleteUrl(serverid, stackname),
     {
       ...options,
@@ -592,7 +592,7 @@ export const deleteApiV1ServersServeridStacksStacknameFilesDelete = async (
 };
 
 export const getDeleteApiV1ServersServeridStacksStacknameFilesDeleteMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -637,13 +637,13 @@ export type DeleteApiV1ServersServeridStacksStacknameFilesDeleteMutationResult =
 >;
 export type DeleteApiV1ServersServeridStacksStacknameFilesDeleteMutationBody = DeleteRequest2;
 export type DeleteApiV1ServersServeridStacksStacknameFilesDeleteMutationError =
-  ErrorResponse | void;
+  ResponseEmpty | void;
 
 /**
  * @summary Delete file or directory
  */
 export const useDeleteApiV1ServersServeridStacksStacknameFilesDelete = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -719,7 +719,7 @@ export const getGetApiV1ServersServeridStacksStacknameFilesDownloadQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameFilesDownloadQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -764,11 +764,11 @@ export const getGetApiV1ServersServeridStacksStacknameFilesDownloadQueryOptions 
 export type GetApiV1ServersServeridStacksStacknameFilesDownloadQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>
 >;
-export type GetApiV1ServersServeridStacksStacknameFilesDownloadQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameFilesDownloadQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -795,7 +795,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -822,7 +822,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -845,7 +845,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
 
 export function useGetApiV1ServersServeridStacksStacknameFilesDownload<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesDownload>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -892,8 +892,8 @@ export const postApiV1ServersServeridStacksStacknameFilesMkdir = async (
   stackname: string,
   createDirectoryRequest: CreateDirectoryRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesMkdirUrl(serverid, stackname),
     {
       ...options,
@@ -905,7 +905,7 @@ export const postApiV1ServersServeridStacksStacknameFilesMkdir = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesMkdirMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -949,13 +949,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesMkdirMutationResult = No
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesMkdir>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesMkdirMutationBody = CreateDirectoryRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesMkdirMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesMkdirMutationError = ResponseEmpty | void;
 
 /**
  * @summary Create directory
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesMkdir = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -1008,8 +1008,8 @@ export const getApiV1ServersServeridStacksStacknameFilesRead = async (
   stackname: string,
   params: GetApiV1ServersServeridStacksStacknameFilesReadParams,
   options?: RequestInit
-): Promise<FileContentResponse> => {
-  return apiClient<FileContentResponse>(
+): Promise<ResponseFileContent> => {
+  return apiClient<ResponseFileContent>(
     getGetApiV1ServersServeridStacksStacknameFilesReadUrl(serverid, stackname, params),
     {
       ...options,
@@ -1031,7 +1031,7 @@ export const getGetApiV1ServersServeridStacksStacknameFilesReadQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameFilesReadQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1076,11 +1076,11 @@ export const getGetApiV1ServersServeridStacksStacknameFilesReadQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameFilesReadQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>
 >;
-export type GetApiV1ServersServeridStacksStacknameFilesReadQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameFilesReadQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameFilesRead<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1107,7 +1107,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesRead<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesRead<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1134,7 +1134,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesRead<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesRead<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1157,7 +1157,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesRead<
 
 export function useGetApiV1ServersServeridStacksStacknameFilesRead<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesRead>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1204,8 +1204,8 @@ export const postApiV1ServersServeridStacksStacknameFilesRename = async (
   stackname: string,
   renameRequest: RenameRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesRenameUrl(serverid, stackname),
     {
       ...options,
@@ -1217,7 +1217,7 @@ export const postApiV1ServersServeridStacksStacknameFilesRename = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesRenameMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1261,13 +1261,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesRenameMutationResult = N
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesRename>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesRenameMutationBody = RenameRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesRenameMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesRenameMutationError = ResponseEmpty | void;
 
 /**
  * @summary Rename file or directory
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesRename = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -1320,8 +1320,8 @@ export const getApiV1ServersServeridStacksStacknameFilesStats = async (
   stackname: string,
   params?: GetApiV1ServersServeridStacksStacknameFilesStatsParams,
   options?: RequestInit
-): Promise<DirectoryStatsResponse> => {
-  return apiClient<DirectoryStatsResponse>(
+): Promise<ResponseDirectoryStats> => {
+  return apiClient<ResponseDirectoryStats>(
     getGetApiV1ServersServeridStacksStacknameFilesStatsUrl(serverid, stackname, params),
     {
       ...options,
@@ -1343,7 +1343,7 @@ export const getGetApiV1ServersServeridStacksStacknameFilesStatsQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameFilesStatsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1388,11 +1388,11 @@ export const getGetApiV1ServersServeridStacksStacknameFilesStatsQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameFilesStatsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>
 >;
-export type GetApiV1ServersServeridStacksStacknameFilesStatsQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameFilesStatsQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameFilesStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1419,7 +1419,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesStats<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1446,7 +1446,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesStats<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameFilesStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1469,7 +1469,7 @@ export function useGetApiV1ServersServeridStacksStacknameFilesStats<
 
 export function useGetApiV1ServersServeridStacksStacknameFilesStats<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameFilesStats>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -1516,14 +1516,14 @@ export const postApiV1ServersServeridStacksStacknameFilesUpload = async (
   stackname: string,
   postApiV1ServersServeridStacksStacknameFilesUploadBody: PostApiV1ServersServeridStacksStacknameFilesUploadBody,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
+): Promise<ResponseFileMessageData> => {
   const formData = new FormData();
   formData.append(`file`, postApiV1ServersServeridStacksStacknameFilesUploadBody.file);
   if (postApiV1ServersServeridStacksStacknameFilesUploadBody.filePath !== undefined) {
     formData.append(`filePath`, postApiV1ServersServeridStacksStacknameFilesUploadBody.filePath);
   }
 
-  return apiClient<FileMessageResponse>(
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesUploadUrl(serverid, stackname),
     {
       ...options,
@@ -1534,7 +1534,7 @@ export const postApiV1ServersServeridStacksStacknameFilesUpload = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesUploadMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1591,13 +1591,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesUploadMutationResult = N
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesUploadMutationBody =
   PostApiV1ServersServeridStacksStacknameFilesUploadBody;
-export type PostApiV1ServersServeridStacksStacknameFilesUploadMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesUploadMutationError = ResponseEmpty | void;
 
 /**
  * @summary Upload a file
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesUpload = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
@@ -1645,8 +1645,8 @@ export const postApiV1ServersServeridStacksStacknameFilesWrite = async (
   stackname: string,
   writeFileRequest: WriteFileRequest,
   options?: RequestInit
-): Promise<FileMessageResponse> => {
-  return apiClient<FileMessageResponse>(
+): Promise<ResponseFileMessageData> => {
+  return apiClient<ResponseFileMessageData>(
     getPostApiV1ServersServeridStacksStacknameFilesWriteUrl(serverid, stackname),
     {
       ...options,
@@ -1658,7 +1658,7 @@ export const postApiV1ServersServeridStacksStacknameFilesWrite = async (
 };
 
 export const getPostApiV1ServersServeridStacksStacknameFilesWriteMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1702,13 +1702,13 @@ export type PostApiV1ServersServeridStacksStacknameFilesWriteMutationResult = No
   Awaited<ReturnType<typeof postApiV1ServersServeridStacksStacknameFilesWrite>>
 >;
 export type PostApiV1ServersServeridStacksStacknameFilesWriteMutationBody = WriteFileRequest;
-export type PostApiV1ServersServeridStacksStacknameFilesWriteMutationError = ErrorResponse | void;
+export type PostApiV1ServersServeridStacksStacknameFilesWriteMutationError = ResponseEmpty | void;
 
 /**
  * @summary Write file contents
  */
 export const usePostApiV1ServersServeridStacksStacknameFilesWrite = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
