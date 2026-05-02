@@ -43,18 +43,15 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 	logsData, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
-			return response.SendForbidden(c, err.Error())
+			return response.Forbidden(c, err.Error())
 		}
 		if strings.Contains(err.Error(), "record not found") {
-			return response.SendNotFound(c, "Server not found")
+			return response.NotFound(c, "Server not found")
 		}
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, LogsResponse{
-		Success: true,
-		Data:    *logsData,
-	})
+	return response.OK(c, *logsData)
 }
 
 func (h *Handler) GetContainerLogs(c echo.Context) error {
@@ -70,7 +67,7 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 
 	containerName := c.Param("containerName")
 	if containerName == "" {
-		return response.SendBadRequest(c, "Container name is required")
+		return response.BadRequest(c, "Container name is required")
 	}
 
 	req := LogRequest{
@@ -86,18 +83,15 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 	logsData, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient permissions") {
-			return response.SendForbidden(c, err.Error())
+			return response.Forbidden(c, err.Error())
 		}
 		if strings.Contains(err.Error(), "record not found") {
-			return response.SendNotFound(c, "Server not found")
+			return response.NotFound(c, "Server not found")
 		}
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, LogsResponse{
-		Success: true,
-		Data:    *logsData,
-	})
+	return response.OK(c, *logsData)
 }
 
 func (h *Handler) parseIntParam(c echo.Context, param string, defaultValue int) int {

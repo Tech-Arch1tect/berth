@@ -441,11 +441,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("tail", "Number of log lines to return").TypeInt().Default(100).Optional().
 		QueryParam("since", "Only return logs since this timestamp (RFC3339 format)").Optional().
 		QueryParam("timestamps", "Include timestamps in log output").TypeBool().Default(true).Optional().
-		Response(http.StatusOK, logs.LogsResponse{}, "Stack logs").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[logs.LogsData]{}, "Stack logs").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -459,12 +459,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		QueryParam("tail", "Number of log lines to return").TypeInt().Default(100).Optional().
 		QueryParam("since", "Only return logs since this timestamp (RFC3339 format)").Optional().
 		QueryParam("timestamps", "Include timestamps in log output").TypeBool().Default(true).Optional().
-		Response(http.StatusOK, logs.LogsResponse{}, "Container logs").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Container name is required").
-		Response(http.StatusNotFound, ErrorResponse{}, "Server not found").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[logs.LogsData]{}, "Container logs").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Container name is required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

@@ -6,6 +6,7 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/logs"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -147,7 +148,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var logsResp logs.LogsResponse
+		var logsResp response.Response[logs.LogsData]
 		require.NoError(t, resp.GetJSON(&logsResp))
 		assert.True(t, logsResp.Success)
 		assert.NotEmpty(t, logsResp.Data.Logs)

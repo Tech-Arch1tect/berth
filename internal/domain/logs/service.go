@@ -63,11 +63,6 @@ type LogsData struct {
 	Logs []LogEntry `json:"logs"`
 }
 
-type LogsResponse struct {
-	Success bool     `json:"success"`
-	Data    LogsData `json:"data"`
-}
-
 func (s *Service) GetStackLogs(ctx context.Context, req LogRequest) (*LogsData, error) {
 	s.logger.Debug("retrieving stack logs",
 		zap.Uint("user_id", req.UserID),
