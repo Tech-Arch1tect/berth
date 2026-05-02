@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"berth/internal/domain/operationlogs"
+	"berth/internal/domain/operations"
 	"testing"
 
 	"berth/internal/domain/auth"
@@ -12,10 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type OperationStartResponse struct {
-	OperationID string `json:"operationId"`
-}
 
 func TestOperationsEndpointsJWT(t *testing.T) {
 	t.Parallel()
@@ -82,9 +79,10 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var opResp OperationStartResponse
+		var opResp response.Response[operations.OperationStartData]
 		require.NoError(t, resp.GetJSON(&opResp))
-		assert.NotEmpty(t, opResp.OperationID)
+		assert.True(t, opResp.Success)
+		assert.NotEmpty(t, opResp.Data.OperationID)
 	})
 
 	t.Run("GET /api/v1/operation-logs returns user operation logs", func(t *testing.T) {

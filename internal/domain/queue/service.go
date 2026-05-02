@@ -24,7 +24,7 @@ type queueSecurityAuditor interface {
 }
 
 type queueOperationExecutor interface {
-	StartAndExecuteOperation(ctx context.Context, userID, serverID uint, stackname string, req operations.OperationRequest, operationLogID uint) (*operations.OperationResponse, error)
+	StartAndExecuteOperation(ctx context.Context, userID, serverID uint, stackname string, req operations.OperationRequest, operationLogID uint) (*operations.OperationStartData, error)
 }
 
 type Service struct {

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"berth/internal/domain/operationlogs"
+	"berth/internal/domain/operations"
 	"net/http"
 
 	"berth/internal/domain/apikey"
@@ -23,6 +24,7 @@ import (
 	"berth/internal/pkg/response"
 
 	"berth/internal/pkg/apidocs"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -332,6 +334,22 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
 		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// Operations
+	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/operations").
+		Tags("operations").
+		Summary("Start a stack operation").
+		Description("Starts a Docker Compose operation against the specified stack and returns its operation ID.").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Body(operations.OperationRequest{}, "Operation command and options").
+		Response(http.StatusOK, response.Response[operations.OperationStartData]{}, "Operation started").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request body").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

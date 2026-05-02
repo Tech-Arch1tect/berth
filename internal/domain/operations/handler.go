@@ -33,7 +33,7 @@ func (h *Handler) StartOperation(c echo.Context) error {
 
 	stackname := c.Param("stackname")
 	if stackname == "" {
-		return response.SendBadRequest(c, "Stack name is required")
+		return response.BadRequest(c, "Stack name is required")
 	}
 
 	var req OperationRequest
@@ -43,11 +43,11 @@ func (h *Handler) StartOperation(c echo.Context) error {
 
 	resp, err := h.service.StartOperation(c.Request().Context(), userID, serverID, stackname, req)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	startTime := time.Now()
 	h.service.auditSvc.LogOperationStart(userID, serverID, stackname, resp.OperationID, req, startTime)
 
-	return response.SendSuccess(c, resp)
+	return response.OK(c, *resp)
 }

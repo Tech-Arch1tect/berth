@@ -59,7 +59,7 @@ func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, audit
 	}
 }
 
-func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest) (*OperationResponse, error) {
+func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest) (*OperationStartData, error) {
 	s.logger.Debug("starting Docker operation",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),
@@ -172,7 +172,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 		return nil, fmt.Errorf("agent error: %s", errorMsg)
 	}
 
-	var response OperationResponse
+	var response OperationStartData
 	if err := json.NewDecoder(agentResp.Body).Decode(&response); err != nil {
 		s.logger.Error("failed to decode operation response",
 			zap.Error(err),
@@ -192,7 +192,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	return &response, nil
 }
 
-func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationResponse, error) {
+func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationStartData, error) {
 	s.logger.Debug("starting and executing Docker operation",
 		zap.Uint("user_id", userID),
 		zap.Uint("server_id", serverID),

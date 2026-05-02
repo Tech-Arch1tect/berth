@@ -15,7 +15,7 @@ type OperationRequest struct {
 	RegistryCredentials []RegistryCredential `json:"registry_credentials,omitempty"`
 }
 
-type OperationResponse struct {
+type OperationStartData struct {
 	OperationID string `json:"operationId"`
 }
 
