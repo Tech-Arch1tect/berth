@@ -38,7 +38,7 @@ import {
   NewServiceConfig,
   ServiceNetworkConfig,
 } from '../types';
-import { StackService } from '../../../services/stackService';
+import { StackService } from '../../stacks/services/stackService';
 
 interface ComposeEditorModalProps {
   isOpen: boolean;

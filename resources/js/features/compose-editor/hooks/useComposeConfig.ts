@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { StackService } from '../../../services/stackService';
+import { StackService } from '../../stacks/services/stackService';
 import { RawComposeConfig } from '../types';
 
 interface UseComposeConfigOptions {

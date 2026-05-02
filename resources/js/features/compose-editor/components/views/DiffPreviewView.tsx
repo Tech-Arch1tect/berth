@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
-import { StackService } from '../../../../services/stackService';
+import { StackService } from '../../../stacks/services/stackService';
 import { ComposeChanges } from '../../types';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 

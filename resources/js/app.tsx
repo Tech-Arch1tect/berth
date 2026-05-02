@@ -60,6 +60,9 @@ const pageMap: Record<string, string> = {
   'Servers/Registries': './features/registries/pages/Registries.tsx',
   'Servers/Maintenance': './features/maintenance/pages/Maintenance.tsx',
   Dashboard: './features/dashboard/pages/Dashboard.tsx',
+  Stacks: './features/stacks/pages/Stacks.tsx',
+  'Servers/Stacks': './features/stacks/pages/ServerStacks.tsx',
+  'Servers/StackDetails': './features/stacks/pages/StackDetails.tsx',
 };
 
 function resolvePage(name: string): InertiaPageModule['default'] {

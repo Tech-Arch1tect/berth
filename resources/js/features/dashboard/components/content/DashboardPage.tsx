@@ -18,7 +18,7 @@ import { Server } from '../../../../shared/types/server';
 import { HealthSummary } from '../../types';
 import { ActivitySummary } from '../../hooks/useDashboardActivity';
 import type { OperationLogInfo } from '../../../../api/generated/models';
-import { useServerStatistics } from '../../../../hooks/useServerStatistics';
+import { useServerStatistics } from '../../../stacks/hooks/useServerStatistics';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 
 interface DashboardPageProps {
