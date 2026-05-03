@@ -7,9 +7,14 @@ test.describe('setup page', () => {
     await expect(page.getByRole('heading', { name: /create admin account/i })).toBeVisible();
   });
 
-  test('admin setup page returns 404 once an admin has been seeded', async ({ page, api }) => {
+  test('admin setup page redirects to login once an admin has been seeded', async ({
+    page,
+    api,
+  }) => {
     await api.seedAdmin();
     const res = await page.goto('/setup/admin');
-    expect(res?.status()).toBe(404);
+    expect(res?.status()).toBe(200);
+    expect(new URL(page.url()).pathname).toBe('/auth/login');
+    expect(res?.request().redirectedFrom()?.url()).toContain('/setup/admin');
   });
 });
