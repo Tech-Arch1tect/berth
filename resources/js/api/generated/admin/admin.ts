@@ -26,12 +26,10 @@ import type {
   CreateRoleRequest,
   CreateStackPermissionRequest,
   CreateUserRequest,
-  ErrorResponse,
   ExportRequest,
   GetApiV1AdminOperationLogsParams,
   GetApiV1AdminPermissionsParams,
   GetApiV1AdminSecurityAuditLogsParams,
-  ImportResponse,
   PostApiV1AdminMigrationImportBody,
   ResponseAdminCreateServerData,
   ResponseAdminListServersData,
@@ -39,6 +37,7 @@ import type {
   ResponseEmpty,
   ResponseGetServerData,
   ResponseGetUserRolesData,
+  ResponseImportData,
   ResponseListPermissionsData,
   ResponseListRoleStackPermissionsData,
   ResponseListRolesData,
@@ -84,7 +83,7 @@ export const postApiV1AdminMigrationExport = async (
 };
 
 export const getPostApiV1AdminMigrationExportMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -123,12 +122,12 @@ export type PostApiV1AdminMigrationExportMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>
 >;
 export type PostApiV1AdminMigrationExportMutationBody = ExportRequest;
-export type PostApiV1AdminMigrationExportMutationError = ErrorResponse | void;
+export type PostApiV1AdminMigrationExportMutationError = ResponseEmpty | void;
 
 /**
  * @summary Export data
  */
-export const usePostApiV1AdminMigrationExport = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminMigrationExport = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminMigrationExport>>,
@@ -158,12 +157,12 @@ export const getPostApiV1AdminMigrationImportUrl = () => {
 export const postApiV1AdminMigrationImport = async (
   postApiV1AdminMigrationImportBody: PostApiV1AdminMigrationImportBody,
   options?: RequestInit
-): Promise<ImportResponse> => {
+): Promise<ResponseImportData> => {
   const formData = new FormData();
   formData.append(`backup_file`, postApiV1AdminMigrationImportBody.backup_file);
   formData.append(`password`, postApiV1AdminMigrationImportBody.password);
 
-  return apiClient<ImportResponse>(getPostApiV1AdminMigrationImportUrl(), {
+  return apiClient<ResponseImportData>(getPostApiV1AdminMigrationImportUrl(), {
     ...options,
     method: 'POST',
     body: formData,
@@ -171,7 +170,7 @@ export const postApiV1AdminMigrationImport = async (
 };
 
 export const getPostApiV1AdminMigrationImportMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -210,12 +209,12 @@ export type PostApiV1AdminMigrationImportMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>
 >;
 export type PostApiV1AdminMigrationImportMutationBody = PostApiV1AdminMigrationImportBody;
-export type PostApiV1AdminMigrationImportMutationError = ErrorResponse | void;
+export type PostApiV1AdminMigrationImportMutationError = ResponseEmpty | void;
 
 /**
  * @summary Import data
  */
-export const usePostApiV1AdminMigrationImport = <TError = ErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AdminMigrationImport = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AdminMigrationImport>>,

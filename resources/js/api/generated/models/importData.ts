@@ -5,9 +5,9 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { ImportResponseData } from './importResponseData';
+import type { ImportSummary } from './importSummary';
 
-export interface ImportResponse {
-  data: ImportResponseData;
-  success: boolean;
+export interface ImportData {
+  encryption_secret: string;
+  summary: ImportSummary;
 }
