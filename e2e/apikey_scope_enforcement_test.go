@@ -100,7 +100,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result stack.ListStacksResponse
+		var result response.Response[stack.ListStacksData]
 		require.NoError(t, resp.GetJSON(&result))
 
 		assert.True(t, result.Success)
@@ -118,7 +118,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result stack.ListStacksResponse
+		var result response.Response[stack.ListStacksData]
 		require.NoError(t, resp.GetJSON(&result))
 
 		assert.True(t, result.Success)
@@ -221,7 +221,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result stack.ListStacksResponse
+		var result response.Response[stack.ListStacksData]
 		require.NoError(t, resp.GetJSON(&result))
 
 		assert.True(t, result.Success)
@@ -240,7 +240,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var result stack.StackPermissionsResponse
+		var result response.Response[stack.StackPermissionsData]
 		require.NoError(t, resp.GetJSON(&result))
 
 		assert.True(t, result.Success)

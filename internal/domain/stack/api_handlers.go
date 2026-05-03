@@ -46,13 +46,10 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 
 	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userID, serverID)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, ListStacksResponse{
-		Success: true,
-		Data:    ListStacksData{Stacks: stacks},
-	})
+	return response.OK(c, ListStacksData{Stacks: stacks})
 }
 
 func (h *APIHandler) CreateStack(c echo.Context) error {
@@ -68,11 +65,11 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 
 	var req CreateStackRequest
 	if err := c.Bind(&req); err != nil {
-		return response.SendBadRequest(c, "invalid request body")
+		return response.BadRequest(c, "invalid request body")
 	}
 
 	if req.Name == "" {
-		return response.SendBadRequest(c, "stack name is required")
+		return response.BadRequest(c, "stack name is required")
 	}
 
 	h.logger.Debug("creating stack via API",
@@ -85,12 +82,12 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "permission denied") {
-			return response.SendForbidden(c, errMsg)
+			return response.Forbidden(c, errMsg)
 		}
 		if strings.Contains(errMsg, "already exists") {
-			return response.SendConflict(c, errMsg)
+			return response.Conflict(c, errMsg)
 		}
-		return response.SendBadRequest(c, errMsg)
+		return response.BadRequest(c, errMsg)
 	}
 
 	user, _ := session.LoadCurrentUser(c, h.db)
@@ -109,12 +106,9 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 		nil,
 	)
 
-	return response.SendCreated(c, CreateStackResponse{
-		Success: true,
-		Data: CreateStackData{
-			Stack:   stack,
-			Message: "Stack created successfully",
-		},
+	return response.Created(c, CreateStackData{
+		Stack:   stack,
+		Message: "Stack created successfully",
 	})
 }
 
@@ -131,10 +125,10 @@ func (h *APIHandler) GetStackDetails(c echo.Context) error {
 
 	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, stackDetails)
+	return response.OK(c, stackDetails)
 }
 
 func (h *APIHandler) GetStackNetworks(c echo.Context) error {
@@ -150,13 +144,10 @@ func (h *APIHandler) GetStackNetworks(c echo.Context) error {
 
 	networks, err := h.service.GetStackNetworks(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, StackNetworksResponse{
-		Success: true,
-		Data:    StackNetworksData{Networks: networks},
-	})
+	return response.OK(c, StackNetworksData{Networks: networks})
 }
 
 func (h *APIHandler) GetStackVolumes(c echo.Context) error {
@@ -172,13 +163,10 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 
 	volumes, err := h.service.GetStackVolumes(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, StackVolumesResponse{
-		Success: true,
-		Data:    StackVolumesData{Volumes: volumes},
-	})
+	return response.OK(c, StackVolumesData{Volumes: volumes})
 }
 
 func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
@@ -194,13 +182,10 @@ func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
 
 	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, StackImagesResponse{
-		Success: true,
-		Data:    StackImagesData{Images: imageDetails},
-	})
+	return response.OK(c, StackImagesData{Images: imageDetails})
 }
 
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
@@ -225,7 +210,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 
 	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname, unmask)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
 	if unmask {
@@ -259,10 +244,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 		}()),
 	)
 
-	return response.SendSuccess(c, StackEnvironmentResponse{
-		Success: true,
-		Data:    StackEnvironmentData{Services: environmentVariables},
-	})
+	return response.OK(c, StackEnvironmentData{Services: environmentVariables})
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {
@@ -278,13 +260,10 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 
 	stackStats, err := h.service.GetStackStats(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, StackStatsResponse{
-		Success: true,
-		Data:    StackStatsData{StackStats: *stackStats},
-	})
+	return response.OK(c, *stackStats)
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
@@ -300,13 +279,10 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 
 	permissions, err := h.service.rbacSvc.GetUserStackPermissions(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to get user permissions")
+		return response.Internal(c, "Failed to get user permissions")
 	}
 
-	return response.SendSuccess(c, StackPermissionsResponse{
-		Success: true,
-		Data:    StackPermissionsData{Permissions: permissions},
-	})
+	return response.OK(c, StackPermissionsData{Permissions: permissions})
 }
 
 func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
@@ -322,13 +298,10 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 
 	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermStacksCreate)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return response.Internal(c, "Failed to check permissions")
 	}
 
-	return response.SendSuccess(c, CanCreateStackResponse{
-		Success: true,
-		Data:    CanCreateStackData{CanCreate: canCreate},
-	})
+	return response.OK(c, CanCreateStackData{CanCreate: canCreate})
 }
 
 func (h *APIHandler) GetComposeConfig(c echo.Context) error {
@@ -344,10 +317,10 @@ func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 
 	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), userID, serverID, stackname)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, composeConfig)
+	return response.OK(c, composeConfig)
 }
 
 func (h *APIHandler) UpdateCompose(c echo.Context) error {
@@ -363,13 +336,13 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 
 	var req UpdateComposeRequest
 	if err := c.Bind(&req); err != nil {
-		return response.SendBadRequest(c, "invalid request body")
+		return response.BadRequest(c, "invalid request body")
 	}
 
 	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, &req)
 	if err != nil {
-		return response.SendInternalError(c, err.Error())
+		return response.Internal(c, err.Error())
 	}
 
-	return response.SendSuccess(c, result)
+	return response.OK(c, result)
 }

@@ -212,9 +212,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List server stacks").
 		Description("Returns all stacks on a server that the authenticated user has permission to access").
 		PathParam("serverid", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, stack.ListStacksResponse{}, "List of stacks").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.ListStacksData]{}, "List of stacks").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -224,10 +224,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns detailed information about a specific stack including services and containers").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackDetails{}, "Stack details").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackDetails]{}, "Stack details").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -237,9 +237,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns the list of permissions the authenticated user has for a specific stack").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackPermissionsResponse{}, "User permissions for the stack").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackPermissionsData]{}, "User permissions for the stack").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -249,10 +249,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns network information for a specific stack").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackNetworksResponse{}, "Stack networks").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackNetworksData]{}, "Stack networks").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -262,10 +262,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns volume information for a specific stack").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackVolumesResponse{}, "Stack volumes").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackVolumesData]{}, "Stack volumes").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -276,10 +276,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		QueryParam("unmask", "Set to true to unmask sensitive values").Optional().
-		Response(http.StatusOK, stack.StackEnvironmentResponse{}, "Stack environment variables").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackEnvironmentData]{}, "Stack environment variables").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -289,10 +289,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns detailed image information for all containers in a stack").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackImagesResponse{}, "Container image details").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackImagesData]{}, "Container image details").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -302,10 +302,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns resource usage statistics for all containers in a stack").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.StackStatsResponse{}, "Stack statistics").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Access denied").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.StackStats]{}, "Stack statistics").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Access denied").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -316,10 +316,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns the parsed Docker Compose configuration for a stack. Requires files.read permission.").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, stack.RawComposeConfig{}, "Compose configuration").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.RawComposeConfig]{}, "Compose configuration").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -330,11 +330,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
 		Body(stack.UpdateComposeRequest{}, "Changes to apply to the compose file").
-		Response(http.StatusOK, stack.UpdateComposeResponse{}, "Update result with original and modified YAML").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request body").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Insufficient permissions").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.UpdateComposeResponse]{}, "Update result with original and modified YAML").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request body").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -752,9 +752,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Check if user can create stacks").
 		Description("Returns whether the authenticated user has permission to create stacks on the server").
 		PathParam("serverid", "Server ID").TypeInt().Required().
-		Response(http.StatusOK, stack.CanCreateStackResponse{}, "Can create response").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusOK, response.Response[stack.CanCreateStackData]{}, "Can create response").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -764,12 +764,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Creates a new stack on the server").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		Body(stack.CreateStackRequest{}, "Stack creation request").
-		Response(http.StatusCreated, stack.CreateStackResponse{}, "Stack created successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Permission denied").
-		Response(http.StatusConflict, ErrorResponse{}, "Stack already exists").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Internal server error").
+		Response(http.StatusCreated, response.Response[stack.CreateStackData]{}, "Stack created successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Permission denied").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Stack already exists").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 

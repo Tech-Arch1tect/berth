@@ -6,6 +6,9 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "success": false
+    "data": {
+      "success": false
+    },
+    "success": true
   }
 }

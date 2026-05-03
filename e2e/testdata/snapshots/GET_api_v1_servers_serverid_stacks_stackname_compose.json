@@ -6,7 +6,10 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "compose_file": "",
-    "services": null
+    "data": {
+      "compose_file": "",
+      "services": null
+    },
+    "success": true
   }
 }

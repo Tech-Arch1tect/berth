@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/stack"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/stretchr/testify/assert"
@@ -113,7 +114,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var stacksResp stack.ListStacksResponse
+		var stacksResp response.Response[stack.ListStacksData]
 		require.NoError(t, resp.GetJSON(&stacksResp))
 		assert.True(t, stacksResp.Success)
 		assert.NotEmpty(t, stacksResp.Data.Stacks)
@@ -145,7 +146,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var permsResp stack.StackPermissionsResponse
+		var permsResp response.Response[stack.StackPermissionsData]
 		require.NoError(t, resp.GetJSON(&permsResp))
 		assert.True(t, permsResp.Success)
 		assert.NotNil(t, permsResp.Data.Permissions)
@@ -215,7 +216,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var statsResp stack.StackStatsResponse
+		var statsResp response.Response[stack.StackStats]
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.Equal(t, "test-stack", statsResp.Data.StackName)

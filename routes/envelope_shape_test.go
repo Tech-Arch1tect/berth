@@ -28,19 +28,6 @@ var legacyEnvelopeAllowlist = map[string]bool{
 	"POST /api/v1/totp/enable":                true,
 	"POST /api/v1/totp/disable":               true,
 
-	"GET /api/v1/servers/{serverid}/stacks":                         true,
-	"GET /api/v1/servers/{serverid}/stacks/can-create":              true,
-	"POST /api/v1/servers/{serverid}/stacks":                        true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}":             true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/permissions": true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/networks":    true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/volumes":     true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/environment": true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/images":      true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/stats":       true,
-	"GET /api/v1/servers/{serverid}/stacks/{stackname}/compose":     true,
-	"PATCH /api/v1/servers/{serverid}/stacks/{stackname}/compose":   true,
-
 	"POST /api/v1/admin/migration/import": true,
 }
 

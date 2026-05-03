@@ -6,23 +6,26 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "compose_file": "docker-compose.yml",
-    "name": "snap-stack",
-    "path": "/opt/snap-stack",
-    "server_id": 1,
-    "server_name": "snap-server-api",
-    "services": [
-      {
-        "containers": [
-          {
-            "image": "",
-            "name": "snap-stack-web-1",
-            "state": "running"
-          }
-        ],
-        "image": "nginx:latest",
-        "name": "web"
-      }
-    ]
+    "data": {
+      "compose_file": "docker-compose.yml",
+      "name": "snap-stack",
+      "path": "/opt/snap-stack",
+      "server_id": 1,
+      "server_name": "snap-server-api",
+      "services": [
+        {
+          "containers": [
+            {
+              "image": "",
+              "name": "snap-stack-web-1",
+              "state": "running"
+            }
+          ],
+          "image": "nginx:latest",
+          "name": "web"
+        }
+      ]
+    },
+    "success": true
   }
 }
