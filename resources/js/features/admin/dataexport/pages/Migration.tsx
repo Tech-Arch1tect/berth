@@ -9,7 +9,7 @@ import {
   usePostApiV1AdminMigrationExport,
   usePostApiV1AdminMigrationImport,
 } from '../../../../api/generated/admin/admin';
-import type { ImportResponseData } from '../../../../api/generated/models';
+import type { ImportData } from '../../../../api/generated/models';
 
 interface Props {
   title: string;
@@ -17,7 +17,7 @@ interface Props {
 
 export default function Migration({ title }: Props) {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [importResult, setImportResult] = useState<ImportResponseData | null>(null);
+  const [importResult, setImportResult] = useState<ImportData | null>(null);
   const [showEncryptionSecret, setShowEncryptionSecret] = useState(false);
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string }>(
     {
