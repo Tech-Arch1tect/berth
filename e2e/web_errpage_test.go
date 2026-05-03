@@ -104,3 +104,40 @@ func TestStackWebHandlerErrors(t *testing.T) {
 		assertInertiaErrPage(t, resp, http.StatusNotFound, "Server not found")
 	})
 }
+
+func TestRBACWebHandlerErrors(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "rbacerruser",
+		Email:    "rbacerruser@example.com",
+		Password: "password123",
+	}
+	app.CreateAdminTestUser(t, user)
+	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
+
+	t.Run("GET /admin/users/:id/roles renders 404 errpage when user missing", func(t *testing.T) {
+		TagTest(t, "GET", "/admin/users/:id/roles", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := client.Get("/admin/users/9999/roles")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusNotFound, "user not found")
+	})
+
+	t.Run("GET /admin/roles/:id/stack-permissions renders 404 errpage when role missing", func(t *testing.T) {
+		TagTest(t, "GET", "/admin/roles/:id/stack-permissions", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := client.Get("/admin/roles/9999/stack-permissions")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusNotFound, "role not found")
+	})
+
+	t.Run("GET /admin/roles/:id/stack-permissions renders 400 errpage for admin role", func(t *testing.T) {
+		TagTest(t, "GET", "/admin/roles/:id/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		var adminRoleID uint
+		require.NoError(t, app.DB.Table("roles").Where("name = ?", "admin").Pluck("id", &adminRoleID).Error)
+
+		resp, err := client.Get("/admin/roles/" + itoa(adminRoleID) + "/stack-permissions")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusBadRequest, "cannot manage server permissions for admin role")
+	})
+}

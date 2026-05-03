@@ -1,15 +1,17 @@
 package rbac
 
 import (
+	"net/http"
+
 	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
-	"berth/internal/pkg/response"
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -18,6 +20,7 @@ import (
 type Handler struct {
 	db         *gorm.DB
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 	rbac       *Service
 	authSvc    *auth.Service
 	totpSvc    *totp.Service
@@ -28,6 +31,7 @@ func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc
 	return &Handler{
 		db:         db,
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 		rbac:       rbac,
 		authSvc:    authSvc,
 		totpSvc:    totpSvc,
@@ -38,7 +42,7 @@ func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, rbac *Service, authSvc
 func (h *Handler) ListUsers(c echo.Context) error {
 	var users []usermodel.User
 	if err := h.db.Preload("Roles").Find(&users).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch users")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch users")
 	}
 
 	type UserWithTOTP struct {
@@ -68,12 +72,12 @@ func (h *Handler) ShowUserRoles(c echo.Context) error {
 
 	var user usermodel.User
 	if err := h.db.Preload("Roles").First(&user, uint(userID)).Error; err != nil {
-		return response.SendNotFound(c, "user not found")
+		return h.errPage.Render(c, http.StatusNotFound, "user not found")
 	}
 
 	var allRoles []usermodel.Role
 	if err := h.db.Find(&allRoles).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch roles")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch roles")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/UserRoles", map[string]any{
@@ -86,7 +90,7 @@ func (h *Handler) ShowUserRoles(c echo.Context) error {
 func (h *Handler) ListRoles(c echo.Context) error {
 	roles, err := h.rbac.GetAllRoles()
 	if err != nil {
-		return response.SendInternalError(c, "failed to fetch roles")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch roles")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/Roles", map[string]any{
@@ -103,26 +107,26 @@ func (h *Handler) RoleServerStackPermissions(c echo.Context) error {
 
 	var role usermodel.Role
 	if err := h.db.First(&role, uint(roleID)).Error; err != nil {
-		return response.SendNotFound(c, "role not found")
+		return h.errPage.Render(c, http.StatusNotFound, "role not found")
 	}
 
 	if role.IsAdmin {
-		return response.SendBadRequest(c, "cannot manage server permissions for admin role")
+		return h.errPage.Render(c, http.StatusBadRequest, "cannot manage server permissions for admin role")
 	}
 
 	var servers []server.Server
 	if err := h.db.Find(&servers).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch servers")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch servers")
 	}
 
 	var permissions []usermodel.Permission
 	if err := h.db.Where("is_api_key_only = ?", false).Find(&permissions).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch permissions")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch permissions")
 	}
 
 	var serverRoleStackPermissions []usermodel.ServerRoleStackPermission
 	if err := h.db.Where("role_id = ?", roleID).Find(&serverRoleStackPermissions).Error; err != nil {
-		return response.SendInternalError(c, "failed to fetch role stack permissions")
+		return h.errPage.Render(c, http.StatusInternalServerError, "failed to fetch role stack permissions")
 	}
 
 	type PermissionRule struct {
