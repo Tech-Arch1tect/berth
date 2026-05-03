@@ -5,9 +5,13 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Error } from './error';
+import type { Meta } from './meta';
 import type { StackNetworksData } from './stackNetworksData';
 
-export interface StackNetworksResponse {
+export interface ResponseStackNetworksData {
   data: StackNetworksData;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }

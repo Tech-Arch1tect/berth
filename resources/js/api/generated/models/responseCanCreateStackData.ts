@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CanCreateStackData } from './canCreateStackData';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface CanCreateStackResponse {
+export interface ResponseCanCreateStackData {
   data: CanCreateStackData;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }

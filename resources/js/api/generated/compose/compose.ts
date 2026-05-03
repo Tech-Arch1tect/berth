@@ -22,10 +22,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  ErrorResponse,
-  RawComposeConfig,
+  ResponseEmpty,
+  ResponseRawComposeConfig,
+  ResponseUpdateComposeResponse,
   UpdateComposeRequest,
-  UpdateComposeResponse,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -47,8 +47,8 @@ export const getApiV1ServersServeridStacksStacknameCompose = async (
   serverid: number,
   stackname: string,
   options?: RequestInit
-): Promise<RawComposeConfig> => {
-  return apiClient<RawComposeConfig>(
+): Promise<ResponseRawComposeConfig> => {
+  return apiClient<ResponseRawComposeConfig>(
     getGetApiV1ServersServeridStacksStacknameComposeUrl(serverid, stackname),
     {
       ...options,
@@ -66,7 +66,7 @@ export const getGetApiV1ServersServeridStacksStacknameComposeQueryKey = (
 
 export const getGetApiV1ServersServeridStacksStacknameComposeQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -110,11 +110,11 @@ export const getGetApiV1ServersServeridStacksStacknameComposeQueryOptions = <
 export type GetApiV1ServersServeridStacksStacknameComposeQueryResult = NonNullable<
   Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>
 >;
-export type GetApiV1ServersServeridStacksStacknameComposeQueryError = ErrorResponse | void;
+export type GetApiV1ServersServeridStacksStacknameComposeQueryError = ResponseEmpty | void;
 
 export function useGetApiV1ServersServeridStacksStacknameCompose<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -140,7 +140,7 @@ export function useGetApiV1ServersServeridStacksStacknameCompose<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameCompose<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -166,7 +166,7 @@ export function useGetApiV1ServersServeridStacksStacknameCompose<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1ServersServeridStacksStacknameCompose<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -188,7 +188,7 @@ export function useGetApiV1ServersServeridStacksStacknameCompose<
 
 export function useGetApiV1ServersServeridStacksStacknameCompose<
   TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameCompose>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   serverid: number,
   stackname: string,
@@ -233,8 +233,8 @@ export const patchApiV1ServersServeridStacksStacknameCompose = async (
   stackname: string,
   updateComposeRequest: UpdateComposeRequest,
   options?: RequestInit
-): Promise<UpdateComposeResponse> => {
-  return apiClient<UpdateComposeResponse>(
+): Promise<ResponseUpdateComposeResponse> => {
+  return apiClient<ResponseUpdateComposeResponse>(
     getPatchApiV1ServersServeridStacksStacknameComposeUrl(serverid, stackname),
     {
       ...options,
@@ -246,7 +246,7 @@ export const patchApiV1ServersServeridStacksStacknameCompose = async (
 };
 
 export const getPatchApiV1ServersServeridStacksStacknameComposeMutationOptions = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -290,13 +290,13 @@ export type PatchApiV1ServersServeridStacksStacknameComposeMutationResult = NonN
   Awaited<ReturnType<typeof patchApiV1ServersServeridStacksStacknameCompose>>
 >;
 export type PatchApiV1ServersServeridStacksStacknameComposeMutationBody = UpdateComposeRequest;
-export type PatchApiV1ServersServeridStacksStacknameComposeMutationError = ErrorResponse | void;
+export type PatchApiV1ServersServeridStacksStacknameComposeMutationError = ResponseEmpty | void;
 
 /**
  * @summary Update compose configuration
  */
 export const usePatchApiV1ServersServeridStacksStacknameCompose = <
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(
   options?: {
