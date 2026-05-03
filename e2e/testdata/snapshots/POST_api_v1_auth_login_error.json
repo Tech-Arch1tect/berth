@@ -6,8 +6,11 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "error": "invalid_credentials",
-    "message": "Invalid username or password",
+    "data": {},
+    "error": {
+      "code": "invalid_credentials",
+      "message": "Invalid username or password"
+    },
     "success": false
   }
 }

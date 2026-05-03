@@ -6,6 +6,8 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/session"
+	usermodel "berth/internal/domain/user"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/pquerna/otp/totp"
@@ -33,7 +35,7 @@ func TestAPILogin(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		var loginResp auth.AuthLoginResponse
+		var loginResp response.Response[auth.AuthLoginData]
 		require.NoError(t, resp.GetJSON(&loginResp))
 
 		assert.True(t, loginResp.Success)
@@ -62,10 +64,10 @@ func TestAPILogin(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
-		assert.Equal(t, "invalid_credentials", errResp.Error)
+		assert.Equal(t, "invalid_credentials", errResp.Error.Code)
 	})
 
 	t.Run("nonexistent user returns error", func(t *testing.T) {
@@ -77,10 +79,10 @@ func TestAPILogin(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
-		assert.Equal(t, "invalid_credentials", errResp.Error)
+		assert.Equal(t, "invalid_credentials", errResp.Error.Code)
 	})
 }
 
@@ -104,7 +106,7 @@ func TestAPIRefresh(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
@@ -113,7 +115,7 @@ func TestAPIRefresh(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, refreshResp.StatusCode)
 
-		var refresh auth.AuthRefreshResponse
+		var refresh response.Response[auth.AuthRefreshData]
 		require.NoError(t, refreshResp.GetJSON(&refresh))
 
 		assert.True(t, refresh.Success)
@@ -131,10 +133,10 @@ func TestAPIRefresh(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
 		assert.False(t, errResp.Success)
-		assert.Equal(t, "invalid_token", errResp.Error)
+		assert.Equal(t, "invalid_token", errResp.Error.Code)
 	})
 }
 
@@ -158,7 +160,7 @@ func TestAPILogout(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		logoutResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -174,7 +176,7 @@ func TestAPILogout(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, logoutResp.StatusCode)
 
-		var logout auth.AuthLogoutResponse
+		var logout response.Response[auth.AuthLogoutData]
 		require.NoError(t, logoutResp.GetJSON(&logout))
 		assert.True(t, logout.Success)
 		assert.Contains(t, logout.Data.Message, "Logout successful")
@@ -207,7 +209,7 @@ func TestAPIProfile(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -220,7 +222,7 @@ func TestAPIProfile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile auth.GetProfileResponse
+		var profile response.Response[usermodel.UserInfo]
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 		assert.Equal(t, user.Email, profile.Data.Email)
@@ -257,7 +259,7 @@ func TestAPITOTPStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		statusResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -270,7 +272,7 @@ func TestAPITOTPStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.True(t, status.Success)
 		assert.False(t, status.Data.Enabled)
@@ -297,7 +299,7 @@ func TestAPISessions(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -313,7 +315,7 @@ func TestAPISessions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, sessionsResp.StatusCode)
 
-		var sessions session.GetSessionsResponse
+		var sessions response.Response[session.GetSessionsData]
 		require.NoError(t, sessionsResp.GetJSON(&sessions))
 		assert.True(t, sessions.Success)
 		assert.GreaterOrEqual(t, len(sessions.Data.Sessions), 1)
@@ -342,7 +344,7 @@ func TestAPISessions(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login1 auth.AuthLoginResponse
+		var login1 response.Response[auth.AuthLoginData]
 		require.NoError(t, login1Resp.GetJSON(&login1))
 
 		login2Resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
@@ -350,7 +352,7 @@ func TestAPISessions(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login2 auth.AuthLoginResponse
+		var login2 response.Response[auth.AuthLoginData]
 		require.NoError(t, login2Resp.GetJSON(&login2))
 
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -450,7 +452,7 @@ func TestAPITOTPVerify(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var totpChallenge auth.AuthTOTPRequiredResponse
+		var totpChallenge response.Response[auth.AuthTOTPRequiredData]
 		require.NoError(t, loginResp.GetJSON(&totpChallenge))
 		require.True(t, totpChallenge.Data.TOTPRequired, "login must signal TOTP is required")
 		require.NotEmpty(t, totpChallenge.Data.TemporaryToken, "login must issue a temporary token")
@@ -470,7 +472,7 @@ func TestAPITOTPVerify(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, verifyResp.StatusCode)
 
-		var verify auth.AuthLoginResponse
+		var verify response.Response[auth.AuthLoginData]
 		require.NoError(t, verifyResp.GetJSON(&verify))
 		assert.True(t, verify.Success)
 		assert.NotEmpty(t, verify.Data.AccessToken)

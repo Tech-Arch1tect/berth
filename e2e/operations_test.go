@@ -32,7 +32,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -186,7 +186,7 @@ func TestAdminOperationLogsEndpoints(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -247,7 +247,7 @@ func TestOperationLogsDetailEndpoints(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

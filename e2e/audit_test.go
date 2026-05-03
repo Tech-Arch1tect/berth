@@ -30,7 +30,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -135,7 +135,7 @@ func TestSecurityAuditStatsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -179,7 +179,7 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -250,7 +250,7 @@ func TestMigrationExportJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -322,7 +322,7 @@ func TestMigrationImportJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -375,7 +375,7 @@ func TestAdminOperationLogDetailJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -460,7 +460,7 @@ func TestSecurityAuditEndpointsNonAdmin(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 

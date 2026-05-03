@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"berth/internal/domain/auth"
+	usermodel "berth/internal/domain/user"
+	"berth/internal/pkg/response"
 	"net/http"
 	"testing"
 
@@ -29,7 +31,7 @@ func TestAPISessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile auth.GetProfileResponse
+		var profile response.Response[usermodel.UserInfo]
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 		assert.Equal(t, user.Email, profile.Data.Email)
@@ -50,7 +52,7 @@ func TestAPISessionAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.False(t, status.Data.Enabled)
 	})
@@ -126,7 +128,7 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		profileResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -139,7 +141,7 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile auth.GetProfileResponse
+		var profile response.Response[usermodel.UserInfo]
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 	})
@@ -152,7 +154,7 @@ func TestBothAuthMethodsWork(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, profileResp.StatusCode)
 
-		var profile auth.GetProfileResponse
+		var profile response.Response[usermodel.UserInfo]
 		require.NoError(t, profileResp.GetJSON(&profile))
 		assert.Equal(t, user.Username, profile.Data.Username)
 	})

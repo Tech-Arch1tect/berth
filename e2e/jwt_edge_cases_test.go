@@ -3,6 +3,7 @@ package e2e
 import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/session"
+	"berth/internal/pkg/response"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func apiLogin(t *testing.T, app *TestApp, username, email, password string) auth.AuthLoginResponse {
+func apiLogin(t *testing.T, app *TestApp, username, email, password string) response.Response[auth.AuthLoginData] {
 	t.Helper()
 	app.AuthHelper.CreateTestUser(t, &e2etesting.TestUser{
 		Username: username,
@@ -24,22 +25,22 @@ func apiLogin(t *testing.T, app *TestApp, username, email, password string) auth
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode)
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, resp.GetJSON(&login))
 	require.True(t, login.Success)
 	return login
 }
 
-func apiRefresh(t *testing.T, app *TestApp, refreshToken string) (auth.AuthRefreshResponse, int) {
+func apiRefresh(t *testing.T, app *TestApp, refreshToken string) (response.Response[auth.AuthRefreshData], int) {
 	t.Helper()
 	resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 		RefreshToken: refreshToken,
 	})
 	require.NoError(t, err)
 	if resp.StatusCode != 200 {
-		return auth.AuthRefreshResponse{}, resp.StatusCode
+		return response.Response[auth.AuthRefreshData]{}, resp.StatusCode
 	}
-	var refresh auth.AuthRefreshResponse
+	var refresh response.Response[auth.AuthRefreshData]
 	require.NoError(t, resp.GetJSON(&refresh))
 	return refresh, resp.StatusCode
 }
@@ -169,9 +170,9 @@ func TestJWTRefreshValidation(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error)
+		assert.Equal(t, "validation_error", errResp.Error.Code)
 	})
 
 	t.Run("garbage refresh token", func(t *testing.T) {
@@ -182,9 +183,9 @@ func TestJWTRefreshValidation(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "invalid_token", errResp.Error)
+		assert.Equal(t, "invalid_token", errResp.Error.Code)
 	})
 
 	t.Run("malformed request body", func(t *testing.T) {
@@ -219,9 +220,9 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error)
+		assert.Equal(t, "validation_error", errResp.Error.Code)
 	})
 
 	t.Run("double logout is safe", func(t *testing.T) {
@@ -248,7 +249,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 			Password: "password123",
 		})
 		require.NoError(t, err)
-		var login2 auth.AuthLoginResponse
+		var login2 response.Response[auth.AuthLoginData]
 		require.NoError(t, resp2.GetJSON(&login2))
 
 		sessResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -264,7 +265,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, sessResp.StatusCode)
 
-		var sessions session.GetSessionsResponse
+		var sessions response.Response[session.GetSessionsData]
 		require.NoError(t, sessResp.GetJSON(&sessions))
 		require.GreaterOrEqual(t, len(sessions.Data.Sessions), 2, "should have at least 2 sessions")
 
@@ -301,7 +302,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		var sessions2 session.GetSessionsResponse
+		var sessions2 response.Response[session.GetSessionsData]
 		require.NoError(t, sessResp2.GetJSON(&sessions2))
 		assert.Less(t, len(sessions2.Data.Sessions), len(sessions.Data.Sessions), "session count should decrease after revocation")
 	})
@@ -321,9 +322,9 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error)
+		assert.Equal(t, "validation_error", errResp.Error.Code)
 	})
 }
 
@@ -348,9 +349,9 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "invalid_token", errResp.Error)
+		assert.Equal(t, "invalid_token", errResp.Error.Code)
 	})
 
 	t.Run("revoke all others with empty refresh token returns 400", func(t *testing.T) {
@@ -380,14 +381,14 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 			Username: "jwtrevall3", Password: "password123",
 		})
 		require.NoError(t, err)
-		var login2 auth.AuthLoginResponse
+		var login2 response.Response[auth.AuthLoginData]
 		require.NoError(t, resp2.GetJSON(&login2))
 
 		resp3, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
 			Username: "jwtrevall3", Password: "password123",
 		})
 		require.NoError(t, err)
-		var login3 auth.AuthLoginResponse
+		var login3 response.Response[auth.AuthLoginData]
 		require.NoError(t, resp3.GetJSON(&login3))
 
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{

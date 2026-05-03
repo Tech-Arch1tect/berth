@@ -30,7 +30,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -176,7 +176,7 @@ func TestLogsEndpointsErrorCases(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, loginResp.StatusCode)
 
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
@@ -241,7 +241,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, adminLoginResp.StatusCode)
 
-	var adminLogin auth.AuthLoginResponse
+	var adminLogin response.Response[auth.AuthLoginData]
 	require.NoError(t, adminLoginResp.GetJSON(&adminLogin))
 	adminToken := adminLogin.Data.AccessToken
 
@@ -259,7 +259,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 200, regularLoginResp.StatusCode)
 
-	var regularLogin auth.AuthLoginResponse
+	var regularLogin response.Response[auth.AuthLoginData]
 	require.NoError(t, regularLoginResp.GetJSON(&regularLogin))
 	regularToken := regularLogin.Data.AccessToken
 

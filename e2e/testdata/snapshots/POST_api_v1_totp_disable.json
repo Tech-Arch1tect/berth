@@ -6,8 +6,11 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "error": "invalid_totp_code",
-    "message": "Invalid TOTP code",
+    "data": {},
+    "error": {
+      "code": "invalid_totp_code",
+      "message": "Invalid TOTP code"
+    },
     "success": false
   }
 }

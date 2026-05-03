@@ -6,8 +6,11 @@
     "Content-Type": "application/json"
   },
   "body": {
-    "error": "validation_error",
-    "message": "TOTP code is required",
+    "data": {},
+    "error": {
+      "code": "validation_error",
+      "message": "TOTP code is required"
+    },
     "success": false
   }
 }

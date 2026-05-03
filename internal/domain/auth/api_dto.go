@@ -19,11 +19,6 @@ type AuthLogoutRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
-type AuthLoginResponse struct {
-	Success bool          `json:"success"`
-	Data    AuthLoginData `json:"data"`
-}
-
 type AuthLoginData struct {
 	AccessToken      string        `json:"access_token"`
 	RefreshToken     string        `json:"refresh_token"`
@@ -33,20 +28,10 @@ type AuthLoginData struct {
 	User             user.UserInfo `json:"user"`
 }
 
-type AuthTOTPRequiredResponse struct {
-	Success bool                 `json:"success"`
-	Data    AuthTOTPRequiredData `json:"data"`
-}
-
 type AuthTOTPRequiredData struct {
 	Message        string `json:"message"`
 	TOTPRequired   bool   `json:"totp_required"`
 	TemporaryToken string `json:"temporary_token"`
-}
-
-type AuthRefreshResponse struct {
-	Success bool            `json:"success"`
-	Data    AuthRefreshData `json:"data"`
 }
 
 type AuthRefreshData struct {
@@ -57,23 +42,7 @@ type AuthRefreshData struct {
 	RefreshExpiresIn int    `json:"refresh_expires_in"`
 }
 
-type AuthLogoutResponse struct {
-	Success bool           `json:"success"`
-	Data    AuthLogoutData `json:"data"`
-}
-
 type AuthLogoutData struct {
 	Message       string   `json:"message"`
 	RevokedTokens []string `json:"revoked_tokens"`
-}
-
-type AuthErrorResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error"`
-	Message string `json:"message"`
-}
-
-type GetProfileResponse struct {
-	Success bool          `json:"success"`
-	Data    user.UserInfo `json:"data"`
 }

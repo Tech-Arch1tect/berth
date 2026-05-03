@@ -12,6 +12,7 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
+	"berth/internal/pkg/response"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -51,19 +52,11 @@ func (h *APIHandler) Login(c echo.Context) error {
 		h.logger.Warn("mobile login - invalid request format",
 			zap.String("remote_ip", c.RealIP()),
 			zap.Error(err))
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.Username == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "Username and password are required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "Username and password are required")
 	}
 
 	h.logger.Info("mobile login attempt",
@@ -88,11 +81,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 			"user not found",
 			nil,
 		)
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_credentials",
-			Message: "Invalid username or password",
-		})
+		return response.Err(c, http.StatusUnauthorized, "invalid_credentials", "Invalid username or password")
 	}
 
 	if err := h.authSvc.VerifyPassword(user.Password, req.Password); err != nil {
@@ -111,19 +100,11 @@ func (h *APIHandler) Login(c echo.Context) error {
 			"invalid password",
 			nil,
 		)
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_credentials",
-			Message: "Invalid username or password",
-		})
+		return response.Err(c, http.StatusUnauthorized, "invalid_credentials", "Invalid username or password")
 	}
 
 	if h.authSvc.IsEmailVerificationRequired() && !h.authSvc.IsEmailVerified(user.Email) {
-		return c.JSON(http.StatusForbidden, AuthErrorResponse{
-			Success: false,
-			Error:   "email_not_verified",
-			Message: "Please verify your email before signing in",
-		})
+		return response.Err(c, http.StatusForbidden, "email_not_verified", "Please verify your email before signing in")
 	}
 
 	if h.totpSvc.IsUserTOTPEnabled(user.ID) {
@@ -133,11 +114,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 				zap.Uint("user_id", user.ID),
 				zap.Error(err),
 			)
-			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-				Success: false,
-				Error:   "token_generation_failed",
-				Message: "Failed to generate authentication token",
-			})
+			return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate authentication token")
 		}
 
 		h.logger.Info("mobile login - TOTP required",
@@ -146,13 +123,10 @@ func (h *APIHandler) Login(c echo.Context) error {
 			zap.String("remote_ip", c.RealIP()),
 		)
 
-		return c.JSON(http.StatusOK, AuthTOTPRequiredResponse{
-			Success: true,
-			Data: AuthTOTPRequiredData{
-				Message:        "Two-factor authentication required",
-				TOTPRequired:   true,
-				TemporaryToken: temporaryToken,
-			},
+		return response.OK(c, AuthTOTPRequiredData{
+			Message:        "Two-factor authentication required",
+			TOTPRequired:   true,
+			TemporaryToken: temporaryToken,
 		})
 	}
 
@@ -162,11 +136,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 			zap.Uint("user_id", user.ID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "token_generation_failed",
-			Message: "Failed to generate authentication token",
-		})
+		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate authentication token")
 	}
 
 	sessionInfo := tokens.SessionInfo{
@@ -181,11 +151,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 			zap.Uint("user_id", user.ID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "token_generation_failed",
-			Message: "Failed to generate refresh token",
-		})
+		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate refresh token")
 	}
 
 	h.trackJWTSession(c, user.ID, accessToken, refreshTokenData)
@@ -217,70 +183,43 @@ func (h *APIHandler) Login(c echo.Context) error {
 
 	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
-	return c.JSON(http.StatusOK, AuthLoginResponse{
-		Success: true,
-		Data: AuthLoginData{
-			AccessToken:      accessToken,
-			RefreshToken:     refreshTokenData.Token,
-			TokenType:        "Bearer",
-			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
-			RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
-			User:             userInfo,
-		},
+	return response.OK(c, AuthLoginData{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshTokenData.Token,
+		TokenType:        "Bearer",
+		ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
+		RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
+		User:             userInfo,
 	})
 }
 
 func (h *APIHandler) RefreshToken(c echo.Context) error {
 	var req AuthRefreshRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "Refresh token is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
 	}
 
 	oldToken, validateErr := h.tokens.ValidateRefresh(req.RefreshToken)
 	if validateErr != nil {
 		switch validateErr {
 		case tokens.ErrRefreshExpired:
-			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-				Success: false,
-				Error:   "expired_token",
-				Message: "Refresh token has expired",
-			})
+			return response.Err(c, http.StatusUnauthorized, "expired_token", "Refresh token has expired")
 		case tokens.ErrRefreshNotFound, tokens.ErrRefreshInvalid:
-			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-				Success: false,
-				Error:   "invalid_token",
-				Message: "Invalid refresh token",
-			})
+			return response.Err(c, http.StatusUnauthorized, "invalid_token", "Invalid refresh token")
 		default:
 			h.logger.Error("failed to validate refresh token", zap.Error(validateErr))
-			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-				Success: false,
-				Error:   "token_refresh_failed",
-				Message: "Failed to refresh token",
-			})
+			return response.Err(c, http.StatusInternalServerError, "token_refresh_failed", "Failed to refresh token")
 		}
 	}
 
 	result, err := h.tokens.RotateRefresh(req.RefreshToken)
 	if err != nil {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "token_refresh_failed",
-			Message: "Failed to refresh token",
-		})
+		return response.Err(c, http.StatusInternalServerError, "token_refresh_failed", "Failed to refresh token")
 	}
 
 	if h.sessionSvc != nil {
@@ -309,52 +248,34 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		)
 	}
 
-	return c.JSON(http.StatusOK, AuthRefreshResponse{
-		Success: true,
-		Data: AuthRefreshData{
-			AccessToken:      result.AccessToken,
-			RefreshToken:     result.RefreshToken,
-			TokenType:        "Bearer",
-			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
-			RefreshExpiresIn: int(time.Until(result.ExpiresAt).Seconds()),
-		},
+	return response.OK(c, AuthRefreshData{
+		AccessToken:      result.AccessToken,
+		RefreshToken:     result.RefreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
+		RefreshExpiresIn: int(time.Until(result.ExpiresAt).Seconds()),
 	})
 }
 
 func (h *APIHandler) Profile(c echo.Context) error {
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var fullUser usermodel.User
 	if err := h.db.Preload("Roles").Where("id = ?", userModel.ID).First(&fullUser).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "database_error",
-			Message: "Failed to load user profile",
-		})
+		return response.Err(c, http.StatusInternalServerError, "database_error", "Failed to load user profile")
 	}
 
 	userInfo := usermodel.ToUserInfo(fullUser, h.totpSvc.IsUserTOTPEnabled(fullUser.ID))
 
-	return c.JSON(http.StatusOK, GetProfileResponse{
-		Success: true,
-		Data:    userInfo,
-	})
+	return response.OK(c, userInfo)
 }
 
 func (h *APIHandler) Logout(c echo.Context) error {
@@ -363,19 +284,11 @@ func (h *APIHandler) Logout(c echo.Context) error {
 		h.logger.Warn("logout - invalid request format",
 			zap.String("remote_ip", c.RealIP()),
 			zap.Error(err))
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "Refresh token is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
 	}
 
 	var revokedTokens []string
@@ -416,11 +329,7 @@ func (h *APIHandler) Logout(c echo.Context) error {
 
 	if len(revokedTokens) == 0 {
 		h.logger.Error("failed to revoke any tokens during logout")
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "logout_failed",
-			Message: "Failed to revoke tokens",
-		})
+		return response.Err(c, http.StatusInternalServerError, "logout_failed", "Failed to revoke tokens")
 	}
 
 	user := GetCurrentUser(c)
@@ -443,58 +352,35 @@ func (h *APIHandler) Logout(c echo.Context) error {
 		zap.Strings("revoked_tokens", revokedTokens),
 		zap.String("remote_ip", c.RealIP()))
 
-	return c.JSON(http.StatusOK, AuthLogoutResponse{
-		Success: true,
-		Data: AuthLogoutData{
-			Message:       "Logout successful. Tokens have been revoked.",
-			RevokedTokens: revokedTokens,
-		},
+	return response.OK(c, AuthLogoutData{
+		Message:       "Logout successful. Tokens have been revoked.",
+		RevokedTokens: revokedTokens,
 	})
 }
 
 func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	var req AuthTOTPVerifyRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.Code == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "TOTP code is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code is required")
 	}
 
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Missing or invalid authorization header",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Missing or invalid authorization header")
 	}
 
 	tokenString := authHeader[7:]
 	claims, err := h.tokens.ValidateAccess(tokenString)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or expired token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or expired token")
 	}
 
 	if claims.TokenType != "totp_pending" {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_token_type",
-			Message: "Invalid token for TOTP verification",
-		})
+		return response.Err(c, http.StatusUnauthorized, "invalid_token_type", "Invalid token for TOTP verification")
 	}
 
 	if err := h.totpSvc.VerifyUserCode(claims.UserID, req.Code); err != nil {
@@ -513,36 +399,20 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 		}
 		switch err {
 		case totp.ErrInvalidCode:
-			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-				Success: false,
-				Error:   "invalid_totp_code",
-				Message: "Invalid TOTP code",
-			})
+			return response.Err(c, http.StatusUnauthorized, "invalid_totp_code", "Invalid TOTP code")
 		case totp.ErrCodeAlreadyUsed:
-			return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-				Success: false,
-				Error:   "code_already_used",
-				Message: "TOTP code has already been used",
-			})
+			return response.Err(c, http.StatusUnauthorized, "code_already_used", "TOTP code has already been used")
 		}
 		h.logger.Error("TOTP verification failed",
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_verification_failed",
-			Message: "Failed to verify TOTP code",
-		})
+		return response.Err(c, http.StatusInternalServerError, "totp_verification_failed", "Failed to verify TOTP code")
 	}
 
 	var user usermodel.User
 	if err := h.db.First(&user, claims.UserID).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_not_found",
-			Message: "User not found",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_not_found", "User not found")
 	}
 
 	accessToken, err := h.tokens.IssueAccessToken(claims.UserID)
@@ -551,11 +421,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "token_generation_failed",
-			Message: "Failed to generate authentication token",
-		})
+		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate authentication token")
 	}
 
 	sessionInfo := tokens.SessionInfo{
@@ -570,11 +436,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 			zap.Uint("user_id", claims.UserID),
 			zap.Error(err),
 		)
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "token_generation_failed",
-			Message: "Failed to generate refresh token",
-		})
+		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate refresh token")
 	}
 
 	h.trackJWTSession(c, claims.UserID, accessToken, refreshTokenData)
@@ -605,53 +467,34 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, AuthLoginResponse{
-		Success: true,
-		Data: AuthLoginData{
-			AccessToken:      accessToken,
-			RefreshToken:     refreshTokenData.Token,
-			TokenType:        "Bearer",
-			ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
-			RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
-			User:             usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID)),
-		},
+	return response.OK(c, AuthLoginData{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshTokenData.Token,
+		TokenType:        "Bearer",
+		ExpiresIn:        h.tokens.GetAccessExpirySeconds(),
+		RefreshExpiresIn: int(time.Until(refreshTokenData.ExpiresAt).Seconds()),
+		User:             usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID)),
 	})
 }
 
 func (h *APIHandler) GetTOTPSetup(c echo.Context) error {
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	if h.totpSvc.IsUserTOTPEnabled(userModel.ID) {
-		return c.JSON(http.StatusConflict, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_already_enabled",
-			Message: "TOTP is already enabled for your account",
-		})
+		return response.Err(c, http.StatusConflict, "totp_already_enabled", "TOTP is already enabled for your account")
 	}
 
 	existing, err := h.totpSvc.GetSecret(userModel.ID)
 	if err != nil && err != totp.ErrSecretNotFound {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_setup_failed",
-			Message: "Failed to retrieve TOTP information",
-		})
+		return response.Err(c, http.StatusInternalServerError, "totp_setup_failed", "Failed to retrieve TOTP information")
 	}
 
 	var secret *totp.TOTPSecret
@@ -660,81 +503,46 @@ func (h *APIHandler) GetTOTPSetup(c echo.Context) error {
 	} else {
 		secret, err = h.totpSvc.GenerateSecret(userModel.ID, userModel.Email)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-				Success: false,
-				Error:   "totp_setup_failed",
-				Message: "Failed to generate TOTP secret",
-			})
+			return response.Err(c, http.StatusInternalServerError, "totp_setup_failed", "Failed to generate TOTP secret")
 		}
 	}
 
 	qrCodeURI, err := h.totpSvc.GenerateProvisioningURI(secret, userModel.Email)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_setup_failed",
-			Message: "Failed to generate QR code",
-		})
+		return response.Err(c, http.StatusInternalServerError, "totp_setup_failed", "Failed to generate QR code")
 	}
 
-	return c.JSON(http.StatusOK, TOTPSetupResponse{
-		Success: true,
-		Data: TOTPSetupData{
-			QRCodeURI: qrCodeURI,
-			Secret:    secret.Secret,
-		},
+	return response.OK(c, TOTPSetupData{
+		QRCodeURI: qrCodeURI,
+		Secret:    secret.Secret,
 	})
 }
 
 func (h *APIHandler) EnableTOTP(c echo.Context) error {
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var req TOTPEnableRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.Code == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "TOTP code is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code is required")
 	}
 
 	if err := h.totpSvc.EnableTOTP(userModel.ID, req.Code); err != nil {
 		if err == totp.ErrInvalidCode {
-			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-				Success: false,
-				Error:   "invalid_totp_code",
-				Message: "Invalid TOTP code. Please try again.",
-			})
+			return response.Err(c, http.StatusBadRequest, "invalid_totp_code", "Invalid TOTP code. Please try again.")
 		}
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_enable_failed",
-			Message: "Failed to enable TOTP",
-		})
+		return response.Err(c, http.StatusInternalServerError, "totp_enable_failed", "Failed to enable TOTP")
 	}
 
 	_ = h.auditSvc.LogAuthEvent(
@@ -752,72 +560,41 @@ func (h *APIHandler) EnableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, true)
 	}
 
-	return c.JSON(http.StatusOK, TOTPMessageResponse{
-		Success: true,
-		Data: TOTPMessageData{
-			Message: "Two-factor authentication has been enabled successfully",
-		},
+	return response.OK(c, TOTPMessageData{
+		Message: "Two-factor authentication has been enabled successfully",
 	})
 }
 
 func (h *APIHandler) DisableTOTP(c echo.Context) error {
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var req TOTPDisableRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.Code == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "TOTP code and password are required to disable 2FA",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code and password are required to disable 2FA")
 	}
 
 	if err := h.authSvc.VerifyPassword(userModel.Password, req.Password); err != nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_password",
-			Message: "Invalid password",
-		})
+		return response.Err(c, http.StatusUnauthorized, "invalid_password", "Invalid password")
 	}
 
 	if err := h.totpSvc.VerifyUserCode(userModel.ID, req.Code); err != nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_totp_code",
-			Message: "Invalid TOTP code",
-		})
+		return response.Err(c, http.StatusUnauthorized, "invalid_totp_code", "Invalid TOTP code")
 	}
 
 	if err := h.totpSvc.DisableTOTP(userModel.ID); err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "totp_disable_failed",
-			Message: "Failed to disable TOTP",
-		})
+		return response.Err(c, http.StatusInternalServerError, "totp_disable_failed", "Failed to disable TOTP")
 	}
 
 	_ = h.auditSvc.LogAuthEvent(
@@ -835,104 +612,60 @@ func (h *APIHandler) DisableTOTP(c echo.Context) error {
 		session.SetTOTPEnabled(c, false)
 	}
 
-	return c.JSON(http.StatusOK, TOTPMessageResponse{
-		Success: true,
-		Data: TOTPMessageData{
-			Message: "Two-factor authentication has been disabled",
-		},
+	return response.OK(c, TOTPMessageData{
+		Message: "Two-factor authentication has been disabled",
 	})
 }
 
 func (h *APIHandler) GetTOTPStatus(c echo.Context) error {
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	enabled := h.totpSvc.IsUserTOTPEnabled(userModel.ID)
 
-	return c.JSON(http.StatusOK, TOTPStatusResponse{
-		Success: true,
-		Data: TOTPStatusData{
-			Enabled: enabled,
-		},
-	})
+	return response.OK(c, TOTPStatusData{Enabled: enabled})
 }
 
 func (h *APIHandler) GetSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
-			Success: false,
-			Error:   "sessions_unavailable",
-			Message: "Session service not available",
-		})
+		return response.Err(c, http.StatusServiceUnavailable, "sessions_unavailable", "Session service not available")
 	}
 
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var req session.GetSessionsRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "Refresh token is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
 	}
 
 	refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_token",
-			Message: "Invalid refresh token",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_token", "Invalid refresh token")
 	}
 	currentToken := h.generateSessionTokenFromID(refreshToken.ID)
 
 	sessions, err := h.sessionSvc.GetUserSessions(userModel.ID, currentToken)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "sessions_fetch_failed",
-			Message: "Failed to retrieve sessions",
-		})
+		return response.Err(c, http.StatusInternalServerError, "sessions_fetch_failed", "Failed to retrieve sessions")
 	}
 
 	sessionItems := make([]session.SessionItem, len(sessions))
@@ -962,66 +695,37 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, session.GetSessionsResponse{
-		Success: true,
-		Data: session.GetSessionsData{
-			Sessions: sessionItems,
-		},
-	})
+	return response.OK(c, session.GetSessionsData{Sessions: sessionItems})
 }
 
 func (h *APIHandler) RevokeSession(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
-			Success: false,
-			Error:   "sessions_unavailable",
-			Message: "Session service not available",
-		})
+		return response.Err(c, http.StatusServiceUnavailable, "sessions_unavailable", "Session service not available")
 	}
 
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var req session.RevokeSessionRequest
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 	}
 
 	if req.SessionID == 0 {
-		return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-			Success: false,
-			Error:   "validation_error",
-			Message: "Session ID is required",
-		})
+		return response.Err(c, http.StatusBadRequest, "validation_error", "Session ID is required")
 	}
 
 	err := h.sessionSvc.RevokeSession(userModel.ID, req.SessionID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "session_revoke_failed",
-			Message: "Failed to revoke session",
-		})
+		return response.Err(c, http.StatusInternalServerError, "session_revoke_failed", "Failed to revoke session")
 	}
 
 	_ = h.auditSvc.LogAuthEvent(
@@ -1037,39 +741,24 @@ func (h *APIHandler) RevokeSession(c echo.Context) error {
 		},
 	)
 
-	return c.JSON(http.StatusOK, session.SessionMessageResponse{
-		Success: true,
-		Data: session.SessionMessageData{
-			Message: "Session revoked successfully",
-		},
+	return response.OK(c, session.SessionMessageData{
+		Message: "Session revoked successfully",
 	})
 }
 
 func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 	if h.sessionSvc == nil {
-		return c.JSON(http.StatusServiceUnavailable, AuthErrorResponse{
-			Success: false,
-			Error:   "sessions_unavailable",
-			Message: "Session service not available",
-		})
+		return response.Err(c, http.StatusServiceUnavailable, "sessions_unavailable", "Session service not available")
 	}
 
 	user := GetCurrentUser(c)
 	if user == nil {
-		return c.JSON(http.StatusUnauthorized, AuthErrorResponse{
-			Success: false,
-			Error:   "unauthorized",
-			Message: "Invalid or missing authentication token",
-		})
+		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
 	}
 
 	userModel, ok := user.(usermodel.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "user_data_error",
-			Message: "Failed to process user data",
-		})
+		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
 	var currentToken string
@@ -1077,59 +766,35 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 	if session.IsAuthenticated(c) {
 		manager := session.GetManager(c)
 		if manager == nil {
-			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-				Success: false,
-				Error:   "session_manager_unavailable",
-				Message: "Session manager not available",
-			})
+			return response.Err(c, http.StatusInternalServerError, "session_manager_unavailable", "Session manager not available")
 		}
 
 		currentToken = manager.Token(c.Request().Context())
 		if currentToken == "" {
-			return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-				Success: false,
-				Error:   "current_session_not_found",
-				Message: "Current session token not found",
-			})
+			return response.Err(c, http.StatusInternalServerError, "current_session_not_found", "Current session token not found")
 		}
 	} else {
 
 		var req session.RevokeAllOtherSessionsRequest
 
 		if err := c.Bind(&req); err != nil {
-			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-				Success: false,
-				Error:   "invalid_request",
-				Message: "Invalid request format",
-			})
+			return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
 		}
 
 		if req.RefreshToken == "" {
-			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-				Success: false,
-				Error:   "validation_error",
-				Message: "Refresh token is required",
-			})
+			return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
 		}
 
 		refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, AuthErrorResponse{
-				Success: false,
-				Error:   "invalid_token",
-				Message: "Invalid refresh token",
-			})
+			return response.Err(c, http.StatusBadRequest, "invalid_token", "Invalid refresh token")
 		}
 		currentToken = h.generateSessionTokenFromID(refreshToken.ID)
 	}
 
 	err := h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, AuthErrorResponse{
-			Success: false,
-			Error:   "sessions_revoke_failed",
-			Message: "Failed to revoke other sessions",
-		})
+		return response.Err(c, http.StatusInternalServerError, "sessions_revoke_failed", "Failed to revoke other sessions")
 	}
 
 	_ = h.auditSvc.LogAuthEvent(
@@ -1143,11 +808,8 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 		nil,
 	)
 
-	return c.JSON(http.StatusOK, session.SessionMessageResponse{
-		Success: true,
-		Data: session.SessionMessageData{
-			Message: "All other sessions revoked successfully",
-		},
+	return response.OK(c, session.SessionMessageData{
+		Message: "All other sessions revoked successfully",
 	})
 }
 

@@ -9,6 +9,7 @@ import (
 
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/auth"
+	"berth/internal/pkg/response"
 
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func jwtLogin(t *testing.T, app *TestApp, username, email, password string, admi
 	})
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode)
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, resp.GetJSON(&login))
 	return login.Data.AccessToken
 }
@@ -394,7 +395,7 @@ func TestSnapshotAPIAuth(t *testing.T) {
 		Username: user.Username, Password: user.Password,
 	})
 	require.NoError(t, err)
-	var login auth.AuthLoginResponse
+	var login response.Response[auth.AuthLoginData]
 	require.NoError(t, loginResp.GetJSON(&login))
 	accessToken := login.Data.AccessToken
 	refreshToken := login.Data.RefreshToken

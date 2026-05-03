@@ -15,19 +15,6 @@ var envelopeExempt = map[string]bool{
 }
 
 var legacyEnvelopeAllowlist = map[string]bool{
-	"POST /api/v1/auth/login":                 true,
-	"POST /api/v1/auth/refresh":               true,
-	"POST /api/v1/auth/totp/verify":           true,
-	"POST /api/v1/auth/logout":                true,
-	"POST /api/v1/sessions":                   true,
-	"POST /api/v1/sessions/revoke":            true,
-	"POST /api/v1/sessions/revoke-all-others": true,
-	"GET /api/v1/profile":                     true,
-	"GET /api/v1/totp/setup":                  true,
-	"GET /api/v1/totp/status":                 true,
-	"POST /api/v1/totp/enable":                true,
-	"POST /api/v1/totp/disable":               true,
-
 	"POST /api/v1/admin/migration/import": true,
 }
 

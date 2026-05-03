@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"berth/internal/domain/auth"
+	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
 	"github.com/pquerna/otp/totp"
@@ -33,7 +34,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -46,7 +47,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, setupResp.StatusCode)
 
-		var setup auth.TOTPSetupResponse
+		var setup response.Response[auth.TOTPSetupData]
 		require.NoError(t, setupResp.GetJSON(&setup))
 		assert.NotEmpty(t, setup.Data.Secret, "secret should not be empty")
 		assert.NotEmpty(t, setup.Data.QRCodeURI, "QR code URI should not be empty")
@@ -79,7 +80,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -92,7 +93,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, setupResp.StatusCode)
 
-		var setup auth.TOTPSetupResponse
+		var setup response.Response[auth.TOTPSetupData]
 		require.NoError(t, setupResp.GetJSON(&setup))
 
 		validCode, err := totp.GenerateCode(setup.Data.Secret, time.Now())
@@ -122,9 +123,9 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 409, conflictResp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, conflictResp.GetJSON(&errResp))
-		assert.Equal(t, "totp_already_enabled", errResp.Error)
+		assert.Equal(t, "totp_already_enabled", errResp.Error.Code)
 	})
 
 	t.Run("login with TOTP enabled returns TOTP required response", func(t *testing.T) {
@@ -145,7 +146,7 @@ func TestTOTPSetupAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthTOTPRequiredResponse
+		var login response.Response[auth.AuthTOTPRequiredData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		assert.True(t, login.Data.TOTPRequired, "should require TOTP verification")
@@ -184,7 +185,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -199,9 +200,9 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error)
+		assert.Equal(t, "validation_error", errResp.Error.Code)
 	})
 
 	t.Run("POST /api/v1/totp/enable with invalid code returns 400", func(t *testing.T) {
@@ -218,7 +219,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		_, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -244,9 +245,9 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "invalid_totp_code", errResp.Error)
+		assert.Equal(t, "invalid_totp_code", errResp.Error.Code)
 	})
 
 	t.Run("POST /api/v1/totp/enable with valid code enables TOTP", func(t *testing.T) {
@@ -263,7 +264,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -276,7 +277,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, setupResp.StatusCode)
 
-		var setup auth.TOTPSetupResponse
+		var setup response.Response[auth.TOTPSetupData]
 		require.NoError(t, setupResp.GetJSON(&setup))
 		require.NotEmpty(t, setup.Data.Secret)
 
@@ -307,7 +308,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.True(t, status.Data.Enabled, "TOTP should be enabled after successful enable")
 	})
@@ -345,7 +346,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -377,7 +378,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -395,9 +396,9 @@ func TestTOTPDisableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 
-		var errResp auth.AuthErrorResponse
+		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "invalid_password", errResp.Error)
+		assert.Equal(t, "invalid_password", errResp.Error.Code)
 	})
 
 	t.Run("POST /api/v1/totp/disable with valid credentials disables TOTP", func(t *testing.T) {
@@ -414,7 +415,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 			Password: user.Password,
 		})
 		require.NoError(t, err)
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -427,7 +428,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, setupResp.StatusCode)
 
-		var setup auth.TOTPSetupResponse
+		var setup response.Response[auth.TOTPSetupData]
 		require.NoError(t, setupResp.GetJSON(&setup))
 		require.NotEmpty(t, setup.Data.Secret)
 
@@ -478,7 +479,7 @@ func TestTOTPDisableAPI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.False(t, status.Data.Enabled, "TOTP should be disabled after successful disable")
 	})
@@ -605,7 +606,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		statusResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -618,7 +619,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.False(t, status.Data.Enabled)
 	})
@@ -639,7 +640,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, loginResp.StatusCode)
 
-		var login auth.AuthLoginResponse
+		var login response.Response[auth.AuthLoginData]
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		setupResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -652,7 +653,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 200, setupResp.StatusCode)
 
-		var setup auth.TOTPSetupResponse
+		var setup response.Response[auth.TOTPSetupData]
 		require.NoError(t, setupResp.GetJSON(&setup))
 
 		validCode, err := totp.GenerateCode(setup.Data.Secret, time.Now())
@@ -682,7 +683,7 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 200, statusResp.StatusCode)
 
-		var status auth.TOTPStatusResponse
+		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.True(t, status.Data.Enabled, "TOTP status should show enabled after activation")
 	})

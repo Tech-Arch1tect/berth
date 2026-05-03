@@ -18,21 +18,6 @@ type TOTPSetupData struct {
 	Secret    string `json:"secret"`
 }
 
-type TOTPStatusResponse struct {
-	Success bool           `json:"success"`
-	Data    TOTPStatusData `json:"data"`
-}
-
-type TOTPSetupResponse struct {
-	Success bool          `json:"success"`
-	Data    TOTPSetupData `json:"data"`
-}
-
-type TOTPMessageResponse struct {
-	Success bool            `json:"success"`
-	Data    TOTPMessageData `json:"data"`
-}
-
 type TOTPMessageData struct {
 	Message string `json:"message"`
 }
