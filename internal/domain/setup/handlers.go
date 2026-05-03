@@ -6,9 +6,9 @@ import (
 
 	"berth/internal/domain/auth"
 	"berth/internal/domain/session"
-	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -18,6 +18,7 @@ type Handler struct {
 	setupSvc   *Service
 	authSvc    *auth.Service
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 	logger     *zap.Logger
 }
 
@@ -26,6 +27,7 @@ func NewHandler(setupSvc *Service, authSvc *auth.Service, inertiaSvc *inertia.Se
 		setupSvc:   setupSvc,
 		authSvc:    authSvc,
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 		logger:     logger,
 	}
 }
@@ -34,11 +36,11 @@ func (h *Handler) ShowSetup(c echo.Context) error {
 	adminExists, err := h.setupSvc.AdminExists()
 	if err != nil {
 		h.logger.Error("failed to check admin existence", zap.Error(err))
-		return response.SendInternalError(c, "Failed to check setup status")
+		return h.errPage.Render(c, http.StatusInternalServerError, "Failed to check setup status")
 	}
 
 	if adminExists {
-		return response.SendNotFound(c, "Setup already completed")
+		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
 	return h.inertiaSvc.Render(c, "Setup/Admin", map[string]any{
@@ -55,7 +57,8 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	}
 
 	if adminExists {
-		return response.SendNotFound(c, "Setup already completed")
+		session.AddFlashError(c, "Setup already completed")
+		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
 	var req CreateInitialAdminForm
@@ -89,7 +92,8 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 	user, err := h.setupSvc.CreateAdmin(req.Username, req.Email, hashedPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return response.SendError(c, http.StatusConflict, "Setup already completed")
+			session.AddFlashError(c, "Setup already completed")
+			return c.Redirect(http.StatusFound, "/auth/login")
 		}
 		h.logger.Error("failed to create admin user", zap.Error(err))
 		session.AddFlashError(c, "Failed to create admin user")
