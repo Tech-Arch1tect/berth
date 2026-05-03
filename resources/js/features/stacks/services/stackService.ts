@@ -152,7 +152,8 @@ export class StackService {
 
   static async getComposeConfig(serverid: number, stackname: string): Promise<RawComposeConfig> {
     try {
-      return await getApiV1ServersServeridStacksStacknameCompose(serverid, stackname);
+      const response = await getApiV1ServersServeridStacksStacknameCompose(serverid, stackname);
+      return response.data;
     } catch (error) {
       if (isApiError<{ error?: string }>(error)) {
         if (error.status === 403) {
@@ -173,7 +174,12 @@ export class StackService {
     request: UpdateComposeRequest
   ): Promise<UpdateComposeResponse> {
     try {
-      return await patchApiV1ServersServeridStacksStacknameCompose(serverid, stackname, request);
+      const response = await patchApiV1ServersServeridStacksStacknameCompose(
+        serverid,
+        stackname,
+        request
+      );
+      return response.data;
     } catch (error) {
       if (isApiError<{ error?: string }>(error)) {
         if (error.status === 403) {

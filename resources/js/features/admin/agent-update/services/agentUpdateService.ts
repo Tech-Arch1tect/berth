@@ -21,7 +21,8 @@ export class AgentUpdateService {
   }
 
   static async getStackDetails(serverId: number, stackName: string): Promise<StackDetails> {
-    return await getApiV1ServersServeridStacksStackname(serverId, stackName);
+    const response = await getApiV1ServersServeridStacksStackname(serverId, stackName);
+    return response.data;
   }
 
   static async updateComposeImages(

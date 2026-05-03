@@ -15,15 +15,16 @@ export const useStackDetails = ({ serverid, stackname }: UseStackDetailsParams) 
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       select: (response) => {
-        if (response?.services) {
-          response.services.sort((a, b) => a.name.localeCompare(b.name));
-          response.services.forEach((service) => {
+        const details = response.data;
+        if (details?.services) {
+          details.services.sort((a, b) => a.name.localeCompare(b.name));
+          details.services.forEach((service) => {
             if (service.containers) {
               service.containers.sort((a, b) => a.name.localeCompare(b.name));
             }
           });
         }
-        return response;
+        return details;
       },
     },
   });
