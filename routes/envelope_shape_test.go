@@ -14,9 +14,7 @@ var envelopeExempt = map[string]bool{
 	"POST /api/v1/admin/migration/export":                              true,
 }
 
-var legacyEnvelopeAllowlist = map[string]bool{
-	"POST /api/v1/admin/migration/import": true,
-}
+var legacyEnvelopeAllowlist = map[string]bool{}
 
 func TestAllJSONResponsesUseEnvelope(t *testing.T) {
 	apiDoc := apidocs.NewOpenAPI()

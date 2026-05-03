@@ -3,6 +3,7 @@ package dataexport
 import (
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/session"
+	"berth/internal/pkg/response"
 	"fmt"
 	"io"
 	"net/http"
@@ -191,11 +192,8 @@ func (h *Handler) Import(c echo.Context) error {
 		zap.Any("summary", result.Summary),
 	)
 
-	return c.JSON(http.StatusOK, ImportResponse{
-		Success: true,
-		Data: ImportResponseData{
-			EncryptionSecret: result.EncryptionSecret,
-			Summary:          result.Summary,
-		},
+	return response.OK(c, ImportData{
+		EncryptionSecret: result.EncryptionSecret,
+		Summary:          result.Summary,
 	})
 }

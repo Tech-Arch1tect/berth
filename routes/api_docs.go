@@ -1122,10 +1122,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.").
 		Body(dataexport.ExportRequest{}, "Export password (min 12 characters)").
 		ResponseBinary(http.StatusOK, "application/octet-stream", "Encrypted backup file").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or password too short").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Export failed").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or password too short").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Export failed").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
@@ -1136,11 +1136,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		BodyMultipart("Backup file and decryption password").
 		Field("password", true).
 		FileField("backup_file", true).
-		Response(http.StatusOK, dataexport.ImportResponse{}, "Import completed successfully").
-		Response(http.StatusBadRequest, ErrorResponse{}, "Invalid request or missing file/password").
-		Response(http.StatusUnauthorized, ErrorResponse{}, "Not authenticated").
-		Response(http.StatusForbidden, ErrorResponse{}, "Admin access required").
-		Response(http.StatusInternalServerError, ErrorResponse{}, "Import failed").
+		Response(http.StatusOK, response.Response[dataexport.ImportData]{}, "Import completed successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or missing file/password").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Import failed").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
