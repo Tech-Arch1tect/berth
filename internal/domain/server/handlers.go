@@ -1,11 +1,11 @@
 package server
 
 import (
-	"berth/internal/domain/security"
-	"berth/internal/pkg/echoparams"
-	"berth/internal/pkg/response"
+	"net/http"
 
+	"berth/internal/domain/security"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -15,6 +15,7 @@ type Handler struct {
 	db         *gorm.DB
 	service    *Service
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 	auditSvc   *security.AuditService
 }
 
@@ -23,6 +24,7 @@ func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, audi
 		db:         db,
 		service:    service,
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 		auditSvc:   auditSvc,
 	}
 }
@@ -30,24 +32,10 @@ func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, audi
 func (h *Handler) Index(c echo.Context) error {
 	servers, err := h.service.ListServers()
 	if err != nil {
-		return response.SendInternalError(c, "Failed to fetch servers")
+		return h.errPage.Render(c, http.StatusInternalServerError, "Failed to fetch servers")
 	}
 
 	return h.inertiaSvc.Render(c, "Admin/Servers", map[string]any{
 		"servers": servers,
 	})
-}
-
-func (h *Handler) Show(c echo.Context) error {
-	id, err := echoparams.ParseUintParam(c, "id")
-	if err != nil {
-		return err
-	}
-
-	server, err := h.service.GetServerResponse(uint(id))
-	if err != nil {
-		return response.SendNotFound(c, "Server not found")
-	}
-
-	return response.SendSuccess(c, server)
 }

@@ -4,7 +4,6 @@ import "github.com/labstack/echo/v4"
 
 func (h *Handler) RegisterAdminWebRoutes(g *echo.Group) {
 	g.GET("/servers", h.Index)
-	g.GET("/servers/:id", h.Show)
 }
 
 func (h *UserAPIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {

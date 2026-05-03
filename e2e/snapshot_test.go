@@ -213,7 +213,7 @@ func TestSnapshotAdminWeb(t *testing.T) {
 	app.CreateAdminTestUser(t, adminUser)
 	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, adminUser.Username, adminUser.Password)
 
-	mockAgent, testServer := app.CreateTestServerWithAgent(t, "snap-admin-server")
+	mockAgent, _ := app.CreateTestServerWithAgent(t, "snap-admin-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
 	var adminRoleID uint
@@ -232,7 +232,6 @@ func TestSnapshotAdminWeb(t *testing.T) {
 		{"GET", "/admin/migration", "/admin/migration"},
 		{"GET", "/admin/operation-logs", "/admin/operation-logs"},
 		{"GET", "/admin/security-audit-logs", "/admin/security-audit-logs"},
-		{"GET", fmt.Sprintf("/admin/servers/%d", testServer.ID), "/admin/servers/:id"},
 		{"GET", fmt.Sprintf("/admin/roles/%d/stack-permissions", adminRoleID), "/admin/roles/:id/stack-permissions"},
 		{"GET", fmt.Sprintf("/admin/users/%d/roles", adminUser.ID), "/admin/users/:id/roles"},
 	}

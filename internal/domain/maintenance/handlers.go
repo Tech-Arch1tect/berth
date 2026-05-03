@@ -1,12 +1,14 @@
 package maintenance
 
 import (
+	"net/http"
+
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
-	"berth/internal/pkg/response"
 
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
@@ -14,12 +16,14 @@ import (
 
 type Handler struct {
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 	service    *Service
 }
 
 func NewHandler(inertiaSvc *inertia.Service, service *Service) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 		service:    service,
 	}
 }
@@ -38,16 +42,16 @@ func (h *Handler) ShowMaintenance(c echo.Context) error {
 	ctx := c.Request().Context()
 	server, err := h.service.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 
 	hasPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermDockerMaintenanceRead)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to check permissions")
+		return h.errPage.Render(c, http.StatusInternalServerError, "Failed to check permissions")
 	}
 
 	if !hasPermission {
-		return response.SendForbidden(c, "Insufficient permissions")
+		return h.errPage.Render(c, http.StatusForbidden, "Insufficient permissions")
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Maintenance", gonertia.Props{

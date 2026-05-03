@@ -1,13 +1,15 @@
 package registry
 
 import (
+	"net/http"
+
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/echoparams"
-	"berth/internal/pkg/response"
 
 	"berth/internal/domain/session"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 )
@@ -17,6 +19,7 @@ type Handler struct {
 	rbacSvc    *rbac.Service
 	serverSvc  *server.Service
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 }
 
 func NewHandler(service *Service, rbacSvc *rbac.Service, serverSvc *server.Service, inertiaSvc *inertia.Service) *Handler {
@@ -25,6 +28,7 @@ func NewHandler(service *Service, rbacSvc *rbac.Service, serverSvc *server.Servi
 		rbacSvc:    rbacSvc,
 		serverSvc:  serverSvc,
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 	}
 }
 
@@ -39,21 +43,15 @@ func (h *Handler) ShowRegistries(c echo.Context) error {
 
 	srv, err := h.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
 	if err != nil {
-		return h.inertiaSvc.Render(c, "Errors/Generic", map[string]any{
-			"title":   "Error",
-			"message": "Failed to check permissions",
-		})
+		return h.errPage.Render(c, http.StatusInternalServerError, "Failed to check permissions")
 	}
 
 	if !hasPermission {
-		return h.inertiaSvc.Render(c, "Errors/Generic", map[string]any{
-			"title":   "Access Denied",
-			"message": "You don't have permission to manage registry credentials for this server",
-		})
+		return h.errPage.Render(c, http.StatusForbidden, "You don't have permission to manage registry credentials for this server")
 	}
 
 	credentials, err := h.service.GetCredentials(serverID)
