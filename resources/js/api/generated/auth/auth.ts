@@ -14,15 +14,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  AuthErrorResponse,
   AuthLoginRequest,
-  AuthLoginResponse,
   AuthLogoutRequest,
-  AuthLogoutResponse,
   AuthRefreshRequest,
-  AuthRefreshResponse,
-  AuthTOTPRequiredResponse,
   AuthTOTPVerifyRequest,
+  ResponseAuthLoginData,
+  ResponseAuthLogoutData,
+  ResponseAuthRefreshData,
+  ResponseEmpty,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -40,8 +39,8 @@ export const getPostApiV1AuthLoginUrl = () => {
 export const postApiV1AuthLogin = async (
   authLoginRequest: AuthLoginRequest,
   options?: RequestInit
-): Promise<AuthTOTPRequiredResponse> => {
-  return apiClient<AuthTOTPRequiredResponse>(getPostApiV1AuthLoginUrl(), {
+): Promise<ResponseAuthLoginData> => {
+  return apiClient<ResponseAuthLoginData>(getPostApiV1AuthLoginUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -50,7 +49,7 @@ export const postApiV1AuthLogin = async (
 };
 
 export const getPostApiV1AuthLoginMutationOptions = <
-  TError = AuthErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -89,12 +88,12 @@ export type PostApiV1AuthLoginMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AuthLogin>>
 >;
 export type PostApiV1AuthLoginMutationBody = AuthLoginRequest;
-export type PostApiV1AuthLoginMutationError = AuthErrorResponse | void;
+export type PostApiV1AuthLoginMutationError = ResponseEmpty | void;
 
 /**
  * @summary Login with username and password
  */
-export const usePostApiV1AuthLogin = <TError = AuthErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AuthLogin = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AuthLogin>>,
@@ -124,8 +123,8 @@ export const getPostApiV1AuthLogoutUrl = () => {
 export const postApiV1AuthLogout = async (
   authLogoutRequest: AuthLogoutRequest,
   options?: RequestInit
-): Promise<AuthLogoutResponse> => {
-  return apiClient<AuthLogoutResponse>(getPostApiV1AuthLogoutUrl(), {
+): Promise<ResponseAuthLogoutData> => {
+  return apiClient<ResponseAuthLogoutData>(getPostApiV1AuthLogoutUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -134,7 +133,7 @@ export const postApiV1AuthLogout = async (
 };
 
 export const getPostApiV1AuthLogoutMutationOptions = <
-  TError = AuthErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -173,12 +172,12 @@ export type PostApiV1AuthLogoutMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AuthLogout>>
 >;
 export type PostApiV1AuthLogoutMutationBody = AuthLogoutRequest;
-export type PostApiV1AuthLogoutMutationError = AuthErrorResponse | void;
+export type PostApiV1AuthLogoutMutationError = ResponseEmpty | void;
 
 /**
  * @summary Logout and revoke tokens
  */
-export const usePostApiV1AuthLogout = <TError = AuthErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AuthLogout = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AuthLogout>>,
@@ -208,8 +207,8 @@ export const getPostApiV1AuthRefreshUrl = () => {
 export const postApiV1AuthRefresh = async (
   authRefreshRequest: AuthRefreshRequest,
   options?: RequestInit
-): Promise<AuthRefreshResponse> => {
-  return apiClient<AuthRefreshResponse>(getPostApiV1AuthRefreshUrl(), {
+): Promise<ResponseAuthRefreshData> => {
+  return apiClient<ResponseAuthRefreshData>(getPostApiV1AuthRefreshUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -218,7 +217,7 @@ export const postApiV1AuthRefresh = async (
 };
 
 export const getPostApiV1AuthRefreshMutationOptions = <
-  TError = AuthErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -257,12 +256,12 @@ export type PostApiV1AuthRefreshMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AuthRefresh>>
 >;
 export type PostApiV1AuthRefreshMutationBody = AuthRefreshRequest;
-export type PostApiV1AuthRefreshMutationError = AuthErrorResponse | void;
+export type PostApiV1AuthRefreshMutationError = ResponseEmpty | void;
 
 /**
  * @summary Refresh access token
  */
-export const usePostApiV1AuthRefresh = <TError = AuthErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AuthRefresh = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AuthRefresh>>,
@@ -292,8 +291,8 @@ export const getPostApiV1AuthTotpVerifyUrl = () => {
 export const postApiV1AuthTotpVerify = async (
   authTOTPVerifyRequest: AuthTOTPVerifyRequest,
   options?: RequestInit
-): Promise<AuthLoginResponse> => {
-  return apiClient<AuthLoginResponse>(getPostApiV1AuthTotpVerifyUrl(), {
+): Promise<ResponseAuthLoginData> => {
+  return apiClient<ResponseAuthLoginData>(getPostApiV1AuthTotpVerifyUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -302,7 +301,7 @@ export const postApiV1AuthTotpVerify = async (
 };
 
 export const getPostApiV1AuthTotpVerifyMutationOptions = <
-  TError = AuthErrorResponse | void,
+  TError = ResponseEmpty | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -341,12 +340,12 @@ export type PostApiV1AuthTotpVerifyMutationResult = NonNullable<
   Awaited<ReturnType<typeof postApiV1AuthTotpVerify>>
 >;
 export type PostApiV1AuthTotpVerifyMutationBody = AuthTOTPVerifyRequest;
-export type PostApiV1AuthTotpVerifyMutationError = AuthErrorResponse | void;
+export type PostApiV1AuthTotpVerifyMutationError = ResponseEmpty | void;
 
 /**
  * @summary Verify TOTP code to complete login
  */
-export const usePostApiV1AuthTotpVerify = <TError = AuthErrorResponse | void, TContext = unknown>(
+export const usePostApiV1AuthTotpVerify = <TError = ResponseEmpty | void, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postApiV1AuthTotpVerify>>,

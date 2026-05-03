@@ -18,7 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { ErrorResponse, GetProfileResponse } from '../models';
+import type { ResponseEmpty, ResponseUserInfo } from '../models';
 
 import { apiClient } from '../../client';
 
@@ -32,8 +32,8 @@ export const getGetApiV1ProfileUrl = () => {
   return `/api/v1/profile`;
 };
 
-export const getApiV1Profile = async (options?: RequestInit): Promise<GetProfileResponse> => {
-  return apiClient<GetProfileResponse>(getGetApiV1ProfileUrl(), {
+export const getApiV1Profile = async (options?: RequestInit): Promise<ResponseUserInfo> => {
+  return apiClient<ResponseUserInfo>(getGetApiV1ProfileUrl(), {
     ...options,
     method: 'GET',
   });
@@ -45,7 +45,7 @@ export const getGetApiV1ProfileQueryKey = () => {
 
 export const getGetApiV1ProfileQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1Profile>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Profile>>, TError, TData>>;
   request?: SecondParameter<typeof apiClient>;
@@ -65,11 +65,11 @@ export const getGetApiV1ProfileQueryOptions = <
 };
 
 export type GetApiV1ProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Profile>>>;
-export type GetApiV1ProfileQueryError = ErrorResponse | void;
+export type GetApiV1ProfileQueryError = ResponseEmpty | void;
 
 export function useGetApiV1Profile<
   TData = Awaited<ReturnType<typeof getApiV1Profile>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Profile>>, TError, TData>> &
@@ -87,7 +87,7 @@ export function useGetApiV1Profile<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Profile<
   TData = Awaited<ReturnType<typeof getApiV1Profile>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Profile>>, TError, TData>> &
@@ -105,7 +105,7 @@ export function useGetApiV1Profile<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetApiV1Profile<
   TData = Awaited<ReturnType<typeof getApiV1Profile>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Profile>>, TError, TData>>;
@@ -119,7 +119,7 @@ export function useGetApiV1Profile<
 
 export function useGetApiV1Profile<
   TData = Awaited<ReturnType<typeof getApiV1Profile>>,
-  TError = ErrorResponse | void,
+  TError = ResponseEmpty | void,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Profile>>, TError, TData>>;

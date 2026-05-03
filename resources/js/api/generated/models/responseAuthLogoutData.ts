@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { AuthLogoutData } from './authLogoutData';
+import type { Error } from './error';
+import type { Meta } from './meta';
 
-export interface AuthLogoutResponse {
+export interface ResponseAuthLogoutData {
   data: AuthLogoutData;
+  error?: Error | null;
+  meta?: Meta | null;
   success: boolean;
 }
