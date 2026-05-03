@@ -29,6 +29,7 @@ import (
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/config"
+	"berth/internal/pkg/response"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/middleware/ratelimit"
 
@@ -310,10 +311,10 @@ func requireWebSocketAuth() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if !session.IsAuthenticated(c) {
-				return c.JSON(401, map[string]string{"error": "Not authenticated"})
+				return response.Unauthorized(c, "Not authenticated")
 			}
 			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-				return c.JSON(401, map[string]string{"error": "TOTP verification required"})
+				return response.Unauthorized(c, "TOTP verification required")
 			}
 			return next(c)
 		}

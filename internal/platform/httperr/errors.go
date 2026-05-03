@@ -50,6 +50,8 @@ func codeForStatus(status int) string {
 		return response.CodeUnprocessableEntity
 	case http.StatusTooManyRequests:
 		return response.CodeTooManyRequests
+	case http.StatusBadGateway:
+		return response.CodeBadGateway
 	case http.StatusServiceUnavailable:
 		return response.CodeServiceUnavailable
 	default:

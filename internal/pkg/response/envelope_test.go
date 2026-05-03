@@ -151,6 +151,7 @@ func TestConvenienceHelpers_setStatusAndCode(t *testing.T) {
 		{"UnprocessableEntity", UnprocessableEntity, http.StatusUnprocessableEntity, CodeUnprocessableEntity},
 		{"TooManyRequests", TooManyRequests, http.StatusTooManyRequests, CodeTooManyRequests},
 		{"Internal", Internal, http.StatusInternalServerError, CodeInternal},
+		{"BadGateway", BadGateway, http.StatusBadGateway, CodeBadGateway},
 		{"ServiceUnavailable", ServiceUnavailable, http.StatusServiceUnavailable, CodeServiceUnavailable},
 	}
 

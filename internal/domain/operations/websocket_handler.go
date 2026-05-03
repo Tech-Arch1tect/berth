@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/origin"
-	"berth/internal/pkg/response"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -40,10 +39,6 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 		return err
 	}
 	operationIDStr := c.Param("operationId")
-
-	if serverID == 0 || stackname == "" {
-		return response.SendBadRequest(c, "Server ID and stack name are required")
-	}
 
 	userID, err := session.GetCurrentUserID(c)
 	if err != nil {

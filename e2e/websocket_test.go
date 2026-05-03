@@ -19,14 +19,14 @@ func TestWebSocketStackStatusNoAuth(t *testing.T) {
 		TagTest(t, "GET", "/ws/ui/stack-status/:server_id", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/ws/ui/stack-status/1")
 		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Not authenticated")
 	})
 
 	t.Run("GET /ws/api/stack-status/:server_id requires authentication", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/ws/api/stack-status/1")
 		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Authorization header required")
 	})
 }
 
@@ -38,14 +38,14 @@ func TestWebSocketTerminalNoAuth(t *testing.T) {
 		TagTest(t, "GET", "/ws/ui/servers/:serverid/terminal", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/ws/ui/servers/1/terminal")
 		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Not authenticated")
 	})
 
 	t.Run("GET /ws/api/servers/:serverid/terminal requires authentication", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/terminal", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/ws/api/servers/1/terminal")
 		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Authorization header required")
 	})
 }
 
@@ -79,6 +79,51 @@ func TestWebSocketOperationsNoAuth(t *testing.T) {
 		resp, err := app.HTTPClient.Get("/ws/api/servers/1/stacks/test-stack/operations/op-123")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
+	})
+}
+
+func TestWebSocketEnvelopeShape(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	t.Run("invalid bearer token returns envelope with unauthorized code", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method:  "GET",
+			Path:    "/ws/api/stack-status/1",
+			Headers: map[string]string{"Authorization": "Bearer invalid-token"},
+		})
+		require.NoError(t, err)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Authentication failed")
+	})
+
+	t.Run("malformed authorization header returns envelope", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method:  "GET",
+			Path:    "/ws/api/stack-status/1",
+			Headers: map[string]string{"Authorization": "NotBearer token"},
+		})
+		require.NoError(t, err)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Invalid authorization header format")
+	})
+
+	t.Run("bare Bearer prefix returns envelope", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method:  "GET",
+			Path:    "/ws/api/stack-status/1",
+			Headers: map[string]string{"Authorization": "Bearer"},
+		})
+		require.NoError(t, err)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Invalid authorization header format")
+	})
+
+	t.Run("ui route without session returns envelope", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/ui/stack-status/:server_id", e2etesting.CategoryNoAuth, e2etesting.ValueMedium)
+		resp, err := app.HTTPClient.Get("/ws/ui/stack-status/1")
+		require.NoError(t, err)
+		assertJSONEnvelope(t, resp, 401, "unauthorized", "Not authenticated")
 	})
 }
 

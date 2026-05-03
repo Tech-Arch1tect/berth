@@ -97,18 +97,18 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 		auth := c.Request().Header.Get("Authorization")
 		token, ok := strings.CutPrefix(auth, "Bearer ")
 		if !ok || token == "" {
-			return 0, 0, response.SendUnauthorized(c, "Authorization header with Bearer token required")
+			return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
 		}
 
 		claims, err := h.jwtService.ValidateAccess(token)
 		if err != nil {
-			return 0, 0, response.SendUnauthorized(c, "Invalid token")
+			return 0, 0, response.Unauthorized(c, "Invalid token")
 		}
 		userID = int(claims.UserID)
 	} else {
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
-			return 0, 0, response.SendUnauthorized(c, "Not authenticated")
+			return 0, 0, response.Unauthorized(c, "Not authenticated")
 		}
 		userID = int(sessionUserID)
 	}
@@ -116,11 +116,11 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 	serverIDStr := c.Param("server_id")
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
-		return 0, 0, response.SendBadRequest(c, "Invalid server ID")
+		return 0, 0, response.BadRequest(c, "Invalid server ID")
 	}
 
 	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
-		return 0, 0, response.SendForbidden(c, "Insufficient permissions to access this server")
+		return 0, 0, response.Forbidden(c, "Insufficient permissions to access this server")
 	}
 
 	return userID, serverID, nil
@@ -138,12 +138,12 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 			auth := c.Request().Header.Get("Authorization")
 			token, ok := strings.CutPrefix(auth, "Bearer ")
 			if !ok || token == "" {
-				return 0, 0, response.SendUnauthorized(c, "Authorization header with Bearer token required")
+				return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
 			}
 
 			claims, err := h.jwtService.ValidateAccess(token)
 			if err != nil {
-				return 0, 0, response.SendUnauthorized(c, "Invalid token")
+				return 0, 0, response.Unauthorized(c, "Invalid token")
 			}
 			userID = int(claims.UserID)
 		}
@@ -151,7 +151,7 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
 
-			return 0, 0, response.SendUnauthorized(c, "Not authenticated")
+			return 0, 0, response.Unauthorized(c, "Not authenticated")
 		}
 		userID = int(sessionUserID)
 	}
@@ -160,12 +160,12 @@ func (h *Handler) authenticateTerminalRequest(c echo.Context, clientType string)
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
 
-		return 0, 0, response.SendBadRequest(c, "Invalid server ID")
+		return 0, 0, response.BadRequest(c, "Invalid server ID")
 	}
 
 	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
 
-		return 0, 0, response.SendForbidden(c, "Insufficient permissions to access this server")
+		return 0, 0, response.Forbidden(c, "Insufficient permissions to access this server")
 	}
 
 	return userID, serverID, nil
@@ -182,7 +182,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	server, err := h.serverService.GetServer(uint(serverID))
 	if err != nil {
 
-		return response.SendNotFound(c, "Server not found")
+		return response.NotFound(c, "Server not found")
 	}
 
 	agentWSURL := fmt.Sprintf("wss://%s:%d/ws/terminal", server.Host, server.Port)
@@ -201,7 +201,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	agentConn, _, err := dialer.Dial(agentWSURL, headers)
 	if err != nil {
 
-		return response.SendError(c, 502, "Failed to connect to agent terminal")
+		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
 
 	defer func() { _ = agentConn.Close() }()

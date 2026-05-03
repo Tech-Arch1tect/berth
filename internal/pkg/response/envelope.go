@@ -38,6 +38,7 @@ const (
 	CodeValidationFailed    = "validation_failed"
 	CodeTooManyRequests     = "too_many_requests"
 	CodeInternal            = "internal_error"
+	CodeBadGateway          = "bad_gateway"
 	CodeServiceUnavailable  = "service_unavailable"
 )
 
@@ -103,6 +104,10 @@ func TooManyRequests(c echo.Context, message string) error {
 
 func Internal(c echo.Context, message string) error {
 	return Err(c, http.StatusInternalServerError, CodeInternal, message)
+}
+
+func BadGateway(c echo.Context, message string) error {
+	return Err(c, http.StatusBadGateway, CodeBadGateway, message)
 }
 
 func ServiceUnavailable(c echo.Context, message string) error {
