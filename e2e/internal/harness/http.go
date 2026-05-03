@@ -202,8 +202,9 @@ func (c *HTTPClient) Request(opts *RequestOptions) (*Response, error) {
 func (c *HTTPClient) WithCookieJar() *HTTPClient {
 	jar, _ := cookiejar.New(nil)
 	newClient := &http.Client{
-		Timeout: c.Client.Timeout,
-		Jar:     jar,
+		Timeout:   c.Client.Timeout,
+		Transport: c.Client.Transport,
+		Jar:       jar,
 	}
 
 	return &HTTPClient{
@@ -225,8 +226,9 @@ func (c *HTTPClient) EnsureCookieJar() *HTTPClient {
 
 func (c *HTTPClient) WithoutRedirects() *HTTPClient {
 	newClient := &http.Client{
-		Timeout: c.Client.Timeout,
-		Jar:     c.Client.Jar,
+		Timeout:   c.Client.Timeout,
+		Transport: c.Client.Transport,
+		Jar:       c.Client.Jar,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},

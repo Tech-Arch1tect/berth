@@ -25,9 +25,11 @@ type CertificateManager struct {
 }
 
 func NewCertificateManager() *CertificateManager {
-	return &CertificateManager{
-		certDir: CertDir,
-	}
+	return NewCertificateManagerIn(CertDir)
+}
+
+func NewCertificateManagerIn(dir string) *CertificateManager {
+	return &CertificateManager{certDir: dir}
 }
 
 func (cm *CertificateManager) EnsureCertificates() (string, string, error) {
