@@ -70,7 +70,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 
 	var request PruneRequest
 	if err := c.Bind(&request); err != nil {
-		return response.SendBadRequest(c, "Invalid request body")
+		return response.BadRequest(c, "Invalid request body")
 	}
 
 	if request.Type == "" {
