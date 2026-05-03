@@ -70,3 +70,37 @@ func TestMaintenanceWebHandlerErrors(t *testing.T) {
 		assertInertiaErrPage(t, resp, http.StatusNotFound, "Server not found")
 	})
 }
+
+func TestStackWebHandlerErrors(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "stackerruser",
+		Email:    "stackerruser@example.com",
+		Password: "password123",
+	}
+	app.CreateAdminTestUser(t, user)
+	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
+
+	t.Run("GET /servers/:id/stacks renders 400 errpage on non-numeric id", func(t *testing.T) {
+		TagTest(t, "GET", "/servers/:id/stacks", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		resp, err := client.Get("/servers/not-a-number/stacks")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusBadRequest, "Invalid server ID")
+	})
+
+	t.Run("GET /servers/:id/stacks renders 404 errpage when server missing", func(t *testing.T) {
+		TagTest(t, "GET", "/servers/:id/stacks", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := client.Get("/servers/9999/stacks")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusNotFound, "Server not found")
+	})
+
+	t.Run("GET /servers/:serverid/stacks/:stackname renders 404 errpage when server missing", func(t *testing.T) {
+		TagTest(t, "GET", "/servers/:serverid/stacks/:stackname", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := client.Get("/servers/9999/stacks/some-stack")
+		require.NoError(t, err)
+		assertInertiaErrPage(t, resp, http.StatusNotFound, "Server not found")
+	})
+}

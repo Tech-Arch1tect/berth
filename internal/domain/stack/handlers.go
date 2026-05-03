@@ -3,14 +3,15 @@ package stack
 import (
 	"berth/internal/domain/server"
 	"context"
+	"net/http"
 	"strconv"
 
 	"berth/internal/domain/rbac"
 	"berth/internal/pkg/echoparams"
-	"berth/internal/pkg/response"
 
 	"berth/internal/domain/session"
 	"berth/internal/platform/inertia"
+	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
@@ -22,6 +23,7 @@ type serverLister interface {
 
 type Handler struct {
 	inertiaSvc *inertia.Service
+	errPage    *errpage.Renderer
 	service    *Service
 	rbacSvc    *rbac.Service
 	serverSvc  serverLister
@@ -30,6 +32,7 @@ type Handler struct {
 func NewHandler(inertiaSvc *inertia.Service, service *Service, rbacSvc *rbac.Service, serverSvc serverLister) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
+		errPage:    errpage.New(inertiaSvc),
 		service:    service,
 		rbacSvc:    rbacSvc,
 		serverSvc:  serverSvc,
@@ -59,18 +62,18 @@ func (h *Handler) ShowServerStacks(c echo.Context) error {
 	serverIDStr := c.Param("id")
 	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
 	if err != nil {
-		return response.SendBadRequest(c, "Invalid server ID")
+		return h.errPage.Render(c, http.StatusBadRequest, "Invalid server ID")
 	}
 
 	ctx := c.Request().Context()
 	_, err = h.service.serverSvc.GetActiveServerForUser(ctx, uint(serverID), userID)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/Stacks", gonertia.Props{
@@ -86,26 +89,22 @@ func (h *Handler) ShowStackDetails(c echo.Context) error {
 		return err
 	}
 
-	if serverID == 0 || stackname == "" {
-		return response.SendBadRequest(c, "Invalid server ID or stack name")
-	}
-
 	userID := session.GetUserIDAsUint(c)
 	ctx := c.Request().Context()
 
 	_, err = h.service.serverSvc.GetActiveServerForUser(ctx, uint(serverID), userID)
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 
 	serverInfo, err := h.service.GetServerInfo(uint(serverID))
 	if err != nil {
-		return response.SendNotFound(c, "Server not found")
+		return h.errPage.Render(c, http.StatusNotFound, "Server not found")
 	}
 
 	permissions, err := h.rbacSvc.GetUserStackPermissions(ctx, userID, uint(serverID), stackname)
 	if err != nil {
-		return response.SendInternalError(c, "Failed to get user permissions")
+		return h.errPage.Render(c, http.StatusInternalServerError, "Failed to get user permissions")
 	}
 
 	return h.inertiaSvc.Render(c, "Servers/StackDetails", gonertia.Props{
