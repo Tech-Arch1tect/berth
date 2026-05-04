@@ -4,6 +4,7 @@ import (
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"fmt"
 	"io"
 	"net/http"
@@ -71,28 +72,14 @@ func (h *Handler) Export(c echo.Context) error {
 	}
 
 	var request ExportRequest
-	if err := c.Bind(&request); err != nil {
-		h.logger.Warn("failed to parse export request",
+	if err := validation.BindAndValidate(c, &request); err != nil {
+		h.logger.Warn("export request rejected",
 			zap.Uint("user_id", userID),
 			zap.Error(err),
 		)
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
+		return err
 	}
-
 	password := request.Password
-	if password == "" {
-		h.logger.Warn("export attempted without password",
-			zap.Uint("user_id", userID),
-		)
-		return echo.NewHTTPError(http.StatusBadRequest, "Password is required")
-	}
-
-	if len(password) < 12 {
-		h.logger.Warn("export attempted with weak password",
-			zap.Uint("user_id", userID),
-		)
-		return echo.NewHTTPError(http.StatusBadRequest, "Password must be at least 12 characters long")
-	}
 
 	h.logger.Info("starting data export",
 		zap.Uint("user_id", userID),
