@@ -1,0 +1,121 @@
+package validation
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/labstack/echo/v4"
+)
+
+type sampleReq struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+func (s *sampleReq) Validate() error {
+	if s.Name == "" {
+		return errMissingName
+	}
+	if s.Count < 0 {
+		return errNegativeCount
+	}
+	return nil
+}
+
+var (
+	errMissingName   = &validationError{msg: "name is required"}
+	errNegativeCount = &validationError{msg: "count must be non-negative"}
+)
+
+type validationError struct{ msg string }
+
+func (v *validationError) Error() string { return v.msg }
+
+func newJSONCtx(t *testing.T, body string) (echo.Context, *httptest.ResponseRecorder) {
+	t.Helper()
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	return e.NewContext(req, rec), rec
+}
+
+func TestBindRequest_decodesJSONBody(t *testing.T) {
+	c, _ := newJSONCtx(t, `{"name":"alpha","count":3}`)
+
+	var req sampleReq
+	if err := BindRequest(c, &req); err != nil {
+		t.Fatalf("BindRequest: %v", err)
+	}
+	if req.Name != "alpha" || req.Count != 3 {
+		t.Errorf("decoded payload mismatch: %+v", req)
+	}
+}
+
+func TestBindRequest_returns400OnMalformedJSON(t *testing.T) {
+	c, _ := newJSONCtx(t, `{"name":`)
+
+	var req sampleReq
+	err := BindRequest(c, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	httpErr, ok := err.(*echo.HTTPError)
+	if !ok {
+		t.Fatalf("error type: got %T, want *echo.HTTPError", err)
+	}
+	if httpErr.Code != http.StatusBadRequest {
+		t.Errorf("status: got %d, want 400", httpErr.Code)
+	}
+}
+
+func TestBindAndValidate_decodesAndPassesValidation(t *testing.T) {
+	c, _ := newJSONCtx(t, `{"name":"alpha","count":3}`)
+
+	var req sampleReq
+	if err := BindAndValidate(c, &req); err != nil {
+		t.Fatalf("BindAndValidate: %v", err)
+	}
+	if req.Name != "alpha" || req.Count != 3 {
+		t.Errorf("decoded payload not propagated to caller: %+v", req)
+	}
+}
+
+func TestBindAndValidate_returns400WhenValidateFails(t *testing.T) {
+	c, _ := newJSONCtx(t, `{"name":"","count":3}`)
+
+	var req sampleReq
+	err := BindAndValidate(c, &req)
+	if err == nil {
+		t.Fatal("expected validation error, got nil")
+	}
+	httpErr, ok := err.(*echo.HTTPError)
+	if !ok {
+		t.Fatalf("error type: got %T, want *echo.HTTPError", err)
+	}
+	if httpErr.Code != http.StatusBadRequest {
+		t.Errorf("status: got %d, want 400", httpErr.Code)
+	}
+	if msg, _ := httpErr.Message.(string); msg != errMissingName.Error() {
+		t.Errorf("message: got %q, want %q", msg, errMissingName.Error())
+	}
+}
+
+func TestBindAndValidate_returns400OnMalformedJSON(t *testing.T) {
+	c, _ := newJSONCtx(t, `{`)
+
+	var req sampleReq
+	err := BindAndValidate(c, &req)
+	if err == nil {
+		t.Fatal("expected bind error, got nil")
+	}
+	httpErr, ok := err.(*echo.HTTPError)
+	if !ok {
+		t.Fatalf("error type: got %T, want *echo.HTTPError", err)
+	}
+	if httpErr.Code != http.StatusBadRequest {
+		t.Errorf("status: got %d, want 400", httpErr.Code)
+	}
+}

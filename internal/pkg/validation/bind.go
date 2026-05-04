@@ -10,8 +10,8 @@ type RequestValidator interface {
 	Validate() error
 }
 
-func BindAndValidate[T RequestValidator](c echo.Context, req T) error {
-	if err := c.Bind(&req); err != nil {
+func BindAndValidate(c echo.Context, req RequestValidator) error {
+	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
 
