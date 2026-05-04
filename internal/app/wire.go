@@ -328,7 +328,7 @@ func Build(
 		overrides.BeforeRoutes(g)
 	}
 
-	routes.RegisterRoutes(buildRouteParams(g))
+	registerRoutes(g)
 
 	if err := seeds.SeedRBACData(db); err != nil {
 		return nil, fmt.Errorf("seed rbac: %w", err)
@@ -400,51 +400,4 @@ func registerAuditCallbacks(db *gorm.DB, g *Graph, overrides Overrides) {
 		OperationAuditLogger: op,
 		SecurityAuditLogger:  sec,
 	})
-}
-
-func buildRouteParams(g *Graph) routes.RouteParams {
-	return routes.RouteParams{
-		Srv:                    g.Echo,
-		DashboardHandler:       g.DashboardHandler,
-		AuthHandler:            g.AuthHandler,
-		MobileAuthHandler:      g.AuthAPIHandler,
-		SessionHandler:         g.SessionHandler,
-		TOTPHandler:            g.AuthTOTPHandler,
-		VersionHandler:         g.VersionHandler,
-		MigrationHandler:       g.DataExportHandler,
-		OperationLogsHandler:   g.OperationLogsHandler,
-		RBACHandler:            g.RBACHandler,
-		RBACAPIHandler:         g.RBACAPIHandler,
-		RBACMiddleware:         g.RBACMid,
-		SetupHandler:           g.SetupHandler,
-		ServerHandler:          g.ServerHandler,
-		ServerAPIHandler:       g.ServerAPIHandler,
-		ServerUserAPIHandler:   g.ServerUserAPIHandler,
-		StackHandler:           g.StackHandler,
-		StackAPIHandler:        g.StackAPIHandler,
-		MaintenanceHandler:     g.MaintHandler,
-		MaintenanceAPIHandler:  g.MaintAPIHandler,
-		FilesAPIHandler:        g.FilesAPIHandler,
-		LogsHandler:            g.LogsHandler,
-		OperationsHandler:      g.OperationsHandler,
-		OperationsWSHandler:    g.OperationsWSHandler,
-		RegistryHandler:        g.RegistryHandler,
-		RegistryAPIHandler:     g.RegistryAPIHandler,
-		WSHandler:              g.WSHandler,
-		SecurityHandler:        g.SecurityHandler,
-		APIKeyHandler:          g.APIKeyHandler,
-		APIKeySvc:              g.APIKeySvc,
-		ImageUpdatesAPIHandler: g.ImageUpdatesAPIHandler,
-		VulnscanHandler:        g.VulnscanHandler,
-		SessionManager:         g.SessionMgr,
-		SessionService:         g.SessionSvc,
-		RateLimitStore:         g.RateLimit,
-		InertiaService:         g.Inertia,
-		JWTSvc:                 g.JWTSvc,
-		UserProvider:           g.AuthUserProv,
-		AuthSvc:                g.AuthSvc,
-		TOTPSvc:                g.TOTPSvc,
-		Logger:                 g.Logger,
-		Cfg:                    g.Cfg,
-	}
 }

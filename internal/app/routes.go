@@ -1,4 +1,4 @@
-package routes
+package app
 
 import (
 	"net/http"
@@ -6,6 +6,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
+	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/dashboard"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
@@ -18,70 +19,20 @@ import (
 	"berth/internal/domain/registry"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
-	"berth/internal/domain/setup"
+	"berth/internal/domain/session"
 	"berth/internal/domain/stack"
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
 	"berth/internal/domain/websocket"
-	"berth/internal/platform/httperr"
-
-	"berth/internal/domain/auth/tokens"
-	"berth/internal/domain/auth/totp"
-	"berth/internal/domain/session"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/response"
+	"berth/internal/platform/httperr"
 	"berth/internal/platform/inertia"
 	"berth/internal/platform/middleware/ratelimit"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"go.uber.org/zap"
 )
-
-type RouteParams struct {
-	Srv                    *echo.Echo
-	DashboardHandler       *dashboard.Handler
-	AuthHandler            *auth.Handler
-	MobileAuthHandler      *auth.APIHandler
-	SessionHandler         *session.Handler
-	TOTPHandler            *auth.TOTPHandler
-	VersionHandler         *version.Handler
-	MigrationHandler       *dataexport.Handler
-	OperationLogsHandler   *operationlogs.Handler
-	RBACHandler            *rbac.Handler
-	RBACAPIHandler         *rbac.APIHandler
-	RBACMiddleware         *rbac.Middleware
-	SetupHandler           *setup.Handler
-	ServerHandler          *server.Handler
-	ServerAPIHandler       *server.APIHandler
-	ServerUserAPIHandler   *server.UserAPIHandler
-	StackHandler           *stack.Handler
-	StackAPIHandler        *stack.APIHandler
-	MaintenanceHandler     *maintenance.Handler
-	MaintenanceAPIHandler  *maintenance.APIHandler
-	FilesAPIHandler        *files.APIHandler
-	LogsHandler            *logs.Handler
-	OperationsHandler      *operations.Handler
-	OperationsWSHandler    *operations.WebSocketHandler
-	RegistryHandler        *registry.Handler
-	RegistryAPIHandler     *registry.APIHandler
-	WSHandler              *websocket.Handler
-	SecurityHandler        *security.Handler
-	APIKeyHandler          *apikey.Handler
-	APIKeySvc              *apikey.Service
-	ImageUpdatesAPIHandler *imageupdates.APIHandler
-	VulnscanHandler        *vulnscan.Handler
-	SessionManager         *session.Manager
-	SessionService         *session.Service
-	RateLimitStore         *ratelimit.Store
-	InertiaService         *inertia.Service
-	JWTSvc                 *tokens.Service
-	UserProvider           auth.UserProvider
-	AuthSvc                *auth.Service
-	TOTPSvc                *totp.Service
-	Logger                 *zap.Logger
-	Cfg                    *config.Config
-}
 
 func newRateLimit(cfg *config.Config, rlc ratelimit.Config) echo.MiddlewareFunc {
 	if !cfg.RateLimit.Enabled {
@@ -90,12 +41,12 @@ func newRateLimit(cfg *config.Config, rlc ratelimit.Config) echo.MiddlewareFunc 
 	return ratelimit.New(rlc)
 }
 
-func RegisterRoutes(p RouteParams) {
-	if p.RBACMiddleware != nil && p.APIKeySvc != nil {
-		p.RBACMiddleware.SetAPIKeyService(p.APIKeySvc)
+func registerRoutes(g *Graph) {
+	if g.RBACMid != nil && g.APIKeySvc != nil {
+		g.RBACMid.SetAPIKeyService(g.APIKeySvc)
 	}
 
-	e := p.Srv
+	e := g.Echo
 	e.Use(middleware.Recover())
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XSSProtection:      "0",
@@ -104,41 +55,33 @@ func RegisterRoutes(p RouteParams) {
 		HSTSMaxAge:         31536000,
 		ReferrerPolicy:     "strict-origin-when-cross-origin",
 	}))
-	httperr.SetupErrorHandler(e, p.InertiaService)
+	httperr.SetupErrorHandler(e, g.Inertia)
 
-	// ============================================================================
-	// PUBLIC ROUTES
-	// ============================================================================
+	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
-	p.Srv.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
-
-	if p.SetupHandler != nil {
-		p.SetupHandler.RegisterPublicRoutes(p.Srv)
+	if g.SetupHandler != nil {
+		g.SetupHandler.RegisterPublicRoutes(e)
 	}
 
-	// ============================================================================
-	// WEB UI ROUTES - Session Auth Only
-	// ============================================================================
-
-	web := p.Srv.Group("")
-	web.Use(session.Middleware(p.SessionManager))
-	if p.SessionService != nil {
-		web.Use(session.TrackingMiddleware(p.SessionService))
+	web := e.Group("")
+	web.Use(session.Middleware(g.SessionMgr))
+	if g.SessionSvc != nil {
+		web.Use(session.TrackingMiddleware(g.SessionSvc))
 	}
 	web.Use(auth.RememberMeMiddleware(auth.RememberMeConfig{
-		AuthService:  p.AuthSvc,
-		UserProvider: p.UserProvider,
-		TOTPService:  p.TOTPSvc,
-		Logger:       p.Logger,
+		AuthService:  g.AuthSvc,
+		UserProvider: g.AuthUserProv,
+		TOTPService:  g.TOTPSvc,
+		Logger:       g.Logger,
 	}))
-	if p.Cfg.CSRF.Enabled {
-		web.Use(auth.CSRFMiddleware(&p.Cfg.CSRF))
-		web.Use(inertia.CSRFContext(p.Cfg.CSRF.ContextKey))
+	if g.Cfg.CSRF.Enabled {
+		web.Use(auth.CSRFMiddleware(&g.Cfg.CSRF))
+		web.Use(inertia.CSRFContext(g.Cfg.CSRF.ContextKey))
 	}
-	if p.InertiaService != nil {
-		web.Use(p.InertiaService.Middleware())
+	if g.Inertia != nil {
+		web.Use(g.Inertia.Middleware())
 		web.Use(inertia.SharedContext(
-			p.UserProvider.GetUser,
+			g.AuthUserProv.GetUser,
 			session.IsAuthenticated,
 			session.GetUserIDAsUint,
 			func(c echo.Context) any {
@@ -150,64 +93,58 @@ func RegisterRoutes(p RouteParams) {
 		))
 	}
 
-	registerAuthRoutes(web, p.Cfg, p.AuthHandler, p.TOTPHandler, p.RateLimitStore)
+	registerAuthRoutes(web, g.Cfg, g.AuthHandler, g.AuthTOTPHandler, g.RateLimit)
 	registerProtectedWebRoutes(web,
-		p.DashboardHandler, p.AuthHandler, p.SessionHandler, p.TOTPHandler,
-		p.StackHandler, p.MaintenanceHandler, p.RegistryHandler,
-		p.OperationLogsHandler, p.APIKeyHandler)
-	registerAdminWebRoutes(web, p.RBACMiddleware, p.InertiaService,
-		p.RBACHandler, p.OperationLogsHandler, p.ServerHandler,
-		p.MigrationHandler, p.SecurityHandler)
-	registerWebUIWebSocketRoutes(p.Srv, p.SessionManager, p.WSHandler, p.OperationsWSHandler)
+		g.DashboardHandler, g.AuthHandler, g.SessionHandler, g.AuthTOTPHandler,
+		g.StackHandler, g.MaintHandler, g.RegistryHandler,
+		g.OperationLogsHandler, g.APIKeyHandler)
+	registerAdminWebRoutes(web, g.RBACMid, g.Inertia,
+		g.RBACHandler, g.OperationLogsHandler, g.ServerHandler,
+		g.DataExportHandler, g.SecurityHandler)
+	registerWebUIWebSocketRoutes(e, g.SessionMgr, g.WSHandler, g.OperationsWSHandler)
 
-	// ============================================================================
-	// API ROUTES - Hybrid Auth (Session OR JWT OR API Key)
-	// ============================================================================
-
-	if p.MobileAuthHandler != nil && p.JWTSvc != nil {
-		api := p.Srv.Group("/api/v1")
-		api.Use(session.Middleware(p.SessionManager))
-		if p.SessionService != nil {
-			api.Use(session.TrackingMiddleware(p.SessionService))
-		}
-		if p.Cfg.CSRF.Enabled {
-			api.Use(auth.ConditionalCSRFMiddleware(p.Cfg))
-		}
-
-		authApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
-			Store:     p.RateLimitStore,
-			Name:      "api_auth",
-			Rate:      25,
-			Period:    time.Minute,
-			CountMode: ratelimit.CountNon2xx,
-			KeyFunc:   ratelimit.KeyByIP,
-		})
-
-		generalApiRateLimit := newRateLimit(p.Cfg, ratelimit.Config{
-			Store:     p.RateLimitStore,
-			Name:      "api_general",
-			Rate:      1000,
-			Period:    time.Minute * 10,
-			CountMode: ratelimit.CountAll,
-			KeyFunc:   ratelimit.KeyByIP,
-		})
-
-		registerAPIAuthRoutes(api, authApiRateLimit, p.MobileAuthHandler)
-		registerProtectedAPIRoutes(api, generalApiRateLimit, p.JWTSvc, p.APIKeySvc, p.UserProvider,
-			p.RBACMiddleware, p.MobileAuthHandler, p.ServerUserAPIHandler,
-			p.StackAPIHandler, p.FilesAPIHandler, p.LogsHandler, p.OperationsHandler,
-			p.OperationLogsHandler, p.MaintenanceAPIHandler, p.VulnscanHandler,
-			p.ImageUpdatesAPIHandler, p.APIKeyHandler, p.VersionHandler, p.RegistryAPIHandler)
-		registerAdminAPIRoutes(api, generalApiRateLimit, p.JWTSvc, p.APIKeySvc, p.UserProvider,
-			p.RBACMiddleware, p.RBACAPIHandler, p.OperationLogsHandler,
-			p.ServerAPIHandler, p.MigrationHandler, p.SecurityHandler)
-		registerAPIWebSocketRoutes(p.Srv, p.JWTSvc, p.APIKeySvc, p.UserProvider, p.WSHandler, p.OperationsWSHandler)
+	if g.AuthAPIHandler == nil || g.JWTSvc == nil {
+		return
 	}
-}
 
-// ============================================================================
-// WEB UI ROUTE HELPERS
-// ============================================================================
+	api := e.Group("/api/v1")
+	api.Use(session.Middleware(g.SessionMgr))
+	if g.SessionSvc != nil {
+		api.Use(session.TrackingMiddleware(g.SessionSvc))
+	}
+	if g.Cfg.CSRF.Enabled {
+		api.Use(auth.ConditionalCSRFMiddleware(g.Cfg))
+	}
+
+	authApiRateLimit := newRateLimit(g.Cfg, ratelimit.Config{
+		Store:     g.RateLimit,
+		Name:      "api_auth",
+		Rate:      25,
+		Period:    time.Minute,
+		CountMode: ratelimit.CountNon2xx,
+		KeyFunc:   ratelimit.KeyByIP,
+	})
+
+	generalApiRateLimit := newRateLimit(g.Cfg, ratelimit.Config{
+		Store:     g.RateLimit,
+		Name:      "api_general",
+		Rate:      1000,
+		Period:    time.Minute * 10,
+		CountMode: ratelimit.CountAll,
+		KeyFunc:   ratelimit.KeyByIP,
+	})
+
+	registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler)
+	registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+		g.RBACMid, g.AuthAPIHandler, g.ServerUserAPIHandler,
+		g.StackAPIHandler, g.FilesAPIHandler, g.LogsHandler, g.OperationsHandler,
+		g.OperationLogsHandler, g.MaintAPIHandler, g.VulnscanHandler,
+		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
+	registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+		g.RBACMid, g.RBACAPIHandler, g.OperationLogsHandler,
+		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
+	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
+}
 
 func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.Handler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
 	authGroup := web.Group("/auth")
@@ -334,10 +271,6 @@ func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manage
 		operationsWSHandler.RegisterWebSocketRoutes(wsUIGroup)
 	}
 }
-
-// ============================================================================
-// API ROUTE HELPERS
-// ============================================================================
 
 func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler) {
 	authApi := api.Group("/auth")

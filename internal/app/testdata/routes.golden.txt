@@ -1,10 +1,10 @@
 GET	/	internal/domain/dashboard.(*Handler).Dashboard-fm
-GET	/admin/agent-update	routes.registerAdminWebRoutes.func1
+GET	/admin/agent-update	internal/app.registerAdminWebRoutes.func1
 GET	/admin/migration	internal/domain/dataexport.(*Handler).Index-fm
 GET	/admin/operation-logs	internal/domain/operationlogs.(*Handler).ShowOperationLogs-fm
 GET	/admin/roles	internal/domain/rbac.(*Handler).ListRoles-fm
 GET	/admin/roles/:id/stack-permissions	internal/domain/rbac.(*Handler).RoleServerStackPermissions-fm
-GET	/admin/security-audit-logs	routes.registerAdminWebRoutes.func2
+GET	/admin/security-audit-logs	internal/app.registerAdminWebRoutes.func2
 GET	/admin/servers	internal/domain/server.(*Handler).Index-fm
 GET	/admin/users	internal/domain/rbac.(*Handler).ListUsers-fm
 GET	/admin/users/:id/roles	internal/domain/rbac.(*Handler).ShowUserRoles-fm
@@ -122,7 +122,7 @@ GET	/auth/totp/verify	internal/domain/auth.(*TOTPHandler).ShowVerify-fm
 POST	/auth/totp/verify	internal/domain/auth.(*TOTPHandler).VerifyTOTP-fm
 GET	/auth/verify-email	internal/domain/auth.(*Handler).ShowVerifyEmail-fm
 POST	/auth/verify-email	internal/domain/auth.(*Handler).VerifyEmail-fm
-GET	/build/*	routes.RegisterRoutes.WrapHandler.func5
+GET	/build/*	internal/app.registerRoutes.WrapHandler.func5
 GET	/operation-logs	internal/domain/operationlogs.(*Handler).ShowUserOperationLogs-fm
 GET	/profile	internal/domain/auth.(*Handler).Profile-fm
 GET	/servers/:id/stacks	internal/domain/stack.(*Handler).ShowServerStacks-fm
