@@ -6,14 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"berth/internal/domain/auth/tokens"
-	"berth/internal/domain/auth/totp"
-	"berth/internal/domain/security"
-	"berth/internal/domain/session"
 	"berth/internal/pkg/config"
-	"berth/internal/platform/inertia"
 
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -75,17 +69,3 @@ func generateHexToken(length int) (string, error) {
 	}
 	return hex.EncodeToString(b), nil
 }
-
-var Module = fx.Module("auth",
-	fx.Provide(NewService),
-	fx.Provide(NewUserProvider),
-	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, authSvc *Service, totpSvc *totp.Service, logger *zap.Logger, auditSvc *security.AuditService) *Handler {
-		return NewHandler(db, inertiaSvc, authSvc, totpSvc, logger, auditSvc)
-	}),
-	fx.Provide(func(db *gorm.DB, inertiaSvc *inertia.Service, totpSvc *totp.Service, authSvc *Service, logger *zap.Logger, auditSvc *security.AuditService) *TOTPHandler {
-		return NewTOTPHandler(db, inertiaSvc, totpSvc, authSvc, logger, auditSvc)
-	}),
-	fx.Provide(func(db *gorm.DB, authSvc *Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc *security.AuditService) *APIHandler {
-		return NewAPIHandler(db, authSvc, tokensSvc, totpSvc, sessionSvc, logger, auditSvc)
-	}),
-)

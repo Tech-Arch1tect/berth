@@ -8,7 +8,6 @@ import (
 	"berth/internal/pkg/config"
 
 	"github.com/pquerna/otp/totp"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -185,7 +184,3 @@ func (s *Service) VerifyUserCode(userID uint, code string) error {
 		return nil
 	})
 }
-
-var Module = fx.Module("totp",
-	fx.Provide(NewService),
-)

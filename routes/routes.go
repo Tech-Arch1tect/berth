@@ -35,13 +35,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 type RouteParams struct {
-	fx.In
-
 	Srv                    *echo.Echo
 	DashboardHandler       *dashboard.Handler
 	AuthHandler            *auth.Handler

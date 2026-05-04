@@ -8,7 +8,6 @@ import (
 	"berth/internal/pkg/config"
 
 	"github.com/alexedwards/scs/v2"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -69,9 +68,3 @@ func ProvideSessionService(db *gorm.DB, manager *Manager, t *tokens.Service, log
 	}
 	return &Service{db: db, sessionManager: manager, tokens: t, logger: logger}
 }
-
-var Module = fx.Module("session",
-	fx.Provide(ProvideSessionManager),
-	fx.Provide(ProvideSessionService),
-	fx.Provide(NewHandler),
-)

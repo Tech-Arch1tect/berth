@@ -2,9 +2,7 @@ package websocket
 
 import (
 	"berth/internal/domain/server"
-	"context"
 
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
@@ -78,19 +76,4 @@ func (sm *ServiceManager) Start() error {
 	)
 
 	return nil
-}
-
-func StartWebSocketServiceManager(lc fx.Lifecycle, sm *ServiceManager) {
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			go func() {
-				if err := sm.Start(); err != nil {
-					sm.logger.Error("WebSocket service manager startup failed",
-						zap.Error(err),
-					)
-				}
-			}()
-			return nil
-		},
-	})
 }

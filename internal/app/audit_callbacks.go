@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/security"
 
-	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
 
@@ -18,10 +17,9 @@ type SecurityLogAuditor interface {
 }
 
 type AuditCallbackParams struct {
-	fx.In
 	DB                   *gorm.DB
-	OperationAuditLogger OperationLogAuditor `optional:"true"`
-	SecurityAuditLogger  SecurityLogAuditor  `optional:"true"`
+	OperationAuditLogger OperationLogAuditor
+	SecurityAuditLogger  SecurityLogAuditor
 }
 
 func RegisterAuditCallbacks(p AuditCallbackParams) {

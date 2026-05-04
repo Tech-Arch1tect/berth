@@ -8,7 +8,6 @@ import (
 
 	"berth/internal/pkg/config"
 
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -104,7 +103,3 @@ func (s *Service) stopCleanupWorker() {
 	close(s.cleanupStop)
 	<-s.cleanupStopped
 }
-
-var Module = fx.Module("tokens",
-	fx.Provide(NewService),
-)
