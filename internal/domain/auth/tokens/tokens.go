@@ -26,7 +26,7 @@ type Service struct {
 	cleanupStopped chan struct{}
 }
 
-func NewService(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, logger *zap.Logger) (*Service, error) {
+func NewService(cfg *config.Config, db *gorm.DB, logger *zap.Logger) (*Service, error) {
 	s := &Service{
 		cfg:           cfg,
 		db:            db,
@@ -43,30 +43,27 @@ func NewService(lc fx.Lifecycle, cfg *config.Config, db *gorm.DB, logger *zap.Lo
 		}
 	}
 
-	if lc != nil {
-		lc.Append(fx.Hook{
-			OnStart: func(context.Context) error {
-				if s.revokePersist {
-					if err := s.loadRevokedFromDB(); err != nil {
-						return fmt.Errorf("load revoked tokens: %w", err)
-					}
-				}
-				s.startCleanupWorker()
-				return nil
-			},
-			OnStop: func(context.Context) error {
-				s.stopCleanupWorker()
-				if s.revokePersist {
-					if err := s.saveRevokedToDB(); err != nil {
-						logger.Error("failed to persist revoked tokens on shutdown", zap.Error(err))
-					}
-				}
-				return nil
-			},
-		})
-	}
-
 	return s, nil
+}
+
+func (s *Service) Start(context.Context) error {
+	if s.revokePersist {
+		if err := s.loadRevokedFromDB(); err != nil {
+			return fmt.Errorf("load revoked tokens: %w", err)
+		}
+	}
+	s.startCleanupWorker()
+	return nil
+}
+
+func (s *Service) Stop(context.Context) error {
+	s.stopCleanupWorker()
+	if s.revokePersist {
+		if err := s.saveRevokedToDB(); err != nil {
+			s.logger.Error("failed to persist revoked tokens on shutdown", zap.Error(err))
+		}
+	}
+	return nil
 }
 
 func (s *Service) GetAccessExpirySeconds() int {

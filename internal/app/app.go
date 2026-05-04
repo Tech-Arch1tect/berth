@@ -14,13 +14,12 @@ import (
 	"berth/internal/platform/logging"
 	"berth/internal/platform/ssl"
 
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type App struct {
-	fx     *fx.App
+	graph  *Graph
 	logger *zap.Logger
 }
 
@@ -29,7 +28,7 @@ type AppOptions struct {
 	SkipConfigEnforcement bool
 	CertFile              string
 	KeyFile               string
-	ExtraFxOptions        []fx.Option
+	Overrides             Overrides
 }
 
 func NewApp(opts *AppOptions) *App {
@@ -44,16 +43,39 @@ func NewApp(opts *AppOptions) *App {
 	inertiaSvc := inertia.New(&cfg.Inertia, SessionStoreResolver, logger)
 	e := NewEcho(cfg, logger)
 
-	fxOpts := assembleFxOptions(cfg, logger, db, inertiaSvc, e, certFile, keyFile, opts.ExtraFxOptions)
+	sslCfg := &SSLConfig{
+		Enabled:  true,
+		CertFile: certFile,
+		KeyFile:  keyFile,
+	}
+
+	graph, err := Build(cfg, logger, db, e, inertiaSvc, sslCfg, opts.Overrides)
+	if err != nil {
+		panic(fmt.Errorf("build app graph: %w", err))
+	}
 
 	return &App{
-		fx:     fx.New(fxOpts...),
+		graph:  graph,
 		logger: logger,
 	}
 }
 
+func (a *App) Graph() *Graph { return a.graph }
+
 func (a *App) Start() error {
-	return a.fx.Start(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	for _, h := range a.graph.Hooks {
+		if h.Start == nil {
+			continue
+		}
+		if err := h.Start(ctx); err != nil {
+			a.logger.Error("startup hook failed", zap.String("hook", h.Name), zap.Error(err))
+			return fmt.Errorf("start %s: %w", h.Name, err)
+		}
+	}
+	return nil
 }
 
 func (a *App) Run() {
@@ -73,8 +95,14 @@ func (a *App) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := a.fx.Stop(ctx); err != nil {
-		a.logger.Error("Failed to stop application gracefully")
+	for i := len(a.graph.Hooks) - 1; i >= 0; i-- {
+		h := a.graph.Hooks[i]
+		if h.Stop == nil {
+			continue
+		}
+		if err := h.Stop(ctx); err != nil {
+			a.logger.Error("shutdown hook failed", zap.String("hook", h.Name), zap.Error(err))
+		}
 	}
 }
 

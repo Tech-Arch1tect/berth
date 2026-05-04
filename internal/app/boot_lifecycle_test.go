@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"berth/internal/app"
 	"berth/internal/app/apptest"
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/server"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 )
 
 func TestBoot_HTTPSListenerServes(t *testing.T) {
@@ -74,13 +72,7 @@ func TestBoot_AuditCallbacksFireOnInsert(t *testing.T) {
 	t.Parallel()
 	spy := newSpyOperationAuditor()
 
-	booted := apptest.Boot(t,
-		apptest.WithFxExtras(
-			fx.Decorate(func(app.OperationLogAuditor) app.OperationLogAuditor {
-				return spy
-			}),
-		),
-	)
+	booted := apptest.Boot(t, apptest.WithOperationAuditor(spy))
 
 	usr := user.User{Username: "auditor-test", Email: "auditor@example.com", Password: "x"}
 	require.NoError(t, booted.DB.Create(&usr).Error)

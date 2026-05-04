@@ -5,23 +5,23 @@ package app
 import (
 	"berth/internal/domain/session"
 	"berth/internal/domain/testsupport"
-	"berth/internal/pkg/config"
 
-	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
 
-func testSupportModule() fx.Option {
-	return fx.Options(
-		fx.Supply(testsupport.DatabaseModels(DatabaseModels())),
-		fx.Provide(externalSchemaHooks),
-		testsupport.Module,
-	)
+func wireTestSupport(g *Graph) error {
+	models := testsupport.DatabaseModels(DatabaseModels())
+	hooks := externalSchemaHooks(g)
+
+	svc := testsupport.NewService(g.DB, g.AuthSvc, g.RBACSvc, g.Crypto, models, hooks, g.Logger)
+	h := testsupport.NewHandler(svc)
+	testsupport.RegisterRoutes(g.Echo, h, g.Cfg)
+	return nil
 }
 
-func externalSchemaHooks(cfg *config.Config) []testsupport.EnsureSchemaFunc {
+func externalSchemaHooks(g *Graph) []testsupport.EnsureSchemaFunc {
 	var hooks []testsupport.EnsureSchemaFunc
-	if cfg.Session.Store == "database" {
+	if g.Cfg.Session.Store == "database" {
 		hooks = append(hooks, func(db *gorm.DB) error {
 			return session.MigrateDatabaseStore(db)
 		})

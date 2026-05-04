@@ -2,8 +2,4 @@
 
 package app
 
-import "go.uber.org/fx"
-
-func testSupportModule() fx.Option {
-	return fx.Options()
-}
+func wireTestSupport(*Graph) error { return nil }

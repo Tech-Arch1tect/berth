@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"berth/internal/app"
 	"berth/internal/app/apptest"
 	"berth/internal/pkg/crypto"
 
@@ -19,7 +20,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
 
@@ -92,17 +92,13 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 		options = append(options, apptest.WithConfig(m))
 	}
 
-	var authSvc *auth.Service
-	options = append(options, apptest.WithFxExtras(
-		fx.Populate(&authSvc),
-		fx.Invoke(func(srv *echo.Echo) {
-			tracker := GetGlobalCoverageTracker()
-			srv.Use(tracker.TrackingMiddleware())
-			routesRegisteredOnce.Do(func() {
-				tracker.RegisterRoutes(srv)
-			})
-		}),
-	))
+	options = append(options, apptest.WithBeforeRoutes(func(g *app.Graph) {
+		tracker := GetGlobalCoverageTracker()
+		g.Echo.Use(tracker.TrackingMiddleware())
+		routesRegisteredOnce.Do(func() {
+			tracker.RegisterRoutes(g.Echo)
+		})
+	}))
 
 	booted := apptest.Boot(t, options...)
 
@@ -118,10 +114,10 @@ func SetupTestAppWithConfig(t *testing.T, modifiers ...func(*config.Config)) *Te
 		DB:            booted.DB,
 		Echo:          booted.Echo,
 		BaseURL:       baseURL,
-		AuthSvc:       authSvc,
+		AuthSvc:       booted.Graph.AuthSvc,
 		Mail:          booted.Mail,
 		HTTPClient:    httpClient,
-		AuthHelper:    e2etesting.NewAuthHelper(httpClient, booted.DB, authSvc),
+		AuthHelper:    e2etesting.NewAuthHelper(httpClient, booted.DB, booted.Graph.AuthSvc),
 		SessionHelper: e2etesting.NewSessionHelper(httpClient, booted.DB),
 	}
 }

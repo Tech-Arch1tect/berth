@@ -4,13 +4,11 @@ import (
 	"testing"
 
 	"berth/internal/app"
-	"berth/internal/domain/auth"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -22,21 +20,32 @@ type Booted struct {
 	Echo    *echo.Echo
 	Inertia *inertia.Service
 	Mail    *CapturingMailService
+	Graph   *app.Graph
 }
 
 type Option func(*bootSettings)
 
 type bootSettings struct {
-	configMods []func(*config.Config)
-	fxExtras   []fx.Option
+	configMods       []func(*config.Config)
+	beforeRoutes     []func(*app.Graph)
+	operationAuditor app.OperationLogAuditor
+	securityAuditor  app.SecurityLogAuditor
 }
 
 func WithConfig(mod func(*config.Config)) Option {
 	return func(s *bootSettings) { s.configMods = append(s.configMods, mod) }
 }
 
-func WithFxExtras(opts ...fx.Option) Option {
-	return func(s *bootSettings) { s.fxExtras = append(s.fxExtras, opts...) }
+func WithBeforeRoutes(hook func(*app.Graph)) Option {
+	return func(s *bootSettings) { s.beforeRoutes = append(s.beforeRoutes, hook) }
+}
+
+func WithOperationAuditor(a app.OperationLogAuditor) Option {
+	return func(s *bootSettings) { s.operationAuditor = a }
+}
+
+func WithSecurityAuditor(a app.SecurityLogAuditor) Option {
+	return func(s *bootSettings) { s.securityAuditor = a }
 }
 
 func Boot(t *testing.T, options ...Option) *Booted {
@@ -50,29 +59,36 @@ func Boot(t *testing.T, options ...Option) *Booted {
 	cfg := BuildConfig(t, settings.configMods...)
 	mailSvc := NewCapturingMailService()
 
-	booted := &Booted{
-		Config: cfg,
-		Mail:   mailSvc,
+	beforeRoutes := func(g *app.Graph) {
+		for _, hook := range settings.beforeRoutes {
+			hook(g)
+		}
 	}
-
-	overrides := []fx.Option{
-		fx.Decorate(func(auth.MailService) auth.MailService {
-			return mailSvc
-		}),
-		fx.Populate(&booted.Logger, &booted.DB, &booted.Echo, &booted.Inertia),
-	}
-	overrides = append(overrides, settings.fxExtras...)
 
 	certFile, keyFile := ensureSSLCerts(t)
 	a := app.NewApp(&app.AppOptions{
-		Config:         cfg,
-		CertFile:       certFile,
-		KeyFile:        keyFile,
-		ExtraFxOptions: overrides,
+		Config:   cfg,
+		CertFile: certFile,
+		KeyFile:  keyFile,
+		Overrides: app.Overrides{
+			Mail:             mailSvc,
+			OperationAuditor: settings.operationAuditor,
+			SecurityAuditor:  settings.securityAuditor,
+			BeforeRoutes:     beforeRoutes,
+		},
 	})
 
 	require.NoError(t, a.Start(), "failed to start app under test")
 	t.Cleanup(a.Stop)
 
-	return booted
+	g := a.Graph()
+	return &Booted{
+		Config:  cfg,
+		Logger:  g.Logger,
+		DB:      g.DB,
+		Echo:    g.Echo,
+		Inertia: g.Inertia,
+		Mail:    mailSvc,
+		Graph:   g,
+	}
 }

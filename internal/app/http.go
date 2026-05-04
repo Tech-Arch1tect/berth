@@ -13,7 +13,6 @@ import (
 	"berth/internal/platform/logging"
 
 	"github.com/labstack/echo/v4"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
@@ -21,6 +20,47 @@ type SSLConfig struct {
 	Enabled  bool
 	CertFile string
 	KeyFile  string
+}
+
+type httpServer struct {
+	e      *echo.Echo
+	addr   string
+	ssl    *SSLConfig
+	logger *zap.Logger
+}
+
+func newHTTPServer(e *echo.Echo, cfg *config.Config, ssl *SSLConfig, logger *zap.Logger) *httpServer {
+	return &httpServer{
+		e:      e,
+		addr:   fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
+		ssl:    ssl,
+		logger: logger,
+	}
+}
+
+func (h *httpServer) start(context.Context) error {
+	logRoutes(h.e, h.logger)
+	if h.ssl != nil && h.ssl.Enabled {
+		h.logger.Info("SSL enabled - starting HTTPS server in background",
+			zap.String("address", h.addr),
+			zap.String("cert_file", h.ssl.CertFile),
+			zap.String("key_file", h.ssl.KeyFile))
+		go startTLS(h.e, h.addr, h.ssl.CertFile, h.ssl.KeyFile, h.logger)
+	} else {
+		h.logger.Info("SSL disabled - starting HTTP server in background",
+			zap.String("address", h.addr))
+		go start(h.e, h.addr, h.logger)
+	}
+	return nil
+}
+
+func (h *httpServer) stop(ctx context.Context) error {
+	h.logger.Info("server lifecycle - shutting down gracefully")
+	if err := h.e.Shutdown(ctx); err != nil {
+		h.logger.Error("echo server shutdown failed", zap.Error(err))
+		return err
+	}
+	return nil
 }
 
 func NewEcho(cfg *config.Config, logger *zap.Logger) *echo.Echo {
@@ -75,35 +115,6 @@ func configureTrustedProxies(e *echo.Echo, trustedProxies []string, logger *zap.
 
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(trustOptions...)
 	logger.Info("configured trusted proxies", zap.Strings("proxies", trustedProxies))
-}
-
-func RegisterHTTPLifecycle(lc fx.Lifecycle, e *echo.Echo, cfg *config.Config, ssl *SSLConfig, logger *zap.Logger) {
-	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			logRoutes(e, logger)
-			if ssl != nil && ssl.Enabled {
-				logger.Info("SSL enabled - starting HTTPS server in background",
-					zap.String("address", addr),
-					zap.String("cert_file", ssl.CertFile),
-					zap.String("key_file", ssl.KeyFile))
-				go startTLS(e, addr, ssl.CertFile, ssl.KeyFile, logger)
-			} else {
-				logger.Info("SSL disabled - starting HTTP server in background",
-					zap.String("address", addr))
-				go start(e, addr, logger)
-			}
-			return nil
-		},
-		OnStop: func(ctx context.Context) error {
-			logger.Info("server lifecycle - shutting down gracefully")
-			if err := e.Shutdown(ctx); err != nil {
-				logger.Error("echo server shutdown failed", zap.Error(err))
-				return err
-			}
-			return nil
-		},
-	})
 }
 
 func start(e *echo.Echo, addr string, logger *zap.Logger) {
