@@ -3,7 +3,7 @@ package session
 import "time"
 
 type RevokeSessionRequest struct {
-	SessionID uint `json:"session_id" validate:"required"`
+	SessionID uint `json:"session_id"`
 }
 
 type RevokeAllOtherSessionsRequest struct {
@@ -11,7 +11,7 @@ type RevokeAllOtherSessionsRequest struct {
 }
 
 type GetSessionsRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type SessionItem struct {

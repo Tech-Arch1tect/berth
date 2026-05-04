@@ -3,20 +3,20 @@ package auth
 import "berth/internal/domain/user"
 
 type AuthLoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type AuthRefreshRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthTOTPVerifyRequest struct {
-	Code string `json:"code" validate:"required"`
+	Code string `json:"code"`
 }
 
 type AuthLogoutRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthLoginData struct {

@@ -1,12 +1,12 @@
 package auth
 
 type TOTPEnableRequest struct {
-	Code string `json:"code" validate:"required"`
+	Code string `json:"code"`
 }
 
 type TOTPDisableRequest struct {
-	Code     string `json:"code" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
 }
 
 type TOTPStatusData struct {

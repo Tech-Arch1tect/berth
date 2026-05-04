@@ -31,7 +31,7 @@ type FileContent struct {
 }
 
 type WriteFileRequest struct {
-	Path     string  `json:"path" validate:"required"`
+	Path     string  `json:"path"`
 	Content  string  `json:"content"`
 	Encoding string  `json:"encoding,omitempty"`
 	Mode     *string `json:"mode,omitempty"`
@@ -40,41 +40,41 @@ type WriteFileRequest struct {
 }
 
 type CreateDirectoryRequest struct {
-	Path    string  `json:"path" validate:"required"`
+	Path    string  `json:"path"`
 	Mode    *string `json:"mode,omitempty"`
 	OwnerID *uint32 `json:"owner_id,omitempty"`
 	GroupID *uint32 `json:"group_id,omitempty"`
 }
 
 type DeleteRequest struct {
-	Path string `json:"path" validate:"required"`
+	Path string `json:"path"`
 }
 
 type RenameRequest struct {
-	OldPath string `json:"old_path" validate:"required"`
-	NewPath string `json:"new_path" validate:"required"`
+	OldPath string `json:"old_path"`
+	NewPath string `json:"new_path"`
 }
 
 type CopyRequest struct {
-	SourcePath string `json:"source_path" validate:"required"`
-	TargetPath string `json:"target_path" validate:"required"`
+	SourcePath string `json:"source_path"`
+	TargetPath string `json:"target_path"`
 }
 
 type ChmodRequest struct {
-	Path      string `json:"path" validate:"required"`
-	Mode      string `json:"mode" validate:"required"`
+	Path      string `json:"path"`
+	Mode      string `json:"mode"`
 	Recursive bool   `json:"recursive,omitempty"`
 }
 
 type ChownRequest struct {
-	Path      string  `json:"path" validate:"required"`
+	Path      string  `json:"path"`
 	OwnerID   *uint32 `json:"owner_id,omitempty"`
 	GroupID   *uint32 `json:"group_id,omitempty"`
 	Recursive bool    `json:"recursive,omitempty"`
 }
 
 type DirectoryStatsRequest struct {
-	Path string `json:"path" validate:"required"`
+	Path string `json:"path"`
 }
 
 type DirectoryStats struct {
