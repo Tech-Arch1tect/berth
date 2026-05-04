@@ -20,6 +20,7 @@ type RequestOptions struct {
 	Method      string
 	Path        string
 	Body        interface{}
+	RawBody     []byte
 	Headers     map[string]string
 	Cookies     []*http.Cookie
 	ContentType string
@@ -147,6 +148,11 @@ func (c *HTTPClient) Request(opts *RequestOptions) (*Response, error) {
 		bodyReader = strings.NewReader(opts.FormData.Encode())
 		if contentType == "" {
 			contentType = "application/x-www-form-urlencoded"
+		}
+	} else if opts.RawBody != nil {
+		bodyReader = bytes.NewReader(opts.RawBody)
+		if contentType == "" {
+			contentType = "application/json"
 		}
 	} else if opts.Body != nil {
 		jsonBody, err := json.Marshal(opts.Body)

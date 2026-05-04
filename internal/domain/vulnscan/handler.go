@@ -4,6 +4,7 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -34,8 +35,11 @@ func (h *Handler) StartScan(c echo.Context) error {
 	}
 
 	var req StartScanRequest
+	if err := validation.BindRequest(c, &req); err != nil {
+		return err
+	}
 	var opts *StartScanOptions
-	if err := c.Bind(&req); err == nil && len(req.Services) > 0 {
+	if len(req.Services) > 0 {
 		opts = &StartScanOptions{Services: req.Services}
 	}
 
