@@ -152,7 +152,7 @@ func (h *APIHandler) GetUserRoles(c echo.Context) error {
 
 func (h *APIHandler) AssignRole(c echo.Context) error {
 	var req AssignRoleRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 
@@ -191,7 +191,7 @@ func (h *APIHandler) AssignRole(c echo.Context) error {
 
 func (h *APIHandler) RevokeRole(c echo.Context) error {
 	var req RevokeRoleRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 

@@ -39,6 +39,50 @@ func TestCreateUserRequest_Validate(t *testing.T) {
 	}
 }
 
+func TestAssignRoleRequest_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     AssignRoleRequest
+		wantErr error
+	}{
+		{"both zero", AssignRoleRequest{}, ErrRoleAssignmentFieldsRequired},
+		{"user zero", AssignRoleRequest{UserID: 0, RoleID: 2}, ErrRoleAssignmentFieldsRequired},
+		{"role zero", AssignRoleRequest{UserID: 1, RoleID: 0}, ErrRoleAssignmentFieldsRequired},
+		{"both present", AssignRoleRequest{UserID: 1, RoleID: 2}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.req.Validate()
+			if !errors.Is(got, tt.wantErr) {
+				t.Errorf("Validate() = %v, want %v", got, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestRevokeRoleRequest_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     RevokeRoleRequest
+		wantErr error
+	}{
+		{"both zero", RevokeRoleRequest{}, ErrRoleAssignmentFieldsRequired},
+		{"user zero", RevokeRoleRequest{UserID: 0, RoleID: 2}, ErrRoleAssignmentFieldsRequired},
+		{"role zero", RevokeRoleRequest{UserID: 1, RoleID: 0}, ErrRoleAssignmentFieldsRequired},
+		{"both present", RevokeRoleRequest{UserID: 1, RoleID: 2}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.req.Validate()
+			if !errors.Is(got, tt.wantErr) {
+				t.Errorf("Validate() = %v, want %v", got, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestCreateRoleRequest_Validate(t *testing.T) {
 	tests := []struct {
 		name    string

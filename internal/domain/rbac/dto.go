@@ -11,6 +11,7 @@ var (
 	ErrCreateUserPasswordMismatch    = errors.New("passwords do not match")
 	ErrRoleNameRequired              = errors.New("name is required")
 	ErrStackPermissionFieldsRequired = errors.New("server_id and permission_id are required")
+	ErrRoleAssignmentFieldsRequired  = errors.New("user_id and role_id are required")
 )
 
 type CreateUserRequest struct {
@@ -35,9 +36,23 @@ type AssignRoleRequest struct {
 	RoleID uint `json:"role_id"`
 }
 
+func (r *AssignRoleRequest) Validate() error {
+	if r.UserID == 0 || r.RoleID == 0 {
+		return ErrRoleAssignmentFieldsRequired
+	}
+	return nil
+}
+
 type RevokeRoleRequest struct {
 	UserID uint `json:"user_id"`
 	RoleID uint `json:"role_id"`
+}
+
+func (r *RevokeRoleRequest) Validate() error {
+	if r.UserID == 0 || r.RoleID == 0 {
+		return ErrRoleAssignmentFieldsRequired
+	}
+	return nil
 }
 
 type CreateRoleRequest struct {
