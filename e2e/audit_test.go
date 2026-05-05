@@ -38,7 +38,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/security-audit-logs",
+			Path:   "/api/v1/admin/security-audit-logs?per_page=50",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -82,7 +82,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/security-audit-logs?event_type=api.token.issued",
+			Path:   "/api/v1/admin/security-audit-logs?event_type=api.token.issued&per_page=50",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -101,7 +101,7 @@ func TestSecurityAuditLogsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/security-audit-logs?success=true",
+			Path:   "/api/v1/admin/security-audit-logs?success=true&per_page=50",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},

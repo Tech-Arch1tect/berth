@@ -1514,7 +1514,7 @@ export const useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId = <
  * @summary List security audit logs
  */
 export const getGetApiV1AdminSecurityAuditLogsUrl = (
-  params?: GetApiV1AdminSecurityAuditLogsParams
+  params: GetApiV1AdminSecurityAuditLogsParams
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1532,7 +1532,7 @@ export const getGetApiV1AdminSecurityAuditLogsUrl = (
 };
 
 export const getApiV1AdminSecurityAuditLogs = async (
-  params?: GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options?: RequestInit
 ): Promise<ResponseSecurityAuditLogInfo> => {
   return apiClient<ResponseSecurityAuditLogInfo>(getGetApiV1AdminSecurityAuditLogsUrl(params), {
@@ -1551,7 +1551,7 @@ export const getGetApiV1AdminSecurityAuditLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
   TError = ResponseEmpty | void,
 >(
-  params?: GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
@@ -1583,7 +1583,7 @@ export function useGetApiV1AdminSecurityAuditLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
   TError = ResponseEmpty | void,
 >(
-  params: undefined | GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
@@ -1604,7 +1604,7 @@ export function useGetApiV1AdminSecurityAuditLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
   TError = ResponseEmpty | void,
 >(
-  params?: GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
@@ -1625,7 +1625,7 @@ export function useGetApiV1AdminSecurityAuditLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
   TError = ResponseEmpty | void,
 >(
-  params?: GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>
@@ -1642,7 +1642,7 @@ export function useGetApiV1AdminSecurityAuditLogs<
   TData = Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>,
   TError = ResponseEmpty | void,
 >(
-  params?: GetApiV1AdminSecurityAuditLogsParams,
+  params: GetApiV1AdminSecurityAuditLogsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminSecurityAuditLogs>>, TError, TData>

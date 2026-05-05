@@ -15,9 +15,8 @@ export type GetApiV1AdminSecurityAuditLogsParams = {
   /**
    * Number of items per page
    * @minimum 1
-   * @maximum 100
    */
-  per_page?: number;
+  per_page: number;
   /**
    * Filter by event type
    */

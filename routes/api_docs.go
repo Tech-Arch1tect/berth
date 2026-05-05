@@ -823,7 +823,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("List security audit logs").
 		Description("Returns paginated list of security audit logs. Requires admin permissions.").
 		QueryParam("page", "Page number").TypeInt().Default(1).Min(1).
-		QueryParam("per_page", "Number of items per page").TypeInt().Default(50).Min(1).Max(100).
+		QueryParam("per_page", "Number of items per page").TypeInt().Min(1).Required().
 		QueryParam("event_type", "Filter by event type").Optional().
 		QueryParam("event_category", "Filter by event category").Optional().
 		QueryParam("severity", "Filter by severity").Optional().

@@ -1,6 +1,14 @@
 package security
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrListLogsNegativePage = errors.New("page must be non-negative")
+	ErrListLogsPerPageMin   = errors.New("per_page must be at least 1")
+)
 
 type ListLogsRequest struct {
 	EventType     string `query:"event_type"`
@@ -13,6 +21,16 @@ type ListLogsRequest struct {
 	Search        string `query:"search"`
 	Page          int    `query:"page"`
 	PerPage       int    `query:"per_page"`
+}
+
+func (r *ListLogsRequest) Validate() error {
+	if r.Page < 0 {
+		return ErrListLogsNegativePage
+	}
+	if r.PerPage < 1 {
+		return ErrListLogsPerPageMin
+	}
+	return nil
 }
 
 type SecurityAuditLogInfo struct {

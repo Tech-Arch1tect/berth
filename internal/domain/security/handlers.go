@@ -54,15 +54,12 @@ func NewHandler(db *gorm.DB) *Handler {
 
 func (h *Handler) ListLogs(c echo.Context) error {
 	var req ListLogsRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 
 	if req.Page < 1 {
 		req.Page = 1
-	}
-	if req.PerPage < 1 || req.PerPage > 100 {
-		req.PerPage = 50
 	}
 
 	query := h.db.Model(&SecurityAuditLog{})

@@ -572,7 +572,6 @@ func TestSnapshotAdminAPI(t *testing.T) {
 		"/api/v1/admin/roles",
 		"/api/v1/admin/users",
 		"/api/v1/admin/permissions",
-		"/api/v1/admin/security-audit-logs",
 		"/api/v1/admin/security-audit-logs/stats",
 		"/api/v1/admin/operation-logs",
 		"/api/v1/admin/operation-logs/stats",
@@ -584,6 +583,11 @@ func TestSnapshotAdminAPI(t *testing.T) {
 			sr.RecordAndAssert(t, "GET", path, resp)
 		})
 	}
+
+	t.Run("GET /api/v1/admin/security-audit-logs", func(t *testing.T) {
+		resp := jwtRequest(t, app, adminToken, "GET", "/api/v1/admin/security-audit-logs?per_page=50")
+		sr.RecordAndAssert(t, "GET", "/api/v1/admin/security-audit-logs", resp)
+	})
 
 	t.Run("GET /api/v1/admin/roles forbidden", func(t *testing.T) {
 		resp := jwtRequest(t, app, normalToken, "GET", "/api/v1/admin/roles")
