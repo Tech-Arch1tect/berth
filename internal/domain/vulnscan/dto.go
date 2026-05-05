@@ -1,7 +1,21 @@
 package vulnscan
 
+import (
+	"errors"
+	"slices"
+)
+
+var ErrStartScanEmptyService = errors.New("services entries must be non-empty")
+
 type StartScanRequest struct {
 	Services []string `json:"services,omitempty"`
+}
+
+func (r *StartScanRequest) Validate() error {
+	if slices.Contains(r.Services, "") {
+		return ErrStartScanEmptyService
+	}
+	return nil
 }
 
 type StartScanData struct {

@@ -35,7 +35,7 @@ func (h *Handler) StartScan(c echo.Context) error {
 	}
 
 	var req StartScanRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 	var opts *StartScanOptions
