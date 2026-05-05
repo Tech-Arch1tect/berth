@@ -7,12 +7,15 @@ import (
 	"berth/internal/domain/server"
 )
 
-var ErrCredentialFieldsRequired = errors.New("registry_url, username, and password are required")
+var (
+	ErrCredentialFieldsRequired       = errors.New("registry_url, username, and password are required")
+	ErrCredentialUpdateFieldsRequired = errors.New("registry_url and username are required")
+)
 
 type CreateCredentialRequest struct {
-	StackPattern string `json:"stack_pattern"`
+	StackPattern string `json:"stack_pattern,omitempty"`
 	RegistryURL  string `json:"registry_url"`
-	ImagePattern string `json:"image_pattern"`
+	ImagePattern string `json:"image_pattern,omitempty"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 }
@@ -25,11 +28,18 @@ func (r *CreateCredentialRequest) Validate() error {
 }
 
 type UpdateCredentialRequest struct {
-	StackPattern string `json:"stack_pattern"`
+	StackPattern string `json:"stack_pattern,omitempty"`
 	RegistryURL  string `json:"registry_url"`
-	ImagePattern string `json:"image_pattern"`
+	ImagePattern string `json:"image_pattern,omitempty"`
 	Username     string `json:"username"`
-	Password     string `json:"password"`
+	Password     string `json:"password,omitempty"`
+}
+
+func (r *UpdateCredentialRequest) Validate() error {
+	if r.RegistryURL == "" || r.Username == "" {
+		return ErrCredentialUpdateFieldsRequired
+	}
+	return nil
 }
 
 type RegistryCredentialInfo struct {

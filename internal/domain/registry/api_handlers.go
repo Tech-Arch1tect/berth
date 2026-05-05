@@ -204,7 +204,7 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 
 	var req UpdateCredentialRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 
