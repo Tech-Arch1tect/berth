@@ -3,6 +3,7 @@ package security
 import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"strconv"
 	"time"
 
@@ -53,8 +54,8 @@ func NewHandler(db *gorm.DB) *Handler {
 
 func (h *Handler) ListLogs(c echo.Context) error {
 	var req ListLogsRequest
-	if err := c.Bind(&req); err != nil {
-		return response.BadRequest(c, "Invalid request parameters")
+	if err := validation.BindRequest(c, &req); err != nil {
+		return err
 	}
 
 	if req.Page < 1 {
