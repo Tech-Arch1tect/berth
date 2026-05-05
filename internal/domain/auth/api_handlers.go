@@ -13,6 +13,7 @@ import (
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -48,15 +49,8 @@ func NewAPIHandler(db *gorm.DB, authSvc *Service, tokensSvc *tokens.Service, tot
 
 func (h *APIHandler) Login(c echo.Context) error {
 	var req AuthLoginRequest
-	if err := c.Bind(&req); err != nil {
-		h.logger.Warn("mobile login - invalid request format",
-			zap.String("remote_ip", c.RealIP()),
-			zap.Error(err))
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.Username == "" || req.Password == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "Username and password are required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	h.logger.Info("mobile login attempt",
@@ -195,12 +189,8 @@ func (h *APIHandler) Login(c echo.Context) error {
 
 func (h *APIHandler) RefreshToken(c echo.Context) error {
 	var req AuthRefreshRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.RefreshToken == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	oldToken, validateErr := h.tokens.ValidateRefresh(req.RefreshToken)
@@ -280,15 +270,8 @@ func (h *APIHandler) Profile(c echo.Context) error {
 
 func (h *APIHandler) Logout(c echo.Context) error {
 	var req AuthLogoutRequest
-	if err := c.Bind(&req); err != nil {
-		h.logger.Warn("logout - invalid request format",
-			zap.String("remote_ip", c.RealIP()),
-			zap.Error(err))
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.RefreshToken == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	var revokedTokens []string
@@ -360,12 +343,8 @@ func (h *APIHandler) Logout(c echo.Context) error {
 
 func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	var req AuthTOTPVerifyRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.Code == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	authHeader := c.Request().Header.Get("Authorization")
@@ -530,12 +509,8 @@ func (h *APIHandler) EnableTOTP(c echo.Context) error {
 	}
 
 	var req TOTPEnableRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.Code == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	if err := h.totpSvc.EnableTOTP(userModel.ID, req.Code); err != nil {
@@ -577,12 +552,8 @@ func (h *APIHandler) DisableTOTP(c echo.Context) error {
 	}
 
 	var req TOTPDisableRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.Code == "" || req.Password == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "TOTP code and password are required to disable 2FA")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	if err := h.authSvc.VerifyPassword(userModel.Password, req.Password); err != nil {

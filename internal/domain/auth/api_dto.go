@@ -1,22 +1,60 @@
 package auth
 
-import "berth/internal/domain/user"
+import (
+	"errors"
+
+	"berth/internal/domain/user"
+)
+
+var (
+	ErrAuthCredentialsRequired = errors.New("Username and password are required")
+	ErrAuthRefreshRequired     = errors.New("Refresh token is required")
+	ErrAuthTOTPCodeRequired    = errors.New("TOTP code is required")
+)
 
 type AuthLoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+func (r *AuthLoginRequest) Validate() error {
+	if r.Username == "" || r.Password == "" {
+		return ErrAuthCredentialsRequired
+	}
+	return nil
+}
+
 type AuthRefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+func (r *AuthRefreshRequest) Validate() error {
+	if r.RefreshToken == "" {
+		return ErrAuthRefreshRequired
+	}
+	return nil
 }
 
 type AuthTOTPVerifyRequest struct {
 	Code string `json:"code"`
 }
 
+func (r *AuthTOTPVerifyRequest) Validate() error {
+	if r.Code == "" {
+		return ErrAuthTOTPCodeRequired
+	}
+	return nil
+}
+
 type AuthLogoutRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+func (r *AuthLogoutRequest) Validate() error {
+	if r.RefreshToken == "" {
+		return ErrAuthRefreshRequired
+	}
+	return nil
 }
 
 type AuthLoginData struct {

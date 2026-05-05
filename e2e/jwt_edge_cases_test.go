@@ -172,7 +172,7 @@ func TestJWTRefreshValidation(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error.Code)
+		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
 	})
 
 	t.Run("garbage refresh token", func(t *testing.T) {
@@ -222,7 +222,7 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error.Code)
+		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
 	})
 
 	t.Run("double logout is safe", func(t *testing.T) {

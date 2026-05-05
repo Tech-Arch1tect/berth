@@ -8,7 +8,7 @@
   "body": {
     "data": {},
     "error": {
-      "code": "validation_error",
+      "code": "bad_request",
       "message": "TOTP code is required"
     },
     "success": false

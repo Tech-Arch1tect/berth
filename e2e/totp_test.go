@@ -202,7 +202,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error.Code)
+		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
 	})
 
 	t.Run("POST /api/v1/totp/enable with invalid code returns 400", func(t *testing.T) {
