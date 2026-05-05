@@ -958,7 +958,11 @@ func TestSnapshotServerAPI(t *testing.T) {
 
 	t.Run("PATCH /api/v1/servers/:serverid/stacks/:stackname/compose", func(t *testing.T) {
 		resp := jwtRequestJSON(t, app, adminToken, "PATCH", "/api/v1/servers/"+sid+"/stacks/"+stack+"/compose", map[string]interface{}{
-			"content": "version: '3'\nservices:\n  web:\n    image: nginx:latest\n",
+			"changes": map[string]interface{}{
+				"add_services": map[string]interface{}{
+					"web": map[string]interface{}{"image": "nginx:latest"},
+				},
+			},
 		})
 		sr.RecordAndAssert(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", resp)
 	})

@@ -174,7 +174,11 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 				"Content-Type":  "application/json",
 			},
 			Body: map[string]any{
-				"services": map[string]any{},
+				"changes": map[string]any{
+					"add_services": map[string]any{
+						"web": map[string]any{"image": "nginx:latest"},
+					},
+				},
 			},
 		})
 		require.NoError(t, err)

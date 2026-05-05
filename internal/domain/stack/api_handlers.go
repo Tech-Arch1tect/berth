@@ -332,7 +332,7 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 	}
 
 	var req UpdateComposeRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 

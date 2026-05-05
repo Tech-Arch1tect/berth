@@ -1,6 +1,10 @@
 package stack
 
-import agenttypes "github.com/tech-arch1tect/berth-agent/types"
+import (
+	"errors"
+
+	agenttypes "github.com/tech-arch1tect/berth-agent/types"
+)
 
 type (
 	RawComposeConfig = agenttypes.RawComposeConfig
@@ -31,6 +35,26 @@ type (
 	ComposeSecretConfig  = agenttypes.SecretConfig
 	ComposeConfigConfig  = agenttypes.ConfigConfig
 
-	UpdateComposeRequest  = agenttypes.UpdateComposeRequest
 	UpdateComposeResponse = agenttypes.UpdateComposeResponse
 )
+
+var ErrUpdateComposeNoChanges = errors.New("at least one change is required")
+
+type UpdateComposeRequest struct {
+	agenttypes.UpdateComposeRequest
+}
+
+func (r *UpdateComposeRequest) Validate() error {
+	c := &r.Changes
+	if len(c.ServiceChanges) == 0 &&
+		len(c.NetworkChanges) == 0 &&
+		len(c.VolumeChanges) == 0 &&
+		len(c.SecretChanges) == 0 &&
+		len(c.ConfigChanges) == 0 &&
+		len(c.AddServices) == 0 &&
+		len(c.DeleteServices) == 0 &&
+		len(c.RenameServices) == 0 {
+		return ErrUpdateComposeNoChanges
+	}
+	return nil
+}
