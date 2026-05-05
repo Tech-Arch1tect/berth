@@ -119,3 +119,31 @@ func TestBindAndValidate_returns400OnMalformedJSON(t *testing.T) {
 		t.Errorf("status: got %d, want 400", httpErr.Code)
 	}
 }
+
+func TestErrorMessage_extractsHTTPErrorString(t *testing.T) {
+	err := echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	if got := ErrorMessage(err); got != "name is required" {
+		t.Errorf("ErrorMessage() = %q, want %q", got, "name is required")
+	}
+}
+
+func TestErrorMessage_fallsBackToErrErrorForPlainError(t *testing.T) {
+	err := errMissingName
+	if got := ErrorMessage(err); got != "name is required" {
+		t.Errorf("ErrorMessage() = %q, want %q", got, "name is required")
+	}
+}
+
+func TestErrorMessage_returnsEmptyForNil(t *testing.T) {
+	if got := ErrorMessage(nil); got != "" {
+		t.Errorf("ErrorMessage(nil) = %q, want %q", got, "")
+	}
+}
+
+func TestErrorMessage_fallsBackForNonStringHTTPMessage(t *testing.T) {
+	err := echo.NewHTTPError(http.StatusBadRequest, map[string]string{"field": "name"})
+	got := ErrorMessage(err)
+	if got == "" {
+		t.Errorf("ErrorMessage() returned empty string for non-string HTTPError message")
+	}
+}

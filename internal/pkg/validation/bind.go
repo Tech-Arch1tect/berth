@@ -29,3 +29,15 @@ func BindRequest[T any](c echo.Context, req *T) error {
 
 	return nil
 }
+
+func ErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	if he, ok := err.(*echo.HTTPError); ok {
+		if msg, ok := he.Message.(string); ok {
+			return msg
+		}
+	}
+	return err.Error()
+}
