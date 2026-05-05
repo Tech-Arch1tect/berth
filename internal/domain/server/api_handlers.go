@@ -62,7 +62,7 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	}
 
 	var req AdminUpdateServerRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 

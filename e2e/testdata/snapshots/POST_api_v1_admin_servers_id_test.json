@@ -1,16 +1,14 @@
 {
   "method": "POST",
   "path": "/api/v1/admin/servers/:id/test",
-  "status_code": 503,
+  "status_code": 200,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
-    "data": {},
-    "error": {
-      "code": "service_unavailable",
-      "message": "Connection test failed: failed to connect to server: Get \"https://:0/api/health\": dial tcp :0: connect: connection refused"
+    "data": {
+      "message": "Connection successful"
     },
-    "success": false
+    "success": true
   }
 }

@@ -731,9 +731,20 @@ func TestSnapshotAdminAPI(t *testing.T) {
 			sr.RecordAndAssert(t, "GET", "/api/v1/admin/servers/:id", resp)
 		})
 
+		var existingServer struct {
+			Host string
+			Port int
+		}
+		err = app.DB.Table("servers").Where("id = ?", serverID).Select("host, port").Scan(&existingServer).Error
+		require.NoError(t, err)
+
 		t.Run("PUT /api/v1/admin/servers/:id", func(t *testing.T) {
 			resp := jwtRequestJSON(t, app, adminToken, "PUT", fmt.Sprintf("/api/v1/admin/servers/%d", serverID), map[string]interface{}{
-				"name": "snap-admin-server-updated",
+				"name":                  "snap-admin-server-updated",
+				"host":                  existingServer.Host,
+				"port":                  existingServer.Port,
+				"skip_ssl_verification": true,
+				"is_active":             true,
 			})
 			sr.RecordAndAssert(t, "PUT", "/api/v1/admin/servers/:id", resp)
 		})

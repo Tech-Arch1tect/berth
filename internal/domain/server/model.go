@@ -7,7 +7,12 @@ import (
 	"berth/internal/platform/db"
 )
 
-var ErrServerAccessTokenRequired = errors.New("access token is required")
+var (
+	ErrServerNameRequired        = errors.New("name is required")
+	ErrServerHostRequired        = errors.New("host is required")
+	ErrServerPortRequired        = errors.New("port must be greater than 0")
+	ErrServerAccessTokenRequired = errors.New("access token is required")
+)
 
 type StackStatistics struct {
 	TotalStacks     int `json:"total_stacks"`
@@ -40,15 +45,24 @@ type ServerInfo struct {
 
 type ServerCreateRequest struct {
 	Name                string `json:"name"`
-	Description         string `json:"description"`
+	Description         string `json:"description,omitempty"`
 	Host                string `json:"host"`
 	Port                int    `json:"port"`
-	SkipSSLVerification *bool  `json:"skip_ssl_verification"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty"`
 	AccessToken         string `json:"access_token"`
-	IsActive            bool   `json:"is_active"`
+	IsActive            bool   `json:"is_active,omitempty"`
 }
 
 func (r *ServerCreateRequest) Validate() error {
+	if r.Name == "" {
+		return ErrServerNameRequired
+	}
+	if r.Host == "" {
+		return ErrServerHostRequired
+	}
+	if r.Port <= 0 {
+		return ErrServerPortRequired
+	}
 	if r.AccessToken == "" {
 		return ErrServerAccessTokenRequired
 	}
@@ -57,12 +71,25 @@ func (r *ServerCreateRequest) Validate() error {
 
 type ServerUpdateRequest struct {
 	Name                string `json:"name"`
-	Description         string `json:"description"`
+	Description         string `json:"description,omitempty"`
 	Host                string `json:"host"`
 	Port                int    `json:"port"`
-	SkipSSLVerification *bool  `json:"skip_ssl_verification"`
-	AccessToken         string `json:"access_token"`
-	IsActive            bool   `json:"is_active"`
+	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty"`
+	AccessToken         string `json:"access_token,omitempty"`
+	IsActive            bool   `json:"is_active,omitempty"`
+}
+
+func (r *ServerUpdateRequest) Validate() error {
+	if r.Name == "" {
+		return ErrServerNameRequired
+	}
+	if r.Host == "" {
+		return ErrServerHostRequired
+	}
+	if r.Port <= 0 {
+		return ErrServerPortRequired
+	}
+	return nil
 }
 
 func (r *ServerCreateRequest) ToServer() *Server {
