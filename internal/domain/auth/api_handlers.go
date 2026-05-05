@@ -620,12 +620,8 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 	}
 
 	var req session.GetSessionsRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.RefreshToken == "" {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
@@ -685,13 +681,8 @@ func (h *APIHandler) RevokeSession(c echo.Context) error {
 	}
 
 	var req session.RevokeSessionRequest
-
-	if err := c.Bind(&req); err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-	}
-
-	if req.SessionID == 0 {
-		return response.Err(c, http.StatusBadRequest, "validation_error", "Session ID is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	err := h.sessionSvc.RevokeSession(userModel.ID, req.SessionID)
@@ -747,13 +738,8 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 	} else {
 
 		var req session.RevokeAllOtherSessionsRequest
-
-		if err := c.Bind(&req); err != nil {
-			return response.Err(c, http.StatusBadRequest, "invalid_request", "Invalid request format")
-		}
-
-		if req.RefreshToken == "" {
-			return response.Err(c, http.StatusBadRequest, "validation_error", "Refresh token is required")
+		if err := validation.BindAndValidate(c, &req); err != nil {
+			return err
 		}
 
 		refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)

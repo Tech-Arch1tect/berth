@@ -1,17 +1,46 @@
 package session
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrSessionRefreshRequired = errors.New("Refresh token is required")
+	ErrSessionIDRequired      = errors.New("Session ID is required")
+)
 
 type RevokeSessionRequest struct {
 	SessionID uint `json:"session_id"`
+}
+
+func (r *RevokeSessionRequest) Validate() error {
+	if r.SessionID == 0 {
+		return ErrSessionIDRequired
+	}
+	return nil
 }
 
 type RevokeAllOtherSessionsRequest struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
+func (r *RevokeAllOtherSessionsRequest) Validate() error {
+	if r.RefreshToken == "" {
+		return ErrSessionRefreshRequired
+	}
+	return nil
+}
+
 type GetSessionsRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+func (r *GetSessionsRequest) Validate() error {
+	if r.RefreshToken == "" {
+		return ErrSessionRefreshRequired
+	}
+	return nil
 }
 
 type SessionItem struct {

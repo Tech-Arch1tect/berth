@@ -324,7 +324,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "validation_error", errResp.Error.Code)
+		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
 	})
 }
 
