@@ -63,17 +63,8 @@ func (h *Handler) CreateAdmin(c echo.Context) error {
 
 	var req CreateInitialAdminForm
 
-	if err := validation.BindRequest(c, &req); err != nil {
-		return err
-	}
-
-	if req.Username == "" || req.Email == "" || req.Password == "" {
-		session.AddFlashError(c, "All fields are required")
-		return c.Redirect(http.StatusFound, "/setup/admin")
-	}
-
-	if req.Password != req.PasswordConfirm {
-		session.AddFlashError(c, "Passwords do not match")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
 		return c.Redirect(http.StatusFound, "/setup/admin")
 	}
 
