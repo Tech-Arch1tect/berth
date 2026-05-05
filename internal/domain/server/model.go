@@ -1,10 +1,13 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 
 	"berth/internal/platform/db"
 )
+
+var ErrServerAccessTokenRequired = errors.New("access token is required")
 
 type StackStatistics struct {
 	TotalStacks     int `json:"total_stacks"`
@@ -43,6 +46,13 @@ type ServerCreateRequest struct {
 	SkipSSLVerification *bool  `json:"skip_ssl_verification"`
 	AccessToken         string `json:"access_token"`
 	IsActive            bool   `json:"is_active"`
+}
+
+func (r *ServerCreateRequest) Validate() error {
+	if r.AccessToken == "" {
+		return ErrServerAccessTokenRequired
+	}
+	return nil
 }
 
 type ServerUpdateRequest struct {

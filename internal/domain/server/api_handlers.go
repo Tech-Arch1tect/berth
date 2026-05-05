@@ -43,15 +43,12 @@ func (h *APIHandler) GetServer(c echo.Context) error {
 
 func (h *APIHandler) CreateServer(c echo.Context) error {
 	var req AdminCreateServerRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 
 	server := req.ToServer()
 	if err := h.service.CreateServer(server); err != nil {
-		if err.Error() == "access token is required" {
-			return response.BadRequest(c, err.Error())
-		}
 		return response.Internal(c, "Failed to create server")
 	}
 

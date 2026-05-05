@@ -158,7 +158,7 @@ func (s *Service) CreateServer(server *Server) error {
 		s.logger.Error("access token is required when creating a server",
 			zap.String("server_name", server.Name),
 		)
-		return fmt.Errorf("access token is required")
+		return ErrServerAccessTokenRequired
 	}
 
 	encryptedToken, err := s.crypto.Encrypt(server.AccessToken)
