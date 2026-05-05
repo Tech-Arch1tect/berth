@@ -4,6 +4,7 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"strconv"
 	"time"
 
@@ -92,15 +93,8 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 	}
 
 	var req CreateAPIKeyRequest
-	if err := c.Bind(&req); err != nil {
-		return response.BadRequest(c, "Invalid request")
-	}
-
-	if req.Name == "" {
-		return response.BadRequest(c, "Name is required")
-	}
-	if len(req.Name) > 255 {
-		return response.BadRequest(c, "Name must be less than 255 characters")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	var expiresAt *time.Time
@@ -219,25 +213,8 @@ func (h *Handler) AddScope(c echo.Context) error {
 	}
 
 	var req AddScopeRequest
-	if err := c.Bind(&req); err != nil {
-		return response.BadRequest(c, "Invalid request")
-	}
-
-	if req.StackPattern == "" {
-		return response.BadRequest(c, "Stack pattern is required")
-	}
-	if len(req.StackPattern) > 255 {
-		return response.BadRequest(c, "Stack pattern must be less than 255 characters")
-	}
-
-	for _, r := range req.StackPattern {
-		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') &&
-			r != '-' && r != '_' && r != '.' && r != '*' {
-			return response.BadRequest(c, "Stack pattern contains invalid characters. Only alphanumeric, dash, underscore, dot, and asterisk are allowed")
-		}
-	}
-	if req.Permission == "" {
-		return response.BadRequest(c, "Permission is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	ctx := c.Request().Context()
