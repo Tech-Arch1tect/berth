@@ -409,22 +409,12 @@ func (o *OpenAPI) buildStructSchema(t reflect.Type, visited map[string]bool) *op
 				fieldType = fieldType.Elem()
 			}
 			if fieldType.Kind() == reflect.Struct {
-				embeddedRef := o.generateStructSchema(fieldType, visited, false)
-				var embeddedSchema *openapi3.Schema
-				if embeddedRef.Ref != "" {
-					refName := strings.TrimPrefix(embeddedRef.Ref, "#/components/schemas/")
-					if schemaRef, ok := o.spec.Components.Schemas[refName]; ok {
-						embeddedSchema = schemaRef.Value
-					}
-				} else {
-					embeddedSchema = embeddedRef.Value
-				}
-
-				if embeddedSchema != nil {
-					for propName, propSchema := range embeddedSchema.Properties {
+				embeddedRef := o.generateStructSchema(fieldType, visited, true)
+				if embeddedRef.Value != nil {
+					for propName, propSchema := range embeddedRef.Value.Properties {
 						schema.Properties[propName] = propSchema
 					}
-					required = append(required, embeddedSchema.Required...)
+					required = append(required, embeddedRef.Value.Required...)
 				}
 				continue
 			}
