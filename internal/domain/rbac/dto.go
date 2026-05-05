@@ -1,12 +1,33 @@
 package rbac
 
-import "berth/internal/domain/user"
+import (
+	"errors"
+
+	"berth/internal/domain/user"
+)
+
+var (
+	ErrCreateUserFieldsRequired      = errors.New("username, email and password are required")
+	ErrCreateUserPasswordMismatch    = errors.New("passwords do not match")
+	ErrRoleNameRequired              = errors.New("name is required")
+	ErrStackPermissionFieldsRequired = errors.New("server_id and permission_id are required")
+)
 
 type CreateUserRequest struct {
 	Username        string `json:"username"`
 	Email           string `json:"email"`
 	Password        string `json:"password"`
 	PasswordConfirm string `json:"password_confirm"`
+}
+
+func (r *CreateUserRequest) Validate() error {
+	if r.Username == "" || r.Email == "" || r.Password == "" {
+		return ErrCreateUserFieldsRequired
+	}
+	if r.Password != r.PasswordConfirm {
+		return ErrCreateUserPasswordMismatch
+	}
+	return nil
 }
 
 type AssignRoleRequest struct {
@@ -24,15 +45,36 @@ type CreateRoleRequest struct {
 	Description string `json:"description"`
 }
 
+func (r *CreateRoleRequest) Validate() error {
+	if r.Name == "" {
+		return ErrRoleNameRequired
+	}
+	return nil
+}
+
 type UpdateRoleRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+func (r *UpdateRoleRequest) Validate() error {
+	if r.Name == "" {
+		return ErrRoleNameRequired
+	}
+	return nil
 }
 
 type CreateStackPermissionRequest struct {
 	ServerID     uint   `json:"server_id"`
 	PermissionID uint   `json:"permission_id"`
 	StackPattern string `json:"stack_pattern"`
+}
+
+func (r *CreateStackPermissionRequest) Validate() error {
+	if r.ServerID == 0 || r.PermissionID == 0 {
+		return ErrStackPermissionFieldsRequired
+	}
+	return nil
 }
 
 type MessageData struct {

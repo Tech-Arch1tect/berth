@@ -55,16 +55,8 @@ func (h *APIHandler) ListUsers(c echo.Context) error {
 
 func (h *APIHandler) CreateUser(c echo.Context) error {
 	var req CreateUserRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Username == "" || req.Email == "" || req.Password == "" {
-		return response.BadRequest(c, "username, email and password are required")
-	}
-
-	if req.Password != req.PasswordConfirm {
-		return response.BadRequest(c, "passwords do not match")
 	}
 
 	if err := h.authSvc.ValidatePassword(req.Password); err != nil {
@@ -252,12 +244,8 @@ func (h *APIHandler) ListRoles(c echo.Context) error {
 
 func (h *APIHandler) CreateRole(c echo.Context) error {
 	var req CreateRoleRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Name == "" {
-		return response.BadRequest(c, "name is required")
 	}
 
 	role, err := h.rbacSvc.CreateRole(req.Name, req.Description)
@@ -295,12 +283,8 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 	}
 
 	var req UpdateRoleRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Name == "" {
-		return response.BadRequest(c, "name is required")
 	}
 
 	role, err := h.rbacSvc.UpdateRole(roleID, req.Name, req.Description)
@@ -441,12 +425,8 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 	}
 
 	var req CreateStackPermissionRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.ServerID == 0 || req.PermissionID == 0 {
-		return response.BadRequest(c, "server_id and permission_id are required")
 	}
 
 	if req.StackPattern == "" {
