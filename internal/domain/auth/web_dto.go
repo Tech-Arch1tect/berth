@@ -1,5 +1,9 @@
 package auth
 
+import "errors"
+
+var ErrTOTPVerifyCodeRequired = errors.New("TOTP code is required")
+
 type LoginFormRequest struct {
 	Username   string `form:"username" json:"username"`
 	Password   string `form:"password" json:"password"`
@@ -22,4 +26,11 @@ type ResendVerificationForm struct {
 
 type TOTPVerifyForm struct {
 	Code string `form:"code" json:"code"`
+}
+
+func (f *TOTPVerifyForm) Validate() error {
+	if f.Code == "" {
+		return ErrTOTPVerifyCodeRequired
+	}
+	return nil
 }

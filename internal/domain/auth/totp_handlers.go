@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
+	"berth/internal/pkg/validation"
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
@@ -125,14 +126,8 @@ func (h *TOTPHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	var req TOTPVerifyForm
-
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/auth/totp/verify")
-	}
-
-	if req.Code == "" {
-		session.AddFlashError(c, "TOTP code is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
 		return c.Redirect(http.StatusFound, "/auth/totp/verify")
 	}
 
