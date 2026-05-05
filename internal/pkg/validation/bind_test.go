@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -117,6 +118,19 @@ func TestBindAndValidate_returns400OnMalformedJSON(t *testing.T) {
 	}
 	if httpErr.Code != http.StatusBadRequest {
 		t.Errorf("status: got %d, want 400", httpErr.Code)
+	}
+}
+
+func TestBindAndValidate_preservesValidateErrorForUnwrap(t *testing.T) {
+	c, _ := newJSONCtx(t, `{"name":"","count":3}`)
+
+	var req sampleReq
+	err := BindAndValidate(c, &req)
+	if err == nil {
+		t.Fatal("expected validation error, got nil")
+	}
+	if !errors.Is(err, errMissingName) {
+		t.Errorf("errors.Is(err, errMissingName) = false; want true so handlers can route on the named error")
 	}
 }
 

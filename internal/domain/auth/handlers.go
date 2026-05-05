@@ -11,6 +11,7 @@ import (
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
+	"berth/internal/pkg/validation"
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
@@ -62,14 +63,8 @@ func (h *Handler) ShowLogin(c echo.Context) error {
 
 func (h *Handler) Login(c echo.Context) error {
 	var req LoginFormRequest
-
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/auth/login")
-	}
-
-	if req.Username == "" || req.Password == "" {
-		session.AddFlashError(c, "Username and password are required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 
@@ -260,14 +255,8 @@ func (h *Handler) ShowPasswordReset(c echo.Context) error {
 
 func (h *Handler) RequestPasswordReset(c echo.Context) error {
 	var req PasswordResetRequestForm
-
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/auth/password-reset")
-	}
-
-	if req.Email == "" {
-		session.AddFlashError(c, "Email is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
 		return c.Redirect(http.StatusFound, "/auth/password-reset")
 	}
 
@@ -344,24 +333,11 @@ func (h *Handler) ShowPasswordResetConfirm(c echo.Context) error {
 
 func (h *Handler) ConfirmPasswordReset(c echo.Context) error {
 	var req PasswordResetConfirmForm
-
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/auth/password-reset")
-	}
-
-	if req.Token == "" {
-		session.AddFlashError(c, "Invalid password reset link")
-		return c.Redirect(http.StatusFound, "/auth/password-reset")
-	}
-
-	if req.Password == "" || req.PasswordConfirm == "" {
-		session.AddFlashError(c, "Password and confirmation are required")
-		return c.Redirect(http.StatusFound, fmt.Sprintf("/auth/password-reset/confirm?token=%s", req.Token))
-	}
-
-	if req.Password != req.PasswordConfirm {
-		session.AddFlashError(c, "Passwords do not match")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
+		if errors.Is(err, ErrPasswordResetTokenRequired) || req.Token == "" {
+			return c.Redirect(http.StatusFound, "/auth/password-reset")
+		}
 		return c.Redirect(http.StatusFound, fmt.Sprintf("/auth/password-reset/confirm?token=%s", req.Token))
 	}
 
@@ -501,14 +477,8 @@ func (h *Handler) VerifyEmail(c echo.Context) error {
 
 func (h *Handler) ResendVerification(c echo.Context) error {
 	var req ResendVerificationForm
-
-	if err := c.Bind(&req); err != nil {
-		session.AddFlashError(c, "Invalid request")
-		return c.Redirect(http.StatusFound, "/auth/login")
-	}
-
-	if req.Email == "" {
-		session.AddFlashError(c, "Email is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		session.AddFlashError(c, validation.ErrorMessage(err))
 		return c.Redirect(http.StatusFound, "/auth/login")
 	}
 

@@ -16,7 +16,7 @@ func BindAndValidate(c echo.Context, req RequestValidator) error {
 	}
 
 	if err := req.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error()).SetInternal(err)
 	}
 
 	return nil
