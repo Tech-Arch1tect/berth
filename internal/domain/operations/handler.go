@@ -37,7 +37,7 @@ func (h *Handler) StartOperation(c echo.Context) error {
 	}
 
 	var req OperationRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 

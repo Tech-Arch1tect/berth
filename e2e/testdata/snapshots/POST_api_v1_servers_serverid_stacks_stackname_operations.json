@@ -1,15 +1,15 @@
 {
   "method": "POST",
   "path": "/api/v1/servers/:serverid/stacks/:stackname/operations",
-  "status_code": 500,
+  "status_code": 400,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
     "data": {},
     "error": {
-      "code": "internal_error",
-      "message": "agent error: 404 Not Found"
+      "code": "bad_request",
+      "message": "command is required"
     },
     "success": false
   }

@@ -165,6 +165,9 @@ func (h *WebSocketHandler) processOperationRequest(ctx context.Context, conn *we
 	if err := json.Unmarshal(reqBytes, &opReq); err != nil {
 		return err
 	}
+	if err := opReq.Validate(); err != nil {
+		return err
+	}
 
 	startTime := time.Now()
 	response, err := h.service.StartOperation(ctx, userID, serverID, stackname, opReq)

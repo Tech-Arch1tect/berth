@@ -8,13 +8,6 @@ type RegistryCredential struct {
 	Password string `json:"password"`
 }
 
-type OperationRequest struct {
-	Command             string               `json:"command"`
-	Options             []string             `json:"options"`
-	Services            []string             `json:"services"`
-	RegistryCredentials []RegistryCredential `json:"registry_credentials,omitempty"`
-}
-
 type OperationStartData struct {
 	OperationID string `json:"operationId"`
 }
