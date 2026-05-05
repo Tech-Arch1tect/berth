@@ -1,9 +1,36 @@
 package registry
 
 import (
-	"berth/internal/domain/server"
+	"errors"
 	"time"
+
+	"berth/internal/domain/server"
 )
+
+var ErrCredentialFieldsRequired = errors.New("registry_url, username, and password are required")
+
+type CreateCredentialRequest struct {
+	StackPattern string `json:"stack_pattern"`
+	RegistryURL  string `json:"registry_url"`
+	ImagePattern string `json:"image_pattern"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+}
+
+func (r *CreateCredentialRequest) Validate() error {
+	if r.RegistryURL == "" || r.Username == "" || r.Password == "" {
+		return ErrCredentialFieldsRequired
+	}
+	return nil
+}
+
+type UpdateCredentialRequest struct {
+	StackPattern string `json:"stack_pattern"`
+	RegistryURL  string `json:"registry_url"`
+	ImagePattern string `json:"image_pattern"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+}
 
 type RegistryCredentialInfo struct {
 	ID           uint      `json:"id"`

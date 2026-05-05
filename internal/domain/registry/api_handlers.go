@@ -35,22 +35,6 @@ func NewAPIHandler(service *Service, rbacSvc permissionChecker, db *gorm.DB) *AP
 	}
 }
 
-type CreateCredentialRequest struct {
-	StackPattern string `json:"stack_pattern"`
-	RegistryURL  string `json:"registry_url"`
-	ImagePattern string `json:"image_pattern"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-}
-
-type UpdateCredentialRequest struct {
-	StackPattern string `json:"stack_pattern"`
-	RegistryURL  string `json:"registry_url"`
-	ImagePattern string `json:"image_pattern"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-}
-
 func (h *APIHandler) ListCredentials(c echo.Context) error {
 	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
@@ -135,16 +119,12 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 
 	var req CreateCredentialRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
 	}
 
 	if req.StackPattern == "" {
 		req.StackPattern = "*"
-	}
-
-	if req.RegistryURL == "" || req.Username == "" || req.Password == "" {
-		return response.BadRequest(c, "registry_url, username, and password are required")
 	}
 
 	credential, err := h.service.CreateCredential(serverID, req.StackPattern, req.RegistryURL, req.ImagePattern, req.Username, req.Password)
