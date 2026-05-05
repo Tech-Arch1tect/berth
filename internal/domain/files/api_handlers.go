@@ -88,12 +88,8 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 	}
 
 	var req WriteFileRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Path == "" {
-		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.WriteFile(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -130,12 +126,8 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 	}
 
 	var req CreateDirectoryRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Path == "" {
-		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.CreateDirectory(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -157,12 +149,8 @@ func (h *APIHandler) Delete(c echo.Context) error {
 	}
 
 	var req DeleteRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Path == "" {
-		return response.BadRequest(c, "path is required")
 	}
 
 	if err := h.service.Delete(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -199,12 +187,8 @@ func (h *APIHandler) Rename(c echo.Context) error {
 	}
 
 	var req RenameRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.OldPath == "" || req.NewPath == "" {
-		return response.BadRequest(c, "oldPath and newPath are required")
 	}
 
 	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -243,12 +227,8 @@ func (h *APIHandler) Copy(c echo.Context) error {
 	}
 
 	var req CopyRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.SourcePath == "" || req.TargetPath == "" {
-		return response.BadRequest(c, "sourcePath and targetPath are required")
 	}
 
 	if err := h.service.Copy(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -362,16 +342,8 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 	}
 
 	var req ChmodRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Path == "" {
-		return response.BadRequest(c, "path is required")
-	}
-
-	if req.Mode == "" {
-		return response.BadRequest(c, "mode is required")
 	}
 
 	if err := h.service.Chmod(c.Request().Context(), userID, serverID, stackname, req); err != nil {
@@ -393,16 +365,8 @@ func (h *APIHandler) Chown(c echo.Context) error {
 	}
 
 	var req ChownRequest
-	if err := validation.BindRequest(c, &req); err != nil {
+	if err := validation.BindAndValidate(c, &req); err != nil {
 		return err
-	}
-
-	if req.Path == "" {
-		return response.BadRequest(c, "path is required")
-	}
-
-	if req.OwnerID == nil && req.GroupID == nil {
-		return response.BadRequest(c, "owner_id or group_id is required")
 	}
 
 	if err := h.service.Chown(c.Request().Context(), userID, serverID, stackname, req); err != nil {
