@@ -254,10 +254,6 @@ type ServiceEnvironment struct {
 	Variables   []EnvironmentVariable `json:"variables"`
 }
 
-type CreateStackRequest struct {
-	Name string `json:"name"`
-}
-
 type ListStacksData struct {
 	Stacks []Stack `json:"stacks"`
 }

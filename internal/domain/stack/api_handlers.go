@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -64,12 +65,8 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 	}
 
 	var req CreateStackRequest
-	if err := c.Bind(&req); err != nil {
-		return response.BadRequest(c, "invalid request body")
-	}
-
-	if req.Name == "" {
-		return response.BadRequest(c, "stack name is required")
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
 	h.logger.Debug("creating stack via API",
@@ -335,8 +332,8 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 	}
 
 	var req UpdateComposeRequest
-	if err := c.Bind(&req); err != nil {
-		return response.BadRequest(c, "invalid request body")
+	if err := validation.BindRequest(c, &req); err != nil {
+		return err
 	}
 
 	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, &req)
