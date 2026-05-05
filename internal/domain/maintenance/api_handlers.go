@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
+	"berth/internal/pkg/validation"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -69,25 +70,8 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 	}
 
 	var request PruneRequest
-	if err := c.Bind(&request); err != nil {
-		return response.BadRequest(c, "Invalid request body")
-	}
-
-	if request.Type == "" {
-		return response.BadRequest(c, "Prune type is required")
-	}
-
-	validTypes := map[string]bool{
-		"images":      true,
-		"containers":  true,
-		"volumes":     true,
-		"networks":    true,
-		"build-cache": true,
-		"system":      true,
-	}
-
-	if !validTypes[request.Type] {
-		return response.BadRequest(c, "Invalid prune type")
+	if err := validation.BindAndValidate(c, &request); err != nil {
+		return err
 	}
 
 	result, err := h.service.PruneDocker(c.Request().Context(), userID, serverID, &request)
@@ -130,27 +114,8 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 	}
 
 	var request DeleteRequest
-	if err := c.Bind(&request); err != nil {
-		return response.BadRequest(c, "Invalid request body")
-	}
-
-	if request.Type == "" {
-		return response.BadRequest(c, "Resource type is required")
-	}
-
-	if request.ID == "" {
-		return response.BadRequest(c, "Resource ID is required")
-	}
-
-	validTypes := map[string]bool{
-		"image":     true,
-		"container": true,
-		"volume":    true,
-		"network":   true,
-	}
-
-	if !validTypes[request.Type] {
-		return response.BadRequest(c, "Invalid resource type")
+	if err := validation.BindAndValidate(c, &request); err != nil {
+		return err
 	}
 
 	result, err := h.service.DeleteResource(c.Request().Context(), userID, serverID, &request)

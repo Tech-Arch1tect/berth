@@ -129,18 +129,6 @@ type MaintenanceInfo struct {
 	LastUpdated       time.Time         `json:"last_updated"`
 }
 
-type PruneRequest struct {
-	Type    string `json:"type"`
-	Force   bool   `json:"force"`
-	All     bool   `json:"all"`
-	Filters string `json:"filters"`
-}
-
-type DeleteRequest struct {
-	Type string `json:"type"` // "image", "container", "volume", "network"
-	ID   string `json:"id"`   // Resource ID to delete
-}
-
 type DeleteResult struct {
 	Type    string `json:"type"`
 	ID      string `json:"id"`
