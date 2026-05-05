@@ -20,7 +20,6 @@ export * from './authLogoutRequest';
 export * from './authRefreshData';
 export * from './authRefreshRequest';
 export * from './authTOTPVerifyRequest';
-export * from './baseModel';
 export * from './buildCacheInfo';
 export * from './buildCacheSummary';
 export * from './buildConfig';

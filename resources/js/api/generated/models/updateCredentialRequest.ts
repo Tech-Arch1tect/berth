@@ -7,9 +7,9 @@
  */
 
 export interface UpdateCredentialRequest {
-  image_pattern: string;
-  password: string;
+  image_pattern?: string;
+  password?: string;
   registry_url: string;
-  stack_pattern: string;
+  stack_pattern?: string;
   username: string;
 }
