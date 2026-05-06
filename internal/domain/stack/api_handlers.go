@@ -11,7 +11,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type stackAuditLogger interface {
@@ -22,15 +21,13 @@ type APIHandler struct {
 	service      *Service
 	logger       *zap.Logger
 	auditService stackAuditLogger
-	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, logger *zap.Logger, auditService stackAuditLogger, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, logger *zap.Logger, auditService stackAuditLogger) *APIHandler {
 	return &APIHandler{
 		service:      service,
 		logger:       logger,
 		auditService: auditService,
-		db:           db,
 	}
 }
 
@@ -87,11 +84,7 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 		return response.BadRequest(c, errMsg)
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.LogStackEvent(
 		security.EventStackCreated,
@@ -211,11 +204,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 	}
 
 	if unmask {
-		user, _ := session.LoadCurrentUser(c, h.db)
-		username := ""
-		if user != nil {
-			username = user.Username
-		}
+		username := session.ResolveUsername(c)
 
 		h.auditService.LogStackEvent(
 			security.EventStackSecretsViewed,

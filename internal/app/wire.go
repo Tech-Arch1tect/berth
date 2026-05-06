@@ -225,7 +225,7 @@ func Build(
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
 
 	g.APIKeySvc = apikey.NewService(db, logger, g.RBACSvc)
-	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, inertiaSvc, g.SecurityAuditSvc, db)
+	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, inertiaSvc, g.SecurityAuditSvc)
 
 	g.SetupSvc = setup.NewService(db, g.RBACSvc, logger)
 	g.SetupHandler = setup.NewHandler(g.SetupSvc, g.AuthSvc, inertiaSvc, logger)
@@ -237,16 +237,16 @@ func Build(
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
 	g.StackHandler = stack.NewHandler(inertiaSvc, g.StackSvc, g.RBACSvc, g.ServerSvc)
-	g.StackAPIHandler = stack.NewAPIHandler(g.StackSvc, logger, g.SecurityAuditSvc, db)
+	g.StackAPIHandler = stack.NewAPIHandler(g.StackSvc, logger, g.SecurityAuditSvc)
 
 	g.DashboardHandler = dashboard.NewHandler(inertiaSvc, logger, g.ServerSvc)
 
 	g.MaintSvc = maintenance.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
 	g.MaintHandler = maintenance.NewHandler(inertiaSvc, g.MaintSvc)
-	g.MaintAPIHandler = maintenance.NewAPIHandler(g.MaintSvc, g.SecurityAuditSvc, db)
+	g.MaintAPIHandler = maintenance.NewAPIHandler(g.MaintSvc, g.SecurityAuditSvc)
 
 	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
-	g.FilesAPIHandler = files.NewAPIHandler(db, g.FilesSvc, g.SecurityAuditSvc)
+	g.FilesAPIHandler = files.NewAPIHandler(g.FilesSvc, g.SecurityAuditSvc)
 
 	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
 	g.LogsHandler = logs.NewHandler(g.LogsSvc)

@@ -2,7 +2,6 @@ package files
 
 import (
 	"berth/internal/domain/security"
-	"berth/internal/domain/user"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
@@ -10,7 +9,6 @@ import (
 	"berth/internal/domain/session"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type fileAuditLogger interface {
@@ -18,14 +16,12 @@ type fileAuditLogger interface {
 }
 
 type APIHandler struct {
-	db       *gorm.DB
 	service  *Service
 	auditSvc fileAuditLogger
 }
 
-func NewAPIHandler(db *gorm.DB, service *Service, auditSvc fileAuditLogger) *APIHandler {
+func NewAPIHandler(service *Service, auditSvc fileAuditLogger) *APIHandler {
 	return &APIHandler{
-		db:       db,
 		service:  service,
 		auditSvc: auditSvc,
 	}
@@ -96,20 +92,16 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser user.User
-	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
-		_ = h.auditSvc.LogFileEvent(
-			security.EventFileUploaded,
-			actorUser.ID,
-			actorUser.Username,
-			serverID,
-			stackname,
-			req.Path,
-			c.RealIP(),
-			nil,
-		)
-	}
+	_ = h.auditSvc.LogFileEvent(
+		security.EventFileUploaded,
+		session.GetUserIDAsUint(c),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		req.Path,
+		c.RealIP(),
+		nil,
+	)
 
 	return response.OK(c, FileMessageData{Message: "success"})
 }
@@ -157,20 +149,16 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser user.User
-	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
-		_ = h.auditSvc.LogFileEvent(
-			security.EventFileDeleted,
-			actorUser.ID,
-			actorUser.Username,
-			serverID,
-			stackname,
-			req.Path,
-			c.RealIP(),
-			nil,
-		)
-	}
+	_ = h.auditSvc.LogFileEvent(
+		security.EventFileDeleted,
+		session.GetUserIDAsUint(c),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		req.Path,
+		c.RealIP(),
+		nil,
+	)
 
 	return response.OK(c, FileMessageData{Message: "success"})
 }
@@ -195,22 +183,18 @@ func (h *APIHandler) Rename(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser user.User
-	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
-		_ = h.auditSvc.LogFileEvent(
-			security.EventFileRenamed,
-			actorUser.ID,
-			actorUser.Username,
-			serverID,
-			stackname,
-			req.NewPath,
-			c.RealIP(),
-			map[string]any{
-				"old_path": req.OldPath,
-			},
-		)
-	}
+	_ = h.auditSvc.LogFileEvent(
+		security.EventFileRenamed,
+		session.GetUserIDAsUint(c),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		req.NewPath,
+		c.RealIP(),
+		map[string]any{
+			"old_path": req.OldPath,
+		},
+	)
 
 	return response.OK(c, FileMessageData{Message: "success"})
 }
@@ -260,23 +244,19 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser user.User
-	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
-		_ = h.auditSvc.LogFileEvent(
-			security.EventFileUploaded,
-			actorUser.ID,
-			actorUser.Username,
-			serverID,
-			stackname,
-			filePath,
-			c.RealIP(),
-			map[string]any{
-				"filename": file.Filename,
-				"size":     file.Size,
-			},
-		)
-	}
+	_ = h.auditSvc.LogFileEvent(
+		security.EventFileUploaded,
+		session.GetUserIDAsUint(c),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		filePath,
+		c.RealIP(),
+		map[string]any{
+			"filename": file.Filename,
+			"size":     file.Size,
+		},
+	)
 
 	return response.OK(c, FileMessageData{Message: "File uploaded successfully"})
 }
@@ -305,22 +285,18 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 	}
 	defer result.Body.Close()
 
-	actorUserID := session.GetUserIDAsUint(c)
-	var actorUser user.User
-	if err := h.db.First(&actorUser, actorUserID).Error; err == nil {
-		_ = h.auditSvc.LogFileEvent(
-			security.EventFileDownloaded,
-			actorUser.ID,
-			actorUser.Username,
-			serverID,
-			stackname,
-			filePath,
-			c.RealIP(),
-			map[string]any{
-				"filename": filename,
-			},
-		)
-	}
+	_ = h.auditSvc.LogFileEvent(
+		security.EventFileDownloaded,
+		session.GetUserIDAsUint(c),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		filePath,
+		c.RealIP(),
+		map[string]any{
+			"filename": filename,
+		},
+	)
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	if filename != "" {

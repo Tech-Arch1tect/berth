@@ -9,7 +9,6 @@ import (
 	"berth/internal/pkg/validation"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type MaintenancePermissions struct {
@@ -28,14 +27,12 @@ type maintenanceAuditLogger interface {
 type APIHandler struct {
 	service      *Service
 	auditService maintenanceAuditLogger
-	db           *gorm.DB
 }
 
-func NewAPIHandler(service *Service, auditService maintenanceAuditLogger, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, auditService maintenanceAuditLogger) *APIHandler {
 	return &APIHandler{
 		service:      service,
 		auditService: auditService,
-		db:           db,
 	}
 }
 
@@ -79,11 +76,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerPruneExecuted,
@@ -123,11 +116,7 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 		return response.Internal(c, err.Error())
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerResourceDeleted,

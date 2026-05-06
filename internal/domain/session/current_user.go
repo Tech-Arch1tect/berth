@@ -40,3 +40,12 @@ func LoadCurrentUser(c echo.Context, db *gorm.DB) (*user.User, error) {
 
 	return nil, echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
 }
+
+func ResolveUsername(c echo.Context) string {
+	if currentUser := c.Get("currentUser"); currentUser != nil {
+		if userModel, ok := currentUser.(user.User); ok {
+			return userModel.Username
+		}
+	}
+	return ""
+}

@@ -11,7 +11,6 @@ import (
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type apikeyAuditLogger interface {
@@ -23,15 +22,13 @@ type Handler struct {
 	service      *Service
 	inertia      *inertia.Service
 	auditService apikeyAuditLogger
-	db           *gorm.DB
 }
 
-func NewHandler(service *Service, inertia *inertia.Service, auditService apikeyAuditLogger, db *gorm.DB) *Handler {
+func NewHandler(service *Service, inertia *inertia.Service, auditService apikeyAuditLogger) *Handler {
 	return &Handler{
 		service:      service,
 		inertia:      inertia,
 		auditService: auditService,
-		db:           db,
 	}
 }
 
@@ -111,11 +108,7 @@ func (h *Handler) CreateAPIKey(c echo.Context) error {
 		return response.Internal(c, "Failed to create API key")
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.LogAPIKeyEvent(
 		security.EventAPIKeyCreated,
@@ -158,11 +151,7 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 		return response.NotFound(c, "API key not found")
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.LogAPIKeyEvent(
 		security.EventAPIKeyRevoked,
@@ -223,11 +212,7 @@ func (h *Handler) AddScope(c echo.Context) error {
 		return response.BadRequest(c, err.Error())
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.LogAPIKeyScopeEvent(
 		security.EventAPIKeyScopeAdded,
@@ -264,11 +249,7 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 		return response.NotFound(c, "Scope not found")
 	}
 
-	user, _ := session.LoadCurrentUser(c, h.db)
-	username := ""
-	if user != nil {
-		username = user.Username
-	}
+	username := session.ResolveUsername(c)
 
 	h.auditService.LogAPIKeyScopeEvent(
 		security.EventAPIKeyScopeRemoved,
