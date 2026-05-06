@@ -43,35 +43,6 @@ func newJSONCtx(t *testing.T, body string) (echo.Context, *httptest.ResponseReco
 	return e.NewContext(req, rec), rec
 }
 
-func TestBindRequest_decodesJSONBody(t *testing.T) {
-	c, _ := newJSONCtx(t, `{"name":"alpha","count":3}`)
-
-	var req sampleReq
-	if err := BindRequest(c, &req); err != nil {
-		t.Fatalf("BindRequest: %v", err)
-	}
-	if req.Name != "alpha" || req.Count != 3 {
-		t.Errorf("decoded payload mismatch: %+v", req)
-	}
-}
-
-func TestBindRequest_returns400OnMalformedJSON(t *testing.T) {
-	c, _ := newJSONCtx(t, `{"name":`)
-
-	var req sampleReq
-	err := BindRequest(c, &req)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-	httpErr, ok := err.(*echo.HTTPError)
-	if !ok {
-		t.Fatalf("error type: got %T, want *echo.HTTPError", err)
-	}
-	if httpErr.Code != http.StatusBadRequest {
-		t.Errorf("status: got %d, want 400", httpErr.Code)
-	}
-}
-
 func TestBindAndValidate_decodesAndPassesValidation(t *testing.T) {
 	c, _ := newJSONCtx(t, `{"name":"alpha","count":3}`)
 

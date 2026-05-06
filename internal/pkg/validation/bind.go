@@ -22,14 +22,6 @@ func BindAndValidate(c echo.Context, req RequestValidator) error {
 	return nil
 }
 
-func BindRequest[T any](c echo.Context, req *T) error {
-	if err := c.Bind(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
-	}
-
-	return nil
-}
-
 func ErrorMessage(err error) string {
 	if err == nil {
 		return ""
