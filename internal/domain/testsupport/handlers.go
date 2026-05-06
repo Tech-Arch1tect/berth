@@ -4,11 +4,16 @@ package testsupport
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"berth/internal/pkg/validation"
+
 	"github.com/labstack/echo/v4"
 )
+
+var ErrRegisterHandlerPathRequired = errors.New("path required")
 
 type Handler struct {
 	svc *Service
@@ -27,8 +32,8 @@ func (h *Handler) Reset(c echo.Context) error {
 
 func (h *Handler) SeedUser(c echo.Context) error {
 	var in SeedUserInput
-	if err := c.Bind(&in); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	if err := validation.BindAndValidate(c, &in); err != nil {
+		return err
 	}
 	res, err := h.svc.SeedUser(in)
 	if err != nil {
@@ -50,8 +55,8 @@ func (h *Handler) EnableTOTP(c echo.Context) error {
 
 func (h *Handler) SeedServer(c echo.Context) error {
 	var in SeedServerInput
-	if err := c.Bind(&in); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	if err := validation.BindAndValidate(c, &in); err != nil {
+		return err
 	}
 	res, err := h.svc.SeedServerWithAgent(in)
 	if err != nil {
@@ -66,6 +71,13 @@ type registerHandlerInput struct {
 	Body   json.RawMessage `json:"body"`
 }
 
+func (i *registerHandlerInput) Validate() error {
+	if i.Path == "" {
+		return ErrRegisterHandlerPathRequired
+	}
+	return nil
+}
+
 func (h *Handler) RegisterAgentHandler(c echo.Context) error {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
@@ -77,11 +89,8 @@ func (h *Handler) RegisterAgentHandler(c echo.Context) error {
 	}
 
 	var in registerHandlerInput
-	if err := c.Bind(&in); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-	if in.Path == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "path required")
+	if err := validation.BindAndValidate(c, &in); err != nil {
+		return err
 	}
 	status := in.Status
 	if status == 0 {

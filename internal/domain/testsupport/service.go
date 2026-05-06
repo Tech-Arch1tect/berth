@@ -93,12 +93,21 @@ func (s *Service) Reset() error {
 	return nil
 }
 
+var ErrSeedUserFieldsRequired = errors.New("username, email, password required")
+
 type SeedUserInput struct {
 	Username      string `json:"username"`
 	Email         string `json:"email"`
 	Password      string `json:"password"`
 	Admin         bool   `json:"admin"`
 	EmailVerified bool   `json:"email_verified"`
+}
+
+func (i *SeedUserInput) Validate() error {
+	if i.Username == "" || i.Email == "" || i.Password == "" {
+		return ErrSeedUserFieldsRequired
+	}
+	return nil
 }
 
 type SeedUserResult struct {
@@ -109,7 +118,7 @@ type SeedUserResult struct {
 
 func (s *Service) SeedUser(in SeedUserInput) (*SeedUserResult, error) {
 	if in.Username == "" || in.Email == "" || in.Password == "" {
-		return nil, errors.New("username, email, password required")
+		return nil, ErrSeedUserFieldsRequired
 	}
 
 	hashed, err := s.authSvc.HashPassword(in.Password)
@@ -151,8 +160,17 @@ func (s *Service) EnableTOTP(userID uint) error {
 	return nil
 }
 
+var ErrSeedServerNameRequired = errors.New("name required")
+
 type SeedServerInput struct {
 	Name string `json:"name"`
+}
+
+func (i *SeedServerInput) Validate() error {
+	if i.Name == "" {
+		return ErrSeedServerNameRequired
+	}
+	return nil
 }
 
 type SeedServerResult struct {
@@ -163,7 +181,7 @@ type SeedServerResult struct {
 
 func (s *Service) SeedServerWithAgent(in SeedServerInput) (*SeedServerResult, error) {
 	if in.Name == "" {
-		return nil, errors.New("name required")
+		return nil, ErrSeedServerNameRequired
 	}
 
 	agent := NewMockAgent()
