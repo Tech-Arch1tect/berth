@@ -190,7 +190,7 @@ func Build(
 	}
 	g.SessionMgr = sessionMgr
 	g.SessionSvc = session.ProvideSessionService(db, sessionMgr, jwtSvc, logger)
-	g.SessionHandler = session.NewHandler(db, inertiaSvc, g.SessionSvc)
+	g.SessionHandler = session.NewHandler(inertiaSvc, g.SessionSvc)
 
 	var sessionInvalidator auth.SessionInvalidator
 	if g.SessionSvc != nil {
@@ -231,15 +231,15 @@ func Build(
 	g.SetupHandler = setup.NewHandler(g.SetupSvc, g.AuthSvc, inertiaSvc, logger)
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.RBACSvc, g.AgentSvc, logger)
-	g.ServerHandler = server.NewHandler(db, g.ServerSvc, inertiaSvc, g.SecurityAuditSvc)
+	g.ServerHandler = server.NewHandler(g.ServerSvc, inertiaSvc, g.SecurityAuditSvc)
 	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc)
-	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc, db)
+	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
 	g.StackHandler = stack.NewHandler(inertiaSvc, g.StackSvc, g.RBACSvc, g.ServerSvc)
 	g.StackAPIHandler = stack.NewAPIHandler(g.StackSvc, logger, g.SecurityAuditSvc, db)
 
-	g.DashboardHandler = dashboard.NewHandler(inertiaSvc, db, logger, g.ServerSvc)
+	g.DashboardHandler = dashboard.NewHandler(inertiaSvc, logger, g.ServerSvc)
 
 	g.MaintSvc = maintenance.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
 	g.MaintHandler = maintenance.NewHandler(inertiaSvc, g.MaintSvc)

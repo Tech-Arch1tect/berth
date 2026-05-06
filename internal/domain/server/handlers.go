@@ -8,20 +8,17 @@ import (
 	"berth/internal/platform/inertia/errpage"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
-	db         *gorm.DB
 	service    *Service
 	inertiaSvc *inertia.Service
 	errPage    *errpage.Renderer
 	auditSvc   *security.AuditService
 }
 
-func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *Handler {
+func NewHandler(service *Service, inertiaSvc *inertia.Service, auditSvc *security.AuditService) *Handler {
 	return &Handler{
-		db:         db,
 		service:    service,
 		inertiaSvc: inertiaSvc,
 		errPage:    errpage.New(inertiaSvc),

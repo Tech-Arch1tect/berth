@@ -6,18 +6,15 @@ import (
 	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
-	db         *gorm.DB
 	inertiaSvc *inertia.Service
 	sessionSvc *Service
 }
 
-func NewHandler(db *gorm.DB, inertiaSvc *inertia.Service, sessionSvc *Service) *Handler {
+func NewHandler(inertiaSvc *inertia.Service, sessionSvc *Service) *Handler {
 	return &Handler{
-		db:         db,
 		inertiaSvc: inertiaSvc,
 		sessionSvc: sessionSvc,
 	}

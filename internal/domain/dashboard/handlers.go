@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type serverLister interface {
@@ -19,15 +18,13 @@ type serverLister interface {
 
 type Handler struct {
 	inertiaSvc *inertia.Service
-	db         *gorm.DB
 	logger     *zap.Logger
 	serverSvc  serverLister
 }
 
-func NewHandler(inertiaSvc *inertia.Service, db *gorm.DB, logger *zap.Logger, serverSvc serverLister) *Handler {
+func NewHandler(inertiaSvc *inertia.Service, logger *zap.Logger, serverSvc serverLister) *Handler {
 	return &Handler{
 		inertiaSvc: inertiaSvc,
-		db:         db,
 		logger:     logger,
 		serverSvc:  serverSvc,
 	}

@@ -6,12 +6,10 @@ import (
 	"berth/internal/pkg/response"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type UserAPIHandler struct {
 	service *Service
-	db      *gorm.DB
 }
 
 type ListServersData struct {
@@ -22,10 +20,9 @@ type ServerStatisticsData struct {
 	Statistics StackStatistics `json:"statistics"`
 }
 
-func NewUserAPIHandler(service *Service, db *gorm.DB) *UserAPIHandler {
+func NewUserAPIHandler(service *Service) *UserAPIHandler {
 	return &UserAPIHandler{
 		service: service,
-		db:      db,
 	}
 }
 
