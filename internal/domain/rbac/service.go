@@ -59,42 +59,6 @@ func (s *Service) HasRole(userID uint, roleName string) (bool, error) {
 	return hasRole, nil
 }
 
-func (s *Service) HasPermission(userID uint, resource, action string) (bool, error) {
-	var user usermodel.User
-	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, role := range user.Roles {
-		if role.IsAdmin {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func (s *Service) HasPermissionByName(userID uint, permissionName string) (bool, error) {
-	var user usermodel.User
-	err := s.db.Preload("Roles", "is_admin = ?", true).First(&user, userID).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, role := range user.Roles {
-		if role.IsAdmin {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func (s *Service) AssignRole(userID uint, roleID uint) error {
 	s.logger.Info("assigning role to user",
 		zap.Uint("user_id", userID),
@@ -202,32 +166,6 @@ func (s *Service) GetUserRoles(userID uint) ([]usermodel.Role, error) {
 		return nil, err
 	}
 	return user.Roles, nil
-}
-
-func (s *Service) GetUserPermissions(userID uint) ([]usermodel.ServerRoleStackPermission, error) {
-	var user usermodel.User
-	if err := s.db.Preload("Roles").First(&user, userID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []usermodel.ServerRoleStackPermission{}, nil
-		}
-		return nil, err
-	}
-
-	for _, role := range user.Roles {
-		if role.IsAdmin {
-			var allPermissions []usermodel.ServerRoleStackPermission
-			err := s.db.Preload("Permission").Find(&allPermissions).Error
-			return allPermissions, err
-		}
-	}
-
-	var permissions []usermodel.ServerRoleStackPermission
-	err := s.db.Preload("Permission").
-		Joins("JOIN user_roles ON user_roles.role_id = server_role_stack_permissions.role_id").
-		Where("user_roles.user_id = ?", userID).
-		Find(&permissions).Error
-
-	return permissions, err
 }
 
 func (s *Service) GetRoleByName(roleName string) (*usermodel.Role, error) {
@@ -825,16 +763,6 @@ func (s *Service) checkAPIKeyServerPermission(apiKey *apikey.APIKey, serverID ui
 		}
 	}
 	return false
-}
-
-func (s *Service) CheckUserStackPermission(ctx context.Context, userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
-	return s.UserHasStackPermission(ctx, userID, serverID, stackname, permissionName)
-}
-
-func (s *Service) GetRoleServerStackPermissions(roleID uint) ([]usermodel.ServerRoleStackPermission, error) {
-	var permissions []usermodel.ServerRoleStackPermission
-	err := s.db.Preload("Permission").Where("role_id = ?", roleID).Find(&permissions).Error
-	return permissions, err
 }
 
 func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stackname string, permissionName string) error {

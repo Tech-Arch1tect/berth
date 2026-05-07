@@ -3,7 +3,6 @@ package apikey
 import (
 	"berth/internal/domain/server"
 	"berth/internal/domain/user"
-	"berth/internal/pkg/patterns"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -430,52 +429,6 @@ func (s *Service) RemoveScope(scopeID uint, userID uint) error {
 	)
 
 	return nil
-}
-
-func (s *Service) CheckAPIKeyPermission(apiKey *APIKey, userHasPermission bool, serverID uint, stackName string, permissionName string) (bool, error) {
-	s.logger.Debug("checking API key permission",
-		zap.Uint("api_key_id", apiKey.ID),
-		zap.Uint("user_id", apiKey.UserID),
-		zap.Uint("server_id", serverID),
-		zap.String("stack_name", stackName),
-		zap.String("permission_name", permissionName),
-		zap.Bool("user_has_permission", userHasPermission),
-	)
-
-	if !userHasPermission {
-		s.logger.Debug("user does not have permission, API key denied",
-			zap.Uint("api_key_id", apiKey.ID),
-			zap.String("permission_name", permissionName),
-		)
-		return false, nil
-	}
-
-	for _, scope := range apiKey.Scopes {
-
-		if scope.ServerID != nil && *scope.ServerID != serverID {
-			continue
-		}
-
-		if !patterns.Matches(stackName, scope.StackPattern) {
-			continue
-		}
-
-		if scope.Permission.Name == permissionName {
-			s.logger.Debug("API key permission granted",
-				zap.Uint("api_key_id", apiKey.ID),
-				zap.Uint("scope_id", scope.ID),
-				zap.String("permission_name", permissionName),
-			)
-			return true, nil
-		}
-	}
-
-	s.logger.Debug("API key permission denied - no matching scope",
-		zap.Uint("api_key_id", apiKey.ID),
-		zap.String("permission_name", permissionName),
-	)
-
-	return false, nil
 }
 
 func (s *Service) ListScopes(apiKeyID uint, userID uint) ([]APIKeyScope, error) {

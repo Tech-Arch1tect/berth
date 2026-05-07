@@ -31,8 +31,6 @@ const (
 	PermLogsOperationsRead = "logs.operations.read"
 )
 
-const PermAdminPrefix = "admin."
-
 const (
 	RoleAdmin     = "admin"
 	RoleUser      = "user"

@@ -536,22 +536,6 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 	return response.OK(c, MessageData{Message: "Role stack permission deleted successfully"})
 }
 
-func (h *APIHandler) GetUserPermissions(c echo.Context) error {
-	userID, err := echoparams.ParseUintParam(c, "id")
-	if err != nil {
-		return err
-	}
-
-	permissions, err := h.rbacSvc.GetUserPermissions(userID)
-	if err != nil {
-		return response.Internal(c, "Failed to fetch permissions")
-	}
-
-	return response.OK(c, map[string]any{
-		"permissions": permissions,
-	})
-}
-
 func (h *APIHandler) ListPermissions(c echo.Context) error {
 	permType := c.QueryParam("type")
 
