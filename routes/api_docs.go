@@ -47,7 +47,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/auth/login").
 		Tags("auth").
 		Summary("Login with username and password").
-		Description("Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication.").
+		Description("Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication. On success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients; mobile/CLI clients can keep using the body-returned `refresh_token`.").
 		Body(auth.AuthLoginRequest{}, "Login credentials").
 		Response(http.StatusOK, response.Response[auth.AuthLoginData]{}, "Login successful - returns access and refresh tokens").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
@@ -58,7 +58,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/auth/refresh").
 		Tags("auth").
 		Summary("Refresh access token").
-		Description("Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated.").
+		Description("Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The rotated refresh token is also written back to the `berth_refresh` cookie so browser clients stay current after rotation.").
 		Body(auth.AuthRefreshRequest{}, "Refresh token").
 		Response(http.StatusOK, response.Response[auth.AuthRefreshData]{}, "New access and refresh tokens").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
@@ -69,7 +69,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/auth/totp/verify").
 		Tags("auth").
 		Summary("Verify TOTP code to complete login").
-		Description("Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app.").
+		Description("Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app. On success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients.").
 		Body(auth.AuthTOTPVerifyRequest{}, "TOTP verification code").
 		Response(http.StatusOK, response.Response[auth.AuthLoginData]{}, "TOTP verified - returns access and refresh tokens").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").

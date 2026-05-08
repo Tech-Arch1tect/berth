@@ -34,7 +34,7 @@ import { apiClient } from '../../client';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication.
+ * Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication. On success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients; mobile/CLI clients can keep using the body-returned `refresh_token`.
  * @summary Login with username and password
  */
 export const getPostApiV1AuthLoginUrl = () => {
@@ -373,7 +373,7 @@ export const usePostApiV1AuthPasswordResetConfirm = <
   return useMutation(getPostApiV1AuthPasswordResetConfirmMutationOptions(options), queryClient);
 };
 /**
- * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated.
+ * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The rotated refresh token is also written back to the `berth_refresh` cookie so browser clients stay current after rotation.
  * @summary Refresh access token
  */
 export const getPostApiV1AuthRefreshUrl = () => {
@@ -544,7 +544,7 @@ export const usePostApiV1AuthResendVerification = <
   return useMutation(getPostApiV1AuthResendVerificationMutationOptions(options), queryClient);
 };
 /**
- * Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app.
+ * Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app. On success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients.
  * @summary Verify TOTP code to complete login
  */
 export const getPostApiV1AuthTotpVerifyUrl = () => {

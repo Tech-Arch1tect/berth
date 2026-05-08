@@ -148,6 +148,8 @@ func (h *APIHandler) Login(c echo.Context) error {
 		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate refresh token")
 	}
 
+	setRefreshCookie(c, refreshTokenData.Token, refreshTokenData.ExpiresAt)
+
 	h.trackJWTSession(c, user.ID, accessToken, refreshTokenData)
 
 	now := time.Now()
@@ -211,6 +213,8 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
 		return response.Err(c, http.StatusInternalServerError, "token_refresh_failed", "Failed to refresh token")
 	}
+
+	setRefreshCookie(c, result.RefreshToken, result.ExpiresAt)
 
 	if h.sessionSvc != nil {
 		accessJTI, _ := h.tokens.ExtractJTI(result.AccessToken)
@@ -417,6 +421,8 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 		)
 		return response.Err(c, http.StatusInternalServerError, "token_generation_failed", "Failed to generate refresh token")
 	}
+
+	setRefreshCookie(c, refreshTokenData.Token, refreshTokenData.ExpiresAt)
 
 	h.trackJWTSession(c, claims.UserID, accessToken, refreshTokenData)
 
