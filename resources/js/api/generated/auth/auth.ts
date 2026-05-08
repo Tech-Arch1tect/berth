@@ -16,10 +16,15 @@ import type {
 import type {
   AuthLoginRequest,
   AuthLogoutRequest,
+  AuthPasswordResetConfirmRequest,
+  AuthPasswordResetRequest,
   AuthRefreshRequest,
+  AuthResendVerificationRequest,
   AuthTOTPVerifyRequest,
+  AuthVerifyEmailRequest,
   ResponseAuthLoginData,
   ResponseAuthLogoutData,
+  ResponseAuthMessageData,
   ResponseAuthRefreshData,
   ResponseEmpty,
 } from '../models';
@@ -197,6 +202,177 @@ export const usePostApiV1AuthLogout = <TError = ResponseEmpty | void, TContext =
   return useMutation(getPostApiV1AuthLogoutMutationOptions(options), queryClient);
 };
 /**
+ * Sends a password reset email to the supplied address if an account exists. Always returns 200 with a generic message to prevent account enumeration.
+ * @summary Request a password reset email
+ */
+export const getPostApiV1AuthPasswordResetUrl = () => {
+  return `/api/v1/auth/password-reset`;
+};
+
+export const postApiV1AuthPasswordReset = async (
+  authPasswordResetRequest: AuthPasswordResetRequest,
+  options?: RequestInit
+): Promise<ResponseAuthMessageData> => {
+  return apiClient<ResponseAuthMessageData>(getPostApiV1AuthPasswordResetUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authPasswordResetRequest),
+  });
+};
+
+export const getPostApiV1AuthPasswordResetMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>,
+    TError,
+    { data: AuthPasswordResetRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>,
+  TError,
+  { data: AuthPasswordResetRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AuthPasswordReset'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>,
+    { data: AuthPasswordResetRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AuthPasswordReset(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AuthPasswordResetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>
+>;
+export type PostApiV1AuthPasswordResetMutationBody = AuthPasswordResetRequest;
+export type PostApiV1AuthPasswordResetMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Request a password reset email
+ */
+export const usePostApiV1AuthPasswordReset = <TError = ResponseEmpty | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>,
+      TError,
+      { data: AuthPasswordResetRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordReset>>,
+  TError,
+  { data: AuthPasswordResetRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AuthPasswordResetMutationOptions(options), queryClient);
+};
+/**
+ * Resets the user's password using a token previously emailed to them. The token is single-use; subsequent submissions return an error.
+ * @summary Complete a password reset
+ */
+export const getPostApiV1AuthPasswordResetConfirmUrl = () => {
+  return `/api/v1/auth/password-reset/confirm`;
+};
+
+export const postApiV1AuthPasswordResetConfirm = async (
+  authPasswordResetConfirmRequest: AuthPasswordResetConfirmRequest,
+  options?: RequestInit
+): Promise<ResponseAuthMessageData> => {
+  return apiClient<ResponseAuthMessageData>(getPostApiV1AuthPasswordResetConfirmUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authPasswordResetConfirmRequest),
+  });
+};
+
+export const getPostApiV1AuthPasswordResetConfirmMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>,
+    TError,
+    { data: AuthPasswordResetConfirmRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>,
+  TError,
+  { data: AuthPasswordResetConfirmRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AuthPasswordResetConfirm'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>,
+    { data: AuthPasswordResetConfirmRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AuthPasswordResetConfirm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AuthPasswordResetConfirmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>
+>;
+export type PostApiV1AuthPasswordResetConfirmMutationBody = AuthPasswordResetConfirmRequest;
+export type PostApiV1AuthPasswordResetConfirmMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Complete a password reset
+ */
+export const usePostApiV1AuthPasswordResetConfirm = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>,
+      TError,
+      { data: AuthPasswordResetConfirmRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AuthPasswordResetConfirm>>,
+  TError,
+  { data: AuthPasswordResetConfirmRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AuthPasswordResetConfirmMutationOptions(options), queryClient);
+};
+/**
  * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated.
  * @summary Refresh access token
  */
@@ -281,6 +457,93 @@ export const usePostApiV1AuthRefresh = <TError = ResponseEmpty | void, TContext 
   return useMutation(getPostApiV1AuthRefreshMutationOptions(options), queryClient);
 };
 /**
+ * Sends a fresh verification email if an account with the supplied address exists and is unverified. Always returns 200 with a generic message to prevent account enumeration.
+ * @summary Request a new email verification link
+ */
+export const getPostApiV1AuthResendVerificationUrl = () => {
+  return `/api/v1/auth/resend-verification`;
+};
+
+export const postApiV1AuthResendVerification = async (
+  authResendVerificationRequest: AuthResendVerificationRequest,
+  options?: RequestInit
+): Promise<ResponseAuthMessageData> => {
+  return apiClient<ResponseAuthMessageData>(getPostApiV1AuthResendVerificationUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authResendVerificationRequest),
+  });
+};
+
+export const getPostApiV1AuthResendVerificationMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AuthResendVerification>>,
+    TError,
+    { data: AuthResendVerificationRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AuthResendVerification>>,
+  TError,
+  { data: AuthResendVerificationRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AuthResendVerification'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AuthResendVerification>>,
+    { data: AuthResendVerificationRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AuthResendVerification(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AuthResendVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AuthResendVerification>>
+>;
+export type PostApiV1AuthResendVerificationMutationBody = AuthResendVerificationRequest;
+export type PostApiV1AuthResendVerificationMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Request a new email verification link
+ */
+export const usePostApiV1AuthResendVerification = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AuthResendVerification>>,
+      TError,
+      { data: AuthResendVerificationRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AuthResendVerification>>,
+  TError,
+  { data: AuthResendVerificationRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AuthResendVerificationMutationOptions(options), queryClient);
+};
+/**
  * Completes the login flow when TOTP is enabled. Requires the temporary token from /auth/login and a valid TOTP code from the authenticator app.
  * @summary Verify TOTP code to complete login
  */
@@ -363,4 +626,88 @@ export const usePostApiV1AuthTotpVerify = <TError = ResponseEmpty | void, TConte
   TContext
 > => {
   return useMutation(getPostApiV1AuthTotpVerifyMutationOptions(options), queryClient);
+};
+/**
+ * Marks the email address associated with the supplied token as verified. The token is single-use.
+ * @summary Verify an email address
+ */
+export const getPostApiV1AuthVerifyEmailUrl = () => {
+  return `/api/v1/auth/verify-email`;
+};
+
+export const postApiV1AuthVerifyEmail = async (
+  authVerifyEmailRequest: AuthVerifyEmailRequest,
+  options?: RequestInit
+): Promise<ResponseAuthMessageData> => {
+  return apiClient<ResponseAuthMessageData>(getPostApiV1AuthVerifyEmailUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authVerifyEmailRequest),
+  });
+};
+
+export const getPostApiV1AuthVerifyEmailMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>,
+    TError,
+    { data: AuthVerifyEmailRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>,
+  TError,
+  { data: AuthVerifyEmailRequest },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AuthVerifyEmail'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>,
+    { data: AuthVerifyEmailRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postApiV1AuthVerifyEmail(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AuthVerifyEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>
+>;
+export type PostApiV1AuthVerifyEmailMutationBody = AuthVerifyEmailRequest;
+export type PostApiV1AuthVerifyEmailMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Verify an email address
+ */
+export const usePostApiV1AuthVerifyEmail = <TError = ResponseEmpty | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>,
+      TError,
+      { data: AuthVerifyEmailRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AuthVerifyEmail>>,
+  TError,
+  { data: AuthVerifyEmailRequest },
+  TContext
+> => {
+  return useMutation(getPostApiV1AuthVerifyEmailMutationOptions(options), queryClient);
 };

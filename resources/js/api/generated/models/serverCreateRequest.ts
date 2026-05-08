@@ -8,11 +8,11 @@
 
 export interface ServerCreateRequest {
   access_token: string;
-  description: string;
+  description?: string;
   host: string;
-  is_active: boolean;
+  is_active?: boolean;
   name: string;
   port: number;
   /** @nullable */
-  skip_ssl_verification: boolean | null;
+  skip_ssl_verification?: boolean | null;
 }
