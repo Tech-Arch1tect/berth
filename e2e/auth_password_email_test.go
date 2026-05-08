@@ -474,3 +474,257 @@ func TestAPIVerifyEmailDisabledByDefault(t *testing.T) {
 	assert.True(t, body.Success)
 	assert.NotEmpty(t, body.Data.AccessToken)
 }
+
+func TestAPIPasswordResetSessionInvalidation(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/password-reset/confirm", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_pwreset_invalidate",
+		Email:    "api_pwreset_invalidate@example.com",
+		Password: "oldpassword123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, loginResp.StatusCode)
+	var login response.Response[auth.AuthLoginData]
+	require.NoError(t, loginResp.GetJSON(&login))
+	require.NotEmpty(t, login.Data.RefreshToken)
+	oldRefreshToken := login.Data.RefreshToken
+
+	app.Mail.Reset()
+	_, err = app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractTokenFromCapturedMail(t, app)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "newpassword456",
+		PasswordConfirmation: "newpassword456",
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
+
+	refreshResp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
+		RefreshToken: oldRefreshToken,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 401, refreshResp.StatusCode, "old refresh token should be revoked after password reset")
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, refreshResp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+}
+
+func TestAPIPasswordResetTokenReuse(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/password-reset/confirm", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_pwreset_reuse",
+		Email:    "api_pwreset_reuse@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	app.Mail.Reset()
+	_, err := app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractTokenFromCapturedMail(t, app)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "firstnewpass123",
+		PasswordConfirmation: "firstnewpass123",
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
+
+	resp, err = app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "secondnewpass123",
+		PasswordConfirmation: "secondnewpass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "used_token", errBody.Error.Code)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: "firstnewpass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, loginResp.StatusCode, "first reset should be the password that works")
+
+	loginResp, err = app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: "secondnewpass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 401, loginResp.StatusCode, "second reset attempt should not have changed the password")
+}
+
+func TestAPIPasswordResetExpiredLink(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/password-reset/confirm", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_pwreset_expired",
+		Email:    "api_pwreset_expired@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	app.Mail.Reset()
+	_, err := app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractTokenFromCapturedMail(t, app)
+
+	err = app.DB.Table("password_reset_tokens").
+		Where("token = ?", token).
+		Update("expires_at", time.Now().Add(-time.Hour)).Error
+	require.NoError(t, err, "failed to backdate password reset token")
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "newpassword456",
+		PasswordConfirmation: "newpassword456",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "expired_token", errBody.Error.Code)
+}
+
+func TestAPIPasswordResetMultipleTokensInvalidatePrevious(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/password-reset", e2etesting.CategoryEdgeCase, e2etesting.ValueMedium)
+
+	user := &e2etesting.TestUser{
+		Username: "api_pwreset_multi",
+		Email:    "api_pwreset_multi@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	app.Mail.Reset()
+
+	_, err := app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	_, err = app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+
+	mails := app.Mail.ByTemplate("password_reset")
+	require.Len(t, mails, 2, "two password_reset emails should be sent")
+
+	token1 := extractTokenFromURL(t, mails[0].Data["ResetURL"].(string))
+	token2 := extractTokenFromURL(t, mails[1].Data["ResetURL"].(string))
+	require.NotEqual(t, token1, token2, "each request should generate a unique token")
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token1,
+		Password:             "firsttoken_pass123",
+		PasswordConfirmation: "firsttoken_pass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode, "first token should be invalidated by second request")
+
+	resp, err = app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token2,
+		Password:             "secondtoken_pass123",
+		PasswordConfirmation: "secondtoken_pass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode, "second (latest) token should still work")
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: "secondtoken_pass123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, loginResp.StatusCode)
+}
+
+func TestAPIPasswordResetWeakPasswordPreservesToken(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/password-reset/confirm", e2etesting.CategoryValidation, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_pwreset_weak",
+		Email:    "api_pwreset_weak@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	verifyUser(t, app, user)
+
+	app.Mail.Reset()
+	_, err := app.HTTPClient.Post("/api/v1/auth/password-reset", auth.AuthPasswordResetRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractTokenFromCapturedMail(t, app)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "short",
+		PasswordConfirmation: "short",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "weak_password", errBody.Error.Code)
+
+	resp, err = app.HTTPClient.Post("/api/v1/auth/password-reset/confirm", auth.AuthPasswordResetConfirmRequest{
+		Token:                token,
+		Password:             "validpassword123",
+		PasswordConfirmation: "validpassword123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode, "token should not have been consumed by the rejected weak-password attempt")
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: "validpassword123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, loginResp.StatusCode)
+}
