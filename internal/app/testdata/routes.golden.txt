@@ -46,8 +46,12 @@ POST	/api/v1/api-keys/:id/scopes	internal/domain/apikey.(*Handler).AddScope-fm
 DELETE	/api/v1/api-keys/:id/scopes/:scopeId	internal/domain/apikey.(*Handler).RemoveScope-fm
 POST	/api/v1/auth/login	internal/domain/auth.(*APIHandler).Login-fm
 POST	/api/v1/auth/logout	internal/domain/auth.(*APIHandler).Logout-fm
+POST	/api/v1/auth/password-reset	internal/domain/auth.(*APIHandler).RequestPasswordResetAPI-fm
+POST	/api/v1/auth/password-reset/confirm	internal/domain/auth.(*APIHandler).ConfirmPasswordResetAPI-fm
 POST	/api/v1/auth/refresh	internal/domain/auth.(*APIHandler).RefreshToken-fm
+POST	/api/v1/auth/resend-verification	internal/domain/auth.(*APIHandler).ResendVerificationAPI-fm
 POST	/api/v1/auth/totp/verify	internal/domain/auth.(*APIHandler).VerifyTOTP-fm
+POST	/api/v1/auth/verify-email	internal/domain/auth.(*APIHandler).VerifyEmailAPI-fm
 GET	/api/v1/image-updates	internal/domain/imageupdates.(*APIHandler).ListAvailableUpdates-fm
 GET	/api/v1/operation-logs	internal/domain/operationlogs.(*Handler).ListUserOperationLogs-fm
 GET	/api/v1/operation-logs/:id	internal/domain/operationlogs.(*Handler).GetUserOperationLogDetails-fm
