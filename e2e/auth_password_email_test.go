@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"testing"
+	"time"
 
 	"berth/internal/domain/auth"
 	"berth/internal/pkg/config"
@@ -308,4 +309,168 @@ func TestAPIResendVerification(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
 	})
+}
+
+func TestAPIVerifyEmailLoginBlocked(t *testing.T) {
+	t.Parallel()
+	app := setupEmailVerificationAPIApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_ev_blocked",
+		Email:    "api_ev_blocked@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 403, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "email_not_verified", errBody.Error.Code)
+}
+
+func TestAPIVerifyEmailTokenReuse(t *testing.T) {
+	t.Parallel()
+	app := setupEmailVerificationAPIApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/verify-email", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_ev_reuse",
+		Email:    "api_ev_reuse@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	app.Mail.Reset()
+	_, err := app.HTTPClient.Post("/api/v1/auth/resend-verification", auth.AuthResendVerificationRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractVerificationTokenFromCapturedMail(t, app)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/verify-email", auth.AuthVerifyEmailRequest{Token: token})
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	app.AuthHelper.AssertEmailVerified(t, user.Email)
+
+	resp, err = app.HTTPClient.Post("/api/v1/auth/verify-email", auth.AuthVerifyEmailRequest{Token: token})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "used_token", errBody.Error.Code)
+}
+
+func TestAPIVerifyEmailExpiredLink(t *testing.T) {
+	t.Parallel()
+	app := setupEmailVerificationAPIApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/verify-email", e2etesting.CategoryErrorHandler, e2etesting.ValueHigh)
+
+	user := &e2etesting.TestUser{
+		Username: "api_ev_expired",
+		Email:    "api_ev_expired@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	app.Mail.Reset()
+	_, err := app.HTTPClient.Post("/api/v1/auth/resend-verification", auth.AuthResendVerificationRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	token := extractVerificationTokenFromCapturedMail(t, app)
+
+	err = app.DB.Table("email_verification_tokens").
+		Where("token = ?", token).
+		Update("expires_at", time.Now().Add(-time.Hour)).Error
+	require.NoError(t, err, "failed to backdate email verification token")
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/verify-email", auth.AuthVerifyEmailRequest{Token: token})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errBody response.ErrorResponseBody
+	require.NoError(t, resp.GetJSON(&errBody))
+	assert.False(t, errBody.Success)
+	assert.Equal(t, "expired_token", errBody.Error.Code)
+}
+
+func TestAPIVerifyEmailMultipleTokensInvalidatePrevious(t *testing.T) {
+	t.Parallel()
+	app := setupEmailVerificationAPIApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/resend-verification", e2etesting.CategoryEdgeCase, e2etesting.ValueMedium)
+
+	user := &e2etesting.TestUser{
+		Username: "api_ev_multi",
+		Email:    "api_ev_multi@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	app.Mail.Reset()
+
+	_, err := app.HTTPClient.Post("/api/v1/auth/resend-verification", auth.AuthResendVerificationRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+	_, err = app.HTTPClient.Post("/api/v1/auth/resend-verification", auth.AuthResendVerificationRequest{
+		Email: user.Email,
+	})
+	require.NoError(t, err)
+
+	mails := app.Mail.ByTemplate("email_verification")
+	require.Len(t, mails, 2, "two verification emails should be sent")
+
+	token1 := extractVerificationTokenFromURL(t, mails[0].Data["VerificationURL"].(string))
+	token2 := extractVerificationTokenFromURL(t, mails[1].Data["VerificationURL"].(string))
+	require.NotEqual(t, token1, token2, "each request should generate a unique token")
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/verify-email", auth.AuthVerifyEmailRequest{Token: token1})
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode, "first token should be invalidated by second resend")
+	app.AuthHelper.AssertEmailNotVerified(t, user.Email)
+
+	resp, err = app.HTTPClient.Post("/api/v1/auth/verify-email", auth.AuthVerifyEmailRequest{Token: token2})
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode, "second (latest) token should still work")
+	app.AuthHelper.AssertEmailVerified(t, user.Email)
+}
+
+func TestAPIVerifyEmailDisabledByDefault(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	TagTest(t, "POST", "/api/v1/auth/login", e2etesting.CategoryIntegration, e2etesting.ValueMedium)
+
+	user := &e2etesting.TestUser{
+		Username: "api_ev_disabled",
+		Email:    "api_ev_disabled@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode, "with verification disabled, unverified user should be able to log in")
+
+	var body response.Response[auth.AuthLoginData]
+	require.NoError(t, resp.GetJSON(&body))
+	assert.True(t, body.Success)
+	assert.NotEmpty(t, body.Data.AccessToken)
 }
