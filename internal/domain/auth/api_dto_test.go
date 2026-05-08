@@ -29,19 +29,17 @@ func TestAuthLoginRequest_Validate(t *testing.T) {
 
 func TestAuthRefreshRequest_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
-		req     AuthRefreshRequest
-		wantErr error
+		name string
+		req  AuthRefreshRequest
 	}{
-		{"empty token", AuthRefreshRequest{RefreshToken: ""}, ErrAuthRefreshRequired},
-		{"present token", AuthRefreshRequest{RefreshToken: "abc"}, nil},
+		{"empty token (cookie fallback may supply it)", AuthRefreshRequest{RefreshToken: ""}},
+		{"present token", AuthRefreshRequest{RefreshToken: "abc"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.req.Validate()
-			if !errors.Is(got, tt.wantErr) {
-				t.Errorf("Validate() = %v, want %v", got, tt.wantErr)
+			if got := tt.req.Validate(); got != nil {
+				t.Errorf("Validate() = %v, want nil (refresh_token is optional)", got)
 			}
 		})
 	}
@@ -49,19 +47,17 @@ func TestAuthRefreshRequest_Validate(t *testing.T) {
 
 func TestAuthLogoutRequest_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
-		req     AuthLogoutRequest
-		wantErr error
+		name string
+		req  AuthLogoutRequest
 	}{
-		{"empty token", AuthLogoutRequest{RefreshToken: ""}, ErrAuthRefreshRequired},
-		{"present token", AuthLogoutRequest{RefreshToken: "abc"}, nil},
+		{"empty token (cookie fallback may supply it)", AuthLogoutRequest{RefreshToken: ""}},
+		{"present token", AuthLogoutRequest{RefreshToken: "abc"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.req.Validate()
-			if !errors.Is(got, tt.wantErr) {
-				t.Errorf("Validate() = %v, want %v", got, tt.wantErr)
+			if got := tt.req.Validate(); got != nil {
+				t.Errorf("Validate() = %v, want nil (refresh_token is optional)", got)
 			}
 		})
 	}

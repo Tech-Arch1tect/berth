@@ -162,7 +162,7 @@ func TestJWTRefreshValidation(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("empty refresh token", func(t *testing.T) {
+	t.Run("empty refresh token without cookie returns 400", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Post("/api/v1/auth/refresh", auth.AuthRefreshRequest{
 			RefreshToken: "",
@@ -172,7 +172,7 @@ func TestJWTRefreshValidation(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
+		assert.Equal(t, "missing_refresh_token", errResp.Error.Code)
 	})
 
 	t.Run("garbage refresh token", func(t *testing.T) {
@@ -205,8 +205,8 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("logout without refresh token returns 400", func(t *testing.T) {
-		TagTest(t, "POST", "/api/v1/auth/logout", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+	t.Run("logout with only access token revokes the access token", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/logout", e2etesting.CategoryEdgeCase, e2etesting.ValueMedium)
 		login := apiLogin(t, app, "jwtlogout1", "jwtlogout1@example.com", "password123")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -218,11 +218,13 @@ func TestJWTLogoutEdgeCases(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 400, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "with refresh_token optional, an Authorization-only logout still revokes the access token")
 
-		var errResp response.ErrorResponseBody
-		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, response.CodeBadRequest, errResp.Error.Code)
+		var body response.Response[auth.AuthLogoutData]
+		require.NoError(t, resp.GetJSON(&body))
+		assert.True(t, body.Success)
+		assert.Contains(t, body.Data.RevokedTokens, "access_token")
+		assert.NotContains(t, body.Data.RevokedTokens, "refresh_token", "no refresh_token was supplied (body or cookie), so none was revoked")
 	})
 
 	t.Run("double logout is safe", func(t *testing.T) {

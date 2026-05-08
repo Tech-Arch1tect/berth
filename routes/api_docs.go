@@ -58,8 +58,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/auth/refresh").
 		Tags("auth").
 		Summary("Refresh access token").
-		Description("Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The rotated refresh token is also written back to the `berth_refresh` cookie so browser clients stay current after rotation.").
-		Body(auth.AuthRefreshRequest{}, "Refresh token").
+		Description("Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The refresh token may be supplied either in the request body's `refresh_token` field (mobile/CLI) or via the `berth_refresh` cookie (browser); when both are present the body wins. The rotated refresh token is written back to the `berth_refresh` cookie so browser clients stay current after rotation.").
+		Body(auth.AuthRefreshRequest{}, "Refresh token (optional - may be supplied via berth_refresh cookie instead)").
 		Response(http.StatusOK, response.Response[auth.AuthRefreshData]{}, "New access and refresh tokens").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Invalid or expired refresh token").
@@ -81,8 +81,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/auth/logout").
 		Tags("auth").
 		Summary("Logout and revoke tokens").
-		Description("Revokes the access token and refresh token, effectively logging the user out. The refresh token must be provided in the request body.").
-		Body(auth.AuthLogoutRequest{}, "Refresh token to revoke").
+		Description("Revokes the access token (from the `Authorization` header) and the refresh token, effectively logging the user out. The refresh token may be supplied either in the request body's `refresh_token` field (mobile/CLI) or via the `berth_refresh` cookie (browser); when both are present the body wins. The `berth_refresh` cookie is always cleared on the response.").
+		Body(auth.AuthLogoutRequest{}, "Refresh token to revoke (optional - may be supplied via berth_refresh cookie instead)").
 		Response(http.StatusOK, response.Response[auth.AuthLogoutData]{}, "Logout successful").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to revoke tokens").

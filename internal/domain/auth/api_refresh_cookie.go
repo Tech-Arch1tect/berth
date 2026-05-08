@@ -23,3 +23,23 @@ func setRefreshCookie(c echo.Context, token string, expiresAt time.Time) {
 		SameSite: http.SameSiteStrictMode,
 	})
 }
+
+func clearRefreshCookie(c echo.Context) {
+	c.SetCookie(&http.Cookie{
+		Name:     refreshCookieName,
+		Value:    "",
+		Path:     refreshCookiePath,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func readRefreshCookie(c echo.Context) string {
+	cookie, err := c.Cookie(refreshCookieName)
+	if err != nil {
+		return ""
+	}
+	return cookie.Value
+}

@@ -195,7 +195,15 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		return err
 	}
 
-	oldToken, validateErr := h.tokens.ValidateRefresh(req.RefreshToken)
+	refreshToken := req.RefreshToken
+	if refreshToken == "" {
+		refreshToken = readRefreshCookie(c)
+	}
+	if refreshToken == "" {
+		return response.Err(c, http.StatusBadRequest, "missing_refresh_token", "Refresh token is required (in body or berth_refresh cookie)")
+	}
+
+	oldToken, validateErr := h.tokens.ValidateRefresh(refreshToken)
 	if validateErr != nil {
 		switch validateErr {
 		case tokens.ErrRefreshExpired:
@@ -208,7 +216,7 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	result, err := h.tokens.RotateRefresh(req.RefreshToken)
+	result, err := h.tokens.RotateRefresh(refreshToken)
 	if err != nil {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
 		return response.Err(c, http.StatusInternalServerError, "token_refresh_failed", "Failed to refresh token")
@@ -278,6 +286,13 @@ func (h *APIHandler) Logout(c echo.Context) error {
 		return err
 	}
 
+	clearRefreshCookie(c)
+
+	refreshToken := req.RefreshToken
+	if refreshToken == "" {
+		refreshToken = readRefreshCookie(c)
+	}
+
 	var revokedTokens []string
 
 	authHeader := c.Request().Header.Get("Authorization")
@@ -298,20 +313,22 @@ func (h *APIHandler) Logout(c echo.Context) error {
 			}
 		}
 
-		if h.sessionSvc != nil {
-			refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
+		if h.sessionSvc != nil && refreshToken != "" {
+			refresh, err := h.tokens.ValidateRefresh(refreshToken)
 			if err == nil {
-				sessionToken := h.generateSessionTokenFromID(refreshToken.ID)
+				sessionToken := h.generateSessionTokenFromID(refresh.ID)
 				_ = h.sessionSvc.RemoveSessionByToken(sessionToken)
 			}
 		}
 	}
 
-	if err := h.tokens.RevokeRefresh(req.RefreshToken); err != nil {
-		h.logger.Warn("failed to revoke refresh token during logout",
-			zap.Error(err))
-	} else {
-		revokedTokens = append(revokedTokens, "refresh_token")
+	if refreshToken != "" {
+		if err := h.tokens.RevokeRefresh(refreshToken); err != nil {
+			h.logger.Warn("failed to revoke refresh token during logout",
+				zap.Error(err))
+		} else {
+			revokedTokens = append(revokedTokens, "refresh_token")
+		}
 	}
 
 	if len(revokedTokens) == 0 {

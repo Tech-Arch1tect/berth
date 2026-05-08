@@ -8,7 +8,6 @@ import (
 
 var (
 	ErrAuthCredentialsRequired = errors.New("Username and password are required")
-	ErrAuthRefreshRequired     = errors.New("Refresh token is required")
 	ErrAuthTOTPCodeRequired    = errors.New("TOTP code is required")
 )
 
@@ -29,9 +28,6 @@ type AuthRefreshRequest struct {
 }
 
 func (r *AuthRefreshRequest) Validate() error {
-	if r.RefreshToken == "" {
-		return ErrAuthRefreshRequired
-	}
 	return nil
 }
 
@@ -51,9 +47,6 @@ type AuthLogoutRequest struct {
 }
 
 func (r *AuthLogoutRequest) Validate() error {
-	if r.RefreshToken == "" {
-		return ErrAuthRefreshRequired
-	}
 	return nil
 }
 
