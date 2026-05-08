@@ -34,6 +34,10 @@ func (h *APIHandler) RegisterPublicAPIRoutes(g *echo.Group) {
 	g.POST("/login", h.Login)
 	g.POST("/refresh", h.RefreshToken)
 	g.POST("/totp/verify", h.VerifyTOTP)
+	g.POST("/password-reset", h.RequestPasswordResetAPI)
+	g.POST("/password-reset/confirm", h.ConfirmPasswordResetAPI)
+	g.POST("/verify-email", h.VerifyEmailAPI)
+	g.POST("/resend-verification", h.ResendVerificationAPI)
 }
 
 func (h *APIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireAPIKeyDenied echo.MiddlewareFunc) {

@@ -89,6 +89,50 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "session").
 		Build()
 
+	apiDoc.Document("POST", "/api/v1/auth/password-reset").
+		Tags("auth").
+		Summary("Request a password reset email").
+		Description("Sends a password reset email to the supplied address if an account exists. Always returns 200 with a generic message to prevent account enumeration.").
+		Body(auth.AuthPasswordResetRequest{}, "Email address to send the reset link to").
+		Response(http.StatusOK, response.Response[auth.AuthMessageData]{}, "Generic acknowledgement (regardless of account existence)").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Password reset is disabled").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to send password reset email").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/auth/password-reset/confirm").
+		Tags("auth").
+		Summary("Complete a password reset").
+		Description("Resets the user's password using a token previously emailed to them. The token is single-use; subsequent submissions return an error.").
+		Body(auth.AuthPasswordResetConfirmRequest{}, "Reset token plus new password and confirmation").
+		Response(http.StatusOK, response.Response[auth.AuthMessageData]{}, "Password reset successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request, invalid/expired/used token, or weak password").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Password reset is disabled").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Password reset failed").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/auth/verify-email").
+		Tags("auth").
+		Summary("Verify an email address").
+		Description("Marks the email address associated with the supplied token as verified. The token is single-use.").
+		Body(auth.AuthVerifyEmailRequest{}, "Email verification token").
+		Response(http.StatusOK, response.Response[auth.AuthMessageData]{}, "Email verified successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request, or invalid/expired/used token").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Email verification is disabled").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Email verification failed").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/auth/resend-verification").
+		Tags("auth").
+		Summary("Request a new email verification link").
+		Description("Sends a fresh verification email if an account with the supplied address exists and is unverified. Always returns 200 with a generic message to prevent account enumeration.").
+		Body(auth.AuthResendVerificationRequest{}, "Email address to send the verification link to").
+		Response(http.StatusOK, response.Response[auth.AuthMessageData]{}, "Generic acknowledgement (regardless of account state)").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request format").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Email verification is disabled").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to send verification email").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/sessions").
 		Tags("sessions").
 		Summary("List user sessions").
