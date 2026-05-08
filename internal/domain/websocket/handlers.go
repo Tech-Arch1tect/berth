@@ -94,17 +94,22 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context, clientType string
 	var userID int
 
 	if clientType == "Flutter" {
-		auth := c.Request().Header.Get("Authorization")
-		token, ok := strings.CutPrefix(auth, "Bearer ")
-		if !ok || token == "" {
-			return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
-		}
+		if authUserID, ok := c.Get("_jwt_user_id").(uint); ok && authUserID > 0 {
+			userID = int(authUserID)
+		} else {
 
-		claims, err := h.jwtService.ValidateAccess(token)
-		if err != nil {
-			return 0, 0, response.Unauthorized(c, "Invalid token")
+			auth := c.Request().Header.Get("Authorization")
+			token, ok := strings.CutPrefix(auth, "Bearer ")
+			if !ok || token == "" {
+				return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
+			}
+
+			claims, err := h.jwtService.ValidateAccess(token)
+			if err != nil {
+				return 0, 0, response.Unauthorized(c, "Invalid token")
+			}
+			userID = int(claims.UserID)
 		}
-		userID = int(claims.UserID)
 	} else {
 		sessionUserID := session.GetUserIDAsUint(c)
 		if sessionUserID == 0 {
@@ -207,7 +212,8 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 	defer func() { _ = agentConn.Close() }()
 
 	termUpgrader := websocket.Upgrader{
-		CheckOrigin: h.checkOrigin,
+		CheckOrigin:  h.checkOrigin,
+		Subprotocols: []string{"Bearer"},
 	}
 
 	clientConn, err := termUpgrader.Upgrade(c.Response(), c.Request(), nil)

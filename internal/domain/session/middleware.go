@@ -34,10 +34,8 @@ func Middleware(manager *Manager) echo.MiddlewareFunc {
 				if cookie, err := c.Cookie(manager.SessionManager.Cookie.Name); err == nil {
 					token = cookie.Value
 				}
-				if token != "" {
-					if loadedCtx, err := manager.SessionManager.Load(ctx, token); err == nil {
-						ctx = loadedCtx
-					}
+				if loadedCtx, err := manager.SessionManager.Load(ctx, token); err == nil {
+					ctx = loadedCtx
 				}
 
 				c.SetRequest(c.Request().WithContext(ctx))

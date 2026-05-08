@@ -15,6 +15,8 @@ const (
 	UserIDKey   = "_jwt_user_id"
 	AuthTypeKey = "_auth_type"
 	APIKeyKey   = "_api_key"
+
+	wsProtocolBearer = "Bearer"
 )
 
 type contextKey string
@@ -33,17 +35,30 @@ func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, user
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" {
+			wsProto := c.Request().Header.Get("Sec-WebSocket-Protocol")
+
+			if authHeader != "" && wsProto != "" {
+				return echo.NewHTTPError(http.StatusBadRequest, "Ambiguous authentication: set either Authorization or Sec-WebSocket-Protocol, not both")
+			}
+
+			var tokenString string
+			switch {
+			case authHeader != "":
+				if !strings.HasPrefix(authHeader, "Bearer ") {
+					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
+				}
+				tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+				if tokenString == "" {
+					return echo.NewHTTPError(http.StatusUnauthorized, "Token required")
+				}
+			case wsProto != "":
+				token, ok := tokenFromWSSubprotocol(wsProto)
+				if !ok {
+					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid Sec-WebSocket-Protocol format")
+				}
+				tokenString = token
+			default:
 				return echo.NewHTTPError(http.StatusUnauthorized, "Authorization header required")
-			}
-
-			if !strings.HasPrefix(authHeader, "Bearer ") {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
-			}
-
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			if tokenString == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Token required")
 			}
 
 			if strings.HasPrefix(tokenString, apikey.KeyPrefix) {
@@ -53,6 +68,21 @@ func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, user
 			return handleJWTAuth(c, next, jwtService, userProvider, tokenString)
 		}
 	}
+}
+
+func tokenFromWSSubprotocol(value string) (string, bool) {
+	parts := strings.Split(value, ",")
+	if len(parts) != 2 {
+		return "", false
+	}
+	if strings.TrimSpace(parts[0]) != wsProtocolBearer {
+		return "", false
+	}
+	token := strings.TrimSpace(parts[1])
+	if token == "" {
+		return "", false
+	}
+	return token, true
 }
 
 func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apikey.Service, key string) error {

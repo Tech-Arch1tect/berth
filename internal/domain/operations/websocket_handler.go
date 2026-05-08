@@ -29,6 +29,7 @@ func NewWebSocketHandler(service *Service, checkOrigin origin.CheckOriginFunc, l
 			CheckOrigin:     checkOrigin,
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
+			Subprotocols:    []string{"Bearer"},
 		},
 	}
 }

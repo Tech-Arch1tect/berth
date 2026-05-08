@@ -51,7 +51,8 @@ func NewHub(permissionChecker PermissionChecker, logger *zap.Logger, checkOrigin
 		permissionChecker: permissionChecker,
 		logger:            logger,
 		upgrader: websocket.Upgrader{
-			CheckOrigin: checkOrigin,
+			CheckOrigin:  checkOrigin,
+			Subprotocols: []string{"Bearer"},
 		},
 	}
 }
