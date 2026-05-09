@@ -257,9 +257,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		sessResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: session.GetSessionsRequest{
-				RefreshToken: login2.Data.RefreshToken,
-			},
+			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},
@@ -296,9 +294,7 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		sessResp2, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: session.GetSessionsRequest{
-				RefreshToken: login2.Data.RefreshToken,
-			},
+			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},
@@ -334,16 +330,17 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("revoke all others with invalid refresh token returns 400", func(t *testing.T) {
-		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		login := apiLogin(t, app, "jwtrevall1", "jwtrevall1@example.com", "password123")
+	t.Run("revoke all others returns 400 when access token JTI has no matching session row", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryValidation, e2etesting.ValueHigh)
+		login := apiLogin(t, app, "jwtrevall_orphan", "jwtrevall_orphan@example.com", "password123")
+
+		require.NoError(t, app.DB.Where("user_id = ?", login.Data.User.ID).Delete(&session.UserSession{}).Error,
+			"failed to clear session rows to synthesise orphaned access token")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: session.RevokeAllOtherSessionsRequest{
-				RefreshToken: "garbage-token",
-			},
+			Body:   session.RevokeAllOtherSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
@@ -353,25 +350,23 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 
 		var errResp response.ErrorResponseBody
 		require.NoError(t, resp.GetJSON(&errResp))
-		assert.Equal(t, "invalid_token", errResp.Error.Code)
+		assert.Equal(t, "invalid_session", errResp.Error.Code)
 	})
 
-	t.Run("revoke all others with empty refresh token returns 400", func(t *testing.T) {
-		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		login := apiLogin(t, app, "jwtrevall2", "jwtrevall2@example.com", "password123")
+	t.Run("revoke all others succeeds with empty body via JWT", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		login := apiLogin(t, app, "jwtrevall_emptybody", "jwtrevall_emptybody@example.com", "password123")
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: session.RevokeAllOtherSessionsRequest{
-				RefreshToken: "",
-			},
+			Body:   session.RevokeAllOtherSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 400, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "field-less body must succeed; cookie-based SPA cannot supply a refresh token")
 	})
 
 	t.Run("revoke all others preserves current session tokens", func(t *testing.T) {
@@ -396,9 +391,7 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: session.RevokeAllOtherSessionsRequest{
-				RefreshToken: login3.Data.RefreshToken,
-			},
+			Body:   session.RevokeAllOtherSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login3.Data.AccessToken,
 			},
@@ -415,6 +408,13 @@ func TestJWTRevokeAllOtherSessionsEdgeCases(t *testing.T) {
 
 		_, status2 := apiRefresh(t, app, login2.Data.RefreshToken)
 		assert.Equal(t, 401, status2, "login2 refresh should be revoked")
+
+		assert.Equal(t, 401, apiGetProfile(t, app, login1.Data.AccessToken),
+			"login1 access token should be rejected (JTI revoked)")
+		assert.Equal(t, 401, apiGetProfile(t, app, login2.Data.AccessToken),
+			"login2 access token should be rejected (JTI revoked)")
+		assert.Equal(t, 200, apiGetProfile(t, app, login3.Data.AccessToken),
+			"login3 access token should still work (current session preserved)")
 	})
 }
 

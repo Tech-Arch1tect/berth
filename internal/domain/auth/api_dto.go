@@ -24,7 +24,7 @@ func (r *AuthLoginRequest) Validate() error {
 }
 
 type AuthRefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 func (r *AuthRefreshRequest) Validate() error {
@@ -43,7 +43,7 @@ func (r *AuthTOTPVerifyRequest) Validate() error {
 }
 
 type AuthLogoutRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 func (r *AuthLogoutRequest) Validate() error {

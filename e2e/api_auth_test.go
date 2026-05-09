@@ -305,9 +305,7 @@ func TestAPISessions(t *testing.T) {
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions",
-			Body: session.GetSessionsRequest{
-				RefreshToken: login.Data.RefreshToken,
-			},
+			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},
@@ -358,9 +356,7 @@ func TestAPISessions(t *testing.T) {
 		revokeResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/sessions/revoke-all-others",
-			Body: session.RevokeAllOtherSessionsRequest{
-				RefreshToken: login2.Data.RefreshToken,
-			},
+			Body:   session.RevokeAllOtherSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},

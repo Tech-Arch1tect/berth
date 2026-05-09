@@ -1,16 +1,36 @@
 {
   "method": "POST",
   "path": "/api/v1/sessions",
-  "status_code": 400,
+  "status_code": 200,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
-    "data": {},
-    "error": {
-      "code": "bad_request",
-      "message": "Refresh token is required"
+    "data": {
+      "sessions": [
+        {
+          "bot": false,
+          "browser": "Go-http-client 1.1",
+          "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "current": true,
+          "desktop": true,
+          "device": "Desktop Computer",
+          "device_type": "Desktop",
+          "expires_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "ip_address": "127.0.0.1",
+          "last_used": "\u003c\u003cTIMESTAMP\u003e\u003e",
+          "location": "Local",
+          "mobile": false,
+          "os": "Unknown OS",
+          "tablet": false,
+          "token": "\u003c\u003cTOKEN\u003e\u003e",
+          "type": "jwt",
+          "user_agent": "Go-http-client/1.1",
+          "user_id": "\u003c\u003cID\u003e\u003e"
+        }
+      ]
     },
-    "success": false
+    "success": true
   }
 }

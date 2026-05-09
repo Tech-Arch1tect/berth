@@ -35,6 +35,14 @@ type APIHandler struct {
 	auditSvc   apiAuditLogger
 }
 
+func extractAccessJTI(c echo.Context, t *tokens.Service) (string, error) {
+	authHeader := c.Request().Header.Get("Authorization")
+	if len(authHeader) <= 7 || authHeader[:7] != "Bearer " {
+		return "", fmt.Errorf("missing bearer token")
+	}
+	return t.ExtractJTI(authHeader[7:])
+}
+
 func NewAPIHandler(db *gorm.DB, authSvc *Service, tokensSvc *tokens.Service, totpSvc *totp.Service, sessionSvc *session.Service, logger *zap.Logger, auditSvc apiAuditLogger) *APIHandler {
 	return &APIHandler{
 		db:         db,
@@ -647,11 +655,12 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 		return err
 	}
 
-	refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
-	if err != nil {
-		return response.Err(c, http.StatusBadRequest, "invalid_token", "Invalid refresh token")
+	var currentToken string
+	if accessJTI, jtiErr := extractAccessJTI(c, h.tokens); jtiErr == nil {
+		if token, lookupErr := h.sessionSvc.GetCurrentSessionToken(userModel.ID, accessJTI); lookupErr == nil {
+			currentToken = token
+		}
 	}
-	currentToken := h.generateSessionTokenFromID(refreshToken.ID)
 
 	sessions, err := h.sessionSvc.GetUserSessions(userModel.ID, currentToken)
 	if err != nil {
@@ -765,11 +774,15 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 			return err
 		}
 
-		refreshToken, err := h.tokens.ValidateRefresh(req.RefreshToken)
+		accessJTI, err := extractAccessJTI(c, h.tokens)
 		if err != nil {
-			return response.Err(c, http.StatusBadRequest, "invalid_token", "Invalid refresh token")
+			return response.Err(c, http.StatusBadRequest, "invalid_session", "Could not identify current session")
 		}
-		currentToken = h.generateSessionTokenFromID(refreshToken.ID)
+		token, err := h.sessionSvc.GetCurrentSessionToken(userModel.ID, accessJTI)
+		if err != nil {
+			return response.Err(c, http.StatusBadRequest, "invalid_session", "Current session not found")
+		}
+		currentToken = token
 	}
 
 	err := h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)

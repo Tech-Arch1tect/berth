@@ -83,6 +83,15 @@ func (s *Service) UpdateLastUsed(token string) error {
 	return err
 }
 
+func (s *Service) GetCurrentSessionToken(userID uint, accessJTI string) (string, error) {
+	var session UserSession
+	if err := s.db.Where("user_id = ? AND access_token_jti = ?", userID, accessJTI).
+		First(&session).Error; err != nil {
+		return "", err
+	}
+	return session.Token, nil
+}
+
 func (s *Service) GetUserSessions(userID uint, currentToken string) ([]UserSession, error) {
 	var sessions []UserSession
 	if err := s.db.Where("user_id = ? AND expires_at > ?", userID, time.Now()).

@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	ErrSessionRefreshRequired = errors.New("Refresh token is required")
-	ErrSessionIDRequired      = errors.New("Session ID is required")
+	ErrSessionIDRequired = errors.New("Session ID is required")
 )
 
 type RevokeSessionRequest struct {
@@ -21,25 +20,15 @@ func (r *RevokeSessionRequest) Validate() error {
 	return nil
 }
 
-type RevokeAllOtherSessionsRequest struct {
-	RefreshToken string `json:"refresh_token,omitempty"`
-}
+type RevokeAllOtherSessionsRequest struct{}
 
 func (r *RevokeAllOtherSessionsRequest) Validate() error {
-	if r.RefreshToken == "" {
-		return ErrSessionRefreshRequired
-	}
 	return nil
 }
 
-type GetSessionsRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
+type GetSessionsRequest struct{}
 
 func (r *GetSessionsRequest) Validate() error {
-	if r.RefreshToken == "" {
-		return ErrSessionRefreshRequired
-	}
 	return nil
 }
 

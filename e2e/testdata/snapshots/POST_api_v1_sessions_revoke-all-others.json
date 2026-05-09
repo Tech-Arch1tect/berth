@@ -1,16 +1,14 @@
 {
   "method": "POST",
   "path": "/api/v1/sessions/revoke-all-others",
-  "status_code": 400,
+  "status_code": 200,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
-    "data": {},
-    "error": {
-      "code": "bad_request",
-      "message": "Refresh token is required"
+    "data": {
+      "message": "All other sessions revoked successfully"
     },
-    "success": false
+    "success": true
   }
 }
