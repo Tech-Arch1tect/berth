@@ -118,7 +118,7 @@ export const usePostApiV1AuthLogin = <TError = ResponseEmpty | void, TContext = 
   return useMutation(getPostApiV1AuthLoginMutationOptions(options), queryClient);
 };
 /**
- * Revokes the access token and refresh token, effectively logging the user out. The refresh token must be provided in the request body.
+ * Revokes the access token (from the `Authorization` header) and the refresh token, effectively logging the user out. The refresh token may be supplied either in the request body's `refresh_token` field (mobile/CLI) or via the `berth_refresh` cookie (browser); when both are present the body wins. The `berth_refresh` cookie is always cleared on the response.
  * @summary Logout and revoke tokens
  */
 export const getPostApiV1AuthLogoutUrl = () => {
@@ -373,7 +373,7 @@ export const usePostApiV1AuthPasswordResetConfirm = <
   return useMutation(getPostApiV1AuthPasswordResetConfirmMutationOptions(options), queryClient);
 };
 /**
- * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The rotated refresh token is also written back to the `berth_refresh` cookie so browser clients stay current after rotation.
+ * Exchanges a valid refresh token for new access and refresh tokens. Implements token rotation - the old refresh token is invalidated. The refresh token may be supplied either in the request body's `refresh_token` field (mobile/CLI) or via the `berth_refresh` cookie (browser); when both are present the body wins. The rotated refresh token is written back to the `berth_refresh` cookie so browser clients stay current after rotation.
  * @summary Refresh access token
  */
 export const getPostApiV1AuthRefreshUrl = () => {

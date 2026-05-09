@@ -27,7 +27,7 @@ import { apiClient } from '../../client';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns all active sessions for the authenticated user. The refresh token must be provided to identify the current session.
+ * Returns all active sessions for the authenticated user.
  * @summary List user sessions
  */
 export const getPostApiV1SessionsUrl = () => {
@@ -195,7 +195,7 @@ export const usePostApiV1SessionsRevoke = <TError = ResponseEmpty | void, TConte
   return useMutation(getPostApiV1SessionsRevokeMutationOptions(options), queryClient);
 };
 /**
- * Revokes all sessions except the current one. For JWT authentication, the refresh token must be provided in the request body.
+ * Revokes all sessions for the authenticated user except the current one.
  * @summary Revoke all other sessions
  */
 export const getPostApiV1SessionsRevokeAllOthersUrl = () => {

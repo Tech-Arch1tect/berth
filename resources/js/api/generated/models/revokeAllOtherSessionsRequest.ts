@@ -7,5 +7,5 @@
  */
 
 export interface RevokeAllOtherSessionsRequest {
-  refresh_token?: string;
+  [key: string]: unknown;
 }

@@ -7,5 +7,5 @@
  */
 
 export interface GetSessionsRequest {
-  refresh_token: string;
+  [key: string]: unknown;
 }

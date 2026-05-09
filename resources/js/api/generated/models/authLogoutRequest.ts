@@ -7,5 +7,5 @@
  */
 
 export interface AuthLogoutRequest {
-  refresh_token: string;
+  refresh_token?: string;
 }

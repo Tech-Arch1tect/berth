@@ -136,10 +136,10 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/sessions").
 		Tags("sessions").
 		Summary("List user sessions").
-		Description("Returns all active sessions for the authenticated user. The refresh token must be provided to identify the current session.").
-		Body(session.GetSessionsRequest{}, "Refresh token to identify current session").
+		Description("Returns all active sessions for the authenticated user.").
+		Body(session.GetSessionsRequest{}, "No body required").
 		Response(http.StatusOK, response.Response[session.GetSessionsData]{}, "List of active sessions").
-		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or refresh token").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to retrieve sessions").
 		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Session service not available").
@@ -1410,8 +1410,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/sessions/revoke-all-others").
 		Tags("sessions").
 		Summary("Revoke all other sessions").
-		Description("Revokes all sessions except the current one. For JWT authentication, the refresh token must be provided in the request body.").
-		Body(session.RevokeAllOtherSessionsRequest{}, "Refresh token (required for JWT auth, not needed for session auth)").
+		Description("Revokes all sessions for the authenticated user except the current one.").
+		Body(session.RevokeAllOtherSessionsRequest{}, "No body required").
 		Response(http.StatusOK, response.Response[session.SessionMessageData]{}, "All other sessions revoked successfully").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
