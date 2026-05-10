@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -146,7 +146,7 @@ export const ActivityPanel: React.FC<ActivityPanelProps> = ({ activitySummary, o
                 <ArrowPathIcon className="w-4 h-4" />
               </button>
             )}
-            <Link href="/operation-logs" className={cn('text-sm font-medium', theme.link.primary)}>
+            <Link to="/operation-logs" className={cn('text-sm font-medium', theme.link.primary)}>
               View all logs
             </Link>
           </div>
@@ -175,7 +175,8 @@ export const ActivityPanel: React.FC<ActivityPanelProps> = ({ activitySummary, o
                 </h3>
               </div>
               <Link
-                href="/operation-logs?status=failed"
+                to="/operation-logs"
+                search={{ status: 'failed' }}
                 className="text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
               >
                 View all

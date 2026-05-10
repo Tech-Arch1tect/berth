@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -157,7 +157,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
                   severity="warning"
                   action={
                     <Link
-                      href={`/servers/${server.id}/stacks`}
+                      to={`/servers/${server.id}/stacks`}
                       className={cn(
                         'text-sm font-medium',
                         'text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300'

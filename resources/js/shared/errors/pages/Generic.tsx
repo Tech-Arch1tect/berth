@@ -1,5 +1,5 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { cn } from '../../utils/cn';
 import { theme } from '../../theme';
 
@@ -28,10 +28,10 @@ export default function GenericError({ code = 500, message }: GenericErrorProps)
     }
   };
 
+  useDocumentTitle(`${code} - ${getErrorTitle(code)}`);
+
   return (
     <>
-      <Head title={`${code} - ${getErrorTitle(code)}`} />
-
       <div className={cn('min-h-screen flex items-center justify-center', theme.layout.authShell)}>
         <div className="text-center">
           <h1 className={cn('text-9xl font-bold', theme.text.subtle)}>{code}</h1>
@@ -41,7 +41,7 @@ export default function GenericError({ code = 500, message }: GenericErrorProps)
           <p className={cn('mt-2', theme.text.muted)}>Something went wrong.</p>
 
           <div className="mt-6 space-x-4">
-            <Link href="/" className={cn('inline-flex items-center', theme.buttons.primary)}>
+            <Link to="/" className={cn('inline-flex items-center', theme.buttons.primary)}>
               Go Home
             </Link>
 

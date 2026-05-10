@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ServerIcon,
   CubeIcon,
@@ -63,7 +63,7 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
             </div>
           </div>
           <Link
-            href={`/servers/${server.id}/stacks`}
+            to={`/servers/${server.id}/stacks`}
             className={cn(
               'flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg',
               'bg-teal-50 text-teal-700 hover:bg-teal-100',
@@ -195,7 +195,7 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
           </div>
           <div className="p-4 flex flex-wrap gap-3">
             <Link
-              href={`/servers/${server.id}/stacks`}
+              to={`/servers/${server.id}/stacks`}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',
@@ -207,7 +207,7 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
               Manage Stacks
             </Link>
             <Link
-              href={`/servers/${server.id}/maintenance`}
+              to={`/servers/${server.id}/maintenance`}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',
@@ -218,7 +218,7 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
               Maintenance
             </Link>
             <Link
-              href={`/servers/${server.id}/registries`}
+              to={`/servers/${server.id}/registries`}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',

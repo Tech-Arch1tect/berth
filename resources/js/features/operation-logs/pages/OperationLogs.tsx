@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
+import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import Layout from '../../../shared/layout/Layout';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import {
   OperationLogsSidebar,
@@ -21,11 +20,8 @@ import type {
   GetApiV1OperationLogsStatus,
 } from '../../../api/generated/models';
 
-interface Props {
-  title: string;
-}
-
-function OperationLogs({ title }: Props) {
+export default function OperationLogs() {
+  useDocumentTitle('My Operation Logs');
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,7 +91,6 @@ function OperationLogs({ title }: Props) {
 
   return (
     <>
-      <Head title={title} />
       <PanelLayout
         storageKey="operation-logs"
         sidebarTitle="Filters"
@@ -143,7 +138,3 @@ function OperationLogs({ title }: Props) {
     </>
   );
 }
-
-OperationLogs.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
-
-export default OperationLogs;

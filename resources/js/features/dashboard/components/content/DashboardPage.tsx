@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ChartBarIcon,
   ServerIcon,
@@ -154,7 +154,7 @@ const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
           </div>
         </div>
         <Link
-          href={`/servers/${server.id}/stacks`}
+          to={`/servers/${server.id}/stacks`}
           className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg',
             'bg-teal-50 text-teal-700 hover:bg-teal-100',
@@ -425,7 +425,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </p>
                       </div>
                       <Link
-                        href={`/servers/${server.id}/stacks`}
+                        to={`/servers/${server.id}/stacks`}
                         className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
                       >
                         Manage stacks
@@ -445,7 +445,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <h2 className={cn('text-lg font-bold', theme.text.strong)}>Recent Activity</h2>
               <p className={cn('text-sm', theme.text.subtle)}>Operations and system events</p>
             </div>
-            <Link href="/operation-logs" className={cn('text-sm font-medium', theme.link.primary)}>
+            <Link to="/operation-logs" className={cn('text-sm font-medium', theme.link.primary)}>
               View all logs
             </Link>
           </div>

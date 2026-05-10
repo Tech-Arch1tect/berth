@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import { ArrowPathIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
@@ -46,7 +46,7 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
 
         {isAdmin && (
           <Link
-            href="/admin/servers"
+            to="/admin/servers"
             className={cn(
               'p-2 rounded-md transition-colors',
               'hover:bg-zinc-100 dark:hover:bg-zinc-800',

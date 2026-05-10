@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { PanelLayout } from '../../../../shared/components/PanelLayout';
 import {
   OperationLogsSidebar,
@@ -17,11 +17,8 @@ import {
 } from '../../../../api/generated/admin/admin';
 import type { GetApiV1AdminOperationLogsStatus } from '../../../../api/generated/models';
 
-interface Props {
-  title: string;
-}
-
-export default function OperationLogs({ title }: Props) {
+export default function OperationLogs() {
+  useDocumentTitle('Operation Logs');
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +90,6 @@ export default function OperationLogs({ title }: Props) {
 
   return (
     <>
-      <Head title={title} />
       <PanelLayout
         storageKey="operation-logs"
         sidebarTitle="Filters"

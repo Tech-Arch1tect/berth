@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ServerIcon,
   CircleStackIcon,
@@ -44,7 +44,7 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
   if (compact) {
     return (
       <Link
-        href={`/servers/${stack.server_id}/stacks/${stack.name}`}
+        to={`/servers/${stack.server_id}/stacks/${stack.name}`}
         className={cn(
           theme.cards.stack.compact.base,
           stack.is_healthy
@@ -90,7 +90,7 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
 
   return (
     <Link
-      href={`/servers/${stack.server_id}/stacks/${stack.name}`}
+      to={`/servers/${stack.server_id}/stacks/${stack.name}`}
       className={cn(theme.cards.stack.normal.base, theme.cards.stack.normal.hover)}
     >
       <div className="p-5">

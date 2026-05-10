@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import {
   ServerIcon,
   WifiIcon,
@@ -39,7 +39,7 @@ export default function ServerCard({ server }: ServerCardProps) {
 
   return (
     <Link
-      href={`/servers/${server.id}/stacks`}
+      to={`/servers/${server.id}/stacks`}
       className={cn(
         theme.cards.shell,
         theme.cards.translucent,
