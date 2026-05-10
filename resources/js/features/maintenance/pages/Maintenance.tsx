@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { useParams } from '@tanstack/react-router';
 import { ServerNavigation } from '../../../shared/layout/ServerNavigation';
-import { Server } from '../../../shared/types/server';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
+import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 import {
   useMaintenanceInfo,
   useDockerPrune,
@@ -28,17 +29,18 @@ import {
   MaintenanceActionsTab,
 } from '../components';
 
-interface MaintenanceProps {
-  title: string;
-  server: Server;
-  serverid: number;
-}
-
 type TabType = 'overview' | 'images' | 'containers' | 'volumes' | 'networks' | 'actions';
 type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
-const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) => {
+export default function Maintenance() {
+  const params = useParams({ strict: false }) as { serverid?: string };
+  const serverid = Number(params.serverid);
+  const { data: serverResponse, isLoading: serverLoading } = useGetApiV1ServersServerid(serverid, {
+    query: { enabled: Number.isFinite(serverid) && serverid > 0 },
+  });
+  const server = serverResponse?.data?.server;
+  useDocumentTitle(server ? `Docker Maintenance - ${server.name}` : 'Docker Maintenance');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedPruneType, setSelectedPruneType] = useState<PruneType>('images');
   const [pruneAll, setPruneAll] = useState(false);
@@ -134,31 +136,27 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
     return descriptions[type];
   };
 
+  if (serverLoading || !server) {
+    return <LoadingSpinner size="lg" text="Loading server..." fullScreen />;
+  }
+
   if (isLoading) {
-    return (
-      <>
-        <Head title={title} />
-        <LoadingSpinner size="lg" text="Loading maintenance information..." fullScreen />
-      </>
-    );
+    return <LoadingSpinner size="lg" text="Loading maintenance information..." fullScreen />;
   }
 
   if (error) {
     return (
-      <>
-        <Head title={title} />
-        <EmptyState
-          icon={ExclamationTriangleIcon}
-          title="Failed to load maintenance information"
-          description="Unable to connect to the Docker maintenance service."
-          variant="error"
-          size="lg"
-          action={{
-            label: 'Retry',
-            onClick: () => refetch(),
-          }}
-        />
-      </>
+      <EmptyState
+        icon={ExclamationTriangleIcon}
+        title="Failed to load maintenance information"
+        description="Unable to connect to the Docker maintenance service."
+        variant="error"
+        size="lg"
+        action={{
+          label: 'Retry',
+          onClick: () => refetch(),
+        }}
+      />
     );
   }
 
@@ -174,9 +172,6 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
 
   return (
     <>
-      <Head title={title} />
-
-      {/* Breadcrumb */}
       <Breadcrumb
         items={[
           {
@@ -189,7 +184,6 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
         ]}
       />
 
-      {/* Server Navigation */}
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
       <div className="h-full flex flex-col">
@@ -297,6 +291,4 @@ const Maintenance: React.FC<MaintenanceProps> = ({ title, server, serverid }) =>
       />
     </>
   );
-};
-
-export default Maintenance;
+}

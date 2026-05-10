@@ -1,12 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
+import { useParams } from '@tanstack/react-router';
 import { ServerNavigation } from '../../../shared/layout/ServerNavigation';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { SortOption } from '../types';
-import { Server } from '../../../shared/types/server';
 import { useServerStacks } from '../hooks/useServerStacks';
 import { useCanCreateStack } from '../hooks/useCanCreateStack';
 import { StorageManager } from '../../../shared/utils/storage';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
+import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import { StacksToolbar } from '../components/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/sidebar/StacksSidebar';
@@ -15,13 +17,14 @@ import { StacksStatusBar } from '../components/statusbar/StacksStatusBar';
 import { CreateStackModal } from '../components/CreateStackModal';
 import { StackService } from '../services/stackService';
 
-interface ServerStacksProps {
-  title: string;
-  server: Server;
-  serverid: number;
-}
-
-export default function ServerStacks({ title, server, serverid }: ServerStacksProps) {
+export default function ServerStacks() {
+  const params = useParams({ strict: false }) as { serverid?: string };
+  const serverid = Number(params.serverid);
+  const { data: serverResponse, isLoading: serverLoading } = useGetApiV1ServersServerid(serverid, {
+    query: { enabled: Number.isFinite(serverid) && serverid > 0 },
+  });
+  const server = serverResponse?.data?.server;
+  useDocumentTitle(server ? `${server.name} - Stacks` : 'Stacks');
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [layoutMode, setLayoutMode] = useState<'compact' | 'normal'>(() =>
@@ -130,13 +133,14 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
     (searchTerm !== '' ? 1 : 0) + (healthFilter !== 'all' ? 1 : 0) + negativeFilters.length;
 
   const hasError = !!error;
-  const errors = error ? [{ server, error: error as Error }] : [];
+  const errors = error && server ? [{ server, error: error as Error }] : [];
+
+  if (serverLoading || !server) {
+    return <LoadingSpinner size="lg" text="Loading server..." fullScreen />;
+  }
 
   return (
     <>
-      <Head title={title} />
-
-      {/* Breadcrumb */}
       <Breadcrumb
         items={[
           {
@@ -149,10 +153,8 @@ export default function ServerStacks({ title, server, serverid }: ServerStacksPr
         ]}
       />
 
-      {/* Server Navigation */}
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
-      {/* Panel-Based Layout */}
       <div className="h-full flex flex-col">
         <PanelLayout
           storageKey="stacks"

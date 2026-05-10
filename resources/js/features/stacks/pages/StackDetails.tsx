@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
-import { Server } from '../../../shared/types/server';
+import { useParams } from '@tanstack/react-router';
 import { useStackDetailsPage } from '../hooks/useStackDetailsPage';
 import { GlobalOperationsTracker } from '../../operations/components/GlobalOperationsTracker';
 import { EmptyState } from '../../../shared/components/EmptyState';
@@ -9,8 +8,9 @@ import { ServerStackProvider } from '../../../shared/contexts/ServerStackContext
 import { ImageUpdateBanner } from '../../image-updates/components';
 import { useStackImageUpdates } from '../../image-updates/hooks/useStackImageUpdates';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import Layout from '../../../shared/layout/Layout';
 import { ComposeEditorModal } from '../../compose-editor/components/ComposeEditorModal';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
+import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 
 import {
   PERM_STACKS_MANAGE,
@@ -25,18 +25,15 @@ import { StackToolbar } from '../components/toolbar/StackToolbar';
 import { StackStatusBar } from '../components/statusbar/StackStatusBar';
 import { StackContent } from '../components/content/StackContent';
 
-interface StackDetailsProps {
-  title: string;
-  server: Server;
-  serverid: number;
-  stackname: string;
-}
-
-type StackDetailsComponent = React.FC<StackDetailsProps> & {
-  layout?: (page: React.ReactElement) => React.ReactElement;
-};
-
-const StackDetails: StackDetailsComponent = ({ title, server, serverid, stackname }) => {
+export default function StackDetails() {
+  const params = useParams({ strict: false }) as { serverid?: string; stackname?: string };
+  const serverid = Number(params.serverid);
+  const stackname = params.stackname ?? '';
+  const { data: serverResponse, isLoading: serverLoading } = useGetApiV1ServersServerid(serverid, {
+    query: { enabled: Number.isFinite(serverid) && serverid > 0 },
+  });
+  const server = serverResponse?.data?.server;
+  useDocumentTitle(server ? `${server.name} - ${stackname}` : stackname || 'Stack');
   const stack = useStackDetailsPage({ serverid, stackname });
   const [selection, setSelection] = useState<SidebarSelection | null>({ type: 'overview' });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
@@ -66,9 +63,12 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
     }
   }, [selection, stack.setActiveTab]);
 
+  if (serverLoading || !server) {
+    return <LoadingSpinner size="lg" text="Loading server..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
       <ServerStackProvider serverId={serverid} stackName={stackname} serverName={server.name}>
         {/* Main Content */}
         {stack.loading ? (
@@ -216,8 +216,4 @@ const StackDetails: StackDetailsComponent = ({ title, server, serverid, stacknam
       </ServerStackProvider>
     </>
   );
-};
-
-StackDetails.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
-
-export default StackDetails;
+}
