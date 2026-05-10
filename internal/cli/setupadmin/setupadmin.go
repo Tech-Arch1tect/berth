@@ -10,35 +10,18 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/setup"
+	"berth/internal/pkg/config"
 	"berth/internal/platform/logging"
+	"berth/seeds"
+
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 func Run(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("setup-admin", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-
-	username := fs.String("username", "", "admin username (required)")
-	email := fs.String("email", "", "admin email address (required)")
-	password := fs.String("password", "", "admin password (required)")
-
-	if err := fs.Parse(args); err != nil {
-		return 2
-	}
-
-	missing := []string{}
-	if strings.TrimSpace(*username) == "" {
-		missing = append(missing, "--username")
-	}
-	if strings.TrimSpace(*email) == "" {
-		missing = append(missing, "--email")
-	}
-	if *password == "" {
-		missing = append(missing, "--password")
-	}
-	if len(missing) > 0 {
-		fmt.Fprintf(stderr, "missing required flag(s): %s\n", strings.Join(missing, ", "))
-		fs.Usage()
-		return 2
+	username, email, password, code := parseFlags(args, stderr)
+	if code != 0 {
+		return code
 	}
 
 	cfg, err := app.LoadConfig()
@@ -60,6 +43,47 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
+	if err := seeds.SeedRBACData(db); err != nil {
+		fmt.Fprintf(stderr, "seed rbac data: %v\n", err)
+		return 1
+	}
+
+	return doSetup(username, email, password, stdout, stderr, cfg, db, logger)
+}
+
+func parseFlags(args []string, stderr io.Writer) (string, string, string, int) {
+	fs := flag.NewFlagSet("setup-admin", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+
+	username := fs.String("username", "", "admin username (required)")
+	email := fs.String("email", "", "admin email address (required)")
+	password := fs.String("password", "", "admin password (required)")
+
+	if err := fs.Parse(args); err != nil {
+		return "", "", "", 2
+	}
+
+	missing := []string{}
+	if strings.TrimSpace(*username) == "" {
+		missing = append(missing, "--username")
+	}
+	if strings.TrimSpace(*email) == "" {
+		missing = append(missing, "--email")
+	}
+	if *password == "" {
+		missing = append(missing, "--password")
+	}
+	if len(missing) > 0 {
+		fmt.Fprintf(stderr, "missing required flag(s): %s\n", strings.Join(missing, ", "))
+		fs.Usage()
+		return "", "", "", 2
+	}
+
+	return *username, *email, *password, 0
+}
+
+func doSetup(username, email, password string, stdout, stderr io.Writer,
+	cfg *config.Config, db *gorm.DB, logger *zap.Logger) int {
 	rbacSvc := rbac.NewService(db, logger)
 	authSvc := auth.NewService(cfg, db, nil, nil, logger)
 	setupSvc := setup.NewService(db, rbacSvc, logger)
@@ -74,13 +98,13 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	hashed, err := authSvc.HashPassword(*password)
+	hashed, err := authSvc.HashPassword(password)
 	if err != nil {
 		fmt.Fprintf(stderr, "%v\n", err)
 		return 1
 	}
 
-	created, err := setupSvc.CreateAdmin(*username, *email, hashed)
+	created, err := setupSvc.CreateAdmin(username, email, hashed)
 	if err != nil {
 		fmt.Fprintf(stderr, "create admin: %v\n", err)
 		return 1
