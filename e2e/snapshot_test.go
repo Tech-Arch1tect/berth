@@ -96,7 +96,6 @@ func TestSnapshotUnauthenticatedWeb(t *testing.T) {
 		{"GET", "/auth/verify-email"},
 		{"GET", "/auth/totp/verify"},
 		{"GET", "/auth/totp/setup"},
-		{"GET", "/setup/admin"},
 	}
 
 	for _, r := range routes {
@@ -318,14 +317,6 @@ func TestSnapshotWebAuthForms(t *testing.T) {
 		resp, err := client.PostForm("/auth/totp/verify", nil)
 		require.NoError(t, err)
 		sr.RecordAndAssert(t, "POST", "/auth/totp/verify", resp)
-	})
-
-	t.Run("POST /setup/admin", func(t *testing.T) {
-		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
-		_, _ = client.Get("/setup/admin")
-		resp, err := client.PostForm("/setup/admin", nil)
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/setup/admin", resp)
 	})
 }
 

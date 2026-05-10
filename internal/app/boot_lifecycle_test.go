@@ -51,7 +51,7 @@ func TestBoot_InertiaPageRenders(t *testing.T) {
 
 	baseURL := apptest.WaitForListener(t, booted.Echo, 5*time.Second)
 
-	resp, err := apptest.NewTLSClient().Get(baseURL + "/setup/admin")
+	resp, err := apptest.NewTLSClient().Get(baseURL + "/auth/login")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -59,13 +59,13 @@ func TestBoot_InertiaPageRenders(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equalf(t, http.StatusOK, resp.StatusCode,
-		"setup page must render (body: %s)", truncateForLog(string(body)))
+		"login page must render (body: %s)", truncateForLog(string(body)))
 
 	bodyStr := string(body)
 	assert.Contains(t, bodyStr, `id="app"`,
 		"rendered HTML must contain inertia mount node — proves inertia init hook + middleware ran")
-	assert.Contains(t, bodyStr, "Setup",
-		"rendered HTML should reference the setup page name")
+	assert.Contains(t, bodyStr, "Auth/Login",
+		"rendered HTML should reference the resolved page component")
 }
 
 func TestBoot_AuditCallbacksFireOnInsert(t *testing.T) {

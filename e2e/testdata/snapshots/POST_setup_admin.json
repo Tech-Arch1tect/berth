@@ -1,9 +1,0 @@
-{
-  "method": "POST",
-  "path": "/setup/admin",
-  "status_code": 302,
-  "headers": {
-    "Location": "/setup/admin"
-  },
-  "body": ""
-}

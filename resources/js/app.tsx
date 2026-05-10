@@ -33,7 +33,6 @@ const pages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/pag
 const pageMap: Record<string, string> = {
   'Errors/Generic': './shared/errors/pages/Generic.tsx',
   'Sessions/Index': './features/sessions/pages/Index.tsx',
-  'Setup/Admin': './features/setup/pages/Admin.tsx',
   'APIKeys/Index': './features/apikeys/pages/Index.tsx',
   'APIKeys/Scopes': './features/apikeys/pages/Scopes.tsx',
   'Auth/Login': './features/auth/pages/Login.tsx',

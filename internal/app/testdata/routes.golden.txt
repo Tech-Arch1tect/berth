@@ -134,8 +134,6 @@ GET	/servers/:serverid/maintenance	internal/domain/maintenance.(*Handler).ShowMa
 GET	/servers/:serverid/registries	internal/domain/registry.(*Handler).ShowRegistries-fm
 GET	/servers/:serverid/stacks/:stackname	internal/domain/stack.(*Handler).ShowStackDetails-fm
 GET	/sessions	internal/domain/session.(*Handler).Sessions-fm
-GET	/setup/admin	internal/domain/setup.(*Handler).ShowSetup-fm
-POST	/setup/admin	internal/domain/setup.(*Handler).CreateAdmin-fm
 GET	/stacks	internal/domain/stack.(*Handler).Index-fm
 GET	/ws/api/servers/:serverid/stacks/:stackname/operations	internal/domain/operations.(*WebSocketHandler).HandleOperationWebSocket-fm
 GET	/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId	internal/domain/operations.(*WebSocketHandler).HandleOperationWebSocket-fm

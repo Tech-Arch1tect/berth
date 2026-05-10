@@ -59,10 +59,6 @@ func registerRoutes(g *Graph) {
 
 	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
-	if g.SetupHandler != nil {
-		g.SetupHandler.RegisterPublicRoutes(e)
-	}
-
 	web := e.Group("")
 	web.Use(session.Middleware(g.SessionMgr))
 	if g.SessionSvc != nil {

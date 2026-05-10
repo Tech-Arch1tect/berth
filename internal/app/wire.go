@@ -104,7 +104,6 @@ type Graph struct {
 	APIKeySvc              *apikey.Service
 	APIKeyHandler          *apikey.Handler
 	SetupSvc               *setup.Service
-	SetupHandler           *setup.Handler
 	ServerSvc              *server.Service
 	ServerHandler          *server.Handler
 	ServerAPIHandler       *server.APIHandler
@@ -228,7 +227,6 @@ func Build(
 	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, inertiaSvc, g.SecurityAuditSvc)
 
 	g.SetupSvc = setup.NewService(db, g.RBACSvc, logger)
-	g.SetupHandler = setup.NewHandler(g.SetupSvc, g.AuthSvc, inertiaSvc, logger)
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.RBACSvc, g.AgentSvc, logger)
 	g.ServerHandler = server.NewHandler(g.ServerSvc, inertiaSvc, g.SecurityAuditSvc)
