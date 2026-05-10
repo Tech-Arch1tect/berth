@@ -1,21 +1,16 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Head, usePage } from '@inertiajs/react';
 import { Modal } from '../../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { useAgentDiscovery } from '../hooks/useAgentDiscovery';
 import { useServerSelection } from '../../../../shared/hooks/useServerSelection';
 import { useAgentUpdateExecution } from '../hooks/useAgentUpdateExecution';
 import { AgentDiscoveryTable, UpdateConfigForm, UpdateProgressTable } from '../components';
 
-interface Props {
-  title?: string;
-}
-
-export default function AgentUpdate({ title = 'Agent Updates' }: Props) {
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
+export default function AgentUpdate() {
+  useDocumentTitle('Agent Updates');
 
   const { servers, loading, error, discover, agentServers } = useAgentDiscovery();
 
@@ -32,7 +27,7 @@ export default function AgentUpdate({ title = 'Agent Updates' }: Props) {
     successCount,
     failedCount,
     skippedCount,
-  } = useAgentUpdateExecution({ csrfToken });
+  } = useAgentUpdateExecution();
 
   const [changeTag, setChangeTag] = useState(false);
   const [pullImages, setPullImages] = useState(true);
@@ -95,8 +90,6 @@ export default function AgentUpdate({ title = 'Agent Updates' }: Props) {
 
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="py-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

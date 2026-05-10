@@ -24,10 +24,6 @@ interface UpdateConfig {
   newTag: string;
 }
 
-interface UseAgentUpdateExecutionOptions {
-  csrfToken?: string;
-}
-
 interface UseAgentUpdateExecutionReturn {
   isUpdating: boolean;
   progress: AgentUpdateProgress[];
@@ -42,9 +38,7 @@ interface UseAgentUpdateExecutionReturn {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function useAgentUpdateExecution({
-  csrfToken,
-}: UseAgentUpdateExecutionOptions = {}): UseAgentUpdateExecutionReturn {
+export function useAgentUpdateExecution(): UseAgentUpdateExecutionReturn {
   const [isUpdating, setIsUpdating] = useState(false);
   const [progress, setProgress] = useState<AgentUpdateProgress[]>([]);
   const [currentServerIndex, setCurrentServerIndex] = useState(-1);
@@ -229,7 +223,7 @@ export function useAgentUpdateExecution({
         return false;
       }
     },
-    [csrfToken, executeOperation]
+    [executeOperation]
   );
 
   const startUpdate = useCallback(
