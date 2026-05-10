@@ -1,34 +1,25 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { Link } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { Table } from '../../../../shared/components/Table';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
-import { usePostApiV1AdminUsers } from '../../../../api/generated/admin/admin';
+import {
+  useGetApiV1AdminUsers,
+  usePostApiV1AdminUsers,
+  getGetApiV1AdminUsersQueryKey,
+} from '../../../../api/generated/admin/admin';
+import type { UserInfo } from '../../../../api/generated/models';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  created_at: string;
-  last_login_at: string | null;
-  totp_enabled: boolean;
-  roles: Role[];
-}
+export default function AdminUsers() {
+  useDocumentTitle('User Management');
+  const queryClient = useQueryClient();
 
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-}
-
-interface Props {
-  title: string;
-  users: User[];
-}
-
-export default function AdminUsers({ title, users }: Props) {
+  const { data: usersResponse, isLoading: usersLoading } = useGetApiV1AdminUsers();
+  const users = usersResponse?.data?.users ?? [];
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -56,7 +47,7 @@ export default function AdminUsers({ title, users }: Props) {
             password_confirm: '',
           });
           setShowCreateForm(false);
-          window.location.reload();
+          queryClient.invalidateQueries({ queryKey: getGetApiV1AdminUsersQueryKey() });
         },
         onError: (error) => {
           const errorData = error as { message?: string; errors?: Record<string, string> };
@@ -80,10 +71,12 @@ export default function AdminUsers({ title, users }: Props) {
     });
   };
 
+  if (usersLoading) {
+    return <LoadingSpinner size="lg" text="Loading users..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -94,7 +87,7 @@ export default function AdminUsers({ title, users }: Props) {
                   theme.text.strong
                 )}
               >
-                {title}
+                User Management
               </h2>
             </div>
             <div className="mt-4 flex md:mt-0 md:ml-4">
@@ -107,8 +100,6 @@ export default function AdminUsers({ title, users }: Props) {
               </button>
             </div>
           </div>
-
-          <FlashMessages />
 
           {errors.general && (
             <div className="mt-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md p-4">
@@ -254,7 +245,7 @@ export default function AdminUsers({ title, users }: Props) {
             <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                 <div className={theme.table.panel}>
-                  <Table<User>
+                  <Table<UserInfo>
                     data={users}
                     keyExtractor={(user) => user.id.toString()}
                     emptyMessage="No users found"
@@ -346,7 +337,11 @@ export default function AdminUsers({ title, users }: Props) {
                         header: '',
                         className: 'text-right',
                         render: (user) => (
-                          <Link href={`/admin/users/${user.id}/roles`} className={theme.text.info}>
+                          <Link
+                            to="/admin/users/$userid/roles"
+                            params={{ userid: String(user.id) }}
+                            className={theme.text.info}
+                          >
                             Manage Roles
                           </Link>
                         ),

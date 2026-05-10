@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { Head } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
 import { Modal } from '../../../../shared/components/Modal';
 import { Tabs } from '../../../../shared/components/Tabs';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import {
   usePostApiV1AdminMigrationExport,
   usePostApiV1AdminMigrationImport,
 } from '../../../../api/generated/admin/admin';
 import type { ImportData } from '../../../../api/generated/models';
 
-interface Props {
-  title: string;
-}
-
-export default function Migration({ title }: Props) {
+export default function Migration() {
+  useDocumentTitle('Data Migration');
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [importResult, setImportResult] = useState<ImportData | null>(null);
   const [showEncryptionSecret, setShowEncryptionSecret] = useState(false);
@@ -136,8 +132,6 @@ export default function Migration({ title }: Props) {
 
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="py-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,8 +142,6 @@ export default function Migration({ title }: Props) {
                 permissions.
               </p>
             </div>
-
-            <FlashMessages />
 
             <Tabs
               tabs={[

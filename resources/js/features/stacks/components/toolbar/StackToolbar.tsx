@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import type { ComposeService } from '../../../../api/generated/models';
 import { WebSocketConnectionStatus } from '../../../../shared/types/websocket';
 import { OperationRequest } from '../../../operations/types';
@@ -115,7 +115,7 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
       {/* Left: Breadcrumb navigation */}
       <nav className="flex items-center gap-2 min-w-0" aria-label="Breadcrumb">
         <Link
-          href="/"
+          to="/"
           className={cn(
             theme.text.subtle,
             'hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex-shrink-0'
@@ -125,7 +125,7 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         </Link>
         <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
         <Link
-          href={`/servers/${serverId}/stacks`}
+          to={`/servers/${serverId}/stacks`}
           className={cn(
             'text-sm font-medium transition-colors truncate',
             theme.text.muted,

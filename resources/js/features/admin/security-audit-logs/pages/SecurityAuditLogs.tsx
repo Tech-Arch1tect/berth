@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
 import { PanelLayout } from '../../../../shared/components/PanelLayout';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import {
   SecurityAuditLogsSidebar,
   SecurityAuditLogsToolbar,
@@ -9,11 +9,8 @@ import {
 } from '../components';
 import { useSecurityAuditLogs } from '../hooks/useSecurityAuditLogs';
 
-interface Props {
-  title: string;
-}
-
-export default function SecurityAuditLogs({ title }: Props) {
+export default function SecurityAuditLogs() {
+  useDocumentTitle('Security Audit Logs');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -103,7 +100,6 @@ export default function SecurityAuditLogs({ title }: Props) {
 
   return (
     <>
-      <Head title={title} />
       <PanelLayout
         storageKey="security-audit-logs"
         sidebarTitle="Filters"
