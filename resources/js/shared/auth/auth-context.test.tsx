@@ -8,6 +8,7 @@ import {
   postApiV1AuthLogin,
   postApiV1AuthLogout,
   postApiV1AuthRefresh,
+  postApiV1AuthTotpVerify,
 } from '../../api/generated/auth/auth';
 import { getApiV1Profile } from '../../api/generated/profile/profile';
 import type { UserInfo } from '../../api/generated/models';
@@ -16,6 +17,7 @@ vi.mock('../../api/generated/auth/auth', () => ({
   postApiV1AuthLogin: vi.fn(),
   postApiV1AuthLogout: vi.fn(),
   postApiV1AuthRefresh: vi.fn(),
+  postApiV1AuthTotpVerify: vi.fn(),
 }));
 
 vi.mock('../../api/generated/profile/profile', () => ({
@@ -25,6 +27,7 @@ vi.mock('../../api/generated/profile/profile', () => ({
 const mockLogin = postApiV1AuthLogin as ReturnType<typeof vi.fn>;
 const mockLogout = postApiV1AuthLogout as ReturnType<typeof vi.fn>;
 const mockRefresh = postApiV1AuthRefresh as ReturnType<typeof vi.fn>;
+const mockTOTPVerify = postApiV1AuthTotpVerify as ReturnType<typeof vi.fn>;
 const mockProfile = getApiV1Profile as ReturnType<typeof vi.fn>;
 
 function userFixture(overrides: Partial<UserInfo> = {}): UserInfo {
@@ -58,6 +61,7 @@ beforeEach(() => {
   mockLogin.mockReset();
   mockLogout.mockReset();
   mockRefresh.mockReset();
+  mockTOTPVerify.mockReset();
   mockProfile.mockReset();
 });
 
@@ -134,6 +138,85 @@ describe('useAuth.login', () => {
     ).rejects.toThrow();
     expect(result.current.user).toBeNull();
     expect(getAccessToken()).toBeNull();
+  });
+});
+
+describe('useAuth.login + verifyTOTP', () => {
+  it('returns totpRequired when the server reports a TOTP challenge and stores the pending token', async () => {
+    mockLogin.mockResolvedValue({
+      success: true,
+      data: {
+        totp_required: true,
+        temporary_token: 'totp-pending-jwt',
+        message: 'Two-factor authentication required',
+      },
+    });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
+
+    let outcome: { totpRequired: boolean } | undefined;
+    await act(async () => {
+      outcome = await result.current.login({ username: 'alice', password: 'Pass1234!' });
+    });
+
+    expect(outcome).toEqual({ totpRequired: true });
+    expect(result.current.totpPending).toBe(true);
+    expect(result.current.user).toBeNull();
+    expect(getAccessToken()).toBeNull();
+    expect(mockProfile).not.toHaveBeenCalled();
+  });
+
+  it('verifyTOTP completes the login by sending the pending token as Bearer and seeding full auth', async () => {
+    const user = userFixture();
+    mockLogin.mockResolvedValue({
+      success: true,
+      data: {
+        totp_required: true,
+        temporary_token: 'totp-pending-jwt',
+        message: 'TOTP required',
+      },
+    });
+    mockTOTPVerify.mockResolvedValue({
+      success: true,
+      data: {
+        access_token: 'after-totp',
+        refresh_token: 'r',
+        token_type: 'Bearer',
+        expires_in: 900,
+        refresh_expires_in: 2592000,
+        user,
+      },
+    });
+    mockProfile.mockResolvedValue({ success: true, data: user });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.login({ username: 'alice', password: 'Pass1234!' });
+    });
+    await act(async () => {
+      await result.current.verifyTOTP('123456');
+    });
+
+    expect(mockTOTPVerify).toHaveBeenCalledWith(
+      { code: '123456' },
+      { headers: { Authorization: 'Bearer totp-pending-jwt' } }
+    );
+    expect(getAccessToken()).toBe('after-totp');
+    expect(result.current.user).toEqual(user);
+    expect(result.current.totpPending).toBe(false);
+  });
+
+  it('verifyTOTP rejects if no pending TOTP challenge exists', async () => {
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
+
+    await expect(
+      act(async () => {
+        await result.current.verifyTOTP('123456');
+      })
+    ).rejects.toThrow(/no pending TOTP challenge/i);
+    expect(mockTOTPVerify).not.toHaveBeenCalled();
   });
 });
 

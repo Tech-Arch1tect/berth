@@ -62,7 +62,7 @@ func TestAllJSONResponsesUseEnvelope(t *testing.T) {
 					endpointEnvelope = false
 					continue
 				}
-				if !hasEnvelopeShape(schema) {
+				if !hasEnvelopeShape(schema, spec.Components.Schemas) {
 					if !allowed {
 						t.Errorf("%s [%s]: response schema is not the envelope shape (missing top-level success/data); use response.Response[T]{} or response.ErrorResponseBody{}", key, status)
 					}
@@ -106,8 +106,20 @@ func resolveSchema(ref *openapi3.SchemaRef, components openapi3.Schemas) *openap
 	return nil
 }
 
-func hasEnvelopeShape(schema *openapi3.Schema) bool {
-	if schema == nil || schema.Properties == nil {
+func hasEnvelopeShape(schema *openapi3.Schema, components openapi3.Schemas) bool {
+	if schema == nil {
+		return false
+	}
+	if len(schema.OneOf) > 0 {
+		for _, variant := range schema.OneOf {
+			v := resolveSchema(variant, components)
+			if !hasEnvelopeShape(v, components) {
+				return false
+			}
+		}
+		return true
+	}
+	if schema.Properties == nil {
 		return false
 	}
 	for _, prop := range []string{"success", "data", "error", "meta"} {

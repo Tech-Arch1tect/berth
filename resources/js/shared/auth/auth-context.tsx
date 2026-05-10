@@ -15,9 +15,10 @@ import {
   postApiV1AuthLogin,
   postApiV1AuthLogout,
   postApiV1AuthRefresh,
+  postApiV1AuthTotpVerify,
 } from '../../api/generated/auth/auth';
 import { getApiV1Profile } from '../../api/generated/profile/profile';
-import type { UserInfo } from '../../api/generated/models';
+import type { ResponseAuthLoginData, UserInfo } from '../../api/generated/models';
 
 let accessToken: string | null = null;
 
@@ -47,14 +48,18 @@ async function fetchProfile(): Promise<UserInfo | null> {
   return null;
 }
 
+export type LoginResult = { totpRequired: false } | { totpRequired: true };
+
 export type AuthContextValue = {
   user: UserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (creds: { username: string; password: string }) => Promise<void>;
+  totpPending: boolean;
+  login: (creds: { username: string; password: string }) => Promise<LoginResult>;
   logout: () => Promise<void>;
   refresh: () => Promise<string | null>;
   initialise: () => Promise<void>;
+  verifyTOTP: (code: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,6 +72,12 @@ export type AuthProviderProps = {
 export function AuthProvider({ children, onAuthFailed }: AuthProviderProps) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [totpPendingToken, setTotpPendingTokenState] = useState<string | null>(null);
+  const totpPendingTokenRef = useRef<string | null>(null);
+  const setTotpPendingToken = useCallback((token: string | null) => {
+    totpPendingTokenRef.current = token;
+    setTotpPendingTokenState(token);
+  }, []);
   const queryClient = useQueryClient();
   const initialisePromise = useRef<Promise<void> | null>(null);
 
@@ -108,13 +119,42 @@ export function AuthProvider({ children, onAuthFailed }: AuthProviderProps) {
     return initialisePromise.current;
   }, []);
 
-  const login = useCallback(async (creds: { username: string; password: string }) => {
-    const resp = await postApiV1AuthLogin(creds);
+  const login = useCallback(
+    async (creds: { username: string; password: string }): Promise<LoginResult> => {
+      const resp = await postApiV1AuthLogin(creds);
+      if (!resp.success || !resp.data) {
+        throw new Error('login response did not contain data');
+      }
+      if ('totp_required' in resp.data && resp.data.totp_required) {
+        setTotpPendingToken(resp.data.temporary_token);
+        return { totpRequired: true };
+      }
+      const data = resp.data as Extract<typeof resp.data, { access_token: string }>;
+      accessToken = data.access_token;
+      setUser(data.user);
+      void fetchProfile().then((p) => {
+        if (p) setUser(p);
+      });
+      return { totpRequired: false };
+    },
+    []
+  );
+
+  const verifyTOTP = useCallback(async (code: string) => {
+    const tokenAtCallTime = totpPendingTokenRef.current;
+    if (!tokenAtCallTime) {
+      throw new Error('no pending TOTP challenge — call login first');
+    }
+    const resp = (await postApiV1AuthTotpVerify(
+      { code },
+      { headers: { Authorization: `Bearer ${tokenAtCallTime}` } }
+    )) as ResponseAuthLoginData;
     if (!resp.success || !resp.data) {
-      throw new Error('login response did not contain data');
+      throw new Error('totp verify response did not contain data');
     }
     accessToken = resp.data.access_token;
     setUser(resp.data.user);
+    setTotpPendingToken(null);
     void fetchProfile().then((p) => {
       if (p) setUser(p);
     });
@@ -144,12 +184,14 @@ export function AuthProvider({ children, onAuthFailed }: AuthProviderProps) {
       user,
       isAuthenticated: user !== null,
       isLoading,
+      totpPending: totpPendingToken !== null,
       login,
       logout,
       refresh,
       initialise,
+      verifyTOTP,
     }),
-    [user, isLoading, login, logout, refresh, initialise]
+    [user, isLoading, totpPendingToken, login, logout, refresh, initialise, verifyTOTP]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
