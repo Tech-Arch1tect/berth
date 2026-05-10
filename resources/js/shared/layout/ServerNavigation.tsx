@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, useLocation } from '@tanstack/react-router';
 import { CircleStackIcon, WrenchScrewdriverIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useMaintenancePermissions } from '../../features/maintenance/hooks/useMaintenancePermissions';
 import { useRegistryPermissions } from '../../features/registries/hooks/useRegistryPermissions';
@@ -12,7 +12,7 @@ interface ServerNavigationProps {
 }
 
 export const ServerNavigation = ({ serverId, className }: ServerNavigationProps) => {
-  const { url } = usePage();
+  const { pathname } = useLocation();
   const { data: maintenancePerms } = useMaintenancePermissions({
     serverid: serverId,
   });
@@ -20,22 +20,26 @@ export const ServerNavigation = ({ serverId, className }: ServerNavigationProps)
     serverId,
   });
 
+  const serverIdStr = String(serverId);
   const navItems = [
     {
       name: 'Stacks',
-      href: `/servers/${serverId}/stacks`,
+      to: '/servers/$serverid/stacks' as const,
+      href: `/servers/${serverIdStr}/stacks`,
       icon: CircleStackIcon,
       show: true,
     },
     {
       name: 'Registries',
-      href: `/servers/${serverId}/registries`,
+      to: '/servers/$serverid/registries' as const,
+      href: `/servers/${serverIdStr}/registries`,
       icon: KeyIcon,
       show: registryPerms?.canManage === true,
     },
     {
       name: 'Maintenance',
-      href: `/servers/${serverId}/maintenance`,
+      to: '/servers/$serverid/maintenance' as const,
+      href: `/servers/${serverIdStr}/maintenance`,
       icon: WrenchScrewdriverIcon,
       show: maintenancePerms?.maintenance?.read === true,
     },
@@ -45,11 +49,12 @@ export const ServerNavigation = ({ serverId, className }: ServerNavigationProps)
     <nav className={cn(theme.tabs.container, className)}>
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = url === item.href;
+        const isActive = pathname === item.href;
         return (
           <Link
             key={item.name}
-            href={item.href}
+            to={item.to}
+            params={{ serverid: serverIdStr }}
             className={cn(theme.tabs.trigger, isActive ? theme.tabs.active : theme.tabs.inactive)}
           >
             <div className="flex items-center gap-2">

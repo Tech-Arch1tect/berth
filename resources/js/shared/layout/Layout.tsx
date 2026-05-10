@@ -1,6 +1,5 @@
-import { Link, usePage, router } from '@inertiajs/react';
-import { ReactNode, useState, useEffect } from 'react';
-import { useGetApiV1Version } from '../../api/generated/system/system';
+import { Link, useLocation } from '@tanstack/react-router';
+import { ReactNode, useState } from 'react';
 import {
   SunIcon,
   MoonIcon,
@@ -22,8 +21,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-import { User } from '../types';
-import { setCsrfToken } from '../../api/client';
+import { useGetApiV1Version } from '../../api/generated/system/system';
+import { useAuth } from '../auth/auth-context';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { Toaster } from '../utils/toast';
 import { GlobalOperationsTracker } from '../../features/operations/components/GlobalOperationsTracker';
@@ -37,9 +36,8 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { url, props } = usePage();
-  const user = props.currentUser as User | undefined;
-  const csrfToken = props.csrfToken as string | undefined;
+  const { user, logout } = useAuth();
+  const { pathname } = useLocation();
   const { isDark, toggleDarkMode } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
@@ -50,10 +48,6 @@ export default function Layout({ children }: LayoutProps) {
   const { data: versionResponse } = useGetApiV1Version();
   const appVersion = versionResponse?.data?.version ?? 'dev';
 
-  useEffect(() => {
-    setCsrfToken(csrfToken);
-  }, [csrfToken]);
-
   const toggleSidebarCollapse = () => {
     const newValue = !sidebarCollapsed;
     setSidebarCollapsed(newValue);
@@ -63,28 +57,28 @@ export default function Layout({ children }: LayoutProps) {
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: HomeIcon },
-    { name: 'All Stacks', href: '/stacks', icon: CircleStackIcon },
+    { name: 'Dashboard', href: '/' as const, icon: HomeIcon },
+    { name: 'All Stacks', href: '/stacks' as const, icon: CircleStackIcon },
     {
       name: 'Operation Logs',
-      href: '/operation-logs',
+      href: '/operation-logs' as const,
       icon: ClipboardDocumentListIcon,
     },
     ...(isAdmin
       ? [
-          { name: 'Servers', href: '/admin/servers', icon: ServerIcon },
-          { name: 'Agent Updates', href: '/admin/agent-update', icon: ArrowPathIcon },
-          { name: 'Users', href: '/admin/users', icon: UsersIcon },
-          { name: 'Roles', href: '/admin/roles', icon: ShieldCheckIcon },
-          { name: 'Migration', href: '/admin/migration', icon: ArrowUpTrayIcon },
+          { name: 'Servers', href: '/admin/servers' as const, icon: ServerIcon },
+          { name: 'Agent Updates', href: '/admin/agent-update' as const, icon: ArrowPathIcon },
+          { name: 'Users', href: '/admin/users' as const, icon: UsersIcon },
+          { name: 'Roles', href: '/admin/roles' as const, icon: ShieldCheckIcon },
+          { name: 'Migration', href: '/admin/migration' as const, icon: ArrowUpTrayIcon },
           {
             name: 'Admin Operation Logs',
-            href: '/admin/operation-logs',
+            href: '/admin/operation-logs' as const,
             icon: ClipboardDocumentListIcon,
           },
           {
             name: 'Security Audit Logs',
-            href: '/admin/security-audit-logs',
+            href: '/admin/security-audit-logs' as const,
             icon: ShieldExclamationIcon,
           },
         ]
@@ -92,24 +86,16 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   const userNavigation = [
-    { name: 'Profile', href: '/profile', icon: UserCircleIcon },
-    { name: 'Sessions', href: '/sessions', icon: ComputerDesktopIcon },
-    { name: 'API Keys', href: '/api-keys', icon: KeyIcon },
+    { name: 'Profile', href: '/profile' as const, icon: UserCircleIcon },
+    { name: 'Sessions', href: '/sessions' as const, icon: ComputerDesktopIcon },
+    { name: 'API Keys', href: '/api-keys' as const, icon: KeyIcon },
   ];
 
   const handleLogout = () => {
-    router.post(
-      '/auth/logout',
-      {},
-      {
-        headers: {
-          'X-CSRF-Token': csrfToken || '',
-        },
-      }
-    );
+    void logout();
   };
 
-  if (!user || url === '/auth/totp/verify') {
+  if (!user || pathname === '/auth/totp/verify') {
     return (
       <div className={theme.layout.authShell}>
         <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -147,12 +133,10 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className={theme.layout.appShell}>
-      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div className={theme.overlays.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div
         className={cn(
           'fixed inset-y-0 left-0 z-50 border-r shadow-xl transition-all duration-300 ease-in-out lg:translate-x-0 dark:shadow-black/20',
@@ -163,7 +147,6 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Logo and close button */}
           <div
             className={cn(
               'flex items-center border-b dark:border-zinc-800',
@@ -198,15 +181,14 @@ export default function Layout({ children }: LayoutProps) {
             </button>
           </div>
 
-          {/* Navigation */}
           <div className={cn('flex-1 space-y-2 py-6', sidebarCollapsed ? 'lg:px-2' : 'px-4')}>
             {navigation.map((item) => {
               const Icon = item.icon;
-              const isActive = url === item.href;
+              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  to={item.href}
                   className={cn(
                     theme.navigation.itemBase,
                     isActive ? theme.navigation.itemActive : theme.navigation.itemInactive,
@@ -229,7 +211,6 @@ export default function Layout({ children }: LayoutProps) {
             })}
           </div>
 
-          {/* Collapse toggle button - desktop only */}
           <div
             className={cn(
               'hidden lg:flex border-t dark:border-zinc-800',
@@ -254,7 +235,6 @@ export default function Layout({ children }: LayoutProps) {
             </button>
           </div>
 
-          {/* User section */}
           <div
             className={cn(
               'border-t dark:border-zinc-800',
@@ -287,11 +267,11 @@ export default function Layout({ children }: LayoutProps) {
             <div className="space-y-2">
               {userNavigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = url === item.href;
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className={cn(
                       theme.navigation.itemBase,
                       isActive ? theme.navigation.itemActive : theme.navigation.itemInactive,
@@ -350,7 +330,6 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      {/* Main content area */}
       <div
         className={cn(
           'transition-[padding-left] duration-300 flex flex-col',
@@ -363,7 +342,6 @@ export default function Layout({ children }: LayoutProps) {
               : '100vh',
         }}
       >
-        {/* Mobile menu button */}
         <button
           className={cn(
             'lg:hidden fixed top-3 left-3 z-40 p-2 rounded-lg',

@@ -1,9 +1,3 @@
-let csrfToken: string | undefined;
-
-export function setCsrfToken(token: string | undefined) {
-  csrfToken = token;
-}
-
 let getAccessToken: () => string | null = () => null;
 let onUnauthorized: (() => Promise<string | null>) | null = null;
 
@@ -50,8 +44,6 @@ async function parseBody(res: Response): Promise<unknown> {
 
 function buildHeaders(init: RequestInit | undefined, accessToken: string | null): Headers {
   const headers = new Headers(init?.headers);
-  headers.set('X-Requested-With', 'XMLHttpRequest');
-  if (csrfToken) headers.set('X-CSRF-Token', csrfToken);
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   return headers;
 }

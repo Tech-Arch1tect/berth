@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, apiClient, configureAuth, isApiError, resetAuth, setCsrfToken } from './client';
+import { ApiError, apiClient, configureAuth, isApiError, resetAuth } from './client';
 
 const fetchMock = vi.fn();
 
@@ -7,7 +7,6 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
   resetAuth();
-  setCsrfToken(undefined);
 });
 
 afterEach(() => {
@@ -106,14 +105,13 @@ describe('apiClient', () => {
     }
   });
 
-  it('keeps the existing CSRF + X-Requested-With headers on every request', async () => {
+  it('does not send CSRF or X-Requested-With headers (legacy Inertia path removed)', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { ok: true }));
-    setCsrfToken('csrf-abc');
 
     await apiClient('/api/v1/anything');
 
     const headers = fetchMock.mock.calls[0][1].headers as Headers;
-    expect(headers.get('X-Requested-With')).toBe('XMLHttpRequest');
-    expect(headers.get('X-CSRF-Token')).toBe('csrf-abc');
+    expect(headers.get('X-Requested-With')).toBeNull();
+    expect(headers.get('X-CSRF-Token')).toBeNull();
   });
 });
