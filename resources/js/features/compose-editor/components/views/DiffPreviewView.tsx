@@ -10,7 +10,6 @@ interface DiffPreviewViewProps {
   serverId: number;
   stackName: string;
   changes: ComposeChanges;
-  csrfToken?: string;
   hasChanges: boolean;
 }
 
@@ -18,7 +17,6 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
   serverId,
   stackName,
   changes,
-  csrfToken,
   hasChanges,
 }) => {
   const [originalYaml, setOriginalYaml] = useState<string>('');
@@ -52,7 +50,7 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [hasChanges, serverId, stackName, changes, csrfToken]);
+  }, [hasChanges, serverId, stackName, changes]);
 
   useEffect(() => {
     fetchPreview();

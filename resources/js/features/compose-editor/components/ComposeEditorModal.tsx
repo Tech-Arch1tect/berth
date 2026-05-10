@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { usePage } from '@inertiajs/react';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Modal } from '../../../shared/components/Modal';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
@@ -74,8 +73,6 @@ const ComposeEditorContent: React.FC<{
     clearChangesAfterSave,
   } = useComposeEditor();
   const { refetch } = useComposeEditorData({ serverId, stackName });
-  const { props } = usePage();
-  const csrfToken = props.csrfToken as string | undefined;
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
@@ -150,7 +147,7 @@ const ComposeEditorContent: React.FC<{
     } finally {
       setSaving(false);
     }
-  }, [serverId, stackName, apiChanges, isDirty, csrfToken, clearChangesAfterSave, refetch]);
+  }, [serverId, stackName, apiChanges, isDirty, clearChangesAfterSave, refetch]);
 
   const handleDiscardAll = useCallback(() => {
     resetChanges();
@@ -394,7 +391,6 @@ const ComposeEditorContent: React.FC<{
               serverId={serverId}
               stackName={stackName}
               changes={apiChanges}
-              csrfToken={csrfToken}
               hasChanges={isDirty}
             />
           </div>
