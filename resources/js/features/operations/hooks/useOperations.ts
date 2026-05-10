@@ -7,6 +7,7 @@ import {
   WebSocketMessage,
 } from '../types';
 import { useOperationsContext, NewOperationInput } from '../contexts/OperationsContext';
+import { getAccessToken } from '../../../shared/auth/auth-context';
 import { getApiV1OperationLogsByOperationIdOperationId } from '../../../api/generated/operation-logs/operation-logs';
 
 interface UseOperationsOptions {
@@ -52,9 +53,10 @@ export const useOperations = ({
     setError(null);
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/operations`;
+    const wsUrl = `${protocol}//${window.location.host}/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/operations`;
 
-    const ws = new WebSocket(wsUrl);
+    const token = getAccessToken();
+    const ws = token ? new WebSocket(wsUrl, ['Bearer', token]) : new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { getAccessToken } from '../auth/auth-context';
 import type {
   WebSocketMessage,
   SubscribeMessage,
@@ -41,7 +42,9 @@ export const useWebSocket = ({
     setConnectionStatus('connecting');
 
     try {
-      ws.current = new WebSocket(url);
+      const token = getAccessToken();
+      const protocols = token ? ['Bearer', token] : undefined;
+      ws.current = new WebSocket(url, protocols);
 
       ws.current.onopen = () => {
         if (!mountedRef.current) return;

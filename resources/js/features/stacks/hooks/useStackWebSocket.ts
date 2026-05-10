@@ -80,7 +80,7 @@ export const useStackWebSocket = ({
   const handleDisconnect = useCallback(() => {}, []);
 
   const { isConnected, connectionStatus, subscribe, unsubscribe } = useWebSocket({
-    url: `/ws/ui/stack-status/${serverid}`,
+    url: `/ws/api/stack-status/${serverid}`,
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,

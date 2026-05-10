@@ -13,7 +13,7 @@ import type {
 const getWebSocketUrl = (serverid: number): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.host;
-  return `${protocol}//${host}/ws/ui/servers/${serverid}/terminal`;
+  return `${protocol}//${host}/ws/api/servers/${serverid}/terminal`;
 };
 
 export const useTerminal = ({

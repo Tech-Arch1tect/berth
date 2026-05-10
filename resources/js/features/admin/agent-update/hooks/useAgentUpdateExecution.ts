@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { ServerWithAgentStack, UpdateStatus, AgentUpdateProgress } from '../types';
 import { AgentUpdateService } from '../services/agentUpdateService';
+import { getAccessToken } from '../../../../shared/auth/auth-context';
 
 export const TIMEOUTS = {
   WEBSOCKET_OPERATION: 300_000,
@@ -52,9 +53,10 @@ export function useAgentUpdateExecution(): UseAgentUpdateExecutionReturn {
     ): Promise<boolean> => {
       return new Promise((resolve) => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/operations`;
+        const wsUrl = `${protocol}//${window.location.host}/ws/api/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/operations`;
 
-        const ws = new WebSocket(wsUrl);
+        const token = getAccessToken();
+        const ws = token ? new WebSocket(wsUrl, ['Bearer', token]) : new WebSocket(wsUrl);
         let operationStarted = false;
 
         const timeout = setTimeout(() => {

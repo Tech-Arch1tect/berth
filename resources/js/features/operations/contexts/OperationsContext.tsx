@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { StreamMessage } from '../types';
 import StorageManager from '../../../shared/utils/storage';
+import { getAccessToken } from '../../../shared/auth/auth-context';
 import { getApiV1RunningOperations } from '../../../api/generated/operation-logs/operation-logs';
 import type { OperationLogInfo } from '../../../api/generated/models';
 
@@ -101,9 +102,10 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const createWebSocketForOperation = useCallback(
     (operation: RunningOperation) => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/ui/servers/${operation.server_id}/stacks/${encodeURIComponent(operation.stack_name)}/operations/${operation.operation_id}`;
+      const wsUrl = `${protocol}//${window.location.host}/ws/api/servers/${operation.server_id}/stacks/${encodeURIComponent(operation.stack_name)}/operations/${operation.operation_id}`;
 
-      const ws = new WebSocket(wsUrl);
+      const token = getAccessToken();
+      const ws = token ? new WebSocket(wsUrl, ['Bearer', token]) : new WebSocket(wsUrl);
 
       ws.onopen = () => {
         console.log(`WebSocket connected for operation ${operation.operation_id}`);
