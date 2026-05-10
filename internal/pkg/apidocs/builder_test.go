@@ -104,6 +104,59 @@ func TestGenericSchemaProducesValidRefNames(t *testing.T) {
 	}
 }
 
+type sampleAlt struct {
+	Reason string `json:"reason"`
+}
+
+func TestResponseOneOfEmitsUnionSchema(t *testing.T) {
+	o := NewOpenAPI()
+	o.Document(http.MethodPost, "/sample-oneof").
+		Tags("test").
+		Summary("sample one-of").
+		ResponseOneOf(http.StatusOK, "primary or alternate",
+			sampleEnvelope[sampleData]{},
+			sampleEnvelope[sampleAlt]{},
+		).
+		Build()
+
+	raw, err := o.JSON()
+	if err != nil {
+		t.Fatalf("OpenAPI JSON: %v", err)
+	}
+
+	var spec struct {
+		Paths map[string]struct {
+			Post struct {
+				Responses map[string]struct {
+					Content map[string]struct {
+						Schema struct {
+							OneOf []struct {
+								Ref string `json:"$ref"`
+							} `json:"oneOf"`
+						} `json:"schema"`
+					} `json:"content"`
+				} `json:"responses"`
+			} `json:"post"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(raw, &spec); err != nil {
+		t.Fatalf("decode spec: %v\n%s", err, raw)
+	}
+
+	op := spec.Paths["/sample-oneof"].Post.Responses["200"].Content["application/json"]
+	if len(op.Schema.OneOf) != 2 {
+		t.Fatalf("expected 2 oneOf entries, got %d", len(op.Schema.OneOf))
+	}
+
+	suffixes := []string{"/sampleEnvelope_sampleData", "/sampleEnvelope_sampleAlt"}
+	for i, want := range suffixes {
+		got := op.Schema.OneOf[i].Ref
+		if !strings.HasSuffix(got, want) {
+			t.Errorf("oneOf[%d]: got ref %q, want suffix %q", i, got, want)
+		}
+	}
+}
+
 func TestGenericEnvelopeSchemaShape(t *testing.T) {
 	o := NewOpenAPI()
 	o.Document(http.MethodGet, "/sample").

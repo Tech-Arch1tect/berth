@@ -186,6 +186,43 @@ func (rb *RouteBuilder) Response(statusCode int, example any, description string
 	return rb
 }
 
+func (rb *RouteBuilder) ResponseOneOf(statusCode int, description string, examples ...any) *RouteBuilder {
+	if len(examples) == 0 {
+		return rb
+	}
+
+	schemaRefs := make([]*openapi3.SchemaRef, 0, len(examples))
+	for _, ex := range examples {
+		if ex == nil {
+			continue
+		}
+		schemaRefs = append(schemaRefs, rb.openapi.generateSchema(ex))
+	}
+
+	if len(schemaRefs) == 0 {
+		return rb
+	}
+
+	schema := &openapi3.SchemaRef{
+		Value: &openapi3.Schema{
+			OneOf: schemaRefs,
+		},
+	}
+
+	rb.operation.Responses.Set(statusCodeToString(statusCode), &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: &description,
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: schema,
+				},
+			},
+		},
+	})
+
+	return rb
+}
+
 func (rb *RouteBuilder) Security(schemes ...string) *RouteBuilder {
 	if rb.operation.Security == nil {
 		rb.operation.Security = &openapi3.SecurityRequirements{}
