@@ -1,44 +1,59 @@
 import React, { useState } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { useQueryClient } from '@tanstack/react-query';
 import { Modal } from '../../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
 import { Table } from '../../../../shared/components/Table';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import {
+  useGetApiV1AdminServers,
   usePostApiV1AdminServers,
   usePutApiV1AdminServersId,
   useDeleteApiV1AdminServersId,
   usePostApiV1AdminServersIdTest,
+  getGetApiV1AdminServersQueryKey,
 } from '../../../../api/generated/admin/admin';
+import type { ServerInfo } from '../../../../api/generated/models';
 
-interface Server {
-  id: number;
+interface ServerForm {
   name: string;
   description: string;
   host: string;
   port: number;
   skip_ssl_verification: boolean;
+  access_token: string;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-interface Props {
-  title?: string;
-  servers: Server[];
-}
+const EMPTY_FORM: ServerForm = {
+  name: '',
+  description: '',
+  host: '',
+  port: 8080,
+  skip_ssl_verification: true,
+  access_token: '',
+  is_active: true,
+};
 
-export default function AdminServers({ title = 'Servers', servers }: Props) {
+export default function AdminServers() {
+  useDocumentTitle('Servers');
+  const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingServer, setEditingServer] = useState<Server | null>(null);
+  const [editingServer, setEditingServer] = useState<ServerInfo | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; name: string } | null>(null);
   const [testResultModal, setTestResultModal] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
+
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1AdminServers();
+  const servers = serversResponse?.data?.servers ?? [];
+
+  const invalidateServers = () =>
+    queryClient.invalidateQueries({ queryKey: getGetApiV1AdminServersQueryKey() });
 
   const createServerMutation = usePostApiV1AdminServers();
   const updateServerMutation = usePutApiV1AdminServersId();
@@ -50,15 +65,12 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
     updateServerMutation.isPending ||
     deleteServerMutation.isPending;
 
-  const { data, setData, reset } = useForm({
-    name: '',
-    description: '',
-    host: '',
-    port: 8080,
-    skip_ssl_verification: true,
-    access_token: '',
-    is_active: true,
-  });
+  const [data, setFormData] = useState<ServerForm>(EMPTY_FORM);
+
+  const setData = <K extends keyof ServerForm>(field: K, value: ServerForm[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+  const reset = () => setFormData(EMPTY_FORM);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -74,7 +86,7 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
     e.preventDefault();
 
     const onSuccess = () => {
-      router.reload();
+      invalidateServers();
       if (editingServer) {
         setEditingServer(null);
       } else {
@@ -98,10 +110,10 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
     }
   };
 
-  const handleEdit = (server: Server) => {
+  const handleEdit = (server: ServerInfo) => {
     setEditingServer(server);
     setShowAddForm(false);
-    setData({
+    setFormData({
       name: server.name,
       description: server.description,
       host: server.host,
@@ -128,7 +140,7 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
       { id: deleteConfirm.id },
       {
         onSuccess: () => {
-          router.reload();
+          invalidateServers();
           setDeleteConfirm(null);
         },
         onError: (error) => {
@@ -191,7 +203,7 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
       },
       {
         onSuccess: () => {
-          router.reload();
+          invalidateServers();
         },
         onError: (error) => {
           const errorData = error as { message?: string; error?: string };
@@ -204,10 +216,12 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
     );
   };
 
+  if (serversLoading) {
+    return <LoadingSpinner size="lg" text="Loading servers..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -218,7 +232,7 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
                   theme.text.strong
                 )}
               >
-                {title}
+                Servers
               </h2>
             </div>
             <div className="mt-4 flex md:mt-0 md:ml-4">
@@ -236,8 +250,6 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
               </button>
             </div>
           </div>
-
-          <FlashMessages />
 
           {(showAddForm || editingServer) && (
             <div className={cn('mt-8 shadow rounded-lg', theme.surface.panel)}>
@@ -347,7 +359,7 @@ export default function AdminServers({ title = 'Servers', servers }: Props) {
             <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                 <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                  <Table<Server>
+                  <Table<ServerInfo>
                     data={servers}
                     keyExtractor={(server) => server.id.toString()}
                     emptyMessage="No servers configured yet."
