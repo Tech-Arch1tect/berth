@@ -30,9 +30,3 @@ func TestRevokeAllOtherSessionsRequest_Validate(t *testing.T) {
 		t.Errorf("Validate() = %v, want nil", err)
 	}
 }
-
-func TestGetSessionsRequest_Validate(t *testing.T) {
-	if err := (&GetSessionsRequest{}).Validate(); err != nil {
-		t.Errorf("Validate() = %v, want nil", err)
-	}
-}

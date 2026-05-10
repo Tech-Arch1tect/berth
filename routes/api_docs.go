@@ -136,13 +136,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to send verification email").
 		Build()
 
-	apiDoc.Document("POST", "/api/v1/sessions").
+	apiDoc.Document("GET", "/api/v1/sessions").
 		Tags("sessions").
 		Summary("List user sessions").
 		Description("Returns all active sessions for the authenticated user.").
-		Body(session.GetSessionsRequest{}, "No body required").
 		Response(http.StatusOK, response.Response[session.GetSessionsData]{}, "List of active sessions").
-		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to retrieve sessions").
 		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Session service not available").

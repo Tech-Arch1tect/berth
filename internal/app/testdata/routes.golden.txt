@@ -103,7 +103,7 @@ GET	/api/v1/servers/:serverid/stacks/:stackname/vulnscan/history	internal/domain
 GET	/api/v1/servers/:serverid/stacks/:stackname/vulnscan/trend	internal/domain/vulnscan.(*Handler).GetScanTrend-fm
 GET	/api/v1/servers/:serverid/stacks/can-create	internal/domain/stack.(*APIHandler).CheckCanCreateStack-fm
 GET	/api/v1/servers/:serverid/statistics	internal/domain/server.(*UserAPIHandler).GetServerStatistics-fm
-POST	/api/v1/sessions	internal/domain/auth.(*APIHandler).GetSessions-fm
+GET	/api/v1/sessions	internal/domain/auth.(*APIHandler).GetSessions-fm
 POST	/api/v1/sessions/revoke	internal/domain/auth.(*APIHandler).RevokeSession-fm
 POST	/api/v1/sessions/revoke-all-others	internal/domain/auth.(*APIHandler).RevokeAllOtherSessions-fm
 POST	/api/v1/totp/disable	internal/domain/auth.(*APIHandler).DisableTOTP-fm

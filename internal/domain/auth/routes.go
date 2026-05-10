@@ -49,7 +49,7 @@ func (h *APIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireAPIKeyDeni
 	g.POST("/totp/disable", h.DisableTOTP, requireAPIKeyDenied)
 	g.GET("/totp/status", h.GetTOTPStatus, requireAPIKeyDenied)
 
-	g.POST("/sessions", h.GetSessions, requireAPIKeyDenied)
+	g.GET("/sessions", h.GetSessions, requireAPIKeyDenied)
 	g.POST("/sessions/revoke", h.RevokeSession, requireAPIKeyDenied)
 	g.POST("/sessions/revoke-all-others", h.RevokeAllOtherSessions, requireAPIKeyDenied)
 }

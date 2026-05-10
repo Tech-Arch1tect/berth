@@ -255,9 +255,8 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		require.NoError(t, resp2.GetJSON(&login2))
 
 		sessResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "POST",
+			Method: "GET",
 			Path:   "/api/v1/sessions",
-			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},
@@ -292,9 +291,8 @@ func TestJWTSingleSessionRevocation(t *testing.T) {
 		assert.Equal(t, 200, apiGetProfile(t, app, login2.Data.AccessToken))
 
 		sessResp2, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "POST",
+			Method: "GET",
 			Path:   "/api/v1/sessions",
-			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login2.Data.AccessToken,
 			},

@@ -284,7 +284,7 @@ func TestAPISessions(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("list sessions returns current session", func(t *testing.T) {
-		TagTest(t, "POST", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+		TagTest(t, "GET", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		user := &e2etesting.TestUser{
 			Username: "apisessionsuser1",
 			Email:    "apisessionsuser1@example.com",
@@ -303,9 +303,8 @@ func TestAPISessions(t *testing.T) {
 		require.NoError(t, loginResp.GetJSON(&login))
 
 		sessionsResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "POST",
+			Method: "GET",
 			Path:   "/api/v1/sessions",
-			Body:   session.GetSessionsRequest{},
 			Headers: map[string]string{
 				"Authorization": "Bearer " + login.Data.AccessToken,
 			},

@@ -26,12 +26,6 @@ func (r *RevokeAllOtherSessionsRequest) Validate() error {
 	return nil
 }
 
-type GetSessionsRequest struct{}
-
-func (r *GetSessionsRequest) Validate() error {
-	return nil
-}
-
 type SessionItem struct {
 	ID         uint      `json:"id"`
 	UserID     uint      `json:"user_id"`

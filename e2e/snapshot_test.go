@@ -456,9 +456,9 @@ func TestSnapshotAuthenticatedAPI(t *testing.T) {
 		sr.RecordAndAssert(t, "POST", "/api/v1/totp/disable", resp)
 	})
 
-	t.Run("POST /api/v1/sessions", func(t *testing.T) {
-		resp := jwtRequestJSON(t, app, token, "POST", "/api/v1/sessions", nil)
-		sr.RecordAndAssert(t, "POST", "/api/v1/sessions", resp)
+	t.Run("GET /api/v1/sessions", func(t *testing.T) {
+		resp := jwtRequest(t, app, token, "GET", "/api/v1/sessions")
+		sr.RecordAndAssert(t, "GET", "/api/v1/sessions", resp)
 	})
 
 	t.Run("POST /api/v1/sessions/revoke-all-others", func(t *testing.T) {

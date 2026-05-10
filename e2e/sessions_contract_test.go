@@ -13,12 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func listSessionsViaJWT(t *testing.T, app *TestApp, accessToken string, body any) (response.Response[session.GetSessionsData], int) {
+func listSessionsViaJWT(t *testing.T, app *TestApp, accessToken string) (response.Response[session.GetSessionsData], int) {
 	t.Helper()
 	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-		Method: "POST",
+		Method: "GET",
 		Path:   "/api/v1/sessions",
-		Body:   body,
 		Headers: map[string]string{
 			"Authorization": "Bearer " + accessToken,
 		},
@@ -50,7 +49,7 @@ func TestSessionsListMarksCallerCurrentViaJTI(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	TagTest(t, "POST", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+	TagTest(t, "GET", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 	login1 := apiLogin(t, app, "sescurr1", "sescurr1@example.com", "password123")
 
 	resp2, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
@@ -60,9 +59,9 @@ func TestSessionsListMarksCallerCurrentViaJTI(t *testing.T) {
 	var login2 response.Response[auth.AuthLoginData]
 	require.NoError(t, resp2.GetJSON(&login2))
 
-	listFrom1, status1 := listSessionsViaJWT(t, app, login1.Data.AccessToken, session.GetSessionsRequest{})
+	listFrom1, status1 := listSessionsViaJWT(t, app, login1.Data.AccessToken)
 	require.Equal(t, 200, status1)
-	listFrom2, status2 := listSessionsViaJWT(t, app, login2.Data.AccessToken, session.GetSessionsRequest{})
+	listFrom2, status2 := listSessionsViaJWT(t, app, login2.Data.AccessToken)
 	require.Equal(t, 200, status2)
 
 	currentFrom1 := currentSessionID(t, listFrom1.Data.Sessions)
@@ -72,20 +71,6 @@ func TestSessionsListMarksCallerCurrentViaJTI(t *testing.T) {
 	require.NotZero(t, currentFrom2, "list via login2 should mark exactly one session current")
 	assert.NotEqual(t, currentFrom1, currentFrom2,
 		"current row must differ between callers; access JTI should drive identification, not be a constant per user")
-}
-
-func TestSessionsListIgnoresStaleRefreshTokenInBody(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-
-	TagTest(t, "POST", "/api/v1/sessions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-	login := apiLogin(t, app, "sesstale1", "sesstale1@example.com", "password123")
-
-	staleBody := map[string]any{"refresh_token": "garbage-stale-value-from-old-client"}
-	listed, status := listSessionsViaJWT(t, app, login.Data.AccessToken, staleBody)
-	require.Equal(t, 200, status, "server must silently tolerate older clients still sending refresh_token")
-	assert.Equal(t, 1, countCurrent(listed.Data.Sessions),
-		"current marker must come from access JTI, not from any body field; stale value must not steer identification")
 }
 
 func TestSessionsRevokeAllOthersIsIdempotent(t *testing.T) {
@@ -215,7 +200,7 @@ func TestSessionsRevokeAllOthersSurvivesRotation(t *testing.T) {
 	require.NotEmpty(t, rotated.Data.AccessToken)
 	require.NotEqual(t, loginB.Data.AccessToken, rotated.Data.AccessToken, "rotation must mint a new access token")
 
-	listed, listStatus := listSessionsViaJWT(t, app, rotated.Data.AccessToken, session.GetSessionsRequest{})
+	listed, listStatus := listSessionsViaJWT(t, app, rotated.Data.AccessToken)
 	require.Equal(t, 200, listStatus)
 	assert.Equal(t, 1, countCurrent(listed.Data.Sessions),
 		"after rotation, the surviving row's access_token_jti must be updated to the new JTI so the new access token still identifies it as current")

@@ -650,11 +650,6 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
-	var req session.GetSessionsRequest
-	if err := validation.BindAndValidate(c, &req); err != nil {
-		return err
-	}
-
 	var currentToken string
 	if accessJTI, jtiErr := extractAccessJTI(c, h.tokens); jtiErr == nil {
 		if token, lookupErr := h.sessionSvc.GetCurrentSessionToken(userModel.ID, accessJTI); lookupErr == nil {
