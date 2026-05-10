@@ -1,6 +1,6 @@
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
-import { Head, useForm, router } from '@inertiajs/react';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import {
   PlusIcon,
   TrashIcon,
@@ -48,15 +48,17 @@ import {
   PERM_ADMIN_SYSTEM_IMPORT,
 } from '../../../shared/constants/permissions';
 
-interface ScopesProps {
-  api_key_id: string;
-}
-
 interface NewScopeForm {
   server_id: string;
   stack_pattern: string;
   permissions: string[];
 }
+
+const EMPTY_FORM: NewScopeForm = {
+  server_id: '',
+  stack_pattern: '*',
+  permissions: [],
+};
 
 const PERMISSIONS = [
   { value: PERM_SERVERS_READ, label: 'View accessible servers' },
@@ -90,9 +92,12 @@ const PERMISSIONS = [
   { value: PERM_ADMIN_SYSTEM_IMPORT, label: 'Import system configuration (admin)' },
 ];
 
-export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
+export default function APIKeyScopesPage() {
+  useDocumentTitle('Manage API Key Scopes');
   const queryClient = useQueryClient();
-  const apiKeyIdNum = parseInt(api_key_id, 10);
+  const navigate = useNavigate();
+  const params = useParams({ strict: false }) as { keyid?: string };
+  const apiKeyIdNum = Number(params.keyid);
   const [showAddModal, setShowAddModal] = useState(false);
   const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,20 +105,18 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
   const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
   const servers = serversResponse?.data?.servers ?? [];
 
-  const { data: scopesResponse, isLoading: scopesLoading } =
-    useGetApiV1ApiKeysIdScopes(apiKeyIdNum);
+  const { data: scopesResponse, isLoading: scopesLoading } = useGetApiV1ApiKeysIdScopes(
+    apiKeyIdNum,
+    { query: { enabled: Number.isFinite(apiKeyIdNum) && apiKeyIdNum > 0 } }
+  );
   const scopes = scopesResponse?.data ?? [];
 
-  const {
-    data: formData,
-    setData,
-    processing,
-    reset,
-  } = useForm<NewScopeForm>({
-    server_id: '',
-    stack_pattern: '*',
-    permissions: [],
-  });
+  const [formData, setFormData] = useState<NewScopeForm>(EMPTY_FORM);
+
+  const setData = <K extends keyof NewScopeForm>(field: K, value: NewScopeForm[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+  const reset = () => setFormData(EMPTY_FORM);
 
   const addScopeMutation = usePostApiV1ApiKeysIdScopes({
     mutation: {
@@ -123,11 +126,10 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
         queryClient.invalidateQueries({
           queryKey: getGetApiV1ApiKeysIdScopesQueryKey(apiKeyIdNum),
         });
-        router.reload({ only: ['flash'] });
       },
-      onError: (error: any) => {
+      onError: (error: unknown) => {
         console.error('Failed to add scope:', error);
-        setErrorMessage(error.response?.data?.message || 'Failed to add scopes');
+        setErrorMessage((error as { message?: string })?.message || 'Failed to add scopes');
       },
     },
   });
@@ -138,7 +140,6 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
         queryClient.invalidateQueries({
           queryKey: getGetApiV1ApiKeysIdScopesQueryKey(apiKeyIdNum),
         });
-        router.reload({ only: ['flash'] });
         setScopeToRemove(null);
       },
       onError: (error) => {
@@ -183,13 +184,12 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
 
   return (
     <>
-      <Head title="Manage API Key Scopes" />
       <div className="h-full overflow-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
             <div className="mb-6">
               <button
-                onClick={() => router.visit('/api-keys')}
+                onClick={() => navigate({ to: '/api-keys' })}
                 className={cn(
                   'inline-flex items-center text-sm',
                   theme.text.muted,
@@ -211,8 +211,6 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                 Add Scope
               </button>
             </div>
-
-            <FlashMessages className="mb-6" />
 
             {/* Add Scope Modal */}
             <Modal
@@ -238,10 +236,10 @@ export default function APIKeyScopesPage({ api_key_id }: ScopesProps) {
                   <button
                     type="submit"
                     form="add-scope-form"
-                    disabled={processing || addScopeMutation.isPending}
+                    disabled={addScopeMutation.isPending}
                     className={cn(
                       theme.buttons.primary,
-                      (processing || addScopeMutation.isPending) && 'opacity-50'
+                      addScopeMutation.isPending && 'opacity-50'
                     )}
                   >
                     Add Scope

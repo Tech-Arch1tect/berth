@@ -1,7 +1,8 @@
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
-import { Head, useForm, router } from '@inertiajs/react';
+import { useNavigate } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
+import { fieldErrorsFromApiError } from '../../../shared/utils/api-errors';
 import {
   KeyIcon,
   PlusIcon,
@@ -28,29 +29,32 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import type { APIKeyInfo } from '../../../api/generated/models';
 
-interface NewAPIKeyModal {
+interface NewAPIKeyForm {
   name: string;
   expires_at: string;
 }
 
+const EMPTY_FORM: NewAPIKeyForm = { name: '', expires_at: '' };
+
 export default function APIKeysIndex() {
+  useDocumentTitle('API Keys');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyData, setNewKeyData] = useState<{ key: string; name: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [keyToRevoke, setKeyToRevoke] = useState<{ id: number; name: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formData, setFormData] = useState<NewAPIKeyForm>(EMPTY_FORM);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const {
-    data: formData,
-    setData,
-    processing,
-    errors,
-    reset,
-  } = useForm<NewAPIKeyModal>({
-    name: '',
-    expires_at: '',
-  });
+  const setData = <K extends keyof NewAPIKeyForm>(field: K, value: NewAPIKeyForm[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+  const reset = () => {
+    setFormData(EMPTY_FORM);
+    setErrors({});
+  };
 
   const { data: apiKeysResponse, isLoading: loading } = useGetApiV1ApiKeys();
   const apiKeys = apiKeysResponse?.data ?? [];
@@ -66,9 +70,10 @@ export default function APIKeysIndex() {
         reset();
         queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
       },
-      onError: (error: any) => {
+      onError: (error: unknown) => {
         console.error('Failed to create API key:', error);
-        setErrorMessage(error.response?.data?.message || 'Failed to create API key');
+        setErrors(fieldErrorsFromApiError(error));
+        setErrorMessage((error as { message?: string })?.message || 'Failed to create API key');
       },
     },
   });
@@ -77,7 +82,6 @@ export default function APIKeysIndex() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
-        router.reload({ only: ['flash'] });
         setKeyToRevoke(null);
       },
       onError: (error) => {
@@ -120,7 +124,6 @@ export default function APIKeysIndex() {
 
   return (
     <>
-      <Head title="API Keys" />
       <div className="h-full overflow-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
@@ -134,8 +137,6 @@ export default function APIKeysIndex() {
                 Create API Key
               </button>
             </div>
-
-            <FlashMessages className="mb-6" />
 
             {/* New Key Display Modal */}
             <Modal
@@ -215,11 +216,8 @@ export default function APIKeysIndex() {
                   <button
                     type="submit"
                     form="create-api-key-form"
-                    disabled={processing || createMutation.isPending}
-                    className={cn(
-                      theme.buttons.primary,
-                      (processing || createMutation.isPending) && 'opacity-50'
-                    )}
+                    disabled={createMutation.isPending}
+                    className={cn(theme.buttons.primary, createMutation.isPending && 'opacity-50')}
                   >
                     Create
                   </button>
@@ -329,8 +327,9 @@ export default function APIKeysIndex() {
                         <div className="flex-shrink-0 flex space-x-2">
                           <button
                             onClick={() =>
-                              router.visit(`/api-keys/${apiKey.id}/scopes`, {
-                                preserveState: false,
+                              navigate({
+                                to: '/api-keys/$keyid/scopes',
+                                params: { keyid: String(apiKey.id) },
                               })
                             }
                             className={cn(
