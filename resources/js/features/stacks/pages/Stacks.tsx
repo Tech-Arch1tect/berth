@@ -1,21 +1,20 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
 import { SortOption } from '../types';
-import { Server } from '../../../shared/types/server';
 import { useAllStacks } from '../hooks/useAllStacks';
 import { StorageManager } from '../../../shared/utils/storage';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
+import { useGetApiV1Servers } from '../../../api/generated/servers/servers';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import { StacksToolbar } from '../components/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/sidebar/StacksSidebar';
 import { StacksContent } from '../components/content/StacksContent';
 import { StacksStatusBar } from '../components/statusbar/StacksStatusBar';
 
-interface StacksProps {
-  title: string;
-  servers: Server[];
-}
+export default function Stacks() {
+  useDocumentTitle('All Stacks');
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
+  const servers = useMemo(() => serversResponse?.data?.servers ?? [], [serversResponse]);
 
-export default function Stacks({ title, servers }: StacksProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'unhealthy'>('all');
   const [serverFilter, setServerFilter] = useState<number | 'all'>('all');
@@ -128,61 +127,57 @@ export default function Stacks({ title, servers }: StacksProps) {
     negativeFilters.length;
 
   return (
-    <>
-      <Head title={title} />
-
-      <div className="h-full flex flex-col">
-        <PanelLayout
-          storageKey="stacks"
-          sidebarTitle="Filters"
-          toolbar={
-            <StacksToolbar
-              title={title}
-              isRefreshing={isFetching}
-              onRefresh={handleRefresh}
-              layoutMode={layoutMode}
-              onLayoutToggle={toggleLayout}
-            />
-          }
-          sidebar={
-            <StacksSidebar
-              servers={servers}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              serverFilter={serverFilter}
-              onServerFilterChange={setServerFilter}
-              healthFilter={healthFilter}
-              onHealthFilterChange={setHealthFilter}
-              sortBy={sortBy}
-              onSortChange={handleSortChange}
-              negativeFilters={negativeFilters}
-              onNegativeFiltersChange={setNegativeFilters}
-              showExclusionFilter={showExclusionFilter}
-              onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
-              serverStackCounts={serverStackCounts}
-            />
-          }
-          content={
-            <StacksContent
-              stacks={filteredAndSortedStacks}
-              statistics={statistics}
-              layoutMode={layoutMode}
-              isLoading={isLoading}
-              hasError={hasError}
-              errors={errors}
-              hasActiveFilters={hasActiveFilters}
-            />
-          }
-          statusBar={
-            <StacksStatusBar
-              filteredCount={filteredAndSortedStacks.length}
-              totalCount={stacks.length}
-              lastUpdated={lastUpdated}
-              activeFilterCount={activeFilterCount}
-            />
-          }
-        />
-      </div>
-    </>
+    <div className="h-full flex flex-col">
+      <PanelLayout
+        storageKey="stacks"
+        sidebarTitle="Filters"
+        toolbar={
+          <StacksToolbar
+            title="All Stacks"
+            isRefreshing={isFetching}
+            onRefresh={handleRefresh}
+            layoutMode={layoutMode}
+            onLayoutToggle={toggleLayout}
+          />
+        }
+        sidebar={
+          <StacksSidebar
+            servers={servers}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            serverFilter={serverFilter}
+            onServerFilterChange={setServerFilter}
+            healthFilter={healthFilter}
+            onHealthFilterChange={setHealthFilter}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            negativeFilters={negativeFilters}
+            onNegativeFiltersChange={setNegativeFilters}
+            showExclusionFilter={showExclusionFilter}
+            onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
+            serverStackCounts={serverStackCounts}
+          />
+        }
+        content={
+          <StacksContent
+            stacks={filteredAndSortedStacks}
+            statistics={statistics}
+            layoutMode={layoutMode}
+            isLoading={isLoading || serversLoading}
+            hasError={hasError}
+            errors={errors}
+            hasActiveFilters={hasActiveFilters}
+          />
+        }
+        statusBar={
+          <StacksStatusBar
+            filteredCount={filteredAndSortedStacks.length}
+            totalCount={stacks.length}
+            lastUpdated={lastUpdated}
+            activeFilterCount={activeFilterCount}
+          />
+        }
+      />
+    </div>
   );
 }

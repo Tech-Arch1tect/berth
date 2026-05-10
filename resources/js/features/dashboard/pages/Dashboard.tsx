@@ -1,38 +1,27 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Head } from '@inertiajs/react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import { Server } from '../../../shared/types/server';
 import { useDashboardHealth, useDashboardActivity } from '../components';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import { DashboardSidebar } from '../components/sidebar/DashboardSidebar';
 import { DashboardPage, SECTION_IDS } from '../components/content/DashboardPage';
 import { DashboardToolbar } from '../components/toolbar/DashboardToolbar';
 import { DashboardStatusBar } from '../components/statusbar/DashboardStatusBar';
-import Layout from '../../../shared/layout/Layout';
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { useAuth } from '../../../shared/auth/auth-context';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import {
   getApiV1ServersServeridStatistics,
   getGetApiV1ServersServeridStatisticsQueryKey,
+  useGetApiV1Servers,
 } from '../../../api/generated/servers/servers';
 
-interface DashboardProps {
-  title: string;
-  servers: Server[];
-  currentUser: {
-    id: number;
-    username: string;
-    email: string;
-    roles?: Array<{ name: string }>;
-  };
-}
+export default function Dashboard() {
+  useDocumentTitle('Dashboard');
+  const { user } = useAuth();
+  const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
+  const servers = serversResponse?.data?.servers ?? [];
 
-type DashboardComponent = React.FC<DashboardProps> & {
-  layout?: (page: React.ReactElement) => React.ReactElement;
-};
-
-const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
-  const userRoles = currentUser?.roles?.map((role) => role.name) || [];
+  const userRoles = user?.roles?.map((role) => role.name) ?? [];
   const isAdmin = userRoles.includes('admin');
 
   const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.overview);
@@ -84,73 +73,63 @@ const Dashboard: DashboardComponent = ({ title, servers, currentUser }) => {
     setActiveSection(sectionId);
   }, []);
 
-  const isLoading = statisticsQueries.some((q) => q.isLoading) || healthSummary.serversLoading > 0;
+  const isLoading =
+    serversLoading ||
+    statisticsQueries.some((q) => q.isLoading) ||
+    healthSummary.serversLoading > 0;
 
-  const isInitialLoad = isLoading && statisticsQueries.every((q) => !q.data);
+  const isInitialLoad = serversLoading || (isLoading && statisticsQueries.every((q) => !q.data));
 
   if (isInitialLoad) {
     return (
-      <>
-        <Head title={title} />
-        <FlashMessages className="fixed top-4 right-4 z-50" />
-        <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-          <div className="text-center">
-            <LoadingSpinner size="lg" />
-            <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Loading dashboard...</p>
-          </div>
+      <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Loading dashboard...</p>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Head title={title} />
-      <FlashMessages className="fixed top-4 right-4 z-50" />
-
-      <div className="h-full flex flex-col">
-        <PanelLayout
-          storageKey="dashboard"
-          sidebarTitle="Servers"
-          toolbar={
-            <DashboardToolbar
-              title={title}
-              isRefreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              isAdmin={isAdmin}
-            />
-          }
-          sidebar={
-            <DashboardSidebar
-              servers={servers}
-              activeSection={activeSection}
-              healthSummary={healthSummary}
-              serverStats={serverStats}
-            />
-          }
-          content={
-            <DashboardPage
-              servers={servers}
-              healthSummary={healthSummary}
-              activitySummary={activitySummary}
-              userRoles={userRoles}
-              serverStats={serverStats}
-              onSectionChange={handleSectionChange}
-            />
-          }
-          statusBar={
-            <DashboardStatusBar
-              healthSummary={healthSummary}
-              lastUpdated={lastUpdated}
-              isLoading={isLoading}
-            />
-          }
-        />
-      </div>
-    </>
+    <div className="h-full flex flex-col">
+      <PanelLayout
+        storageKey="dashboard"
+        sidebarTitle="Servers"
+        toolbar={
+          <DashboardToolbar
+            title="Dashboard"
+            isRefreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            isAdmin={isAdmin}
+          />
+        }
+        sidebar={
+          <DashboardSidebar
+            servers={servers}
+            activeSection={activeSection}
+            healthSummary={healthSummary}
+            serverStats={serverStats}
+          />
+        }
+        content={
+          <DashboardPage
+            servers={servers}
+            healthSummary={healthSummary}
+            activitySummary={activitySummary}
+            userRoles={userRoles}
+            serverStats={serverStats}
+            onSectionChange={handleSectionChange}
+          />
+        }
+        statusBar={
+          <DashboardStatusBar
+            healthSummary={healthSummary}
+            lastUpdated={lastUpdated}
+            isLoading={isLoading}
+          />
+        }
+      />
+    </div>
   );
-};
-
-Dashboard.layout = (page: React.ReactElement) => <Layout>{page}</Layout>;
-
-export default Dashboard;
+}
