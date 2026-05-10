@@ -5,14 +5,20 @@ import (
 	"os"
 
 	"berth/internal/app"
+	"berth/internal/cli/setupadmin"
 	"berth/internal/pkg/apidocs"
 	"berth/routes"
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "openapi" {
-		generateOpenAPI()
-		return
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "openapi":
+			generateOpenAPI()
+			return
+		case "setup-admin":
+			os.Exit(setupadmin.Run(os.Args[2:], os.Stdout, os.Stderr))
+		}
 	}
 	app.Run()
 }
