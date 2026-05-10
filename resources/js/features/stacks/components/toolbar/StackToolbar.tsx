@@ -125,7 +125,8 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         </Link>
         <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
         <Link
-          to={`/servers/${serverId}/stacks`}
+          to="/servers/$serverid/stacks"
+          params={{ serverid: String(serverId) }}
           className={cn(
             'text-sm font-medium transition-colors truncate',
             theme.text.muted,

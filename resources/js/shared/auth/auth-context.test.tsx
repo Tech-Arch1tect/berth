@@ -410,7 +410,7 @@ describe('AuthProvider integration with apiClient', () => {
     renderHook(() => useAuth(), { wrapper: Wrapper });
     const { configureAuth: _configureAuth, ...api } = await import('../../api/client');
     void api;
-    expect(getAccessToken()).toBeNull();
+    setAccessTokenForTests(null);
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.refresh();

@@ -39,7 +39,8 @@ export default function ServerCard({ server }: ServerCardProps) {
 
   return (
     <Link
-      to={`/servers/${server.id}/stacks`}
+      to="/servers/$serverid/stacks"
+      params={{ serverid: String(server.id) }}
       className={cn(
         theme.cards.shell,
         theme.cards.translucent,

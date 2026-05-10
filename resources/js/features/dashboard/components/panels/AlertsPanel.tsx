@@ -157,7 +157,8 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
                   severity="warning"
                   action={
                     <Link
-                      to={`/servers/${server.id}/stacks`}
+                      to="/servers/$serverid/stacks"
+                      params={{ serverid: String(server.id) }}
                       className={cn(
                         'text-sm font-medium',
                         'text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300'

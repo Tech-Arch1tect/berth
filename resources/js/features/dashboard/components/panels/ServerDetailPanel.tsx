@@ -63,7 +63,8 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
             </div>
           </div>
           <Link
-            to={`/servers/${server.id}/stacks`}
+            to="/servers/$serverid/stacks"
+            params={{ serverid: String(server.id) }}
             className={cn(
               'flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg',
               'bg-teal-50 text-teal-700 hover:bg-teal-100',
@@ -195,7 +196,8 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
           </div>
           <div className="p-4 flex flex-wrap gap-3">
             <Link
-              to={`/servers/${server.id}/stacks`}
+              to="/servers/$serverid/stacks"
+              params={{ serverid: String(server.id) }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',
@@ -207,7 +209,8 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
               Manage Stacks
             </Link>
             <Link
-              to={`/servers/${server.id}/maintenance`}
+              to="/servers/$serverid/maintenance"
+              params={{ serverid: String(server.id) }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',
@@ -218,7 +221,8 @@ export const ServerDetailPanel: React.FC<ServerDetailPanelProps> = ({ server }) 
               Maintenance
             </Link>
             <Link
-              to={`/servers/${server.id}/registries`}
+              to="/servers/$serverid/registries"
+              params={{ serverid: String(server.id) }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg',
                 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700',

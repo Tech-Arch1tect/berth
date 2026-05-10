@@ -1,14 +1,13 @@
 import '../css/app.css';
 
 import { createRoot } from 'react-dom/client';
-import { createInertiaApp } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createRouter, RouterProvider } from '@tanstack/react-router';
+import { routeTree } from './routeTree.gen';
+import { AuthProvider } from './shared/auth/auth-context';
 import { OperationsProvider } from './features/operations/contexts/OperationsContext';
 import { TerminalPanelProvider } from './features/terminal/contexts/TerminalPanelContext';
 import { TerminalPanel } from './features/terminal/components/TerminalPanel';
-import Layout from './shared/layout/Layout';
-
-const appName = 'Berth';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,81 +19,31 @@ const queryClient = new QueryClient({
   },
 });
 
-type InertiaPageModule = {
-  default: React.ComponentType<unknown> & {
-    layout?: (page: React.ReactElement) => React.ReactElement;
-  };
-};
+const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  scrollRestoration: true,
+});
 
-const pages = import.meta.glob(['./features/**/pages/**/*.tsx', './shared/**/pages/**/*.tsx'], {
-  eager: true,
-}) as Record<string, InertiaPageModule>;
-
-const pageMap: Record<string, string> = {
-  'Errors/Generic': './shared/errors/pages/Generic.tsx',
-  'Sessions/Index': './features/sessions/pages/Index.tsx',
-  'APIKeys/Index': './features/apikeys/pages/Index.tsx',
-  'APIKeys/Scopes': './features/apikeys/pages/Scopes.tsx',
-  'Auth/Login': './features/auth/pages/Login.tsx',
-  'Auth/PasswordReset': './features/auth/pages/PasswordReset.tsx',
-  'Auth/PasswordResetConfirm': './features/auth/pages/PasswordResetConfirm.tsx',
-  'Auth/TOTPSetup': './features/auth/pages/TOTPSetup.tsx',
-  'Auth/TOTPVerify': './features/auth/pages/TOTPVerify.tsx',
-  'Auth/VerifyEmail': './features/auth/pages/VerifyEmail.tsx',
-  Profile: './features/auth/pages/Profile.tsx',
-  'Admin/Migration': './features/admin/dataexport/pages/Migration.tsx',
-  'Admin/OperationLogs': './features/admin/operation-logs/pages/OperationLogs.tsx',
-  'Admin/Servers': './features/admin/servers/pages/Servers.tsx',
-  'Admin/Users': './features/admin/users/pages/Users.tsx',
-  'Admin/UserRoles': './features/admin/users/pages/UserRoles.tsx',
-  'Admin/Roles': './features/admin/users/pages/Roles.tsx',
-  'Admin/RoleStackPermissions': './features/admin/users/pages/RoleStackPermissions.tsx',
-  'Admin/AgentUpdate': './features/admin/agent-update/pages/AgentUpdate.tsx',
-  'Admin/SecurityAuditLogs': './features/admin/security-audit-logs/pages/SecurityAuditLogs.tsx',
-  OperationLogs: './features/operation-logs/pages/OperationLogs.tsx',
-  'Servers/Registries': './features/registries/pages/Registries.tsx',
-  'Servers/Maintenance': './features/maintenance/pages/Maintenance.tsx',
-  Dashboard: './features/dashboard/pages/Dashboard.tsx',
-  Stacks: './features/stacks/pages/Stacks.tsx',
-  'Servers/Stacks': './features/stacks/pages/ServerStacks.tsx',
-  'Servers/StackDetails': './features/stacks/pages/StackDetails.tsx',
-};
-
-function resolvePage(name: string): InertiaPageModule['default'] {
-  const mappedPath = pageMap[name];
-  if (!mappedPath) {
-    throw new Error(`Page not found: ${name}`);
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
   }
-  const module = pages[mappedPath];
-  if (!module) {
-    throw new Error(`Page "${name}" mapped to "${mappedPath}" but file is missing`);
-  }
-  return module.default;
 }
 
-createInertiaApp({
-  title: (title) => `${title} - ${appName}`,
-  resolve: (name) => {
-    const Component = resolvePage(name);
-    if (!Component.layout) {
-      Component.layout = (page) => <Layout>{page}</Layout>;
-    }
-    return Component;
-  },
-  setup({ el, App, props }) {
-    const root = createRoot(el);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <OperationsProvider>
-          <TerminalPanelProvider>
-            <App {...props} />
-            <TerminalPanel />
-          </TerminalPanelProvider>
-        </OperationsProvider>
-      </QueryClientProvider>
-    );
-  },
-  progress: {
-    color: '#4B5563',
-  },
-});
+const rootElement = document.getElementById('app');
+if (!rootElement) throw new Error('root element #app not found');
+
+const root = createRoot(rootElement);
+root.render(
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <OperationsProvider>
+        <TerminalPanelProvider>
+          <RouterProvider router={router} />
+          <TerminalPanel />
+        </TerminalPanelProvider>
+      </OperationsProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);

@@ -44,7 +44,8 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
   if (compact) {
     return (
       <Link
-        to={`/servers/${stack.server_id}/stacks/${stack.name}`}
+        to="/servers/$serverid/stacks/$stackname"
+        params={{ serverid: String(stack.server_id), stackname: stack.name }}
         className={cn(
           theme.cards.stack.compact.base,
           stack.is_healthy
@@ -90,7 +91,8 @@ export const StackCard: React.FC<StackCardProps> = ({ stack, compact = false }) 
 
   return (
     <Link
-      to={`/servers/${stack.server_id}/stacks/${stack.name}`}
+      to="/servers/$serverid/stacks/$stackname"
+      params={{ serverid: String(stack.server_id), stackname: stack.name }}
       className={cn(theme.cards.stack.normal.base, theme.cards.stack.normal.hover)}
     >
       <div className="p-5">

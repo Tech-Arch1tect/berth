@@ -154,7 +154,8 @@ const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
           </div>
         </div>
         <Link
-          to={`/servers/${server.id}/stacks`}
+          to="/servers/$serverid/stacks"
+          params={{ serverid: String(server.id) }}
           className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg',
             'bg-teal-50 text-teal-700 hover:bg-teal-100',
@@ -425,7 +426,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </p>
                       </div>
                       <Link
-                        to={`/servers/${server.id}/stacks`}
+                        to="/servers/$serverid/stacks"
+                        params={{ serverid: String(server.id) }}
                         className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
                       >
                         Manage stacks

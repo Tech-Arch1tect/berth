@@ -119,6 +119,12 @@ export function AuthProvider({ children, onAuthFailed }: AuthProviderProps) {
     return initialisePromise.current;
   }, []);
 
+  useEffect(() => {
+    initialise().catch(() => {
+      setIsLoading(false);
+    });
+  }, [initialise]);
+
   const login = useCallback(
     async (creds: { username: string; password: string }): Promise<LoginResult> => {
       const resp = await postApiV1AuthLogin(creds);
