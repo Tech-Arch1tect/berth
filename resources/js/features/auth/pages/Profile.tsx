@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { User } from '../../../shared/types';
+import { Link } from '@tanstack/react-router';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { Modal } from '../../../shared/components/Modal';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { useAuth } from '../../../shared/auth/auth-context';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useGetApiV1TotpStatus, usePostApiV1TotpDisable } from '../../../api/generated/totp/totp';
 
-interface ProfileProps {
-  title: string;
-}
-
-export default function Profile({ title }: ProfileProps) {
-  const { props } = usePage();
-  const user = props.currentUser as User;
+export default function Profile() {
+  useDocumentTitle('Profile');
+  const { user } = useAuth();
   const [showDisableForm, setShowDisableForm] = useState(false);
   const [disableData, setDisableDataState] = useState({ password: '', code: '' });
   const [disableError, setDisableError] = useState('');
@@ -49,15 +46,16 @@ export default function Profile({ title }: ProfileProps) {
     }
   };
 
+  if (!user) {
+    return <LoadingSpinner size="lg" text="Loading profile..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
             <h1 className={cn('text-3xl font-bold mb-8', theme.text.strong)}>Profile</h1>
-
-            <FlashMessages className="mb-6" />
 
             <div className="space-y-6">
               {/* User Information */}
@@ -108,11 +106,14 @@ export default function Profile({ title }: ProfileProps) {
                       </label>
                       <div className={cn('mt-1 p-2 rounded-md', theme.surface.muted)}>
                         <span className={theme.text.strong}>
-                          {new Date(user.updated_at).toLocaleDateString('en-GB', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
+                          {new Date(user.updated_at ?? user.created_at).toLocaleDateString(
+                            'en-GB',
+                            {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            }
+                          )}
                         </span>
                       </div>
                     </div>
@@ -165,7 +166,7 @@ export default function Profile({ title }: ProfileProps) {
                         </button>
                       ) : (
                         <Link
-                          href="/auth/totp/setup"
+                          to="/auth/totp/setup"
                           className={cn(
                             'px-4 py-2 rounded-md text-sm font-medium',
                             theme.buttons.primary
