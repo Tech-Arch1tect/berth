@@ -41,6 +41,30 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 	return response.OK(c, ListServersData{Servers: servers})
 }
 
+func (h *UserAPIHandler) GetServer(c echo.Context) error {
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, err := echoparams.ParseUintParam(c, "serverid")
+	if err != nil {
+		return err
+	}
+
+	ctx := c.Request().Context()
+	if _, err := h.service.GetActiveServerForUser(ctx, serverID, userID); err != nil {
+		return response.NotFound(c, "Server not found")
+	}
+
+	serverInfo, err := h.service.GetServerResponse(serverID)
+	if err != nil {
+		return response.Internal(c, "Failed to fetch server")
+	}
+
+	return response.OK(c, GetServerData{Server: *serverInfo})
+}
+
 func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 	userID, err := session.GetCurrentUserID(c)
 	if err != nil {

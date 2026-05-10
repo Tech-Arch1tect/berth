@@ -60,6 +60,7 @@ GET	/api/v1/operation-logs/stats	internal/domain/operationlogs.(*Handler).GetUse
 GET	/api/v1/profile	internal/domain/auth.(*APIHandler).Profile-fm
 GET	/api/v1/running-operations	internal/domain/operationlogs.(*Handler).GetRunningOperations-fm
 GET	/api/v1/servers	internal/domain/server.(*UserAPIHandler).ListServers-fm
+GET	/api/v1/servers/:serverid	internal/domain/server.(*UserAPIHandler).GetServer-fm
 GET	/api/v1/servers/:serverid/image-updates	internal/domain/imageupdates.(*APIHandler).ListServerUpdates-fm
 GET	/api/v1/servers/:serverid/maintenance/info	internal/domain/maintenance.(*APIHandler).GetSystemInfo-fm
 GET	/api/v1/servers/:serverid/maintenance/permissions	internal/domain/maintenance.(*APIHandler).CheckPermissions-fm

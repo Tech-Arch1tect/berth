@@ -8,6 +8,7 @@ func (h *Handler) RegisterAdminWebRoutes(g *echo.Group) {
 
 func (h *UserAPIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {
 	g.GET("/servers", h.ListServers, requireUserScope)
+	g.GET("/servers/:serverid", h.GetServer, requireUserScope)
 	g.GET("/servers/:serverid/statistics", h.GetServerStatistics, requireUserScope)
 }
 

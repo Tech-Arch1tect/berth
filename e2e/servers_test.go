@@ -73,6 +73,51 @@ func TestServerEndpointsJWT(t *testing.T) {
 		assert.True(t, found, "test server should be in the list")
 	})
 
+	t.Run("GET /api/v1/servers/:serverid returns the server", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/servers/" + itoa(testServer.ID),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+
+		var serverResp response.Response[server.GetServerData]
+		require.NoError(t, resp.GetJSON(&serverResp))
+		assert.True(t, serverResp.Success)
+		assert.Equal(t, testServer.ID, serverResp.Data.Server.ID)
+		assert.Equal(t, "test-server-jwt", serverResp.Data.Server.Name)
+	})
+
+	t.Run("GET /api/v1/servers/:serverid returns 404 for non-existent server", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/servers/99999",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode)
+	})
+
+	t.Run("GET /api/v1/servers/:serverid returns 400 for non-numeric id", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryErrorHandler, e2etesting.ValueLow)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/servers/not-a-number",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
+
 	t.Run("GET /api/v1/servers/:id/statistics returns statistics", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/statistics", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -360,11 +405,57 @@ func TestServerEndpointsNoAuth(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
+	t.Run("GET /api/v1/servers/:serverid requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
+		resp, err := app.HTTPClient.Get("/api/v1/servers/1")
+		require.NoError(t, err)
+		assert.Equal(t, 401, resp.StatusCode)
+	})
+
 	t.Run("GET /api/v1/admin/servers requires authentication", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/servers", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Get("/api/v1/admin/servers")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
+	})
+}
+
+func TestUserGetServerNonAdmin(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "userserveraccessdenied",
+		Email:    "userserveraccessdenied@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, loginResp.StatusCode)
+
+	var login response.Response[auth.AuthLoginData]
+	require.NoError(t, loginResp.GetJSON(&login))
+	token := login.Data.AccessToken
+
+	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-denied")
+	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
+
+	t.Run("GET /api/v1/servers/:serverid returns 404 when user lacks access to an existing server", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "GET",
+			Path:   "/api/v1/servers/" + itoa(testServer.ID),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + token,
+			},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 404, resp.StatusCode)
 	})
 }
 

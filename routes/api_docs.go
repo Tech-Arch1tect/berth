@@ -240,6 +240,19 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}").
+		Tags("servers").
+		Summary("Get server").
+		Description("Returns the server with the given id when the authenticated user has permission to access it").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[server.GetServerData]{}, "Server details").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/statistics").
 		Tags("servers").
 		Summary("Get server statistics").
