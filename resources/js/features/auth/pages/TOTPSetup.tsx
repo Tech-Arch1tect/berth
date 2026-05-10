@@ -1,20 +1,21 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
-import { usePostApiV1TotpEnable } from '../../../api/generated/totp/totp';
+import { useGetApiV1TotpSetup, usePostApiV1TotpEnable } from '../../../api/generated/totp/totp';
 
-interface Props {
-  title: string;
-  qrCodeURI: string;
-  secret: string;
-}
-
-export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
+export default function TOTPSetup() {
+  useDocumentTitle('Setup Two-Factor Authentication');
+  const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+
+  const { data: setupResponse, isLoading: setupLoading } = useGetApiV1TotpSetup();
+  const qrCodeURI = setupResponse?.data?.qr_code_uri ?? '';
+  const secret = setupResponse?.data?.secret ?? '';
 
   const enableMutation = usePostApiV1TotpEnable();
 
@@ -26,7 +27,7 @@ export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
       await enableMutation.mutateAsync({
         data: { code },
       });
-      router.visit('/profile');
+      navigate({ to: '/profile' });
     } catch (err) {
       const message =
         (err as { message?: string })?.message || 'Failed to enable two-factor authentication';
@@ -34,17 +35,17 @@ export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
     }
   };
 
+  if (setupLoading || !qrCodeURI) {
+    return <LoadingSpinner size="lg" text="Preparing setup..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
-
       <div className="max-w-2xl mx-auto p-6">
         <div className={cn('shadow-lg rounded-lg p-8', theme.surface.panel)}>
           <h1 className={cn('text-2xl font-bold mb-6', theme.text.strong)}>
             Setup Two-Factor Authentication
           </h1>
-
-          <FlashMessages className="mb-6" />
 
           <div className="space-y-6">
             <div>
@@ -105,7 +106,7 @@ export default function TOTPSetup({ title, qrCodeURI, secret }: Props) {
                 </button>
 
                 <Link
-                  href="/profile"
+                  to="/profile"
                   className={cn('flex-1 py-2 px-4 rounded-lg text-center', theme.buttons.secondary)}
                 >
                   Cancel
