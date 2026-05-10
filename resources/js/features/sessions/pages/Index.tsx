@@ -1,5 +1,3 @@
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
-import { Head, router } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DevicePhoneMobileIcon,
@@ -16,41 +14,32 @@ import {
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { EmptyState } from '../../../shared/components/EmptyState';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  useGetApiV1Sessions,
   usePostApiV1SessionsRevoke,
   usePostApiV1SessionsRevokeAllOthers,
+  getGetApiV1SessionsQueryKey,
 } from '../../../api/generated/sessions/sessions';
+import type { SessionItem } from '../../../api/generated/models';
 
-interface Session {
-  id: number;
-  current: boolean;
-  type: string;
-  ip_address: string;
-  location: string;
-  browser: string;
-  os: string;
-  device_type: string;
-  device: string;
-  mobile: boolean;
-  tablet: boolean;
-  desktop: boolean;
-  bot: boolean;
-  created_at: string;
-  last_used: string;
-  expires_at: string;
-}
-
-interface SessionsProps {
-  sessions: Session[];
-}
-
-export default function SessionsIndex({ sessions }: SessionsProps) {
+export default function SessionsIndex() {
+  useDocumentTitle('Active Sessions');
+  const queryClient = useQueryClient();
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
   const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: sessionsResponse, isLoading: sessionsLoading } = useGetApiV1Sessions();
+  const sessions = sessionsResponse?.data?.sessions ?? [];
+
+  const invalidateSessions = () =>
+    queryClient.invalidateQueries({ queryKey: getGetApiV1SessionsQueryKey() });
 
   const revokeMutation = usePostApiV1SessionsRevoke();
   const revokeAllMutation = usePostApiV1SessionsRevokeAllOthers();
@@ -70,7 +59,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
       await revokeMutation.mutateAsync({
         data: { session_id: sessionToRevoke },
       });
-      router.reload();
+      invalidateSessions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke session');
     } finally {
@@ -86,7 +75,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
       await revokeAllMutation.mutateAsync({
         data: {},
       });
-      router.reload();
+      invalidateSessions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke sessions');
     } finally {
@@ -98,7 +87,7 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
 
-  const getDeviceIcon = (session: Session) => {
+  const getDeviceIcon = (session: SessionItem) => {
     const iconClass = cn('h-8 w-8', theme.text.muted);
 
     if (session.bot) return <CpuChipIcon className={iconClass} />;
@@ -115,16 +104,19 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
     return <ComputerDesktopIcon className={iconClass} />;
   };
 
-  const getDeviceTypeColor = (session: Session) => {
+  const getDeviceTypeColor = (session: SessionItem) => {
     if (session.bot) return cn(theme.badges.tag.base, theme.badges.tag.info);
     if (session.mobile) return cn(theme.badges.tag.base, theme.badges.tag.info);
     if (session.tablet) return cn(theme.badges.tag.base, theme.badges.tag.success);
     return cn(theme.badges.tag.base, theme.badges.tag.neutral);
   };
 
+  if (sessionsLoading) {
+    return <LoadingSpinner size="lg" text="Loading sessions..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title="Active Sessions" />
       <div className="h-full overflow-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
@@ -143,8 +135,6 @@ export default function SessionsIndex({ sessions }: SessionsProps) {
                 </button>
               )}
             </div>
-
-            <FlashMessages className="mb-6" />
 
             {error && (
               <div className={cn(theme.intent.danger.surface, 'mb-6 rounded-lg p-4')}>

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../../shared/components/flash/FlashMessages';
+import { useParams } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { ServerNavigation } from '../../../shared/layout/ServerNavigation';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { Modal } from '../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { theme } from '../../../shared/theme';
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import {
   RegistriesToolbar,
@@ -13,26 +15,38 @@ import {
   RegistriesContent,
   RegistriesStatusBar,
 } from '../components';
+import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 import {
+  useGetApiV1ServersServeridRegistries,
   usePostApiV1ServersServeridRegistries,
   usePutApiV1ServersServeridRegistriesId,
   useDeleteApiV1ServersServeridRegistriesId,
+  getGetApiV1ServersServeridRegistriesQueryKey,
 } from '../../../api/generated/registries/registries';
 import type { RegistryCredentialInfo } from '../../../api/generated/models';
 
-interface Props {
-  title?: string;
-  server_id: number;
-  server_name: string;
-  credentials: RegistryCredentialInfo[];
-}
+export default function Registries() {
+  const params = useParams({ strict: false }) as { serverid?: string };
+  const serverid = Number(params.serverid);
+  const queryClient = useQueryClient();
 
-export default function Registries({
-  title = 'Registry Credentials',
-  server_id,
-  server_name,
-  credentials,
-}: Props) {
+  const { data: serverResponse, isLoading: serverLoading } = useGetApiV1ServersServerid(serverid, {
+    query: { enabled: Number.isFinite(serverid) && serverid > 0 },
+  });
+  const server = serverResponse?.data?.server;
+  useDocumentTitle(server ? `Registry Credentials - ${server.name}` : 'Registry Credentials');
+
+  const { data: credentialsResponse, isLoading: credentialsLoading } =
+    useGetApiV1ServersServeridRegistries(serverid, {
+      query: { enabled: Number.isFinite(serverid) && serverid > 0 },
+    });
+  const credentials = credentialsResponse?.data?.credentials ?? [];
+
+  const invalidateCredentials = () =>
+    queryClient.invalidateQueries({
+      queryKey: getGetApiV1ServersServeridRegistriesQueryKey(serverid),
+    });
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCredential, setEditingCredential] = useState<RegistryCredentialInfo | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -72,7 +86,7 @@ export default function Registries({
     try {
       if (editingCredential) {
         await updateMutation.mutateAsync({
-          serverid: server_id,
+          serverid,
           id: editingCredential.id,
           data: {
             stack_pattern: data.stack_pattern,
@@ -85,10 +99,10 @@ export default function Registries({
 
         setEditingCredential(null);
         reset();
-        router.reload();
+        invalidateCredentials();
       } else {
         await createMutation.mutateAsync({
-          serverid: server_id,
+          serverid,
           data: {
             stack_pattern: data.stack_pattern,
             registry_url: data.registry_url,
@@ -100,7 +114,7 @@ export default function Registries({
 
         setShowAddForm(false);
         reset();
-        router.reload();
+        invalidateCredentials();
       }
     } catch (error) {
       console.error('Submit failed:', error);
@@ -131,12 +145,12 @@ export default function Registries({
 
     try {
       await deleteMutation.mutateAsync({
-        serverid: server_id,
+        serverid,
         id: deleteConfirm.id,
       });
 
       setDeleteConfirm(null);
-      router.reload();
+      invalidateCredentials();
     } catch (error) {
       console.error('Delete failed:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete credential');
@@ -151,25 +165,23 @@ export default function Registries({
   };
 
   const handleRefresh = () => {
-    router.reload();
+    invalidateCredentials();
   };
+
+  if (serverLoading || credentialsLoading || !server) {
+    return <LoadingSpinner size="lg" text="Loading registries..." fullScreen />;
+  }
 
   return (
     <>
-      <Head title={title} />
-
-      {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: server_name, href: `/servers/${server_id}/stacks` },
+          { label: server.name, href: `/servers/${serverid}/stacks` },
           { label: 'Registry Credentials' },
         ]}
       />
 
-      {/* Server Navigation */}
-      <ServerNavigation serverId={server_id} serverName={server_name} />
-
-      <FlashMessages />
+      <ServerNavigation serverId={serverid} serverName={server.name} />
 
       <PanelLayout
         storageKey="registries"
@@ -178,7 +190,7 @@ export default function Registries({
         maxWidthPercent={35}
         toolbar={
           <RegistriesToolbar
-            serverName={server_name}
+            serverName={server.name}
             onAddCredential={() => {
               setEditingCredential(null);
               reset();
