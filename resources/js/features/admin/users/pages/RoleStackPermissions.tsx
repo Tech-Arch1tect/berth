@@ -1,68 +1,43 @@
 import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { useParams } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Breadcrumb } from '../../../../shared/components/Breadcrumb';
 import { Modal } from '../../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { EmptyState } from '../../../../shared/components/EmptyState';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import {
+  useGetApiV1AdminRolesRoleIdStackPermissions,
   usePostApiV1AdminRolesRoleIdStackPermissions,
   useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId,
+  getGetApiV1AdminRolesRoleIdStackPermissionsQueryKey,
 } from '../../../../api/generated/admin/admin';
+import type { StackPermissionRule } from '../../../../api/generated/models';
 
-interface Permission {
-  id: number;
-  name: string;
-  resource: string;
-  action: string;
-  description: string;
-}
+export default function RoleStackPermissions() {
+  useDocumentTitle('Role Stack Permissions');
+  const queryClient = useQueryClient();
+  const params = useParams({ strict: false }) as { roleid?: string };
+  const roleid = Number(params.roleid);
 
-interface Server {
-  id: number;
-  name: string;
-  description: string;
-  host: string;
-  port: number;
-  skip_ssl_verification: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+  const { data: stackPermissionsResponse, isLoading: stackPermissionsLoading } =
+    useGetApiV1AdminRolesRoleIdStackPermissions(roleid, {
+      query: { enabled: Number.isFinite(roleid) && roleid > 0 },
+    });
+  const role = stackPermissionsResponse?.data?.role;
+  const servers = stackPermissionsResponse?.data?.servers ?? [];
+  const permissions = stackPermissionsResponse?.data?.permissions ?? [];
+  const permissionRules = stackPermissionsResponse?.data?.permissionRules ?? [];
 
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-  is_admin: boolean;
-}
+  const invalidateStackPermissions = () =>
+    queryClient.invalidateQueries({
+      queryKey: getGetApiV1AdminRolesRoleIdStackPermissionsQueryKey(roleid),
+    });
 
-interface PermissionRule {
-  id: number;
-  server_id: number;
-  permission_id: number;
-  stack_pattern: string;
-  is_stack_based: boolean;
-}
-
-interface Props {
-  title: string;
-  role: Role;
-  servers: Server[];
-  permissions: Permission[];
-  permissionRules: PermissionRule[];
-}
-
-export default function RoleStackPermissions({
-  title,
-  role,
-  servers = [],
-  permissions = [],
-  permissionRules = [],
-}: Props) {
   const [showAddRule, setShowAddRule] = useState(false);
   const [showAddToPattern, setShowAddToPattern] = useState<{
     serverid: number;
@@ -134,7 +109,7 @@ export default function RoleStackPermissions({
 
   const handleAddRule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRule.server_id || newRule.permission_ids.length === 0) return;
+    if (!role || !newRule.server_id || newRule.permission_ids.length === 0) return;
 
     try {
       const promises = newRule.permission_ids.map((permissionId) =>
@@ -149,7 +124,7 @@ export default function RoleStackPermissions({
       );
 
       await Promise.all(promises);
-      router.reload();
+      invalidateStackPermissions();
       setShowAddRule(false);
       setNewRule({ server_id: '', permission_ids: [], stack_pattern: '*' });
     } catch (error) {
@@ -165,7 +140,8 @@ export default function RoleStackPermissions({
 
   const handleAddToPattern = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addToPatternRule.server_id || addToPatternRule.permission_ids.length === 0) return;
+    if (!role || !addToPatternRule.server_id || addToPatternRule.permission_ids.length === 0)
+      return;
 
     try {
       const promises = addToPatternRule.permission_ids.map((permissionId) =>
@@ -180,7 +156,7 @@ export default function RoleStackPermissions({
       );
 
       await Promise.all(promises);
-      router.reload();
+      invalidateStackPermissions();
       setShowAddToPattern(null);
       setAddToPatternRule({ server_id: 0, permission_ids: [], stack_pattern: '' });
     } catch (error) {
@@ -195,13 +171,13 @@ export default function RoleStackPermissions({
   };
 
   const handleDeleteRule = () => {
-    if (ruleToDelete === null) return;
+    if (ruleToDelete === null || !role) return;
 
     deletePermissionMutation.mutate(
       { roleId: role.id, permissionId: ruleToDelete },
       {
         onSuccess: () => {
-          router.reload();
+          invalidateStackPermissions();
           setRuleToDelete(null);
         },
         onError: (error) => {
@@ -235,14 +211,16 @@ export default function RoleStackPermissions({
     },
     {} as Record<
       string,
-      { serverName: string; serverid: number; stackPattern: string; rules: PermissionRule[] }
+      { serverName: string; serverid: number; stackPattern: string; rules: StackPermissionRule[] }
     >
   );
 
+  if (stackPermissionsLoading || !role) {
+    return <LoadingSpinner size="lg" text="Loading role..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -260,7 +238,7 @@ export default function RoleStackPermissions({
                   theme.text.strong
                 )}
               >
-                {title}
+                Role Stack Permissions
               </h2>
               <p className={cn('mt-1 text-sm', theme.text.subtle)}>
                 Manage stack-based permissions for the <strong>{role.name}</strong> role using
@@ -273,8 +251,6 @@ export default function RoleStackPermissions({
               </button>
             </div>
           </div>
-
-          <FlashMessages />
 
           {/* Add Rule Modal */}
           <Modal

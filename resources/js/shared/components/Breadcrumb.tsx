@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link } from '@tanstack/react-router';
 import { HomeIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { cn } from '../utils/cn';
 import { theme } from '../theme';
@@ -22,7 +22,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, homeHref = '/' })
         {/* Home */}
         <li>
           <Link
-            href={homeHref}
+            to={homeHref}
             className={cn(
               theme.text.subtle,
               'hover:text-slate-700 dark:hover:text-slate-300 transition-colors'
@@ -43,7 +43,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, homeHref = '/' })
                 <ChevronRightIcon className={cn('h-5 w-5', theme.text.subtle)} />
                 {item.href && !isLast ? (
                   <Link
-                    href={item.href}
+                    to={item.href}
                     className={cn(
                       'ml-4 text-sm font-medium transition-colors',
                       theme.text.muted,

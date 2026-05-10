@@ -1,34 +1,33 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import {
+  useGetApiV1AdminUsersIdRoles,
   usePostApiV1AdminUsersAssignRole,
   usePostApiV1AdminUsersRevokeRole,
+  getGetApiV1AdminUsersIdRolesQueryKey,
 } from '../../../../api/generated/admin/admin';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  roles: Role[];
-}
-
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-}
-
-interface Props {
-  title: string;
-  user: User;
-  allRoles: Role[];
-}
-
-export default function UserRoles({ title, user, allRoles }: Props) {
+export default function UserRoles() {
+  useDocumentTitle('Manage User Roles');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const params = useParams({ strict: false }) as { userid?: string };
+  const userid = Number(params.userid);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: rolesResponse, isLoading: rolesLoading } = useGetApiV1AdminUsersIdRoles(userid, {
+    query: { enabled: Number.isFinite(userid) && userid > 0 },
+  });
+  const user = rolesResponse?.data?.user;
+  const allRoles = rolesResponse?.data?.all_roles ?? [];
+
+  const invalidateUserRoles = () =>
+    queryClient.invalidateQueries({ queryKey: getGetApiV1AdminUsersIdRolesQueryKey(userid) });
 
   const assignRoleMutation = usePostApiV1AdminUsersAssignRole();
   const revokeRoleMutation = usePostApiV1AdminUsersRevokeRole();
@@ -36,14 +35,14 @@ export default function UserRoles({ title, user, allRoles }: Props) {
   const processing = assignRoleMutation.isPending || revokeRoleMutation.isPending;
 
   const assignRole = (roleId: number) => {
-    if (processing) return;
+    if (processing || !user) return;
     setError(null);
 
     assignRoleMutation.mutate(
       { data: { user_id: user.id, role_id: roleId } },
       {
         onSuccess: () => {
-          window.location.reload();
+          invalidateUserRoles();
         },
         onError: (err) => {
           const errorData = err as { message?: string };
@@ -54,14 +53,14 @@ export default function UserRoles({ title, user, allRoles }: Props) {
   };
 
   const revokeRole = (roleId: number) => {
-    if (processing) return;
+    if (processing || !user) return;
     setError(null);
 
     revokeRoleMutation.mutate(
       { data: { user_id: user.id, role_id: roleId } },
       {
         onSuccess: () => {
-          window.location.reload();
+          invalidateUserRoles();
         },
         onError: (err) => {
           const errorData = err as { message?: string };
@@ -71,14 +70,16 @@ export default function UserRoles({ title, user, allRoles }: Props) {
     );
   };
 
+  if (rolesLoading || !user) {
+    return <LoadingSpinner size="lg" text="Loading user..." fullScreen />;
+  }
+
   const userRoles = user.roles ?? [];
   const userRoleIds = userRoles.map((role) => role.id);
-  const availableRoles = (allRoles ?? []).filter((role) => !userRoleIds.includes(role.id));
+  const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.id));
 
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -89,7 +90,7 @@ export default function UserRoles({ title, user, allRoles }: Props) {
                   theme.text.strong
                 )}
               >
-                {title}
+                Manage User Roles
               </h2>
               <p className={cn('mt-1 text-sm', theme.text.subtle)}>
                 Managing roles for {user.username} ({user.email})
@@ -98,15 +99,13 @@ export default function UserRoles({ title, user, allRoles }: Props) {
             <div className="mt-4 flex md:mt-0 md:ml-4">
               <button
                 type="button"
-                onClick={() => router.get('/admin/users')}
+                onClick={() => navigate({ to: '/admin/users' })}
                 className={cn('ml-3', theme.buttons.secondary)}
               >
                 Back to Users
               </button>
             </div>
           </div>
-
-          <FlashMessages />
 
           {error && (
             <div className="mt-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md p-4">

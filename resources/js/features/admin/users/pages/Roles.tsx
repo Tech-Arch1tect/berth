@@ -1,32 +1,28 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import FlashMessages from '../../../../shared/components/flash/FlashMessages';
+import { useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { Table } from '../../../../shared/components/Table';
+import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import {
+  useGetApiV1AdminRoles,
   usePostApiV1AdminRoles,
   usePutApiV1AdminRolesId,
   useDeleteApiV1AdminRolesId,
+  getGetApiV1AdminRolesQueryKey,
 } from '../../../../api/generated/admin/admin';
+import type { RoleInfo } from '../../../../api/generated/models';
 
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-  is_admin: boolean;
-}
-
-interface Props {
-  title: string;
-  roles: Role[];
-}
-
-export default function AdminRoles({ title, roles }: Props) {
+export default function AdminRoles() {
+  useDocumentTitle('Role Management');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [editingRole, setEditingRole] = useState<RoleInfo | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<{ id: number; name: string } | null>(null);
   const [formData, setFormData] = useState({
@@ -34,6 +30,12 @@ export default function AdminRoles({ title, roles }: Props) {
     description: '',
   });
   const [error, setError] = useState<string | null>(null);
+
+  const { data: rolesResponse, isLoading: rolesLoading } = useGetApiV1AdminRoles();
+  const roles = rolesResponse?.data?.roles ?? [];
+
+  const invalidateRoles = () =>
+    queryClient.invalidateQueries({ queryKey: getGetApiV1AdminRolesQueryKey() });
 
   const createRoleMutation = usePostApiV1AdminRoles();
   const updateRoleMutation = usePutApiV1AdminRolesId();
@@ -47,7 +49,7 @@ export default function AdminRoles({ title, roles }: Props) {
     setError(null);
 
     const onSuccess = () => {
-      router.reload();
+      invalidateRoles();
       setEditingRole(null);
       setShowAddForm(false);
       setFormData({ name: '', description: '' });
@@ -65,7 +67,7 @@ export default function AdminRoles({ title, roles }: Props) {
     }
   };
 
-  const handleEdit = (role: Role) => {
+  const handleEdit = (role: RoleInfo) => {
     if (role.is_admin) return;
     setEditingRole(role);
     setShowAddForm(false);
@@ -96,7 +98,7 @@ export default function AdminRoles({ title, roles }: Props) {
       { id: roleToDelete.id },
       {
         onSuccess: () => {
-          router.reload();
+          invalidateRoles();
           setShowDeleteModal(false);
           setRoleToDelete(null);
         },
@@ -110,10 +112,12 @@ export default function AdminRoles({ title, roles }: Props) {
     );
   };
 
+  if (rolesLoading) {
+    return <LoadingSpinner size="lg" text="Loading roles..." fullScreen />;
+  }
+
   return (
     <>
-      <Head title={title} />
-
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -124,7 +128,7 @@ export default function AdminRoles({ title, roles }: Props) {
                   theme.text.strong
                 )}
               >
-                {title}
+                Role Management
               </h2>
             </div>
             <div className="mt-4 flex md:mt-0 md:ml-4">
@@ -142,8 +146,6 @@ export default function AdminRoles({ title, roles }: Props) {
               </button>
             </div>
           </div>
-
-          <FlashMessages />
 
           {(showAddForm || editingRole) && (
             <div className={cn('mt-8', theme.cards.shell, theme.cards.padded)}>
@@ -220,7 +222,7 @@ export default function AdminRoles({ title, roles }: Props) {
             <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                 <div className={theme.table.panel}>
-                  <Table<Role>
+                  <Table<RoleInfo>
                     data={roles}
                     keyExtractor={(role) => role.id.toString()}
                     emptyMessage="No roles defined yet"
@@ -308,7 +310,10 @@ export default function AdminRoles({ title, roles }: Props) {
                                 </button>
                                 <button
                                   onClick={() =>
-                                    router.visit(`/admin/roles/${role.id}/stack-permissions`)
+                                    navigate({
+                                      to: '/admin/roles/$roleid/stack-permissions',
+                                      params: { roleid: String(role.id) },
+                                    })
                                   }
                                   className={cn('hover:underline', theme.text.info)}
                                 >
