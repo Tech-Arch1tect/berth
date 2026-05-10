@@ -26,6 +26,7 @@ import type {
   ResponseAuthLogoutData,
   ResponseAuthMessageData,
   ResponseAuthRefreshData,
+  ResponseAuthTOTPRequiredData,
   ResponseEmpty,
 } from '../models';
 
@@ -34,7 +35,7 @@ import { apiClient } from '../../client';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Authenticates a user with username and password. If TOTP is enabled, returns a temporary token that must be used with /auth/totp/verify to complete authentication. On success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients; mobile/CLI clients can keep using the body-returned `refresh_token`.
+ * Authenticates a user with username and password. The 200 response is one of two shapes: AuthLoginData (full access and refresh tokens, plus user info) when login completes immediately, or AuthTOTPRequiredData (totp_required=true with a temporary token) when TOTP is enabled and the caller must complete /auth/totp/verify next. Clients should branch on the totp_required field. On full success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients; mobile/CLI clients can keep using the body-returned `refresh_token`.
  * @summary Login with username and password
  */
 export const getPostApiV1AuthLoginUrl = () => {
@@ -44,13 +45,16 @@ export const getPostApiV1AuthLoginUrl = () => {
 export const postApiV1AuthLogin = async (
   authLoginRequest: AuthLoginRequest,
   options?: RequestInit
-): Promise<ResponseAuthLoginData> => {
-  return apiClient<ResponseAuthLoginData>(getPostApiV1AuthLoginUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authLoginRequest),
-  });
+): Promise<ResponseAuthLoginData | ResponseAuthTOTPRequiredData> => {
+  return apiClient<ResponseAuthLoginData | ResponseAuthTOTPRequiredData>(
+    getPostApiV1AuthLoginUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authLoginRequest),
+    }
+  );
 };
 
 export const getPostApiV1AuthLoginMutationOptions = <
