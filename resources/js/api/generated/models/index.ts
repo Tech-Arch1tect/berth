@@ -104,7 +104,6 @@ export * from './getScanSummaryData';
 export * from './getScanTrendData';
 export * from './getServerData';
 export * from './getSessionsData';
-export * from './getSessionsRequest';
 export * from './getUserRolesData';
 export * from './healthcheckConfig';
 export * from './healthLog';
