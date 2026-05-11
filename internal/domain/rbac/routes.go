@@ -2,13 +2,6 @@ package rbac
 
 import "github.com/labstack/echo/v4"
 
-func (h *Handler) RegisterAdminWebRoutes(g *echo.Group) {
-	g.GET("/users", h.ListUsers)
-	g.GET("/users/:id/roles", h.ShowUserRoles)
-	g.GET("/roles", h.ListRoles)
-	g.GET("/roles/:id/stack-permissions", h.RoleServerStackPermissions)
-}
-
 func (h *APIHandler) RegisterAdminAPIRoutes(g *echo.Group, mw *Middleware) {
 	g.GET("/users", h.ListUsers, mw.RequireAdminScopeJWT(PermAdminUsersRead))
 	g.POST("/users", h.CreateUser, mw.RequireAdminScopeJWT(PermAdminUsersWrite))

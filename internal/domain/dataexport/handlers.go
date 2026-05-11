@@ -11,50 +11,22 @@ import (
 	"strconv"
 	"time"
 
-	"berth/internal/platform/inertia"
-
 	"github.com/labstack/echo/v4"
-	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
 )
 
 type Handler struct {
-	inertiaSvc *inertia.Service
-	logger     *zap.Logger
-	service    *Service
-	rbacSvc    *rbac.Service
+	logger  *zap.Logger
+	service *Service
+	rbacSvc *rbac.Service
 }
 
-func NewHandler(inertiaSvc *inertia.Service, logger *zap.Logger, service *Service, rbacSvc *rbac.Service) *Handler {
+func NewHandler(logger *zap.Logger, service *Service, rbacSvc *rbac.Service) *Handler {
 	return &Handler{
-		inertiaSvc: inertiaSvc,
-		logger:     logger,
-		service:    service,
-		rbacSvc:    rbacSvc,
+		logger:  logger,
+		service: service,
+		rbacSvc: rbacSvc,
 	}
-}
-
-func (h *Handler) Index(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return err
-	}
-
-	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
-	if err != nil || !isAdmin {
-		h.logger.Warn("unauthorized migration page access attempt",
-			zap.Uint("user_id", userID),
-		)
-		return echo.NewHTTPError(http.StatusForbidden, "Admin access required")
-	}
-
-	h.logger.Info("migration page accessed",
-		zap.Uint("user_id", userID),
-	)
-
-	return h.inertiaSvc.Render(c, "Admin/Migration", gonertia.Props{
-		"title": "Data Migration",
-	})
 }
 
 func (h *Handler) Export(c echo.Context) error {

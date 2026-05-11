@@ -2,10 +2,6 @@ package server
 
 import "github.com/labstack/echo/v4"
 
-func (h *Handler) RegisterAdminWebRoutes(g *echo.Group) {
-	g.GET("/servers", h.Index)
-}
-
 func (h *UserAPIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {
 	g.GET("/servers", h.ListServers, requireUserScope)
 	g.GET("/servers/:serverid", h.GetServer, requireUserScope)

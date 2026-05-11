@@ -2,14 +2,6 @@ package operationlogs
 
 import "github.com/labstack/echo/v4"
 
-func (h *Handler) RegisterProtectedWebRoutes(g *echo.Group) {
-	g.GET("/operation-logs", h.ShowUserOperationLogs)
-}
-
-func (h *Handler) RegisterAdminWebRoutes(g *echo.Group) {
-	g.GET("/operation-logs", h.ShowOperationLogs)
-}
-
 func (h *Handler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {
 	g.GET("/operation-logs", h.ListUserOperationLogs, requireUserScope)
 	g.GET("/operation-logs/stats", h.GetUserOperationLogsStats, requireUserScope)

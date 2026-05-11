@@ -7,7 +7,6 @@ import (
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/tokens"
-	"berth/internal/domain/dashboard"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -27,7 +26,6 @@ import (
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/response"
 	"berth/internal/platform/httperr"
-	"berth/internal/platform/inertia"
 	"berth/internal/platform/middleware/ratelimit"
 
 	"github.com/labstack/echo/v4"
@@ -55,48 +53,10 @@ func registerRoutes(g *Graph) {
 		HSTSMaxAge:         31536000,
 		ReferrerPolicy:     "strict-origin-when-cross-origin",
 	}))
-	httperr.SetupErrorHandler(e, g.Inertia)
+	httperr.SetupErrorHandler(e)
 
 	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
 
-	web := e.Group("")
-	web.Use(session.Middleware(g.SessionMgr))
-	if g.SessionSvc != nil {
-		web.Use(session.TrackingMiddleware(g.SessionSvc))
-	}
-	web.Use(auth.RememberMeMiddleware(auth.RememberMeConfig{
-		AuthService:  g.AuthSvc,
-		UserProvider: g.AuthUserProv,
-		TOTPService:  g.TOTPSvc,
-		Logger:       g.Logger,
-	}))
-	if g.Cfg.CSRF.Enabled {
-		web.Use(auth.CSRFMiddleware(&g.Cfg.CSRF))
-		web.Use(inertia.CSRFContext(g.Cfg.CSRF.ContextKey))
-	}
-	if g.Inertia != nil {
-		web.Use(g.Inertia.Middleware())
-		web.Use(inertia.SharedContext(
-			g.AuthUserProv.GetUser,
-			session.IsAuthenticated,
-			session.GetUserIDAsUint,
-			func(c echo.Context) any {
-				if msgs := session.GetFlashMessages(c); msgs != nil {
-					return msgs
-				}
-				return nil
-			},
-		))
-	}
-
-	registerAuthRoutes(web, g.Cfg, g.AuthHandler, g.AuthTOTPHandler, g.RateLimit)
-	registerProtectedWebRoutes(web,
-		g.DashboardHandler, g.AuthHandler, g.SessionHandler, g.AuthTOTPHandler,
-		g.StackHandler, g.MaintHandler, g.RegistryHandler,
-		g.OperationLogsHandler, g.APIKeyHandler)
-	registerAdminWebRoutes(web, g.RBACMid, g.Inertia,
-		g.RBACHandler, g.OperationLogsHandler, g.ServerHandler,
-		g.DataExportHandler, g.SecurityHandler)
 	registerWebUIWebSocketRoutes(e, g.SessionMgr, g.WSHandler, g.OperationsWSHandler)
 
 	if g.AuthAPIHandler == nil || g.JWTSvc == nil {
@@ -140,101 +100,6 @@ func registerRoutes(g *Graph) {
 		g.RBACMid, g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
 	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
-}
-
-func registerAuthRoutes(web *echo.Group, cfg *config.Config, authHandler *auth.Handler, totpHandler *auth.TOTPHandler, rateLimitStore *ratelimit.Store) {
-	authGroup := web.Group("/auth")
-	authGroup.Use(newRateLimit(cfg, ratelimit.Config{
-		Store:     rateLimitStore,
-		Name:      "web_auth_group",
-		Rate:      60,
-		Period:    time.Minute,
-		CountMode: ratelimit.CountAll,
-		KeyFunc:   ratelimit.KeyByIP,
-	}))
-
-	tightAuth := func(name string, rate int) echo.MiddlewareFunc {
-		return newRateLimit(cfg, ratelimit.Config{
-			Store:     rateLimitStore,
-			Name:      name,
-			Rate:      rate,
-			Period:    time.Minute,
-			CountMode: ratelimit.CountNon2xx,
-			KeyFunc:   ratelimit.KeyByIP,
-		})
-	}
-
-	authHandler.RegisterPublicWebAuthRoutes(authGroup, tightAuth)
-	totpHandler.RegisterPublicWebAuthRoutes(authGroup, tightAuth)
-}
-
-func registerProtectedWebRoutes(web *echo.Group,
-	dashboardHandler *dashboard.Handler, authHandler *auth.Handler,
-	sessionHandler *session.Handler, totpHandler *auth.TOTPHandler,
-	stackHandler *stack.Handler, maintenanceHandler *maintenance.Handler,
-	registryHandler *registry.Handler, operationLogsHandler *operationlogs.Handler,
-	apiKeyHandler *apikey.Handler) {
-
-	protected := web.Group("")
-	protected.Use(session.RequireAuthWeb("/auth/login"))
-	protected.Use(session.RequireTOTPWeb("/auth/totp/verify"))
-
-	dashboardHandler.RegisterProtectedWebRoutes(protected)
-	authHandler.RegisterProtectedWebRoutes(protected)
-	if stackHandler != nil {
-		stackHandler.RegisterProtectedWebRoutes(protected)
-	}
-	if maintenanceHandler != nil {
-		maintenanceHandler.RegisterProtectedWebRoutes(protected)
-	}
-	if registryHandler != nil {
-		registryHandler.RegisterProtectedWebRoutes(protected)
-	}
-	if operationLogsHandler != nil {
-		operationLogsHandler.RegisterProtectedWebRoutes(protected)
-	}
-	if sessionHandler != nil {
-		sessionHandler.RegisterProtectedWebRoutes(protected)
-	}
-	if apiKeyHandler != nil {
-		apiKeyHandler.RegisterProtectedWebRoutes(protected)
-	}
-	totpHandler.RegisterProtectedWebRoutes(protected)
-}
-
-func registerAdminWebRoutes(web *echo.Group, rbacMiddleware *rbac.Middleware, inertiaService *inertia.Service,
-	rbacHandler *rbac.Handler, operationLogsHandler *operationlogs.Handler, serverHandler *server.Handler,
-	migrationHandler *dataexport.Handler, securityHandler *security.Handler) {
-
-	if rbacHandler == nil || rbacMiddleware == nil {
-		return
-	}
-
-	admin := web.Group("/admin")
-	admin.Use(rbacMiddleware.RequireRole(rbac.RoleAdmin))
-
-	rbacHandler.RegisterAdminWebRoutes(admin)
-	if serverHandler != nil {
-		serverHandler.RegisterAdminWebRoutes(admin)
-	}
-	if migrationHandler != nil {
-		migrationHandler.RegisterAdminWebRoutes(admin)
-	}
-	admin.GET("/agent-update", func(c echo.Context) error {
-		return inertiaService.Render(c, "Admin/AgentUpdate", map[string]any{
-			"title": "Agent Updates",
-		})
-	})
-	if operationLogsHandler != nil {
-		operationLogsHandler.RegisterAdminWebRoutes(admin)
-	}
-	if securityHandler != nil {
-		admin.GET("/security-audit-logs", func(c echo.Context) error {
-			return inertiaService.Render(c, "Admin/SecurityAuditLogs", map[string]any{
-				"title": "Security Audit Logs",
-			})
-		})
-	}
 }
 
 func requireWebSocketAuth() echo.MiddlewareFunc {

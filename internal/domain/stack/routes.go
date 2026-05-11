@@ -2,12 +2,6 @@ package stack
 
 import "github.com/labstack/echo/v4"
 
-func (h *Handler) RegisterProtectedWebRoutes(g *echo.Group) {
-	g.GET("/stacks", h.Index)
-	g.GET("/servers/:id/stacks", h.ShowServerStacks)
-	g.GET("/servers/:serverid/stacks/:stackname", h.ShowStackDetails)
-}
-
 func (h *APIHandler) RegisterProtectedAPIRoutes(g *echo.Group) {
 	g.GET("/servers/:serverid/stacks", h.ListServerStacks)
 	g.POST("/servers/:serverid/stacks", h.CreateStack)

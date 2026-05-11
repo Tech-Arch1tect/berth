@@ -5,10 +5,7 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 
-	"berth/internal/platform/inertia"
-
 	"github.com/labstack/echo/v4"
-	gonertia "github.com/romsar/gonertia/v3"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -16,47 +13,17 @@ import (
 type Handler struct {
 	db                      *gorm.DB
 	service                 *Service
-	inertiaSvc              *inertia.Service
 	logger                  *zap.Logger
 	operationTimeoutSeconds int
 }
 
-func NewHandler(db *gorm.DB, service *Service, inertiaSvc *inertia.Service, logger *zap.Logger, operationTimeoutSeconds int) *Handler {
+func NewHandler(db *gorm.DB, service *Service, logger *zap.Logger, operationTimeoutSeconds int) *Handler {
 	return &Handler{
 		db:                      db,
 		service:                 service,
-		inertiaSvc:              inertiaSvc,
 		logger:                  logger,
 		operationTimeoutSeconds: operationTimeoutSeconds,
 	}
-}
-
-func (h *Handler) ShowOperationLogs(c echo.Context) error {
-	h.logger.Info("operation logs page accessed",
-		zap.String("user_agent", c.Request().UserAgent()),
-		zap.String("remote_ip", c.RealIP()),
-	)
-
-	return h.inertiaSvc.Render(c, "Admin/OperationLogs", gonertia.Props{
-		"title": "Operation Logs",
-	})
-}
-
-func (h *Handler) ShowUserOperationLogs(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return err
-	}
-
-	h.logger.Info("user operation logs page accessed",
-		zap.String("user_agent", c.Request().UserAgent()),
-		zap.String("remote_ip", c.RealIP()),
-		zap.Uint("user_id", userID),
-	)
-
-	return h.inertiaSvc.Render(c, "OperationLogs", gonertia.Props{
-		"title": "My Operation Logs",
-	})
 }
 
 func (h *Handler) ListOperationLogs(c echo.Context) error {

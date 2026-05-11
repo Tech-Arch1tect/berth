@@ -11,7 +11,6 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/auth/totp"
-	"berth/internal/domain/dashboard"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -34,7 +33,6 @@ import (
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/crypto"
 	"berth/internal/pkg/origin"
-	"berth/internal/platform/inertia"
 	"berth/internal/platform/mail"
 	"berth/internal/platform/middleware/ratelimit"
 	"berth/routes"
@@ -61,12 +59,11 @@ type Overrides struct {
 }
 
 type Graph struct {
-	Cfg     *config.Config
-	Logger  *zap.Logger
-	DB      *gorm.DB
-	Echo    *echo.Echo
-	Inertia *inertia.Service
-	SSL     *SSLConfig
+	Cfg    *config.Config
+	Logger *zap.Logger
+	DB     *gorm.DB
+	Echo   *echo.Echo
+	SSL    *SSLConfig
 
 	Mail        auth.MailService
 	Crypto      *crypto.Crypto
@@ -74,16 +71,13 @@ type Graph struct {
 	RateLimit   *ratelimit.Store
 	APIDocs     *apidocs.OpenAPI
 
-	JWTSvc          *tokens.Service
-	SessionMgr      *session.Manager
-	SessionSvc      *session.Service
-	SessionHandler  *session.Handler
-	AuthSvc         *auth.Service
-	AuthUserProv    auth.UserProvider
-	TOTPSvc         *totp.Service
-	AuthHandler     *auth.Handler
-	AuthTOTPHandler *auth.TOTPHandler
-	AuthAPIHandler  *auth.APIHandler
+	JWTSvc         *tokens.Service
+	SessionMgr     *session.Manager
+	SessionSvc     *session.Service
+	AuthSvc        *auth.Service
+	AuthUserProv   auth.UserProvider
+	TOTPSvc        *totp.Service
+	AuthAPIHandler *auth.APIHandler
 
 	OperationsSummaryParser *operations.SummaryParser
 	OperationsAuditLogger   *operations.AuditLogger
@@ -99,28 +93,22 @@ type Graph struct {
 	AgentSvc               *agent.Service
 	RBACSvc                *rbac.Service
 	RBACMid                *rbac.Middleware
-	RBACHandler            *rbac.Handler
 	RBACAPIHandler         *rbac.APIHandler
 	APIKeySvc              *apikey.Service
 	APIKeyHandler          *apikey.Handler
 	SetupSvc               *setup.Service
 	ServerSvc              *server.Service
-	ServerHandler          *server.Handler
 	ServerAPIHandler       *server.APIHandler
 	ServerUserAPIHandler   *server.UserAPIHandler
 	StackSvc               *stack.Service
-	StackHandler           *stack.Handler
 	StackAPIHandler        *stack.APIHandler
-	DashboardHandler       *dashboard.Handler
 	MaintSvc               *maintenance.Service
-	MaintHandler           *maintenance.Handler
 	MaintAPIHandler        *maintenance.APIHandler
 	FilesSvc               *files.Service
 	FilesAPIHandler        *files.APIHandler
 	LogsSvc                *logs.Service
 	LogsHandler            *logs.Handler
 	RegistrySvc            *registry.Service
-	RegistryHandler        *registry.Handler
 	RegistryAPIHandler     *registry.APIHandler
 	OperationLogsSvc       *operationlogs.Service
 	OperationLogsHandler   *operationlogs.Handler
@@ -147,17 +135,15 @@ func Build(
 	logger *zap.Logger,
 	db *gorm.DB,
 	e *echo.Echo,
-	inertiaSvc *inertia.Service,
 	ssl *SSLConfig,
 	overrides Overrides,
 ) (*Graph, error) {
 	g := &Graph{
-		Cfg:     cfg,
-		Logger:  logger,
-		DB:      db,
-		Echo:    e,
-		Inertia: inertiaSvc,
-		SSL:     ssl,
+		Cfg:    cfg,
+		Logger: logger,
+		DB:     db,
+		Echo:   e,
+		SSL:    ssl,
 	}
 
 	g.Crypto = crypto.NewCrypto(cfg.Custom.EncryptionSecret)
@@ -189,7 +175,6 @@ func Build(
 	}
 	g.SessionMgr = sessionMgr
 	g.SessionSvc = session.ProvideSessionService(db, sessionMgr, jwtSvc, logger)
-	g.SessionHandler = session.NewHandler(inertiaSvc, g.SessionSvc)
 
 	var sessionInvalidator auth.SessionInvalidator
 	if g.SessionSvc != nil {
@@ -212,35 +197,27 @@ func Build(
 	g.SecurityAuditSvc = security.NewAuditService(db, logger)
 	g.SecurityHandler = security.NewHandler(db)
 
-	g.AuthHandler = auth.NewHandler(db, inertiaSvc, g.AuthSvc, g.TOTPSvc, logger, g.SecurityAuditSvc)
-	g.AuthTOTPHandler = auth.NewTOTPHandler(db, inertiaSvc, g.TOTPSvc, g.AuthSvc, logger, g.SecurityAuditSvc)
 	g.AuthAPIHandler = auth.NewAPIHandler(db, g.AuthSvc, jwtSvc, g.TOTPSvc, g.SessionSvc, logger, g.SecurityAuditSvc)
 
 	g.AgentSvc = agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
 
 	g.RBACSvc = rbac.NewService(db, logger)
 	g.RBACMid = rbac.NewMiddleware(g.RBACSvc)
-	g.RBACHandler = rbac.NewRBACHandler(db, inertiaSvc, g.RBACSvc, g.AuthSvc, g.TOTPSvc, g.SecurityAuditSvc)
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
 
 	g.APIKeySvc = apikey.NewService(db, logger, g.RBACSvc)
-	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, inertiaSvc, g.SecurityAuditSvc)
+	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, g.SecurityAuditSvc)
 
 	g.SetupSvc = setup.NewService(db, g.RBACSvc, logger)
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.RBACSvc, g.AgentSvc, logger)
-	g.ServerHandler = server.NewHandler(g.ServerSvc, inertiaSvc, g.SecurityAuditSvc)
 	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc)
 	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
-	g.StackHandler = stack.NewHandler(inertiaSvc, g.StackSvc, g.RBACSvc, g.ServerSvc)
 	g.StackAPIHandler = stack.NewAPIHandler(g.StackSvc, logger, g.SecurityAuditSvc)
 
-	g.DashboardHandler = dashboard.NewHandler(inertiaSvc, logger, g.ServerSvc)
-
 	g.MaintSvc = maintenance.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
-	g.MaintHandler = maintenance.NewHandler(inertiaSvc, g.MaintSvc)
 	g.MaintAPIHandler = maintenance.NewAPIHandler(g.MaintSvc, g.SecurityAuditSvc)
 
 	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
@@ -263,7 +240,6 @@ func Build(
 	g.OperationsAuditSvc = operations.NewAuditService(db, logger, g.OperationsSummaryParser)
 
 	g.RegistrySvc = registry.NewService(db, g.Crypto, logger)
-	g.RegistryHandler = registry.NewHandler(g.RegistrySvc, g.RBACSvc, g.ServerSvc, inertiaSvc)
 	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.RBACSvc, db)
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.RBACSvc, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
@@ -271,10 +247,10 @@ func Build(
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
 
 	g.OperationLogsSvc = operationlogs.NewService(db, logger)
-	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, inertiaSvc, logger, cfg.Custom.OperationTimeoutSeconds)
+	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, logger, cfg.Custom.OperationTimeoutSeconds)
 
 	g.DataExportSvc = dataexport.NewService(db, logger)
-	g.DataExportHandler = dataexport.NewHandler(inertiaSvc, logger, g.DataExportSvc, g.RBACSvc)
+	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc, g.RBACSvc)
 
 	g.QueueSvc = queue.NewService(db, g.OperationsSvc, g.RBACSvc, logger, g.SecurityAuditSvc, cfg.Custom.OperationTimeoutSeconds)
 
@@ -315,9 +291,6 @@ func Build(
 
 	registerAuditCallbacks(db, g, overrides)
 
-	installCoreMiddleware(g)
-	g.addHook("inertia init", inertiaInitHook(cfg, inertiaSvc), nil)
-
 	if err := wireTestSupport(g); err != nil {
 		return nil, fmt.Errorf("test support wiring: %w", err)
 	}
@@ -350,36 +323,6 @@ func closeHook(name string, logger *zap.Logger, c io.Closer) func(context.Contex
 			return err
 		}
 		logger.Info(name + " closed successfully")
-		return nil
-	}
-}
-
-func installCoreMiddleware(g *Graph) {
-	if g.SessionMgr != nil {
-		g.Echo.Use(session.Middleware(g.SessionMgr))
-	}
-	g.Echo.Use(g.Inertia.Middleware())
-	g.Echo.Use(inertia.SharedContext(
-		g.AuthUserProv.GetUser,
-		session.IsAuthenticated,
-		session.GetUserIDAsUint,
-		InertiaFlashMessages,
-	))
-}
-
-func inertiaInitHook(cfg *config.Config, svc *inertia.Service) func(context.Context) error {
-	return func(context.Context) error {
-		rootView := cfg.Inertia.RootView
-		if rootView == "" {
-			rootView = "app.html"
-		}
-		if err := svc.InitializeFromFile(rootView); err != nil {
-			return err
-		}
-		if !cfg.Inertia.Development {
-			_ = svc.LoadManifest("public/build/.vite/manifest.json")
-		}
-		svc.ShareAssetData()
 		return nil
 	}
 }

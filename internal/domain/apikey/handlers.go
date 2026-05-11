@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"berth/internal/platform/inertia"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,29 +18,14 @@ type apikeyAuditLogger interface {
 
 type Handler struct {
 	service      *Service
-	inertia      *inertia.Service
 	auditService apikeyAuditLogger
 }
 
-func NewHandler(service *Service, inertia *inertia.Service, auditService apikeyAuditLogger) *Handler {
+func NewHandler(service *Service, auditService apikeyAuditLogger) *Handler {
 	return &Handler{
 		service:      service,
-		inertia:      inertia,
 		auditService: auditService,
 	}
-}
-
-func (h *Handler) ShowAPIKeys(c echo.Context) error {
-	return h.inertia.Render(c, "APIKeys/Index", map[string]any{
-		"title": "API Keys",
-	})
-}
-
-func (h *Handler) ShowAPIKeyScopes(c echo.Context) error {
-	apiKeyID := c.Param("id")
-	return h.inertia.Render(c, "APIKeys/Scopes", map[string]any{
-		"api_key_id": apiKeyID,
-	})
 }
 
 func (h *Handler) ListAPIKeys(c echo.Context) error {
