@@ -7,8 +7,6 @@ const (
 	EventAuthPasswordResetRequested = "auth.password_reset.requested"
 	EventAuthPasswordResetCompleted = "auth.password_reset.completed"
 	EventAuthEmailVerified          = "auth.email.verified"
-	EventAuthRememberMeCreated      = "auth.remember_me.created"
-	EventAuthRememberMeInvalidated  = "auth.remember_me.invalidated"
 	EventAuthSessionRevoked         = "auth.session.revoked"
 	EventAuthSessionsRevokedAll     = "auth.sessions.revoked_all"
 )
@@ -88,7 +86,7 @@ func GetEventCategory(eventType string) string {
 	switch eventType {
 	case EventAuthLoginSuccess, EventAuthLoginFailure, EventAuthLogout,
 		EventAuthPasswordResetRequested, EventAuthPasswordResetCompleted,
-		EventAuthEmailVerified, EventAuthRememberMeCreated, EventAuthRememberMeInvalidated,
+		EventAuthEmailVerified,
 		EventAuthSessionRevoked, EventAuthSessionsRevokedAll:
 		return "auth"
 
@@ -158,7 +156,6 @@ func GetEventSeverity(eventType string) string {
 		return "medium"
 
 	case EventAuthLoginSuccess, EventAuthLogout, EventAuthEmailVerified,
-		EventAuthRememberMeCreated, EventAuthRememberMeInvalidated,
 		EventAuthSessionRevoked, EventAuthSessionsRevokedAll,
 		EventTOTPVerificationSuccess, EventTOTPSetupInitiated,
 		EventAPITokenIssued, EventAPITokenRefreshed, EventAPITokenRevoked,

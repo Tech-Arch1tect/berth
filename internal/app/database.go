@@ -38,7 +38,7 @@ func DatabaseModels() []any {
 		&imageupdates.ContainerImageUpdate{},
 		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{},
 		&totp.TOTPSecret{}, &totp.UsedCode{},
-		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{}, &auth.RememberMeToken{},
+		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{},
 		&tokens.RevokedToken{}, &tokens.RefreshToken{},
 	}
 }

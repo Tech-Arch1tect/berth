@@ -166,12 +166,6 @@ func (s *Service) CompletePasswordReset(token, newPassword string) error {
 					zap.String("email", resetToken.Email), zap.Uint("user_id", userID), zap.Error(revokeErr))
 			}
 		}
-		if s.config.Auth.RememberMeEnabled {
-			if err := s.InvalidateRememberMeTokens(userID); err != nil {
-				s.logger.Error("invalidate remember-me tokens after password reset failed",
-					zap.String("email", resetToken.Email), zap.Uint("user_id", userID), zap.Error(err))
-			}
-		}
 	}
 
 	if err := s.sendPasswordResetSuccessEmail(resetToken.Email); err != nil {

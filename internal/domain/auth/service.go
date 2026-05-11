@@ -26,11 +26,6 @@ var (
 	ErrEmailVerificationTokenInvalid = errors.New("invalid or expired email verification token")
 	ErrEmailVerificationTokenExpired = errors.New("email verification token has expired")
 	ErrEmailVerificationTokenUsed    = errors.New("email verification token has already been used")
-
-	ErrRememberMeDisabled     = errors.New("remember me functionality is disabled")
-	ErrRememberMeTokenInvalid = errors.New("invalid or expired remember me token")
-	ErrRememberMeTokenExpired = errors.New("remember me token has expired")
-	ErrRememberMeTokenUsed    = errors.New("remember me token has already been used")
 )
 
 type MailService interface {
