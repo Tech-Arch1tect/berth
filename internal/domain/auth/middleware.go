@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	tokens "berth/internal/domain/auth/tokens"
-	"berth/internal/domain/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,9 +25,8 @@ const APIKeyContextKey contextKey = "api_key"
 type authType string
 
 const (
-	authTypeJWT     authType = "jwt"
-	authTypeAPIKey  authType = "apikey"
-	authTypeSession authType = "session"
+	authTypeJWT    authType = "jwt"
+	authTypeAPIKey authType = "apikey"
 )
 
 func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
@@ -151,10 +149,6 @@ func IsJWTAuth(c echo.Context) bool {
 	return getAuthType(c) == authTypeJWT
 }
 
-func IsSessionAuth(c echo.Context) bool {
-	return getAuthType(c) == authTypeSession
-}
-
 func GetAPIKeyFromContext(ctx context.Context) *apikey.APIKey {
 	if apiKey, ok := ctx.Value(APIKeyContextKey).(*apikey.APIKey); ok {
 		return apiKey
@@ -165,22 +159,6 @@ func GetAPIKeyFromContext(ctx context.Context) *apikey.APIKey {
 func RequireHybridAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			isAuth := session.IsAuthenticated(c)
-			if isAuth {
-				userID := session.GetUserIDAsUint(c)
-				if userID > 0 {
-					c.Set(UserIDKey, userID)
-					c.Set(AuthTypeKey, authTypeSession)
-					if userProvider != nil {
-						user, err := userProvider.GetUser(userID)
-						if err == nil && user != nil {
-							c.Set("currentUser", user)
-						}
-					}
-					return next(c)
-				}
-			}
-
 			authHeader := c.Request().Header.Get("Authorization")
 
 			if authHeader == "" {

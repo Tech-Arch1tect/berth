@@ -94,7 +94,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileUploaded,
-		session.GetUserIDAsUint(c),
+		userID,
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -151,7 +151,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileDeleted,
-		session.GetUserIDAsUint(c),
+		userID,
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -185,7 +185,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileRenamed,
-		session.GetUserIDAsUint(c),
+		userID,
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -246,7 +246,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileUploaded,
-		session.GetUserIDAsUint(c),
+		userID,
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -287,7 +287,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileDownloaded,
-		session.GetUserIDAsUint(c),
+		userID,
 		session.ResolveUsername(c),
 		serverID,
 		stackname,

@@ -18,7 +18,6 @@ import (
 	"berth/internal/domain/registry"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
-	"berth/internal/domain/session"
 	"berth/internal/domain/stack"
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
@@ -61,10 +60,6 @@ func registerRoutes(g *Graph) {
 	}
 
 	api := e.Group("/api/v1")
-	api.Use(session.Middleware(g.SessionMgr))
-	if g.SessionSvc != nil {
-		api.Use(session.TrackingMiddleware(g.SessionSvc))
-	}
 
 	authApiRateLimit := newRateLimit(g.Cfg, ratelimit.Config{
 		Store:     g.RateLimit,

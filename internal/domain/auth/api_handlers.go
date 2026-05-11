@@ -562,10 +562,6 @@ func (h *APIHandler) EnableTOTP(c echo.Context) error {
 		nil,
 	)
 
-	if session.IsAuthenticated(c) {
-		session.SetTOTPEnabled(c, true)
-	}
-
 	return response.OK(c, TOTPMessageData{
 		Message: "Two-factor authentication has been enabled successfully",
 	})
@@ -609,10 +605,6 @@ func (h *APIHandler) DisableTOTP(c echo.Context) error {
 		"",
 		nil,
 	)
-
-	if session.IsAuthenticated(c) {
-		session.SetTOTPEnabled(c, false)
-	}
 
 	return response.OK(c, TOTPMessageData{
 		Message: "Two-factor authentication has been disabled",
@@ -750,37 +742,21 @@ func (h *APIHandler) RevokeAllOtherSessions(c echo.Context) error {
 		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
 	}
 
-	var currentToken string
-
-	if session.IsAuthenticated(c) {
-		manager := session.GetManager(c)
-		if manager == nil {
-			return response.Err(c, http.StatusInternalServerError, "session_manager_unavailable", "Session manager not available")
-		}
-
-		currentToken = manager.Token(c.Request().Context())
-		if currentToken == "" {
-			return response.Err(c, http.StatusInternalServerError, "current_session_not_found", "Current session token not found")
-		}
-	} else {
-
-		var req session.RevokeAllOtherSessionsRequest
-		if err := validation.BindAndValidate(c, &req); err != nil {
-			return err
-		}
-
-		accessJTI, err := extractAccessJTI(c, h.tokens)
-		if err != nil {
-			return response.Err(c, http.StatusBadRequest, "invalid_session", "Could not identify current session")
-		}
-		token, err := h.sessionSvc.GetCurrentSessionToken(userModel.ID, accessJTI)
-		if err != nil {
-			return response.Err(c, http.StatusBadRequest, "invalid_session", "Current session not found")
-		}
-		currentToken = token
+	var req session.RevokeAllOtherSessionsRequest
+	if err := validation.BindAndValidate(c, &req); err != nil {
+		return err
 	}
 
-	err := h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
+	accessJTI, err := extractAccessJTI(c, h.tokens)
+	if err != nil {
+		return response.Err(c, http.StatusBadRequest, "invalid_session", "Could not identify current session")
+	}
+	currentToken, err := h.sessionSvc.GetCurrentSessionToken(userModel.ID, accessJTI)
+	if err != nil {
+		return response.Err(c, http.StatusBadRequest, "invalid_session", "Current session not found")
+	}
+
+	err = h.sessionSvc.RevokeAllOtherSessions(userModel.ID, currentToken)
 	if err != nil {
 		return response.Err(c, http.StatusInternalServerError, "sessions_revoke_failed", "Failed to revoke other sessions")
 	}

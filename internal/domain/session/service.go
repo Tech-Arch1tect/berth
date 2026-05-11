@@ -14,10 +14,16 @@ import (
 )
 
 type Service struct {
-	db             *gorm.DB
-	sessionManager *Manager
-	tokens         *tokens.Service
-	logger         *zap.Logger
+	db     *gorm.DB
+	tokens *tokens.Service
+	logger *zap.Logger
+}
+
+func ProvideSessionService(db *gorm.DB, t *tokens.Service, logger *zap.Logger) *Service {
+	if db == nil {
+		return nil
+	}
+	return &Service{db: db, tokens: t, logger: logger}
 }
 
 func (s *Service) TrackSession(userID uint, token string, sessionType SessionType, ipAddress, userAgent string, expiresAt time.Time) error {
@@ -118,23 +124,12 @@ func (s *Service) revokeTokens(session *UserSession) {
 	}
 }
 
-func (s *Service) deleteWebSessionFromStore(session *UserSession) error {
-	if session.Type != SessionTypeWeb || s.sessionManager == nil || s.sessionManager.SessionManager.Store == nil {
-		return nil
-	}
-	return s.sessionManager.SessionManager.Store.Delete(session.Token)
-}
-
 func (s *Service) RevokeSession(userID uint, sessionID uint) error {
 	var session UserSession
 	if err := s.db.Where("id = ? AND user_id = ?", sessionID, userID).First(&session).Error; err != nil {
 		return err
 	}
 	s.revokeTokens(&session)
-	if err := s.deleteWebSessionFromStore(&session); err != nil {
-		s.logger.Error("failed to delete session from store", zap.Error(err))
-		return err
-	}
 	if err := s.db.Delete(&session).Error; err != nil {
 		s.logger.Error("failed to delete session from db", zap.Error(err), zap.Uint("session_id", sessionID))
 		return err
@@ -149,10 +144,6 @@ func (s *Service) RevokeAllOtherSessions(userID uint, currentToken string) error
 	}
 	for i := range sessions {
 		s.revokeTokens(&sessions[i])
-		if err := s.deleteWebSessionFromStore(&sessions[i]); err != nil {
-			s.logger.Error("failed to delete session from store", zap.Error(err), zap.Uint("session_id", sessions[i].ID))
-			return err
-		}
 	}
 	return s.db.Where("user_id = ? AND token != ?", userID, currentToken).Delete(&UserSession{}).Error
 }
@@ -164,10 +155,6 @@ func (s *Service) RevokeAllUserSessions(userID uint) error {
 	}
 	for i := range sessions {
 		s.revokeTokens(&sessions[i])
-		if err := s.deleteWebSessionFromStore(&sessions[i]); err != nil {
-			s.logger.Error("failed to delete session from store", zap.Error(err), zap.Uint("session_id", sessions[i].ID))
-			return err
-		}
 	}
 	return s.db.Where("user_id = ?", userID).Delete(&UserSession{}).Error
 }

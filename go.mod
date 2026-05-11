@@ -17,8 +17,6 @@ require (
 )
 
 require (
-	github.com/alexedwards/scs/gormstore v0.0.0-20251002162104-209de6e426de
-	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/caarlos0/env/v10 v10.0.0
 	github.com/getkin/kin-openapi v0.134.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

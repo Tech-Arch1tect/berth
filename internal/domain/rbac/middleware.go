@@ -7,7 +7,6 @@ import (
 	"berth/internal/domain/auth"
 	usermodel "berth/internal/domain/user"
 
-	"berth/internal/domain/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,37 +23,6 @@ func NewMiddleware(rbac *Service) *Middleware {
 
 func (m *Middleware) SetAPIKeyService(apiKeyService *apikey.Service) {
 	m.apiKeyService = apiKeyService
-}
-
-func (m *Middleware) RequireRole(roleName string) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if !session.IsAuthenticated(c) {
-				return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
-			}
-
-			userID := session.GetUserID(c)
-			if userID == nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid session")
-			}
-
-			userIDUint, ok := userID.(uint)
-			if !ok {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid user ID")
-			}
-
-			hasRole, err := m.rbac.HasRole(userIDUint, roleName)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to check role")
-			}
-
-			if !hasRole {
-				return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
-			}
-
-			return next(c)
-		}
-	}
 }
 
 func (m *Middleware) RequireAPIKeyDenied() echo.MiddlewareFunc {
@@ -98,10 +66,6 @@ func (m *Middleware) RequireAdminScopeJWT(scopeName string) echo.MiddlewareFunc 
 				return echo.NewHTTPError(http.StatusForbidden, map[string]string{
 					"error": "Insufficient permissions - admin role required",
 				})
-			}
-
-			if auth.IsSessionAuth(c) {
-				return next(c)
 			}
 
 			if auth.IsJWTAuth(c) {
@@ -154,10 +118,6 @@ func (m *Middleware) RequireUserScopeJWT(scopeName string) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, map[string]string{
 					"error": "Invalid user type",
 				})
-			}
-
-			if auth.IsSessionAuth(c) {
-				return next(c)
 			}
 
 			if auth.IsJWTAuth(c) {

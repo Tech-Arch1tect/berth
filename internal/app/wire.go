@@ -72,7 +72,6 @@ type Graph struct {
 	APIDocs     *apidocs.OpenAPI
 
 	JWTSvc         *tokens.Service
-	SessionMgr     *session.Manager
 	SessionSvc     *session.Service
 	AuthSvc        *auth.Service
 	AuthUserProv   auth.UserProvider
@@ -169,12 +168,7 @@ func Build(
 	g.JWTSvc = jwtSvc
 	g.addHook("tokens cleanup worker", jwtSvc.Start, jwtSvc.Stop)
 
-	sessionMgr, err := session.ProvideSessionManager(cfg, db, logger)
-	if err != nil {
-		return nil, fmt.Errorf("session manager: %w", err)
-	}
-	g.SessionMgr = sessionMgr
-	g.SessionSvc = session.ProvideSessionService(db, sessionMgr, jwtSvc, logger)
+	g.SessionSvc = session.ProvideSessionService(db, jwtSvc, logger)
 
 	var sessionInvalidator auth.SessionInvalidator
 	if g.SessionSvc != nil {
