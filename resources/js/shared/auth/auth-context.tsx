@@ -30,15 +30,24 @@ export function setAccessTokenForTests(token: string | null): void {
   accessToken = token;
 }
 
-async function refreshAccessTokenInternal(): Promise<string | null> {
-  const resp = await postApiV1AuthRefresh({});
-  if (resp.success && resp.data?.access_token) {
-    accessToken = resp.data.access_token;
-    return accessToken;
-  }
+let refreshInFlight: Promise<string | null> | null = null;
 
-  accessToken = null;
-  return null;
+async function refreshAccessTokenInternal(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const resp = await postApiV1AuthRefresh({});
+      if (resp.success && resp.data?.access_token) {
+        accessToken = resp.data.access_token;
+        return accessToken;
+      }
+      accessToken = null;
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
 }
 
 async function fetchProfile(): Promise<UserInfo | null> {
