@@ -65,9 +65,6 @@ func registerRoutes(g *Graph) {
 	if g.SessionSvc != nil {
 		api.Use(session.TrackingMiddleware(g.SessionSvc))
 	}
-	if g.Cfg.CSRF.Enabled {
-		api.Use(auth.ConditionalCSRFMiddleware(g.Cfg))
-	}
 
 	authApiRateLimit := newRateLimit(g.Cfg, ratelimit.Config{
 		Store:     g.RateLimit,
