@@ -14,7 +14,7 @@ type Config struct {
 	App          AppConfig          `envPrefix:"APP_"`
 	Server       ServerConfig       `envPrefix:"SERVER_"`
 	Log          LogConfig          `envPrefix:"LOG_"`
-	Inertia      InertiaConfig      `envPrefix:"INERTIA_"`
+	Frontend     FrontendConfig     `envPrefix:"FRONTEND_"`
 	Database     DatabaseConfig     `envPrefix:"DATABASE_"`
 	Session      SessionConfig      `envPrefix:"SESSION_"`
 	Auth         AuthConfig         `envPrefix:"AUTH_"`
@@ -45,9 +45,8 @@ type LogConfig struct {
 	Output string `env:"OUTPUT" envDefault:"stdout"`
 }
 
-type InertiaConfig struct {
+type FrontendConfig struct {
 	RootView    string `env:"ROOT_VIEW" envDefault:"app.html"`
-	SSRURL      string `env:"SSR_URL" envDefault:"http://127.0.0.1:13714"`
 	Development bool   `env:"DEVELOPMENT" envDefault:"false"`
 	ViteDevURL  string `env:"VITE_DEV_URL" envDefault:"http://localhost:5173"`
 }

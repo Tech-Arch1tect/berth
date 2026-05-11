@@ -5,7 +5,6 @@ import "os"
 func EnforceRequiredSettings() {
 	enforceSecuritySettings()
 	enforceDatabaseSettings()
-	enforceInertiaSettings()
 	enforceSessionSettings()
 	enforceAuthSettings()
 	enforceTOTPSettings()
@@ -30,10 +29,6 @@ func enforceSecuritySettings() {
 
 func enforceDatabaseSettings() {
 	os.Setenv("DATABASE_AUTO_MIGRATE", "true")
-}
-
-func enforceInertiaSettings() {
-	os.Setenv("INERTIA_ROOT_VIEW", "app.html")
 }
 
 func enforceSessionSettings() {

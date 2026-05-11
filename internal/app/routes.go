@@ -89,6 +89,10 @@ func registerRoutes(g *Graph) {
 		g.RBACMid, g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
 	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
+
+	if g.SPASvc != nil {
+		e.GET("/*", g.SPASvc.Render)
+	}
 }
 
 func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler) {

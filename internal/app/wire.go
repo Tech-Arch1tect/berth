@@ -35,6 +35,7 @@ import (
 	"berth/internal/pkg/origin"
 	"berth/internal/platform/mail"
 	"berth/internal/platform/middleware/ratelimit"
+	"berth/internal/platform/spa"
 	"berth/routes"
 	"berth/seeds"
 
@@ -125,6 +126,8 @@ type Graph struct {
 	WSAgentMgr             *websocket.AgentManager
 	WSServiceMgr           *websocket.ServiceManager
 	WSHandler              *websocket.Handler
+
+	SPASvc *spa.Service
 
 	Hooks []Hook
 }
@@ -279,6 +282,14 @@ func Build(
 		},
 		nil,
 	)
+
+	g.SPASvc = spa.New(cfg.Frontend.Development, cfg.Frontend.ViteDevURL, logger)
+	if err := g.SPASvc.LoadTemplate(cfg.Frontend.RootView); err != nil {
+		return nil, fmt.Errorf("SPA template: %w", err)
+	}
+	if err := g.SPASvc.LoadManifest(spa.ManifestPath); err != nil {
+		logger.Warn("SPA manifest not loaded; assets will be missing in production renders", zap.Error(err))
+	}
 
 	routes.RegisterAPIDocs(g.APIDocs)
 	routes.RegisterOpenAPIEndpoints(e, g.APIDocs, cfg)

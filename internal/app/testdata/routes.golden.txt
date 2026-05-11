@@ -1,3 +1,4 @@
+GET	/*	internal/platform/spa.(*Service).Render-fm
 POST	/api/v1/admin/migration/export	internal/domain/dataexport.(*Handler).Export-fm
 POST	/api/v1/admin/migration/import	internal/domain/dataexport.(*Handler).Import-fm
 GET	/api/v1/admin/operation-logs	internal/domain/operationlogs.(*Handler).ListOperationLogs-fm

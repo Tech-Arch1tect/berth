@@ -83,7 +83,7 @@ func BuildConfig(t *testing.T, modifiers ...func(*config.Config)) *config.Config
 			Enabled: true,
 			Issuer:  "Test App",
 		},
-		Inertia: config.InertiaConfig{
+		Frontend: config.FrontendConfig{
 			RootView:    rootView,
 			Development: true,
 		},

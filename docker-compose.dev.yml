@@ -6,7 +6,7 @@ services:
     container_name: berth-dev
     env_file: .env
     environment:
-      - INERTIA_DEVELOPMENT=true
+      - FRONTEND_DEVELOPMENT=true
       - SERVER_HOST=0.0.0.0
     extra_hosts:
       - "host.docker.internal:host-gateway"
