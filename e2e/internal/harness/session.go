@@ -2,12 +2,9 @@ package harness
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
-	"berth/internal/domain/session"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -22,15 +19,6 @@ func NewSessionHelper(httpClient *HTTPClient, db *gorm.DB) *SessionHelper {
 		HTTPClient: httpClient,
 		DB:         db,
 	}
-}
-
-func (h *SessionHelper) GetSessionCookie(resp *Response) *http.Cookie {
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "session" || cookie.Name == "test_session" {
-			return cookie
-		}
-	}
-	return nil
 }
 
 func (h *SessionHelper) AssertSessionExists(t *testing.T, userID uint) {
@@ -64,20 +52,6 @@ func (h *SessionHelper) AssertSessionCount(t *testing.T, userID uint, expectedCo
 	require.Equal(t, int64(expectedCount), count, "unexpected number of sessions")
 }
 
-func (h *SessionHelper) CreateTestSession(t *testing.T, userID uint, token string) {
-	sess := session.UserSession{
-		UserID:    userID,
-		Token:     token,
-		Type:      session.SessionTypeWeb,
-		IPAddress: "127.0.0.1",
-		UserAgent: "Test User Agent",
-		ExpiresAt: time.Now().Add(time.Hour),
-	}
-
-	err := h.DB.Create(&sess).Error
-	require.NoError(t, err, "failed to create test session")
-}
-
 func (h *SessionHelper) CleanSessionTables() error {
 	tables := []string{
 		"user_sessions",
@@ -92,39 +66,8 @@ func (h *SessionHelper) CleanSessionTables() error {
 	return nil
 }
 
-func (h *SessionHelper) AssertSessionCookiePresent(t *testing.T, resp *Response) *http.Cookie {
-	cookie := h.GetSessionCookie(resp)
-	require.NotNil(t, cookie, "session cookie should be present in response")
-	require.NotEmpty(t, cookie.Value, "session cookie should have a value")
-	return cookie
-}
-
-func (h *SessionHelper) WithSessionCookie(cookie *http.Cookie) *HTTPClient {
-	client := h.HTTPClient.EnsureCookieJar()
-
-	if cookie != nil && h.HTTPClient.BaseURL != "" {
-		u, err := url.Parse(h.HTTPClient.BaseURL)
-		if err == nil {
-			client.Client.Jar.SetCookies(u, []*http.Cookie{cookie})
-		}
-	}
-
-	return client.WithoutRedirects()
-}
-
 func (h *SessionHelper) SimulateLogin(t *testing.T, authHelper *AuthHelper, username, password string) *HTTPClient {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-
-	resp, err := authHelper.LoginWithClient(client, username, password)
-	require.NoError(t, err, "login request failed")
-
-	authHelper.AssertLoginSuccess(t, resp)
-	h.AssertSessionCookiePresent(t, resp)
-
-	return client
-}
-
-func (h *SessionHelper) AssertAuthenticationRequired(t *testing.T, resp *Response) {
-
-	resp.AssertRedirect(t, "/auth/login")
+	t.Helper()
+	token := authHelper.JWTLogin(t, username, password)
+	return h.HTTPClient.WithBearerToken(token)
 }

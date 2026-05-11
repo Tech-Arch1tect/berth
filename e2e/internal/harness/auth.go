@@ -1,11 +1,11 @@
 package harness
 
 import (
-	"fmt"
-	"net/url"
 	"testing"
 
 	"berth/internal/domain/auth"
+	"berth/internal/pkg/response"
+
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -52,89 +52,6 @@ func (h *AuthHelper) CreateTestUser(t *testing.T, user *TestUser) {
 	user.ID = dbUser.ID
 }
 
-func (h *AuthHelper) Login(username, password string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	return h.LoginWithClient(client, username, password)
-}
-
-func (h *AuthHelper) LoginWithClient(client *HTTPClient, username, password string) (*Response, error) {
-	if _, err := client.Get("/auth/login"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/login", url.Values{
-		"username": {username},
-		"password": {password},
-	})
-}
-
-func (h *AuthHelper) LoginWithRememberMe(username, password string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/login"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/login", url.Values{
-		"username":    {username},
-		"password":    {password},
-		"remember_me": {"true"},
-	})
-}
-
-func (h *AuthHelper) Register(username, email, password string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/login"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/register", url.Values{
-		"username": {username},
-		"email":    {email},
-		"password": {password},
-	})
-}
-
-func (h *AuthHelper) Logout() (*Response, error) {
-	return h.HTTPClient.PostForm("/auth/logout", url.Values{})
-}
-
-func (h *AuthHelper) RequestPasswordReset(email string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/password-reset"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/password-reset", url.Values{
-		"email": {email},
-	})
-}
-
-func (h *AuthHelper) ResetPassword(token, newPassword string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/password-reset/confirm"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/password-reset/confirm", url.Values{
-		"token":            {token},
-		"password":         {newPassword},
-		"password_confirm": {newPassword},
-	})
-}
-
-func (h *AuthHelper) VerifyEmail(token string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/verify-email"); err != nil {
-		return nil, err
-	}
-	return client.Post(fmt.Sprintf("/auth/verify-email?token=%s", token), nil)
-}
-
-func (h *AuthHelper) ResendVerification(email string) (*Response, error) {
-	client := h.HTTPClient.WithCookieJar().WithoutRedirects()
-	if _, err := client.Get("/auth/login"); err != nil {
-		return nil, err
-	}
-	return client.PostForm("/auth/resend-verification", url.Values{
-		"email": {email},
-	})
-}
-
 func (h *AuthHelper) GetPasswordResetToken(t *testing.T, email string) string {
 	var tokens []string
 	err := h.DB.Table("password_reset_tokens").
@@ -167,14 +84,6 @@ func (h *AuthHelper) AssertEmailNotVerified(t *testing.T, email string) {
 	require.Equal(t, int64(1), count, "email should not be verified")
 }
 
-func (h *AuthHelper) AssertLoginSuccess(t *testing.T, resp *Response) {
-	resp.AssertRedirect(t, "/")
-}
-
-func (h *AuthHelper) AssertLoginFailed(t *testing.T, resp *Response) {
-	resp.AssertRedirect(t, "/auth/login")
-}
-
 func (h *AuthHelper) EnableTOTPForUser(t *testing.T, userID uint) {
 	err := h.DB.Table("totp_secrets").Create(map[string]interface{}{
 		"user_id": userID,
@@ -182,4 +91,20 @@ func (h *AuthHelper) EnableTOTPForUser(t *testing.T, userID uint) {
 		"enabled": true,
 	}).Error
 	require.NoError(t, err, "failed to enable TOTP for test user")
+}
+
+func (h *AuthHelper) JWTLogin(t *testing.T, username, password string) string {
+	t.Helper()
+	resp, err := h.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: username,
+		Password: password,
+	})
+	require.NoError(t, err, "JWT login request failed")
+	require.Equal(t, 200, resp.StatusCode, "JWT login should succeed")
+
+	var login response.Response[auth.AuthLoginData]
+	require.NoError(t, resp.GetJSON(&login), "JWT login response should decode")
+	require.True(t, login.Success, "JWT login response should be success")
+	require.NotEmpty(t, login.Data.AccessToken, "JWT login should return access token")
+	return login.Data.AccessToken
 }

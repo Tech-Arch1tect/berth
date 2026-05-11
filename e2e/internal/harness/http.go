@@ -27,6 +27,12 @@ type RequestOptions struct {
 	FormData    url.Values
 }
 
+func (c *HTTPClient) WithBearerToken(token string) *HTTPClient {
+	clone := *c
+	clone.BearerToken = token
+	return &clone
+}
+
 func isSafeHTTPMethod(method string) bool {
 	switch method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace, "":
@@ -174,6 +180,10 @@ func (c *HTTPClient) Request(opts *RequestOptions) (*Response, error) {
 		req.Header.Set("Content-Type", contentType)
 	}
 
+	if c.BearerToken != "" && req.Header.Get("Authorization") == "" {
+		req.Header.Set("Authorization", "Bearer "+c.BearerToken)
+	}
+
 	for key, value := range opts.Headers {
 		req.Header.Set(key, value)
 	}
@@ -214,16 +224,18 @@ func (c *HTTPClient) WithCookieJar() *HTTPClient {
 	}
 
 	return &HTTPClient{
-		Client:  newClient,
-		BaseURL: c.BaseURL,
+		Client:      newClient,
+		BaseURL:     c.BaseURL,
+		BearerToken: c.BearerToken,
 	}
 }
 
 func (c *HTTPClient) EnsureCookieJar() *HTTPClient {
 	if c.Client.Jar != nil {
 		return &HTTPClient{
-			Client:  c.Client,
-			BaseURL: c.BaseURL,
+			Client:      c.Client,
+			BaseURL:     c.BaseURL,
+			BearerToken: c.BearerToken,
 		}
 	}
 
@@ -241,7 +253,8 @@ func (c *HTTPClient) WithoutRedirects() *HTTPClient {
 	}
 
 	return &HTTPClient{
-		Client:  newClient,
-		BaseURL: c.BaseURL,
+		Client:      newClient,
+		BaseURL:     c.BaseURL,
+		BearerToken: c.BearerToken,
 	}
 }

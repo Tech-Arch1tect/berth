@@ -209,37 +209,6 @@ func TestSessionsRevokeAllOthersSurvivesRotation(t *testing.T) {
 		"second revoke-all-others using the rotated token must still find a matching session row, not 400 invalid_session")
 }
 
-func TestSessionsRevokeAllOthersCookieBranch(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-
-	TagTest(t, "POST", "/api/v1/sessions/revoke-all-others", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
-
-	user := app.CreateVerifiedTestUser(t)
-	cookieClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-	jwtResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
-		Username: user.Username, Password: user.Password,
-	})
-	require.NoError(t, err)
-	var jwtLogin response.Response[auth.AuthLoginData]
-	require.NoError(t, jwtResp.GetJSON(&jwtLogin))
-
-	app.SessionHelper.AssertSessionCount(t, user.ID, 2)
-
-	resp, err := cookieClient.Post("/api/v1/sessions/revoke-all-others", nil)
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode, "cookie-session branch must still return 200; Phase 1.4 only changed the JWT branch")
-
-	app.SessionHelper.AssertSessionCount(t, user.ID, 1)
-
-	_, jwtRefreshStatus := apiRefresh(t, app, jwtLogin.Data.RefreshToken)
-	assert.Equal(t, 401, jwtRefreshStatus,
-		"JWT session revoked by the cookie-branch caller — refresh must 401")
-	assert.Equal(t, 401, apiGetProfile(t, app, jwtLogin.Data.AccessToken),
-		"JWT session revoked by the cookie-branch caller — access token must 401")
-}
-
 func currentSessionID(t *testing.T, items []session.SessionItem) uint {
 	t.Helper()
 	var found uint

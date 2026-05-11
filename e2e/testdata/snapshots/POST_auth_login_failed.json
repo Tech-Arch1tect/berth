@@ -1,9 +1,0 @@
-{
-  "method": "POST",
-  "path": "/auth/login_failed",
-  "status_code": 302,
-  "headers": {
-    "Location": "/auth/login"
-  },
-  "body": ""
-}

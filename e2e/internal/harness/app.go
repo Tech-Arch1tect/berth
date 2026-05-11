@@ -3,6 +3,7 @@ package harness
 import "net/http"
 
 type HTTPClient struct {
-	Client  *http.Client
-	BaseURL string
+	Client      *http.Client
+	BaseURL     string
+	BearerToken string
 }

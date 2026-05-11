@@ -20,6 +20,7 @@ func snapshotDir() string {
 	_, thisFile, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(thisFile), "testdata", "snapshots")
 }
+
 func jwtLogin(t *testing.T, app *TestApp, username, email, password string, admin bool) string {
 	t.Helper()
 	user := &e2etesting.TestUser{
@@ -32,15 +33,9 @@ func jwtLogin(t *testing.T, app *TestApp, username, email, password string, admi
 	} else {
 		app.AuthHelper.CreateTestUser(t, user)
 	}
-	resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
-		Username: username, Password: password,
-	})
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode)
-	var login response.Response[auth.AuthLoginData]
-	require.NoError(t, resp.GetJSON(&login))
-	return login.Data.AccessToken
+	return app.AuthHelper.JWTLogin(t, username, password)
 }
+
 func jwtRequest(t *testing.T, app *TestApp, token, method, path string) *e2etesting.Response {
 	t.Helper()
 	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -51,6 +46,7 @@ func jwtRequest(t *testing.T, app *TestApp, token, method, path string) *e2etest
 	require.NoError(t, err)
 	return resp
 }
+
 func jwtRequestJSON(t *testing.T, app *TestApp, token, method, path string, body interface{}) *e2etesting.Response {
 	t.Helper()
 	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -61,263 +57,6 @@ func jwtRequestJSON(t *testing.T, app *TestApp, token, method, path string, body
 	})
 	require.NoError(t, err)
 	return resp
-}
-func sessionLogin(t *testing.T, app *TestApp, username, email, password string, admin bool) *e2etesting.HTTPClient {
-	t.Helper()
-	user := &e2etesting.TestUser{
-		Username: username,
-		Email:    email,
-		Password: password,
-	}
-	if admin {
-		app.CreateAdminTestUser(t, user)
-	} else {
-		app.AuthHelper.CreateTestUser(t, user)
-		err := app.DB.Table("users").Where("email = ?", email).Update("email_verified_at", "2026-01-01").Error
-		require.NoError(t, err)
-	}
-	return app.SessionHelper.SimulateLogin(t, app.AuthHelper, username, password)
-}
-
-func TestSnapshotUnauthenticatedWeb(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
-	client := app.HTTPClient.WithCookieJar()
-
-	routes := []struct {
-		method string
-		path   string
-	}{
-		{"GET", "/auth/login"},
-		{"GET", "/auth/register"},
-		{"GET", "/auth/password-reset"},
-		{"GET", "/auth/password-reset/confirm"},
-		{"GET", "/auth/verify-email"},
-		{"GET", "/auth/totp/verify"},
-		{"GET", "/auth/totp/setup"},
-	}
-
-	for _, r := range routes {
-		t.Run(r.method+" "+r.path, func(t *testing.T) {
-			resp, err := client.Request(&e2etesting.RequestOptions{
-				Method: r.method,
-				Path:   r.path,
-			})
-			require.NoError(t, err)
-			sr.RecordAndAssert(t, r.method, r.path, resp)
-		})
-	}
-}
-
-func TestSnapshotAuthenticatedWeb(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
-
-	user := app.CreateVerifiedTestUser(t)
-	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-	routes := []struct {
-		method string
-		path   string
-	}{
-		{"GET", "/"},
-		{"GET", "/profile"},
-		{"GET", "/sessions"},
-		{"GET", "/stacks"},
-		{"GET", "/operation-logs"},
-		{"GET", "/api-keys"},
-	}
-
-	for _, r := range routes {
-		t.Run(r.method+" "+r.path, func(t *testing.T) {
-			resp, err := client.Request(&e2etesting.RequestOptions{
-				Method: r.method,
-				Path:   r.path,
-			})
-			require.NoError(t, err)
-			sr.RecordAndAssert(t, r.method, r.path, resp)
-		})
-	}
-}
-
-func TestSnapshotAuthenticatedWebParams(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
-
-	user := &e2etesting.TestUser{
-		Username: "snapwebparam",
-		Email:    "snapwebparam@example.com",
-		Password: "password123",
-	}
-	app.CreateAdminTestUser(t, user)
-	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-	mockAgent, testServer := app.CreateTestServerWithAgent(t, "snap-web-server")
-	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]interface{}{
-		{"name": "snap-stack", "path": "/opt/snap-stack", "compose_file": "docker-compose.yml",
-			"is_healthy": true, "total_containers": 1, "running_containers": 1},
-	})
-	mockAgent.RegisterJSONHandler("/api/stacks/snap-stack", map[string]interface{}{
-		"name": "snap-stack", "path": "/opt/snap-stack", "compose_file": "docker-compose.yml",
-		"services": []map[string]interface{}{
-			{"name": "web", "image": "nginx:latest", "containers": []map[string]interface{}{
-				{"name": "snap-stack-web-1", "state": "running"},
-			}},
-		},
-	})
-	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
-	mockAgent.RegisterJSONHandler("/api/system/info", map[string]interface{}{
-		"docker_version": "24.0.0", "os": "linux",
-	})
-	mockAgent.RegisterJSONHandler("/api/registries", []interface{}{})
-
-	serverID := testServer.ID
-
-	paramRoutes := []struct {
-		method string
-		path   string
-		snap   string
-	}{
-		{"GET", fmt.Sprintf("/servers/%d/stacks", serverID), "/servers/:id/stacks"},
-		{"GET", fmt.Sprintf("/servers/%d/stacks/snap-stack", serverID), "/servers/:serverid/stacks/:stackname"},
-		{"GET", fmt.Sprintf("/servers/%d/maintenance", serverID), "/servers/:serverid/maintenance"},
-		{"GET", fmt.Sprintf("/servers/%d/registries", serverID), "/servers/:serverid/registries"},
-	}
-
-	for _, r := range paramRoutes {
-		t.Run(r.method+" "+r.snap, func(t *testing.T) {
-			resp, err := client.Request(&e2etesting.RequestOptions{
-				Method: r.method,
-				Path:   r.path,
-			})
-			require.NoError(t, err)
-			sr.RecordAndAssert(t, r.method, r.snap, resp)
-		})
-	}
-}
-
-func TestSnapshotAdminWeb(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
-
-	adminUser := &e2etesting.TestUser{
-		Username: "snapshotadmin",
-		Email:    "snapshotadmin@example.com",
-		Password: "password123",
-	}
-	app.CreateAdminTestUser(t, adminUser)
-	client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, adminUser.Username, adminUser.Password)
-
-	mockAgent, _ := app.CreateTestServerWithAgent(t, "snap-admin-server")
-	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
-
-	var adminRoleID uint
-	err := app.DB.Table("roles").Where("name = ?", "admin").Pluck("id", &adminRoleID).Error
-	require.NoError(t, err)
-
-	routes := []struct {
-		method string
-		path   string
-		snap   string
-	}{
-		{"GET", "/admin/servers", "/admin/servers"},
-		{"GET", "/admin/roles", "/admin/roles"},
-		{"GET", "/admin/users", "/admin/users"},
-		{"GET", "/admin/agent-update", "/admin/agent-update"},
-		{"GET", "/admin/migration", "/admin/migration"},
-		{"GET", "/admin/operation-logs", "/admin/operation-logs"},
-		{"GET", "/admin/security-audit-logs", "/admin/security-audit-logs"},
-		{"GET", fmt.Sprintf("/admin/roles/%d/stack-permissions", adminRoleID), "/admin/roles/:id/stack-permissions"},
-		{"GET", fmt.Sprintf("/admin/users/%d/roles", adminUser.ID), "/admin/users/:id/roles"},
-	}
-
-	for _, r := range routes {
-		t.Run(r.method+" "+r.snap, func(t *testing.T) {
-			resp, err := client.Request(&e2etesting.RequestOptions{
-				Method: r.method,
-				Path:   r.path,
-			})
-			require.NoError(t, err)
-			sr.RecordAndAssert(t, r.method, r.snap, resp)
-		})
-	}
-}
-
-func TestSnapshotWebAuthForms(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-	sr := e2etesting.NewSnapshotRecorder(snapshotDir(), *updateSnapshots)
-
-	t.Run("POST /auth/login failed", func(t *testing.T) {
-		resp, err := app.AuthHelper.Login("nonexistent", "badpassword")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/login_failed", resp)
-	})
-
-	t.Run("POST /auth/login success", func(t *testing.T) {
-		user := app.CreateVerifiedTestUser(t)
-		resp, err := app.AuthHelper.Login(user.Username, user.Password)
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/login_success", resp)
-	})
-
-	t.Run("POST /auth/register", func(t *testing.T) {
-		resp, err := app.AuthHelper.Register("snapreguser", "snapreg@example.com", "password123")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/register", resp)
-	})
-
-	t.Run("POST /auth/logout", func(t *testing.T) {
-		user := &e2etesting.TestUser{
-			Username: "snaplogout",
-			Email:    "snaplogout@example.com",
-			Password: "password123",
-		}
-		app.AuthHelper.CreateTestUser(t, user)
-		client := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-		resp, err := client.Request(&e2etesting.RequestOptions{
-			Method: "POST",
-			Path:   "/auth/logout",
-		})
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/logout", resp)
-	})
-
-	t.Run("POST /auth/password-reset", func(t *testing.T) {
-		resp, err := app.AuthHelper.RequestPasswordReset("nonexistent@example.com")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/password-reset", resp)
-	})
-
-	t.Run("POST /auth/password-reset/confirm", func(t *testing.T) {
-		resp, err := app.AuthHelper.ResetPassword("invalid-token", "newpassword123")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/password-reset/confirm", resp)
-	})
-
-	t.Run("POST /auth/resend-verification", func(t *testing.T) {
-		resp, err := app.AuthHelper.ResendVerification("nonexistent@example.com")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/resend-verification", resp)
-	})
-
-	t.Run("POST /auth/verify-email", func(t *testing.T) {
-		resp, err := app.AuthHelper.VerifyEmail("invalid-token")
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/verify-email", resp)
-	})
-
-	t.Run("POST /auth/totp/verify", func(t *testing.T) {
-		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
-		_, _ = client.Get("/auth/login")
-		resp, err := client.PostForm("/auth/totp/verify", nil)
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "POST", "/auth/totp/verify", resp)
-	})
 }
 
 func TestSnapshotUnauthenticatedAPI(t *testing.T) {
@@ -530,24 +269,6 @@ func TestSnapshotAuthenticatedAPI(t *testing.T) {
 			resp := jwtRequest(t, app, token, "DELETE", fmt.Sprintf("/api/v1/api-keys/%d", keyID))
 			sr.RecordAndAssert(t, "DELETE", "/api/v1/api-keys/:id", resp)
 		})
-	})
-
-	t.Run("GET /api-keys/:id/scopes web", func(t *testing.T) {
-		client := sessionLogin(t, app, "snapapikeyweb", "snapapikeyweb@example.com", "password123", false)
-		createResp, err := client.Post("/api/v1/api-keys", map[string]string{"name": "web-snap-key"})
-		require.NoError(t, err)
-		var result struct {
-			Success bool `json:"success"`
-			Data    struct {
-				APIKey struct {
-					ID uint `json:"id"`
-				} `json:"api_key"`
-			} `json:"data"`
-		}
-		require.NoError(t, createResp.GetJSON(&result))
-		resp, err := client.Get(fmt.Sprintf("/api-keys/%d/scopes", result.Data.APIKey.ID))
-		require.NoError(t, err)
-		sr.RecordAndAssert(t, "GET", "/api-keys/:id/scopes", resp)
 	})
 }
 

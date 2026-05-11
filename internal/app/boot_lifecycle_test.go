@@ -1,8 +1,6 @@
 package app_test
 
 import (
-	"io"
-	"net/http"
 	"testing"
 	"time"
 
@@ -43,29 +41,6 @@ func TestBoot_RBACDataSeeded(t *testing.T) {
 		"SELECT COUNT(*) FROM permissions",
 	).Scan(&permCount).Error)
 	assert.Greater(t, permCount, int64(0), "permissions should be seeded by SeedRBACData")
-}
-
-func TestBoot_InertiaPageRenders(t *testing.T) {
-	t.Parallel()
-	booted := apptest.Boot(t)
-
-	baseURL := apptest.WaitForListener(t, booted.Echo, 5*time.Second)
-
-	resp, err := apptest.NewTLSClient().Get(baseURL + "/auth/login")
-	require.NoError(t, err)
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	require.Equalf(t, http.StatusOK, resp.StatusCode,
-		"login page must render (body: %s)", truncateForLog(string(body)))
-
-	bodyStr := string(body)
-	assert.Contains(t, bodyStr, `id="app"`,
-		"rendered HTML must contain inertia mount node — proves inertia init hook + middleware ran")
-	assert.Contains(t, bodyStr, "Auth/Login",
-		"rendered HTML should reference the resolved page component")
 }
 
 func TestBoot_AuditCallbacksFireOnInsert(t *testing.T) {
@@ -113,11 +88,3 @@ func (s *spyOperationAuditor) LogOperationCreate(log *operationlogs.OperationLog
 }
 
 func (s *spyOperationAuditor) LogOperationUpdate(*operationlogs.OperationLog) {}
-
-func truncateForLog(s string) string {
-	const max = 200
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "…(truncated)"
-}

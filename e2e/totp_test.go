@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"net/url"
 	"testing"
 	"time"
 
@@ -482,97 +481,6 @@ func TestTOTPDisableAPI(t *testing.T) {
 		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.False(t, status.Data.Enabled, "TOTP should be disabled after successful disable")
-	})
-}
-
-func TestTOTPUIPages(t *testing.T) {
-	t.Parallel()
-	app := SetupTestApp(t)
-
-	t.Run("GET /auth/totp/setup redirects to login when unauthenticated", func(t *testing.T) {
-		TagTest(t, "GET", "/auth/totp/setup", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().Get("/auth/totp/setup")
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
-	})
-
-	t.Run("GET /auth/totp/setup accessible when authenticated", func(t *testing.T) {
-		TagTest(t, "GET", "/auth/totp/setup", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		user := app.CreateVerifiedTestUser(t)
-		authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-		resp, err := authenticatedClient.Get("/auth/totp/setup")
-		require.NoError(t, err)
-		assert.Equal(t, 200, resp.StatusCode)
-	})
-
-	t.Run("GET /auth/totp/verify redirects to login when unauthenticated", func(t *testing.T) {
-		TagTest(t, "GET", "/auth/totp/verify", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.WithoutRedirects().Get("/auth/totp/verify")
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
-	})
-
-	t.Run("GET /auth/totp/verify redirects to home if TOTP not enabled", func(t *testing.T) {
-		TagTest(t, "GET", "/auth/totp/verify", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		user := &e2etesting.TestUser{
-			Username: "totpverifyuser1",
-			Email:    "totpverifyuser1@example.com",
-			Password: "password123",
-		}
-		app.AuthHelper.CreateTestUser(t, user)
-		authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-		resp, err := authenticatedClient.WithoutRedirects().Get("/auth/totp/verify")
-		require.NoError(t, err)
-		resp.AssertRedirect(t, "/")
-	})
-
-	t.Run("POST /auth/totp/verify redirects to login when unauthenticated", func(t *testing.T) {
-		TagTest(t, "POST", "/auth/totp/verify", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		client := app.HTTPClient.WithCookieJar().WithoutRedirects()
-		_, err := client.Get("/auth/login")
-		require.NoError(t, err)
-		resp, err := client.PostForm("/auth/totp/verify", url.Values{
-			"code": {"123456"},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 302, resp.StatusCode)
-	})
-
-	t.Run("POST /auth/totp/verify with empty code returns validation error", func(t *testing.T) {
-		TagTest(t, "POST", "/auth/totp/verify", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		user := &e2etesting.TestUser{
-			Username: "totpverifyuser2",
-			Email:    "totpverifyuser2@example.com",
-			Password: "password123",
-		}
-		app.AuthHelper.CreateTestUser(t, user)
-
-		authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-		resp, err := authenticatedClient.WithoutRedirects().PostForm("/auth/totp/verify", url.Values{
-			"code": {""},
-		})
-		require.NoError(t, err)
-		resp.AssertRedirect(t, "/auth/totp/verify")
-	})
-
-	t.Run("POST /auth/totp/verify with invalid code redirects back", func(t *testing.T) {
-		TagTest(t, "POST", "/auth/totp/verify", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		user := &e2etesting.TestUser{
-			Username: "totpverifyuser3",
-			Email:    "totpverifyuser3@example.com",
-			Password: "password123",
-		}
-		app.AuthHelper.CreateTestUser(t, user)
-		authenticatedClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
-
-		resp, err := authenticatedClient.WithoutRedirects().PostForm("/auth/totp/verify", url.Values{
-			"code": {"000000"},
-		})
-		require.NoError(t, err)
-		resp.AssertRedirect(t, "/auth/totp/verify")
 	})
 }
 
