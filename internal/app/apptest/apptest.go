@@ -5,7 +5,6 @@ import (
 
 	"berth/internal/app"
 	"berth/internal/pkg/config"
-	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -14,13 +13,12 @@ import (
 )
 
 type Booted struct {
-	Config  *config.Config
-	Logger  *zap.Logger
-	DB      *gorm.DB
-	Echo    *echo.Echo
-	Inertia *inertia.Service
-	Mail    *CapturingMailService
-	Graph   *app.Graph
+	Config *config.Config
+	Logger *zap.Logger
+	DB     *gorm.DB
+	Echo   *echo.Echo
+	Mail   *CapturingMailService
+	Graph  *app.Graph
 }
 
 type Option func(*bootSettings)
@@ -83,12 +81,11 @@ func Boot(t *testing.T, options ...Option) *Booted {
 
 	g := a.Graph()
 	return &Booted{
-		Config:  cfg,
-		Logger:  g.Logger,
-		DB:      g.DB,
-		Echo:    g.Echo,
-		Inertia: g.Inertia,
-		Mail:    mailSvc,
-		Graph:   g,
+		Config: cfg,
+		Logger: g.Logger,
+		DB:     g.DB,
+		Echo:   g.Echo,
+		Mail:   mailSvc,
+		Graph:  g,
 	}
 }

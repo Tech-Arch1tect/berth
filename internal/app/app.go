@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"berth/internal/pkg/config"
-	"berth/internal/platform/inertia"
 	"berth/internal/platform/logging"
 	"berth/internal/platform/ssl"
 
@@ -40,7 +39,6 @@ func NewApp(opts *AppOptions) *App {
 	certFile, keyFile := resolveCertificates(opts)
 	logger := mustNewLogger(cfg)
 	db := mustOpenDatabase(cfg, logger)
-	inertiaSvc := inertia.New(&cfg.Inertia, SessionStoreResolver, logger)
 	e := NewEcho(cfg, logger)
 
 	sslCfg := &SSLConfig{
@@ -49,7 +47,7 @@ func NewApp(opts *AppOptions) *App {
 		KeyFile:  keyFile,
 	}
 
-	graph, err := Build(cfg, logger, db, e, inertiaSvc, sslCfg, opts.Overrides)
+	graph, err := Build(cfg, logger, db, e, sslCfg, opts.Overrides)
 	if err != nil {
 		panic(fmt.Errorf("build app graph: %w", err))
 	}

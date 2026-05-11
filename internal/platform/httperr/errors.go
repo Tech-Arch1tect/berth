@@ -3,15 +3,13 @@ package httperr
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"berth/internal/pkg/response"
-	"berth/internal/platform/inertia"
 
 	"github.com/labstack/echo/v4"
 )
 
-func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
+func SetupErrorHandler(e *echo.Echo) {
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
 		status := http.StatusInternalServerError
 		message := "Internal Server Error"
@@ -19,15 +17,6 @@ func SetupErrorHandler(e *echo.Echo, inertiaSvc *inertia.Service) {
 		if he, ok := err.(*echo.HTTPError); ok {
 			status = he.Code
 			message = fmt.Sprintf("%v", he.Message)
-		}
-
-		accept := c.Request().Header.Get("Accept")
-		if strings.Contains(accept, "text/html") || c.Request().Header.Get("X-Inertia") == "true" {
-			_ = inertiaSvc.Render(c, "Errors/Generic", map[string]any{
-				"code":    status,
-				"message": message,
-			})
-			return
 		}
 
 		_ = response.Err(c, status, codeForStatus(status), message)
