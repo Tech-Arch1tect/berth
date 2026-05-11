@@ -9,7 +9,7 @@
     "data": {},
     "error": {
       "code": "unauthorized",
-      "message": "Authentication required"
+      "message": "Authorization header required"
     },
     "success": false
   }

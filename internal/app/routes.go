@@ -106,7 +106,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(auth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
 	if versionHandler != nil {
 		versionHandler.RegisterAPIRoutes(apiProtected)
@@ -159,7 +159,7 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(auth.RequireHybridAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
 	apiAdmin := apiProtected.Group("/admin")
 

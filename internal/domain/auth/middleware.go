@@ -155,29 +155,3 @@ func GetAPIKeyFromContext(ctx context.Context) *apikey.APIKey {
 	}
 	return nil
 }
-
-func RequireHybridAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			authHeader := c.Request().Header.Get("Authorization")
-
-			if authHeader == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
-			}
-
-			if !strings.HasPrefix(authHeader, "Bearer ") {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
-			}
-
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			if tokenString == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Token required")
-			}
-
-			if strings.HasPrefix(tokenString, apikey.KeyPrefix) {
-				return handleAPIKeyAuth(c, next, apiKeyService, tokenString)
-			}
-			return handleJWTAuth(c, next, jwtService, userProvider, tokenString)
-		}
-	}
-}
