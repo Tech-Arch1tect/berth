@@ -41,7 +41,10 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 		return err
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
@@ -73,7 +76,10 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 		return err
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
@@ -107,7 +113,10 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		return err
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
@@ -180,7 +189,10 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		return err
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
@@ -261,7 +273,10 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		return err
 	}
 
-	userID := session.GetUserIDAsUint(c)
+	userID, err := session.GetCurrentUserID(c)
+	if err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 
 	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)

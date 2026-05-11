@@ -1,15 +1,15 @@
 {
   "method": "POST",
   "path": "/api/v1/servers/:serverid/registries",
-  "status_code": 403,
+  "status_code": 400,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
     "data": {},
     "error": {
-      "code": "forbidden",
-      "message": "Insufficient permissions to manage registry credentials"
+      "code": "bad_request",
+      "message": "registry_url, username, and password are required"
     },
     "success": false
   }
