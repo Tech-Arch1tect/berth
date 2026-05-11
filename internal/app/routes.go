@@ -24,7 +24,6 @@ import (
 	"berth/internal/domain/vulnscan"
 	"berth/internal/domain/websocket"
 	"berth/internal/pkg/config"
-	"berth/internal/pkg/response"
 	"berth/internal/platform/httperr"
 	"berth/internal/platform/middleware/ratelimit"
 
@@ -56,8 +55,6 @@ func registerRoutes(g *Graph) {
 	httperr.SetupErrorHandler(e)
 
 	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
-
-	registerWebUIWebSocketRoutes(e, g.SessionMgr, g.WSHandler, g.OperationsWSHandler)
 
 	if g.AuthAPIHandler == nil || g.JWTSvc == nil {
 		return
@@ -100,37 +97,6 @@ func registerRoutes(g *Graph) {
 		g.RBACMid, g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
 	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
-}
-
-func requireWebSocketAuth() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if !session.IsAuthenticated(c) {
-				return response.Unauthorized(c, "Not authenticated")
-			}
-			if session.IsTOTPEnabled(c) && !session.IsTOTPVerified(c) {
-				return response.Unauthorized(c, "TOTP verification required")
-			}
-			return next(c)
-		}
-	}
-}
-
-func registerWebUIWebSocketRoutes(srv *echo.Echo, sessionManager *session.Manager, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
-	if wsHandler == nil {
-		return
-	}
-
-	wsGroup := srv.Group("/ws")
-	wsUIGroup := wsGroup.Group("/ui")
-	wsUIGroup.Use(session.Middleware(sessionManager))
-	wsUIGroup.Use(requireWebSocketAuth())
-
-	wsHandler.RegisterWebUIRoutes(wsUIGroup)
-
-	if operationsWSHandler != nil {
-		operationsWSHandler.RegisterWebSocketRoutes(wsUIGroup)
-	}
 }
 
 func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler) {
