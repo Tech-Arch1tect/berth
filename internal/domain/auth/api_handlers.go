@@ -144,7 +144,7 @@ func (h *APIHandler) Login(c echo.Context) error {
 	sessionInfo := tokens.SessionInfo{
 		IPAddress:  c.RealIP(),
 		UserAgent:  c.Request().UserAgent(),
-		DeviceInfo: session.GetDeviceInfo(c.Request().UserAgent()),
+		DeviceInfo: GetDeviceInfo(c.Request().UserAgent()),
 	}
 
 	refreshTokenData, err := h.tokens.IssueRefresh(user.ID, sessionInfo)
@@ -435,7 +435,7 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	sessionInfo := tokens.SessionInfo{
 		IPAddress:  c.RealIP(),
 		UserAgent:  c.Request().UserAgent(),
-		DeviceInfo: session.GetDeviceInfo(c.Request().UserAgent()),
+		DeviceInfo: GetDeviceInfo(c.Request().UserAgent()),
 	}
 
 	refreshTokenData, err := h.tokens.IssueRefresh(claims.UserID, sessionInfo)
@@ -656,7 +656,7 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 
 	sessionItems := make([]session.SessionItem, len(sessions))
 	for i, sess := range sessions {
-		deviceInfo := session.GetDeviceInfo(sess.UserAgent)
+		deviceInfo := GetDeviceInfo(sess.UserAgent)
 
 		sessionItems[i] = session.SessionItem{
 			ID:         sess.ID,
@@ -666,7 +666,7 @@ func (h *APIHandler) GetSessions(c echo.Context) error {
 			Current:    sess.Current,
 			IPAddress:  sess.IPAddress,
 			UserAgent:  sess.UserAgent,
-			Location:   session.GetLocationInfo(sess.IPAddress),
+			Location:   GetLocationInfo(sess.IPAddress),
 			Browser:    toString(deviceInfo["browser"]),
 			OS:         toString(deviceInfo["os"]),
 			DeviceType: toString(deviceInfo["device_type"]),
