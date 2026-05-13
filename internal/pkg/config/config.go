@@ -16,12 +16,10 @@ type Config struct {
 	Log          LogConfig          `envPrefix:"LOG_"`
 	Frontend     FrontendConfig     `envPrefix:"FRONTEND_"`
 	Database     DatabaseConfig     `envPrefix:"DATABASE_"`
-	Session      SessionConfig      `envPrefix:"SESSION_"`
 	Auth         AuthConfig         `envPrefix:"AUTH_"`
 	JWT          JWTConfig          `envPrefix:"JWT_"`
 	RefreshToken RefreshTokenConfig `envPrefix:"REFRESH_TOKEN_"`
 	TOTP         TOTPConfig         `envPrefix:"TOTP_"`
-	CSRF         CSRFConfig         `envPrefix:"CSRF_"`
 	RateLimit    RateLimitConfig    `envPrefix:"RATE_LIMIT_"`
 	Mail         MailConfig         `envPrefix:"MAIL_"`
 	Revocation   RevocationConfig   `envPrefix:"JWT_REVOCATION_"`
@@ -57,18 +55,6 @@ type DatabaseConfig struct {
 	AutoMigrate bool   `env:"AUTO_MIGRATE" envDefault:"true"`
 }
 
-type SessionConfig struct {
-	Enabled  bool          `env:"ENABLED" envDefault:"false"`
-	Store    string        `env:"STORE" envDefault:"memory"`
-	Name     string        `env:"NAME" envDefault:"berth-session"`
-	MaxAge   time.Duration `env:"MAX_AGE" envDefault:"24h"`
-	Secure   bool          `env:"SECURE" envDefault:"false"`
-	HttpOnly bool          `env:"HTTP_ONLY" envDefault:"true"`
-	SameSite string        `env:"SAME_SITE" envDefault:"lax"`
-	Path     string        `env:"PATH" envDefault:"/"`
-	Domain   string        `env:"DOMAIN" envDefault:""`
-}
-
 type AuthConfig struct {
 	MinLength                    int           `env:"MIN_LENGTH" envDefault:"8"`
 	RequireUpper                 bool          `env:"REQUIRE_UPPER" envDefault:"true"`
@@ -82,13 +68,6 @@ type AuthConfig struct {
 	EmailVerificationEnabled     bool          `env:"EMAIL_VERIFICATION_ENABLED" envDefault:"false"`
 	EmailVerificationTokenLength int           `env:"EMAIL_VERIFICATION_TOKEN_LENGTH" envDefault:"32"`
 	EmailVerificationExpiry      time.Duration `env:"EMAIL_VERIFICATION_EXPIRY" envDefault:"24h"`
-
-	RememberMeEnabled        bool          `env:"REMEMBER_ME_ENABLED" envDefault:"false"`
-	RememberMeTokenLength    int           `env:"REMEMBER_ME_TOKEN_LENGTH" envDefault:"32"`
-	RememberMeExpiry         time.Duration `env:"REMEMBER_ME_EXPIRY" envDefault:"720h"`
-	RememberMeCookieSecure   bool          `env:"REMEMBER_ME_COOKIE_SECURE" envDefault:"true"`
-	RememberMeCookieSameSite string        `env:"REMEMBER_ME_COOKIE_SAME_SITE" envDefault:"strict"`
-	RememberMeRotateOnUse    bool          `env:"REMEMBER_ME_ROTATE_ON_USE" envDefault:"true"`
 }
 
 type JWTConfig struct {
@@ -111,20 +90,6 @@ type TOTPConfig struct {
 
 type RateLimitConfig struct {
 	Enabled bool `env:"ENABLED" envDefault:"true"`
-}
-
-type CSRFConfig struct {
-	Enabled        bool   `env:"ENABLED" envDefault:"false"`
-	TokenLength    uint8  `env:"TOKEN_LENGTH" envDefault:"32"`
-	TokenLookup    string `env:"TOKEN_LOOKUP" envDefault:"header:X-CSRF-Token"`
-	ContextKey     string `env:"CONTEXT_KEY" envDefault:"csrf"`
-	CookieName     string `env:"COOKIE_NAME" envDefault:"_csrf"`
-	CookieDomain   string `env:"COOKIE_DOMAIN" envDefault:""`
-	CookiePath     string `env:"COOKIE_PATH" envDefault:"/"`
-	CookieMaxAge   int    `env:"COOKIE_MAX_AGE" envDefault:"86400"`
-	CookieSecure   bool   `env:"COOKIE_SECURE" envDefault:"false"`
-	CookieHTTPOnly bool   `env:"COOKIE_HTTP_ONLY" envDefault:"false"`
-	CookieSameSite string `env:"COOKIE_SAME_SITE" envDefault:"default"`
 }
 
 type MailConfig struct {

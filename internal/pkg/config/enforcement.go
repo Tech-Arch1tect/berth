@@ -3,46 +3,21 @@ package config
 import "os"
 
 func EnforceRequiredSettings() {
-	enforceSecuritySettings()
 	enforceDatabaseSettings()
-	enforceSessionSettings()
 	enforceAuthSettings()
 	enforceTOTPSettings()
 	enforceJWTSettings()
 	enforceRefreshTokenSettings()
 	enforceJWTRevocationSettings()
-	enforceCSRFSettings()
-}
-
-func enforceSecuritySettings() {
-	os.Setenv("SESSION_SECURE", "true")
-	os.Setenv("SESSION_HTTP_ONLY", "true")
-	os.Setenv("SESSION_SAME_SITE", "strict")
-
-	os.Setenv("AUTH_REMEMBER_ME_COOKIE_SECURE", "true")
-	os.Setenv("AUTH_REMEMBER_ME_COOKIE_SAME_SITE", "strict")
-
-	os.Setenv("CSRF_COOKIE_SECURE", "true")
-	os.Setenv("CSRF_COOKIE_HTTP_ONLY", "true")
-	os.Setenv("CSRF_COOKIE_SAME_SITE", "strict")
 }
 
 func enforceDatabaseSettings() {
 	os.Setenv("DATABASE_AUTO_MIGRATE", "true")
 }
 
-func enforceSessionSettings() {
-	os.Setenv("SESSION_ENABLED", "true")
-	os.Setenv("SESSION_STORE", "database")
-	os.Setenv("SESSION_NAME", "berth")
-}
-
 func enforceAuthSettings() {
 	os.Setenv("AUTH_EMAIL_VERIFICATION_TOKEN_LENGTH", "32")
 	os.Setenv("AUTH_EMAIL_VERIFICATION_EXPIRY", "24h")
-	os.Setenv("AUTH_REMEMBER_ME_ENABLED", "true")
-	os.Setenv("AUTH_REMEMBER_ME_TOKEN_LENGTH", "32")
-	os.Setenv("AUTH_REMEMBER_ME_ROTATE_ON_USE", "true")
 	os.Setenv("AUTH_PASSWORD_RESET_TOKEN_LENGTH", "32")
 	os.Setenv("AUTH_PASSWORD_RESET_EXPIRY", "1h")
 }
@@ -64,13 +39,4 @@ func enforceRefreshTokenSettings() {
 func enforceJWTRevocationSettings() {
 	os.Setenv("JWT_REVOCATION_ENABLED", "true")
 	os.Setenv("JWT_REVOCATION_STORE", "memory")
-}
-
-func enforceCSRFSettings() {
-	os.Setenv("CSRF_ENABLED", "true")
-	os.Setenv("CSRF_TOKEN_LENGTH", "32")
-	os.Setenv("CSRF_TOKEN_LOOKUP", "header:X-CSRF-Token")
-	os.Setenv("CSRF_COOKIE_NAME", "_csrf")
-	os.Setenv("CSRF_COOKIE_PATH", "/")
-	os.Setenv("CSRF_COOKIE_MAX_AGE", "86400")
 }

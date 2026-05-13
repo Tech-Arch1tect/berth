@@ -78,8 +78,6 @@ type TestApp struct {
 
 func e2eConfigOverrides(cfg *config.Config) {
 	cfg.Mail.TemplatesDir = filepath.Join("..", "testdata", "mail")
-	cfg.Auth.RememberMeCookieSecure = false
-	cfg.Auth.RememberMeCookieSameSite = "lax"
 }
 
 func SetupTestApp(t *testing.T) *TestApp {
