@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -62,13 +61,6 @@ func Record(method, path string, resp *Response) *Snapshot {
 			snap.Body = jsonString(bodyStr)
 		}
 
-	case isInertiaHTML(bodyStr):
-		if props := extractDataPageProps(bodyStr); props != nil {
-			snap.Body = sanitizeJSON(props)
-		} else {
-			snap.Body = jsonString("[inertia html — props extraction failed]")
-		}
-
 	case resp.StatusCode >= 300 && resp.StatusCode < 400:
 		snap.Body = jsonString(bodyStr)
 
@@ -85,8 +77,6 @@ func Record(method, path string, resp *Response) *Snapshot {
 var interestingHeaders = []string{
 	"Content-Type",
 	"Location",
-	"X-Inertia",
-	"X-Inertia-Location",
 }
 
 func snapshotHeaders(resp *Response) map[string]string {
@@ -137,52 +127,6 @@ func (sr *SnapshotRecorder) RecordAndAssert(t *testing.T, method, path string, r
 	t.Helper()
 	snap := Record(method, path, resp)
 	sr.AssertMatch(t, snap)
-}
-
-var inertiaPageScriptRe = regexp.MustCompile(`(?s)<script[^>]*data-page="[^"]*"[^>]*type="application/json"[^>]*>(.*?)</script>`)
-
-func isInertiaHTML(body string) bool {
-	return strings.Contains(body, "data-page=")
-}
-
-func ExtractInertiaPageJSON(body []byte) []byte {
-	m := inertiaPageScriptRe.FindSubmatch(body)
-	if m == nil {
-		return nil
-	}
-	return []byte(strings.ReplaceAll(string(m[1]), `<\/script>`, `</script>`))
-}
-
-func extractDataPageProps(body string) json.RawMessage {
-	raw := ExtractInertiaPageJSON([]byte(body))
-	if raw == nil {
-		return nil
-	}
-
-	var page struct {
-		Component string          `json:"component"`
-		Props     json.RawMessage `json:"props"`
-		URL       string          `json:"url"`
-		Version   string          `json:"version"`
-	}
-	if err := json.Unmarshal(raw, &page); err != nil {
-		return nil
-	}
-
-	wrapper := map[string]interface{}{
-		"component": page.Component,
-		"url":       page.URL,
-	}
-
-	var propsMap map[string]interface{}
-	if err := json.Unmarshal(page.Props, &propsMap); err == nil {
-		wrapper["props"] = sanitizeMap(propsMap)
-	} else {
-		wrapper["props"] = page.Props
-	}
-
-	out, _ := json.Marshal(wrapper)
-	return out
 }
 
 var volatileFieldPatterns = []string{
