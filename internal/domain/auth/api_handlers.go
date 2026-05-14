@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -706,6 +707,9 @@ func (h *APIHandler) RevokeSession(c echo.Context) error {
 
 	err := h.sessionSvc.RevokeSession(userModel.ID, req.SessionID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.Err(c, http.StatusNotFound, "session_not_found", "Session not found")
+		}
 		return response.Err(c, http.StatusInternalServerError, "session_revoke_failed", "Failed to revoke session")
 	}
 
