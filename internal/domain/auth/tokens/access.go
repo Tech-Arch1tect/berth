@@ -76,7 +76,10 @@ func (s *Service) parseToken(tokenString string) (*Claims, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return []byte(s.cfg.JWT.SecretKey), nil
-	})
+	},
+		jwt.WithIssuer(s.cfg.JWT.Issuer),
+		jwt.WithAudience(s.cfg.JWT.Issuer),
+	)
 
 	if err != nil {
 		s.logger.Warn("JWT validation failed", zap.Error(err))
