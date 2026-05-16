@@ -136,6 +136,14 @@ func (s *Service) ValidateAPIKey(key string) (*user.User, *APIKey, error) {
 		return nil, nil, errors.New("API key is inactive or expired")
 	}
 
+	if apiKey.User.ID == 0 {
+		s.logger.Debug("API key owner not found",
+			zap.Uint("api_key_id", apiKey.ID),
+			zap.Uint("user_id", apiKey.UserID),
+		)
+		return nil, nil, errors.New("API key owner not found")
+	}
+
 	now := time.Now()
 	apiKey.LastUsedAt = &now
 	if err := s.db.Model(&apiKey).Update("last_used_at", now).Error; err != nil {

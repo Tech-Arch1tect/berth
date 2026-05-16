@@ -164,6 +164,25 @@ func TestAPIKeyLifecycle_LastUsedAtUpdates(t *testing.T) {
 		"LastUsedAt should be set to ~now")
 }
 
+func TestAPIKeyLifecycle_SoftDeletedUserKeyRejected(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+	user := &e2etesting.TestUser{Username: "apikey-deleted-user", Email: "apikey-deleted-user@example.com", Password: "password123"}
+	app.AuthHelper.CreateTestUser(t, user)
+	session := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
+
+	_, plainKey := createKeyFor(t, session, "deleted-user-key")
+	require.Equal(t, http.StatusOK, authedGet(t, app, "/api/v1/profile", plainKey).StatusCode,
+		"control: the key authenticates while the user exists")
+
+	require.NoError(t, app.DB.Exec("UPDATE users SET deleted_at = ? WHERE id = ?", time.Now(), user.ID).Error)
+
+	TagTest(t, http.MethodGet, "/api/v1/profile", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+	resp := authedGet(t, app, "/api/v1/profile", plainKey)
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode,
+		"a soft-deleted user's API key must no longer authenticate; body=%s", resp.GetString())
+}
+
 func TestAPIKeyScopeGrant_RejectsServerWithoutAccess(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
