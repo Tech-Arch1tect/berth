@@ -14,6 +14,7 @@ var (
 	ErrMalformed        = errors.New("malformed JWT token")
 	ErrInvalidSignature = errors.New("invalid JWT token signature")
 	ErrRevoked          = errors.New("JWT token has been revoked")
+	ErrInvalidTokenType = errors.New("JWT token type not accepted here")
 
 	ErrRefreshNotFound = errors.New("refresh token not found")
 	ErrRefreshExpired  = errors.New("refresh token expired")

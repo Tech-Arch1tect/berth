@@ -49,6 +49,28 @@ func (s *Service) signToken(userID uint, tokenType string, ttl time.Duration) (s
 }
 
 func (s *Service) ValidateAccess(tokenString string) (*Claims, error) {
+	claims, err := s.parseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if claims.TokenType != "" {
+		return nil, ErrInvalidTokenType
+	}
+	return claims, nil
+}
+
+func (s *Service) ValidateTOTPPending(tokenString string) (*Claims, error) {
+	claims, err := s.parseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if claims.TokenType != "totp_pending" {
+		return nil, ErrInvalidTokenType
+	}
+	return claims, nil
+}
+
+func (s *Service) parseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok || t.Method.Alg() != "HS256" {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])

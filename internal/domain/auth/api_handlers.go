@@ -383,13 +383,12 @@ func (h *APIHandler) VerifyTOTP(c echo.Context) error {
 	}
 
 	tokenString := authHeader[7:]
-	claims, err := h.tokens.ValidateAccess(tokenString)
+	claims, err := h.tokens.ValidateTOTPPending(tokenString)
 	if err != nil {
+		if errors.Is(err, tokens.ErrInvalidTokenType) {
+			return response.Err(c, http.StatusUnauthorized, "invalid_token_type", "Invalid token for TOTP verification")
+		}
 		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or expired token")
-	}
-
-	if claims.TokenType != "totp_pending" {
-		return response.Err(c, http.StatusUnauthorized, "invalid_token_type", "Invalid token for TOTP verification")
 	}
 
 	if err := h.totpSvc.VerifyUserCode(claims.UserID, req.Code); err != nil {
