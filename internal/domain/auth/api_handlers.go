@@ -225,6 +225,15 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
+	var user usermodel.User
+	if err := h.db.First(&user, oldToken.UserID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.Err(c, http.StatusUnauthorized, "invalid_token", "Invalid refresh token")
+		}
+		h.logger.Error("failed to load user during token refresh", zap.Error(err))
+		return response.Err(c, http.StatusInternalServerError, "token_refresh_failed", "Failed to refresh token")
+	}
+
 	result, err := h.tokens.RotateRefresh(refreshToken)
 	if err != nil {
 		h.logger.Error("failed to rotate refresh token", zap.Error(err))
@@ -245,19 +254,16 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	var user usermodel.User
-	if err := h.db.First(&user, oldToken.UserID).Error; err == nil {
-		_ = h.auditSvc.LogAPIEvent(
-			security.EventAPITokenRefreshed,
-			&user.ID,
-			user.Username,
-			c.RealIP(),
-			c.Request().UserAgent(),
-			true,
-			"",
-			nil,
-		)
-	}
+	_ = h.auditSvc.LogAPIEvent(
+		security.EventAPITokenRefreshed,
+		&user.ID,
+		user.Username,
+		c.RealIP(),
+		c.Request().UserAgent(),
+		true,
+		"",
+		nil,
+	)
 
 	return response.OK(c, AuthRefreshData{
 		AccessToken:      result.AccessToken,

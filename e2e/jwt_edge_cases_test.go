@@ -5,6 +5,7 @@ import (
 	"berth/internal/domain/session"
 	"berth/internal/pkg/response"
 	"testing"
+	"time"
 
 	e2etesting "berth/e2e/internal/harness"
 
@@ -444,4 +445,21 @@ func TestJWTLoginValidation(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, 200, resp.StatusCode)
 	})
+}
+
+func TestJWTRefreshRejectedForSoftDeletedUser(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	login := apiLogin(t, app, "jwtrefresh_deleted", "jwtrefresh_deleted@example.com", "password123")
+
+	refresh1, status := apiRefresh(t, app, login.Data.RefreshToken)
+	require.Equal(t, 200, status, "control: refresh works while the user exists")
+
+	require.NoError(t, app.DB.Exec("UPDATE users SET deleted_at = ? WHERE id = ?",
+		time.Now(), login.Data.User.ID).Error)
+
+	TagTest(t, "POST", "/api/v1/auth/refresh", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+	_, status = apiRefresh(t, app, refresh1.Data.RefreshToken)
+	assert.Equal(t, 401, status, "a soft-deleted user must not be able to refresh tokens")
 }
