@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tokens "berth/internal/domain/auth/tokens"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -107,15 +108,16 @@ func handleJWTAuth(c echo.Context, next echo.HandlerFunc, jwtService *tokens.Ser
 		return echo.NewHTTPError(http.StatusUnauthorized, "Authentication failed")
 	}
 
-	c.Set(UserIDKey, claims.UserID)
-	c.Set(AuthTypeKey, authTypeJWT)
-
 	if userProvider != nil {
 		user, err := userProvider.GetUser(claims.UserID)
-		if err == nil && user != nil {
-			c.Set("currentUser", user)
+		if err != nil || user == nil {
+			return echo.NewHTTPError(http.StatusUnauthorized, "Authentication failed")
 		}
+		c.Set("currentUser", user)
 	}
+
+	c.Set(UserIDKey, claims.UserID)
+	c.Set(AuthTypeKey, authTypeJWT)
 
 	return next(c)
 }
