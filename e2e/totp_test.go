@@ -8,6 +8,7 @@ import (
 	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
+
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -238,7 +239,7 @@ func TestTOTPEnableAPI(t *testing.T) {
 				"Content-Type":  "application/json",
 			},
 			Body: auth.TOTPEnableRequest{
-				Code: "000000", // Invalid code
+				Code: "000000",
 			},
 		})
 		require.NoError(t, err)
@@ -594,5 +595,69 @@ func TestTOTPStatusForAuthenticatedUser(t *testing.T) {
 		var status response.Response[auth.TOTPStatusData]
 		require.NoError(t, statusResp.GetJSON(&status))
 		assert.True(t, status.Data.Enabled, "TOTP status should show enabled after activation")
+	})
+}
+
+func TestTOTPVerifyCannotBeReplayed(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "totp_replay",
+		Email:    "totp_replay@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+	secret := seedValidTOTPSecret(t, app, user.ID)
+
+	code, err := totp.GenerateCode(secret, time.Now())
+	require.NoError(t, err)
+
+	loginChallenge := func() string {
+		resp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+			Username: user.Username,
+			Password: user.Password,
+		})
+		require.NoError(t, err)
+		require.Equal(t, 200, resp.StatusCode)
+		var ch response.Response[auth.AuthTOTPRequiredData]
+		require.NoError(t, resp.GetJSON(&ch))
+		require.NotEmpty(t, ch.Data.TemporaryToken)
+		return ch.Data.TemporaryToken
+	}
+
+	verifyWith := func(pendingToken string) *e2etesting.Response {
+		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+			Method: "POST",
+			Path:   "/api/v1/auth/totp/verify",
+			Headers: map[string]string{
+				"Authorization": "Bearer " + pendingToken,
+				"Content-Type":  "application/json",
+			},
+			Body: auth.AuthTOTPVerifyRequest{Code: code},
+		})
+		require.NoError(t, err)
+		return resp
+	}
+
+	tokenA := loginChallenge()
+	first := verifyWith(tokenA)
+	require.Equal(t, 200, first.StatusCode, "control: the first verification succeeds; body=%s", first.GetString())
+
+	t.Run("a used code is rejected in a separate fresh login", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategorySecurity, e2etesting.ValueHigh)
+		resp := verifyWith(loginChallenge())
+		assert.Equal(t, 401, resp.StatusCode,
+			"a TOTP code already used must be rejected even via a brand-new login and pending token; body=%s", resp.GetString())
+		var errResp response.ErrorResponseBody
+		require.NoError(t, resp.GetJSON(&errResp))
+		assert.Equal(t, "code_already_used", errResp.Error.Code)
+	})
+
+	t.Run("replaying the original verification request is rejected", func(t *testing.T) {
+		TagTest(t, "POST", "/api/v1/auth/totp/verify", e2etesting.CategorySecurity, e2etesting.ValueMedium)
+		resp := verifyWith(tokenA)
+		assert.Equal(t, 401, resp.StatusCode,
+			"replaying the same pending token + code must be rejected; body=%s", resp.GetString())
 	})
 }

@@ -9,6 +9,7 @@ import (
 	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
+
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -315,4 +316,34 @@ func TestAPIRefreshBodyFlowRegression(t *testing.T) {
 	require.NoError(t, refreshResp.GetJSON(&refresh))
 	assert.NotEmpty(t, refresh.Data.AccessToken)
 	assert.NotEmpty(t, refresh.Data.RefreshToken)
+}
+
+func TestRefreshCookieIgnoredOnDataEndpoint(t *testing.T) {
+	t.Parallel()
+	app := SetupTestApp(t)
+
+	user := &e2etesting.TestUser{
+		Username: "refresh_cookie_scope",
+		Email:    "refresh_cookie_scope@example.com",
+		Password: "password123",
+	}
+	app.AuthHelper.CreateTestUser(t, user)
+
+	loginResp, err := app.HTTPClient.Post("/api/v1/auth/login", auth.AuthLoginRequest{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 200, loginResp.StatusCode)
+	cookie := requireRefreshCookie(t, loginResp)
+
+	TagTest(t, "GET", "/api/v1/profile", e2etesting.CategorySecurity, e2etesting.ValueMedium)
+	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
+		Method:  http.MethodGet,
+		Path:    "/api/v1/profile",
+		Cookies: []*http.Cookie{{Name: refreshCookieName, Value: cookie.Value}},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode,
+		"a data endpoint must require a Bearer token and ignore the refresh cookie; body=%s", resp.GetString())
 }
