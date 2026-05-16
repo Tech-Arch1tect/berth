@@ -127,23 +127,10 @@ export class AuthHelpers {
   }
 
   async loginDirectly(user: Pick<TestUser, 'username' | 'password'>): Promise<void> {
-    const showLogin = await this.page.request.get('/auth/login');
-    expect(showLogin.ok(), 'GET /auth/login').toBeTruthy();
-
-    const cookies = await this.page.context().cookies();
-    const csrf = cookies.find((c) => c.name === '_csrf');
-    if (!csrf) throw new Error('_csrf cookie not present after GET /auth/login');
-
-    const res = await this.page.request.post('/auth/login', {
-      headers: { 'X-CSRF-Token': csrf.value },
-      form: {
-        username: user.username,
-        password: user.password,
-      },
-      maxRedirects: 0,
+    const res = await this.page.request.post('/api/v1/auth/login', {
+      data: { username: user.username, password: user.password },
     });
-    expect([302, 303]).toContain(res.status());
-    expect(res.headers()['location']).not.toContain('/auth/login');
+    expect(res.status(), 'POST /api/v1/auth/login').toBe(200);
   }
 }
 
@@ -181,13 +168,8 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         DATABASE_DRIVER: 'sqlite',
         DATABASE_DSN: join(workerDir, 'berth-e2e.db'),
         DATABASE_AUTO_MIGRATE: 'true',
-        INERTIA_DEVELOPMENT: 'false',
-        INERTIA_ROOT_VIEW: 'app.html',
+        FRONTEND_DEVELOPMENT: 'false',
         APP_URL: baseURL,
-        SESSION_ENABLED: 'true',
-        SESSION_NAME: `berth_e2e_session_${workerInfo.workerIndex}`,
-        SESSION_SECURE: 'false',
-        CSRF_ENABLED: 'true',
         RATE_LIMIT_ENABLED: 'false',
         LOG_LEVEL: 'fatal',
         LOG_FORMAT: 'json',
