@@ -32,6 +32,12 @@ func TestMatches(t *testing.T) {
 		{"mystack", "MYSTACK", true},
 		{"Prod-Web", "prod-*", true},
 
+		{"a?b", "a?b", true},
+		{"axb", "a?b", false},
+		{"stack[1]", "stack[1]", true},
+		{"stack[1]", "stack[2]", false},
+		{"stack[1]", "stack*", true},
+
 		{"", "", true},
 		{"", "notempty", false},
 		{"notempty", "", false},
