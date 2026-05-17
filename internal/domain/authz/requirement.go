@@ -8,6 +8,7 @@ const (
 	KindServer
 	KindStack
 	KindAdmin
+	KindAPIKeyScope
 )
 
 type Requirement struct {

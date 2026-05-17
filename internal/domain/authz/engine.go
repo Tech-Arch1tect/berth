@@ -48,6 +48,8 @@ func (e *Engine) evaluate(p Principal, r Requirement) (bool, error) {
 		return e.evalServer(p, r)
 	case KindStack:
 		return e.evalStack(p, r)
+	case KindAPIKeyScope:
+		return e.evalAPIKeyScope(p, r)
 	default:
 		return false, fmt.Errorf("authz: unknown requirement kind %d", r.Kind)
 	}
@@ -84,6 +86,18 @@ func checkAPIKeyHasAdminScope(key *apikey.APIKey, permName string) bool {
 		}
 	}
 	return false
+}
+
+func (e *Engine) evalAPIKeyScope(p Principal, r Requirement) (bool, error) {
+	if p.APIKey == nil {
+		return true, nil
+	}
+	for _, scope := range p.APIKey.Scopes {
+		if scope.Permission.Name == r.Permission {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (e *Engine) evalServerAccess(p Principal, r Requirement) (bool, error) {

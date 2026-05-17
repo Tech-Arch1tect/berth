@@ -474,6 +474,50 @@ func TestAuthorize_MultipleRequirements(t *testing.T) {
 	})
 }
 
+func TestAuthorize_KindAPIKeyScope(t *testing.T) {
+	f := seedFixture(t)
+	e := NewEngine(f.db, zap.NewNop())
+
+	req := Requirement{Kind: KindAPIKeyScope, Permission: "servers.read"}
+
+	t.Run("JWT principal (no API key) is allowed", func(t *testing.T) {
+		p := principalFor(t, f, f.userID)
+		ok, err := e.Authorize(p, req)
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
+
+	t.Run("API key principal with matching scope is allowed", func(t *testing.T) {
+		p := principalFor(t, f, f.userID)
+		p = withAPIKey(p, scopeForPerm("servers.read", nil))
+		ok, err := e.Authorize(p, req)
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
+
+	t.Run("API key principal with only unrelated scope is denied", func(t *testing.T) {
+		p := principalFor(t, f, f.userID)
+		p = withAPIKey(p, scopeForPerm("logs.operations.read", nil))
+		ok, err := e.Authorize(p, req)
+		require.NoError(t, err)
+		assert.False(t, ok)
+	})
+
+	t.Run("API key principal with no scopes is denied", func(t *testing.T) {
+		p := principalFor(t, f, f.userID)
+		p = withAPIKey(p)
+		ok, err := e.Authorize(p, req)
+		require.NoError(t, err)
+		assert.False(t, ok)
+	})
+
+	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(SystemPrincipal, req)
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
+}
+
 func TestAuthorize_UnknownKind(t *testing.T) {
 	f := seedFixture(t)
 	e := NewEngine(f.db, zap.NewNop())
