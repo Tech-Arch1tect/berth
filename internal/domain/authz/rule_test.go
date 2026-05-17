@@ -72,18 +72,34 @@ func TestAuthenticated_resolves(t *testing.T) {
 	}
 }
 
-func TestListScoped_flags(t *testing.T) {
-	r := ListScoped()
+func TestWithListScope_setsFlag(t *testing.T) {
+	r := Authenticated().WithListScope()
 	if !r.listScope {
 		t.Fatal("listScope flag not set")
 	}
 }
 
-func TestListScoped_resolves(t *testing.T) {
+func TestWithListScope_composesWithServer(t *testing.T) {
+	c := newParamCtx(t, []string{"serverid"}, []string{"5"})
+	r := Server("stacks.read").WithListScope()
+	if !r.listScope {
+		t.Fatal("listScope flag not set on Server rule")
+	}
+	reqs := resolve(t, r, c)
+	if len(reqs) != 1 || reqs[0].Kind != KindServer {
+		t.Fatalf("WithListScope on Server: want [KindServer], got %v", reqs)
+	}
+	if reqs[0].Permission != "stacks.read" {
+		t.Errorf("WithListScope on Server: permission got %q, want %q", reqs[0].Permission, "stacks.read")
+	}
+}
+
+func TestWithListScope_composesWithAuthenticated(t *testing.T) {
 	c := newParamCtx(t, nil, nil)
-	reqs := resolve(t, ListScoped(), c)
+	r := Authenticated().WithListScope()
+	reqs := resolve(t, r, c)
 	if len(reqs) != 1 || reqs[0].Kind != KindAuthenticated {
-		t.Fatalf("ListScoped: want [KindAuthenticated], got %v", reqs)
+		t.Fatalf("WithListScope on Authenticated: want [KindAuthenticated], got %v", reqs)
 	}
 }
 

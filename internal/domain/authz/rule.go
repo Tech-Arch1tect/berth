@@ -16,7 +16,6 @@ const (
 	rulePublic ruleKind = iota
 	ruleAuthenticated
 	ruleAPIKeyDenied
-	ruleListScoped
 	ruleStack
 	ruleServer
 	ruleServerAccess
@@ -55,7 +54,7 @@ func (r Rule) resolveBase(c echo.Context) ([]Requirement, error) {
 	switch r.kind {
 	case rulePublic:
 		return nil, nil
-	case ruleAuthenticated, ruleAPIKeyDenied, ruleListScoped:
+	case ruleAuthenticated, ruleAPIKeyDenied:
 		return []Requirement{{Kind: KindAuthenticated}}, nil
 	case ruleStack:
 		id, stack, err := r.parseServerIDAndStack(c)
@@ -114,8 +113,7 @@ func Authenticated() Rule {
 	return newRule(ruleAuthenticated)
 }
 
-func ListScoped() Rule {
-	r := newRule(ruleListScoped)
+func (r Rule) WithListScope() Rule {
 	r.listScope = true
 	return r
 }

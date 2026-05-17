@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/tokens"
+	"berth/internal/domain/authz"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 )
 
 func newRateLimit(cfg *config.Config, rlc ratelimit.Config) echo.MiddlewareFunc {
@@ -79,9 +81,11 @@ func registerRoutes(g *Graph) {
 		KeyFunc:   ratelimit.KeyByIP,
 	})
 
+	authzEngine := authz.NewEngine(g.DB, g.Logger)
+
 	registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler)
-	registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
-		g.RBACMid, g.AuthAPIHandler, g.ServerUserAPIHandler,
+	stackRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+		g.RBACMid, g.AuthAPIHandler, g.ServerUserAPIHandler, authzEngine,
 		g.StackAPIHandler, g.FilesAPIHandler, g.LogsHandler, g.OperationsHandler,
 		g.OperationLogsHandler, g.MaintAPIHandler, g.VulnscanHandler,
 		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
@@ -89,6 +93,10 @@ func registerRoutes(g *Graph) {
 		g.RBACMid, g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
 	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
+
+	if err := authz.AuditRoutes(e, stackRegistrar); err != nil {
+		g.Logger.Warn("authz audit: unguarded routes detected", zap.Error(err))
+	}
 
 	if g.SPASvc != nil {
 		e.GET("/*", g.SPASvc.Render)
@@ -103,14 +111,16 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *auth.APIHandler, serverUserAPIHandler *server.UserAPIHandler,
-	stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
+	authzEngine *authz.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
-	versionHandler *version.Handler, registryAPIHandler *registry.APIHandler) {
+	versionHandler *version.Handler, registryAPIHandler *registry.APIHandler) *authz.Registrar {
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+
+	stackRegistrar := authz.NewRegistrar(apiProtected, authzEngine, "/api/v1")
 
 	if versionHandler != nil {
 		versionHandler.RegisterAPIRoutes(apiProtected)
@@ -122,7 +132,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
 	}
 	if stackAPIHandler != nil {
-		stackAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
+		stackAPIHandler.RegisterProtectedAPIRoutes(stackRegistrar)
 	}
 	if vulnscanHandler != nil {
 		vulnscanHandler.RegisterProtectedAPIRoutes(apiProtected)
@@ -151,6 +161,8 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	if registryAPIHandler != nil {
 		registryAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
+
+	return stackRegistrar
 }
 
 func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,

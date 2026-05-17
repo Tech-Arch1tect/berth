@@ -86,7 +86,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 
-		assert.Equal(t, 500, resp.StatusCode, "API key without scopes should be denied access to server")
+		assert.Equal(t, 403, resp.StatusCode, "API key without scopes should be denied access to server")
 	})
 
 	t.Run("API key with correct scope can access matching stacks", func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 
-		assert.Equal(t, 500, resp.StatusCode, "API key scoped to different server should be denied access")
+		assert.Equal(t, 403, resp.StatusCode, "API key scoped to different server should be denied access")
 	})
 
 	t.Run("API key with read scope cannot perform manage operations", func(t *testing.T) {
@@ -321,7 +321,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		assert.Equal(t, 500, resp.StatusCode, "Valid API key without matching scope should be denied")
+		assert.Equal(t, 403, resp.StatusCode, "Valid API key without matching scope should be denied")
 	})
 
 	t.Run("Missing Authorization header returns 401", func(t *testing.T) {

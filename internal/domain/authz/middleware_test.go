@@ -180,7 +180,7 @@ func TestMiddleware_ListScoped_PopulatesScopeSet(t *testing.T) {
 
 	var capturedScope ScopeSet
 	var scopeOK bool
-	mw := Middleware(engine, ListScoped())
+	mw := Middleware(engine, Authenticated().WithListScope())
 	err := mw(func(c echo.Context) error {
 		capturedScope, scopeOK = GetScopeSet(c)
 		return nil

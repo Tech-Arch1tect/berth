@@ -271,6 +271,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		Response(http.StatusOK, response.Response[stack.ListStacksData]{}, "List of stacks").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
