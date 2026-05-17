@@ -23,8 +23,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { useGetApiV1Version } from '../../api/generated/system/system';
 import { useAuth } from '../auth/auth-context';
+import { userIsAdmin } from '../auth/roles';
 import { useDarkMode } from '../hooks/useDarkMode';
-import { Toaster } from '../utils/toast';
 import { GlobalOperationsTracker } from '../../features/operations/components/GlobalOperationsTracker';
 import { useTerminalPanel } from '../../features/terminal/contexts/TerminalPanelContext';
 import { theme } from '../theme';
@@ -54,7 +54,7 @@ export default function Layout({ children }: LayoutProps) {
     StorageManager.sidebar.setCollapsed(newValue);
   };
 
-  const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
+  const isAdmin = userIsAdmin(user);
 
   const navigation = [
     { name: 'Dashboard', href: '/' as const, icon: HomeIcon },
@@ -119,14 +119,6 @@ export default function Layout({ children }: LayoutProps) {
             <div className={theme.cards.auth}>{children}</div>
           </div>
         </div>
-        <Toaster
-          position="top-center"
-          gutter={8}
-          toastOptions={{
-            duration: 4000,
-            className: theme.toast.container,
-          }}
-        />
       </div>
     );
   }
@@ -358,13 +350,6 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       <GlobalOperationsTracker />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          className: theme.toast.container,
-        }}
-      />
     </div>
   );
 }
