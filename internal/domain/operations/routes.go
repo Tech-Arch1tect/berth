@@ -1,9 +1,13 @@
 package operations
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
 
-func (h *Handler) RegisterProtectedAPIRoutes(g *echo.Group) {
-	g.POST("/servers/:serverid/stacks/:stackname/operations", h.StartOperation)
+	"github.com/labstack/echo/v4"
+)
+
+func (h *Handler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	reg.POST("/servers/:serverid/stacks/:stackname/operations", h.StartOperation, authz.Resolved(operationRequirement))
 }
 
 func (h *WebSocketHandler) RegisterWebSocketRoutes(g *echo.Group) {

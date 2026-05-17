@@ -144,7 +144,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		logsHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if operationsHandler != nil {
-		operationsHandler.RegisterProtectedAPIRoutes(apiProtected)
+		operationsHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if operationLogsHandler != nil {
 		operationLogsHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
