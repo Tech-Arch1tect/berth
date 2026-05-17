@@ -1,8 +1,11 @@
 package logs
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
+	"berth/internal/domain/rbac"
+)
 
-func (h *Handler) RegisterProtectedAPIRoutes(g *echo.Group) {
-	g.GET("/servers/:serverid/stacks/:stackname/logs", h.GetStackLogs)
-	g.GET("/servers/:serverid/stacks/:stackname/containers/:containerName/logs", h.GetContainerLogs)
+func (h *Handler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/servers/:serverid/stacks/:stackname/logs", h.GetStackLogs, authz.Stack(rbac.PermLogsRead))
+	reg.GET("/servers/:serverid/stacks/:stackname/containers/:containerName/logs", h.GetContainerLogs, authz.Stack(rbac.PermLogsRead))
 }

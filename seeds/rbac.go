@@ -1,12 +1,22 @@
 package seeds
 
 import (
+	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
 	"berth/internal/domain/user"
 
 	"gorm.io/gorm"
 )
+
+func RBACModels() []any {
+	return []any{
+		&user.User{}, &user.Role{}, &user.Permission{}, &user.ServerRoleStackPermission{},
+		&server.Server{},
+		&apikey.APIKey{}, &apikey.APIKeyScope{},
+		&SeedTracker{},
+	}
+}
 
 func SeedRBACData(db *gorm.DB) error {
 	permissions := []user.Permission{

@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"berth/internal/app/dbschema"
 	"berth/internal/domain/apikey"
 	usermodel "berth/internal/domain/user"
 	"berth/seeds"
@@ -24,7 +23,7 @@ func testDB(t *testing.T) *gorm.DB {
 	dsn := fmt.Sprintf("file:authz_test_%d?mode=memory&cache=shared", dbCounter.Add(1))
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
-	err = db.AutoMigrate(dbschema.Models()...)
+	err = db.AutoMigrate(seeds.RBACModels()...)
 	require.NoError(t, err)
 	require.NoError(t, seeds.SeedRBACData(db))
 	return db
