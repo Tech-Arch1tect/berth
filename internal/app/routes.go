@@ -84,7 +84,7 @@ func registerRoutes(g *Graph) {
 	authzEngine := authz.NewEngine(g.DB, g.Logger)
 
 	registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler)
-	stackRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
 		g.RBACMid, g.AuthAPIHandler, g.ServerUserAPIHandler, authzEngine,
 		g.StackAPIHandler, g.FilesAPIHandler, g.LogsHandler, g.OperationsHandler,
 		g.OperationLogsHandler, g.MaintAPIHandler, g.VulnscanHandler,
@@ -94,7 +94,7 @@ func registerRoutes(g *Graph) {
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler)
 	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
 
-	if err := authz.AuditRoutes(e, stackRegistrar); err != nil {
+	if err := authz.AuditRoutes(e, protectedRegistrar); err != nil {
 		g.Logger.Warn("authz audit: unguarded routes detected", zap.Error(err))
 	}
 
@@ -120,7 +120,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
-	stackRegistrar := authz.NewRegistrar(apiProtected, authzEngine, "/api/v1")
+	protectedRegistrar := authz.NewRegistrar(apiProtected, authzEngine, "/api/v1")
 
 	if versionHandler != nil {
 		versionHandler.RegisterAPIRoutes(apiProtected)
@@ -132,7 +132,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
 	}
 	if stackAPIHandler != nil {
-		stackAPIHandler.RegisterProtectedAPIRoutes(stackRegistrar)
+		stackAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if vulnscanHandler != nil {
 		vulnscanHandler.RegisterProtectedAPIRoutes(apiProtected)
@@ -162,7 +162,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		registryAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
 	}
 
-	return stackRegistrar
+	return protectedRegistrar
 }
 
 func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,

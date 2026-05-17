@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"berth/internal/app/dbschema"
 	"berth/internal/pkg/config"
 	"berth/internal/platform/logging"
 	"berth/internal/platform/ssl"
@@ -38,7 +39,7 @@ func NewApp(opts *AppOptions) *App {
 	cfg := resolveConfig(opts)
 	certFile, keyFile := resolveCertificates(opts)
 	logger := mustNewLogger(cfg)
-	db := mustOpenDatabase(cfg, logger)
+	db := mustOpenDatabase(cfg, logger, dbschema.Models()...)
 	e := NewEcho(cfg, logger)
 
 	sslCfg := &SSLConfig{
@@ -141,8 +142,8 @@ func mustNewLogger(cfg *config.Config) *zap.Logger {
 	return logger
 }
 
-func mustOpenDatabase(cfg *config.Config, logger *zap.Logger) *gorm.DB {
-	db, err := OpenDatabase(cfg, logger, DatabaseModels()...)
+func mustOpenDatabase(cfg *config.Config, logger *zap.Logger, models ...any) *gorm.DB {
+	db, err := OpenDatabase(cfg, logger, models...)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize database: %w", err))
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"berth/internal/app"
+	"berth/internal/app/dbschema"
 	"berth/internal/domain/auth"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/setup"
@@ -37,7 +38,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 	defer func() { _ = logger.Sync() }()
 
-	db, err := app.OpenDatabase(cfg, logger, app.DatabaseModels()...)
+	db, err := app.OpenDatabase(cfg, logger, dbschema.Models()...)
 	if err != nil {
 		fmt.Fprintf(stderr, "open database: %v\n", err)
 		return 1

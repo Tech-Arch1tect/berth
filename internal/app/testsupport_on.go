@@ -3,11 +3,12 @@
 package app
 
 import (
+	"berth/internal/app/dbschema"
 	"berth/internal/domain/testsupport"
 )
 
 func wireTestSupport(g *Graph) error {
-	models := testsupport.DatabaseModels(DatabaseModels())
+	models := testsupport.DatabaseModels(dbschema.Models())
 
 	svc := testsupport.NewService(g.DB, g.AuthSvc, g.RBACSvc, g.Crypto, models, nil, g.Logger)
 	h := testsupport.NewHandler(svc)

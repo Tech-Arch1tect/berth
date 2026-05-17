@@ -7,6 +7,7 @@ import (
 
 	"berth/internal/app"
 	"berth/internal/app/apptest"
+	"berth/internal/app/dbschema"
 	"berth/internal/domain/auth"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/setup"
@@ -24,7 +25,7 @@ func buildTestEnv(t *testing.T) (*config.Config, *gorm.DB, *zap.Logger) {
 	t.Helper()
 	cfg := apptest.BuildConfig(t)
 	logger := zap.NewNop()
-	db, err := app.OpenDatabase(cfg, logger, app.DatabaseModels()...)
+	db, err := app.OpenDatabase(cfg, logger, dbschema.Models()...)
 	require.NoError(t, err)
 	require.NoError(t, seeds.SeedRBACData(db), "RBAC seed mirrors the seeding Run does after OpenDatabase")
 	return cfg, db, logger
