@@ -1,0 +1,250 @@
+package authz
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"berth/internal/domain/apikey"
+	"berth/internal/domain/auth"
+	usermodel "berth/internal/domain/user"
+
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+)
+
+func newMiddlewareCtx(t *testing.T, body io.Reader) echo.Context {
+	t.Helper()
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/test", body)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return e.NewContext(req, httptest.NewRecorder())
+}
+
+func setJWTPrincipal(c echo.Context, u usermodel.User) {
+	c.Set(auth.UserIDKey, u.ID)
+	c.Set("currentUser", u)
+}
+
+func setAPIKeyPrincipal(c echo.Context, u usermodel.User, key *apikey.APIKey) {
+	c.Set(auth.UserIDKey, u.ID)
+	c.Set("currentUser", u)
+	c.Set(auth.APIKeyKey, key)
+}
+
+func runMiddleware(t *testing.T, engine *Engine, rule Rule, c echo.Context) (handlerRan bool, err error) {
+	t.Helper()
+	mw := Middleware(engine, rule)
+	err = mw(func(_ echo.Context) error {
+		handlerRan = true
+		return nil
+	})(c)
+	return handlerRan, err
+}
+
+func httpStatus(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+	if he, ok := err.(*echo.HTTPError); ok {
+		return he.Code
+	}
+	return http.StatusInternalServerError
+}
+
+func TestMiddleware_PublicRule(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	c := newMiddlewareCtx(t, nil)
+	ran, err := runMiddleware(t, engine, Public(), c)
+	require.NoError(t, err)
+	assert.True(t, ran, "handler must run for public rule even with no principal")
+}
+
+func TestMiddleware_NoPrincipal_Returns401(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	c := newMiddlewareCtx(t, nil)
+	ran, err := runMiddleware(t, engine, Authenticated(), c)
+	assert.False(t, ran)
+	assert.Equal(t, http.StatusUnauthorized, httpStatus(err))
+}
+
+func TestMiddleware_APIKeyDenied_WithAPIKey_Returns403(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+	key := &apikey.APIKey{Scopes: []apikey.APIKeyScope{scopeForPerm(testPermName, nil)}}
+
+	c := newMiddlewareCtx(t, nil)
+	setAPIKeyPrincipal(c, u, key)
+
+	ran, err := runMiddleware(t, engine, APIKeyDenied(), c)
+	assert.False(t, ran)
+	assert.Equal(t, http.StatusForbidden, httpStatus(err))
+}
+
+func TestMiddleware_APIKeyDenied_WithJWT_Passes(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+
+	c := newMiddlewareCtx(t, nil)
+	setJWTPrincipal(c, u)
+
+	ran, err := runMiddleware(t, engine, APIKeyDenied(), c)
+	require.NoError(t, err)
+	assert.True(t, ran)
+}
+
+func TestMiddleware_StackPerm_WithoutPerm_Returns403(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.noRoleUserID).Error)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+	c.SetParamNames("serverid", "stackname")
+	c.SetParamValues(fmt.Sprintf("%d", f.serverID), testStackName)
+	setJWTPrincipal(c, u)
+
+	ran, err := runMiddleware(t, engine, Stack(testPermName), c)
+	assert.False(t, ran)
+	assert.Equal(t, http.StatusForbidden, httpStatus(err))
+}
+
+func TestMiddleware_StackPerm_WithPerm_Passes(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+	c.SetParamNames("serverid", "stackname")
+	c.SetParamValues(fmt.Sprintf("%d", f.serverID), testStackName)
+	setJWTPrincipal(c, u)
+
+	ran, err := runMiddleware(t, engine, Stack(testPermName), c)
+	require.NoError(t, err)
+	assert.True(t, ran)
+}
+
+func TestMiddleware_APIKeyOutOfScope_Returns403(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+	key := &apikey.APIKey{Scopes: []apikey.APIKeyScope{scopeForPerm("unrelated.perm", nil)}}
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+	c.SetParamNames("serverid", "stackname")
+	c.SetParamValues(fmt.Sprintf("%d", f.serverID), testStackName)
+	setAPIKeyPrincipal(c, u, key)
+
+	ran, err := runMiddleware(t, engine, Stack(testPermName), c)
+	assert.False(t, ran)
+	assert.Equal(t, http.StatusForbidden, httpStatus(err))
+}
+
+func TestMiddleware_ListScoped_PopulatesScopeSet(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+
+	c := newMiddlewareCtx(t, nil)
+	setJWTPrincipal(c, u)
+
+	var capturedScope ScopeSet
+	var scopeOK bool
+	mw := Middleware(engine, ListScoped())
+	err := mw(func(c echo.Context) error {
+		capturedScope, scopeOK = GetScopeSet(c)
+		return nil
+	})(c)
+	require.NoError(t, err)
+	assert.True(t, scopeOK, "ScopeSet must be stored in context")
+	assert.True(t, capturedScope.AllowsServer(f.serverID))
+}
+
+func TestMiddleware_ResolvedRule_BuffersBody(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+
+	bodyContent := `{"action":"deploy"}`
+	c := newMiddlewareCtx(t, strings.NewReader(bodyContent))
+	setJWTPrincipal(c, u)
+
+	resolverRead := ""
+	handlerRead := ""
+
+	rule := Resolved(func(c echo.Context) ([]Requirement, error) {
+		buf, err := io.ReadAll(c.Request().Body)
+		if err != nil {
+			return nil, err
+		}
+		resolverRead = string(buf)
+		return []Requirement{{Kind: KindAuthenticated}}, nil
+	})
+
+	mw := Middleware(engine, rule)
+	err := mw(func(c echo.Context) error {
+		buf, err := io.ReadAll(c.Request().Body)
+		if err != nil {
+			return err
+		}
+		handlerRead = string(buf)
+		return nil
+	})(c)
+	require.NoError(t, err)
+	assert.Equal(t, bodyContent, resolverRead, "resolver must be able to read the body")
+	assert.Equal(t, bodyContent, handlerRead, "handler must be able to read the body after resolver")
+}
+
+func TestMiddleware_ErrorMessageIsPlainString(t *testing.T) {
+	f := seedFixture(t)
+	engine := NewEngine(f.db, zap.NewNop())
+
+	c := newMiddlewareCtx(t, nil)
+	_, err := runMiddleware(t, engine, Authenticated(), c)
+	require.Error(t, err)
+	he, ok := err.(*echo.HTTPError)
+	require.True(t, ok)
+	_, isString := he.Message.(string)
+	assert.True(t, isString, "HTTPError message must be a plain string, got %T", he.Message)
+}
+
+func TestGetScopeSet_AbsentReturnsNotOK(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+
+	_, ok := GetScopeSet(c)
+	assert.False(t, ok)
+}
