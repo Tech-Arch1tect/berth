@@ -126,11 +126,13 @@ export class AuthHelpers {
     ]);
   }
 
-  async loginDirectly(user: Pick<TestUser, 'username' | 'password'>): Promise<void> {
+  async loginDirectly(user: Pick<TestUser, 'username' | 'password'>): Promise<string> {
     const res = await this.page.request.post('/api/v1/auth/login', {
       data: { username: user.username, password: user.password },
     });
     expect(res.status(), 'POST /api/v1/auth/login').toBe(200);
+    const body = (await res.json()) as { data: { access_token: string } };
+    return body.data.access_token;
   }
 }
 

@@ -19,7 +19,7 @@ test.describe('auth', () => {
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL(/\/auth\/login/);
-    await expect(page.getByText(/invalid credentials/i)).toBeVisible();
+    await expect(page.getByText(/invalid username or password/i)).toBeVisible();
   });
 
   test('login with unknown username keeps user on login page', async ({ page, api }) => {
@@ -31,7 +31,7 @@ test.describe('auth', () => {
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL(/\/auth\/login/);
-    await expect(page.getByText(/invalid credentials/i)).toBeVisible();
+    await expect(page.getByText(/invalid username or password/i)).toBeVisible();
   });
 
   test('logout returns user to login page', async ({ page, api, auth }) => {

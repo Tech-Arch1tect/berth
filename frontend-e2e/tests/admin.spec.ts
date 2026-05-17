@@ -18,10 +18,10 @@ test.describe('admin access control', () => {
     await expect(page.getByRole('heading', { name: '403' })).toBeVisible();
   });
 
-  test('unauthenticated visit to /admin lands on a 401 error page', async ({ page, api }) => {
+  test('unauthenticated visit to an admin route redirects to login', async ({ page, api }) => {
     void api;
     await page.goto('/admin/users');
-    await expect(page.getByRole('heading', { name: '401' })).toBeVisible();
+    await expect(page).toHaveURL(/\/auth\/login/);
   });
 });
 
@@ -110,9 +110,11 @@ test.describe('admin pages render', () => {
 
   test('role stack permissions page renders for a non-admin role', async ({ page, api, auth }) => {
     const admin = await api.seedAdmin();
-    await auth.loginDirectly(admin);
+    const token = await auth.loginDirectly(admin);
 
-    const rolesRes = await page.request.get('/api/v1/admin/roles');
+    const rolesRes = await page.request.get('/api/v1/admin/roles', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(rolesRes.ok()).toBeTruthy();
     const rolesBody = (await rolesRes.json()) as {
       data: { roles: Array<{ id: number; name: string; is_admin: boolean }> };

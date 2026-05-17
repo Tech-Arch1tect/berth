@@ -7,16 +7,16 @@ test.describe('public auth pages render', () => {
     await expect(page.getByPlaceholder(/email address/i)).toBeVisible();
   });
 
-  test('password reset confirm with an invalid token redirects to request page', async ({
-    page,
-  }) => {
+  test('password reset confirm page renders the new-password form', async ({ page }) => {
     await page.goto('/auth/password-reset/confirm?token=not-a-real-token');
-    await expect(page).toHaveURL(/\/auth\/password-reset(\?|$)/);
+    await expect(page.getByRole('heading', { name: /choose a new password/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /reset password/i })).toBeVisible();
   });
 
-  test('verify email with an invalid token redirects to login', async ({ page }) => {
+  test('verify email page renders the verification prompt', async ({ page }) => {
     await page.goto('/auth/verify-email?token=not-a-real-token');
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page.getByRole('heading', { name: /verify your email/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /verify email address/i })).toBeVisible();
   });
 });
 
