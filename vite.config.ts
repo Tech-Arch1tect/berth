@@ -20,6 +20,11 @@ export default defineConfig({
       languageWorkers: ['editorWorkerService', 'css', 'html', 'json', 'typescript'],
     }),
   ],
+  experimental: {
+    renderBuiltUrl(filename) {
+      return '/build/' + filename;
+    },
+  },
   build: {
     outDir: 'public/build',
     manifest: true,
