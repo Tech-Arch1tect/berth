@@ -150,7 +150,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		operationLogsHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
 	}
 	if maintenanceAPIHandler != nil {
-		maintenanceAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
+		maintenanceAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if imageUpdatesAPIHandler != nil {
 		imageUpdatesAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
@@ -159,7 +159,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		apiKeyHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 	}
 	if registryAPIHandler != nil {
-		registryAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
+		registryAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 
 	return protectedRegistrar
