@@ -135,7 +135,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		stackAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if vulnscanHandler != nil {
-		vulnscanHandler.RegisterProtectedAPIRoutes(apiProtected)
+		vulnscanHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if filesAPIHandler != nil {
 		filesAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)

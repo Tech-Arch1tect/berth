@@ -794,6 +794,14 @@ func (s *Service) GetVulnerabilitySummary(scanID uint) (*VulnerabilitySummary, e
 	return summary, nil
 }
 
+func (s *Service) ScanStackRef(scanID uint) (serverID uint, stackName string, err error) {
+	var scan ImageScan
+	if err := s.db.Select("server_id, stack_name").First(&scan, scanID).Error; err != nil {
+		return 0, "", err
+	}
+	return scan.ServerID, scan.StackName, nil
+}
+
 func (s *Service) GetVulnerabilitySummaryForImage(scanID uint, imageName string) (*VulnerabilitySummary, error) {
 	var results []struct {
 		Severity string

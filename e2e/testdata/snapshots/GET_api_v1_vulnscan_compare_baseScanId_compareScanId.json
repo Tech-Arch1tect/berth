@@ -1,15 +1,15 @@
 {
   "method": "GET",
   "path": "/api/v1/vulnscan/compare/:baseScanId/:compareScanId",
-  "status_code": 500,
+  "status_code": 404,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
     "data": {},
     "error": {
-      "code": "internal_error",
-      "message": "failed to get base scan: record not found"
+      "code": "not_found",
+      "message": "scan not found"
     },
     "success": false
   }
