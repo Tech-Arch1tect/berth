@@ -1,25 +1,24 @@
 package rbac
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
-
-	"github.com/labstack/echo/v4"
 )
 
-func (h *APIHandler) RegisterAdminAPIRoutes(g *echo.Group, mw *Middleware) {
-	g.GET("/users", h.ListUsers, mw.RequireAdminScopeJWT(permnames.AdminUsersRead))
-	g.POST("/users", h.CreateUser, mw.RequireAdminScopeJWT(permnames.AdminUsersWrite))
-	g.GET("/users/:id/roles", h.GetUserRoles, mw.RequireAdminScopeJWT(permnames.AdminUsersRead))
-	g.POST("/users/assign-role", h.AssignRole, mw.RequireAdminScopeJWT(permnames.AdminUsersWrite))
-	g.POST("/users/revoke-role", h.RevokeRole, mw.RequireAdminScopeJWT(permnames.AdminUsersWrite))
+func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/users", h.ListUsers, authz.Admin(permnames.AdminUsersRead))
+	reg.POST("/users", h.CreateUser, authz.Admin(permnames.AdminUsersWrite))
+	reg.GET("/users/:id/roles", h.GetUserRoles, authz.Admin(permnames.AdminUsersRead))
+	reg.POST("/users/assign-role", h.AssignRole, authz.Admin(permnames.AdminUsersWrite))
+	reg.POST("/users/revoke-role", h.RevokeRole, authz.Admin(permnames.AdminUsersWrite))
 
-	g.GET("/roles", h.ListRoles, mw.RequireAdminScopeJWT(permnames.AdminRolesRead))
-	g.POST("/roles", h.CreateRole, mw.RequireAdminScopeJWT(permnames.AdminRolesWrite))
-	g.PUT("/roles/:id", h.UpdateRole, mw.RequireAdminScopeJWT(permnames.AdminRolesWrite))
-	g.DELETE("/roles/:id", h.DeleteRole, mw.RequireAdminScopeJWT(permnames.AdminRolesWrite))
-	g.GET("/roles/:roleId/stack-permissions", h.ListRoleServerStackPermissions, mw.RequireAdminScopeJWT(permnames.AdminRolesRead))
-	g.POST("/roles/:roleId/stack-permissions", h.CreateRoleStackPermission, mw.RequireAdminScopeJWT(permnames.AdminRolesWrite))
-	g.DELETE("/roles/:roleId/stack-permissions/:permissionId", h.DeleteRoleStackPermission, mw.RequireAdminScopeJWT(permnames.AdminRolesWrite))
+	reg.GET("/roles", h.ListRoles, authz.Admin(permnames.AdminRolesRead))
+	reg.POST("/roles", h.CreateRole, authz.Admin(permnames.AdminRolesWrite))
+	reg.PUT("/roles/:id", h.UpdateRole, authz.Admin(permnames.AdminRolesWrite))
+	reg.DELETE("/roles/:id", h.DeleteRole, authz.Admin(permnames.AdminRolesWrite))
+	reg.GET("/roles/:roleId/stack-permissions", h.ListRoleServerStackPermissions, authz.Admin(permnames.AdminRolesRead))
+	reg.POST("/roles/:roleId/stack-permissions", h.CreateRoleStackPermission, authz.Admin(permnames.AdminRolesWrite))
+	reg.DELETE("/roles/:roleId/stack-permissions/:permissionId", h.DeleteRoleStackPermission, authz.Admin(permnames.AdminRolesWrite))
 
-	g.GET("/permissions", h.ListPermissions, mw.RequireAdminScopeJWT(permnames.AdminPermissionsRead))
+	reg.GET("/permissions", h.ListPermissions, authz.Admin(permnames.AdminPermissionsRead))
 }

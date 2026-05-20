@@ -1,13 +1,14 @@
 package apikey
 
-import "github.com/labstack/echo/v4"
+import "berth/internal/domain/authz"
 
-func (h *Handler) RegisterProtectedAPIRoutes(g *echo.Group, requireAPIKeyDenied echo.MiddlewareFunc) {
-	g.GET("/api-keys", h.ListAPIKeys, requireAPIKeyDenied)
-	g.GET("/api-keys/:id", h.GetAPIKey, requireAPIKeyDenied)
-	g.POST("/api-keys", h.CreateAPIKey, requireAPIKeyDenied)
-	g.DELETE("/api-keys/:id", h.RevokeAPIKey, requireAPIKeyDenied)
-	g.GET("/api-keys/:id/scopes", h.ListScopes, requireAPIKeyDenied)
-	g.POST("/api-keys/:id/scopes", h.AddScope, requireAPIKeyDenied)
-	g.DELETE("/api-keys/:id/scopes/:scopeId", h.RemoveScope, requireAPIKeyDenied)
+func (h *Handler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	rule := authz.APIKeyDenied()
+	reg.GET("/api-keys", h.ListAPIKeys, rule)
+	reg.GET("/api-keys/:id", h.GetAPIKey, rule)
+	reg.POST("/api-keys", h.CreateAPIKey, rule)
+	reg.DELETE("/api-keys/:id", h.RevokeAPIKey, rule)
+	reg.GET("/api-keys/:id/scopes", h.ListScopes, rule)
+	reg.POST("/api-keys/:id/scopes", h.AddScope, rule)
+	reg.DELETE("/api-keys/:id/scopes/:scopeId", h.RemoveScope, rule)
 }

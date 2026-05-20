@@ -1,8 +1,11 @@
 package dataexport
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
+	"berth/internal/domain/rbac/permnames"
+)
 
-func (h *Handler) RegisterAdminAPIRoutes(g *echo.Group, requireExport, requireImport echo.MiddlewareFunc) {
-	g.POST("/migration/export", h.Export, requireExport)
-	g.POST("/migration/import", h.Import, requireImport)
+func (h *Handler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
+	reg.POST("/migration/export", h.Export, authz.Admin(permnames.AdminSystemExport))
+	reg.POST("/migration/import", h.Import, authz.Admin(permnames.AdminSystemImport))
 }

@@ -1,7 +1,7 @@
 package version
 
-import "github.com/labstack/echo/v4"
+import "berth/internal/domain/authz"
 
-func (h *Handler) RegisterAPIRoutes(g *echo.Group) {
-	g.GET("/version", h.GetVersion)
+func (h *Handler) RegisterAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/version", h.GetVersion, authz.Authenticated())
 }

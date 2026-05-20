@@ -3,8 +3,6 @@ package server
 import (
 	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
-
-	"github.com/labstack/echo/v4"
 )
 
 func (h *UserAPIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
@@ -13,11 +11,13 @@ func (h *UserAPIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
 	reg.GET("/servers/:serverid/statistics", h.GetServerStatistics, authz.Server(permnames.StacksRead).RequireAPIKeyScope(permnames.ServersRead))
 }
 
-func (h *APIHandler) RegisterAdminAPIRoutes(g *echo.Group, requireAdminRead, requireAdminWrite echo.MiddlewareFunc) {
-	g.GET("/servers", h.ListServers, requireAdminRead)
-	g.GET("/servers/:id", h.GetServer, requireAdminRead)
-	g.POST("/servers", h.CreateServer, requireAdminWrite)
-	g.PUT("/servers/:id", h.UpdateServer, requireAdminWrite)
-	g.DELETE("/servers/:id", h.DeleteServer, requireAdminWrite)
-	g.POST("/servers/:id/test", h.TestConnection, requireAdminWrite)
+func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
+	read := authz.Admin(permnames.AdminServersRead)
+	write := authz.Admin(permnames.AdminServersWrite)
+	reg.GET("/servers", h.ListServers, read)
+	reg.GET("/servers/:id", h.GetServer, read)
+	reg.POST("/servers", h.CreateServer, write)
+	reg.PUT("/servers/:id", h.UpdateServer, write)
+	reg.DELETE("/servers/:id", h.DeleteServer, write)
+	reg.POST("/servers/:id/test", h.TestConnection, write)
 }

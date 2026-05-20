@@ -9,7 +9,7 @@
     "data": {},
     "error": {
       "code": "forbidden",
-      "message": "map[error:Insufficient permissions - admin role required]"
+      "message": "Insufficient permissions"
     },
     "success": false
   }

@@ -92,7 +92,6 @@ type Graph struct {
 
 	AgentSvc               *agent.Service
 	RBACSvc                *rbac.Service
-	RBACMid                *rbac.Middleware
 	RBACAPIHandler         *rbac.APIHandler
 	APIKeySvc              *apikey.Service
 	APIKeyHandler          *apikey.Handler
@@ -199,7 +198,6 @@ func Build(
 	g.AgentSvc = agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
 
 	g.RBACSvc = rbac.NewService(db, logger)
-	g.RBACMid = rbac.NewMiddleware(g.RBACSvc)
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
 
 	g.APIKeySvc = apikey.NewService(db, logger, g.RBACSvc)

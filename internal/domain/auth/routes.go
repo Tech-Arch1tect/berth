@@ -1,27 +1,29 @@
 package auth
 
-import "github.com/labstack/echo/v4"
+import "berth/internal/domain/authz"
 
-func (h *APIHandler) RegisterPublicAPIRoutes(g *echo.Group) {
-	g.POST("/login", h.Login)
-	g.POST("/refresh", h.RefreshToken)
-	g.POST("/totp/verify", h.VerifyTOTP)
-	g.POST("/password-reset", h.RequestPasswordResetAPI)
-	g.POST("/password-reset/confirm", h.ConfirmPasswordResetAPI)
-	g.POST("/verify-email", h.VerifyEmailAPI)
-	g.POST("/resend-verification", h.ResendVerificationAPI)
+func (h *APIHandler) RegisterPublicAPIRoutes(reg *authz.Registrar) {
+	pub := authz.Public()
+	reg.POST("/login", h.Login, pub)
+	reg.POST("/refresh", h.RefreshToken, pub)
+	reg.POST("/totp/verify", h.VerifyTOTP, pub)
+	reg.POST("/password-reset", h.RequestPasswordResetAPI, pub)
+	reg.POST("/password-reset/confirm", h.ConfirmPasswordResetAPI, pub)
+	reg.POST("/verify-email", h.VerifyEmailAPI, pub)
+	reg.POST("/resend-verification", h.ResendVerificationAPI, pub)
 }
 
-func (h *APIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireAPIKeyDenied echo.MiddlewareFunc) {
-	g.GET("/profile", h.Profile)
-	g.POST("/auth/logout", h.Logout, requireAPIKeyDenied)
+func (h *APIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	denied := authz.APIKeyDenied()
+	reg.GET("/profile", h.Profile, authz.Authenticated())
+	reg.POST("/auth/logout", h.Logout, denied)
 
-	g.GET("/totp/setup", h.GetTOTPSetup, requireAPIKeyDenied)
-	g.POST("/totp/enable", h.EnableTOTP, requireAPIKeyDenied)
-	g.POST("/totp/disable", h.DisableTOTP, requireAPIKeyDenied)
-	g.GET("/totp/status", h.GetTOTPStatus, requireAPIKeyDenied)
+	reg.GET("/totp/setup", h.GetTOTPSetup, denied)
+	reg.POST("/totp/enable", h.EnableTOTP, denied)
+	reg.POST("/totp/disable", h.DisableTOTP, denied)
+	reg.GET("/totp/status", h.GetTOTPStatus, denied)
 
-	g.GET("/sessions", h.GetSessions, requireAPIKeyDenied)
-	g.POST("/sessions/revoke", h.RevokeSession, requireAPIKeyDenied)
-	g.POST("/sessions/revoke-all-others", h.RevokeAllOtherSessions, requireAPIKeyDenied)
+	reg.GET("/sessions", h.GetSessions, denied)
+	reg.POST("/sessions/revoke", h.RevokeSession, denied)
+	reg.POST("/sessions/revoke-all-others", h.RevokeAllOtherSessions, denied)
 }

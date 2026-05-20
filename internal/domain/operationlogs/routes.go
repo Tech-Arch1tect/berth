@@ -1,17 +1,22 @@
 package operationlogs
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
+	"berth/internal/domain/rbac/permnames"
+)
 
-func (h *Handler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {
-	g.GET("/operation-logs", h.ListUserOperationLogs, requireUserScope)
-	g.GET("/operation-logs/stats", h.GetUserOperationLogsStats, requireUserScope)
-	g.GET("/operation-logs/by-operation-id/:operationId", h.GetOperationLogDetailsByOperationID, requireUserScope)
-	g.GET("/operation-logs/:id", h.GetUserOperationLogDetails, requireUserScope)
-	g.GET("/running-operations", h.GetRunningOperations, requireUserScope)
+func (h *Handler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	user := authz.Authenticated().RequireAPIKeyScope(permnames.LogsOperationsRead)
+	reg.GET("/operation-logs", h.ListUserOperationLogs, user)
+	reg.GET("/operation-logs/stats", h.GetUserOperationLogsStats, user)
+	reg.GET("/operation-logs/by-operation-id/:operationId", h.GetOperationLogDetailsByOperationID, user)
+	reg.GET("/operation-logs/:id", h.GetUserOperationLogDetails, user)
+	reg.GET("/running-operations", h.GetRunningOperations, user)
 }
 
-func (h *Handler) RegisterAdminAPIRoutes(g *echo.Group, requireAdminScope echo.MiddlewareFunc) {
-	g.GET("/operation-logs", h.ListOperationLogs, requireAdminScope)
-	g.GET("/operation-logs/stats", h.GetOperationLogsStats, requireAdminScope)
-	g.GET("/operation-logs/:id", h.GetOperationLogDetails, requireAdminScope)
+func (h *Handler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
+	admin := authz.Admin(permnames.AdminLogsRead)
+	reg.GET("/operation-logs", h.ListOperationLogs, admin)
+	reg.GET("/operation-logs/stats", h.GetOperationLogsStats, admin)
+	reg.GET("/operation-logs/:id", h.GetOperationLogDetails, admin)
 }
