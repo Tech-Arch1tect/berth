@@ -39,7 +39,7 @@ func newRule(k ruleKind) Rule {
 	return Rule{kind: k, serverParam: "serverid", stackParam: "stackname"}
 }
 
-func (r Rule) resolve(c echo.Context) ([]Requirement, error) {
+func (r Rule) Resolve(c echo.Context) ([]Requirement, error) {
 	reqs, err := r.resolveBase(c)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,10 @@ func (r Rule) resolve(c echo.Context) ([]Requirement, error) {
 	}
 	return reqs, nil
 }
+
+func (r Rule) IsPublic() bool       { return r.public }
+func (r Rule) DeniesAPIKey() bool   { return r.denyAPIKey }
+func (r Rule) WantsListScope() bool { return r.listScope }
 
 func (r Rule) resolveBase(c echo.Context) ([]Requirement, error) {
 	switch r.kind {

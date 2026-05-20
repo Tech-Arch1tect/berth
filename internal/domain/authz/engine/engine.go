@@ -1,9 +1,10 @@
-package authz
+package engine
 
 import (
 	"fmt"
 
 	"berth/internal/domain/apikey"
+	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/pkg/patterns"
 
@@ -16,11 +17,11 @@ type Engine struct {
 	logger *zap.Logger
 }
 
-func NewEngine(db *gorm.DB, logger *zap.Logger) *Engine {
+func New(db *gorm.DB, logger *zap.Logger) *Engine {
 	return &Engine{db: db, logger: logger}
 }
 
-func (e *Engine) Authorize(p Principal, reqs ...Requirement) (bool, error) {
+func (e *Engine) Authorize(p Principal, reqs ...authz.Requirement) (bool, error) {
 	if p.IsSystem() {
 		return true, nil
 	}
@@ -36,30 +37,30 @@ func (e *Engine) Authorize(p Principal, reqs ...Requirement) (bool, error) {
 	return true, nil
 }
 
-func (e *Engine) evaluate(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evaluate(p Principal, r authz.Requirement) (bool, error) {
 	switch r.Kind {
-	case KindAuthenticated:
+	case authz.KindAuthenticated:
 		return e.evalAuthenticated(p, r)
-	case KindAdmin:
+	case authz.KindAdmin:
 		return e.evalAdmin(p, r)
-	case KindServerAccess:
+	case authz.KindServerAccess:
 		return e.evalServerAccess(p, r)
-	case KindServer:
+	case authz.KindServer:
 		return e.evalServer(p, r)
-	case KindStack:
+	case authz.KindStack:
 		return e.evalStack(p, r)
-	case KindAPIKeyScope:
+	case authz.KindAPIKeyScope:
 		return e.evalAPIKeyScope(p, r)
 	default:
 		return false, fmt.Errorf("authz: unknown requirement kind %d", r.Kind)
 	}
 }
 
-func (e *Engine) evalAuthenticated(p Principal, _ Requirement) (bool, error) {
+func (e *Engine) evalAuthenticated(p Principal, _ authz.Requirement) (bool, error) {
 	return p.UserID != 0, nil
 }
 
-func (e *Engine) evalAdmin(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evalAdmin(p Principal, r authz.Requirement) (bool, error) {
 	roleOK := isAdminRole(p.Roles)
 	if !roleOK {
 		return false, nil
@@ -88,7 +89,7 @@ func checkAPIKeyHasAdminScope(key *apikey.APIKey, permName string) bool {
 	return false
 }
 
-func (e *Engine) evalAPIKeyScope(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evalAPIKeyScope(p Principal, r authz.Requirement) (bool, error) {
 	if p.APIKey == nil {
 		return true, nil
 	}
@@ -100,7 +101,7 @@ func (e *Engine) evalAPIKeyScope(p Principal, r Requirement) (bool, error) {
 	return false, nil
 }
 
-func (e *Engine) evalServerAccess(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evalServerAccess(p Principal, r authz.Requirement) (bool, error) {
 	roleOK, err := e.checkUserServerAccess(p.UserID, p.Roles, r.ServerID)
 	if err != nil {
 		return false, err
@@ -141,7 +142,7 @@ func checkAPIKeyServerAccess(key *apikey.APIKey, serverID uint) bool {
 	return false
 }
 
-func (e *Engine) evalServer(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evalServer(p Principal, r authz.Requirement) (bool, error) {
 	roleOK, err := e.checkUserAnyStackPermission(p.UserID, p.Roles, r.ServerID, r.Permission)
 	if err != nil {
 		return false, err
@@ -186,7 +187,7 @@ func checkAPIKeyServerPermission(key *apikey.APIKey, serverID uint, permName str
 	return false
 }
 
-func (e *Engine) evalStack(p Principal, r Requirement) (bool, error) {
+func (e *Engine) evalStack(p Principal, r authz.Requirement) (bool, error) {
 	roleOK, err := e.checkUserStackPermission(p.UserID, p.Roles, r.ServerID, r.Stack, r.Permission)
 	if err != nil {
 		return false, err

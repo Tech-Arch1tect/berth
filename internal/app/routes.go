@@ -8,6 +8,7 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/authz"
+	authzengine "berth/internal/domain/authz/engine"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -82,7 +83,7 @@ func registerRoutes(g *Graph) {
 		KeyFunc:   ratelimit.KeyByIP,
 	})
 
-	authzEngine := authz.NewEngine(g.DB, g.Logger)
+	authzEngine := authzengine.New(g.DB, g.Logger)
 
 	registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler)
 	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
@@ -112,7 +113,7 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
 	rbacMiddleware *rbac.Middleware, mobileAuthHandler *auth.APIHandler, serverUserAPIHandler *server.UserAPIHandler,
-	authzEngine *authz.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
+	authzEngine *authzengine.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
 	versionHandler *version.Handler, registryAPIHandler *registry.APIHandler) *authz.Registrar {
@@ -121,7 +122,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	apiProtected.Use(generalApiRateLimit)
 	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
-	protectedRegistrar := authz.NewRegistrar(apiProtected, authzEngine, "/api/v1")
+	protectedRegistrar := authz.NewRegistrar(apiProtected, "/api/v1", authzEngine.Middleware)
 
 	if versionHandler != nil {
 		versionHandler.RegisterAPIRoutes(apiProtected)

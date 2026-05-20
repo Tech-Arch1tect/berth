@@ -1,4 +1,4 @@
-package authz
+package engine
 
 import (
 	"berth/internal/domain/apikey"

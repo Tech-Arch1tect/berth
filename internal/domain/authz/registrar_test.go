@@ -1,94 +1,26 @@
 package authz
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	usermodel "berth/internal/domain/user"
-
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
-func TestRegistrar_BlocksUnauthorisedRequest(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
-	e := echo.New()
-	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
-
-	handlerRan := false
-	r.GET("/things", func(c echo.Context) error {
-		handlerRan = true
-		return c.NoContent(http.StatusOK)
-	}, Authenticated())
-
-	req := httptest.NewRequest(http.MethodGet, "/api/things", nil)
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-
-	assert.False(t, handlerRan, "handler must not run for unauthenticated request")
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-}
-
-func TestRegistrar_AllowsAuthorisedRequest(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
-	var u usermodel.User
-	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
-
-	e := echo.New()
-	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
-
-	handlerRan := false
-	r.GET("/things", func(c echo.Context) error {
-		handlerRan = true
-		return c.NoContent(http.StatusOK)
-	}, Authenticated())
-
-	req := httptest.NewRequest(http.MethodGet, "/api/things", nil)
-	rec := httptest.NewRecorder()
-	req.Header.Set("X-Test-User", fmt.Sprintf("%d", u.ID))
-
-	c := e.NewContext(req, rec)
-	setJWTPrincipal(c, u)
-	_ = c
-
-	req2 := httptest.NewRequest(http.MethodGet, "/api/things", nil)
-	rec2 := httptest.NewRecorder()
-
-	e2 := echo.New()
-	g2 := e2.Group("/api")
-	r2 := NewRegistrar(g2, engine, "/api")
-	r2.GET("/things", func(c echo.Context) error {
-		handlerRan = true
-		return c.NoContent(http.StatusOK)
-	}, Public())
-	e2.ServeHTTP(rec2, req2)
-	assert.True(t, handlerRan, "public handler must run")
-}
-
 func TestRegistrar_RegisteredRoutes(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api/v1")
-	r := NewRegistrar(g, engine, "/api/v1")
+	r := NewRegistrar(g, "/api/v1", passthroughMW)
 
-	noop := func(c echo.Context) error { return nil }
-	r.GET("/servers", noop, Authenticated())
-	r.POST("/servers", noop, Admin("admin.servers.write"))
-	r.PUT("/servers/:id", noop, Authenticated())
-	r.PATCH("/servers/:id", noop, Authenticated())
-	r.DELETE("/servers/:id", noop, Admin("admin.servers.write"))
+	noopH := func(c echo.Context) error { return nil }
+	r.GET("/servers", noopH, Authenticated())
+	r.POST("/servers", noopH, Admin("admin.servers.write"))
+	r.PUT("/servers/:id", noopH, Authenticated())
+	r.PATCH("/servers/:id", noopH, Authenticated())
+	r.DELETE("/servers/:id", noopH, Admin("admin.servers.write"))
 
 	routes := r.RegisteredRoutes()
 	require.Len(t, routes, 5)
@@ -106,26 +38,23 @@ func TestRegistrar_RegisteredRoutes(t *testing.T) {
 
 	getRoute := byMethod["GET:/api/v1/servers"]
 	assert.Equal(t, http.MethodGet, getRoute.Method)
-	assert.False(t, getRoute.Rule.public)
+	assert.False(t, getRoute.Rule.IsPublic())
 
 	postRoute := byMethod["POST:/api/v1/servers"]
 	assert.Equal(t, "admin.servers.write", postRoute.Rule.perm)
 }
 
 func TestRegistrar_AllHTTPMethods(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("")
-	r := NewRegistrar(g, engine, "")
+	r := NewRegistrar(g, "", passthroughMW)
 
-	noop := func(c echo.Context) error { return nil }
-	r.GET("/a", noop, Public())
-	r.POST("/b", noop, Public())
-	r.PUT("/c", noop, Public())
-	r.PATCH("/d", noop, Public())
-	r.DELETE("/e", noop, Public())
+	noopH := func(c echo.Context) error { return nil }
+	r.GET("/a", noopH, Public())
+	r.POST("/b", noopH, Public())
+	r.PUT("/c", noopH, Public())
+	r.PATCH("/d", noopH, Public())
+	r.DELETE("/e", noopH, Public())
 
 	routes := r.RegisteredRoutes()
 	require.Len(t, routes, 5)
@@ -139,4 +68,32 @@ func TestRegistrar_AllHTTPMethods(t *testing.T) {
 	assert.True(t, methods[http.MethodPut])
 	assert.True(t, methods[http.MethodPatch])
 	assert.True(t, methods[http.MethodDelete])
+}
+
+func TestRegistrar_AppliesInjectedMiddleware(t *testing.T) {
+	var capturedRule Rule
+	mwInvoked := 0
+	captureMW := func(rule Rule) echo.MiddlewareFunc {
+		capturedRule = rule
+		return func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				mwInvoked++
+				return next(c)
+			}
+		}
+	}
+
+	e := echo.New()
+	g := e.Group("/api")
+	r := NewRegistrar(g, "/api", captureMW)
+
+	r.GET("/x", func(c echo.Context) error { return c.NoContent(http.StatusOK) }, Authenticated())
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/x", nil)
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, 1, mwInvoked, "injected middleware must be invoked once per request")
+	assert.False(t, capturedRule.IsPublic(), "rule must be passed to the mw factory")
 }

@@ -14,17 +14,17 @@ type RouteRule struct {
 
 type Registrar struct {
 	group  *echo.Group
-	engine *Engine
 	prefix string
+	mw     func(Rule) echo.MiddlewareFunc
 	routes []RouteRule
 }
 
-func NewRegistrar(g *echo.Group, engine *Engine, prefix string) *Registrar {
-	return &Registrar{group: g, engine: engine, prefix: prefix}
+func NewRegistrar(g *echo.Group, prefix string, mw func(Rule) echo.MiddlewareFunc) *Registrar {
+	return &Registrar{group: g, prefix: prefix, mw: mw}
 }
 
 func (r *Registrar) register(method, path string, h echo.HandlerFunc, rule Rule) {
-	r.group.Add(method, path, h, Middleware(r.engine, rule))
+	r.group.Add(method, path, h, r.mw(rule))
 	r.routes = append(r.routes, RouteRule{
 		Method: method,
 		Path:   r.prefix + path,

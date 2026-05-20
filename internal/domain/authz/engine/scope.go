@@ -1,79 +1,28 @@
-package authz
+package engine
 
 import (
+	"slices"
+
 	"berth/internal/domain/apikey"
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
-	"berth/internal/pkg/patterns"
-	"slices"
 )
 
-type ScopeSet struct {
-	serverIDs    []uint
-	rolePatterns map[uint][]string
-	keyScopes    []apikey.APIKeyScope
-	hasKey       bool
-	universal    bool
-}
-
-func (s ScopeSet) AllowsServer(serverID uint) bool {
-	if s.universal {
-		return true
-	}
-	for _, id := range s.serverIDs {
-		if id == serverID {
-			return true
-		}
-	}
-	return false
-}
-
-func (s ScopeSet) AllowsStack(serverID uint, stackName string) bool {
-	if s.universal {
-		return true
-	}
-	rolePs, ok := s.rolePatterns[serverID]
-	if !ok {
-		return false
-	}
-	roleMatch := false
-	for _, p := range rolePs {
-		if patterns.Matches(stackName, p) {
-			roleMatch = true
-			break
-		}
-	}
-	if !roleMatch {
-		return false
-	}
-	if !s.hasKey {
-		return true
-	}
-	return checkAPIKeyStackScope(&apikey.APIKey{Scopes: s.keyScopes}, serverID, stackName, permnames.StacksRead)
-}
-
-func (s ScopeSet) ServerIDs() []uint {
-	if s.universal {
-		return s.serverIDs
-	}
-	out := make([]uint, len(s.serverIDs))
-	copy(out, s.serverIDs)
-	return out
-}
-
-func (e *Engine) AuthorizedScope(p Principal) (ScopeSet, error) {
+func (e *Engine) AuthorizedScope(p Principal) (authz.ScopeSet, error) {
 	if p.IsSystem() {
 		var allIDs []uint
 		if err := e.db.Model(&server.Server{}).Pluck("id", &allIDs).Error; err != nil {
-			return ScopeSet{}, err
+			return authz.ScopeSet{}, err
 		}
-		return ScopeSet{universal: true, serverIDs: allIDs}, nil
+		slices.Sort(allIDs)
+		return authz.NewScopeSet(allIDs, nil, nil, false, true), nil
 	}
 
 	roleServerIDs, rolePatterns, err := e.computeRoleScope(p.UserID, p.Roles)
 	if err != nil {
-		return ScopeSet{}, err
+		return authz.ScopeSet{}, err
 	}
 
 	serverIDs := roleServerIDs
@@ -88,15 +37,15 @@ func (e *Engine) AuthorizedScope(p Principal) (ScopeSet, error) {
 		}
 	}
 
-	ks := ScopeSet{
-		serverIDs:    serverIDs,
-		rolePatterns: filteredPatterns,
-		hasKey:       p.APIKey != nil,
-	}
+	var keyPatterns map[uint][]string
 	if p.APIKey != nil {
-		ks.keyScopes = p.APIKey.Scopes
+		keyPatterns = make(map[uint][]string, len(serverIDs))
+		for _, sid := range serverIDs {
+			keyPatterns[sid] = collectKeyStackPatterns(p.APIKey, sid)
+		}
 	}
-	return ks, nil
+
+	return authz.NewScopeSet(serverIDs, filteredPatterns, keyPatterns, p.APIKey != nil, false), nil
 }
 
 func (e *Engine) computeRoleScope(userID uint, roles []usermodel.Role) ([]uint, map[uint][]string, error) {
@@ -145,12 +94,12 @@ func (e *Engine) computeRoleScope(userID uint, roles []usermodel.Role) ([]uint, 
 
 	patMap := make(map[uint][]string, len(ids))
 	for _, id := range ids {
-		patterns := make([]string, 0, len(patternSets[id]))
+		ps := make([]string, 0, len(patternSets[id]))
 		for p := range patternSets[id] {
-			patterns = append(patterns, p)
+			ps = append(ps, p)
 		}
-		slices.Sort(patterns)
-		patMap[id] = patterns
+		slices.Sort(ps)
+		patMap[id] = ps
 	}
 	return ids, patMap, nil
 }
@@ -174,4 +123,18 @@ func filterByAPIKeyServerScopes(key *apikey.APIKey, serverIDs []uint) []uint {
 		}
 	}
 	return filtered
+}
+
+func collectKeyStackPatterns(key *apikey.APIKey, serverID uint) []string {
+	var out []string
+	for _, scope := range key.Scopes {
+		if scope.Permission.Name != permnames.StacksRead {
+			continue
+		}
+		if scope.ServerID != nil && *scope.ServerID != serverID {
+			continue
+		}
+		out = append(out, scope.StackPattern)
+	}
+	return out
 }

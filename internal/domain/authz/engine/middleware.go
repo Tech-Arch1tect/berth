@@ -1,4 +1,4 @@
-package authz
+package engine
 
 import (
 	"bytes"
@@ -7,24 +7,23 @@ import (
 	"net/http"
 
 	"berth/internal/domain/auth"
+	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
 )
 
-const ScopeSetKey = "_authz_scope_set"
-
-func Middleware(engine *Engine, rule Rule) echo.MiddlewareFunc {
+func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if rule.public {
+			if rule.IsPublic() {
 				return next(c)
 			}
 			p, err := principalFromContext(c)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
 			}
-			if rule.denyAPIKey && p.APIKey != nil {
+			if rule.DeniesAPIKey() && p.APIKey != nil {
 				return echo.NewHTTPError(http.StatusForbidden, "API keys cannot access this endpoint")
 			}
 			bodyBuf, err := readBody(c)
@@ -32,24 +31,24 @@ func Middleware(engine *Engine, rule Rule) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 			}
 			resetBody(c, bodyBuf)
-			reqs, err := rule.resolve(c)
+			reqs, err := rule.Resolve(c)
 			if err != nil {
 				return err
 			}
 			resetBody(c, bodyBuf)
-			ok, err := engine.Authorize(p, reqs...)
+			ok, err := e.Authorize(p, reqs...)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, "Authorisation check failed")
 			}
 			if !ok {
 				return echo.NewHTTPError(http.StatusForbidden, "Insufficient permissions")
 			}
-			if rule.listScope {
-				scope, err := engine.AuthorizedScope(p)
+			if rule.WantsListScope() {
+				scope, err := e.AuthorizedScope(p)
 				if err != nil {
 					return echo.NewHTTPError(http.StatusInternalServerError, "Authorisation check failed")
 				}
-				c.Set(ScopeSetKey, scope)
+				c.Set(authz.ScopeSetKey, scope)
 			}
 			resetBody(c, bodyBuf)
 			return next(c)
@@ -94,13 +93,4 @@ func resetBody(c echo.Context, buf []byte) {
 	req := c.Request()
 	req.Body = io.NopCloser(bytes.NewReader(buf))
 	c.SetRequest(req)
-}
-
-func GetScopeSet(c echo.Context) (ScopeSet, bool) {
-	v := c.Get(ScopeSetKey)
-	if v == nil {
-		return ScopeSet{}, false
-	}
-	s, ok := v.(ScopeSet)
-	return s, ok
 }

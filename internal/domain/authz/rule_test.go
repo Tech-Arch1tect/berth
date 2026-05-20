@@ -21,7 +21,7 @@ func newParamCtx(t *testing.T, names, values []string) echo.Context {
 
 func resolve(t *testing.T, r Rule, c echo.Context) []Requirement {
 	t.Helper()
-	reqs, err := r.resolve(c)
+	reqs, err := r.Resolve(c)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestStack_resolves(t *testing.T) {
 
 func TestStack_badServerID_returnsError(t *testing.T) {
 	c := newParamCtx(t, []string{"serverid", "stackname"}, []string{"notanumber", "mystack"})
-	_, err := Stack("stacks.deploy").resolve(c)
+	_, err := Stack("stacks.deploy").Resolve(c)
 	if err == nil {
 		t.Fatal("expected error for bad serverid, got nil")
 	}
@@ -134,7 +134,7 @@ func TestStack_badServerID_returnsError(t *testing.T) {
 
 func TestStack_missingStackName_returnsError(t *testing.T) {
 	c := newParamCtx(t, []string{"serverid"}, []string{"42"})
-	_, err := Stack("stacks.deploy").resolve(c)
+	_, err := Stack("stacks.deploy").Resolve(c)
 	if err == nil {
 		t.Fatal("expected error for missing stackname, got nil")
 	}
@@ -160,7 +160,7 @@ func TestServer_resolves(t *testing.T) {
 
 func TestServer_badServerID_returnsError(t *testing.T) {
 	c := newParamCtx(t, []string{"serverid"}, []string{"nope"})
-	_, err := Server("servers.read").resolve(c)
+	_, err := Server("servers.read").Resolve(c)
 	if err == nil {
 		t.Fatal("expected error for bad serverid, got nil")
 	}
@@ -232,7 +232,7 @@ func TestWithParams_overridesStackParams(t *testing.T) {
 
 func TestWithParams_defaultParamNoLongerWorkAfterOverride(t *testing.T) {
 	c := newParamCtx(t, []string{"serverid"}, []string{"5"})
-	_, err := ServerAccess().WithParams("sid").resolve(c)
+	_, err := ServerAccess().WithParams("sid").Resolve(c)
 	if err == nil {
 		t.Fatal("expected error when default param name is absent after WithParams override, got nil")
 	}

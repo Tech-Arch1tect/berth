@@ -1,4 +1,4 @@
-package authz
+package engine
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"berth/internal/domain/apikey"
+	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 	"berth/seeds"
 
@@ -131,29 +132,29 @@ func ptr[T any](v T) *T { return &v }
 
 func TestAuthorize_KindAuthenticated(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	t.Run("non-zero UserID is authenticated", func(t *testing.T) {
-		ok, err := e.Authorize(Principal{UserID: 1}, Requirement{Kind: KindAuthenticated})
+		ok, err := e.Authorize(Principal{UserID: 1}, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
 
 	t.Run("zero UserID is not authenticated", func(t *testing.T) {
-		ok, err := e.Authorize(Principal{UserID: 0}, Requirement{Kind: KindAuthenticated})
+		ok, err := e.Authorize(Principal{UserID: 0}, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.False(t, ok)
 	})
 
 	t.Run("with API key, non-zero UserID is authenticated", func(t *testing.T) {
 		p := withAPIKey(Principal{UserID: 1}, scopeForPerm(testPermName, nil))
-		ok, err := e.Authorize(p, Requirement{Kind: KindAuthenticated})
+		ok, err := e.Authorize(p, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
 
 	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, Requirement{Kind: KindAuthenticated})
+		ok, err := e.Authorize(SystemPrincipal, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -161,9 +162,9 @@ func TestAuthorize_KindAuthenticated(t *testing.T) {
 
 func TestAuthorize_KindAdmin(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	req := Requirement{Kind: KindAdmin, Permission: testAdminPermName}
+	req := authz.Requirement{Kind: authz.KindAdmin, Permission: testAdminPermName}
 
 	t.Run("admin role grants admin permission", func(t *testing.T) {
 		p := principalFor(t, f, f.adminUserID)
@@ -212,9 +213,9 @@ func TestAuthorize_KindAdmin(t *testing.T) {
 
 func TestAuthorize_KindServerAccess(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	req := Requirement{Kind: KindServerAccess, ServerID: f.serverID}
+	req := authz.Requirement{Kind: authz.KindServerAccess, ServerID: f.serverID}
 
 	t.Run("role grants server access", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
@@ -278,9 +279,9 @@ func TestAuthorize_KindServerAccess(t *testing.T) {
 
 func TestAuthorize_KindServer(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	req := Requirement{Kind: KindServer, ServerID: f.serverID, Permission: testPermName}
+	req := authz.Requirement{Kind: authz.KindServer, ServerID: f.serverID, Permission: testPermName}
 
 	t.Run("role grants server permission", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
@@ -352,10 +353,10 @@ func TestAuthorize_KindServer(t *testing.T) {
 
 func TestAuthorize_KindStack(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	req := Requirement{
-		Kind:       KindStack,
+	req := authz.Requirement{
+		Kind:       authz.KindStack,
 		ServerID:   f.serverID,
 		Stack:      testStackName,
 		Permission: testPermName,
@@ -451,11 +452,11 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 func TestAuthorize_MultipleRequirements(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	authReq := Requirement{Kind: KindAuthenticated}
-	serverReq := Requirement{Kind: KindServerAccess, ServerID: f.serverID}
-	adminReq := Requirement{Kind: KindAdmin, Permission: testAdminPermName}
+	authReq := authz.Requirement{Kind: authz.KindAuthenticated}
+	serverReq := authz.Requirement{Kind: authz.KindServerAccess, ServerID: f.serverID}
+	adminReq := authz.Requirement{Kind: authz.KindAdmin, Permission: testAdminPermName}
 
 	t.Run("all satisfied returns true", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
@@ -481,9 +482,9 @@ func TestAuthorize_MultipleRequirements(t *testing.T) {
 
 func TestAuthorize_KindAPIKeyScope(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
-	req := Requirement{Kind: KindAPIKeyScope, Permission: "servers.read"}
+	req := authz.Requirement{Kind: authz.KindAPIKeyScope, Permission: "servers.read"}
 
 	t.Run("JWT principal (no API key) is allowed", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
@@ -525,9 +526,9 @@ func TestAuthorize_KindAPIKeyScope(t *testing.T) {
 
 func TestAuthorize_UnknownKind(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	p := principalFor(t, f, f.userID)
-	_, err := e.Authorize(p, Requirement{Kind: Kind(999)})
+	_, err := e.Authorize(p, authz.Requirement{Kind: authz.Kind(999)})
 	assert.Error(t, err)
 }

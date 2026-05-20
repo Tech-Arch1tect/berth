@@ -7,18 +7,18 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func noop(c echo.Context) error { return nil }
 
-func TestAuditRoutes_AllCovered(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
+func passthroughMW(_ Rule) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc { return next }
+}
 
+func TestAuditRoutes_AllCovered(t *testing.T) {
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/servers", noop, Authenticated())
 	r.POST("/servers", noop, Authenticated())
 
@@ -27,12 +27,9 @@ func TestAuditRoutes_AllCovered(t *testing.T) {
 }
 
 func TestAuditRoutes_MustNotPanicWhenCovered(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/things", noop, Public())
 
 	assert.NotPanics(t, func() {
@@ -41,12 +38,9 @@ func TestAuditRoutes_MustNotPanicWhenCovered(t *testing.T) {
 }
 
 func TestAuditRoutes_DirectRouteIsViolation(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/things", noop, Authenticated())
 
 	e.GET("/api/bypass", noop)
@@ -58,12 +52,9 @@ func TestAuditRoutes_DirectRouteIsViolation(t *testing.T) {
 }
 
 func TestAuditRoutes_MustPanicOnViolation(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/things", noop, Authenticated())
 
 	e.GET("/api/bypass", noop)
@@ -74,12 +65,9 @@ func TestAuditRoutes_MustPanicOnViolation(t *testing.T) {
 }
 
 func TestAuditRoutes_NonAPIRoutesIgnored(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/things", noop, Public())
 
 	e.GET("/healthz", noop)
@@ -99,12 +87,9 @@ func TestAuditRoutes_WSRouteIsViolation(t *testing.T) {
 }
 
 func TestAuditRoutes_WSRouteCoveredByRegistrar(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/ws")
-	r := NewRegistrar(g, engine, "/ws")
+	r := NewRegistrar(g, "/ws", passthroughMW)
 	r.GET("/events", noop, Authenticated())
 
 	err := AuditRoutes(e, r)
@@ -128,16 +113,13 @@ func TestAuditRoutes_ErrorMessageSorted(t *testing.T) {
 }
 
 func TestAuditRoutes_MultipleRegistrars(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g1 := e.Group("/api")
-	r1 := NewRegistrar(g1, engine, "/api")
+	r1 := NewRegistrar(g1, "/api", passthroughMW)
 	r1.GET("/servers", noop, Authenticated())
 
 	g2 := e.Group("/ws")
-	r2 := NewRegistrar(g2, engine, "/ws")
+	r2 := NewRegistrar(g2, "/ws", passthroughMW)
 	r2.GET("/events", noop, Authenticated())
 
 	err := AuditRoutes(e, r1, r2)
@@ -162,12 +144,9 @@ func indexSubstr(s, sub string) int {
 }
 
 func TestAuditRoutes_DeduplicatesDuplicateEchoRoutes(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/things", noop, Authenticated())
 
 	e.GET("/api/extra", noop)
@@ -189,12 +168,9 @@ func TestAuditRoutes_DeduplicatesDuplicateEchoRoutes(t *testing.T) {
 }
 
 func TestAuditRoutes_DirectHTTPMethodsAllCovered(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/r", noop, Public())
 	r.POST("/r", noop, Public())
 	r.PUT("/r", noop, Public())
@@ -206,12 +182,9 @@ func TestAuditRoutes_DirectHTTPMethodsAllCovered(t *testing.T) {
 }
 
 func TestAuditRoutes_PartialMethodCoverage(t *testing.T) {
-	f := seedFixture(t)
-	engine := NewEngine(f.db, zap.NewNop())
-
 	e := echo.New()
 	g := e.Group("/api")
-	r := NewRegistrar(g, engine, "/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
 	r.GET("/r", noop, Authenticated())
 
 	e.POST("/api/r", noop)

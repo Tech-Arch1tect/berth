@@ -1,4 +1,4 @@
-package authz
+package engine
 
 import (
 	"sort"
@@ -29,7 +29,7 @@ func sortedUints(ids []uint) []uint {
 
 func TestAuthorizedScope_SystemPrincipal(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	scope, err := e.AuthorizedScope(SystemPrincipal)
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestAuthorizedScope_SystemPrincipal(t *testing.T) {
 
 func TestAuthorizedScope_AdminUser(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	p := principalFor(t, f, f.adminUserID)
 	scope, err := e.AuthorizedScope(p)
@@ -75,7 +75,7 @@ func TestAuthorizedScope_AdminUser(t *testing.T) {
 
 func TestAuthorizedScope_ScopedNonAdminUser(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	p := principalFor(t, f, f.userID)
 	scope, err := e.AuthorizedScope(p)
@@ -105,7 +105,7 @@ func TestAuthorizedScope_ScopedNonAdminUser(t *testing.T) {
 
 func TestAuthorizedScope_ScopedNonAdminUser_PatternFiltering(t *testing.T) {
 	f := seedFixtureWithPattern(t, "prod-*")
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	p := principalFor(t, f.fixture, f.userID)
 	scope, err := e.AuthorizedScope(p)
@@ -122,7 +122,7 @@ func TestAuthorizedScope_ScopedNonAdminUser_PatternFiltering(t *testing.T) {
 
 func TestAuthorizedScope_NoRoleUser(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	p := principalFor(t, f, f.noRoleUserID)
 	scope, err := e.AuthorizedScope(p)
@@ -143,7 +143,7 @@ func TestAuthorizedScope_NoRoleUser(t *testing.T) {
 
 func TestAuthorizedScope_APIKey_ServerIntersection(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	t.Run("key scope locked to matching server preserves access", func(t *testing.T) {
 		p := withAPIKey(principalFor(t, f, f.userID),
@@ -178,7 +178,7 @@ func TestAuthorizedScope_APIKey_ServerIntersection(t *testing.T) {
 
 func TestAuthorizedScope_APIKey_StackIntersection(t *testing.T) {
 	f := seedFixture(t)
-	e := NewEngine(f.db, zap.NewNop())
+	e := New(f.db, zap.NewNop())
 
 	t.Run("key stack pattern matches allows stack", func(t *testing.T) {
 		p := withAPIKey(principalFor(t, f, f.userID),
@@ -351,7 +351,7 @@ func TestAuthorizedScope_DuplicatePatternDeduplication(t *testing.T) {
 	require.NoError(t, db.Create(&u).Error)
 	require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, role.ID).Error)
 
-	e := NewEngine(db, zap.NewNop())
+	e := New(db, zap.NewNop())
 
 	p := Principal{UserID: u.ID}
 	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
