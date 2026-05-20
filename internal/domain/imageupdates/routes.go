@@ -1,8 +1,11 @@
 package imageupdates
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
+	"berth/internal/domain/rbac/permnames"
+)
 
-func (h *APIHandler) RegisterProtectedAPIRoutes(g *echo.Group) {
-	g.GET("/image-updates", h.ListAvailableUpdates)
-	g.GET("/servers/:serverid/image-updates", h.ListServerUpdates)
+func (h *APIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/image-updates", h.ListAvailableUpdates, authz.Authenticated().WithListScope())
+	reg.GET("/servers/:serverid/image-updates", h.ListServerUpdates, authz.Server(permnames.StacksRead).WithListScope())
 }

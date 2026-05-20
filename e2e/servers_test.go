@@ -445,7 +445,7 @@ func TestUserGetServerNonAdmin(t *testing.T) {
 	mockAgent, testServer := app.CreateTestServerWithAgent(t, "test-server-denied")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
-	t.Run("GET /api/v1/servers/:serverid returns 404 when user lacks access to an existing server", func(t *testing.T) {
+	t.Run("GET /api/v1/servers/:serverid returns 403 when user lacks access to an existing server", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
@@ -455,7 +455,7 @@ func TestUserGetServerNonAdmin(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 404, resp.StatusCode)
+		assert.Equal(t, 403, resp.StatusCode)
 	})
 }
 

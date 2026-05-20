@@ -1,11 +1,16 @@
 package server
 
-import "github.com/labstack/echo/v4"
+import (
+	"berth/internal/domain/authz"
+	"berth/internal/domain/rbac/permnames"
 
-func (h *UserAPIHandler) RegisterProtectedAPIRoutes(g *echo.Group, requireUserScope echo.MiddlewareFunc) {
-	g.GET("/servers", h.ListServers, requireUserScope)
-	g.GET("/servers/:serverid", h.GetServer, requireUserScope)
-	g.GET("/servers/:serverid/statistics", h.GetServerStatistics, requireUserScope)
+	"github.com/labstack/echo/v4"
+)
+
+func (h *UserAPIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/servers", h.ListServers, authz.Authenticated().WithListScope().RequireAPIKeyScope(permnames.ServersRead))
+	reg.GET("/servers/:serverid", h.GetServer, authz.Server(permnames.StacksRead).RequireAPIKeyScope(permnames.ServersRead))
+	reg.GET("/servers/:serverid/statistics", h.GetServerStatistics, authz.Server(permnames.StacksRead).RequireAPIKeyScope(permnames.ServersRead))
 }
 
 func (h *APIHandler) RegisterAdminAPIRoutes(g *echo.Group, requireAdminRead, requireAdminWrite echo.MiddlewareFunc) {

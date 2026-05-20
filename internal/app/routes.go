@@ -131,7 +131,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	mobileAuthHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 
 	if serverUserAPIHandler != nil {
-		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(permnames.ServersRead))
+		serverUserAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if stackAPIHandler != nil {
 		stackAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
@@ -155,7 +155,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		maintenanceAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if imageUpdatesAPIHandler != nil {
-		imageUpdatesAPIHandler.RegisterProtectedAPIRoutes(apiProtected)
+		imageUpdatesAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if apiKeyHandler != nil {
 		apiKeyHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
