@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
@@ -177,7 +177,7 @@ func (s *Service) validateAccess(ctx context.Context, userID, serverID uint, sta
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermLogsRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.LogsRead)
 	if err != nil {
 		s.logger.Error("failed to check logs permission",
 			zap.Error(err),

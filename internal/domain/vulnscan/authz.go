@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"berth/internal/domain/authz"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/pkg/echoparams"
 
 	"github.com/labstack/echo/v4"
@@ -24,7 +24,7 @@ func scanRequirement(svc *Service) func(echo.Context) ([]authz.Requirement, erro
 
 		return []authz.Requirement{{
 			Kind:       authz.KindStack,
-			Permission: rbac.PermStacksRead,
+			Permission: permnames.StacksRead,
 			ServerID:   serverID,
 			Stack:      stackName,
 		}}, nil
@@ -56,13 +56,13 @@ func scanCompareRequirement(svc *Service) func(echo.Context) ([]authz.Requiremen
 		return []authz.Requirement{
 			{
 				Kind:       authz.KindStack,
-				Permission: rbac.PermStacksRead,
+				Permission: permnames.StacksRead,
 				ServerID:   baseServerID,
 				Stack:      baseStackName,
 			},
 			{
 				Kind:       authz.KindStack,
-				Permission: rbac.PermStacksRead,
+				Permission: permnames.StacksRead,
 				ServerID:   compareServerID,
 				Stack:      compareStackName,
 			},

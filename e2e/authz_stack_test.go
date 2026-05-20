@@ -6,6 +6,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -116,7 +117,7 @@ func TestAuthzStack_StackRead(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sr-user", rbac.PermStacksRead, "*")
+	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sr-user", permnames.StacksRead, "*")
 
 	sid := itoa(fixture.serverID)
 	stackURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack"
@@ -171,7 +172,7 @@ func TestAuthzStack_StackRead(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
@@ -216,12 +217,12 @@ func TestAuthzStack_ComposeWrite(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	writeFixture, mockAgent := setupAuthzStackFixture(t, app, adminClient, "authz-fw-user", rbac.PermFilesWrite, "*")
+	writeFixture, mockAgent := setupAuthzStackFixture(t, app, adminClient, "authz-fw-user", permnames.FilesWrite, "*")
 	mockAgent.RegisterJSONHandler("/api/stacks/allowed-stack/compose", map[string]any{
 		"content": "version: '3'\nservices: {}\n",
 	})
 
-	readOnlyFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fw-readonly", rbac.PermStacksRead, "*")
+	readOnlyFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fw-readonly", permnames.StacksRead, "*")
 
 	sid := itoa(writeFixture.serverID)
 	patchURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/compose"
@@ -274,8 +275,8 @@ func TestAuthzStack_ComposeRead(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	readFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fr-user", rbac.PermFilesRead, "*")
-	noFilesFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fr-nofiles", rbac.PermStacksRead, "*")
+	readFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fr-user", permnames.FilesRead, "*")
+	noFilesFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fr-nofiles", permnames.StacksRead, "*")
 
 	t.Run("JWT with files.read is admitted on GET compose", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -315,7 +316,7 @@ func TestAuthzStack_CreateStack(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	matchFixture, mockAgent := setupAuthzStackFixture(t, app, adminClient, "authz-create-match", rbac.PermStacksCreate, "allowed-*")
+	matchFixture, mockAgent := setupAuthzStackFixture(t, app, adminClient, "authz-create-match", permnames.StacksCreate, "allowed-*")
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]any{})
 	mockAgent.RegisterHandler("/api/stacks", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -328,7 +329,7 @@ func TestAuthzStack_CreateStack(t *testing.T) {
 		_, _ = w.Write([]byte(`[]`))
 	})
 
-	noMatchFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-create-nomatch", rbac.PermStacksCreate, "allowed-*")
+	noMatchFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-create-nomatch", permnames.StacksCreate, "allowed-*")
 
 	t.Run("JWT with matching pattern is admitted on POST stacks", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -431,7 +432,7 @@ func TestAuthzStack_ServerGate(t *testing.T) {
 	app.AuthHelper.CreateTestUser(t, noAccessUser)
 	noAccessJWT := app.AuthHelper.JWTLogin(t, noAccessUser.Username, noAccessUser.Password)
 
-	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sg-user", rbac.PermStacksRead, "*")
+	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sg-user", permnames.StacksRead, "*")
 	_ = fixture
 
 	sid := itoa(srv.ID)

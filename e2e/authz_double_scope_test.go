@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -146,7 +147,7 @@ func TestAuthzDoubleScope_StackRead(t *testing.T) {
 		"name": "allowed-stack", "status": "running",
 	})
 
-	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sr-user", rbac.PermStacksRead, srv.ID)
+	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sr-user", permnames.StacksRead, srv.ID)
 
 	stackURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack"
 
@@ -213,7 +214,7 @@ func TestAuthzDoubleScope_StackList(t *testing.T) {
 		{"name": "allowed-stack", "status": "running"},
 	})
 
-	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sl-user", rbac.PermStacksRead, srv.ID)
+	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sl-user", permnames.StacksRead, srv.ID)
 
 	listURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks"
 
@@ -280,7 +281,7 @@ func TestAuthzDoubleScope_FilesWrite(t *testing.T) {
 		"message": "success",
 	})
 
-	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-fw-user", rbac.PermFilesWrite, srv.ID)
+	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-fw-user", permnames.FilesWrite, srv.ID)
 
 	writeURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/files/write"
 	writeBody := map[string]any{"path": "test.txt", "content": "hello"}
@@ -354,7 +355,7 @@ func TestAuthzDoubleScope_LogsRead(t *testing.T) {
 		"logs": []any{},
 	})
 
-	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-lr-user", rbac.PermLogsRead, srv.ID)
+	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-lr-user", permnames.LogsRead, srv.ID)
 
 	logsURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/logs"
 
@@ -423,7 +424,7 @@ func TestAuthzDoubleScope_OperationsManage(t *testing.T) {
 		"operationId": "test-op-id",
 	})
 
-	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-om-user", rbac.PermStacksManage, srv.ID)
+	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-om-user", permnames.StacksManage, srv.ID)
 
 	opsURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/operations"
 	opsBody := map[string]any{"command": "up"}

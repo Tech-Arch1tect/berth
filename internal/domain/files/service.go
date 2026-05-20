@@ -1,7 +1,7 @@
 package files
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
@@ -629,7 +629,7 @@ func (s *Service) checkFileReadPermission(ctx context.Context, userID uint, serv
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermFilesRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesRead)
 	if err != nil {
 		s.logger.Error("failed to check file read permission",
 			zap.Error(err),
@@ -658,7 +658,7 @@ func (s *Service) checkFileWritePermission(ctx context.Context, userID uint, ser
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermFilesWrite)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesWrite)
 	if err != nil {
 		s.logger.Error("failed to check file write permission",
 			zap.Error(err),

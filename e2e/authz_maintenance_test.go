@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -99,7 +100,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-r-user", rbac.PermDockerMaintenanceRead)
+	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-r-user", permnames.DockerMaintenanceRead)
 
 	sid := itoa(fixture.serverID)
 	infoURL := "/api/v1/servers/" + sid + "/maintenance/info"
@@ -155,7 +156,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermDockerMaintenanceRead,
+			"permission":    permnames.DockerMaintenanceRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
@@ -201,7 +202,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-w-user", rbac.PermDockerMaintenanceWrite)
+	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-w-user", permnames.DockerMaintenanceWrite)
 
 	sid := itoa(fixture.serverID)
 	pruneURL := "/api/v1/servers/" + sid + "/maintenance/prune"
@@ -263,7 +264,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermDockerMaintenanceWrite,
+			"permission":    permnames.DockerMaintenanceWrite,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)

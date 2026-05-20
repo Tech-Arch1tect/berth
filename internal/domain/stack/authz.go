@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"berth/internal/domain/authz"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/pkg/echoparams"
 
 	"github.com/labstack/echo/v4"
@@ -28,7 +28,7 @@ func createStackRequirement(c echo.Context) ([]authz.Requirement, error) {
 
 	return []authz.Requirement{{
 		Kind:       authz.KindStack,
-		Permission: rbac.PermStacksCreate,
+		Permission: permnames.StacksCreate,
 		ServerID:   serverID,
 		Stack:      req.Name,
 	}}, nil

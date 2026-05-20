@@ -6,6 +6,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/domain/vulnscan"
 	"berth/internal/pkg/response"
@@ -113,7 +114,7 @@ func TestAuthzVulnscan_StackPath(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sp-user", rbac.PermStacksRead)
+	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sp-user", permnames.StacksRead)
 
 	sid := itoa(fixture.serverID)
 	url := "/api/v1/servers/" + sid + "/stacks/allowed-stack/vulnscan"
@@ -169,7 +170,7 @@ func TestAuthzVulnscan_StackPath(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
@@ -215,7 +216,7 @@ func TestAuthzVulnscan_ScanByID(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sid-user", rbac.PermStacksRead)
+	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sid-user", permnames.StacksRead)
 
 	scan := createTestScan(t, app, fixture.serverID, "allowed-stack")
 	scanURL := "/api/v1/vulnscan/" + itoa(scan.ID)
@@ -275,7 +276,7 @@ func TestAuthzVulnscan_Compare(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-cmp-user", rbac.PermStacksRead)
+	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-cmp-user", permnames.StacksRead)
 
 	baseScan := createTestScan(t, app, fixture.serverID, "allowed-stack")
 	compareScan := createTestScan(t, app, fixture.serverID, "allowed-stack")

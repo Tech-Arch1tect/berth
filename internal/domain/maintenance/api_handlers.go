@@ -1,7 +1,7 @@
 package maintenance
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -145,12 +145,12 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return err
 	}
 
-	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceRead)
+	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.DockerMaintenanceRead)
 	if err != nil {
 		return response.Internal(c, "Failed to check read permissions")
 	}
 
-	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermDockerMaintenanceWrite)
+	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.DockerMaintenanceWrite)
 	if err != nil {
 		return response.Internal(c, "Failed to check write permissions")
 	}

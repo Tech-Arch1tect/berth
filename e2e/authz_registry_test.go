@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -98,7 +99,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzRegistryFixture(t, app, adminClient, "authz-reg-l-user", rbac.PermRegistriesManage)
+	fixture, _ := setupAuthzRegistryFixture(t, app, adminClient, "authz-reg-l-user", permnames.RegistriesManage)
 
 	sid := itoa(fixture.serverID)
 	listURL := "/api/v1/servers/" + sid + "/registries"
@@ -154,7 +155,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermRegistriesManage,
+			"permission":    permnames.RegistriesManage,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)

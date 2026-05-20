@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -101,7 +102,7 @@ func TestAuthzLogs_StackLogs(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzLogsFixture(t, app, adminClient, "authz-lr-user", rbac.PermLogsRead)
+	fixture, _ := setupAuthzLogsFixture(t, app, adminClient, "authz-lr-user", permnames.LogsRead)
 
 	sid := itoa(fixture.serverID)
 	logsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/logs"
@@ -157,7 +158,7 @@ func TestAuthzLogs_StackLogs(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermLogsRead,
+			"permission":    permnames.LogsRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)

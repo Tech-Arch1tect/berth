@@ -3,6 +3,7 @@ package rbac
 import (
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/pkg/patterns"
@@ -400,7 +401,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	serverIDMap := make(map[uint]bool)
 
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == PermStacksRead {
+		if srsp.Permission.Name == permnames.StacksRead {
 			if !serverIDMap[srsp.ServerID] {
 				serverIDs = append(serverIDs, srsp.ServerID)
 				serverIDMap[srsp.ServerID] = true
@@ -854,7 +855,7 @@ func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]
 
 	patternSet := make(map[string]bool)
 	for _, srsp := range serverRoleStackPermissions {
-		if srsp.Permission.Name == PermStacksRead {
+		if srsp.Permission.Name == permnames.StacksRead {
 			patternSet[srsp.StackPattern] = true
 		}
 	}

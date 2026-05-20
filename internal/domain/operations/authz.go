@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"berth/internal/domain/authz"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/pkg/echoparams"
 
 	"github.com/labstack/echo/v4"
@@ -24,9 +24,9 @@ func operationRequirement(c echo.Context) ([]authz.Requirement, error) {
 
 	var perm string
 	if req.Command == "create-archive" || req.Command == "extract-archive" {
-		perm = rbac.PermFilesWrite
+		perm = permnames.FilesWrite
 	} else {
-		perm = rbac.PermStacksManage
+		perm = permnames.StacksManage
 	}
 
 	return []authz.Requirement{{

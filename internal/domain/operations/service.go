@@ -3,7 +3,7 @@ package operations
 import (
 	"berth/internal/domain/compose"
 	"berth/internal/domain/files"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/server"
 	"bufio"
@@ -79,9 +79,9 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 
 	var requiredPermission string
 	if req.Command == "create-archive" || req.Command == "extract-archive" {
-		requiredPermission = rbac.PermFilesWrite
+		requiredPermission = permnames.FilesWrite
 	} else {
-		requiredPermission = rbac.PermStacksManage
+		requiredPermission = permnames.StacksManage
 	}
 
 	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
@@ -244,7 +244,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, rbac.PermStacksManage)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksManage)
 	if err != nil {
 		s.logger.Error("failed to check stream permission",
 			zap.Error(err),

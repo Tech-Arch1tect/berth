@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -105,7 +106,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	fixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fr-user", rbac.PermFilesRead)
+	fixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fr-user", permnames.FilesRead)
 
 	sid := itoa(fixture.serverID)
 	listURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/files"
@@ -161,7 +162,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermFilesRead,
+			"permission":    permnames.FilesRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
@@ -207,8 +208,8 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	writeFixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fw-user2", rbac.PermFilesWrite)
-	readOnlyFixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fw-readonly2", rbac.PermFilesRead)
+	writeFixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fw-user2", permnames.FilesWrite)
+	readOnlyFixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fw-readonly2", permnames.FilesRead)
 
 	writeBody := map[string]any{
 		"path":    "test.txt",
@@ -268,7 +269,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     writeFixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermFilesWrite,
+			"permission":    permnames.FilesWrite,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)

@@ -2,13 +2,12 @@ package authz
 
 import (
 	"berth/internal/domain/apikey"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/pkg/patterns"
 	"slices"
 )
-
-const permStacksRead = "stacks.read"
 
 type ScopeSet struct {
 	serverIDs    []uint
@@ -51,7 +50,7 @@ func (s ScopeSet) AllowsStack(serverID uint, stackName string) bool {
 	if !s.hasKey {
 		return true
 	}
-	return checkAPIKeyStackScope(&apikey.APIKey{Scopes: s.keyScopes}, serverID, stackName, permStacksRead)
+	return checkAPIKeyStackScope(&apikey.APIKey{Scopes: s.keyScopes}, serverID, stackName, permnames.StacksRead)
 }
 
 func (s ScopeSet) ServerIDs() []uint {
@@ -128,7 +127,7 @@ func (e *Engine) computeRoleScope(userID uint, roles []usermodel.Role) ([]uint, 
 	serverIDSet := make(map[uint]bool)
 	patternSets := make(map[uint]map[string]bool)
 	for _, srsp := range srsps {
-		if srsp.Permission.Name != permStacksRead {
+		if srsp.Permission.Name != permnames.StacksRead {
 			continue
 		}
 		if !serverIDSet[srsp.ServerID] {

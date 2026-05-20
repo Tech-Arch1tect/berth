@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 )
 
 type RBACPermissionChecker struct {
@@ -29,9 +30,9 @@ func (r *RBACPermissionChecker) CanUserAccessAnyStackWithPermission(ctx context.
 
 	switch permission {
 	case "view":
-		permissionName = rbac.PermStacksRead
+		permissionName = permnames.StacksRead
 	case "manage":
-		permissionName = rbac.PermStacksManage
+		permissionName = permnames.StacksManage
 	default:
 		return false
 	}
@@ -48,9 +49,9 @@ func (r *RBACPermissionChecker) HasStackPermission(ctx context.Context, userID i
 
 	switch permission {
 	case "view":
-		permissionName = rbac.PermStacksRead
+		permissionName = permnames.StacksRead
 	case "manage":
-		permissionName = rbac.PermStacksManage
+		permissionName = permnames.StacksManage
 	default:
 		return false
 	}

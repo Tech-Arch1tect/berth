@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
 
@@ -122,7 +123,7 @@ func TestAuthzOperations_StacksManage(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-sm-user", rbac.PermStacksManage)
+	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-sm-user", permnames.StacksManage)
 
 	sid := itoa(manageFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
@@ -165,7 +166,7 @@ func TestAuthzOperations_FilesWrite(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-fw-user", rbac.PermFilesWrite)
+	filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-fw-user", permnames.FilesWrite)
 
 	sid := itoa(filesFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
@@ -208,7 +209,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 	app.CreateAdminTestUser(t, admin)
 	adminClient := app.SessionHelper.SimulateLogin(t, app.AuthHelper, admin.Username, admin.Password)
 
-	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-manage", rbac.PermStacksManage)
+	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-manage", permnames.StacksManage)
 
 	sid := itoa(manageFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
@@ -226,7 +227,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     manageFixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermStacksManage,
+			"permission":    permnames.StacksManage,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
@@ -264,7 +265,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 	t.Run("API key with files.write scope is admitted for create-archive", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-fw", rbac.PermFilesWrite)
+		filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-fw", permnames.FilesWrite)
 		fwSid := itoa(filesFixture.serverID)
 
 		createResp, err := adminClient.Post("/api/v1/api-keys", map[string]any{"name": "authz-ops-fw-key"})
@@ -277,7 +278,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     filesFixture.serverID,
 			"stack_pattern": "allowed-*",
-			"permission":    rbac.PermFilesWrite,
+			"permission":    permnames.FilesWrite,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)

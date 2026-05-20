@@ -1,7 +1,7 @@
 package vulnscan
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
@@ -91,7 +91,7 @@ func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackNam
 		zap.String("stack_name", stackName),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, rbac.PermStacksRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission",
 			zap.Error(err),
@@ -219,7 +219,7 @@ func (s *Service) GetScan(ctx context.Context, userID, scanID uint) (*ImageScan,
 		return nil, err
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, scan.ServerID, scan.StackName, rbac.PermStacksRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, scan.ServerID, scan.StackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -236,7 +236,7 @@ type ScanWithSummary struct {
 }
 
 func (s *Service) GetScansForStack(ctx context.Context, userID, serverID uint, stackName string) ([]ImageScan, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, rbac.PermStacksRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -484,7 +484,7 @@ func (s *Service) CleanupStaleScans() error {
 }
 
 func (s *Service) GetLatestScanForStack(ctx context.Context, userID, serverID uint, stackName string) (*ImageScan, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, rbac.PermStacksRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -648,7 +648,7 @@ type ScanTrendResponse struct {
 }
 
 func (s *Service) GetScanTrend(ctx context.Context, userID, serverID uint, stackName string, limit int) (*ScanTrendResponse, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, rbac.PermStacksRead)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}

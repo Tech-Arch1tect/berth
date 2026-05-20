@@ -3,7 +3,7 @@ package queue
 import (
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -80,7 +80,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 		zap.String("command", req.Command),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, rbac.PermStacksManage)
+	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksManage)
 	if err != nil {
 		s.logger.Error("failed to check permissions for operation",
 			zap.Error(err),
@@ -104,7 +104,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 			"",
 			"",
 			fmt.Sprintf("stack:%s", stackName),
-			rbac.PermStacksManage,
+			permnames.StacksManage,
 			map[string]any{
 				"server_id": serverID,
 				"command":   req.Command,

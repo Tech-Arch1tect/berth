@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -47,7 +47,7 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -82,7 +82,7 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -119,7 +119,7 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -195,7 +195,7 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -279,7 +279,7 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, rbac.PermRegistriesManage)
+	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}

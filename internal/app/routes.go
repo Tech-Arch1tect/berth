@@ -16,6 +16,7 @@ import (
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
@@ -129,7 +130,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	mobileAuthHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireAPIKeyDenied())
 
 	if serverUserAPIHandler != nil {
-		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermServersRead))
+		serverUserAPIHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(permnames.ServersRead))
 	}
 	if stackAPIHandler != nil {
 		stackAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
@@ -147,7 +148,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 		operationsHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if operationLogsHandler != nil {
-		operationLogsHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(rbac.PermLogsOperationsRead))
+		operationLogsHandler.RegisterProtectedAPIRoutes(apiProtected, rbacMiddleware.RequireUserScopeJWT(permnames.LogsOperationsRead))
 	}
 	if maintenanceAPIHandler != nil {
 		maintenanceAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
@@ -181,20 +182,20 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 
 	rbacAPIHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware)
 	if operationLogsHandler != nil {
-		operationLogsHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminLogsRead))
+		operationLogsHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(permnames.AdminLogsRead))
 	}
 	if serverAPIHandler != nil {
 		serverAPIHandler.RegisterAdminAPIRoutes(apiAdmin,
-			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersRead),
-			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminServersWrite))
+			rbacMiddleware.RequireAdminScopeJWT(permnames.AdminServersRead),
+			rbacMiddleware.RequireAdminScopeJWT(permnames.AdminServersWrite))
 	}
 	if migrationHandler != nil {
 		migrationHandler.RegisterAdminAPIRoutes(apiAdmin,
-			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemExport),
-			rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminSystemImport))
+			rbacMiddleware.RequireAdminScopeJWT(permnames.AdminSystemExport),
+			rbacMiddleware.RequireAdminScopeJWT(permnames.AdminSystemImport))
 	}
 	if securityHandler != nil {
-		securityHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(rbac.PermAdminAuditRead))
+		securityHandler.RegisterAdminAPIRoutes(apiAdmin, rbacMiddleware.RequireAdminScopeJWT(permnames.AdminAuditRead))
 	}
 }
 

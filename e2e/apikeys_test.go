@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"berth/internal/domain/apikey"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -122,7 +122,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
 			"server_id":     testServer.ID,
 			"stack_pattern": "test-*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 201, resp.StatusCode)
@@ -137,7 +137,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		require.NotZero(t, createdAPIKeyID, "API key must be created first")
 
 		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(createdAPIKeyID)+"/scopes", map[string]interface{}{
-			"permission": rbac.PermStacksRead,
+			"permission": permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
@@ -167,7 +167,7 @@ func TestAPIKeysSessionAuth(t *testing.T) {
 		assert.True(t, result.Success)
 		assert.Len(t, result.Data, 1)
 		assert.Equal(t, "test-*", result.Data[0].StackPattern)
-		assert.Equal(t, rbac.PermStacksRead, result.Data[0].Permission)
+		assert.Equal(t, permnames.StacksRead, result.Data[0].Permission)
 		createdScopeID = result.Data[0].ID
 	})
 

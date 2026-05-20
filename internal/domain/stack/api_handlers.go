@@ -1,7 +1,7 @@
 package stack
 
 import (
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -282,7 +282,7 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 		return err
 	}
 
-	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, rbac.PermStacksCreate)
+	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.StacksCreate)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}

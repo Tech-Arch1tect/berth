@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"berth/internal/domain/apikey"
-	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/stack"
 	"berth/internal/pkg/response"
 
@@ -94,7 +94,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		keyID, plainKey := createAPIKey(t, "scoped-key")
 		serverID := testServer.ID
-		addScope(t, keyID, &serverID, "*", rbac.PermStacksRead)
+		addScope(t, keyID, &serverID, "*", permnames.StacksRead)
 
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		keyID, plainKey := createAPIKey(t, "pattern-key")
 		serverID := testServer.ID
-		addScope(t, keyID, &serverID, "test-*", rbac.PermStacksRead)
+		addScope(t, keyID, &serverID, "test-*", permnames.StacksRead)
 
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		keyID, plainKey := createAPIKey(t, "server-scoped-key")
 
 		server2ID := testServer2.ID
-		addScope(t, keyID, &server2ID, "*", rbac.PermStacksRead)
+		addScope(t, keyID, &server2ID, "*", permnames.StacksRead)
 
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
@@ -154,7 +154,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		keyID, plainKey := createAPIKey(t, "read-only-key")
 		serverID := testServer.ID
 
-		addScope(t, keyID, &serverID, "*", rbac.PermStacksRead)
+		addScope(t, keyID, &serverID, "*", permnames.StacksRead)
 
 		mockAgent.RegisterJSONHandler("/api/stacks/test-stack", map[string]any{
 			"name":       "test-stack",
@@ -192,7 +192,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		keyID, plainKey := createAPIKey(t, "manage-key")
 		serverID := testServer.ID
-		addScope(t, keyID, &serverID, "test-*", rbac.PermStacksManage)
+		addScope(t, keyID, &serverID, "test-*", permnames.StacksManage)
 
 		mockAgent.RegisterJSONHandler("/api/stacks/test-stack/operations", map[string]any{
 			"operation_id": "test-op-123",
@@ -219,7 +219,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		keyID, plainKey := createAPIKey(t, "all-servers-key")
 
-		addScope(t, keyID, nil, "*", rbac.PermStacksRead)
+		addScope(t, keyID, nil, "*", permnames.StacksRead)
 
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
@@ -238,7 +238,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		keyID, plainKey := createAPIKey(t, "permission-check-key")
 		serverID := testServer.ID
 
-		addScope(t, keyID, &serverID, "*", rbac.PermStacksRead)
+		addScope(t, keyID, &serverID, "*", permnames.StacksRead)
 
 		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/permissions", plainKey)
 		require.NoError(t, err)
@@ -249,10 +249,10 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		assert.True(t, result.Success)
 		if len(result.Data.Permissions) > 0 {
-			assert.Contains(t, result.Data.Permissions, rbac.PermStacksRead, "Should have stacks.read permission")
+			assert.Contains(t, result.Data.Permissions, permnames.StacksRead, "Should have stacks.read permission")
 
 			for _, perm := range result.Data.Permissions {
-				assert.NotEqual(t, rbac.PermStacksManage, perm, "Should not have stacks.manage permission when key only has read scope")
+				assert.NotEqual(t, permnames.StacksManage, perm, "Should not have stacks.manage permission when key only has read scope")
 			}
 		}
 	})
@@ -307,7 +307,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "nonexistent-*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
@@ -378,7 +378,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermFilesRead,
+			"permission":    permnames.FilesRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
@@ -410,7 +410,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
@@ -473,7 +473,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermLogsRead,
+			"permission":    permnames.LogsRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
@@ -505,7 +505,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
-			"permission":    rbac.PermStacksRead,
+			"permission":    permnames.StacksRead,
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
