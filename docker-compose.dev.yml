@@ -25,8 +25,30 @@ services:
     entrypoint: []
     command: ["/bin/sh", "-c", "npm run dev & air -c .air.toml"]
 
+  ide:
+    build:
+      context: dev/ide
+      dockerfile: Dockerfile
+    container_name: berth-ide
+    user: "${UID:-1000}:${GID:-1000}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8099:8080"
+    volumes:
+      - .:/home/coder/project
+      - dev-ide-state:/home/coder/.local/share/code-server/User
+    command:
+      - --auth=none
+      - --disable-telemetry
+      - --bind-addr=0.0.0.0:8080
+      - /home/coder/project
+
 volumes:
   go-mod-cache:
   go-build-cache:
   node-modules:
   berth-tmp:
+  dev-ide-state:
