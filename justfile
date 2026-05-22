@@ -9,7 +9,7 @@ gid := `id -g`
 cache_prefix := "dev-npm"
 
 _docker_run := """
-docker run --rm -it \
+docker run --rm -i $(test -t 0 && printf -- -t) \
   --user """ + uid + ":" + gid + """ \
   --volume $PWD:/app \
   --volume """ + cache_prefix + """-npm:/tmp/.npm \

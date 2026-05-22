@@ -1,7 +1,6 @@
-FROM node:24-bookworm-slim
+FROM node:24.15.0-trixie-slim
 
 ARG GO_VERSION=1.26.3
-ARG TARGETARCH
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -39,7 +38,8 @@ RUN apt-get update \
         fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz" \
+RUN ARCH="$(dpkg --print-architecture)" \
+    && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" \
         -o /tmp/go.tar.gz \
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz
