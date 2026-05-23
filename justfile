@@ -55,6 +55,33 @@ npx *args: _prep-caches
 go *args: _prep-caches
     {{_docker_run}} go {{args}}
 
+test-server *args: _prep-caches
+    {{_docker_run}} go test {{args}} ./...
+
+test-unit *args: _prep-caches
+    {{_docker_run}} npm run test:unit -- {{args}}
+
+test-e2e *args: _prep-caches
+    {{_docker_run}} npm run test:e2e -- {{args}}
+
+install-browsers: _prep-caches
+    {{_docker_run}} npx playwright install chromium
+
+vet: _prep-caches
+    {{_docker_run}} go vet ./...
+
+type-check: _prep-caches
+    {{_docker_run}} npm run type-check
+
+lint: _prep-caches
+    {{_docker_run}} npm run lint
+
+test: vet type-check lint test-unit test-server test-e2e
+
+format: _prep-caches
+    {{_docker_run}} npm run format
+    {{_docker_run}} go fmt ./...
+
 npm-shell: _prep-caches
     {{_docker_run}} bash
 
