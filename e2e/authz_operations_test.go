@@ -139,8 +139,7 @@ func TestAuthzOperations_StacksManage(t *testing.T) {
 			Body:    map[string]any{"command": "up"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "stacks.manage should be admitted for 'up'; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "stacks.manage should be admitted for 'up'; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT with stacks.manage but not files.write returns 403 for create-archive", func(t *testing.T) {
@@ -182,8 +181,7 @@ func TestAuthzOperations_FilesWrite(t *testing.T) {
 			Body:    map[string]any{"command": "create-archive"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "files.write should be admitted for 'create-archive'; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "files.write should be admitted for 'create-archive'; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT with files.write but not stacks.manage returns 403 for up", func(t *testing.T) {
@@ -243,8 +241,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 			Body:    map[string]any{"command": "up"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "API key with stacks.manage scope admitted for 'up'; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "API key with stacks.manage scope admitted for 'up'; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {
@@ -296,7 +293,6 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 			Body:    map[string]any{"command": "create-archive"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "API key with files.write scope admitted for 'create-archive'; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "API key with files.write scope admitted for 'create-archive'; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 }

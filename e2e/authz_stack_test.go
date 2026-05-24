@@ -246,8 +246,7 @@ func TestAuthzStack_ComposeWrite(t *testing.T) {
 			Body:    patchBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 403, resp.StatusCode, "files.write should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 401, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT with stacks.read but not files.write returns 403 on PATCH compose", func(t *testing.T) {
@@ -289,8 +288,7 @@ func TestAuthzStack_ComposeRead(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + readFixture.jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 403, resp.StatusCode, "files.read admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 401, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT with stacks.read but not files.read returns 403 on GET compose", func(t *testing.T) {
@@ -343,8 +341,7 @@ func TestAuthzStack_CreateStack(t *testing.T) {
 			Body:    map[string]any{"name": "allowed-new"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 403, resp.StatusCode, "matching pattern must be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 401, resp.StatusCode)
+		assert.Equal(t, 201, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT whose pattern does not match requested name returns 403", func(t *testing.T) {
@@ -386,8 +383,7 @@ func TestAuthzStack_Authenticated(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("permissions admits any authenticated user", func(t *testing.T) {
@@ -398,8 +394,7 @@ func TestAuthzStack_Authenticated(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("unauthenticated returns 401 on can-create", func(t *testing.T) {

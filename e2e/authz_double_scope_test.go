@@ -300,8 +300,7 @@ func TestAuthzDoubleScope_FilesWrite(t *testing.T) {
 			Body:    writeBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "key should not be 401 before revocation")
-		assert.NotEqual(t, 403, resp.StatusCode, "key should be admitted before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
@@ -310,8 +309,7 @@ func TestAuthzDoubleScope_FilesWrite(t *testing.T) {
 			Body:    writeBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode, "JWT should be admitted before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	revokeRole(t, adminClient, fix.userID, fix.roleID)
@@ -372,8 +370,7 @@ func TestAuthzDoubleScope_LogsRead(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fix.plainKey},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "key should not be 401 before revocation")
-		assert.NotEqual(t, 403, resp.StatusCode, "key should not be 403 before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
@@ -381,8 +378,7 @@ func TestAuthzDoubleScope_LogsRead(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fix.userJWT},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode, "JWT should not be 403 before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	revokeRole(t, adminClient, fix.userID, fix.roleID)
@@ -443,8 +439,7 @@ func TestAuthzDoubleScope_OperationsManage(t *testing.T) {
 			Body:    opsBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "key should not be 401 before revocation")
-		assert.NotEqual(t, 403, resp.StatusCode, "key should be admitted before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
@@ -453,8 +448,7 @@ func TestAuthzDoubleScope_OperationsManage(t *testing.T) {
 			Body:    opsBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode, "JWT should be admitted before revocation: %s", resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	revokeRole(t, adminClient, fix.userID, fix.roleID)

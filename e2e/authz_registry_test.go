@@ -121,8 +121,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fixture.jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "registries.manage should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "registries.manage should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT without registries.manage returns 403", func(t *testing.T) {
@@ -170,8 +169,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + plainKey},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {

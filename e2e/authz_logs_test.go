@@ -124,8 +124,7 @@ func TestAuthzLogs_StackLogs(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fixture.jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT without logs.read returns 403", func(t *testing.T) {
@@ -173,8 +172,7 @@ func TestAuthzLogs_StackLogs(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + plainKey},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {

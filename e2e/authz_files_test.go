@@ -128,8 +128,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fixture.jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT without files.read returns 403", func(t *testing.T) {
@@ -177,8 +176,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + plainKey},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {
@@ -242,8 +240,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 			Body:    writeBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT with files.read but not files.write returns 403", func(t *testing.T) {
@@ -287,8 +284,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 			Body:    writeBody,
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode)
-		assert.NotEqual(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {

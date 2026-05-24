@@ -31,6 +31,19 @@ func setupAuthzMaintenanceFixture(
 	mockAgent, srv := app.CreateTestServerWithAgent(t, "authz-maint-"+username)
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 	mockAgent.RegisterJSONHandler("/api/maintenance/info", map[string]any{})
+	mockAgent.RegisterJSONHandler("/api/maintenance/prune", map[string]any{
+		"containers_deleted":    []any{},
+		"images_deleted":        []any{},
+		"networks_deleted":      []any{},
+		"volumes_deleted":       []any{},
+		"build_cache_deleted":   []any{},
+		"space_reclaimed_bytes": 0,
+	})
+	mockAgent.RegisterJSONHandler("/api/maintenance/resource", map[string]any{
+		"resource_type": "container",
+		"resource_id":   "test-resource",
+		"deleted":       true,
+	})
 
 	targetUser := &e2etesting.TestUser{
 		Username: username,
@@ -122,8 +135,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + fixture.jwt},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "docker.maintenance.read should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "docker.maintenance.read should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT without docker.maintenance.read returns 403", func(t *testing.T) {
@@ -171,8 +183,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + plainKey},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {
@@ -231,8 +242,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 			Body:    map[string]any{"type": "images"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "docker.maintenance.write should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "docker.maintenance.write should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("JWT without docker.maintenance.write returns 403", func(t *testing.T) {
@@ -282,8 +292,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 			Body:    map[string]any{"type": "images"},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "API key in scope should be admitted; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {
@@ -345,7 +354,6 @@ func TestAuthzMaintenance_PermissionsProbe(t *testing.T) {
 			Headers: map[string]string{"Authorization": "Bearer " + plainJWT},
 		})
 		require.NoError(t, err)
-		assert.NotEqual(t, 401, resp.StatusCode, "authenticated user should be admitted to permissions probe; got %d: %s", resp.StatusCode, resp.GetString())
-		assert.NotEqual(t, 403, resp.StatusCode, "authenticated user should be admitted to permissions probe; got %d: %s", resp.StatusCode, resp.GetString())
+		assert.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
 	})
 }
