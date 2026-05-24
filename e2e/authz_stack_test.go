@@ -94,6 +94,8 @@ func setupAuthzStackFixture(
 	require.NoError(t, err)
 	require.Equal(t, 201, addPermResp.StatusCode, "add stack-permission: %s", addPermResp.GetString())
 
+	GrantStacksReadPrerequisite(t, adminClient, roleID, srv.ID, stackPattern, permName, permList.Data.Permissions)
+
 	assignResp, err := adminClient.Post("/api/v1/admin/users/assign-role", map[string]any{
 		"user_id": targetUser.ID,
 		"role_id": roleID,

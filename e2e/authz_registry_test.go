@@ -76,6 +76,8 @@ func setupAuthzRegistryFixture(
 	require.NoError(t, err)
 	require.Equal(t, 201, addPermResp.StatusCode, "add stack-permission: %s", addPermResp.GetString())
 
+	GrantStacksReadPrerequisite(t, adminClient, roleID, srv.ID, "*", permName, permList.Data.Permissions)
+
 	assignResp, err := adminClient.Post("/api/v1/admin/users/assign-role", map[string]any{
 		"user_id": targetUser.ID,
 		"role_id": roleID,
@@ -159,6 +161,8 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, adminClient, keyID, fixture.serverID, "*", permnames.RegistriesManage)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",

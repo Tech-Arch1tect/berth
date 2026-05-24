@@ -83,6 +83,8 @@ func setupAuthzFilesFixture(
 	require.NoError(t, err)
 	require.Equal(t, 201, addPermResp.StatusCode, "add stack-permission: %s", addPermResp.GetString())
 
+	GrantStacksReadPrerequisite(t, adminClient, roleID, srv.ID, "*", permName, permList.Data.Permissions)
+
 	assignResp, err := adminClient.Post("/api/v1/admin/users/assign-role", map[string]any{
 		"user_id": targetUser.ID,
 		"role_id": roleID,
@@ -166,6 +168,8 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, adminClient, keyID, fixture.serverID, "allowed-*", permnames.FilesRead)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
@@ -273,6 +277,8 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, adminClient, keyID, writeFixture.serverID, "allowed-*", permnames.FilesWrite)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",

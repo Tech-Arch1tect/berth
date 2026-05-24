@@ -77,6 +77,8 @@ func setupAuthzMaintenanceFixture(
 	require.NoError(t, err)
 	require.Equal(t, 201, addPermResp.StatusCode, "add stack-permission: %s", addPermResp.GetString())
 
+	GrantStacksReadPrerequisite(t, adminClient, roleID, srv.ID, "*", permName, permList.Data.Permissions)
+
 	assignResp, err := adminClient.Post("/api/v1/admin/users/assign-role", map[string]any{
 		"user_id": targetUser.ID,
 		"role_id": roleID,
@@ -160,6 +162,8 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, adminClient, keyID, fixture.serverID, "*", permnames.DockerMaintenanceRead)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
@@ -268,6 +272,8 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, addScopeResp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, adminClient, keyID, fixture.serverID, "*", permnames.DockerMaintenanceWrite)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",

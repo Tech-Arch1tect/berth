@@ -193,6 +193,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		keyID, plainKey := createAPIKey(t, "manage-key")
 		serverID := testServer.ID
 		addScope(t, keyID, &serverID, "test-*", permnames.StacksManage)
+		AddAPIKeyStacksReadScope(t, sessionClient, keyID, serverID, "test-*", permnames.StacksManage)
 
 		mockAgent.RegisterJSONHandler("/api/stacks/test-stack/operations", map[string]any{
 			"operation_id": "test-op-123",
@@ -383,6 +384,8 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
 
+		AddAPIKeyStacksReadScope(t, sessionClient, keyID, serverID, "*", permnames.FilesRead)
+
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
 			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/files",
@@ -477,6 +480,8 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode)
+
+		AddAPIKeyStacksReadScope(t, sessionClient, keyID, serverID, "*", permnames.LogsRead)
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
