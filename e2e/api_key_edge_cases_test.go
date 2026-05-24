@@ -36,7 +36,7 @@ func TestAPIKeyScopeValidation_RejectsBadStackPatterns(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			TagTest(t, http.MethodPost, "/api/v1/api-keys/:id/scopes", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-			resp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+			resp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 				"stack_pattern": tc.pattern,
 				"permission":    "stacks.read",
 			})
@@ -68,12 +68,12 @@ func TestAPIKeyScopeGrant_DuplicateScopeRejected(t *testing.T) {
 		"permission":    "stacks.read",
 	}
 
-	first, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", scope)
+	first, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", scope)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, first.StatusCode, "first grant should succeed; body=%s", first.GetString())
 
 	TagTest(t, http.MethodPost, "/api/v1/api-keys/:id/scopes", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-	second, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", scope)
+	second, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", scope)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, second.StatusCode,
 		"granting an identical scope twice must be rejected; body=%s", second.GetString())
@@ -127,7 +127,7 @@ func TestAPIKeyScopeRuntime_SoftDeletedPermissionHandledGracefully(t *testing.T)
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]any{})
 
 	keyID, plainKey := createKeyFor(t, session, "deleted-perm-key")
-	scopeResp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	scopeResp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"server_id":     testServer.ID,
 		"stack_pattern": "*",
 		"permission":    "stacks.read",
@@ -144,7 +144,7 @@ func TestAPIKeyScopeRuntime_SoftDeletedPermissionHandledGracefully(t *testing.T)
 	assert.NotEqual(t, http.StatusInternalServerError, profileResp.StatusCode,
 		"a scope pointing at a soft-deleted permission must not crash authentication; body=%s", profileResp.GetString())
 
-	stacksResp := authedGet(t, app, "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+	stacksResp := authedGet(t, app, "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 	assert.NotEqual(t, http.StatusInternalServerError, stacksResp.StatusCode,
 		"a soft-deleted permission must fail the scope check gracefully, not panic; body=%s", stacksResp.GetString())
 }
@@ -166,7 +166,7 @@ func TestAPIKeyScopeRuntime_ServerScopedKeyDeniedAfterAccessLoss(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]any{})
 
 	keyID, plainKey := createKeyFor(t, session, "access-loss-key")
-	scopeResp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	scopeResp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"server_id":     testServer.ID,
 		"stack_pattern": "*",
 		"permission":    "stacks.read",
@@ -174,7 +174,7 @@ func TestAPIKeyScopeRuntime_ServerScopedKeyDeniedAfterAccessLoss(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, scopeResp.StatusCode)
 
-	stacksPath := "/api/v1/servers/" + itoa(testServer.ID) + "/stacks"
+	stacksPath := "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks"
 	require.Equal(t, http.StatusOK, authedGet(t, app, stacksPath, plainKey).StatusCode,
 		"control: the scoped key reads the server's stacks while the granting user has access")
 

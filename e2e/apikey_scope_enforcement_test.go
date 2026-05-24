@@ -62,7 +62,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 			payload["server_id"] = *serverID
 		}
 
-		resp, err := sessionClient.Post("/api/v1/api-keys/"+itoa(apiKeyID)+"/scopes", payload)
+		resp, err := sessionClient.Post("/api/v1/api-keys/"+Itoa(apiKeyID)+"/scopes", payload)
 		require.NoError(t, err)
 		require.Equal(t, 201, resp.StatusCode, "failed to add scope")
 	}
@@ -83,7 +83,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		keyID, plainKey := createAPIKey(t, "no-scope-key")
 		_ = keyID
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 
 		assert.Equal(t, 403, resp.StatusCode, "API key without scopes should be denied access to server")
@@ -96,7 +96,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		serverID := testServer.ID
 		addScope(t, keyID, &serverID, "*", permnames.StacksRead)
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -114,7 +114,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		serverID := testServer.ID
 		addScope(t, keyID, &serverID, "test-*", permnames.StacksRead)
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -142,7 +142,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 		server2ID := testServer2.ID
 		addScope(t, keyID, &server2ID, "*", permnames.StacksRead)
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 
 		assert.Equal(t, 403, resp.StatusCode, "API key scoped to different server should be denied access")
@@ -162,13 +162,13 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 			"containers": []any{},
 		})
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks/test-stack", plainKey)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode, "Read operation should succeed with stacks.read scope")
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "PATCH",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/compose",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/compose",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 				"Content-Type":  "application/json",
@@ -201,7 +201,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/operations",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/operations",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 				"Content-Type":  "application/json",
@@ -221,7 +221,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		addScope(t, keyID, nil, "*", permnames.StacksRead)
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -240,7 +240,7 @@ func TestAPIKeyScopeEnforcement(t *testing.T) {
 
 		addScope(t, keyID, &serverID, "*", permnames.StacksRead)
 
-		resp, err := apiRequest("GET", "/api/v1/servers/"+itoa(testServer.ID)+"/stacks/test-stack/permissions", plainKey)
+		resp, err := apiRequest("GET", "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks/test-stack/permissions", plainKey)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -279,7 +279,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks",
 			Headers: map[string]string{
 				"Authorization": "Bearer brth_invalidkey123456789012345678901234",
 			},
@@ -304,7 +304,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 		mockAgent2.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
 		serverID := testServer2.ID
-		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "nonexistent-*",
 			"permission":    permnames.StacksRead,
@@ -314,7 +314,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 			},
@@ -329,7 +329,7 @@ func TestAPIKeyAuthenticationVsAuthorization(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode, "Missing auth should return 401")
@@ -375,7 +375,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.FilesRead,
@@ -385,7 +385,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/files",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 			},
@@ -407,7 +407,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.StacksRead,
@@ -417,7 +417,7 @@ func TestAPIKeyFilesAccess(t *testing.T) {
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/files",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/files",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 			},
@@ -470,7 +470,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.LogsRead,
@@ -480,7 +480,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 			},
@@ -502,7 +502,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 		keyID := result.Data.APIKey.ID
 
 		serverID := testServer.ID
-		resp, err = sessionClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		resp, err = sessionClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.StacksRead,
@@ -512,7 +512,7 @@ func TestAPIKeyLogsAccess(t *testing.T) {
 
 		resp, err = app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + plainKey,
 			},

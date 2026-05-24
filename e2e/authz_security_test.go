@@ -92,7 +92,7 @@ func TestAuthzSecurity_AuditLogsRoute(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"stack_pattern": "*",
 			"permission":    permnames.AdminAuditRead,
 		})

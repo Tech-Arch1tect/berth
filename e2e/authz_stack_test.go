@@ -84,7 +84,7 @@ func setupAuthzStackFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -119,7 +119,7 @@ func TestAuthzStack_StackRead(t *testing.T) {
 
 	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sr-user", permnames.StacksRead, "*")
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	stackURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestAuthzStack_StackRead(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.StacksRead,
@@ -224,7 +224,7 @@ func TestAuthzStack_ComposeWrite(t *testing.T) {
 
 	readOnlyFixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-fw-readonly", permnames.StacksRead, "*")
 
-	sid := itoa(writeFixture.serverID)
+	sid := Itoa(writeFixture.serverID)
 	patchURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/compose"
 
 	patchBody := map[string]any{
@@ -251,7 +251,7 @@ func TestAuthzStack_ComposeWrite(t *testing.T) {
 	t.Run("JWT with stacks.read but not files.write returns 403 on PATCH compose", func(t *testing.T) {
 		TagTest(t, "PATCH", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
-		sid2 := itoa(readOnlyFixture.serverID)
+		sid2 := Itoa(readOnlyFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "PATCH",
 			Path:    "/api/v1/servers/" + sid2 + "/stacks/allowed-stack/compose",
@@ -280,7 +280,7 @@ func TestAuthzStack_ComposeRead(t *testing.T) {
 
 	t.Run("JWT with files.read is admitted on GET compose", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(readFixture.serverID)
+		sid := Itoa(readFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
 			Path:    "/api/v1/servers/" + sid + "/stacks/allowed-stack/compose",
@@ -293,7 +293,7 @@ func TestAuthzStack_ComposeRead(t *testing.T) {
 
 	t.Run("JWT with stacks.read but not files.read returns 403 on GET compose", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/compose", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(noFilesFixture.serverID)
+		sid := Itoa(noFilesFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
 			Path:    "/api/v1/servers/" + sid + "/stacks/allowed-stack/compose",
@@ -333,7 +333,7 @@ func TestAuthzStack_CreateStack(t *testing.T) {
 
 	t.Run("JWT with matching pattern is admitted on POST stacks", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(matchFixture.serverID)
+		sid := Itoa(matchFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
 			Path:    "/api/v1/servers/" + sid + "/stacks",
@@ -347,7 +347,7 @@ func TestAuthzStack_CreateStack(t *testing.T) {
 
 	t.Run("JWT whose pattern does not match requested name returns 403", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(noMatchFixture.serverID)
+		sid := Itoa(noMatchFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
 			Path:    "/api/v1/servers/" + sid + "/stacks",
@@ -374,7 +374,7 @@ func TestAuthzStack_Authenticated(t *testing.T) {
 	mockAgent, srv := app.CreateTestServerWithAgent(t, "authz-auth-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
-	sid := itoa(srv.ID)
+	sid := Itoa(srv.ID)
 
 	t.Run("can-create admits any authenticated user", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/can-create", e2etesting.CategoryAuthorization, e2etesting.ValueMedium)
@@ -435,7 +435,7 @@ func TestAuthzStack_ServerGate(t *testing.T) {
 	fixture, _ := setupAuthzStackFixture(t, app, adminClient, "authz-sg-user", permnames.StacksRead, "*")
 	_ = fixture
 
-	sid := itoa(srv.ID)
+	sid := Itoa(srv.ID)
 
 	t.Run("principal with no server access returns 403 on list stacks", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)

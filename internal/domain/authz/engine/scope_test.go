@@ -382,3 +382,238 @@ func TestAuthorizedScope_DuplicatePatternDeduplication(t *testing.T) {
 		assert.True(t, firstCall[0] < firstCall[1], "server IDs should be in ascending order")
 	})
 }
+
+func TestAuthorizedScope_PatternMatching(t *testing.T) {
+	cases := []struct {
+		name        string
+		pattern     string
+		stack       string
+		wantAllowed bool
+	}{
+		{"exact match", "prod-web", "prod-web", true},
+		{"exact mismatch", "prod-web", "prod-db", false},
+		{"prefix wildcard matches", "prod-*", "prod-web", true},
+		{"prefix wildcard mismatch", "prod-*", "staging-web", false},
+		{"suffix wildcard matches", "*-web", "prod-web", true},
+		{"suffix wildcard mismatch", "*-web", "prod-db", false},
+		{"infix wildcard matches", "prod-*-v1", "prod-web-v1", true},
+		{"infix wildcard mismatch suffix", "prod-*-v1", "prod-web-v2", false},
+		{"multi wildcard matches", "*prod*web*", "x-prod-y-web-z", true},
+		{"multi wildcard mismatch", "*prod*web*", "x-staging-y-z", false},
+		{"global wildcard matches anything", "*", "anything-goes", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := seedFixtureWithPattern(t, tc.pattern)
+			e := New(f.db, zap.NewNop())
+
+			p := principalFor(t, f.fixture, f.userID)
+			scope, err := e.AuthorizedScope(p)
+			require.NoError(t, err)
+
+			assert.Equal(t, tc.wantAllowed, scope.AllowsStack(f.serverID, tc.stack),
+				"pattern %q vs stack %q", tc.pattern, tc.stack)
+		})
+	}
+}
+
+func TestAuthorizedScope_OverlappingPatternsSameRole(t *testing.T) {
+	db := testDB(t)
+
+	var perm usermodel.Permission
+	require.NoError(t, db.Where("name = ?", testPermName).First(&perm).Error)
+
+	srv := struct {
+		ID          uint   `gorm:"primarykey"`
+		Name        string `gorm:"not null"`
+		Host        string `gorm:"not null"`
+		Port        int    `gorm:"not null"`
+		AccessToken string `gorm:"not null"`
+	}{Name: "overlap-server", Host: "localhost", Port: 2376, AccessToken: "tok"}
+	require.NoError(t, db.Table("servers").Create(&srv).Error)
+
+	role := usermodel.Role{Name: "overlap-role", Description: "overlap", IsAdmin: false}
+	require.NoError(t, db.Create(&role).Error)
+
+	require.NoError(t, db.Create(&usermodel.ServerRoleStackPermission{
+		ServerID: srv.ID, RoleID: role.ID, PermissionID: perm.ID, StackPattern: "prod-*",
+	}).Error)
+	require.NoError(t, db.Create(&usermodel.ServerRoleStackPermission{
+		ServerID: srv.ID, RoleID: role.ID, PermissionID: perm.ID, StackPattern: "prod-web",
+	}).Error)
+
+	u := usermodel.User{Username: "overlap-user", Email: "overlap-user@example.com", Password: "x"}
+	require.NoError(t, db.Create(&u).Error)
+	require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, role.ID).Error)
+	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
+
+	e := New(db, zap.NewNop())
+	scope, err := e.AuthorizedScope(Principal{UserID: u.ID, Roles: u.Roles})
+	require.NoError(t, err)
+
+	t.Run("specific pattern still matches", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(srv.ID, "prod-web"))
+	})
+	t.Run("broader pattern still matches", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(srv.ID, "prod-db"))
+	})
+	t.Run("out-of-pattern still denied", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(srv.ID, "staging-web"))
+	})
+}
+
+func TestAuthorizedScope_MultiRoleUnion(t *testing.T) {
+	db := testDB(t)
+
+	var perm usermodel.Permission
+	require.NoError(t, db.Where("name = ?", testPermName).First(&perm).Error)
+
+	srv := struct {
+		ID          uint   `gorm:"primarykey"`
+		Name        string `gorm:"not null"`
+		Host        string `gorm:"not null"`
+		Port        int    `gorm:"not null"`
+		AccessToken string `gorm:"not null"`
+	}{Name: "union-server", Host: "localhost", Port: 2376, AccessToken: "tok"}
+	require.NoError(t, db.Table("servers").Create(&srv).Error)
+
+	roleA := usermodel.Role{Name: "prod-role", Description: "", IsAdmin: false}
+	require.NoError(t, db.Create(&roleA).Error)
+	require.NoError(t, db.Create(&usermodel.ServerRoleStackPermission{
+		ServerID: srv.ID, RoleID: roleA.ID, PermissionID: perm.ID, StackPattern: "prod-*",
+	}).Error)
+
+	roleB := usermodel.Role{Name: "ops-role", Description: "", IsAdmin: false}
+	require.NoError(t, db.Create(&roleB).Error)
+	require.NoError(t, db.Create(&usermodel.ServerRoleStackPermission{
+		ServerID: srv.ID, RoleID: roleB.ID, PermissionID: perm.ID, StackPattern: "ops-*",
+	}).Error)
+
+	u := usermodel.User{Username: "union-user", Email: "union-user@example.com", Password: "x"}
+	require.NoError(t, db.Create(&u).Error)
+	require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, roleA.ID).Error)
+	require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, roleB.ID).Error)
+	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
+
+	e := New(db, zap.NewNop())
+	scope, err := e.AuthorizedScope(Principal{UserID: u.ID, Roles: u.Roles})
+	require.NoError(t, err)
+
+	t.Run("pattern from role A allowed", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(srv.ID, "prod-web"))
+	})
+	t.Run("pattern from role B allowed", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(srv.ID, "ops-db"))
+	})
+	t.Run("stack matching neither pattern denied", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(srv.ID, "staging-web"))
+	})
+}
+
+func TestAuthorizedScope_APIKey_IntersectsWiderRolePattern(t *testing.T) {
+	f := seedFixture(t)
+	e := New(f.db, zap.NewNop())
+
+	p := withAPIKey(principalFor(t, f, f.userID),
+		scopeWithStack(testPermName, nil, "prod-*"),
+	)
+	scope, err := e.AuthorizedScope(p)
+	require.NoError(t, err)
+
+	t.Run("in-key pattern allowed", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(f.serverID, "prod-web"))
+	})
+	t.Run("role-allowed-but-key-restricted denied", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(f.serverID, "staging-web"))
+	})
+}
+
+func TestAuthorizedScope_APIKey_PatternIntersectionEmpty(t *testing.T) {
+	f := seedFixtureWithPattern(t, "prod-*")
+	e := New(f.db, zap.NewNop())
+
+	p := withAPIKey(principalFor(t, f.fixture, f.userID),
+		scopeWithStack(testPermName, nil, "staging-*"),
+	)
+	scope, err := e.AuthorizedScope(p)
+	require.NoError(t, err)
+
+	t.Run("role-only-allowed denied by key", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(f.serverID, "prod-web"))
+	})
+	t.Run("key-only-allowed denied by role", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(f.serverID, "staging-web"))
+	})
+}
+
+func TestAuthorizedScope_AdminWithKeyServerRestriction(t *testing.T) {
+	f := seedFixture(t)
+
+	srv2 := struct {
+		ID          uint   `gorm:"primarykey"`
+		Name        string `gorm:"not null"`
+		Host        string `gorm:"not null"`
+		Port        int    `gorm:"not null"`
+		AccessToken string `gorm:"not null"`
+	}{Name: "admin-narrow-second", Host: "localhost", Port: 2377, AccessToken: "tok2"}
+	require.NoError(t, f.db.Table("servers").Create(&srv2).Error)
+
+	e := New(f.db, zap.NewNop())
+
+	p := withAPIKey(principalFor(t, f, f.adminUserID),
+		scopeWithStack(testPermName, ptr(f.serverID), "*"),
+	)
+	scope, err := e.AuthorizedScope(p)
+	require.NoError(t, err)
+
+	t.Run("admin scope narrows to keyed server", func(t *testing.T) {
+		assert.True(t, scope.AllowsServer(f.serverID))
+		assert.False(t, scope.AllowsServer(srv2.ID))
+	})
+	t.Run("admin sees other server denied via key intersection", func(t *testing.T) {
+		assert.False(t, scope.AllowsStack(srv2.ID, "any-stack"))
+	})
+	t.Run("admin retains all-stacks on keyed server", func(t *testing.T) {
+		assert.True(t, scope.AllowsStack(f.serverID, "any-stack"))
+	})
+}
+
+func TestAuthorizedScope_EmptyAndMalformedPatterns(t *testing.T) {
+	t.Run("empty role pattern stored as wildcard via DB default", func(t *testing.T) {
+		f := seedFixtureWithPattern(t, "")
+		e := New(f.db, zap.NewNop())
+
+		p := principalFor(t, f.fixture, f.userID)
+		scope, err := e.AuthorizedScope(p)
+		require.NoError(t, err)
+		assert.True(t, scope.AllowsStack(f.serverID, "anything"),
+			"empty StackPattern should resolve to wildcard via gorm default")
+	})
+
+	t.Run("empty in-memory key pattern matches only empty stack name", func(t *testing.T) {
+		f := seedFixture(t)
+		e := New(f.db, zap.NewNop())
+
+		p := withAPIKey(principalFor(t, f, f.userID),
+			scopeWithStack(testPermName, nil, ""),
+		)
+		scope, err := e.AuthorizedScope(p)
+		require.NoError(t, err)
+		assert.False(t, scope.AllowsStack(f.serverID, "prod-web"))
+	})
+
+	t.Run("non-glob characters treated literally", func(t *testing.T) {
+		f := seedFixtureWithPattern(t, "[bad]")
+		e := New(f.db, zap.NewNop())
+
+		p := principalFor(t, f.fixture, f.userID)
+		scope, err := e.AuthorizedScope(p)
+		require.NoError(t, err)
+
+		assert.False(t, scope.AllowsStack(f.serverID, "bad"),
+			"square brackets should not act as a character class")
+		assert.True(t, scope.AllowsStack(f.serverID, "[bad]"),
+			"literal match of the pattern string")
+	})
+}

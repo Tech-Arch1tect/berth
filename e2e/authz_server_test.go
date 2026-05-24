@@ -71,7 +71,7 @@ func setupAuthzServerFixture(
 	require.NotZero(t, permID, "permission stacks.read not found")
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srvIn.ID,
 			"permission_id": permID,
@@ -166,7 +166,7 @@ func TestAuthzServer_List(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"stack_pattern": "*",
 			"permission":    permnames.ServersRead,
 		})
@@ -197,8 +197,8 @@ func TestAuthzServer_GetByID(t *testing.T) {
 
 	fixture := setupAuthzServerFixture(t, app, adminClient, "authz-srv-g-user")
 
-	inURL := "/api/v1/servers/" + itoa(fixture.serverInScope)
-	outURL := "/api/v1/servers/" + itoa(fixture.serverNoRole)
+	inURL := "/api/v1/servers/" + Itoa(fixture.serverInScope)
+	outURL := "/api/v1/servers/" + Itoa(fixture.serverNoRole)
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -261,7 +261,7 @@ func TestAuthzServer_Statistics(t *testing.T) {
 
 	fixture := setupAuthzServerFixture(t, app, adminClient, "authz-srv-s-user")
 
-	outURL := "/api/v1/servers/" + itoa(fixture.serverNoRole) + "/statistics"
+	outURL := "/api/v1/servers/" + Itoa(fixture.serverNoRole) + "/statistics"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/statistics", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -289,7 +289,7 @@ func TestAuthzServer_Statistics(t *testing.T) {
 		require.NoError(t, createResp.GetJSON(&keyResult))
 		plainKey := keyResult.Data.PlainKey
 
-		inURL := "/api/v1/servers/" + itoa(fixture.serverInScope) + "/statistics"
+		inURL := "/api/v1/servers/" + Itoa(fixture.serverInScope) + "/statistics"
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
 			Path:    inURL,

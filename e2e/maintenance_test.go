@@ -98,7 +98,7 @@ func TestMaintenancePermissionsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/maintenance/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/permissions",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -212,7 +212,7 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/maintenance/info", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/info",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/info",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -262,7 +262,7 @@ func TestMaintenancePruneJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/maintenance/prune", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/prune",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/prune",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -277,7 +277,7 @@ func TestMaintenancePruneJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/maintenance/prune", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/prune",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/prune",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -297,7 +297,7 @@ func TestMaintenancePruneJWT(t *testing.T) {
 		for _, pruneType := range validTypes {
 			resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 				Method: "POST",
-				Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/prune",
+				Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/prune",
 				Headers: map[string]string{
 					"Authorization": "Bearer " + token,
 					"Content-Type":  "application/json",
@@ -346,7 +346,7 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/maintenance/resource", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/resource",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/resource",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -363,7 +363,7 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/maintenance/resource", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/resource",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/resource",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -380,7 +380,7 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/maintenance/resource", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/resource",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/resource",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -401,7 +401,7 @@ func TestMaintenanceDeleteResourceJWT(t *testing.T) {
 		for _, resourceType := range validTypes {
 			resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 				Method: "DELETE",
-				Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/maintenance/resource",
+				Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/maintenance/resource",
 				Headers: map[string]string{
 					"Authorization": "Bearer " + token,
 					"Content-Type":  "application/json",
@@ -438,7 +438,7 @@ func TestMaintenanceEndpointsSessionAuth(t *testing.T) {
 
 	t.Run("DELETE /api/servers/:serverid/maintenance/resource works with session auth", func(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/maintenance/resource", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.DeleteWithBody("/api/v1/servers/"+itoa(testServer.ID)+"/maintenance/resource", map[string]interface{}{
+		resp, err := sessionClient.DeleteWithBody("/api/v1/servers/"+Itoa(testServer.ID)+"/maintenance/resource", map[string]interface{}{
 			"type": "image",
 			"id":   "test-image-id",
 		})
@@ -512,7 +512,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("GET /api/v1/servers/:serverid/registries returns empty list initially", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries")
+		resp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/registries")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -523,7 +523,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("POST /api/v1/servers/:serverid/registries creates credential", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
-		resp, err := sessionClient.Post("/api/v1/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
+		resp, err := sessionClient.Post("/api/v1/servers/"+Itoa(testServer.ID)+"/registries", map[string]interface{}{
 			"registry_url":  "ghcr.io",
 			"username":      "testuser",
 			"password":      "testtoken",
@@ -544,7 +544,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("POST /api/v1/servers/:serverid/registries requires registry_url", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/registries", e2etesting.CategoryValidation, e2etesting.ValueMedium)
-		resp, err := sessionClient.Post("/api/v1/servers/"+itoa(testServer.ID)+"/registries", map[string]interface{}{
+		resp, err := sessionClient.Post("/api/v1/servers/"+Itoa(testServer.ID)+"/registries", map[string]interface{}{
 			"username": "testuser",
 			"password": "testtoken",
 		})
@@ -554,7 +554,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("GET /api/v1/servers/:serverid/registries returns created credential", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/registries", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries")
+		resp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/registries")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -568,7 +568,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		resp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/registries/" + Itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -580,7 +580,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("GET /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/99999")
+		resp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/registries/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})
@@ -589,7 +589,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 		TagTest(t, "PUT", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Put("/api/v1/servers/"+itoa(testServer.ID)+"/registries/"+itoa(createdCredentialID), map[string]interface{}{
+		resp, err := sessionClient.Put("/api/v1/servers/"+Itoa(testServer.ID)+"/registries/"+Itoa(createdCredentialID), map[string]interface{}{
 			"registry_url":  "ghcr.io",
 			"username":      "updateduser",
 			"password":      "updatedtoken",
@@ -608,7 +608,7 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 
 	t.Run("PUT /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
 		TagTest(t, "PUT", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Put("/api/v1/servers/"+itoa(testServer.ID)+"/registries/99999", map[string]interface{}{
+		resp, err := sessionClient.Put("/api/v1/servers/"+Itoa(testServer.ID)+"/registries/99999", map[string]interface{}{
 			"username": "testuser",
 		})
 		require.NoError(t, err)
@@ -619,18 +619,18 @@ func TestRegistryCredentialsSessionAuth(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		require.NotZero(t, createdCredentialID, "credential must be created first")
 
-		resp, err := sessionClient.Delete("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		resp, err := sessionClient.Delete("/api/v1/servers/" + Itoa(testServer.ID) + "/registries/" + Itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 
-		getResp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/registries/" + itoa(createdCredentialID))
+		getResp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/registries/" + Itoa(createdCredentialID))
 		require.NoError(t, err)
 		assert.Equal(t, 404, getResp.StatusCode)
 	})
 
 	t.Run("DELETE /api/v1/servers/:serverid/registries/:id returns 404 for non-existent credential", func(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/servers/:serverid/registries/:id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
-		resp, err := sessionClient.Delete("/api/v1/servers/" + itoa(testServer.ID) + "/registries/99999")
+		resp, err := sessionClient.Delete("/api/v1/servers/" + Itoa(testServer.ID) + "/registries/99999")
 		require.NoError(t, err)
 		assert.Equal(t, 404, resp.StatusCode)
 	})

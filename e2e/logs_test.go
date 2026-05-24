@@ -72,7 +72,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -91,7 +91,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs?tail=50",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs?tail=50",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -104,7 +104,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs?since=1h",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs?since=1h",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -117,7 +117,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs?timestamps=false",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs?timestamps=false",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -130,7 +130,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -148,7 +148,7 @@ func TestLogsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryHappyPath, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs?tail=100&since=5m&timestamps=true",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs?tail=100&since=5m&timestamps=true",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -212,7 +212,7 @@ func TestLogsEndpointsErrorCases(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryEdgeCase, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers//logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/containers//logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -279,7 +279,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + adminToken,
 			},
@@ -292,7 +292,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + regularToken,
 			},
@@ -306,7 +306,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + regularToken,
 			},
@@ -320,7 +320,7 @@ func TestLogsEndpointsRBAC(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs",
 		})
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)

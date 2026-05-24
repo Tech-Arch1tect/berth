@@ -68,7 +68,7 @@ func setupAuthzVulnscanFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -116,7 +116,7 @@ func TestAuthzVulnscan_StackPath(t *testing.T) {
 
 	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sp-user", permnames.StacksRead)
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	url := "/api/v1/servers/" + sid + "/stacks/allowed-stack/vulnscan"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -167,7 +167,7 @@ func TestAuthzVulnscan_StackPath(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.StacksRead,
@@ -219,7 +219,7 @@ func TestAuthzVulnscan_ScanByID(t *testing.T) {
 	fixture, _ := setupAuthzVulnscanFixture(t, app, adminClient, "authz-vs-sid-user", permnames.StacksRead)
 
 	scan := createTestScan(t, app, fixture.serverID, "allowed-stack")
-	scanURL := "/api/v1/vulnscan/" + itoa(scan.ID)
+	scanURL := "/api/v1/vulnscan/" + Itoa(scan.ID)
 
 	t.Run("JWT with stacks.read on scan stack is admitted", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/vulnscan/:scanid", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -281,7 +281,7 @@ func TestAuthzVulnscan_Compare(t *testing.T) {
 	baseScan := createTestScan(t, app, fixture.serverID, "allowed-stack")
 	compareScan := createTestScan(t, app, fixture.serverID, "allowed-stack")
 
-	compareURL := "/api/v1/vulnscan/compare/" + itoa(baseScan.ID) + "/" + itoa(compareScan.ID)
+	compareURL := "/api/v1/vulnscan/compare/" + Itoa(baseScan.ID) + "/" + Itoa(compareScan.ID)
 
 	t.Run("JWT authorised for both scans' stacks is admitted", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/vulnscan/compare/:baseScanId/:compareScanId", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -320,7 +320,7 @@ func TestAuthzVulnscan_Compare(t *testing.T) {
 		_, otherSrv := app.CreateTestServerWithAgent(t, "authz-vs-cmp-other")
 		otherScan := createTestScan(t, app, otherSrv.ID, "other-stack")
 
-		crossURL := "/api/v1/vulnscan/compare/" + itoa(baseScan.ID) + "/" + itoa(otherScan.ID)
+		crossURL := "/api/v1/vulnscan/compare/" + Itoa(baseScan.ID) + "/" + Itoa(otherScan.ID)
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",

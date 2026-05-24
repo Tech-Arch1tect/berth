@@ -106,7 +106,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -125,7 +125,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -138,7 +138,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/permissions",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -156,7 +156,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/networks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/networks",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/networks",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -169,7 +169,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/volumes", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/volumes",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/volumes",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -182,7 +182,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/environment", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/environment",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/environment",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -195,7 +195,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/images", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/images",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/images",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -208,7 +208,7 @@ func TestStackEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/stats", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/stats",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/stats",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -243,7 +243,7 @@ func TestStackEndpointsSessionAuth(t *testing.T) {
 
 	t.Run("GET /api/v1/servers/:id/stacks works with session auth", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := sessionClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
+		resp, err := sessionClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
@@ -258,7 +258,7 @@ func TestStackEndpointsNoAuth(t *testing.T) {
 
 	t.Run("GET /api/v1/servers/:id/stacks requires authentication", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:id/stacks", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.Get("/api/v1/servers/" + itoa(testServer.ID) + "/stacks")
+		resp, err := app.HTTPClient.Get("/api/v1/servers/" + Itoa(testServer.ID) + "/stacks")
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
 	})

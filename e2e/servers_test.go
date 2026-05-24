@@ -4,7 +4,6 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/response"
-	"strconv"
 	"testing"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -77,7 +76,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID),
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -122,7 +121,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/statistics", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/statistics",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/statistics",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -157,7 +156,7 @@ func TestServerEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/servers/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/servers/" + itoa(testServer.ID),
+			Path:   "/api/v1/admin/servers/" + Itoa(testServer.ID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -246,7 +245,7 @@ func TestServerCRUDOperations(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "PUT",
-			Path:   "/api/v1/admin/servers/" + itoa(createdServerID),
+			Path:   "/api/v1/admin/servers/" + Itoa(createdServerID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -277,7 +276,7 @@ func TestServerCRUDOperations(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/admin/servers/" + itoa(createdServerID),
+			Path:   "/api/v1/admin/servers/" + Itoa(createdServerID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -292,7 +291,7 @@ func TestServerCRUDOperations(t *testing.T) {
 
 		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/servers/" + itoa(createdServerID),
+			Path:   "/api/v1/admin/servers/" + Itoa(createdServerID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -329,7 +328,7 @@ func TestServerTestConnection(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/admin/servers/" + itoa(testServer.ID) + "/test",
+			Path:   "/api/v1/admin/servers/" + Itoa(testServer.ID) + "/test",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -345,7 +344,7 @@ func TestServerTestConnection(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/admin/servers/" + itoa(testServer.ID) + "/test",
+			Path:   "/api/v1/admin/servers/" + Itoa(testServer.ID) + "/test",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -449,7 +448,7 @@ func TestUserGetServerNonAdmin(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID),
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -457,8 +456,4 @@ func TestUserGetServerNonAdmin(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode)
 	})
-}
-
-func itoa(n uint) string {
-	return strconv.FormatUint(uint64(n), 10)
 }

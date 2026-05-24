@@ -89,7 +89,7 @@ func TestAPIKeyLifecycle_SoftDeletedKeyRejected(t *testing.T) {
 
 	keyID, plainKey := createKeyFor(t, session, "doomed-key")
 
-	deleteResp, err := session.Delete("/api/v1/api-keys/" + itoa(keyID))
+	deleteResp, err := session.Delete("/api/v1/api-keys/" + Itoa(keyID))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, deleteResp.StatusCode)
 
@@ -200,7 +200,7 @@ func TestAPIKeyScopeGrant_RejectsServerWithoutAccess(t *testing.T) {
 	keyID, _ := createKeyFor(t, nonAdminClient, "non-admin-key")
 
 	TagTest(t, http.MethodPost, "/api/v1/api-keys/:id/scopes", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-	resp, err := nonAdminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	resp, err := nonAdminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"server_id":     testServer.ID,
 		"stack_pattern": "*",
 		"permission":    "stacks.read",
@@ -223,7 +223,7 @@ func TestAPIKeyScopeGrant_NonAdminCannotGrantAdminScope(t *testing.T) {
 	keyID, _ := createKeyFor(t, session, "user-key")
 
 	TagTest(t, http.MethodPost, "/api/v1/api-keys/:id/scopes", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-	resp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	resp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"stack_pattern": "*",
 		"permission":    "admin.users.read",
 	})
@@ -246,7 +246,7 @@ func TestAPIKeyScopeGrant_AllServersRequiresAtLeastOneAccessibleServer(t *testin
 	keyID, _ := createKeyFor(t, session, "no-server-key")
 
 	TagTest(t, http.MethodPost, "/api/v1/api-keys/:id/scopes", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-	resp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	resp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"stack_pattern": "*",
 		"permission":    "stacks.read",
 	})
@@ -268,7 +268,7 @@ func TestAPIKeyScopeRuntime_KeyForSoftDeletedServerStillAuthenticatesButDeniesAc
 	mockAgent.RegisterJSONHandler("/api/stacks", []map[string]any{})
 
 	keyID, plainKey := createKeyFor(t, session, "server-scoped-key")
-	scopeResp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	scopeResp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"server_id":     testServer.ID,
 		"stack_pattern": "*",
 		"permission":    "stacks.read",
@@ -276,7 +276,7 @@ func TestAPIKeyScopeRuntime_KeyForSoftDeletedServerStillAuthenticatesButDeniesAc
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, scopeResp.StatusCode)
 
-	delResp, err := session.Delete("/api/v1/admin/servers/" + itoa(testServer.ID))
+	delResp, err := session.Delete("/api/v1/admin/servers/" + Itoa(testServer.ID))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, delResp.StatusCode)
 
@@ -286,7 +286,7 @@ func TestAPIKeyScopeRuntime_KeyForSoftDeletedServerStillAuthenticatesButDeniesAc
 	assert.Equal(t, http.StatusOK, profileResp.StatusCode,
 		"key authentication should still work even though the scoped server is soft-deleted (auth is per-key, not per-scope-target)")
 
-	stacksResp := authedGet(t, app, "/api/v1/servers/"+itoa(testServer.ID)+"/stacks", plainKey)
+	stacksResp := authedGet(t, app, "/api/v1/servers/"+Itoa(testServer.ID)+"/stacks", plainKey)
 	assert.NotEqual(t, http.StatusOK, stacksResp.StatusCode,
 		"accessing a soft-deleted server must not succeed; got %d body=%s", stacksResp.StatusCode, stacksResp.GetString())
 }
@@ -300,7 +300,7 @@ func TestAPIKeyScopeRuntime_AdminScopedKeyDeniedAfterRoleRemoval(t *testing.T) {
 	session := app.SessionHelper.SimulateLogin(t, app.AuthHelper, user.Username, user.Password)
 
 	keyID, plainKey := createKeyFor(t, session, "ex-admin-key")
-	scopeResp, err := session.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	scopeResp, err := session.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"stack_pattern": "*",
 		"permission":    "admin.users.read",
 	})

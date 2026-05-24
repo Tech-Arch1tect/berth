@@ -202,7 +202,7 @@ func TestSecurityAuditLogDetailJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/security-audit-logs/:id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/security-audit-logs/" + itoa(logID),
+			Path:   "/api/v1/admin/security-audit-logs/" + Itoa(logID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},

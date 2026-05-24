@@ -66,7 +66,7 @@ func setupAuthzRegistryFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -101,7 +101,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 
 	fixture, _ := setupAuthzRegistryFixture(t, app, adminClient, "authz-reg-l-user", permnames.RegistriesManage)
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	listURL := "/api/v1/servers/" + sid + "/registries"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestAuthzRegistry_ListCredentials(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.RegistriesManage,

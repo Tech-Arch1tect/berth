@@ -131,7 +131,7 @@ func TestWebSocketInsufficientAccessDeniedAfterAuth(t *testing.T) {
 	TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategorySecurity, e2etesting.ValueHigh)
 	resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 		Method:  http.MethodGet,
-		Path:    "/ws/api/stack-status/" + itoa(testServer.ID),
+		Path:    "/ws/api/stack-status/" + Itoa(testServer.ID),
 		Headers: map[string]string{"Authorization": "Bearer " + plainKey},
 	})
 	require.NoError(t, err)

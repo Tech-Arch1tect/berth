@@ -71,7 +71,7 @@ func setupAuthzImageUpdatesFixture(
 	require.NotZero(t, permID, "permission stacks.read not found")
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srvIn.ID,
 			"permission_id": permID,
@@ -192,8 +192,8 @@ func TestAuthzImageUpdates_ServerScopedList(t *testing.T) {
 
 	seedImageUpdate(t, app, fixture.serverInScope, "in-scope-stack", "ctr-1")
 
-	inURL := "/api/v1/servers/" + itoa(fixture.serverInScope) + "/image-updates"
-	outURL := "/api/v1/servers/" + itoa(fixture.serverNoRole) + "/image-updates"
+	inURL := "/api/v1/servers/" + Itoa(fixture.serverInScope) + "/image-updates"
+	outURL := "/api/v1/servers/" + Itoa(fixture.serverNoRole) + "/image-updates"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/image-updates", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)

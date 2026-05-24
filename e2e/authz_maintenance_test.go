@@ -67,7 +67,7 @@ func setupAuthzMaintenanceFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -102,7 +102,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 
 	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-r-user", permnames.DockerMaintenanceRead)
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	infoURL := "/api/v1/servers/" + sid + "/maintenance/info"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -153,7 +153,7 @@ func TestAuthzMaintenance_ReadRoute(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.DockerMaintenanceRead,
@@ -204,7 +204,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 
 	fixture, _ := setupAuthzMaintenanceFixture(t, app, adminClient, "authz-maint-w-user", permnames.DockerMaintenanceWrite)
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	pruneURL := "/api/v1/servers/" + sid + "/maintenance/prune"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -261,7 +261,7 @@ func TestAuthzMaintenance_WriteRoute(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "*",
 			"permission":    permnames.DockerMaintenanceWrite,
@@ -313,7 +313,7 @@ func TestAuthzMaintenance_PermissionsProbe(t *testing.T) {
 
 	_, srv := app.CreateTestServerWithAgent(t, "authz-maint-pp-server")
 
-	sid := itoa(srv.ID)
+	sid := Itoa(srv.ID)
 	permissionsURL := "/api/v1/servers/" + sid + "/maintenance/permissions"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {

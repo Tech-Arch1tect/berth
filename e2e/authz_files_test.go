@@ -73,7 +73,7 @@ func setupAuthzFilesFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -108,7 +108,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 
 	fixture, _ := setupAuthzFilesFixture(t, app, adminClient, "authz-fr-user", permnames.FilesRead)
 
-	sid := itoa(fixture.serverID)
+	sid := Itoa(fixture.serverID)
 	listURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/files"
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
@@ -159,7 +159,7 @@ func TestAuthzFiles_ReadRoute(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     fixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.FilesRead,
@@ -218,7 +218,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(writeFixture.serverID)
+		sid := Itoa(writeFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
 			Path:   "/api/v1/servers/" + sid + "/stacks/allowed-stack/files/write",
@@ -230,7 +230,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 
 	t.Run("JWT with files.write is admitted", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(writeFixture.serverID)
+		sid := Itoa(writeFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
 			Path:    "/api/v1/servers/" + sid + "/stacks/allowed-stack/files/write",
@@ -244,7 +244,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 
 	t.Run("JWT with files.read but not files.write returns 403", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(readOnlyFixture.serverID)
+		sid := Itoa(readOnlyFixture.serverID)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "POST",
 			Path:    "/api/v1/servers/" + sid + "/stacks/allowed-stack/files/write",
@@ -257,7 +257,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 
 	t.Run("API key in scope is admitted", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(writeFixture.serverID)
+		sid := Itoa(writeFixture.serverID)
 
 		createResp, err := adminClient.Post("/api/v1/api-keys", map[string]any{"name": "authz-files-write-key"})
 		require.NoError(t, err)
@@ -266,7 +266,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     writeFixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.FilesWrite,
@@ -287,7 +287,7 @@ func TestAuthzFiles_WriteRoute(t *testing.T) {
 
 	t.Run("API key out of scope returns 403", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/files/write", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
-		sid := itoa(writeFixture.serverID)
+		sid := Itoa(writeFixture.serverID)
 
 		createResp, err := adminClient.Post("/api/v1/api-keys", map[string]any{"name": "authz-files-write-noscope"})
 		require.NoError(t, err)

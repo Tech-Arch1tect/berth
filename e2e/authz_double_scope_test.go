@@ -68,7 +68,7 @@ func setupDoubleScopeFixture(
 	require.NotZero(t, permID, "permission %q not found", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     serverID,
 			"permission_id": permID,
@@ -98,7 +98,7 @@ func setupDoubleScopeFixture(
 	keyID := keyResult.Data.APIKey.ID
 	plainKey := keyResult.Data.PlainKey
 
-	addScopeResp, err := userClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+	addScopeResp, err := userClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 		"server_id":     serverID,
 		"stack_pattern": "*",
 		"permission":    permName,
@@ -149,7 +149,7 @@ func TestAuthzDoubleScope_StackRead(t *testing.T) {
 
 	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sr-user", permnames.StacksRead, srv.ID)
 
-	stackURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack"
+	stackURL := "/api/v1/servers/" + Itoa(fix.serverID) + "/stacks/allowed-stack"
 
 	t.Run("API key and JWT work before revocation", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -216,7 +216,7 @@ func TestAuthzDoubleScope_StackList(t *testing.T) {
 
 	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-sl-user", permnames.StacksRead, srv.ID)
 
-	listURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks"
+	listURL := "/api/v1/servers/" + Itoa(fix.serverID) + "/stacks"
 
 	t.Run("API key and JWT work before revocation", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -283,7 +283,7 @@ func TestAuthzDoubleScope_FilesWrite(t *testing.T) {
 
 	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-fw-user", permnames.FilesWrite, srv.ID)
 
-	writeURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/files/write"
+	writeURL := "/api/v1/servers/" + Itoa(fix.serverID) + "/stacks/allowed-stack/files/write"
 	writeBody := map[string]any{"path": "test.txt", "content": "hello"}
 
 	t.Run("API key and JWT work before revocation", func(t *testing.T) {
@@ -357,7 +357,7 @@ func TestAuthzDoubleScope_LogsRead(t *testing.T) {
 
 	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-lr-user", permnames.LogsRead, srv.ID)
 
-	logsURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/logs"
+	logsURL := "/api/v1/servers/" + Itoa(fix.serverID) + "/stacks/allowed-stack/logs"
 
 	t.Run("API key and JWT are not forbidden before revocation", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -426,7 +426,7 @@ func TestAuthzDoubleScope_OperationsManage(t *testing.T) {
 
 	fix := setupDoubleScopeFixture(t, app, adminClient, "ds-om-user", permnames.StacksManage, srv.ID)
 
-	opsURL := "/api/v1/servers/" + itoa(fix.serverID) + "/stacks/allowed-stack/operations"
+	opsURL := "/api/v1/servers/" + Itoa(fix.serverID) + "/stacks/allowed-stack/operations"
 	opsBody := map[string]any{"command": "up"}
 
 	t.Run("API key and JWT work before revocation", func(t *testing.T) {

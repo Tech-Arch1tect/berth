@@ -66,7 +66,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/operations",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/operations",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -140,7 +140,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/logs?tail=50",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/logs?tail=50",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -158,7 +158,7 @@ func TestOperationsEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/containers/web-1/logs",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -289,7 +289,7 @@ func TestOperationsEndpointsNoAuth(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/servers/" + itoa(testServer.ID) + "/stacks/test-stack/operations",
+			Path:   "/api/v1/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/operations",
 			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},

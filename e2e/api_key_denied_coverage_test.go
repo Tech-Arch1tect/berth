@@ -53,7 +53,7 @@ func TestRequireAPIKeyDeniedCoverage(t *testing.T) {
 		return resp
 	}
 
-	keyID := itoa(apiKeyID)
+	keyID := Itoa(apiKeyID)
 
 	cases := []struct {
 		name   string
@@ -119,7 +119,7 @@ func TestCrossUserResourceAccess_APIKeys(t *testing.T) {
 
 	var bKeyResp response.Response[apikey.CreateAPIKeyData]
 	require.NoError(t, createResp.GetJSON(&bKeyResp))
-	bKeyID := itoa(bKeyResp.Data.APIKey.ID)
+	bKeyID := Itoa(bKeyResp.Data.APIKey.ID)
 	const dummyScopeID = "1"
 
 	t.Run("user A cannot GET user B's key by ID", func(t *testing.T) {

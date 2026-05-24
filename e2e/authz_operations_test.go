@@ -69,7 +69,7 @@ func setupAuthzOpsFixture(
 	require.NotZero(t, permID, "permission %q not found in permissions list", permName)
 
 	addPermResp, err := adminClient.Post(
-		"/api/v1/admin/roles/"+itoa(roleID)+"/stack-permissions",
+		"/api/v1/admin/roles/"+Itoa(roleID)+"/stack-permissions",
 		map[string]any{
 			"server_id":     srv.ID,
 			"permission_id": permID,
@@ -97,7 +97,7 @@ func TestAuthzOperations_Unauthenticated(t *testing.T) {
 	mockAgent, srv := app.CreateTestServerWithAgent(t, "authz-ops-unauth-server")
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
-	sid := itoa(srv.ID)
+	sid := Itoa(srv.ID)
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
@@ -125,7 +125,7 @@ func TestAuthzOperations_StacksManage(t *testing.T) {
 
 	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-sm-user", permnames.StacksManage)
 
-	sid := itoa(manageFixture.serverID)
+	sid := Itoa(manageFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
 
 	t.Run("JWT with stacks.manage is admitted for non-archive command", func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestAuthzOperations_FilesWrite(t *testing.T) {
 
 	filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-fw-user", permnames.FilesWrite)
 
-	sid := itoa(filesFixture.serverID)
+	sid := Itoa(filesFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
 
 	t.Run("JWT with files.write is admitted for create-archive", func(t *testing.T) {
@@ -211,7 +211,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 
 	manageFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-manage", permnames.StacksManage)
 
-	sid := itoa(manageFixture.serverID)
+	sid := Itoa(manageFixture.serverID)
 	opsURL := "/api/v1/servers/" + sid + "/stacks/allowed-stack/operations"
 
 	t.Run("API key with stacks.manage scope is admitted for non-archive command", func(t *testing.T) {
@@ -224,7 +224,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     manageFixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.StacksManage,
@@ -266,7 +266,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryAuthorization, e2etesting.ValueHigh)
 
 		filesFixture, _ := setupAuthzOpsFixture(t, app, adminClient, "authz-ops-ak-fw", permnames.FilesWrite)
-		fwSid := itoa(filesFixture.serverID)
+		fwSid := Itoa(filesFixture.serverID)
 
 		createResp, err := adminClient.Post("/api/v1/api-keys", map[string]any{"name": "authz-ops-fw-key"})
 		require.NoError(t, err)
@@ -275,7 +275,7 @@ func TestAuthzOperations_APIKey(t *testing.T) {
 		keyID := keyResult.Data.APIKey.ID
 		plainKey := keyResult.Data.PlainKey
 
-		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+itoa(keyID)+"/scopes", map[string]any{
+		addScopeResp, err := adminClient.Post("/api/v1/api-keys/"+Itoa(keyID)+"/scopes", map[string]any{
 			"server_id":     filesFixture.serverID,
 			"stack_pattern": "allowed-*",
 			"permission":    permnames.FilesWrite,

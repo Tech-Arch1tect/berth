@@ -118,7 +118,7 @@ func TestRBACUsersEndpointsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/users/:id/roles", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/users/" + itoa(createdUserID) + "/roles",
+			Path:   "/api/v1/admin/users/" + Itoa(createdUserID) + "/roles",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -226,7 +226,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		TagTest(t, "PUT", "/api/v1/admin/roles/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "PUT",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRoleID),
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRoleID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -250,7 +250,7 @@ func TestRBACRolesEndpointsJWT(t *testing.T) {
 		TagTest(t, "DELETE", "/api/v1/admin/roles/:id", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRoleID),
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRoleID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -416,7 +416,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -456,7 +456,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/roles/" + itoa(adminRoleID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(adminRoleID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -490,7 +490,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -510,7 +510,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 
 		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -529,7 +529,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -546,7 +546,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/roles/:roleId/stack-permissions", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "POST",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 				"Content-Type":  "application/json",
@@ -567,7 +567,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "DELETE",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions/" + itoa(createdStackPermissionID),
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions/" + Itoa(createdStackPermissionID),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -581,7 +581,7 @@ func TestRBACStackPermissionsJWT(t *testing.T) {
 
 		getResp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/api/v1/admin/roles/" + itoa(createdRole.ID) + "/stack-permissions",
+			Path:   "/api/v1/admin/roles/" + Itoa(createdRole.ID) + "/stack-permissions",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
