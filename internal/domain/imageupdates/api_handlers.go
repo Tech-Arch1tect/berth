@@ -1,12 +1,11 @@
 package imageupdates
 
 import (
-	"berth/internal/domain/rbac/permnames"
-	"berth/internal/domain/session"
+	"time"
+
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
-	"context"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -31,143 +30,50 @@ type ImageUpdatesData struct {
 	Updates []ImageUpdate `json:"updates"`
 }
 
-type imageupdatesPermissionChecker interface {
-	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
-	GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error)
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
-}
-
 type APIHandler struct {
 	service *Service
-	rbacSvc imageupdatesPermissionChecker
 	logger  *zap.Logger
 }
 
-func NewAPIHandler(service *Service, rbacSvc imageupdatesPermissionChecker, logger *zap.Logger) *APIHandler {
+func NewAPIHandler(service *Service, logger *zap.Logger) *APIHandler {
 	return &APIHandler{
 		service: service,
-		rbacSvc: rbacSvc,
 		logger:  logger,
 	}
 }
 
 func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
-	ctx := c.Request().Context()
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return response.Unauthorized(c, "Authentication required")
+	scope, ok := authz.GetScopeSet(c)
+	if !ok {
+		return response.Internal(c, "Failed to fetch updates")
 	}
 
 	allUpdates, err := h.service.GetAvailableUpdates()
 	if err != nil {
-		h.logger.Error("failed to fetch available updates",
-			zap.Error(err),
-			zap.Uint("user_id", userID),
-		)
+		h.logger.Error("failed to fetch available updates", zap.Error(err))
 		return response.Internal(c, "Failed to fetch updates")
-	}
-
-	accessibleServerIDs, err := h.rbacSvc.GetServerIDsUserCanList(ctx, userID)
-	if err != nil {
-		h.logger.Error("failed to get user accessible servers",
-			zap.Error(err),
-			zap.Uint("user_id", userID),
-		)
-		return response.Internal(c, "Failed to check server access")
-	}
-
-	serverIDMap := make(map[uint]bool)
-	for _, id := range accessibleServerIDs {
-		serverIDMap[id] = true
 	}
 
 	accessibleUpdates := make([]ImageUpdate, 0)
 	for _, update := range allUpdates {
-		if !serverIDMap[update.ServerID] {
+		if !scope.AllowsStack(update.ServerID, update.StackName) {
 			continue
 		}
-
-		hasPermission, err := h.rbacSvc.UserHasStackPermission(
-			ctx,
-			userID,
-			update.ServerID,
-			update.StackName,
-			permnames.StacksRead,
-		)
-		if err != nil {
-			h.logger.Warn("failed to check stack permission",
-				zap.Error(err),
-				zap.Uint("user_id", userID),
-				zap.Uint("server_id", update.ServerID),
-				zap.String("stack_name", update.StackName),
-			)
-			continue
-		}
-
-		if !hasPermission {
-			continue
-		}
-
-		accessibleUpdates = append(accessibleUpdates, ImageUpdate{
-			ID:                update.ID,
-			ServerID:          update.ServerID,
-			StackName:         update.StackName,
-			ContainerName:     update.ContainerName,
-			CurrentImageName:  update.CurrentImageName,
-			CurrentRepoDigest: update.CurrentRepoDigest,
-			LatestRepoDigest:  update.LatestRepoDigest,
-			UpdateAvailable:   update.UpdateAvailable,
-			LastCheckedAt:     update.LastCheckedAt,
-			CheckError:        update.CheckError,
-			CreatedAt:         update.CreatedAt,
-			UpdatedAt:         update.UpdatedAt,
-		})
+		accessibleUpdates = append(accessibleUpdates, toImageUpdate(update))
 	}
-
-	h.logger.Debug("filtered available updates by permissions",
-		zap.Uint("user_id", userID),
-		zap.Int("total_updates", len(allUpdates)),
-		zap.Int("accessible_updates", len(accessibleUpdates)),
-	)
 
 	return response.OK(c, ImageUpdatesData{Updates: accessibleUpdates})
 }
 
 func (h *APIHandler) ListServerUpdates(c echo.Context) error {
-	ctx := c.Request().Context()
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return response.Unauthorized(c, "Authentication required")
-	}
-
 	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return response.BadRequest(c, "Invalid server ID")
 	}
 
-	serverIDs, err := h.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
-	if err != nil {
-		h.logger.Error("failed to get user accessible servers",
-			zap.Error(err),
-			zap.Uint("user_id", userID),
-		)
-		return response.Internal(c, "Failed to check server access")
-	}
-
-	hasServerAccess := false
-	for _, id := range serverIDs {
-		if id == serverID {
-			hasServerAccess = true
-			break
-		}
-	}
-
-	if !hasServerAccess {
-		h.logger.Warn("user attempted to access server without permission",
-			zap.Uint("user_id", userID),
-			zap.Uint("server_id", serverID),
-		)
-		return response.Forbidden(c, "You do not have access to this server")
+	scope, ok := authz.GetScopeSet(c)
+	if !ok {
+		return response.Internal(c, "Failed to fetch updates")
 	}
 
 	allUpdates, err := h.service.GetServerUpdates(serverID)
@@ -181,46 +87,28 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 
 	accessibleUpdates := make([]ImageUpdate, 0)
 	for _, update := range allUpdates {
-		hasPermission, err := h.rbacSvc.UserHasStackPermission(
-			ctx,
-			userID,
-			serverID,
-			update.StackName,
-			permnames.StacksRead,
-		)
-		if err != nil {
-			h.logger.Warn("failed to check stack permission",
-				zap.Error(err),
-				zap.Uint("user_id", userID),
-				zap.String("stack_name", update.StackName),
-			)
+		if !scope.AllowsStack(serverID, update.StackName) {
 			continue
 		}
-
-		if hasPermission {
-			accessibleUpdates = append(accessibleUpdates, ImageUpdate{
-				ID:                update.ID,
-				ServerID:          update.ServerID,
-				StackName:         update.StackName,
-				ContainerName:     update.ContainerName,
-				CurrentImageName:  update.CurrentImageName,
-				CurrentRepoDigest: update.CurrentRepoDigest,
-				LatestRepoDigest:  update.LatestRepoDigest,
-				UpdateAvailable:   update.UpdateAvailable,
-				LastCheckedAt:     update.LastCheckedAt,
-				CheckError:        update.CheckError,
-				CreatedAt:         update.CreatedAt,
-				UpdatedAt:         update.UpdatedAt,
-			})
-		}
+		accessibleUpdates = append(accessibleUpdates, toImageUpdate(update))
 	}
 
-	h.logger.Debug("filtered server updates by permissions",
-		zap.Uint("user_id", userID),
-		zap.Uint("server_id", serverID),
-		zap.Int("total_updates", len(allUpdates)),
-		zap.Int("accessible_updates", len(accessibleUpdates)),
-	)
-
 	return response.OK(c, ImageUpdatesData{Updates: accessibleUpdates})
+}
+
+func toImageUpdate(update ContainerImageUpdate) ImageUpdate {
+	return ImageUpdate{
+		ID:                update.ID,
+		ServerID:          update.ServerID,
+		StackName:         update.StackName,
+		ContainerName:     update.ContainerName,
+		CurrentImageName:  update.CurrentImageName,
+		CurrentRepoDigest: update.CurrentRepoDigest,
+		LatestRepoDigest:  update.LatestRepoDigest,
+		UpdateAvailable:   update.UpdateAvailable,
+		LastCheckedAt:     update.LastCheckedAt,
+		CheckError:        update.CheckError,
+		CreatedAt:         update.CreatedAt,
+		UpdatedAt:         update.UpdatedAt,
+	}
 }

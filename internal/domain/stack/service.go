@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/validation"
@@ -17,6 +18,7 @@ type stackAgentClient interface {
 }
 
 type stackServerProvider interface {
+	GetServer(id uint) (*server.Server, error)
 	GetServerResponse(id uint) (*server.ServerInfo, error)
 	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
 }
@@ -47,17 +49,13 @@ func (s *Service) GetServerInfo(serverID uint) (*server.ServerInfo, error) {
 	return s.serverSvc.GetServerResponse(serverID)
 }
 
-func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID uint) ([]Stack, error) {
-	s.logger.Debug("listing stacks for server",
-		zap.Uint("user_id", userID),
-		zap.Uint("server_id", serverID),
-	)
+func (s *Service) ListStacksForServer(ctx context.Context, serverID uint, scope authz.ScopeSet) ([]Stack, error) {
+	s.logger.Debug("listing stacks for server", zap.Uint("server_id", serverID))
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetServer(serverID)
 	if err != nil {
 		s.logger.Error("failed to get server for stack listing",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
@@ -73,27 +71,17 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 		return nil, err
 	}
 
-	accessibleStacks := make([]Stack, 0)
+	accessibleStacks := make([]Stack, 0, len(allStacks))
 	for _, stack := range allStacks {
-		hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stack.Name, permnames.StacksRead)
-		if err != nil {
-			s.logger.Warn("failed to check stack permission",
-				zap.Error(err),
-				zap.Uint("user_id", userID),
-				zap.String("stack_name", stack.Name),
-			)
+		if !scope.AllowsStack(serverID, stack.Name) {
 			continue
 		}
-
-		if hasPermission {
-			stack.ServerID = server.ID
-			stack.ServerName = server.Name
-			accessibleStacks = append(accessibleStacks, stack)
-		}
+		stack.ServerID = server.ID
+		stack.ServerName = server.Name
+		accessibleStacks = append(accessibleStacks, stack)
 	}
 
-	s.logger.Info("stacks listed for user",
-		zap.Uint("user_id", userID),
+	s.logger.Info("stacks listed for server",
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.Int("total_stacks", len(allStacks)),

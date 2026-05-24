@@ -18,7 +18,6 @@ import (
 
 type accessChecker interface {
 	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
-	GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error)
 	GetUserAccessibleStackPatterns(userID, serverID uint) ([]string, error)
 }
 
@@ -341,32 +340,15 @@ func (s *Service) TestServerConnection(server *Server) error {
 	return nil
 }
 
-func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]ServerInfo, error) {
-	s.logger.Debug("listing servers for user",
-		zap.Uint("user_id", userID),
-	)
-
-	serverIDs, err := s.rbacSvc.GetServerIDsUserCanList(ctx, userID)
-	if err != nil {
-		s.logger.Error("failed to get user accessible servers",
-			zap.Error(err),
-			zap.Uint("user_id", userID),
-		)
-		return nil, err
-	}
-
+func (s *Service) ListServersByIDs(serverIDs []uint) ([]ServerInfo, error) {
 	if len(serverIDs) == 0 {
-		s.logger.Debug("user has no accessible servers",
-			zap.Uint("user_id", userID),
-		)
 		return []ServerInfo{}, nil
 	}
 
 	var servers []Server
 	if err := s.db.Where("id IN ? AND is_active = ?", serverIDs, true).Find(&servers).Error; err != nil {
-		s.logger.Error("failed to query servers for user",
+		s.logger.Error("failed to query servers by ID",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
 			zap.Int("server_id_count", len(serverIDs)),
 		)
 		return nil, err
@@ -376,13 +358,6 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]Server
 	for i, server := range servers {
 		responses[i] = server.ToResponse()
 	}
-
-	s.logger.Debug("servers listed for user",
-		zap.Uint("user_id", userID),
-		zap.Int("accessible_count", len(serverIDs)),
-		zap.Int("active_count", len(servers)),
-	)
-
 	return responses, nil
 }
 

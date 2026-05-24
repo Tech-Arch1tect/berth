@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
@@ -32,17 +33,17 @@ func NewAPIHandler(service *Service, logger *zap.Logger, auditService stackAudit
 }
 
 func (h *APIHandler) ListServerStacks(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return err
-	}
-
 	serverID, err := echoparams.ParseUintParam(c, "serverid")
 	if err != nil {
 		return err
 	}
 
-	stacks, err := h.service.ListStacksForServer(c.Request().Context(), userID, serverID)
+	scope, ok := authz.GetScopeSet(c)
+	if !ok {
+		return response.Internal(c, "Failed to list stacks")
+	}
+
+	stacks, err := h.service.ListStacksForServer(c.Request().Context(), serverID, scope)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}

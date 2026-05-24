@@ -178,10 +178,10 @@ func TestServerImageUpdatesListFiltering(t *testing.T) {
 		assert.Equal(t, 403, resp.StatusCode, "body: %s", resp.GetString())
 	})
 
-	t.Run("JWT admin against nonexistent server returns 403", func(t *testing.T) {
+	t.Run("JWT admin against nonexistent server returns 200 with empty list", func(t *testing.T) {
 		_, jwt := f.Admin("nonexistent-admin")
-		resp := mustRequest(t, app, "GET", "/api/v1/servers/99999/image-updates", "Bearer "+jwt)
-		assert.Equal(t, 403, resp.StatusCode, "body: %s", resp.GetString())
+		updates := getImageUpdates(t, app, "/api/v1/servers/99999/image-updates", "Bearer "+jwt, 200)
+		assert.Empty(t, updates)
 	})
 
 	t.Run("API key without stacks.read on the server returns 403", func(t *testing.T) {

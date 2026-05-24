@@ -234,6 +234,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns all servers the authenticated user has permission to access").
 		Response(http.StatusOK, response.Response[server.ListServersData]{}, "List of servers").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "API key lacks required scope").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
@@ -246,6 +247,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusOK, response.Response[server.GetServerData]{}, "Server details").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
@@ -259,6 +261,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusOK, response.Response[server.ServerStatisticsData]{}, "Server statistics").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

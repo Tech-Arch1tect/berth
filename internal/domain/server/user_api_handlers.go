@@ -1,6 +1,7 @@
 package server
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -27,13 +28,12 @@ func NewUserAPIHandler(service *Service) *UserAPIHandler {
 }
 
 func (h *UserAPIHandler) ListServers(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
-	if err != nil {
-		return err
+	scope, ok := authz.GetScopeSet(c)
+	if !ok {
+		return response.Internal(c, "Failed to fetch servers")
 	}
 
-	ctx := c.Request().Context()
-	servers, err := h.service.ListServersForUser(ctx, userID)
+	servers, err := h.service.ListServersByIDs(scope.ServerIDs())
 	if err != nil {
 		return response.Internal(c, "Failed to fetch servers")
 	}

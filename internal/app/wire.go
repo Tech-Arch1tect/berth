@@ -250,7 +250,7 @@ func Build(
 	g.QueueSvc = queue.NewService(db, g.OperationsSvc, g.RBACSvc, logger, g.SecurityAuditSvc, cfg.Custom.OperationTimeoutSeconds)
 
 	g.ImageUpdatesSvc = imageupdates.NewService(db, g.AgentSvc, g.ServerSvc, g.Crypto, logger, cfg)
-	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, g.RBACSvc, logger)
+	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, logger)
 
 	g.VulnscanSvc = vulnscan.NewService(db, g.ServerSvc, g.AgentSvc, g.RBACSvc, logger)
 	g.VulnscanHandler = vulnscan.NewHandler(g.VulnscanSvc, logger)

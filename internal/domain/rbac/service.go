@@ -442,50 +442,6 @@ func (s *Service) filterByReachableScopes(apiKey *apikey.APIKey, serverIDs []uin
 	return filteredIDs
 }
 
-func (s *Service) filterByListableScopes(apiKey *apikey.APIKey, serverIDs []uint) []uint {
-	for _, scope := range apiKey.Scopes {
-		if scope.Permission.Name != permnames.StacksRead {
-			continue
-		}
-		if scope.ServerID == nil {
-			return serverIDs
-		}
-	}
-
-	scopeServerMap := make(map[uint]bool)
-	for _, scope := range apiKey.Scopes {
-		if scope.Permission.Name != permnames.StacksRead {
-			continue
-		}
-		if scope.ServerID != nil {
-			scopeServerMap[*scope.ServerID] = true
-		}
-	}
-
-	filteredIDs := []uint{}
-	for _, serverID := range serverIDs {
-		if scopeServerMap[serverID] {
-			filteredIDs = append(filteredIDs, serverID)
-		}
-	}
-
-	return filteredIDs
-}
-
-func (s *Service) GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error) {
-	serverIDs, err := s.getUserAccessibleServerIDsRBAC(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	apiKey := auth.GetAPIKeyFromContext(ctx)
-	if apiKey == nil {
-		return serverIDs, nil
-	}
-
-	return s.filterByListableScopes(apiKey, serverIDs), nil
-}
-
 func (s *Service) UserHasStackPermission(ctx context.Context, userID uint, serverID uint, stackname string, permissionName string) (bool, error) {
 	s.logger.Debug("checking user stack permission",
 		zap.Uint("user_id", userID),

@@ -7,6 +7,7 @@ import (
 	"berth/internal/pkg/response"
 
 	e2etesting "berth/e2e/internal/harness"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,11 +55,16 @@ func TestImageUpdatesWithAuth(t *testing.T) {
 		assert.NotNil(t, result.Data.Updates)
 	})
 
-	t.Run("GET /api/v1/servers/1/image-updates returns 403 when server doesn't exist", func(t *testing.T) {
-		TagTest(t, "GET", "/api/v1/servers/:id/image-updates", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+	t.Run("GET /api/v1/servers/1/image-updates returns 200 with empty list when server doesn't exist", func(t *testing.T) {
+		TagTest(t, "GET", "/api/v1/servers/:id/image-updates", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := sessionClient.Get("/api/v1/servers/1/image-updates")
 		require.NoError(t, err)
-		assert.Equal(t, 403, resp.StatusCode)
+		assert.Equal(t, 200, resp.StatusCode)
+
+		var result response.Response[imageupdates.ImageUpdatesData]
+		require.NoError(t, resp.GetJSON(&result))
+		assert.True(t, result.Success)
+		assert.Empty(t, result.Data.Updates)
 	})
 
 	t.Run("GET /api/v1/servers/invalid/image-updates returns 400 for invalid server ID", func(t *testing.T) {
