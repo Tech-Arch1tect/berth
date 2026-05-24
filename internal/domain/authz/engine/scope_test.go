@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
@@ -616,4 +617,114 @@ func TestAuthorizedScope_EmptyAndMalformedPatterns(t *testing.T) {
 		assert.True(t, scope.AllowsStack(f.serverID, "[bad]"),
 			"literal match of the pattern string")
 	})
+}
+
+func TestFilterByListableScopes(t *testing.T) {
+	roleSet := []uint{1, 2, 3}
+
+	mkScope := func(perm string, serverID *uint) apikey.APIKeyScope {
+		return apikey.APIKeyScope{
+			ServerID:     serverID,
+			StackPattern: "*",
+			Permission:   usermodel.Permission{Name: perm},
+		}
+	}
+
+	tests := []struct {
+		name   string
+		scopes []apikey.APIKeyScope
+		want   []uint
+	}{
+		{
+			name:   "no scopes returns empty",
+			scopes: nil,
+			want:   nil,
+		},
+		{
+			name: "wildcard stacks.read preserves the role-derived set",
+			scopes: []apikey.APIKeyScope{
+				mkScope("stacks.read", nil),
+			},
+			want: roleSet,
+		},
+		{
+			name: "per-server stacks.read narrows to that server",
+			scopes: []apikey.APIKeyScope{
+				mkScope("stacks.read", ptr(uint(1))),
+			},
+			want: []uint{1},
+		},
+		{
+			name: "two per-server stacks.read scopes return their union",
+			scopes: []apikey.APIKeyScope{
+				mkScope("stacks.read", ptr(uint(1))),
+				mkScope("stacks.read", ptr(uint(3))),
+			},
+			want: []uint{1, 3},
+		},
+		{
+			name: "key with only servers.read on nil sees nothing",
+			scopes: []apikey.APIKeyScope{
+				mkScope("servers.read", nil),
+			},
+			want: nil,
+		},
+		{
+			name: "key with only servers.read on a single server sees nothing",
+			scopes: []apikey.APIKeyScope{
+				mkScope("servers.read", ptr(uint(1))),
+			},
+			want: nil,
+		},
+		{
+			name: "servers.read wildcard does not short-circuit a narrow stacks.read",
+			scopes: []apikey.APIKeyScope{
+				mkScope("servers.read", nil),
+				mkScope("stacks.read", ptr(uint(1))),
+			},
+			want: []uint{1},
+		},
+		{
+			name: "servers.read on a different server does not widen stacks.read scope",
+			scopes: []apikey.APIKeyScope{
+				mkScope("stacks.read", ptr(uint(1))),
+				mkScope("servers.read", ptr(uint(2))),
+			},
+			want: []uint{1},
+		},
+		{
+			name: "wildcard and per-server stacks.read together still preserve the role set",
+			scopes: []apikey.APIKeyScope{
+				mkScope("stacks.read", nil),
+				mkScope("stacks.read", ptr(uint(1))),
+			},
+			want: roleSet,
+		},
+		{
+			name: "files.read scopes do not contribute either",
+			scopes: []apikey.APIKeyScope{
+				mkScope("files.read", nil),
+				mkScope("files.read", ptr(uint(2))),
+			},
+			want: nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			key := &apikey.APIKey{Scopes: tc.scopes}
+			got := filterByListableScopes(key, roleSet)
+
+			gotSorted := append([]uint(nil), got...)
+			wantSorted := append([]uint(nil), tc.want...)
+			slices.Sort(gotSorted)
+			slices.Sort(wantSorted)
+
+			if len(gotSorted) == 0 {
+				assert.Empty(t, gotSorted, "expected empty result")
+			} else {
+				assert.Equal(t, wantSorted, gotSorted)
+			}
+		})
+	}
 }

@@ -24,7 +24,7 @@ const (
 type RBACService interface {
 	UserHasServerAccess(ctx context.Context, userID uint, serverID uint) (bool, error)
 	UserHasAnyStackPermission(ctx context.Context, userID uint, serverID uint, permissionName string) (bool, error)
-	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
+	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
 }
 
 type Service struct {
@@ -334,7 +334,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		}
 	} else {
 
-		accessibleServers, err := s.rbacService.GetUserAccessibleServerIDs(ctx, userID)
+		accessibleServers, err := s.rbacService.GetServerIDsUserCanReach(ctx, userID)
 		if err != nil {
 			s.logger.Error("failed to get user accessible servers",
 				zap.Error(err),

@@ -27,7 +27,7 @@ func (e *Engine) AuthorizedScope(p Principal) (authz.ScopeSet, error) {
 
 	serverIDs := roleServerIDs
 	if p.APIKey != nil {
-		serverIDs = filterByAPIKeyServerScopes(p.APIKey, serverIDs)
+		serverIDs = filterByListableScopes(p.APIKey, serverIDs)
 	}
 
 	filteredPatterns := make(map[uint][]string, len(serverIDs))
@@ -104,14 +104,20 @@ func (e *Engine) computeRoleScope(userID uint, roles []usermodel.Role) ([]uint, 
 	return ids, patMap, nil
 }
 
-func filterByAPIKeyServerScopes(key *apikey.APIKey, serverIDs []uint) []uint {
+func filterByListableScopes(key *apikey.APIKey, serverIDs []uint) []uint {
 	for _, scope := range key.Scopes {
+		if scope.Permission.Name != permnames.StacksRead {
+			continue
+		}
 		if scope.ServerID == nil {
 			return serverIDs
 		}
 	}
 	scopeSet := make(map[uint]bool)
 	for _, scope := range key.Scopes {
+		if scope.Permission.Name != permnames.StacksRead {
+			continue
+		}
 		if scope.ServerID != nil {
 			scopeSet[*scope.ServerID] = true
 		}

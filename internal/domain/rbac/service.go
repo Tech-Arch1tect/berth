@@ -330,7 +330,7 @@ func (s *Service) DeleteRole(roleID uint) error {
 	return nil
 }
 
-func (s *Service) GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error) {
+func (s *Service) GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error) {
 	s.logger.Debug("getting user accessible server IDs",
 		zap.Uint("user_id", userID),
 	)
@@ -345,7 +345,7 @@ func (s *Service) GetUserAccessibleServerIDs(ctx context.Context, userID uint) (
 		return serverIDs, nil
 	}
 
-	return s.filterServerIDsByAPIKeyScopes(apiKey, serverIDs), nil
+	return s.filterByReachableScopes(apiKey, serverIDs), nil
 }
 
 func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
@@ -418,7 +418,7 @@ func (s *Service) getUserAccessibleServerIDsRBAC(userID uint) ([]uint, error) {
 	return serverIDs, nil
 }
 
-func (s *Service) filterServerIDsByAPIKeyScopes(apiKey *apikey.APIKey, serverIDs []uint) []uint {
+func (s *Service) filterByReachableScopes(apiKey *apikey.APIKey, serverIDs []uint) []uint {
 	for _, scope := range apiKey.Scopes {
 		if scope.ServerID == nil {
 			return serverIDs
@@ -440,6 +440,50 @@ func (s *Service) filterServerIDsByAPIKeyScopes(apiKey *apikey.APIKey, serverIDs
 	}
 
 	return filteredIDs
+}
+
+func (s *Service) filterByListableScopes(apiKey *apikey.APIKey, serverIDs []uint) []uint {
+	for _, scope := range apiKey.Scopes {
+		if scope.Permission.Name != permnames.StacksRead {
+			continue
+		}
+		if scope.ServerID == nil {
+			return serverIDs
+		}
+	}
+
+	scopeServerMap := make(map[uint]bool)
+	for _, scope := range apiKey.Scopes {
+		if scope.Permission.Name != permnames.StacksRead {
+			continue
+		}
+		if scope.ServerID != nil {
+			scopeServerMap[*scope.ServerID] = true
+		}
+	}
+
+	filteredIDs := []uint{}
+	for _, serverID := range serverIDs {
+		if scopeServerMap[serverID] {
+			filteredIDs = append(filteredIDs, serverID)
+		}
+	}
+
+	return filteredIDs
+}
+
+func (s *Service) GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error) {
+	serverIDs, err := s.getUserAccessibleServerIDsRBAC(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	apiKey := auth.GetAPIKeyFromContext(ctx)
+	if apiKey == nil {
+		return serverIDs, nil
+	}
+
+	return s.filterByListableScopes(apiKey, serverIDs), nil
 }
 
 func (s *Service) UserHasStackPermission(ctx context.Context, userID uint, serverID uint, stackname string, permissionName string) (bool, error) {

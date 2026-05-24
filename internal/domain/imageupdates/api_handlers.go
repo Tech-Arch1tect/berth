@@ -32,7 +32,8 @@ type ImageUpdatesData struct {
 }
 
 type imageupdatesPermissionChecker interface {
-	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
+	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
+	GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error)
 	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
 }
 
@@ -66,7 +67,7 @@ func (h *APIHandler) ListAvailableUpdates(c echo.Context) error {
 		return response.Internal(c, "Failed to fetch updates")
 	}
 
-	accessibleServerIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
+	accessibleServerIDs, err := h.rbacSvc.GetServerIDsUserCanList(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to get user accessible servers",
 			zap.Error(err),
@@ -144,7 +145,7 @@ func (h *APIHandler) ListServerUpdates(c echo.Context) error {
 		return response.BadRequest(c, "Invalid server ID")
 	}
 
-	serverIDs, err := h.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
+	serverIDs, err := h.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to get user accessible servers",
 			zap.Error(err),

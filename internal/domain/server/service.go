@@ -17,7 +17,8 @@ import (
 )
 
 type accessChecker interface {
-	GetUserAccessibleServerIDs(ctx context.Context, userID uint) ([]uint, error)
+	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
+	GetServerIDsUserCanList(ctx context.Context, userID uint) ([]uint, error)
 	GetUserAccessibleStackPatterns(userID, serverID uint) ([]string, error)
 }
 
@@ -97,7 +98,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 		return nil, fmt.Errorf("server is not active")
 	}
 
-	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
+	serverIDs, err := s.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to check user server access",
 			zap.Error(err),
@@ -345,7 +346,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]Server
 		zap.Uint("user_id", userID),
 	)
 
-	serverIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
+	serverIDs, err := s.rbacSvc.GetServerIDsUserCanList(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to get user accessible servers",
 			zap.Error(err),
@@ -387,7 +388,7 @@ func (s *Service) ListServersForUser(ctx context.Context, userID uint) ([]Server
 
 func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID uint) (*StackStatistics, error) {
 
-	accessibleServerIDs, err := s.rbacSvc.GetUserAccessibleServerIDs(ctx, userID)
+	accessibleServerIDs, err := s.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
