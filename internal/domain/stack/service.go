@@ -73,7 +73,7 @@ func (s *Service) ListStacksForServer(ctx context.Context, userID uint, serverID
 		return nil, err
 	}
 
-	var accessibleStacks []Stack
+	accessibleStacks := make([]Stack, 0)
 	for _, stack := range allStacks {
 		hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stack.Name, permnames.StacksRead)
 		if err != nil {
