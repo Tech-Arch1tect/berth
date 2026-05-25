@@ -11,6 +11,7 @@ import (
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/rbac"
+	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/response"
@@ -115,7 +116,14 @@ func (f *AuthzFixture) UserWithRole(name string, srv *server.Server, perm, patte
 	f.T.Helper()
 	u, jwt := f.User(name)
 	roleName := f.uniqueRoleName(name)
-	f.createRole(roleName, []RoleGrant{{Server: srv, Permission: perm, StackPattern: pattern}})
+
+	grants := []RoleGrant{{Server: srv, Permission: perm, StackPattern: pattern}}
+	if perm != permnames.StacksRead {
+		grants = append(grants, RoleGrant{
+			Server: srv, Permission: permnames.StacksRead, StackPattern: pattern,
+		})
+	}
+	f.createRole(roleName, grants)
 	f.assignRole(u.ID, roleName)
 	jwt = f.refreshJWT(u)
 	return u, jwt, roleName
