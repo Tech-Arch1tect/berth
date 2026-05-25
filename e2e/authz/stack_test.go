@@ -7,9 +7,6 @@ import (
 	"berth/e2e"
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/rbac/permnames"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func registerStackMetadataEndpoints(agent *e2e.MockAgent, stackName string) {
@@ -83,48 +80,48 @@ func TestAuthzStackRead(t *testing.T) {
 	keyAdminNoScope := f.APIKeyFor(adminOwner, "admin-noscope-key", nil)
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, "", 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, "", 401)
 	})
 
 	t.Run("JWT with stacks.read on in-pattern stack is admitted", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(jwtProdRole), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtProdRole), 200)
 	})
 
 	t.Run("JWT with stacks.read out-of-pattern returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, stagingURL, bearer(jwtProdRole), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtProdRole), 403)
 	})
 
 	t.Run("JWT with multi-role union admits each unioned pattern", func(t *testing.T) {
 		opsURL := "/api/v1/servers/" + sid + "/stacks/ops-db"
-		assertGetStatus(t, app, prodURL, bearer(jwtUnion), 200)
-		assertGetStatus(t, app, opsURL, bearer(jwtUnion), 200)
-		assertGetStatus(t, app, stagingURL, bearer(jwtUnion), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtUnion), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: opsURL}, bearer(jwtUnion), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtUnion), 403)
 	})
 
 	t.Run("JWT admin is admitted on any stack", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(jwtAdmin), 200)
-		assertGetStatus(t, app, stagingURL, bearer(jwtAdmin), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtAdmin), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtAdmin), 200)
 	})
 
 	t.Run("API key with no scope on resource returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyNoScope), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyNoScope), 403)
 	})
 
 	t.Run("API key with scope equal to role pattern is admitted", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyMatching), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyMatching), 200)
 	})
 
 	t.Run("API key narrower than role admits in-pattern, denies out-of-pattern", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyNarrower), 200)
-		assertGetStatus(t, app, stagingURL, bearer(keyNarrower), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyNarrower), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(keyNarrower), 403)
 	})
 
 	t.Run("API key scoped to wrong server returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyWrongServer), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyWrongServer), 403)
 	})
 
 	t.Run("API key (admin owner) without matching scope returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyAdminNoScope), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyAdminNoScope), 403)
 	})
 
 	t.Run("API key fails after owner loses the role that granted it", func(t *testing.T) {
@@ -132,9 +129,9 @@ func TestAuthzStackRead(t *testing.T) {
 		key := f.APIKeyFor(owner, "revoked-key", []ScopeSpec{
 			keyScope(&f.Server.ID, permnames.StacksRead, "*"),
 		})
-		assertGetStatus(t, app, prodURL, bearer(key), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(key), 200)
 		f.RevokeRole(owner, roleName)
-		assertGetStatus(t, app, prodURL, bearer(key), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(key), 403)
 	})
 }
 
@@ -155,13 +152,13 @@ func TestAuthzStackMetadataSiblings(t *testing.T) {
 			staging := "/api/v1/servers/" + sid + "/stacks/staging-web/" + sib
 
 			t.Run("unauthenticated returns 401", func(t *testing.T) {
-				assertGetStatus(t, app, prod, "", 401)
+				assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prod}, "", 401)
 			})
 			t.Run("JWT in-pattern is admitted", func(t *testing.T) {
-				assertGetStatus(t, app, prod, bearer(jwt), 200)
+				assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prod}, bearer(jwt), 200)
 			})
 			t.Run("JWT out-of-pattern returns 403", func(t *testing.T) {
-				assertGetStatus(t, app, staging, bearer(jwt), 403)
+				assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: staging}, bearer(jwt), 403)
 			})
 		})
 	}
@@ -215,40 +212,40 @@ func TestAuthzStackComposeRead(t *testing.T) {
 	})
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, "", 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, "", 401)
 	})
 	t.Run("JWT files.read on in-pattern is admitted", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(jwtFiles), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtFiles), 200)
 	})
 	t.Run("JWT files.read on out-of-pattern returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, stagingURL, bearer(jwtFiles), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtFiles), 403)
 	})
 	t.Run("JWT stacks.read only returns 403 (no files.read)", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(jwtStacksOnly), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtStacksOnly), 403)
 	})
 	t.Run("JWT multi-role union admits each unioned pattern", func(t *testing.T) {
 		registerStackMetadataEndpoints(f.Agent, "ops-db")
 		opsURL := "/api/v1/servers/" + sid + "/stacks/ops-db/compose"
-		assertGetStatus(t, app, prodURL, bearer(jwtUnion), 200)
-		assertGetStatus(t, app, opsURL, bearer(jwtUnion), 200)
-		assertGetStatus(t, app, stagingURL, bearer(jwtUnion), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtUnion), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: opsURL}, bearer(jwtUnion), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtUnion), 403)
 	})
 	t.Run("JWT admin is admitted", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(jwtAdmin), 200)
-		assertGetStatus(t, app, stagingURL, bearer(jwtAdmin), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(jwtAdmin), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(jwtAdmin), 200)
 	})
 	t.Run("API key with no scope on resource returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyNoScope), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyNoScope), 403)
 	})
 	t.Run("API key with matching scope is admitted", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyMatching), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyMatching), 200)
 	})
 	t.Run("API key narrower than role admits in-pattern, denies out-of-pattern", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyNarrower), 200)
-		assertGetStatus(t, app, stagingURL, bearer(keyNarrower), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyNarrower), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: stagingURL}, bearer(keyNarrower), 403)
 	})
 	t.Run("API key with wrong permission scope returns 403", func(t *testing.T) {
-		assertGetStatus(t, app, prodURL, bearer(keyWrongPerm), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: prodURL}, bearer(keyWrongPerm), 403)
 	})
 }
 
@@ -297,41 +294,41 @@ func TestAuthzStackComposeWrite(t *testing.T) {
 
 	t.Run("unauthenticated returns 401 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, prodURL, "", body, 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, "", 401)
 		assertNoComposeWrite(t)
 	})
 	t.Run("JWT files.write on in-pattern is admitted", func(t *testing.T) {
-		assertPatchStatus(t, app, prodURL, bearer(jwtWrite), body, 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(jwtWrite), 200)
 	})
 	t.Run("JWT files.write on out-of-pattern returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, stagingURL, bearer(jwtWrite), body, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: stagingURL, Body: body}, bearer(jwtWrite), 403)
 		assertNoComposeWrite(t)
 	})
 	t.Run("JWT files.read only returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, prodURL, bearer(jwtRead), body, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(jwtRead), 403)
 		assertNoComposeWrite(t)
 	})
 	t.Run("JWT stacks.read only returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, prodURL, bearer(jwtStacksOnly), body, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(jwtStacksOnly), 403)
 		assertNoComposeWrite(t)
 	})
 	t.Run("JWT admin is admitted", func(t *testing.T) {
-		assertPatchStatus(t, app, prodURL, bearer(jwtAdmin), body, 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(jwtAdmin), 200)
 	})
 	t.Run("API key with no scope returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, prodURL, bearer(keyNoScope), body, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(keyNoScope), 403)
 		assertNoComposeWrite(t)
 	})
 	t.Run("API key with files.write+stacks.read scopes is admitted", func(t *testing.T) {
-		assertPatchStatus(t, app, prodURL, bearer(keyMatching), body, 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(keyMatching), 200)
 	})
 	t.Run("API key with wrong permission returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPatchStatus(t, app, prodURL, bearer(keyWrongPerm), body, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPatch, Path: prodURL, Body: body}, bearer(keyWrongPerm), 403)
 		assertNoComposeWrite(t)
 	})
 }
@@ -361,32 +358,28 @@ func TestAuthzStackCreate(t *testing.T) {
 
 	t.Run("unauthenticated returns 401 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPostStatus(t, app, createURL, "", map[string]any{"name": "prod-new"}, 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: createURL, Body: map[string]any{"name": "prod-new"}}, "", 401)
 		f.Agent.AssertNotCalled(t, http.MethodPost, "/stacks")
 	})
 
 	t.Run("JWT with matching create pattern is admitted", func(t *testing.T) {
-		assertPostStatus(t, app, createURL, bearer(jwt),
-			map[string]any{"name": "prod-new"}, 201)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: createURL, Body: map[string]any{"name": "prod-new"}}, bearer(jwt), 201)
 	})
 
 	t.Run("JWT whose create pattern doesn't match requested name returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPostStatus(t, app, createURL, bearer(jwt),
-			map[string]any{"name": "staging-new"}, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: createURL, Body: map[string]any{"name": "staging-new"}}, bearer(jwt), 403)
 		f.Agent.AssertNotCalled(t, http.MethodPost, "/stacks")
 	})
 
 	t.Run("JWT with stacks.read but not stacks.create returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertPostStatus(t, app, createURL, bearer(jwtRead),
-			map[string]any{"name": "prod-new"}, 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: createURL, Body: map[string]any{"name": "prod-new"}}, bearer(jwtRead), 403)
 		f.Agent.AssertNotCalled(t, http.MethodPost, "/stacks")
 	})
 
 	t.Run("JWT admin is admitted on any name", func(t *testing.T) {
-		assertPostStatus(t, app, createURL, bearer(jwtAdmin),
-			map[string]any{"name": "anything-new"}, 201)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: createURL, Body: map[string]any{"name": "anything-new"}}, bearer(jwtAdmin), 201)
 	})
 }
 
@@ -399,55 +392,15 @@ func TestAuthzStackCapabilityProbes(t *testing.T) {
 	_, jwt := f.User("probe")
 
 	t.Run("can-create admits any authenticated user", func(t *testing.T) {
-		assertGetStatus(t, app, "/api/v1/servers/"+sid+"/stacks/can-create", bearer(jwt), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: "/api/v1/servers/" + sid + "/stacks/can-create"}, bearer(jwt), 200)
 	})
 	t.Run("can-create returns 401 when unauthenticated", func(t *testing.T) {
-		assertGetStatus(t, app, "/api/v1/servers/"+sid+"/stacks/can-create", "", 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: "/api/v1/servers/" + sid + "/stacks/can-create"}, "", 401)
 	})
 	t.Run("permissions probe admits any authenticated user", func(t *testing.T) {
-		assertGetStatus(t, app, "/api/v1/servers/"+sid+"/stacks/some-stack/permissions", bearer(jwt), 200)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: "/api/v1/servers/" + sid + "/stacks/some-stack/permissions"}, bearer(jwt), 200)
 	})
 	t.Run("permissions probe returns 401 when unauthenticated", func(t *testing.T) {
-		assertGetStatus(t, app, "/api/v1/servers/"+sid+"/stacks/some-stack/permissions", "", 401)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: "/api/v1/servers/" + sid + "/stacks/some-stack/permissions"}, "", 401)
 	})
-}
-
-func bearer(token string) string {
-	if token == "" {
-		return ""
-	}
-	return "Bearer " + token
-}
-
-func assertGetStatus(t *testing.T, app *e2e.TestApp, path, authHeader string, want int) {
-	t.Helper()
-	opts := &e2etesting.RequestOptions{Method: http.MethodGet, Path: path}
-	if authHeader != "" {
-		opts.Headers = map[string]string{"Authorization": authHeader}
-	}
-	resp, err := app.HTTPClient.Request(opts)
-	require.NoError(t, err)
-	assert.Equal(t, want, resp.StatusCode, "GET %s body=%s", path, resp.GetString())
-}
-
-func assertPatchStatus(t *testing.T, app *e2e.TestApp, path, authHeader string, body any, want int) {
-	t.Helper()
-	opts := &e2etesting.RequestOptions{Method: http.MethodPatch, Path: path, Body: body}
-	if authHeader != "" {
-		opts.Headers = map[string]string{"Authorization": authHeader}
-	}
-	resp, err := app.HTTPClient.Request(opts)
-	require.NoError(t, err)
-	assert.Equal(t, want, resp.StatusCode, "PATCH %s body=%s", path, resp.GetString())
-}
-
-func assertPostStatus(t *testing.T, app *e2e.TestApp, path, authHeader string, body any, want int) {
-	t.Helper()
-	opts := &e2etesting.RequestOptions{Method: http.MethodPost, Path: path, Body: body}
-	if authHeader != "" {
-		opts.Headers = map[string]string{"Authorization": authHeader}
-	}
-	resp, err := app.HTTPClient.Request(opts)
-	require.NoError(t, err)
-	assert.Equal(t, want, resp.StatusCode, "POST %s body=%s", path, resp.GetString())
 }
