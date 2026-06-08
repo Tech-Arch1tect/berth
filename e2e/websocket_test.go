@@ -27,9 +27,9 @@ func TestWebSocketTerminalNoAuth(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("GET /ws/api/servers/:serverid/terminal requires authentication", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/terminal", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.Get("/ws/api/servers/1/terminal")
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/terminal requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/terminal", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
+		resp, err := app.HTTPClient.Get("/ws/api/servers/1/stacks/test-stack/terminal")
 		require.NoError(t, err)
 		assertJSONEnvelope(t, resp, 401, "unauthorized", "Authorization header required")
 	})
@@ -151,11 +151,11 @@ func TestWebSocketTerminalJWT(t *testing.T) {
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
-	t.Run("GET /ws/api/servers/:serverid/terminal with valid token attempts connection", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/terminal", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/terminal with valid token attempts connection", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/terminal", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/servers/1/terminal",
+			Path:   "/ws/api/servers/1/stacks/test-stack/terminal",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -234,11 +234,11 @@ func TestWebSocketInvalidToken(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
-	t.Run("GET /ws/api/servers/:serverid/terminal with invalid token returns 401", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/terminal", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/terminal with invalid token returns 401", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/terminal", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/servers/1/terminal",
+			Path:   "/ws/api/servers/1/stacks/test-stack/terminal",
 			Headers: map[string]string{
 				"Authorization": "Bearer invalid-token",
 			},

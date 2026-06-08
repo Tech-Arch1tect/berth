@@ -106,5 +106,5 @@ GET	/api/v1/vulnscan/compare/:baseScanId/:compareScanId	internal/domain/vulnscan
 GET	/build/*	internal/app.registerRoutes.WrapHandler.func4
 GET	/ws/api/servers/:serverid/stacks/:stackname/operations	internal/domain/operations.(*WebSocketHandler).HandleOperationWebSocket-fm
 GET	/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId	internal/domain/operations.(*WebSocketHandler).HandleOperationWebSocket-fm
-GET	/ws/api/servers/:serverid/terminal	internal/domain/websocket.(*Handler).HandleFlutterTerminalWebSocket-fm
+GET	/ws/api/servers/:serverid/stacks/:stackname/terminal	internal/domain/websocket.(*Handler).HandleFlutterTerminalWebSocket-fm
 GET	/ws/api/stack-status/:server_id	internal/domain/websocket.(*Handler).HandleFlutterWebSocket-fm

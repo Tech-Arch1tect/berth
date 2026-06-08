@@ -89,9 +89,13 @@ func registerRoutes(g *Graph) {
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
 		g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, authzEngine)
-	registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler)
+	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.OperationsWSHandler, authzEngine)
 
-	if err := authz.AuditRoutes(e, publicRegistrar, protectedRegistrar, adminRegistrar); err != nil {
+	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
+	if wsRegistrar != nil {
+		auditRegistrars = append(auditRegistrars, wsRegistrar)
+	}
+	if err := authz.AuditRoutes(e, auditRegistrars...); err != nil {
 		g.Logger.Warn("authz audit: unguarded routes detected", zap.Error(err))
 	}
 
@@ -197,9 +201,9 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	return adminRegistrar
 }
 
-func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler) {
+func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, operationsWSHandler *operations.WebSocketHandler, authzEngine *authzengine.Engine) *authz.Registrar {
 	if wsHandler == nil {
-		return
+		return nil
 	}
 
 	wsGroup := srv.Group("/ws")
@@ -208,7 +212,12 @@ func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySv
 
 	wsHandler.RegisterAPIRoutes(wsAPIGroup)
 
+	wsRegistrar := authz.NewRegistrar(wsAPIGroup, "/ws/api", authzEngine.Middleware)
+	wsHandler.RegisterProtectedAPIRoutes(wsRegistrar)
+
 	if operationsWSHandler != nil {
 		operationsWSHandler.RegisterWebSocketRoutes(wsAPIGroup)
 	}
+
+	return wsRegistrar
 }

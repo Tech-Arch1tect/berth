@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"berth/internal/domain/auth"
 	"berth/internal/domain/operations"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/origin"
@@ -56,12 +57,14 @@ func (h *Handler) HandleFlutterWebSocket(c echo.Context) error {
 }
 
 func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
-	userID, serverID, err := h.authenticateTerminalRequest(c)
+	userID := int(auth.GetUserID(c))
+	serverID, err := strconv.Atoi(c.Param("serverid"))
 	if err != nil {
-		return err
+		return response.BadRequest(c, "Invalid server ID")
 	}
+	stackName := c.Param("stackname")
 
-	return h.proxyTerminalConnection(c, serverID, "Flutter", userID)
+	return h.proxyTerminalConnection(c, serverID, stackName, "Flutter", userID)
 }
 
 func (h *Handler) authenticateWebSocketRequest(c echo.Context) (int, int, error) {
@@ -96,45 +99,13 @@ func (h *Handler) authenticateWebSocketRequest(c echo.Context) (int, int, error)
 	return userID, serverID, nil
 }
 
-func (h *Handler) authenticateTerminalRequest(c echo.Context) (int, int, error) {
-	var userID int
-
-	if authUserID, ok := c.Get("_jwt_user_id").(uint); ok && authUserID > 0 {
-		userID = int(authUserID)
-	} else {
-		auth := c.Request().Header.Get("Authorization")
-		token, ok := strings.CutPrefix(auth, "Bearer ")
-		if !ok || token == "" {
-			return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
-		}
-
-		claims, err := h.jwtService.ValidateAccess(token)
-		if err != nil {
-			return 0, 0, response.Unauthorized(c, "Invalid token")
-		}
-		userID = int(claims.UserID)
-	}
-
-	serverIDStr := c.Param("serverid")
-	serverID, err := strconv.Atoi(serverIDStr)
-	if err != nil {
-		return 0, 0, response.BadRequest(c, "Invalid server ID")
-	}
-
-	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
-		return 0, 0, response.Forbidden(c, "Insufficient permissions to access this server")
-	}
-
-	return userID, serverID, nil
-}
-
 const (
 	terminalPingInterval = 30 * time.Second
 	terminalPongWait     = 60 * time.Second
 	terminalWriteWait    = 10 * time.Second
 )
 
-func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientType string, userID int) error {
+func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackName string, clientType string, userID int) error {
 
 	server, err := h.serverService.GetServer(uint(serverID))
 	if err != nil {
@@ -228,9 +199,11 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, clientTy
 			}
 
 			if messageType == websocket.TextMessage {
-				if !h.validateMessagePermissions(userID, serverID, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime) {
+				forward, ok := h.prepareTerminalMessage(userID, serverID, stackName, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime)
+				if !ok {
 					continue
 				}
+				message = forward
 			}
 
 			_ = agentConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
@@ -292,12 +265,12 @@ type TerminalCloseMessage struct {
 	SessionID string `json:"session_id"`
 }
 
-func (h *Handler) validateMessagePermissions(userID int, serverID int, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) bool {
+func (h *Handler) prepareTerminalMessage(userID int, serverID int, urlStack string, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) ([]byte, bool) {
 	var baseMsg BaseMessage
 	if err := json.Unmarshal(message, &baseMsg); err != nil {
 
 		h.sendTerminalError(clientConn, "Invalid message format", clientType)
-		return false
+		return nil, false
 	}
 
 	switch baseMsg.Type {
@@ -306,22 +279,30 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 		if err := json.Unmarshal(message, &startMsg); err != nil {
 
 			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
-			return false
+			return nil, false
 		}
 
-		if startMsg.StackName == "" {
+		if startMsg.StackName != "" && startMsg.StackName != urlStack {
 
-			h.sendTerminalError(clientConn, "stack_name is required for terminal access", clientType)
-			return false
+			h.sendTerminalError(clientConn, "stack_name must match the authorised stack", clientType)
+			return nil, false
 		}
 
-		if !h.permChecker.HasStackPermission(context.Background(), userID, serverID, startMsg.StackName, "manage") {
+		var raw map[string]any
+		if err := json.Unmarshal(message, &raw); err != nil {
 
-			h.sendTerminalError(clientConn, fmt.Sprintf("Insufficient permissions: stacks.manage required for stack '%s'", startMsg.StackName), clientType)
-			return false
+			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
+			return nil, false
+		}
+		raw["stack_name"] = urlStack
+		forward, err := json.Marshal(raw)
+		if err != nil {
+
+			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
+			return nil, false
 		}
 
-		*sessionStackName = startMsg.StackName
+		*sessionStackName = urlStack
 
 		operationID := fmt.Sprintf("terminal-%d-%d", time.Now().Unix(), userID)
 		containerInfo := startMsg.ServiceName
@@ -338,7 +319,7 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 		log, err := h.auditService.LogOperationStart(
 			uint(userID),
 			uint(serverID),
-			startMsg.StackName,
+			urlStack,
 			operationID,
 			opRequest,
 			sessionStartTime,
@@ -347,27 +328,21 @@ func (h *Handler) validateMessagePermissions(userID int, serverID int, message [
 			*operationLogID = &log.ID
 		}
 
-		return true
+		return forward, true
 
 	case "terminal_input", "terminal_resize", "terminal_close":
 		if *sessionStackName == "" {
 
 			h.sendTerminalError(clientConn, "No active terminal session", clientType)
-			return false
+			return nil, false
 		}
 
-		if !h.permChecker.HasStackPermission(context.Background(), userID, serverID, *sessionStackName, "manage") {
-
-			h.sendTerminalError(clientConn, fmt.Sprintf("Insufficient permissions: stacks.manage required for stack '%s'", *sessionStackName), clientType)
-			return false
-		}
-
-		return true
+		return message, true
 
 	default:
 
 		h.sendTerminalError(clientConn, "Unknown message type", clientType)
-		return false
+		return nil, false
 	}
 }
 

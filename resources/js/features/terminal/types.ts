@@ -2,7 +2,6 @@ import type { BaseWebSocketMessage } from '../../shared/types/websocket';
 
 export interface TerminalStartMessage {
   type: 'terminal_start';
-  stack_name: string;
   service_name: string;
   container_name?: string;
   cols: number;

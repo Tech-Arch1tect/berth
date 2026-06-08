@@ -10,10 +10,10 @@ import type {
   TerminalSuccessEvent,
 } from '../types';
 
-const getWebSocketUrl = (serverid: number): string => {
+const getWebSocketUrl = (serverid: number, stackname: string): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.host;
-  return `${protocol}//${host}/ws/api/servers/${serverid}/terminal`;
+  return `${protocol}//${host}/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/terminal`;
 };
 
 export const useTerminal = ({
@@ -134,7 +134,7 @@ export const useTerminal = ({
     sendMessage,
     connectionStatus,
   } = useWebSocket({
-    url: getWebSocketUrl(serverid),
+    url: getWebSocketUrl(serverid, stackname),
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
@@ -151,7 +151,6 @@ export const useTerminal = ({
 
       const startMessage: TerminalStartMessage = {
         type: 'terminal_start',
-        stack_name: stackname,
         service_name: serviceName,
         container_name: containerName,
         cols,
@@ -167,7 +166,6 @@ export const useTerminal = ({
       wsConnected,
       session.isConnecting,
       session.isConnected,
-      stackname,
       serviceName,
       containerName,
       sendMessage,
