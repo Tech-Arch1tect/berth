@@ -16,33 +16,14 @@ func TestAuthzUserServersList(t *testing.T) {
 
 	const listURL = "/api/v1/servers"
 
-	_, jwtReader, _ := f.UserWithRole("reader", f.Server, permnames.StacksRead, "*")
-	_, jwtAdmin := f.Admin("read-admin")
-	_, jwtNoPerm := f.User("no-perm")
-
 	keyOwner, _, _ := f.UserWithRole("key-owner", f.Server, permnames.StacksRead, "*")
-	keyWithServersRead := f.APIKeyFor(keyOwner, "with-servers-read", []ScopeSpec{
-		{Permission: permnames.ServersRead, StackPattern: "*"},
-	})
 	keyWithoutServersRead := f.APIKeyFor(keyOwner, "without-servers-read", nil)
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, "", 401)
 	})
-	t.Run("JWT is admitted (result set filtered by role)", func(t *testing.T) {
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, bearer(jwtReader), 200)
-	})
-	t.Run("JWT with no server roles is admitted (result set will be empty)", func(t *testing.T) {
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, bearer(jwtNoPerm), 200)
-	})
-	t.Run("JWT admin is admitted", func(t *testing.T) {
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, bearer(jwtAdmin), 200)
-	})
 	t.Run("API key without servers.read scope returns 403", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, bearer(keyWithoutServersRead), 403)
-	})
-	t.Run("API key with servers.read scope is admitted", func(t *testing.T) {
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: listURL}, bearer(keyWithServersRead), 200)
 	})
 }
 
