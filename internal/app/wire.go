@@ -122,6 +122,8 @@ type Graph struct {
 	VulnscanPoller         *vulnscan.Poller
 	WSPermChecker          websocket.PermissionChecker
 	WSHub                  *websocket.Hub
+	WSEventRegistry        *websocket.StackEventRegistry
+	WSEventsHandler        *websocket.EventsHandler
 	WSAgentMgr             *websocket.AgentManager
 	WSServiceMgr           *websocket.ServiceManager
 	WSHandler              *websocket.Handler
@@ -262,7 +264,9 @@ func Build(
 
 	g.WSPermChecker = websocket.NewRBACPermissionChecker(g.RBACSvc)
 	g.WSHub = websocket.NewHub(g.WSPermChecker, logger, g.OriginCheck)
-	g.WSAgentMgr = websocket.NewAgentManager(g.WSHub, logger)
+	g.WSEventRegistry = websocket.NewStackEventRegistry(logger)
+	g.WSEventsHandler = websocket.NewEventsHandler(g.WSEventRegistry, g.OriginCheck, logger)
+	g.WSAgentMgr = websocket.NewAgentManager(g.WSHub, g.WSEventRegistry, logger)
 	g.WSServiceMgr = websocket.NewServiceManager(g.ServerSvc, g.WSAgentMgr, logger)
 	g.WSHandler = websocket.NewHandler(g.WSHub, g.JWTSvc, g.WSPermChecker, g.ServerSvc, g.OperationsAuditSvc, g.OriginCheck)
 	g.addHook("websocket hub",

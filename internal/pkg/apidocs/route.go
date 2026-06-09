@@ -223,6 +223,14 @@ func (rb *RouteBuilder) ResponseOneOf(statusCode int, description string, exampl
 	return rb
 }
 
+func (rb *RouteBuilder) WebSocket() *RouteBuilder {
+	if rb.operation.Extensions == nil {
+		rb.operation.Extensions = map[string]any{}
+	}
+	rb.operation.Extensions["x-websocket"] = true
+	return rb
+}
+
 func (rb *RouteBuilder) Security(schemes ...string) *RouteBuilder {
 	if rb.operation.Security == nil {
 		rb.operation.Security = &openapi3.SecurityRequirements{}

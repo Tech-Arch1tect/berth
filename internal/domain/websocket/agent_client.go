@@ -16,6 +16,7 @@ type AgentClient struct {
 	server    *server.Server
 	conn      *websocket.Conn
 	hub       *Hub
+	registry  *StackEventRegistry
 	reconnect chan bool
 	stop      chan bool
 	connected bool
@@ -24,17 +25,19 @@ type AgentClient struct {
 }
 
 type AgentManager struct {
-	clients map[uint]*AgentClient
-	hub     *Hub
-	mutex   sync.RWMutex
-	logger  *zap.Logger
+	clients  map[uint]*AgentClient
+	hub      *Hub
+	registry *StackEventRegistry
+	mutex    sync.RWMutex
+	logger   *zap.Logger
 }
 
-func NewAgentManager(hub *Hub, logger *zap.Logger) *AgentManager {
+func NewAgentManager(hub *Hub, registry *StackEventRegistry, logger *zap.Logger) *AgentManager {
 	return &AgentManager{
-		clients: make(map[uint]*AgentClient),
-		hub:     hub,
-		logger:  logger,
+		clients:  make(map[uint]*AgentClient),
+		hub:      hub,
+		registry: registry,
+		logger:   logger,
 	}
 }
 
@@ -60,6 +63,7 @@ func (am *AgentManager) ConnectToAgent(server *server.Server) error {
 	client := &AgentClient{
 		server:    server,
 		hub:       am.hub,
+		registry:  am.registry,
 		reconnect: make(chan bool, 1),
 		stop:      make(chan bool, 1),
 		connected: false,
@@ -263,6 +267,7 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 
 		event.ServerID = int(ac.server.ID)
 		ac.hub.BroadcastContainerStatus(event)
+		ac.registry.PublishContainerStatus(event)
 
 	case MessageTypeStackStatus:
 		var event StackStatusEvent
@@ -277,6 +282,7 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 
 		event.ServerID = int(ac.server.ID)
 		ac.hub.BroadcastStackStatus(event)
+		ac.registry.PublishStackStatus(event)
 
 	case MessageTypeOperationProgress:
 		var event OperationProgressEvent

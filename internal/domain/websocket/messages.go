@@ -1,5 +1,7 @@
 package websocket
 
+import "berth/internal/domain/stack"
+
 type MessageType string
 
 const (
@@ -33,21 +35,15 @@ type UnsubscribeMessage struct {
 
 type ContainerStatusEvent struct {
 	BaseMessage
-	ServerID      int    `json:"server_id"`
-	StackName     string `json:"stack_name"`
-	ServiceName   string `json:"service_name"`
-	ContainerName string `json:"container_name"`
-	ContainerID   string `json:"container_id"`
-	Status        string `json:"status"`
-	Health        string `json:"health,omitempty"`
-	Image         string `json:"image"`
-	Ports         []Port `json:"ports,omitempty"`
-}
-
-type Port struct {
-	Private int    `json:"private"`
-	Public  int    `json:"public,omitempty"`
-	Type    string `json:"type"`
+	ServerID      int          `json:"server_id"`
+	StackName     string       `json:"stack_name"`
+	ServiceName   string       `json:"service_name"`
+	ContainerName string       `json:"container_name"`
+	ContainerID   string       `json:"container_id"`
+	Status        string       `json:"status"`
+	Health        string       `json:"health,omitempty"`
+	Image         string       `json:"image"`
+	Ports         []stack.Port `json:"ports,omitempty"`
 }
 
 type StackStatusEvent struct {

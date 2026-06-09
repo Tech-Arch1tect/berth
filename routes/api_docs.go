@@ -21,6 +21,7 @@ import (
 	"berth/internal/domain/user"
 	"berth/internal/domain/version"
 	"berth/internal/domain/vulnscan"
+	"berth/internal/domain/websocket"
 	"berth/internal/pkg/config"
 	"berth/internal/pkg/response"
 
@@ -413,6 +414,20 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	// WebSocket streams. Generally these are included for visibility.
+	apiDoc.Document("GET", "/ws/api/servers/{serverid}/stacks/{stackname}/events").
+		Tags("websocket").
+		Summary("Per-stack status event stream (WebSocket)").
+		Description("Upgrades to a WebSocket and pushes container_status and stack_status events for the named stack. The URL is the subscription: the stream is one-directional and any client data frame closes the connection. Authenticate with an Authorization Bearer header or the Bearer WebSocket subprotocol.").
+		WebSocket().
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		ResponseOneOf(http.StatusSwitchingProtocols, "WebSocket stream of ContainerStatusEvent and StackStatusEvent messages", websocket.ContainerStatusEvent{}, websocket.StackStatusEvent{}).
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Security("bearerAuth", "apiKey").
 		Build()
 
 	// Vulnerability Scanning

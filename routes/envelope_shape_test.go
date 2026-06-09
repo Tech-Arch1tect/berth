@@ -50,6 +50,9 @@ func TestAllJSONResponsesUseEnvelope(t *testing.T) {
 				if status == "default" || respRef == nil || respRef.Value == nil {
 					continue
 				}
+				if status == "101" && op.Extensions["x-websocket"] == true {
+					continue
+				}
 				media, ok := respRef.Value.Content["application/json"]
 				if !ok || media == nil || media.Schema == nil {
 					continue
