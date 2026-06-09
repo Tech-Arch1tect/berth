@@ -430,6 +430,21 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey").
 		Build()
 
+	apiDoc.Document("GET", "/ws/api/servers/{serverid}/stacks/{stackname}/operations/{operationId}").
+		Tags("websocket").
+		Summary("Operation output stream (WebSocket)").
+		Description("Upgrades to a WebSocket and pushes the named operation's output as StreamMessage frames (stdout, stderr, progress, complete, error). Requires the same permission that starting the operation required. The stream is one-directional and any client data frame closes the connection. Authenticate with an Authorization Bearer header or the Bearer WebSocket subprotocol.").
+		WebSocket().
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("operationId", "Operation ID returned by the start-operation endpoint").Required().
+		Response(http.StatusSwitchingProtocols, operations.StreamMessage{}, "WebSocket stream of StreamMessage frames").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Operation not found on this server and stack").
+		Security("bearerAuth", "apiKey").
+		Build()
+
 	// Vulnerability Scanning
 	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/vulnscan").
 		Tags("vulnscan").

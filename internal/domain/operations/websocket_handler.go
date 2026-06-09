@@ -39,7 +39,6 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	operationIDStr := c.Param("operationId")
 
 	userID, err := session.GetCurrentUserID(c)
 	if err != nil {
@@ -61,46 +60,7 @@ func (h *WebSocketHandler) HandleOperationWebSocket(c echo.Context) error {
 	ctx, cancel := context.WithCancel(c.Request().Context())
 	defer cancel()
 
-	if operationIDStr != "" {
-
-		return h.streamExistingOperation(ctx, conn, userID, uint(serverID), stackname, operationIDStr)
-	} else {
-
-		return h.handleOperationRequests(ctx, conn, userID, uint(serverID), stackname)
-	}
-}
-
-func (h *WebSocketHandler) streamExistingOperation(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string, operationID string) error {
-
-	pipeReader, pipeWriter := streamPipe()
-
-	go func() {
-		defer func() { _ = pipeWriter.Close() }()
-		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackname, operationID, pipeWriter); err != nil {
-
-			errorMsg := WebSocketMessage{
-				Type:  WSMessageTypeError,
-				Error: err.Error(),
-			}
-			if jsonData, marshalErr := json.Marshal(errorMsg); marshalErr == nil {
-				_ = conn.WriteMessage(websocket.TextMessage, jsonData)
-			}
-		}
-	}()
-
-	operationLog, err := h.service.auditSvc.FindOperationLogByOperationID(operationID)
-	if err == nil && operationLog != nil {
-		if operationLog.EndTime == nil {
-			messageCount, _ := h.service.auditSvc.GetOperationMessageCount(operationLog.ID)
-			if messageCount == 0 {
-				return h.relayToWebSocketWithAudit(ctx, conn, pipeReader, operationLog.ID)
-			} else {
-				return h.relayToWebSocketInternal(ctx, conn, pipeReader, &operationLog.ID, false)
-			}
-		}
-	}
-
-	return h.relayToWebSocketInternal(ctx, conn, pipeReader, nil, false)
+	return h.handleOperationRequests(ctx, conn, userID, uint(serverID), stackname)
 }
 
 func (h *WebSocketHandler) handleOperationRequests(ctx context.Context, conn *websocket.Conn, userID uint, serverID uint, stackname string) error {

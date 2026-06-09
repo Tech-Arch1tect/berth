@@ -18,7 +18,12 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { ContainerStatusEvent, ResponseEmpty, StackStatusEvent } from '../models';
+import type {
+  ContainerStatusEvent,
+  ResponseEmpty,
+  StackStatusEvent,
+  StreamMessage,
+} from '../models';
 
 import { apiClient } from '../../client';
 
@@ -200,6 +205,211 @@ export function useGetWsApiServersServeridStacksStacknameEvents<
   const queryOptions = getGetWsApiServersServeridStacksStacknameEventsQueryOptions(
     serverid,
     stackname,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Upgrades to a WebSocket and pushes the named operation's output as StreamMessage frames (stdout, stderr, progress, complete, error). Requires the same permission that starting the operation required. The stream is one-directional and any client data frame closes the connection. Authenticate with an Authorization Bearer header or the Bearer WebSocket subprotocol.
+ * @summary Operation output stream (WebSocket)
+ */
+export const getGetWsApiServersServeridStacksStacknameOperationsOperationIdUrl = (
+  serverid: number,
+  stackname: string,
+  operationId: string
+) => {
+  return `/ws/api/servers/${serverid}/stacks/${stackname}/operations/${operationId}`;
+};
+
+export const getWsApiServersServeridStacksStacknameOperationsOperationId = async (
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options?: RequestInit
+): Promise<void> => {
+  return apiClient<void>(
+    getGetWsApiServersServeridStacksStacknameOperationsOperationIdUrl(
+      serverid,
+      stackname,
+      operationId
+    ),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetWsApiServersServeridStacksStacknameOperationsOperationIdQueryKey = (
+  serverid: number,
+  stackname: string,
+  operationId: string
+) => {
+  return [`/ws/api/servers/${serverid}/stacks/${stackname}/operations/${operationId}`] as const;
+};
+
+export const getGetWsApiServersServeridStacksStacknameOperationsOperationIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+  TError = StreamMessage | ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetWsApiServersServeridStacksStacknameOperationsOperationIdQueryKey(
+      serverid,
+      stackname,
+      operationId
+    );
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>
+  > = ({ signal }) =>
+    getWsApiServersServeridStacksStacknameOperationsOperationId(serverid, stackname, operationId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(serverid && stackname && operationId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWsApiServersServeridStacksStacknameOperationsOperationIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>
+>;
+export type GetWsApiServersServeridStacksStacknameOperationsOperationIdQueryError =
+  | StreamMessage
+  | ResponseEmpty
+  | void;
+
+export function useGetWsApiServersServeridStacksStacknameOperationsOperationId<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+  TError = StreamMessage | ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+          TError,
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWsApiServersServeridStacksStacknameOperationsOperationId<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+  TError = StreamMessage | ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+          TError,
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWsApiServersServeridStacksStacknameOperationsOperationId<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+  TError = StreamMessage | ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Operation output stream (WebSocket)
+ */
+
+export function useGetWsApiServersServeridStacksStacknameOperationsOperationId<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+  TError = StreamMessage | ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  operationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameOperationsOperationId>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetWsApiServersServeridStacksStacknameOperationsOperationIdQueryOptions(
+    serverid,
+    stackname,
+    operationId,
     options
   );
 

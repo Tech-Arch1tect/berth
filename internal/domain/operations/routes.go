@@ -12,5 +12,8 @@ func (h *Handler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
 
 func (h *WebSocketHandler) RegisterWebSocketRoutes(g *echo.Group) {
 	g.GET("/servers/:serverid/stacks/:stackname/operations", h.HandleOperationWebSocket)
-	g.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", h.HandleOperationWebSocket)
+}
+
+func (h *StreamHandler) RegisterRoutes(reg *authz.Registrar) {
+	reg.GET("/servers/:serverid/stacks/:stackname/operations/:operationId", h.HandleOperationStream, authz.Resolved(h.streamRequirement))
 }

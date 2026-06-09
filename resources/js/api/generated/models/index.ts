@@ -308,6 +308,7 @@ export * from './startScanRequest';
 export * from './statsResponseData';
 export * from './statsResponseDataEventsByCategory';
 export * from './statsResponseDataEventsBySeverity';
+export * from './streamMessage';
 export * from './systemInfo';
 export * from './tOTPDisableRequest';
 export * from './tOTPEnableRequest';

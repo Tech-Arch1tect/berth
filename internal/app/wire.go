@@ -85,6 +85,7 @@ type Graph struct {
 	OperationsSvc           *operations.Service
 	OperationsHandler       *operations.Handler
 	OperationsWSHandler     *operations.WebSocketHandler
+	OperationsStreamHandler *operations.StreamHandler
 
 	SecurityAuditLogger *security.AuditLogger
 	SecurityAuditSvc    *security.AuditService
@@ -241,6 +242,7 @@ func Build(
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.RBACSvc, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
 	g.OperationsWSHandler = operations.NewWebSocketHandler(g.OperationsSvc, g.OriginCheck, logger)
+	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
 
 	g.OperationLogsSvc = operationlogs.NewService(db, logger)

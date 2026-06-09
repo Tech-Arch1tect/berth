@@ -89,7 +89,7 @@ func registerRoutes(g *Graph) {
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
 		g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, authzEngine)
-	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.WSEventsHandler, g.OperationsWSHandler, authzEngine)
+	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.WSEventsHandler, g.OperationsWSHandler, g.OperationsStreamHandler, authzEngine)
 
 	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
 	if wsRegistrar != nil {
@@ -201,7 +201,7 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	return adminRegistrar
 }
 
-func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsWSHandler *operations.WebSocketHandler, authzEngine *authzengine.Engine) *authz.Registrar {
+func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsWSHandler *operations.WebSocketHandler, operationsStreamHandler *operations.StreamHandler, authzEngine *authzengine.Engine) *authz.Registrar {
 	if wsHandler == nil {
 		return nil
 	}
@@ -220,6 +220,9 @@ func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySv
 
 	if operationsWSHandler != nil {
 		operationsWSHandler.RegisterWebSocketRoutes(wsAPIGroup)
+	}
+	if operationsStreamHandler != nil {
+		operationsStreamHandler.RegisterRoutes(wsRegistrar)
 	}
 
 	return wsRegistrar
