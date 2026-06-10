@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,8 @@ import (
 	"berth/internal/pkg/origin"
 	"berth/internal/pkg/response"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/labstack/echo/v4"
 )
 
@@ -45,8 +47,8 @@ func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
 
 const (
 	terminalPingInterval = 30 * time.Second
-	terminalPongWait     = 60 * time.Second
 	terminalWriteWait    = 10 * time.Second
+	terminalReadLimit    = 1 << 20
 )
 
 func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackName string, clientType string, userID int) error {
@@ -57,54 +59,49 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 		return response.NotFound(c, "Server not found")
 	}
 
+	if !h.checkOrigin(c.Request()) {
+		return response.Forbidden(c, "Origin not allowed")
+	}
+
 	agentWSURL := fmt.Sprintf("wss://%s:%d/ws/terminal", server.Host, server.Port)
 
-	dialer := websocket.Dialer{
-		HandshakeTimeout: 10 * time.Second,
-	}
-
-	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
-		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
+	dialCtx, dialCancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
+	defer dialCancel()
 
 	headers := make(http.Header)
 	headers.Set("Authorization", fmt.Sprintf("Bearer %s", server.AccessToken))
 
-	agentConn, _, err := dialer.Dial(agentWSURL, headers)
+	dialOpts := &websocket.DialOptions{HTTPHeader: headers}
+	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
+		dialOpts.HTTPClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		}
+	}
+
+	agentConn, _, err := websocket.Dial(dialCtx, agentWSURL, dialOpts)
 	if err != nil {
 
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
+	defer agentConn.Close(websocket.StatusInternalError, "proxy ended")
+	agentConn.SetReadLimit(terminalReadLimit)
 
-	defer func() { _ = agentConn.Close() }()
-
-	termUpgrader := websocket.Upgrader{
-		CheckOrigin:  h.checkOrigin,
-		Subprotocols: []string{"Bearer"},
-	}
-
-	clientConn, err := termUpgrader.Upgrade(c.Response(), c.Request(), nil)
+	clientConn, err := websocket.Accept(c.Response(), c.Request(), &websocket.AcceptOptions{
+		Subprotocols:       []string{"Bearer"},
+		InsecureSkipVerify: true,
+	})
 	if err != nil {
 		return err
 	}
-	defer func() { _ = clientConn.Close() }()
+	defer clientConn.Close(websocket.StatusInternalError, "proxy ended")
+	clientConn.SetReadLimit(terminalReadLimit)
 
-	done := make(chan struct{})
+	ctx, cancel := context.WithCancel(c.Request().Context())
+	defer cancel()
+
 	sessionStackName := ""
 	var operationLogID *uint
 	sessionStartTime := time.Now()
-
-	_ = clientConn.SetReadDeadline(time.Now().Add(terminalPongWait))
-	clientConn.SetPongHandler(func(string) error {
-		_ = clientConn.SetReadDeadline(time.Now().Add(terminalPongWait))
-		return nil
-	})
-
-	_ = agentConn.SetReadDeadline(time.Now().Add(terminalPongWait))
-	agentConn.SetPongHandler(func(string) error {
-		_ = agentConn.SetReadDeadline(time.Now().Add(terminalPongWait))
-		return nil
-	})
 
 	go func() {
 		ticker := time.NewTicker(terminalPingInterval)
@@ -113,71 +110,62 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 		for {
 			select {
 			case <-ticker.C:
-				_ = clientConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
-				if err := clientConn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				pingCtx, pingCancel := context.WithTimeout(ctx, terminalWriteWait)
+				clientErr := clientConn.Ping(pingCtx)
+				agentErr := agentConn.Ping(pingCtx)
+				pingCancel()
+				if clientErr != nil || agentErr != nil {
+					cancel()
 					return
 				}
-
-				_ = agentConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
-				if err := agentConn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					return
-				}
-			case <-done:
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
 	go func() {
-		defer func() {
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
-		}()
+		defer cancel()
 		for {
-			messageType, message, err := clientConn.ReadMessage()
+			messageType, message, err := clientConn.Read(ctx)
 			if err != nil {
-				break
+				return
 			}
 
-			if messageType == websocket.TextMessage {
-				forward, ok := h.prepareTerminalMessage(userID, serverID, stackName, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime)
+			if messageType == websocket.MessageText {
+				forward, ok := h.prepareTerminalMessage(ctx, userID, serverID, stackName, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime)
 				if !ok {
 					continue
 				}
 				message = forward
 			}
 
-			_ = agentConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
-			if err := agentConn.WriteMessage(messageType, message); err != nil {
-				break
+			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
+			err = agentConn.Write(writeCtx, messageType, message)
+			writeCancel()
+			if err != nil {
+				return
 			}
 		}
 	}()
 
 	go func() {
-		defer func() {
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
-		}()
+		defer cancel()
 		for {
-			messageType, message, err := agentConn.ReadMessage()
+			messageType, message, err := agentConn.Read(ctx)
 			if err != nil {
-				break
+				return
 			}
-			_ = clientConn.SetWriteDeadline(time.Now().Add(terminalWriteWait))
-			if err := clientConn.WriteMessage(messageType, message); err != nil {
-				break
+			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
+			err = clientConn.Write(writeCtx, messageType, message)
+			writeCancel()
+			if err != nil {
+				return
 			}
 		}
 	}()
 
-	<-done
+	<-ctx.Done()
 
 	if operationLogID != nil {
 		endTime := time.Now()
@@ -209,11 +197,11 @@ type TerminalCloseMessage struct {
 	SessionID string `json:"session_id"`
 }
 
-func (h *Handler) prepareTerminalMessage(userID int, serverID int, urlStack string, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) ([]byte, bool) {
+func (h *Handler) prepareTerminalMessage(ctx context.Context, userID int, serverID int, urlStack string, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) ([]byte, bool) {
 	var baseMsg BaseMessage
 	if err := json.Unmarshal(message, &baseMsg); err != nil {
 
-		h.sendTerminalError(clientConn, "Invalid message format", clientType)
+		h.sendTerminalError(ctx, clientConn, "Invalid message format", clientType)
 		return nil, false
 	}
 
@@ -222,27 +210,27 @@ func (h *Handler) prepareTerminalMessage(userID int, serverID int, urlStack stri
 		var startMsg TerminalStartMessage
 		if err := json.Unmarshal(message, &startMsg); err != nil {
 
-			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
+			h.sendTerminalError(ctx, clientConn, "Invalid terminal_start message format", clientType)
 			return nil, false
 		}
 
 		if startMsg.StackName != "" && startMsg.StackName != urlStack {
 
-			h.sendTerminalError(clientConn, "stack_name must match the authorised stack", clientType)
+			h.sendTerminalError(ctx, clientConn, "stack_name must match the authorised stack", clientType)
 			return nil, false
 		}
 
 		var raw map[string]any
 		if err := json.Unmarshal(message, &raw); err != nil {
 
-			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
+			h.sendTerminalError(ctx, clientConn, "Invalid terminal_start message format", clientType)
 			return nil, false
 		}
 		raw["stack_name"] = urlStack
 		forward, err := json.Marshal(raw)
 		if err != nil {
 
-			h.sendTerminalError(clientConn, "Invalid terminal_start message format", clientType)
+			h.sendTerminalError(ctx, clientConn, "Invalid terminal_start message format", clientType)
 			return nil, false
 		}
 
@@ -277,7 +265,7 @@ func (h *Handler) prepareTerminalMessage(userID int, serverID int, urlStack stri
 	case "terminal_input", "terminal_resize", "terminal_close":
 		if *sessionStackName == "" {
 
-			h.sendTerminalError(clientConn, "No active terminal session", clientType)
+			h.sendTerminalError(ctx, clientConn, "No active terminal session", clientType)
 			return nil, false
 		}
 
@@ -285,17 +273,19 @@ func (h *Handler) prepareTerminalMessage(userID int, serverID int, urlStack stri
 
 	default:
 
-		h.sendTerminalError(clientConn, "Unknown message type", clientType)
+		h.sendTerminalError(ctx, clientConn, "Unknown message type", clientType)
 		return nil, false
 	}
 }
 
-func (h *Handler) sendTerminalError(conn *websocket.Conn, message string, clientType string) {
+func (h *Handler) sendTerminalError(ctx context.Context, conn *websocket.Conn, message string, clientType string) {
 	errorResponse := map[string]any{
 		"type":      "error",
 		"error":     message,
 		"timestamp": time.Now(),
 	}
 
-	_ = conn.WriteJSON(errorResponse)
+	writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
+	defer writeCancel()
+	_ = wsjson.Write(writeCtx, conn, errorResponse)
 }

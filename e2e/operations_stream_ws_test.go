@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/pkg/response"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,16 +64,15 @@ func TestOperationStreamWSDeliversOperationOutput(t *testing.T) {
 		fmt.Fprint(w, "data: {\"type\":\"complete\",\"success\":true,\"exitCode\":0,\"timestamp\":\"2026-06-09T12:00:01Z\"}\n\n")
 	})
 
-	dialer := newTLSWSDialer()
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+jwt)
 
-	conn, upgradeResp, err := dialer.Dial(
+	conn, upgradeResp, err := dialWS(t,
 		wsURLFor(app.BaseURL, "/ws/api/servers/"+Itoa(testServer.ID)+"/stacks/web-stack/operations/"+opID),
 		header,
 	)
 	require.NoError(t, err, "authorised stream upgrade should succeed")
-	defer func() { _ = conn.Close() }()
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 	require.Equal(t, http.StatusSwitchingProtocols, upgradeResp.StatusCode)
 
 	type frame struct {
@@ -86,8 +84,7 @@ func TestOperationStreamWSDeliversOperationOutput(t *testing.T) {
 
 	readFrame := func() frame {
 		t.Helper()
-		_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-		_, msg, err := conn.ReadMessage()
+		_, msg, err := wsRead(conn)
 		require.NoError(t, err, "expected a stream frame")
 		var f frame
 		require.NoError(t, json.Unmarshal(msg, &f))
@@ -103,11 +100,10 @@ func TestOperationStreamWSDeliversOperationOutput(t *testing.T) {
 	require.NotNil(t, second.Success)
 	assert.True(t, *second.Success)
 
-	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	_, _, err = conn.ReadMessage()
-	var closeErr *websocket.CloseError
-	require.ErrorAs(t, err, &closeErr, "expected a close frame after the stream ended")
-	assert.Equal(t, websocket.CloseNormalClosure, closeErr.Code)
+	_, _, err = wsRead(conn)
+	require.Error(t, err, "expected a close frame after the stream ended")
+	assert.Equal(t, websocket.StatusNormalClosure, websocket.CloseStatus(err),
+		"expected a normal closure; got %v", err)
 }
 
 func TestOperationStreamWSClosesOnClientFrame(t *testing.T) {
@@ -138,27 +134,23 @@ func TestOperationStreamWSClosesOnClientFrame(t *testing.T) {
 		<-r.Context().Done()
 	})
 
-	dialer := newTLSWSDialer()
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+jwt)
 
-	conn, _, err := dialer.Dial(
+	conn, _, err := dialWS(t,
 		wsURLFor(app.BaseURL, "/ws/api/servers/"+Itoa(testServer.ID)+"/stacks/web-stack/operations/"+opID),
 		header,
 	)
 	require.NoError(t, err)
-	defer func() { _ = conn.Close() }()
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 
-	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	_, _, err = conn.ReadMessage()
+	_, _, err = wsRead(conn)
 	require.NoError(t, err)
 
-	require.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"operation_request"}`)))
+	require.NoError(t, wsWrite(conn, []byte(`{"type":"operation_request"}`)))
 
-	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	_, _, err = conn.ReadMessage()
-	var closeErr *websocket.CloseError
-	require.ErrorAs(t, err, &closeErr, "expected the server to close the connection")
-	assert.Equal(t, websocket.ClosePolicyViolation, closeErr.Code,
-		"server must close with a policy violation on an unexpected client frame")
+	_, _, err = wsRead(conn)
+	require.Error(t, err, "expected the server to close the connection")
+	assert.Equal(t, websocket.StatusPolicyViolation, websocket.CloseStatus(err),
+		"server must close with a policy violation on an unexpected client frame; got %v", err)
 }

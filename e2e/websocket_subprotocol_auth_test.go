@@ -1,9 +1,7 @@
 package e2e
 
 import (
-	"crypto/tls"
 	"net/http"
-	"strings"
 	"testing"
 
 	"berth/internal/domain/apikey"
@@ -13,20 +11,10 @@ import (
 
 	e2etesting "berth/e2e/internal/harness"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func wsURLFor(httpsURL, path string) string {
-	return strings.Replace(httpsURL, "https://", "wss://", 1) + path
-}
-
-func newTLSWSDialer() *websocket.Dialer {
-	return &websocket.Dialer{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-}
 
 func loginAndIssueJWT(t *testing.T, app *TestApp, username, password string) string {
 	t.Helper()
@@ -77,17 +65,12 @@ func TestWebSocketSubprotocolAuthHappyPath(t *testing.T) {
 
 	eventsPath := "/ws/api/servers/" + Itoa(testServer.ID) + "/stacks/test-stack/events"
 
-	dialer := newTLSWSDialer()
-
 	t.Run("Sec-WebSocket-Protocol Bearer + JWT upgrades and echoes subprotocol", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 
-		dialer := *dialer
-		dialer.Subprotocols = []string{"Bearer", jwt}
-
-		conn, resp, err := dialer.Dial(wsURLFor(app.BaseURL, eventsPath), nil)
+		conn, resp, err := dialWS(t, wsURLFor(app.BaseURL, eventsPath), nil, "Bearer", jwt)
 		require.NoError(t, err, "WS dial should succeed with valid JWT in Sec-WebSocket-Protocol")
-		defer conn.Close()
+		defer conn.Close(websocket.StatusNormalClosure, "")
 
 		assert.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
 		assert.Equal(t, "Bearer", resp.Header.Get("Sec-WebSocket-Protocol"),
@@ -97,12 +80,9 @@ func TestWebSocketSubprotocolAuthHappyPath(t *testing.T) {
 	t.Run("Sec-WebSocket-Protocol Bearer + API key upgrades and echoes subprotocol", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 
-		dialer := *dialer
-		dialer.Subprotocols = []string{"Bearer", apiKey}
-
-		conn, resp, err := dialer.Dial(wsURLFor(app.BaseURL, eventsPath), nil)
+		conn, resp, err := dialWS(t, wsURLFor(app.BaseURL, eventsPath), nil, "Bearer", apiKey)
 		require.NoError(t, err, "WS dial should succeed with valid API key in Sec-WebSocket-Protocol")
-		defer conn.Close()
+		defer conn.Close(websocket.StatusNormalClosure, "")
 
 		assert.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
 		assert.Equal(t, "Bearer", resp.Header.Get("Sec-WebSocket-Protocol"))
@@ -114,9 +94,9 @@ func TestWebSocketSubprotocolAuthHappyPath(t *testing.T) {
 		header := http.Header{}
 		header.Set("Authorization", "Bearer "+jwt)
 
-		conn, resp, err := dialer.Dial(wsURLFor(app.BaseURL, eventsPath), header)
+		conn, resp, err := dialWS(t, wsURLFor(app.BaseURL, eventsPath), header)
 		require.NoError(t, err, "WS dial with Authorization header still works")
-		defer conn.Close()
+		defer conn.Close(websocket.StatusNormalClosure, "")
 
 		assert.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
 	})
@@ -127,9 +107,9 @@ func TestWebSocketSubprotocolAuthHappyPath(t *testing.T) {
 		header := http.Header{}
 		header.Set("Authorization", "Bearer "+apiKey)
 
-		conn, resp, err := dialer.Dial(wsURLFor(app.BaseURL, eventsPath), header)
+		conn, resp, err := dialWS(t, wsURLFor(app.BaseURL, eventsPath), header)
 		require.NoError(t, err, "WS dial with API key in Authorization header still works")
-		defer conn.Close()
+		defer conn.Close(websocket.StatusNormalClosure, "")
 
 		assert.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
 	})

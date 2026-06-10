@@ -1,16 +1,21 @@
 package websocket
 
 import (
-	"berth/internal/domain/server"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"berth/internal/domain/server"
+
+	"github.com/coder/websocket"
 	"go.uber.org/zap"
 )
+
+const agentReadLimit = 1 << 20
 
 type AgentClient struct {
 	server    *server.Server
@@ -102,9 +107,7 @@ func (ac *AgentClient) connect() {
 	for {
 		select {
 		case <-ac.stop:
-			if ac.conn != nil {
-				_ = ac.conn.Close()
-			}
+			ac.closeConn(websocket.StatusNormalClosure, "shutting down")
 			return
 		default:
 			if err := ac.attemptConnection(); err != nil {
@@ -119,23 +122,28 @@ func (ac *AgentClient) connect() {
 				continue
 			}
 
-			go ac.readPump()
-			go ac.writePump()
+			connCtx, connCancel := context.WithCancel(context.Background())
+			go ac.readPump(connCtx)
+			go ac.pingPump(connCtx)
 
 			select {
 			case <-ac.reconnect:
-				if ac.conn != nil {
-					_ = ac.conn.Close()
-				}
+				connCancel()
+				ac.closeConn(websocket.StatusGoingAway, "reconnecting")
 				ac.setConnected(false)
 				time.Sleep(1 * time.Second)
 			case <-ac.stop:
-				if ac.conn != nil {
-					_ = ac.conn.Close()
-				}
+				connCancel()
+				ac.closeConn(websocket.StatusNormalClosure, "shutting down")
 				return
 			}
 		}
+	}
+}
+
+func (ac *AgentClient) closeConn(code websocket.StatusCode, reason string) {
+	if ac.conn != nil {
+		_ = ac.conn.Close(code, reason)
 	}
 }
 
@@ -148,23 +156,27 @@ func (ac *AgentClient) attemptConnection() error {
 		zap.String("server_name", ac.server.Name),
 	)
 
-	headers := make(map[string][]string)
-	headers["Authorization"] = []string{fmt.Sprintf("Bearer %s", ac.server.AccessToken)}
+	headers := make(http.Header)
+	headers.Set("Authorization", fmt.Sprintf("Bearer %s", ac.server.AccessToken))
 
-	dialer := websocket.DefaultDialer
-	dialer.HandshakeTimeout = 10 * time.Second
+	dialCtx, dialCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer dialCancel()
 
+	dialOpts := &websocket.DialOptions{HTTPHeader: headers}
 	if ac.server.SkipSSLVerification != nil && *ac.server.SkipSSLVerification {
 		ac.logger.Debug("SSL verification disabled for WebSocket connection",
 			zap.String("server_name", ac.server.Name),
 		)
-		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		dialOpts.HTTPClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		}
 	}
 
-	conn, _, err := dialer.Dial(wsURL, headers)
+	conn, _, err := websocket.Dial(dialCtx, wsURL, dialOpts)
 	if err != nil {
 		return err
 	}
+	conn.SetReadLimit(agentReadLimit)
 
 	ac.conn = conn
 	ac.setConnected(true)
@@ -178,9 +190,9 @@ func (ac *AgentClient) attemptConnection() error {
 	return nil
 }
 
-func (ac *AgentClient) readPump() {
+func (ac *AgentClient) readPump(ctx context.Context) {
 	defer func() {
-		_ = ac.conn.Close()
+		ac.closeConn(websocket.StatusInternalError, "read loop ended")
 		ac.setConnected(false)
 		select {
 		case ac.reconnect <- true:
@@ -188,23 +200,18 @@ func (ac *AgentClient) readPump() {
 		}
 	}()
 
-	_ = ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	ac.conn.SetPongHandler(func(string) error {
-		_ = ac.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
 	for {
-		_, message, err := ac.conn.ReadMessage()
+		_, message, err := ac.conn.Read(ctx)
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				ac.logger.Error("WebSocket error from agent",
-					zap.Error(err),
+			status := websocket.CloseStatus(err)
+			if status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway || ctx.Err() != nil {
+				ac.logger.Debug("WebSocket connection closed",
 					zap.Uint("server_id", ac.server.ID),
 					zap.String("server_name", ac.server.Name),
 				)
 			} else {
-				ac.logger.Debug("WebSocket connection closed",
+				ac.logger.Error("WebSocket error from agent",
+					zap.Error(err),
 					zap.Uint("server_id", ac.server.ID),
 					zap.String("server_name", ac.server.Name),
 				)
@@ -216,17 +223,22 @@ func (ac *AgentClient) readPump() {
 	}
 }
 
-func (ac *AgentClient) writePump() {
+func (ac *AgentClient) pingPump(ctx context.Context) {
 	ticker := time.NewTicker(54 * time.Second)
-	defer func() {
-		ticker.Stop()
-		_ = ac.conn.Close()
-	}()
+	defer ticker.Stop()
 
-	for range ticker.C {
-		_ = ac.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		if err := ac.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+	for {
+		select {
+		case <-ctx.Done():
 			return
+		case <-ticker.C:
+			pingCtx, pingCancel := context.WithTimeout(ctx, 10*time.Second)
+			err := ac.conn.Ping(pingCtx)
+			pingCancel()
+			if err != nil {
+				ac.closeConn(websocket.StatusGoingAway, "ping failed")
+				return
+			}
 		}
 	}
 }

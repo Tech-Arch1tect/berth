@@ -29,4 +29,3 @@ const (
 	StreamTypeComplete StreamMessageType = "complete"
 	StreamTypeError    StreamMessageType = "error"
 )
-
