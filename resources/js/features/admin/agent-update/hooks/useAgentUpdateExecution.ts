@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { ServerWithAgentStack, UpdateStatus, AgentUpdateProgress } from '../types';
 import { AgentUpdateService } from '../services/agentUpdateService';
-import { getAccessToken } from '../../../../shared/auth/auth-context';
+import { streamOperation } from '../../../operations/api/operationStream';
+import { postApiV1ServersServeridStacksStacknameOperations } from '../../../../api/generated/operations/operations';
+import type { OperationRequest } from '../../../../api/generated/models';
 
 export const TIMEOUTS = {
   WEBSOCKET_OPERATION: 300_000,
@@ -49,60 +51,45 @@ export function useAgentUpdateExecution(): UseAgentUpdateExecutionReturn {
     async (
       serverId: number,
       stackName: string,
-      request: { command: string; services?: string[]; options?: string[] }
+      request: Pick<OperationRequest, 'command'> & Partial<OperationRequest>
     ): Promise<boolean> => {
+      let operationId: string | undefined;
+      try {
+        const response = await postApiV1ServersServeridStacksStacknameOperations(
+          serverId,
+          stackName,
+          {
+            command: request.command,
+            options: request.options ?? [],
+            services: request.services ?? [],
+          }
+        );
+        operationId = response.data?.operationId;
+      } catch (error) {
+        console.error('Failed to start operation:', error);
+        return false;
+      }
+      if (!operationId) {
+        return false;
+      }
+
       return new Promise((resolve) => {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/api/servers/${serverId}/stacks/${encodeURIComponent(stackName)}/operations`;
-
-        const token = getAccessToken();
-        const ws = token ? new WebSocket(wsUrl, ['Bearer', token]) : new WebSocket(wsUrl);
-        let operationStarted = false;
-
-        const timeout = setTimeout(() => {
-          ws.close();
-          resolve(false);
-        }, TIMEOUTS.WEBSOCKET_OPERATION);
-
-        ws.onopen = () => {
-          const message = {
-            type: 'operation_request',
-            data: request,
-          };
-          ws.send(JSON.stringify(message));
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-
-            if (data.type === 'operation_started') {
-              operationStarted = true;
-            } else if (data.type === 'error') {
-              clearTimeout(timeout);
-              ws.close();
-              resolve(false);
-            } else if (data.type === 'complete') {
-              clearTimeout(timeout);
-              ws.close();
-              resolve(data.success === true);
-            }
-          } catch {
-            console.log('event parse error', event);
-          }
-        };
-
-        ws.onerror = () => {
+        let settled = false;
+        const settle = (success: boolean) => {
+          if (settled) return;
+          settled = true;
           clearTimeout(timeout);
-          resolve(false);
+          stream.close();
+          resolve(success);
         };
 
-        ws.onclose = () => {
-          clearTimeout(timeout);
-          if (!operationStarted) {
-            resolve(false);
-          }
-        };
+        const timeout = setTimeout(() => settle(false), TIMEOUTS.WEBSOCKET_OPERATION);
+
+        const stream = streamOperation(serverId, stackName, operationId, {
+          onComplete: (success) => settle(success),
+          onError: () => settle(false),
+          onClose: () => settle(false),
+        });
       });
     },
     []

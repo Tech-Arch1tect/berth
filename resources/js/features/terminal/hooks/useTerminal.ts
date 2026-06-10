@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useWebSocket } from '../../../shared/hooks/useWebSocket';
-import type { WebSocketMessage } from '../../../shared/types/websocket';
 import type {
   UseTerminalOptions,
   TerminalSession,
   TerminalStartMessage,
-  TerminalOutputEvent,
-  TerminalCloseEvent,
-  TerminalSuccessEvent,
+  TerminalInputMessage,
+  TerminalResizeMessage,
+  TerminalCloseMessage,
+  TerminalOutputMessage,
+  TerminalSuccessMessage,
+  TerminalErrorMessage,
 } from '../types';
-
-const getWebSocketUrl = (serverid: number, stackname: string): string => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.host;
-  return `${protocol}//${host}/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/terminal`;
-};
 
 export const useTerminal = ({
   serverid,
@@ -41,10 +37,11 @@ export const useTerminal = ({
   const terminalRef = useRef<{ cols: number; rows: number }>({ cols: 80, rows: 24 });
 
   const handleMessage = useCallback(
-    (message: WebSocketMessage) => {
+    (raw: unknown) => {
+      const message = raw as { type?: string };
       switch (message.type) {
         case 'success': {
-          const successEvent = message as unknown as TerminalSuccessEvent;
+          const successEvent = message as TerminalSuccessMessage;
           if (successEvent.session_id) {
             setSession((prev) => ({
               ...prev,
@@ -59,28 +56,20 @@ export const useTerminal = ({
         }
 
         case 'terminal_output': {
-          const outputEvent = message as unknown as TerminalOutputEvent;
+          const outputEvent = message as TerminalOutputMessage;
           if (outputEvent.session_id === session.id) {
-            let outputData: Uint8Array;
-            if (typeof outputEvent.output === 'string') {
-              const base64String = outputEvent.output;
-              const binaryString = atob(base64String);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              outputData = bytes;
-            } else {
-              outputData = new Uint8Array(outputEvent.output);
+            const binaryString = atob(outputEvent.output);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
             }
-
-            onOutput?.(outputData);
+            onOutput?.(bytes);
           }
           break;
         }
 
         case 'terminal_close': {
-          const closeEvent = message as unknown as TerminalCloseEvent;
+          const closeEvent = message as TerminalCloseMessage;
           if (closeEvent.session_id === session.id) {
             setSession((prev) => ({
               ...prev,
@@ -93,7 +82,7 @@ export const useTerminal = ({
         }
 
         case 'error': {
-          const errorMessage: string = (message.error as string) || 'Unknown terminal error';
+          const errorMessage = (message as TerminalErrorMessage).error || 'Unknown terminal error';
           setSession(
             (prev) =>
               ({
@@ -134,7 +123,7 @@ export const useTerminal = ({
     sendMessage,
     connectionStatus,
   } = useWebSocket({
-    url: getWebSocketUrl(serverid, stackname),
+    path: `/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/terminal`,
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
@@ -179,13 +168,12 @@ export const useTerminal = ({
       }
 
       const inputData = typeof input === 'string' ? new TextEncoder().encode(input) : input;
-      const inputArray = Array.from(inputData);
 
-      const inputMessage = {
+      const inputMessage: TerminalInputMessage = {
         type: 'terminal_input',
         timestamp: new Date().toISOString(),
         session_id: session.id,
-        input: inputArray,
+        input: Array.from(inputData),
       };
 
       return sendMessage(inputMessage);
@@ -201,7 +189,7 @@ export const useTerminal = ({
 
       terminalRef.current = { cols, rows };
 
-      const resizeMessage = {
+      const resizeMessage: TerminalResizeMessage = {
         type: 'terminal_resize',
         timestamp: new Date().toISOString(),
         session_id: session.id,
@@ -219,7 +207,7 @@ export const useTerminal = ({
       return;
     }
 
-    const closeMessage = {
+    const closeMessage: TerminalCloseMessage = {
       type: 'terminal_close',
       timestamp: new Date().toISOString(),
       session_id: session.id,

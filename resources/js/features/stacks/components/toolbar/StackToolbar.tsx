@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import type { ComposeService } from '../../../../api/generated/models';
-import { WebSocketConnectionStatus } from '../../../../shared/types/websocket';
+import { WebSocketConnectionStatus } from '../../../../shared/websocket/connection';
 import { OperationRequest } from '../../../operations/types';
 import { StackQuickActions } from '../services/StackQuickActions';
 import {

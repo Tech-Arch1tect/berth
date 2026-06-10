@@ -19,4 +19,3 @@ export interface User {
 }
 
 export * from './server';
-export * from './websocket';

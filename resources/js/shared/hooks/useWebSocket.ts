@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getAccessToken } from '../auth/auth-context';
-import type {
-  WebSocketMessage,
-  SubscribeMessage,
-  UnsubscribeMessage,
-  UseWebSocketOptions,
-  WebSocketConnectionStatus,
-} from '../types/websocket';
+import {
+  openAuthenticatedWebSocket,
+  type WebSocketConnectionStatus,
+} from '../websocket/connection';
+
+export interface UseWebSocketOptions {
+  path: string;
+  onMessage?: (message: unknown) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  autoReconnect?: boolean;
+  reconnectInterval?: number;
+}
 
 export const useWebSocket = ({
-  url,
+  path,
   onMessage,
   onConnect,
   onDisconnect,
@@ -27,7 +32,6 @@ export const useWebSocket = ({
   const onDisconnectRef = useRef(onDisconnect);
   const connectRef = useRef<(() => void) | null>(null);
 
-  // Moving to useEffect causes race conditions where events fire before refs are updated.
   /* eslint-disable react-hooks/refs */
   onMessageRef.current = onMessage;
   onConnectRef.current = onConnect;
@@ -42,56 +46,41 @@ export const useWebSocket = ({
     setConnectionStatus('connecting');
 
     try {
-      const token = getAccessToken();
-      const protocols = token ? ['Bearer', token] : undefined;
-      ws.current = new WebSocket(url, protocols);
-
-      ws.current.onopen = () => {
-        if (!mountedRef.current) return;
-
-        setIsConnected(true);
-        setConnectionStatus('connected');
-        onConnectRef.current?.();
-      };
-
-      ws.current.onmessage = (event) => {
-        if (!mountedRef.current) return;
-
-        try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+      ws.current = openAuthenticatedWebSocket(path, {
+        onOpen: () => {
+          if (!mountedRef.current) return;
+          setIsConnected(true);
+          setConnectionStatus('connected');
+          onConnectRef.current?.();
+        },
+        onMessage: (message) => {
+          if (!mountedRef.current) return;
           onMessageRef.current?.(message);
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
+        },
+        onClose: () => {
+          if (!mountedRef.current) return;
+          setIsConnected(false);
+          setConnectionStatus('disconnected');
+          onDisconnectRef.current?.();
 
-      ws.current.onclose = () => {
-        if (!mountedRef.current) return;
-
-        setIsConnected(false);
-        setConnectionStatus('disconnected');
-        onDisconnectRef.current?.();
-
-        if (autoReconnect && mountedRef.current) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (mountedRef.current) {
-              connectRef.current?.();
-            }
-          }, reconnectInterval);
-        }
-      };
-
-      ws.current.onerror = (error) => {
-        if (!mountedRef.current) return;
-
-        setConnectionStatus('error');
-        console.error('WebSocket error:', error);
-      };
+          if (autoReconnect && mountedRef.current) {
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (mountedRef.current) {
+                connectRef.current?.();
+              }
+            }, reconnectInterval);
+          }
+        },
+        onError: () => {
+          if (!mountedRef.current) return;
+          setConnectionStatus('error');
+        },
+      });
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [url, autoReconnect, reconnectInterval]);
+  }, [path, autoReconnect, reconnectInterval]);
 
   // Update connectRef synchronously so reconnection timeout can call the latest connect function
   // eslint-disable-next-line react-hooks/refs
@@ -118,40 +107,6 @@ export const useWebSocket = ({
     return false;
   }, []);
 
-  const subscribe = useCallback(
-    (resource: string, serverid: number, stackname?: string) => {
-      const subscribeMessage: SubscribeMessage = {
-        type: 'subscribe',
-        resource,
-        server_id: serverid,
-      };
-
-      if (stackname) {
-        subscribeMessage.stack_name = stackname;
-      }
-
-      return sendMessage(subscribeMessage);
-    },
-    [sendMessage]
-  );
-
-  const unsubscribe = useCallback(
-    (resource: string, serverid: number, stackname?: string) => {
-      const unsubscribeMessage: UnsubscribeMessage = {
-        type: 'unsubscribe',
-        resource,
-        server_id: serverid,
-      };
-
-      if (stackname) {
-        unsubscribeMessage.stack_name = stackname;
-      }
-
-      return sendMessage(unsubscribeMessage);
-    },
-    [sendMessage]
-  );
-
   useEffect(() => {
     mountedRef.current = true;
     connect();
@@ -166,8 +121,6 @@ export const useWebSocket = ({
     isConnected,
     connectionStatus,
     sendMessage,
-    subscribe,
-    unsubscribe,
     reconnect: connect,
   };
 };

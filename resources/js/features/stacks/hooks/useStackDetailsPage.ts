@@ -46,7 +46,7 @@ export function useStackDetailsPage({ serverid, stackname }: UseStackDetailsPage
   const volumesQuery = useStackVolumes({ serverid, stackname });
   const environmentVariablesQuery = useStackEnvironmentVariables({ serverid, stackname });
   const stackStatsQuery = useStackStats(serverid, stackname, activeTab === 'stats');
-  const { connectionStatus } = useStackWebSocket({ serverid, stackname, enabled: true });
+  const { connectionStatus } = useStackWebSocket({ serverid, stackname });
   const stackPermissionsQuery = useStackPermissions({ serverid, stackname });
 
   const [prevPermissions, setPrevPermissions] = useState(stackPermissionsQuery.data);

@@ -264,8 +264,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
           options.push('--compression', request.compression);
         }
 
-        operations.clearLogs();
-
         await operations.startOperation({
           command: 'create-archive',
           options: options,
@@ -278,7 +276,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         showToast.error('Failed to start archive creation');
       }
     },
-    [operations.clearLogs, operations.startOperation, selectedFile, targetDirectory]
+    [operations.startOperation, selectedFile, targetDirectory]
   );
 
   const handleExtractArchive = useCallback(
@@ -298,8 +296,6 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
           options.push('--create-dirs');
         }
 
-        operations.clearLogs();
-
         await operations.startOperation({
           command: 'extract-archive',
           options: options,
@@ -312,7 +308,7 @@ export function useFileManager({ serverid, stackname, canRead, canWrite }: UseFi
         showToast.error('Failed to start archive extraction');
       }
     },
-    [operations.clearLogs, operations.startOperation]
+    [operations.startOperation]
   );
 
   const closeOperationModal = useCallback(() => {

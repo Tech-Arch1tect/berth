@@ -1,41 +1,10 @@
-export interface OperationRequest {
-  command:
-    | 'up'
-    | 'down'
-    | 'start'
-    | 'stop'
-    | 'restart'
-    | 'pull'
-    | 'create-archive'
-    | 'extract-archive';
-  options: string[];
-  services: string[];
-}
+import type { OperationRequest, StreamMessage } from '../../api/generated/models';
 
-export interface DockerOperationRequest {
-  command: 'up' | 'down' | 'start' | 'stop' | 'restart' | 'pull';
-  options: string[];
-  services: string[];
-}
+export type { OperationRequest, StreamMessage };
 
-export interface OperationResponse {
-  operationId: string;
-}
-
-export interface StreamMessage {
-  type: 'stdout' | 'stderr' | 'progress' | 'complete' | 'error';
-  data?: string;
-  timestamp: string;
-  success?: boolean;
-  exitCode?: number;
-}
-
-export interface WebSocketMessage {
-  type: 'operation_request' | 'operation_started' | 'stream_data' | 'error' | 'complete';
-  data?: unknown;
-  error?: string;
-  message?: string;
-}
+export type DockerOperationRequest = Omit<OperationRequest, 'command'> & {
+  command: Exclude<OperationRequest['command'], 'create-archive' | 'extract-archive'>;
+};
 
 export interface OperationPreset {
   id: string;
@@ -52,5 +21,4 @@ export interface OperationStatus {
   operationId?: string;
   command?: string;
   startTime?: Date;
-  logs: StreamMessage[];
 }

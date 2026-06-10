@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ComposeService } from '../../../../api/generated/models';
-import { WebSocketConnectionStatus } from '../../../../shared/types/websocket';
+import { WebSocketConnectionStatus } from '../../../../shared/websocket/connection';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 

@@ -1,13 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  OperationRequest,
-  OperationResponse,
-  OperationStatus,
-  StreamMessage,
-  WebSocketMessage,
-} from '../types';
-import { useOperationsContext, NewOperationInput } from '../contexts/OperationsContext';
-import { getAccessToken } from '../../../shared/auth/auth-context';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { OperationRequest, OperationStatus } from '../types';
+import { useOperationsContext } from '../contexts/OperationsContext';
+import { postApiV1ServersServeridStacksStacknameOperations } from '../../../api/generated/operations/operations';
 import { getApiV1OperationLogsByOperationIdOperationId } from '../../../api/generated/operation-logs/operation-logs';
 
 interface UseOperationsOptions {
@@ -23,235 +17,106 @@ export const useOperations = ({
   onOperationComplete,
   onError,
 }: UseOperationsOptions) => {
-  const [operationStatus, setOperationStatus] = useState<OperationStatus>({
-    isRunning: false,
-    logs: [],
-  });
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [operationStatus, setOperationStatus] = useState<OperationStatus>({ isRunning: false });
   const [error, setError] = useState<string | null>(null);
-  const { addOperation, addOperationLog } = useOperationsContext();
+  const { operations, getOperationLogs, addOperation } = useOperationsContext();
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 3;
-  const pendingOperationRef = useRef<OperationRequest | null>(null);
-  const currentOperationIdRef = useRef<string | undefined>(undefined);
-  const connectRef = useRef<() => void>(() => {});
+  const onOperationCompleteRef = useRef(onOperationComplete);
+  const onErrorRef = useRef(onError);
+  const settledRef = useRef<string | null>(null);
 
-  const connect = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+  onOperationCompleteRef.current = onOperationComplete;
+  onErrorRef.current = onError;
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+  const activeOperationId = operationStatus.operationId;
+  const activeLogs = useMemo(
+    () => (activeOperationId ? getOperationLogs(activeOperationId) : []),
+    [activeOperationId, getOperationLogs]
+  );
+  const activeOperation = activeOperationId
+    ? operations.find((op) => op.operation_id === activeOperationId)
+    : undefined;
+
+  useEffect(() => {
+    if (!activeOperationId || !operationStatus.isRunning) return;
+    if (settledRef.current === activeOperationId) return;
+
+    const completeFrame = activeLogs.find((log) => log.type === 'complete');
+    const errorFrame = activeLogs.find((log) => log.type === 'error');
+
+    if (completeFrame) {
+      settledRef.current = activeOperationId;
+      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
+
+      const success = completeFrame.success ?? false;
+      const exitCode = completeFrame.exitCode ?? undefined;
+
+      if (onOperationCompleteRef.current) {
+        const complete = onOperationCompleteRef.current;
+        getApiV1OperationLogsByOperationIdOperationId(activeOperationId)
+          .then((response) => {
+            complete(success, exitCode, response.data?.log?.summary || undefined);
+          })
+          .catch(() => {
+            complete(success, exitCode);
+          });
+      }
       return;
     }
 
-    setIsConnecting(true);
-    setError(null);
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/operations`;
-
-    const token = getAccessToken();
-    const ws = token ? new WebSocket(wsUrl, ['Bearer', token]) : new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsConnecting(false);
-      setIsConnected(true);
-      setError(null);
-      reconnectAttempts.current = 0;
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const parsedData = JSON.parse(event.data);
-
-        if (parsedData.type === 'operation_started') {
-          const wsMessage = parsedData as WebSocketMessage;
-          const opResponse = wsMessage.data as OperationResponse;
-
-          currentOperationIdRef.current = opResponse.operationId;
-
-          setOperationStatus((prev) => ({
-            ...prev,
-            operationId: opResponse.operationId,
-          }));
-
-          if (pendingOperationRef.current) {
-            const newOp: NewOperationInput = {
-              server_id: parseInt(serverid),
-              stack_name: stackname,
-              operation_id: opResponse.operationId,
-              command: pendingOperationRef.current.command,
-              is_incomplete: true,
-              skipWebSocket: true,
-            };
-
-            addOperation(newOp);
-            pendingOperationRef.current = null;
-          }
-          return;
-        }
-
-        if (parsedData.type === 'error') {
-          const errorMsg = parsedData.data?.error || parsedData.error || 'Operation failed';
-
-          setOperationStatus((prev) => ({
-            ...prev,
-            isRunning: false,
-          }));
-
-          pendingOperationRef.current = null;
-
-          if (onError) {
-            onError(errorMsg);
-          }
-          return;
-        }
-
-        const message = parsedData as StreamMessage;
-
-        setOperationStatus((prev) => ({
-          ...prev,
-          logs: [...prev.logs, message],
-        }));
-
-        if (currentOperationIdRef.current) {
-          addOperationLog(currentOperationIdRef.current, message);
-        }
-
-        if (message.type === 'complete') {
-          setOperationStatus((prev) => ({
-            ...prev,
-            isRunning: false,
-          }));
-
-          if (onOperationComplete && currentOperationIdRef.current) {
-            getApiV1OperationLogsByOperationIdOperationId(currentOperationIdRef.current)
-              .then((response) => {
-                onOperationComplete(
-                  message.success || false,
-                  message.exitCode,
-                  response.data?.log?.summary || undefined
-                );
-              })
-              .catch(() => {
-                onOperationComplete(message.success || false, message.exitCode);
-              });
-          } else if (onOperationComplete) {
-            onOperationComplete(message.success || false, message.exitCode);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
-      }
-    };
-
-    ws.onclose = (_event) => {
-      setIsConnecting(false);
-      setIsConnected(false);
-
-      if (operationStatus.isRunning && reconnectAttempts.current < maxReconnectAttempts) {
-        setTimeout(() => {
-          reconnectAttempts.current++;
-          connectRef.current();
-        }, 1000 * reconnectAttempts.current);
-      } else {
-        setOperationStatus((prev) => ({
-          ...prev,
-          isRunning: false,
-        }));
-      }
-    };
-
-    ws.onerror = (_event) => {
-      const errorMsg = 'WebSocket connection failed';
-      setError(errorMsg);
-      setIsConnecting(false);
-
-      if (onError) {
-        onError(errorMsg);
-      }
-    };
-  }, [
-    serverid,
-    stackname,
-    operationStatus.isRunning,
-    onOperationComplete,
-    onError,
-    addOperation,
-    addOperationLog,
-  ]);
-
-  useEffect(() => {
-    connectRef.current = connect;
-  });
-
-  const disconnect = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+    if (errorFrame) {
+      settledRef.current = activeOperationId;
+      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
+      onErrorRef.current?.(errorFrame.data || 'Operation failed');
+      return;
     }
-    currentOperationIdRef.current = undefined;
-    setIsConnecting(false);
-  }, []);
+
+    if (activeOperation && !activeOperation.is_incomplete) {
+      settledRef.current = activeOperationId;
+      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
+    }
+  }, [activeOperationId, activeLogs, activeOperation, operationStatus.isRunning]);
 
   const startOperation = useCallback(
     async (operation: OperationRequest) => {
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        connect();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      setError(null);
+
+      const response = await postApiV1ServersServeridStacksStacknameOperations(
+        parseInt(serverid),
+        stackname,
+        operation
+      );
+
+      const operationId = response.data?.operationId;
+      if (!operationId) {
+        const message = 'The server did not return an operation ID';
+        setError(message);
+        onErrorRef.current?.(message);
+        throw new Error(message);
       }
 
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        throw new Error('WebSocket connection not available');
-      }
-
-      pendingOperationRef.current = operation;
-
-      setOperationStatus({
-        isRunning: true,
-        operationId: undefined,
+      addOperation({
+        server_id: parseInt(serverid),
+        stack_name: stackname,
+        operation_id: operationId,
         command: operation.command,
-        startTime: new Date(),
-        logs: [],
+        is_incomplete: true,
       });
 
-      const message: WebSocketMessage = {
-        type: 'operation_request',
-        data: operation,
-      };
-
-      wsRef.current.send(JSON.stringify(message));
+      settledRef.current = null;
+      setOperationStatus({
+        isRunning: true,
+        operationId,
+        command: operation.command,
+        startTime: new Date(),
+      });
     },
-    [connect]
+    [serverid, stackname, addOperation]
   );
-
-  const clearLogs = useCallback(() => {
-    setOperationStatus((prev) => ({
-      ...prev,
-      logs: [],
-    }));
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
 
   return {
     operationStatus,
-    isConnecting,
     error,
     startOperation,
-    clearLogs,
-    connect,
-    disconnect,
-    isConnected,
   };
 };

@@ -234,25 +234,12 @@ const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
       subtitle={`${config.stackname} on Server ${config.serverid}`}
       size="2xl"
       headerExtra={
-        <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              'w-2 h-2 rounded-full',
-              advancedOps.isConnected
-                ? theme.badges.dot.success
-                : advancedOps.isConnecting
-                  ? cn(theme.badges.dot.warning, 'animate-pulse')
-                  : theme.badges.dot.danger
-            )}
-          />
-          <span className={cn('text-xs', theme.text.muted)}>
-            {advancedOps.isConnected
-              ? 'Connected'
-              : advancedOps.isConnecting
-                ? 'Connecting...'
-                : 'Disconnected'}
-          </span>
-        </div>
+        advancedOps.operationStatus.isRunning ? (
+          <div className="flex items-center gap-2">
+            <div className={cn('w-2 h-2 rounded-full animate-pulse', theme.badges.dot.info)} />
+            <span className={cn('text-xs', theme.text.muted)}>Operation running</span>
+          </div>
+        ) : undefined
       }
     >
       <div

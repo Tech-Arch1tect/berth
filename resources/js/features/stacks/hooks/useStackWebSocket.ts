@@ -1,20 +1,19 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useWebSocket } from '../../../shared/hooks/useWebSocket';
 import { useQueryClient } from '@tanstack/react-query';
-import type {
-  ContainerStatusEvent,
-  StackStatusEvent,
-  UseStackWebSocketOptions,
-  WebSocketMessage,
-} from '../../../shared/types/websocket';
+import type { ContainerStatusEvent, StackStatusEvent } from '../../../api/generated/models';
+import {
+  getGetApiV1ServersServeridStacksQueryKey,
+  getGetApiV1ServersServeridStacksStacknameQueryKey,
+} from '../../../api/generated/stacks/stacks';
 
-export const useStackWebSocket = ({
-  serverid,
-  stackname,
-  enabled = true,
-}: UseStackWebSocketOptions) => {
+export interface UseStackWebSocketOptions {
+  serverid: number;
+  stackname: string;
+}
+
+export const useStackWebSocket = ({ serverid, stackname }: UseStackWebSocketOptions) => {
   const queryClient = useQueryClient();
-  const subscriptionsRef = useRef<Set<string>>(new Set());
   const invalidationTimeoutRef = useRef<number | null>(null);
 
   const debouncedInvalidateQueries = useCallback(() => {
@@ -24,11 +23,11 @@ export const useStackWebSocket = ({
 
     invalidationTimeoutRef.current = setTimeout(() => {
       queryClient.invalidateQueries({
-        queryKey: ['stackDetails', serverid, stackname],
+        queryKey: getGetApiV1ServersServeridStacksStacknameQueryKey(serverid, stackname),
       });
 
       queryClient.invalidateQueries({
-        queryKey: ['serverStacks', serverid],
+        queryKey: getGetApiV1ServersServeridStacksQueryKey(serverid),
       });
 
       invalidationTimeoutRef.current = null;
@@ -36,79 +35,21 @@ export const useStackWebSocket = ({
   }, [queryClient, serverid, stackname]);
 
   const handleMessage = useCallback(
-    (message: WebSocketMessage) => {
-      switch (message.type) {
-        case 'container_status': {
-          const event = message as unknown as ContainerStatusEvent;
-
-          if (event.server_id === serverid && event.stack_name === stackname) {
-            debouncedInvalidateQueries();
-          }
-          break;
-        }
-
-        case 'stack_status': {
-          const event = message as unknown as StackStatusEvent;
-
-          if (event.server_id === serverid && event.stack_name === stackname) {
-            debouncedInvalidateQueries();
-          }
-          break;
-        }
-
-        case 'success': {
-          break;
-        }
-
-        case 'error': {
-          const event = message as {
-            type: 'error';
-            error: string;
-            context?: string;
-            timestamp: string;
-          };
-          console.error('WebSocket error:', event.error);
-          break;
-        }
+    (message: unknown) => {
+      const event = message as ContainerStatusEvent | StackStatusEvent;
+      if (event.type === 'container_status' || event.type === 'stack_status') {
+        debouncedInvalidateQueries();
       }
     },
-    [serverid, stackname, debouncedInvalidateQueries]
+    [debouncedInvalidateQueries]
   );
 
-  const handleConnect = useCallback(() => {}, []);
-
-  const handleDisconnect = useCallback(() => {}, []);
-
-  const { isConnected, connectionStatus, subscribe, unsubscribe } = useWebSocket({
-    url: `/ws/api/stack-status/${serverid}`,
+  const { isConnected, connectionStatus } = useWebSocket({
+    path: `/ws/api/servers/${serverid}/stacks/${encodeURIComponent(stackname)}/events`,
     onMessage: handleMessage,
-    onConnect: handleConnect,
-    onDisconnect: handleDisconnect,
     autoReconnect: true,
     reconnectInterval: 3000,
   });
-
-  useEffect(() => {
-    if (!enabled || !isConnected) {
-      return;
-    }
-
-    const subscriptionKey = `stack_status:${serverid}:${stackname}`;
-    const subscriptions = subscriptionsRef.current;
-
-    if (!subscriptions.has(subscriptionKey)) {
-      if (subscribe('stack_status', serverid, stackname)) {
-        subscriptions.add(subscriptionKey);
-      }
-    }
-
-    return () => {
-      if (subscriptions.has(subscriptionKey)) {
-        unsubscribe('stack_status', serverid, stackname);
-        subscriptions.delete(subscriptionKey);
-      }
-    };
-  }, [isConnected, enabled, serverid, stackname, subscribe, unsubscribe]);
 
   useEffect(() => {
     return () => {
