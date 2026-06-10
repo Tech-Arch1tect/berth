@@ -22,6 +22,9 @@ func AuditRoutes(e *echo.Echo, registrars ...*Registrar) error {
 		if !strings.HasPrefix(route.Path, "/api") && !strings.HasPrefix(route.Path, "/ws") {
 			continue
 		}
+		if route.Method == echo.RouteNotFound {
+			continue
+		}
 		key := route.Method + " " + route.Path
 		if _, already := seen[key]; already {
 			continue

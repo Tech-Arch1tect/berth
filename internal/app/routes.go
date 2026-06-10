@@ -30,7 +30,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"go.uber.org/zap"
 )
 
 func newRateLimit(cfg *config.Config, rlc ratelimit.Config) echo.MiddlewareFunc {
@@ -95,9 +94,7 @@ func registerRoutes(g *Graph) {
 	if wsRegistrar != nil {
 		auditRegistrars = append(auditRegistrars, wsRegistrar)
 	}
-	if err := authz.AuditRoutes(e, auditRegistrars...); err != nil {
-		g.Logger.Warn("authz audit: unguarded routes detected", zap.Error(err))
-	}
+	authz.MustAuditRoutes(e, auditRegistrars...)
 
 	if g.SPASvc != nil {
 		e.GET("/*", g.SPASvc.Render)

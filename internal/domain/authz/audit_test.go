@@ -194,3 +194,31 @@ func TestAuditRoutes_PartialMethodCoverage(t *testing.T) {
 	assert.Contains(t, err.Error(), "POST /api/r")
 	assert.NotContains(t, err.Error(), http.MethodGet)
 }
+
+func TestAuditRoutes_RouteNotFoundSentinelsIgnored(t *testing.T) {
+	e := echo.New()
+	g := e.Group("/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
+	r.GET("/things", noop, Authenticated())
+
+	e.RouteNotFound("/api", noop)
+	e.RouteNotFound("/api/*", noop)
+	e.RouteNotFound("/ws/*", noop)
+
+	err := AuditRoutes(e, r)
+	assert.NoError(t, err)
+}
+
+func TestAuditRoutes_RealRouteStillViolatesAlongsideSentinels(t *testing.T) {
+	e := echo.New()
+	g := e.Group("/api")
+	r := NewRegistrar(g, "/api", passthroughMW)
+	r.GET("/things", noop, Authenticated())
+
+	e.RouteNotFound("/api/*", noop)
+	e.GET("/api/bypass", noop)
+
+	err := AuditRoutes(e, r)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "GET /api/bypass")
+}
