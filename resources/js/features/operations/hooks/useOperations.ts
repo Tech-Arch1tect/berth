@@ -11,13 +11,19 @@ interface UseOperationsOptions {
   onError?: (error: string) => void;
 }
 
+interface ActiveOperation {
+  operationId: string;
+  command: OperationRequest['command'];
+  startTime: Date;
+}
+
 export const useOperations = ({
   serverid,
   stackname,
   onOperationComplete,
   onError,
 }: UseOperationsOptions) => {
-  const [operationStatus, setOperationStatus] = useState<OperationStatus>({ isRunning: false });
+  const [active, setActive] = useState<ActiveOperation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { operations, getOperationLogs, addOperation } = useOperationsContext();
 
@@ -25,35 +31,45 @@ export const useOperations = ({
   const onErrorRef = useRef(onError);
   const settledRef = useRef<string | null>(null);
 
-  onOperationCompleteRef.current = onOperationComplete;
-  onErrorRef.current = onError;
+  useEffect(() => {
+    onOperationCompleteRef.current = onOperationComplete;
+    onErrorRef.current = onError;
+  });
 
-  const activeOperationId = operationStatus.operationId;
   const activeLogs = useMemo(
-    () => (activeOperationId ? getOperationLogs(activeOperationId) : []),
-    [activeOperationId, getOperationLogs]
+    () => (active ? getOperationLogs(active.operationId) : []),
+    [active, getOperationLogs]
   );
-  const activeOperation = activeOperationId
-    ? operations.find((op) => op.operation_id === activeOperationId)
-    : undefined;
+  const completeFrame = activeLogs.find((log) => log.type === 'complete');
+  const errorFrame = activeLogs.find((log) => log.type === 'error');
+  const serverSettled = active
+    ? operations.some((op) => op.operation_id === active.operationId && !op.is_incomplete)
+    : false;
+
+  const isRunning = !!active && !completeFrame && !errorFrame && !serverSettled;
+
+  const operationStatus: OperationStatus = useMemo(
+    () => ({
+      isRunning,
+      operationId: active?.operationId,
+      command: active?.command,
+      startTime: active?.startTime,
+    }),
+    [isRunning, active]
+  );
 
   useEffect(() => {
-    if (!activeOperationId || !operationStatus.isRunning) return;
-    if (settledRef.current === activeOperationId) return;
-
-    const completeFrame = activeLogs.find((log) => log.type === 'complete');
-    const errorFrame = activeLogs.find((log) => log.type === 'error');
+    if (!active || settledRef.current === active.operationId) return;
 
     if (completeFrame) {
-      settledRef.current = activeOperationId;
-      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
+      settledRef.current = active.operationId;
 
       const success = completeFrame.success ?? false;
       const exitCode = completeFrame.exitCode ?? undefined;
 
       if (onOperationCompleteRef.current) {
         const complete = onOperationCompleteRef.current;
-        getApiV1OperationLogsByOperationIdOperationId(activeOperationId)
+        getApiV1OperationLogsByOperationIdOperationId(active.operationId)
           .then((response) => {
             complete(success, exitCode, response.data?.log?.summary || undefined);
           })
@@ -65,17 +81,10 @@ export const useOperations = ({
     }
 
     if (errorFrame) {
-      settledRef.current = activeOperationId;
-      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
+      settledRef.current = active.operationId;
       onErrorRef.current?.(errorFrame.data || 'Operation failed');
-      return;
     }
-
-    if (activeOperation && !activeOperation.is_incomplete) {
-      settledRef.current = activeOperationId;
-      setOperationStatus((prev) => ({ ...prev, isRunning: false }));
-    }
-  }, [activeOperationId, activeLogs, activeOperation, operationStatus.isRunning]);
+  }, [active, completeFrame, errorFrame]);
 
   const startOperation = useCallback(
     async (operation: OperationRequest) => {
@@ -104,8 +113,7 @@ export const useOperations = ({
       });
 
       settledRef.current = null;
-      setOperationStatus({
-        isRunning: true,
+      setActive({
         operationId,
         command: operation.command,
         startTime: new Date(),
