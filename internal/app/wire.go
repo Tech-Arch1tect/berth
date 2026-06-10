@@ -84,7 +84,6 @@ type Graph struct {
 	OperationsAuditSvc      *operations.AuditService
 	OperationsSvc           *operations.Service
 	OperationsHandler       *operations.Handler
-	OperationsWSHandler     *operations.WebSocketHandler
 	OperationsStreamHandler *operations.StreamHandler
 
 	SecurityAuditLogger *security.AuditLogger
@@ -121,8 +120,6 @@ type Graph struct {
 	VulnscanSvc            *vulnscan.Service
 	VulnscanHandler        *vulnscan.Handler
 	VulnscanPoller         *vulnscan.Poller
-	WSPermChecker          websocket.PermissionChecker
-	WSHub                  *websocket.Hub
 	WSEventRegistry        *websocket.StackEventRegistry
 	WSEventsHandler        *websocket.EventsHandler
 	WSAgentMgr             *websocket.AgentManager
@@ -241,7 +238,6 @@ func Build(
 	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.RBACSvc, db)
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.RBACSvc, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
-	g.OperationsWSHandler = operations.NewWebSocketHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
 
@@ -264,17 +260,11 @@ func Build(
 		func(context.Context) error { g.VulnscanPoller.Stop(); return nil },
 	)
 
-	g.WSPermChecker = websocket.NewRBACPermissionChecker(g.RBACSvc)
-	g.WSHub = websocket.NewHub(g.WSPermChecker, logger, g.OriginCheck)
 	g.WSEventRegistry = websocket.NewStackEventRegistry(logger)
 	g.WSEventsHandler = websocket.NewEventsHandler(g.WSEventRegistry, g.OriginCheck, logger)
-	g.WSAgentMgr = websocket.NewAgentManager(g.WSHub, g.WSEventRegistry, logger)
+	g.WSAgentMgr = websocket.NewAgentManager(g.WSEventRegistry, logger)
 	g.WSServiceMgr = websocket.NewServiceManager(g.ServerSvc, g.WSAgentMgr, logger)
-	g.WSHandler = websocket.NewHandler(g.WSHub, g.JWTSvc, g.WSPermChecker, g.ServerSvc, g.OperationsAuditSvc, g.OriginCheck)
-	g.addHook("websocket hub",
-		func(context.Context) error { go g.WSHub.Run(); return nil },
-		nil,
-	)
+	g.WSHandler = websocket.NewHandler(g.ServerSvc, g.OperationsAuditSvc, g.OriginCheck)
 	g.addHook("websocket service manager",
 		func(context.Context) error {
 			go func() {

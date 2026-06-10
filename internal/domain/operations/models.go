@@ -30,24 +30,3 @@ const (
 	StreamTypeError    StreamMessageType = "error"
 )
 
-type CompleteMessage struct {
-	Type      StreamMessageType `json:"type"`
-	Success   bool              `json:"success"`
-	ExitCode  int               `json:"exitCode"`
-	Timestamp time.Time         `json:"timestamp"`
-}
-
-type WebSocketMessage struct {
-	Type    string `json:"type"`
-	Data    any    `json:"data,omitempty"`
-	Error   string `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-const (
-	WSMessageTypeOperationRequest = "operation_request"
-	WSMessageTypeOperationStarted = "operation_started"
-	WSMessageTypeStreamData       = "stream_data"
-	WSMessageTypeError            = "error"
-	WSMessageTypeComplete         = "complete"
-)

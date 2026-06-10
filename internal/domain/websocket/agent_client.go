@@ -15,7 +15,6 @@ import (
 type AgentClient struct {
 	server    *server.Server
 	conn      *websocket.Conn
-	hub       *Hub
 	registry  *StackEventRegistry
 	reconnect chan bool
 	stop      chan bool
@@ -26,16 +25,14 @@ type AgentClient struct {
 
 type AgentManager struct {
 	clients  map[uint]*AgentClient
-	hub      *Hub
 	registry *StackEventRegistry
 	mutex    sync.RWMutex
 	logger   *zap.Logger
 }
 
-func NewAgentManager(hub *Hub, registry *StackEventRegistry, logger *zap.Logger) *AgentManager {
+func NewAgentManager(registry *StackEventRegistry, logger *zap.Logger) *AgentManager {
 	return &AgentManager{
 		clients:  make(map[uint]*AgentClient),
-		hub:      hub,
 		registry: registry,
 		logger:   logger,
 	}
@@ -62,7 +59,6 @@ func (am *AgentManager) ConnectToAgent(server *server.Server) error {
 
 	client := &AgentClient{
 		server:    server,
-		hub:       am.hub,
 		registry:  am.registry,
 		reconnect: make(chan bool, 1),
 		stop:      make(chan bool, 1),
@@ -266,7 +262,6 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 		}
 
 		event.ServerID = int(ac.server.ID)
-		ac.hub.BroadcastContainerStatus(event)
 		ac.registry.PublishContainerStatus(event)
 
 	case MessageTypeStackStatus:
@@ -281,22 +276,13 @@ func (ac *AgentClient) handleAgentMessage(message []byte) {
 		}
 
 		event.ServerID = int(ac.server.ID)
-		ac.hub.BroadcastStackStatus(event)
 		ac.registry.PublishStackStatus(event)
 
 	case MessageTypeOperationProgress:
-		var event OperationProgressEvent
-		if err := json.Unmarshal(message, &event); err != nil {
-			ac.logger.Error("invalid operation progress event from agent",
-				zap.Error(err),
-				zap.Uint("server_id", ac.server.ID),
-				zap.String("server_name", ac.server.Name),
-			)
-			return
-		}
-
-		event.ServerID = int(ac.server.ID)
-		ac.hub.BroadcastOperationProgress(event)
+		ac.logger.Debug("dropping operation progress message from agent",
+			zap.Uint("server_id", ac.server.ID),
+			zap.String("server_name", ac.server.Name),
+		)
 
 	default:
 		ac.logger.Warn("unknown message type from agent",

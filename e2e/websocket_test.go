@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWebSocketStackStatusNoAuth(t *testing.T) {
+func TestWebSocketStackEventsNoAuth(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("GET /ws/api/stack-status/:server_id requires authentication", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.Get("/ws/api/stack-status/1")
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/events requires authentication", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
+		resp, err := app.HTTPClient.Get("/ws/api/servers/1/stacks/test-stack/events")
 		require.NoError(t, err)
 		assertJSONEnvelope(t, resp, 401, "unauthorized", "Authorization header required")
 	})
@@ -35,16 +35,9 @@ func TestWebSocketTerminalNoAuth(t *testing.T) {
 	})
 }
 
-func TestWebSocketOperationsNoAuth(t *testing.T) {
+func TestWebSocketOperationStreamNoAuth(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
-
-	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations requires authentication", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
-		resp, err := app.HTTPClient.Get("/ws/api/servers/1/stacks/test-stack/operations")
-		require.NoError(t, err)
-		assert.Equal(t, 401, resp.StatusCode)
-	})
 
 	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations/:operationId requires authentication", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId", e2etesting.CategoryNoAuth, e2etesting.ValueLow)
@@ -59,10 +52,10 @@ func TestWebSocketEnvelopeShape(t *testing.T) {
 	app := SetupTestApp(t)
 
 	t.Run("invalid bearer token returns envelope with unauthorized code", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
-			Path:    "/ws/api/stack-status/1",
+			Path:    "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{"Authorization": "Bearer invalid-token"},
 		})
 		require.NoError(t, err)
@@ -70,10 +63,10 @@ func TestWebSocketEnvelopeShape(t *testing.T) {
 	})
 
 	t.Run("malformed authorization header returns envelope", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
-			Path:    "/ws/api/stack-status/1",
+			Path:    "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{"Authorization": "NotBearer token"},
 		})
 		require.NoError(t, err)
@@ -81,10 +74,10 @@ func TestWebSocketEnvelopeShape(t *testing.T) {
 	})
 
 	t.Run("bare Bearer prefix returns envelope", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method:  "GET",
-			Path:    "/ws/api/stack-status/1",
+			Path:    "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{"Authorization": "Bearer"},
 		})
 		require.NoError(t, err)
@@ -93,7 +86,7 @@ func TestWebSocketEnvelopeShape(t *testing.T) {
 
 }
 
-func TestWebSocketStackStatusJWT(t *testing.T) {
+func TestWebSocketStackEventsJWT(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
@@ -115,11 +108,11 @@ func TestWebSocketStackStatusJWT(t *testing.T) {
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
-	t.Run("GET /ws/api/stack-status/:server_id with valid token", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/events with valid token", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/stack-status/1",
+			Path:   "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + token,
 			},
@@ -166,7 +159,7 @@ func TestWebSocketTerminalJWT(t *testing.T) {
 	})
 }
 
-func TestWebSocketOperationsJWT(t *testing.T) {
+func TestWebSocketOperationStreamJWT(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
@@ -188,20 +181,6 @@ func TestWebSocketOperationsJWT(t *testing.T) {
 	require.NoError(t, loginResp.GetJSON(&login))
 	token := login.Data.AccessToken
 
-	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations with valid token attempts connection", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
-		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
-			Method: "GET",
-			Path:   "/ws/api/servers/1/stacks/test-stack/operations",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + token,
-			},
-		})
-		require.NoError(t, err)
-
-		assert.NotEqual(t, 401, resp.StatusCode, "should not return 401 with valid token")
-	})
-
 	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations/:operationId with valid token attempts connection", func(t *testing.T) {
 		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId", e2etesting.CategoryHappyPath, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -221,11 +200,11 @@ func TestWebSocketInvalidToken(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("GET /ws/api/stack-status/:server_id with invalid token returns 401", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/events with invalid token returns 401", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/stack-status/1",
+			Path:   "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{
 				"Authorization": "Bearer invalid-token",
 			},
@@ -247,11 +226,11 @@ func TestWebSocketInvalidToken(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
-	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations with invalid token returns 401", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/operations/:operationId with invalid token returns 401", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId", e2etesting.CategoryErrorHandler, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/servers/1/stacks/test-stack/operations",
+			Path:   "/ws/api/servers/1/stacks/test-stack/operations/op-123",
 			Headers: map[string]string{
 				"Authorization": "Bearer invalid-token",
 			},
@@ -265,11 +244,11 @@ func TestWebSocketMalformedAuthorization(t *testing.T) {
 	t.Parallel()
 	app := SetupTestApp(t)
 
-	t.Run("GET /ws/api/stack-status/:server_id with malformed auth returns 401", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/events with malformed auth returns 401", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/stack-status/1",
+			Path:   "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{
 				"Authorization": "NotBearer token",
 			},
@@ -278,11 +257,11 @@ func TestWebSocketMalformedAuthorization(t *testing.T) {
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
-	t.Run("GET /ws/api/stack-status/:server_id with empty bearer returns 401", func(t *testing.T) {
-		TagTest(t, "GET", "/ws/api/stack-status/:server_id", e2etesting.CategoryValidation, e2etesting.ValueMedium)
+	t.Run("GET /ws/api/servers/:serverid/stacks/:stackname/events with empty bearer returns 401", func(t *testing.T) {
+		TagTest(t, "GET", "/ws/api/servers/:serverid/stacks/:stackname/events", e2etesting.CategoryValidation, e2etesting.ValueMedium)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
 			Method: "GET",
-			Path:   "/ws/api/stack-status/1",
+			Path:   "/ws/api/servers/1/stacks/test-stack/events",
 			Headers: map[string]string{
 				"Authorization": "Bearer ",
 			},

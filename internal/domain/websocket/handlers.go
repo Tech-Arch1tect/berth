@@ -1,13 +1,11 @@
 package websocket
 
 import (
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"berth/internal/domain/auth"
@@ -16,44 +14,22 @@ import (
 	"berth/internal/pkg/origin"
 	"berth/internal/pkg/response"
 
-	"berth/internal/domain/auth/tokens"
-
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	hub           *Hub
-	jwtService    *tokens.Service
-	permChecker   PermissionChecker
 	serverService *server.Service
 	auditService  *operations.AuditService
 	checkOrigin   origin.CheckOriginFunc
 }
 
-func NewHandler(hub *Hub, jwtService *tokens.Service, permChecker PermissionChecker, serverService *server.Service, auditService *operations.AuditService, checkOrigin origin.CheckOriginFunc) *Handler {
+func NewHandler(serverService *server.Service, auditService *operations.AuditService, checkOrigin origin.CheckOriginFunc) *Handler {
 	return &Handler{
-		hub:           hub,
-		jwtService:    jwtService,
-		permChecker:   permChecker,
 		serverService: serverService,
 		auditService:  auditService,
 		checkOrigin:   checkOrigin,
 	}
-}
-
-func (h *Handler) HandleFlutterWebSocket(c echo.Context) error {
-	userID, _, err := h.authenticateWebSocketRequest(c)
-	if err != nil {
-		return err
-	}
-
-	wsUser := &User{
-		ID:   userID,
-		Name: "",
-	}
-
-	return h.hub.ServeWebSocket(c, wsUser)
 }
 
 func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
@@ -65,38 +41,6 @@ func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
 	stackName := c.Param("stackname")
 
 	return h.proxyTerminalConnection(c, serverID, stackName, "Flutter", userID)
-}
-
-func (h *Handler) authenticateWebSocketRequest(c echo.Context) (int, int, error) {
-	var userID int
-
-	if authUserID, ok := c.Get("_jwt_user_id").(uint); ok && authUserID > 0 {
-		userID = int(authUserID)
-	} else {
-		auth := c.Request().Header.Get("Authorization")
-		token, ok := strings.CutPrefix(auth, "Bearer ")
-		if !ok || token == "" {
-			return 0, 0, response.Unauthorized(c, "Authorization header with Bearer token required")
-		}
-
-		claims, err := h.jwtService.ValidateAccess(token)
-		if err != nil {
-			return 0, 0, response.Unauthorized(c, "Invalid token")
-		}
-		userID = int(claims.UserID)
-	}
-
-	serverIDStr := c.Param("server_id")
-	serverID, err := strconv.Atoi(serverIDStr)
-	if err != nil {
-		return 0, 0, response.BadRequest(c, "Invalid server ID")
-	}
-
-	if !h.permChecker.CanUserAccessServer(context.Background(), userID, serverID) {
-		return 0, 0, response.Forbidden(c, "Insufficient permissions to access this server")
-	}
-
-	return userID, serverID, nil
 }
 
 const (

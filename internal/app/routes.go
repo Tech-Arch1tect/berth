@@ -89,7 +89,7 @@ func registerRoutes(g *Graph) {
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
 		g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, authzEngine)
-	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.WSEventsHandler, g.OperationsWSHandler, g.OperationsStreamHandler, authzEngine)
+	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.WSEventsHandler, g.OperationsStreamHandler, authzEngine)
 
 	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
 	if wsRegistrar != nil {
@@ -201,7 +201,7 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	return adminRegistrar
 }
 
-func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsWSHandler *operations.WebSocketHandler, operationsStreamHandler *operations.StreamHandler, authzEngine *authzengine.Engine) *authz.Registrar {
+func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsStreamHandler *operations.StreamHandler, authzEngine *authzengine.Engine) *authz.Registrar {
 	if wsHandler == nil {
 		return nil
 	}
@@ -210,16 +210,10 @@ func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySv
 	wsAPIGroup := wsGroup.Group("/api")
 	wsAPIGroup.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
 
-	wsHandler.RegisterAPIRoutes(wsAPIGroup)
-
 	wsRegistrar := authz.NewRegistrar(wsAPIGroup, "/ws/api", authzEngine.Middleware)
 	wsHandler.RegisterProtectedAPIRoutes(wsRegistrar)
 	if eventsHandler != nil {
 		eventsHandler.RegisterRoutes(wsRegistrar)
-	}
-
-	if operationsWSHandler != nil {
-		operationsWSHandler.RegisterWebSocketRoutes(wsAPIGroup)
 	}
 	if operationsStreamHandler != nil {
 		operationsStreamHandler.RegisterRoutes(wsRegistrar)
