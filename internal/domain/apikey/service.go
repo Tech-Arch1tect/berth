@@ -1,9 +1,9 @@
 package apikey
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/server"
 	"berth/internal/domain/user"
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -21,23 +21,23 @@ const (
 	KeyLength = 32
 )
 
-type RBACService interface {
-	UserHasServerAccess(ctx context.Context, userID uint, serverID uint) (bool, error)
-	UserHasAnyStackPermission(ctx context.Context, userID uint, serverID uint, permissionName string) (bool, error)
-	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
+type apikeyAuthorizer interface {
+	HasServerAccess(p authz.Principal, serverID uint) (bool, error)
+	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
+	ReachableServerIDs(p authz.Principal) ([]uint, error)
 }
 
 type Service struct {
-	db          *gorm.DB
-	logger      *zap.Logger
-	rbacService RBACService
+	db       *gorm.DB
+	logger   *zap.Logger
+	authzSvc apikeyAuthorizer
 }
 
-func NewService(db *gorm.DB, logger *zap.Logger, rbacService RBACService) *Service {
+func NewService(db *gorm.DB, logger *zap.Logger, authzSvc apikeyAuthorizer) *Service {
 	return &Service{
-		db:          db,
-		logger:      logger,
-		rbacService: rbacService,
+		db:       db,
+		logger:   logger,
+		authzSvc: authzSvc,
 	}
 }
 
@@ -231,17 +231,17 @@ func (s *Service) RevokeAPIKey(apiKeyID uint, userID uint) error {
 	return nil
 }
 
-func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serverID *uint, stackPattern string, permissionName string) error {
+func (s *Service) AddScope(p authz.Principal, apiKeyID uint, serverID *uint, stackPattern string, permissionName string) error {
 	s.logger.Info("adding scope to API key",
 		zap.Uint("api_key_id", apiKeyID),
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Any("server_id", serverID),
 		zap.String("stack_pattern", stackPattern),
 		zap.String("permission_name", permissionName),
 	)
 
 	var apiKey APIKey
-	err := s.db.Where("id = ? AND user_id = ?", apiKeyID, userID).First(&apiKey).Error
+	err := s.db.Where("id = ? AND user_id = ?", apiKeyID, p.UserID()).First(&apiKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("API key not found")
@@ -261,11 +261,11 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 	if permission.IsAPIKeyOnly {
 		if strings.HasPrefix(permission.Name, "admin.") {
 			var u user.User
-			err = s.db.Preload("Roles").First(&u, userID).Error
+			err = s.db.Preload("Roles").First(&u, p.UserID()).Error
 			if err != nil {
 				s.logger.Error("failed to load user roles",
 					zap.Error(err),
-					zap.Uint("user_id", userID),
+					zap.Uint("user_id", p.UserID()),
 				)
 				return errors.New("failed to verify user permissions")
 			}
@@ -280,7 +280,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 
 			if !isAdmin {
 				s.logger.Warn("non-admin user attempted to grant admin API key scope",
-					zap.Uint("user_id", userID),
+					zap.Uint("user_id", p.UserID()),
 					zap.String("permission", permissionName),
 				)
 				return errors.New("admin role required to grant admin API key scopes")
@@ -297,28 +297,28 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 			return err
 		}
 
-		hasAccess, err := s.rbacService.UserHasServerAccess(ctx, userID, *serverID)
+		hasAccess, err := s.authzSvc.HasServerAccess(p, *serverID)
 		if err != nil {
 			s.logger.Error("failed to check user server access",
 				zap.Error(err),
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 				zap.Uint("server_id", *serverID),
 			)
 			return errors.New("failed to verify server access")
 		}
 		if !hasAccess {
 			s.logger.Warn("user attempted to add scope for unauthorized server",
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 				zap.Uint("server_id", *serverID),
 			)
 			return errors.New("you do not have access to this server")
 		}
 
-		hasPermission, err := s.rbacService.UserHasAnyStackPermission(ctx, userID, *serverID, permissionName)
+		hasPermission, err := s.authzSvc.HasServerPermission(p, *serverID, permissionName)
 		if err != nil {
 			s.logger.Error("failed to check user permission",
 				zap.Error(err),
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 				zap.Uint("server_id", *serverID),
 				zap.String("permission", permissionName),
 			)
@@ -326,7 +326,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		}
 		if !hasPermission {
 			s.logger.Warn("user attempted to grant permission they don't have",
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 				zap.Uint("server_id", *serverID),
 				zap.String("permission", permissionName),
 			)
@@ -334,25 +334,25 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 		}
 	} else {
 
-		accessibleServers, err := s.rbacService.GetServerIDsUserCanReach(ctx, userID)
+		accessibleServers, err := s.authzSvc.ReachableServerIDs(p)
 		if err != nil {
 			s.logger.Error("failed to get user accessible servers",
 				zap.Error(err),
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 			)
 			return errors.New("failed to verify server access")
 		}
 
 		if len(accessibleServers) == 0 {
 			s.logger.Warn("user attempted to create 'all servers' scope with no server access",
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 			)
 			return errors.New("you do not have access to any servers")
 		}
 
 		hasPermissionAnywhere := false
 		for _, srvID := range accessibleServers {
-			hasPermission, err := s.rbacService.UserHasAnyStackPermission(ctx, userID, srvID, permissionName)
+			hasPermission, err := s.authzSvc.HasServerPermission(p, srvID, permissionName)
 			if err != nil {
 				continue
 			}
@@ -364,7 +364,7 @@ func (s *Service) AddScope(ctx context.Context, apiKeyID uint, userID uint, serv
 
 		if !hasPermissionAnywhere {
 			s.logger.Warn("user attempted to grant permission they don't have on any server",
-				zap.Uint("user_id", userID),
+				zap.Uint("user_id", p.UserID()),
 				zap.String("permission", permissionName),
 			)
 			return errors.New("you do not have this permission on any accessible server")

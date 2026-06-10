@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"berth/internal/domain/session"
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"strconv"
@@ -21,7 +21,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) GetStackLogs(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 	}
 
 	req := LogRequest{
-		UserID:     userID,
+		Principal:  principal,
 		ServerID:   serverID,
 		StackName:  stackname,
 		Tail:       h.parseIntParam(c, "tail", 100),
@@ -55,7 +55,7 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 }
 
 func (h *Handler) GetContainerLogs(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 	}
 
 	req := LogRequest{
-		UserID:        userID,
+		Principal:     principal,
 		ServerID:      serverID,
 		StackName:     stackname,
 		ContainerName: containerName,

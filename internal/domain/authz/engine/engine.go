@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 
-	"berth/internal/domain/apikey"
 	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	usermodel "berth/internal/domain/user"
@@ -22,7 +21,7 @@ func New(db *gorm.DB, logger *zap.Logger) *Engine {
 	return &Engine{db: db, logger: logger}
 }
 
-func (e *Engine) Authorize(p Principal, reqs ...authz.Requirement) (bool, error) {
+func (e *Engine) Authorize(p authz.Principal, reqs ...authz.Requirement) (bool, error) {
 	if p.IsSystem() {
 		return true, nil
 	}
@@ -38,7 +37,7 @@ func (e *Engine) Authorize(p Principal, reqs ...authz.Requirement) (bool, error)
 	return true, nil
 }
 
-func (e *Engine) evaluate(p Principal, r authz.Requirement) (bool, error) {
+func (e *Engine) evaluate(p authz.Principal, r authz.Requirement) (bool, error) {
 	switch r.Kind {
 	case authz.KindAuthenticated:
 		return e.evalAuthenticated(p, r)
@@ -57,52 +56,42 @@ func (e *Engine) evaluate(p Principal, r authz.Requirement) (bool, error) {
 	}
 }
 
-func (e *Engine) evalAuthenticated(p Principal, _ authz.Requirement) (bool, error) {
-	return p.UserID != 0, nil
+func (e *Engine) evalAuthenticated(p authz.Principal, _ authz.Requirement) (bool, error) {
+	return p.UserID() != 0, nil
 }
 
-func (e *Engine) evalAdmin(p Principal, r authz.Requirement) (bool, error) {
-	roleOK := isAdminRole(p.Roles)
-	if !roleOK {
+func (e *Engine) evalAdmin(p authz.Principal, r authz.Requirement) (bool, error) {
+	if !p.IsAdmin() {
 		return false, nil
 	}
-	if p.APIKey == nil {
+	if p.Key() == nil {
 		return true, nil
 	}
-	return checkAPIKeyHasAdminScope(p.APIKey, r.Permission), nil
+	return checkAPIKeyHasAdminScope(p.Key(), r.Permission), nil
 }
 
-func isAdminRole(roles []usermodel.Role) bool {
-	for _, role := range roles {
-		if role.IsAdmin {
-			return true
-		}
-	}
-	return false
-}
-
-func checkAPIKeyHasAdminScope(key *apikey.APIKey, permName string) bool {
+func checkAPIKeyHasAdminScope(key *authz.KeyDescriptor, permName string) bool {
 	for _, scope := range key.Scopes {
-		if scope.Permission.Name == permName {
+		if scope.Permission == permName {
 			return true
 		}
 	}
 	return false
 }
 
-func (e *Engine) evalAPIKeyScope(p Principal, r authz.Requirement) (bool, error) {
-	if p.APIKey == nil {
+func (e *Engine) evalAPIKeyScope(p authz.Principal, r authz.Requirement) (bool, error) {
+	if p.Key() == nil {
 		return true, nil
 	}
-	for _, scope := range p.APIKey.Scopes {
-		if scope.Permission.Name == r.Permission {
+	for _, scope := range p.Key().Scopes {
+		if scope.Permission == r.Permission {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (e *Engine) evalServerAccess(p Principal, r authz.Requirement) (bool, error) {
+func (e *Engine) evalServerAccess(p authz.Principal, r authz.Requirement) (bool, error) {
 	return e.evalServerPerm(p, authz.Requirement{
 		Kind:       authz.KindServer,
 		ServerID:   r.ServerID,
@@ -110,7 +99,7 @@ func (e *Engine) evalServerAccess(p Principal, r authz.Requirement) (bool, error
 	})
 }
 
-func (e *Engine) evalServer(p Principal, r authz.Requirement) (bool, error) {
+func (e *Engine) evalServer(p authz.Principal, r authz.Requirement) (bool, error) {
 	if r.Permission != permnames.StacksRead {
 		ok, err := e.evalServerPerm(p, authz.Requirement{
 			Kind:       authz.KindServer,
@@ -124,26 +113,25 @@ func (e *Engine) evalServer(p Principal, r authz.Requirement) (bool, error) {
 	return e.evalServerPerm(p, r)
 }
 
-func (e *Engine) evalServerPerm(p Principal, r authz.Requirement) (bool, error) {
-	roleOK, err := e.checkUserAnyStackPermission(p.UserID, p.Roles, r.ServerID, r.Permission)
+func (e *Engine) evalServerPerm(p authz.Principal, r authz.Requirement) (bool, error) {
+	roleOK, err := e.checkUserAnyStackPermission(p, r.ServerID, r.Permission)
 	if err != nil {
 		return false, err
 	}
 	if !roleOK {
 		return false, nil
 	}
-	if p.APIKey == nil {
+	if p.Key() == nil {
 		return true, nil
 	}
-	return checkAPIKeyServerPermission(p.APIKey, r.ServerID, r.Permission), nil
+	return checkAPIKeyServerPermission(p.Key(), r.ServerID, r.Permission), nil
 }
 
-func (e *Engine) checkUserAnyStackPermission(userID uint, roles []usermodel.Role, serverID uint, permName string) (bool, error) {
-	for _, role := range roles {
-		if role.IsAdmin {
-			return true, nil
-		}
+func (e *Engine) checkUserAnyStackPermission(p authz.Principal, serverID uint, permName string) (bool, error) {
+	if p.IsAdmin() {
+		return true, nil
 	}
+	userID := p.UserID()
 
 	var count int64
 	err := e.db.Model(&usermodel.ServerRoleStackPermission{}).
@@ -157,19 +145,19 @@ func (e *Engine) checkUserAnyStackPermission(userID uint, roles []usermodel.Role
 	return count > 0, nil
 }
 
-func checkAPIKeyServerPermission(key *apikey.APIKey, serverID uint, permName string) bool {
+func checkAPIKeyServerPermission(key *authz.KeyDescriptor, serverID uint, permName string) bool {
 	for _, scope := range key.Scopes {
 		if scope.ServerID != nil && *scope.ServerID != serverID {
 			continue
 		}
-		if scope.Permission.Name == permName {
+		if scope.Permission == permName {
 			return true
 		}
 	}
 	return false
 }
 
-func (e *Engine) evalStack(p Principal, r authz.Requirement) (bool, error) {
+func (e *Engine) evalStack(p authz.Principal, r authz.Requirement) (bool, error) {
 	if r.Permission != permnames.StacksRead {
 		ok, err := e.evalStackPerm(p, authz.Requirement{
 			Kind:       authz.KindStack,
@@ -184,26 +172,25 @@ func (e *Engine) evalStack(p Principal, r authz.Requirement) (bool, error) {
 	return e.evalStackPerm(p, r)
 }
 
-func (e *Engine) evalStackPerm(p Principal, r authz.Requirement) (bool, error) {
-	roleOK, err := e.checkUserStackPermission(p.UserID, p.Roles, r.ServerID, r.Stack, r.Permission)
+func (e *Engine) evalStackPerm(p authz.Principal, r authz.Requirement) (bool, error) {
+	roleOK, err := e.checkUserStackPermission(p, r.ServerID, r.Stack, r.Permission)
 	if err != nil {
 		return false, err
 	}
 	if !roleOK {
 		return false, nil
 	}
-	if p.APIKey == nil {
+	if p.Key() == nil {
 		return true, nil
 	}
-	return checkAPIKeyStackScope(p.APIKey, r.ServerID, r.Stack, r.Permission), nil
+	return checkAPIKeyStackScope(p.Key(), r.ServerID, r.Stack, r.Permission), nil
 }
 
-func (e *Engine) checkUserStackPermission(userID uint, roles []usermodel.Role, serverID uint, stack, permName string) (bool, error) {
-	for _, role := range roles {
-		if role.IsAdmin {
-			return true, nil
-		}
+func (e *Engine) checkUserStackPermission(p authz.Principal, serverID uint, stack, permName string) (bool, error) {
+	if p.IsAdmin() {
+		return true, nil
 	}
+	userID := p.UserID()
 
 	var srsps []usermodel.ServerRoleStackPermission
 	err := e.db.Preload("Permission").
@@ -222,7 +209,7 @@ func (e *Engine) checkUserStackPermission(userID uint, roles []usermodel.Role, s
 	return false, nil
 }
 
-func checkAPIKeyStackScope(key *apikey.APIKey, serverID uint, stack, permName string) bool {
+func checkAPIKeyStackScope(key *authz.KeyDescriptor, serverID uint, stack, permName string) bool {
 	for _, scope := range key.Scopes {
 		if scope.ServerID != nil && *scope.ServerID != serverID {
 			continue
@@ -230,7 +217,7 @@ func checkAPIKeyStackScope(key *apikey.APIKey, serverID uint, stack, permName st
 		if !patterns.Matches(stack, scope.StackPattern) {
 			continue
 		}
-		if scope.Permission.Name == permName {
+		if scope.Permission == permName {
 			return true
 		}
 	}

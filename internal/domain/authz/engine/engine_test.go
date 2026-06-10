@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"berth/internal/domain/apikey"
 	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 	"berth/seeds"
@@ -108,23 +107,33 @@ func seedFixture(t *testing.T) *fixture {
 	}
 }
 
-func principalFor(t *testing.T, f *fixture, userID uint) Principal {
+func principalFor(t *testing.T, f *fixture, userID uint) authz.Principal {
 	t.Helper()
 	var u usermodel.User
 	require.NoError(t, f.db.Preload("Roles").First(&u, userID).Error)
-	return Principal{UserID: u.ID, Roles: u.Roles}
+	return principalForRoles(u.ID, u.Roles)
 }
 
-func withAPIKey(p Principal, scopes ...apikey.APIKeyScope) Principal {
-	p.APIKey = &apikey.APIKey{Scopes: scopes}
-	return p
+func principalForRoles(userID uint, roles []usermodel.Role) authz.Principal {
+	isAdmin := false
+	for _, r := range roles {
+		if r.IsAdmin {
+			isAdmin = true
+			break
+		}
+	}
+	return authz.NewPrincipal(userID, isAdmin, nil)
 }
 
-func scopeForPerm(permName string, serverID *uint) apikey.APIKeyScope {
-	return apikey.APIKeyScope{
+func withAPIKey(p authz.Principal, scopes ...authz.KeyScope) authz.Principal {
+	return authz.NewPrincipal(p.UserID(), p.IsAdmin(), &authz.KeyDescriptor{Scopes: scopes})
+}
+
+func scopeForPerm(permName string, serverID *uint) authz.KeyScope {
+	return authz.KeyScope{
 		ServerID:     serverID,
 		StackPattern: "*",
-		Permission:   usermodel.Permission{Name: permName},
+		Permission:   permName,
 	}
 }
 
@@ -135,26 +144,26 @@ func TestAuthorize_KindAuthenticated(t *testing.T) {
 	e := New(f.db, zap.NewNop())
 
 	t.Run("non-zero UserID is authenticated", func(t *testing.T) {
-		ok, err := e.Authorize(Principal{UserID: 1}, authz.Requirement{Kind: authz.KindAuthenticated})
+		ok, err := e.Authorize(authz.NewPrincipal(1, false, nil), authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
 
 	t.Run("zero UserID is not authenticated", func(t *testing.T) {
-		ok, err := e.Authorize(Principal{UserID: 0}, authz.Requirement{Kind: authz.KindAuthenticated})
+		ok, err := e.Authorize(authz.Principal{}, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.False(t, ok)
 	})
 
 	t.Run("with API key, non-zero UserID is authenticated", func(t *testing.T) {
-		p := withAPIKey(Principal{UserID: 1}, scopeForPerm(testPermName, nil))
+		p := withAPIKey(authz.NewPrincipal(1, false, nil), scopeForPerm(testPermName, nil))
 		ok, err := e.Authorize(p, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, authz.Requirement{Kind: authz.KindAuthenticated})
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, authz.Requirement{Kind: authz.KindAuthenticated})
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -204,8 +213,8 @@ func TestAuthorize_KindAdmin(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, req)
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, req)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -270,8 +279,8 @@ func TestAuthorize_KindServerAccess(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, req)
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, req)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -344,8 +353,8 @@ func TestAuthorize_KindServer(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, req)
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, req)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -385,10 +394,10 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 	t.Run("role AND key scope grants", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
-		p = withAPIKey(p, apikey.APIKeyScope{
+		p = withAPIKey(p, authz.KeyScope{
 			ServerID:     nil,
 			StackPattern: "*",
-			Permission:   usermodel.Permission{Name: testPermName},
+			Permission:   testPermName,
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -397,10 +406,10 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 	t.Run("role AND key scope (matching server and stack) grants", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
-		p = withAPIKey(p, apikey.APIKeyScope{
+		p = withAPIKey(p, authz.KeyScope{
 			ServerID:     ptr(f.serverID),
 			StackPattern: "my-*",
-			Permission:   usermodel.Permission{Name: testPermName},
+			Permission:   testPermName,
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -409,10 +418,10 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 	t.Run("role BUT key scope stack pattern does not match denies", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
-		p = withAPIKey(p, apikey.APIKeyScope{
+		p = withAPIKey(p, authz.KeyScope{
 			ServerID:     nil,
 			StackPattern: "other-*",
-			Permission:   usermodel.Permission{Name: testPermName},
+			Permission:   testPermName,
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -421,10 +430,10 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 	t.Run("role BUT key scope has wrong permission denies", func(t *testing.T) {
 		p := principalFor(t, f, f.userID)
-		p = withAPIKey(p, apikey.APIKeyScope{
+		p = withAPIKey(p, authz.KeyScope{
 			ServerID:     nil,
 			StackPattern: "*",
-			Permission:   usermodel.Permission{Name: "stacks.manage"},
+			Permission:   "stacks.manage",
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -433,18 +442,18 @@ func TestAuthorize_KindStack(t *testing.T) {
 
 	t.Run("key scope present BUT role denies", func(t *testing.T) {
 		p := principalFor(t, f, f.noRoleUserID)
-		p = withAPIKey(p, apikey.APIKeyScope{
+		p = withAPIKey(p, authz.KeyScope{
 			ServerID:     nil,
 			StackPattern: "*",
-			Permission:   usermodel.Permission{Name: testPermName},
+			Permission:   testPermName,
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
 		assert.False(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, req)
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, req)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -517,8 +526,8 @@ func TestAuthorize_KindAPIKeyScope(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("SystemPrincipal is always allowed", func(t *testing.T) {
-		ok, err := e.Authorize(SystemPrincipal, req)
+	t.Run("the system principal is always allowed", func(t *testing.T) {
+		ok, err := e.Authorize(authz.SystemPrincipal, req)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -564,12 +573,12 @@ func TestAuthorize_KindStack_StacksReadPrerequisite(t *testing.T) {
 		ServerID: srv.ID, RoleID: roleBoth.ID, PermissionID: stacksRead.ID, StackPattern: "prod-*",
 	}).Error)
 
-	mkUser := func(name string, roleID uint) Principal {
+	mkUser := func(name string, roleID uint) authz.Principal {
 		u := usermodel.User{Username: name, Email: name + "@example.com", Password: "x"}
 		require.NoError(t, db.Create(&u).Error)
 		require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, roleID).Error)
 		require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
-		return Principal{UserID: u.ID, Roles: u.Roles}
+		return principalForRoles(u.ID, u.Roles)
 	}
 
 	pFilesOnly := mkUser("files-only-user", roleFilesOnly.ID)
@@ -603,9 +612,9 @@ func TestAuthorize_KindStack_StacksReadPrerequisite(t *testing.T) {
 	})
 
 	t.Run("API key with only files.read scope is denied", func(t *testing.T) {
-		p := withAPIKey(pBoth, apikey.APIKeyScope{
+		p := withAPIKey(pBoth, authz.KeyScope{
 			ServerID: &srv.ID, StackPattern: "prod-*",
-			Permission: usermodel.Permission{Name: "files.read"},
+			Permission: "files.read",
 		})
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -614,8 +623,8 @@ func TestAuthorize_KindStack_StacksReadPrerequisite(t *testing.T) {
 
 	t.Run("API key with both files.read and stacks.read scopes is admitted", func(t *testing.T) {
 		p := withAPIKey(pBoth,
-			apikey.APIKeyScope{ServerID: &srv.ID, StackPattern: "prod-*", Permission: usermodel.Permission{Name: "files.read"}},
-			apikey.APIKeyScope{ServerID: &srv.ID, StackPattern: "prod-*", Permission: usermodel.Permission{Name: "stacks.read"}},
+			authz.KeyScope{ServerID: &srv.ID, StackPattern: "prod-*", Permission: "files.read"},
+			authz.KeyScope{ServerID: &srv.ID, StackPattern: "prod-*", Permission: "stacks.read"},
 		)
 		ok, err := e.Authorize(p, req)
 		require.NoError(t, err)
@@ -662,12 +671,12 @@ func TestAuthorize_KindServer_StacksReadPrerequisite(t *testing.T) {
 		ServerID: srv.ID, RoleID: roleBoth.ID, PermissionID: stacksRead.ID, StackPattern: "*",
 	}).Error)
 
-	mkUser := func(name string, roleID uint) Principal {
+	mkUser := func(name string, roleID uint) authz.Principal {
 		u := usermodel.User{Username: name, Email: name + "@example.com", Password: "x"}
 		require.NoError(t, db.Create(&u).Error)
 		require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, roleID).Error)
 		require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
-		return Principal{UserID: u.ID, Roles: u.Roles}
+		return principalForRoles(u.ID, u.Roles)
 	}
 
 	pMaintOnly := mkUser("maint-only-user", roleMaintOnly.ID)
@@ -719,12 +728,12 @@ func TestAuthorize_KindServerAccess_RequiresStacksRead(t *testing.T) {
 		ServerID: srv.ID, RoleID: roleStacks.ID, PermissionID: stacksRead.ID, StackPattern: "*",
 	}).Error)
 
-	mkUser := func(name string, roleID uint) Principal {
+	mkUser := func(name string, roleID uint) authz.Principal {
 		u := usermodel.User{Username: name, Email: name + "@example.com", Password: "x"}
 		require.NoError(t, db.Create(&u).Error)
 		require.NoError(t, db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", u.ID, roleID).Error)
 		require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
-		return Principal{UserID: u.ID, Roles: u.Roles}
+		return principalForRoles(u.ID, u.Roles)
 	}
 
 	pLogsOnly := mkUser("sa-logs-only", roleLogsOnly.ID)

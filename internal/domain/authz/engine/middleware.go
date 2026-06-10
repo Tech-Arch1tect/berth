@@ -2,13 +2,10 @@ package engine
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 
-	"berth/internal/domain/auth"
 	"berth/internal/domain/authz"
-	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
 )
@@ -19,11 +16,11 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 			if rule.IsPublic() {
 				return next(c)
 			}
-			p, err := principalFromContext(c)
-			if err != nil {
+			p, ok := authz.PrincipalFromEcho(c)
+			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
 			}
-			if rule.DeniesAPIKey() && p.APIKey != nil {
+			if rule.DeniesAPIKey() && p.Key() != nil {
 				return echo.NewHTTPError(http.StatusForbidden, "API keys cannot access this endpoint")
 			}
 			bodyBuf, err := readBody(c)
@@ -36,11 +33,11 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 				return err
 			}
 			resetBody(c, bodyBuf)
-			ok, err := e.Authorize(p, reqs...)
+			allowed, err := e.Authorize(p, reqs...)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, "Authorisation check failed")
 			}
-			if !ok {
+			if !allowed {
 				return echo.NewHTTPError(http.StatusForbidden, "Insufficient permissions")
 			}
 			if rule.WantsListScope() {
@@ -54,23 +51,6 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
-}
-
-func principalFromContext(c echo.Context) (Principal, error) {
-	userID := auth.GetUserID(c)
-	if userID == 0 {
-		return Principal{}, errors.New("no authenticated user")
-	}
-	currentUser := auth.GetCurrentUser(c)
-	u, ok := currentUser.(usermodel.User)
-	if !ok {
-		return Principal{}, errors.New("current user not a usermodel.User")
-	}
-	return Principal{
-		UserID: userID,
-		Roles:  u.Roles,
-		APIKey: auth.GetAPIKey(c),
-	}, nil
 }
 
 func readBody(c echo.Context) ([]byte, error) {

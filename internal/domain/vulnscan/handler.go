@@ -1,7 +1,7 @@
 package vulnscan
 
 import (
-	"berth/internal/domain/session"
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
@@ -24,7 +24,7 @@ func NewHandler(service *Service, logger *zap.Logger) *Handler {
 }
 
 func (h *Handler) StartScan(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -44,16 +44,16 @@ func (h *Handler) StartScan(c echo.Context) error {
 	}
 
 	h.logger.Debug("starting vulnerability scan",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 	)
 
-	scan, err := h.service.StartScan(c.Request().Context(), userID, serverID, stackName, opts)
+	scan, err := h.service.StartScan(c.Request().Context(), p, serverID, stackName, opts)
 	if err != nil {
 		h.logger.Error("failed to start scan",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
@@ -64,7 +64,7 @@ func (h *Handler) StartScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScan(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (h *Handler) GetScan(c echo.Context) error {
 		return err
 	}
 
-	scan, err := h.service.GetScan(c.Request().Context(), userID, scanID)
+	scan, err := h.service.GetScan(c.Request().Context(), p, scanID)
 	if err != nil {
 		return response.NotFound(c, "scan not found")
 	}
@@ -83,7 +83,7 @@ func (h *Handler) GetScan(c echo.Context) error {
 }
 
 func (h *Handler) GetScansForStack(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 		return err
 	}
 
-	scans, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), userID, serverID, stackName)
+	scans, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), p, serverID, stackName)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -102,7 +102,7 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetLatestScanForStack(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 		return err
 	}
 
-	scan, err := h.service.GetLatestScanForStack(c.Request().Context(), userID, serverID, stackName)
+	scan, err := h.service.GetLatestScanForStack(c.Request().Context(), p, serverID, stackName)
 	if err != nil {
 		return response.NotFound(c, "no scans found for stack")
 	}
@@ -129,7 +129,7 @@ func (h *Handler) GetLatestScanForStack(c echo.Context) error {
 }
 
 func (h *Handler) GetScanSummary(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (h *Handler) GetScanSummary(c echo.Context) error {
 		return err
 	}
 
-	_, err = h.service.GetScan(c.Request().Context(), userID, scanID)
+	_, err = h.service.GetScan(c.Request().Context(), p, scanID)
 	if err != nil {
 		return response.NotFound(c, "scan not found")
 	}
@@ -153,7 +153,7 @@ func (h *Handler) GetScanSummary(c echo.Context) error {
 }
 
 func (h *Handler) CompareScans(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -168,11 +168,11 @@ func (h *Handler) CompareScans(c echo.Context) error {
 		return response.BadRequest(c, "invalid compare scan ID")
 	}
 
-	comparison, err := h.service.CompareScans(c.Request().Context(), userID, baseScanID, compareScanID)
+	comparison, err := h.service.CompareScans(c.Request().Context(), p, baseScanID, compareScanID)
 	if err != nil {
 		h.logger.Error("failed to compare scans",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("base_scan_id", baseScanID),
 			zap.Uint("compare_scan_id", compareScanID),
 		)
@@ -183,7 +183,7 @@ func (h *Handler) CompareScans(c echo.Context) error {
 }
 
 func (h *Handler) GetScanTrend(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -200,11 +200,11 @@ func (h *Handler) GetScanTrend(c echo.Context) error {
 		}
 	}
 
-	trend, err := h.service.GetScanTrend(c.Request().Context(), userID, serverID, stackName, limit)
+	trend, err := h.service.GetScanTrend(c.Request().Context(), p, serverID, stackName, limit)
 	if err != nil {
 		h.logger.Error("failed to get scan trend",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)

@@ -87,14 +87,18 @@ func (w *StackWorker) processOperation(ctx context.Context, queuedOp *QueuedOper
 	operationCtx, cancel := context.WithTimeout(ctx, time.Duration(w.service.operationTimeoutSeconds)*time.Second)
 	defer cancel()
 
-	response, err := w.service.operationSvc.StartAndExecuteOperation(
-		operationCtx,
-		queuedOp.UserID,
-		queuedOp.ServerID,
-		queuedOp.StackName,
-		operationReq,
-		operationLog.ID,
-	)
+	var response *operations.OperationStartData
+	principal, err := w.service.authzSvc.PrincipalForUser(queuedOp.UserID)
+	if err == nil {
+		response, err = w.service.operationSvc.StartAndExecuteOperation(
+			operationCtx,
+			principal,
+			queuedOp.ServerID,
+			queuedOp.StackName,
+			operationReq,
+			operationLog.ID,
+		)
+	}
 
 	endTime := time.Now()
 	duration := int(endTime.Sub(startTime).Milliseconds())

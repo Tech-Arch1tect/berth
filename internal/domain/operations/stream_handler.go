@@ -1,11 +1,11 @@
 package operations
 
 import (
+	"berth/internal/domain/authz"
 	"context"
 	"encoding/json"
 	"time"
 
-	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/origin"
 	"berth/internal/pkg/response"
@@ -44,7 +44,7 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 		return response.BadRequest(c, "operationId is required")
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 	go func() {
 		defer close(streamEnded)
 		defer func() { _ = pipeWriter.Close() }()
-		if err := h.service.StreamOperationToWriter(ctx, userID, serverID, stackname, operationID, pipeWriter); err != nil {
+		if err := h.service.StreamOperationToWriter(ctx, p, serverID, stackname, operationID, pipeWriter); err != nil {
 			select {
 			case streamFailed <- err.Error():
 			default:

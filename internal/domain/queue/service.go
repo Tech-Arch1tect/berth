@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
 	"berth/internal/domain/rbac/permnames"
@@ -15,8 +16,9 @@ import (
 	"gorm.io/gorm"
 )
 
-type queuePermissionChecker interface {
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+type queueAuthorizer interface {
+	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
+	PrincipalForUser(userID uint) (authz.Principal, error)
 }
 
 type queueSecurityAuditor interface {
@@ -24,13 +26,13 @@ type queueSecurityAuditor interface {
 }
 
 type queueOperationExecutor interface {
-	StartAndExecuteOperation(ctx context.Context, userID, serverID uint, stackname string, req operations.OperationRequest, operationLogID uint) (*operations.OperationStartData, error)
+	StartAndExecuteOperation(ctx context.Context, p authz.Principal, serverID uint, stackname string, req operations.OperationRequest, operationLogID uint) (*operations.OperationStartData, error)
 }
 
 type Service struct {
 	db           *gorm.DB
 	operationSvc queueOperationExecutor
-	rbacSvc      queuePermissionChecker
+	authzSvc     queueAuthorizer
 	logger       *zap.Logger
 	auditService queueSecurityAuditor
 
@@ -52,13 +54,13 @@ type StackWorker struct {
 	service  *Service
 }
 
-func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queuePermissionChecker, logger *zap.Logger, auditService queueSecurityAuditor, operationTimeoutSeconds int) *Service {
+func NewService(db *gorm.DB, operationSvc queueOperationExecutor, authzSvc queueAuthorizer, logger *zap.Logger, auditService queueSecurityAuditor, operationTimeoutSeconds int) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &Service{
 		db:                      db,
 		operationSvc:            operationSvc,
-		rbacSvc:                 rbacSvc,
+		authzSvc:                authzSvc,
 		logger:                  logger,
 		auditService:            auditService,
 		operationTimeoutSeconds: operationTimeoutSeconds,
@@ -72,19 +74,19 @@ func NewService(db *gorm.DB, operationSvc queueOperationExecutor, rbacSvc queueP
 	return service
 }
 
-func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID uint, stackName string, req operations.OperationRequest) (*QueuedOperationResponse, error) {
+func (s *Service) EnqueueOperation(ctx context.Context, p authz.Principal, serverID uint, stackName string, req operations.OperationRequest) (*QueuedOperationResponse, error) {
 	s.logger.Debug("enqueuing single operation",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 		zap.String("command", req.Command),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksManage)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksManage)
 	if err != nil {
 		s.logger.Error("failed to check permissions for operation",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
@@ -93,14 +95,15 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 
 	if !hasPermission {
 		s.logger.Warn("operation permission denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 			zap.String("command", req.Command),
 		)
 
+		actorID := p.UserID()
 		s.auditService.LogAuthorizationDenied(
-			&userID,
+			&actorID,
 			"",
 			"",
 			fmt.Sprintf("stack:%s", stackName),
@@ -117,7 +120,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 	operationID := s.generateOperationID()
 	queuedOp := &QueuedOperation{
 		OperationID: operationID,
-		UserID:      userID,
+		UserID:      p.UserID(),
 		ServerID:    serverID,
 		StackName:   stackName,
 		Command:     req.Command,
@@ -145,7 +148,7 @@ func (s *Service) EnqueueOperation(ctx context.Context, userID uint, serverID ui
 
 	s.logger.Info("operation queued successfully",
 		zap.String("operation_id", operationID),
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 		zap.String("command", req.Command),

@@ -77,7 +77,7 @@ func registerRoutes(g *Graph) {
 		KeyFunc:   ratelimit.KeyByIP,
 	})
 
-	authzEngine := authzengine.New(g.DB, g.Logger)
+	authzEngine := g.AuthzEngine
 
 	publicRegistrar := registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler, authzEngine)
 	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,

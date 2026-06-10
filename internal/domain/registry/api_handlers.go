@@ -1,37 +1,35 @@
 package registry
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"context"
 	"encoding/json"
 	"errors"
-
-	"berth/internal/domain/session"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-type permissionChecker interface {
-	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
+type registryAuthorizer interface {
+	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
 }
 
 type APIHandler struct {
-	service *Service
-	rbacSvc permissionChecker
-	db      *gorm.DB
+	service  *Service
+	authzSvc registryAuthorizer
+	db       *gorm.DB
 }
 
-func NewAPIHandler(service *Service, rbacSvc permissionChecker, db *gorm.DB) *APIHandler {
+func NewAPIHandler(service *Service, authzSvc registryAuthorizer, db *gorm.DB) *APIHandler {
 	return &APIHandler{
-		service: service,
-		rbacSvc: rbacSvc,
-		db:      db,
+		service:  service,
+		authzSvc: authzSvc,
+		db:       db,
 	}
 }
 
@@ -41,13 +39,11 @@ func (h *APIHandler) ListCredentials(c echo.Context) error {
 		return err
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	ctx := c.Request().Context()
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
+	hasPermission, err := h.authzSvc.HasServerPermission(p, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -76,13 +72,11 @@ func (h *APIHandler) GetCredential(c echo.Context) error {
 		return err
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	ctx := c.Request().Context()
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
+	hasPermission, err := h.authzSvc.HasServerPermission(p, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -113,13 +107,11 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		return err
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	ctx := c.Request().Context()
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
+	hasPermission, err := h.authzSvc.HasServerPermission(p, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -142,7 +134,7 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 	}
 
 	h.service.Logger().Info("registry credential created",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.Uint("credential_id", credential.ID),
 		zap.String("registry_url", credential.RegistryURL),
@@ -157,11 +149,12 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		"image_pattern": credential.ImagePattern,
 	})
 
+	actorID := p.UserID()
 	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_created",
 		EventCategory:  security.CategoryRegistry,
 		Severity:       security.SeverityMedium,
-		ActorUserID:    &userID,
+		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
 		TargetType:     security.TargetTypeRegistryCredential,
@@ -189,13 +182,11 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		return err
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	ctx := c.Request().Context()
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
+	hasPermission, err := h.authzSvc.HasServerPermission(p, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -226,7 +217,7 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 	}
 
 	h.service.Logger().Info("registry credential updated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.Uint("credential_id", credID),
 		zap.String("registry_url", credential.RegistryURL),
@@ -241,11 +232,12 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		"image_pattern": credential.ImagePattern,
 	})
 
+	actorID := p.UserID()
 	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_updated",
 		EventCategory:  security.CategoryRegistry,
 		Severity:       security.SeverityMedium,
-		ActorUserID:    &userID,
+		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
 		TargetType:     security.TargetTypeRegistryCredential,
@@ -273,13 +265,11 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		return err
 	}
 
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	ctx := c.Request().Context()
-
-	hasPermission, err := h.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.RegistriesManage)
+	hasPermission, err := h.authzSvc.HasServerPermission(p, serverID, permnames.RegistriesManage)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -300,7 +290,7 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	}
 
 	h.service.Logger().Info("registry credential deleted",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.Uint("credential_id", credID),
 		zap.String("registry_url", existing.RegistryURL),
@@ -316,11 +306,12 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 			"error":         err.Error(),
 		})
 
+		actorID := p.UserID()
 		auditLog := &security.SecurityAuditLog{
 			EventType:      "registry_credential_deleted",
 			EventCategory:  security.CategoryRegistry,
 			Severity:       security.SeverityMedium,
-			ActorUserID:    &userID,
+			ActorUserID:    &actorID,
 			ActorIP:        c.RealIP(),
 			ActorUserAgent: c.Request().UserAgent(),
 			TargetType:     security.TargetTypeRegistryCredential,
@@ -342,11 +333,12 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		"username":      existing.Username,
 	})
 
+	actorID := p.UserID()
 	auditLog := &security.SecurityAuditLog{
 		EventType:      "registry_credential_deleted",
 		EventCategory:  security.CategoryRegistry,
 		Severity:       security.SeverityMedium,
-		ActorUserID:    &userID,
+		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
 		TargetType:     security.TargetTypeRegistryCredential,

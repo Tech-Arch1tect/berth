@@ -1,33 +1,21 @@
 package auth
 
 import (
-	"berth/internal/domain/apikey"
-	"context"
 	"net/http"
 	"strings"
 
+	"berth/internal/domain/apikey"
 	tokens "berth/internal/domain/auth/tokens"
+	"berth/internal/domain/authz"
+	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
 )
 
 const (
-	UserIDKey   = "_jwt_user_id"
-	AuthTypeKey = "_auth_type"
-	APIKeyKey   = "_api_key"
+	UserIDKey = "_jwt_user_id"
 
 	wsProtocolBearer = "Bearer"
-)
-
-type contextKey string
-
-const APIKeyContextKey contextKey = "api_key"
-
-type authType string
-
-const (
-	authTypeJWT    authType = "jwt"
-	authTypeAPIKey authType = "apikey"
 )
 
 func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
@@ -91,15 +79,32 @@ func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apik
 	}
 
 	c.Set(UserIDKey, user.ID)
-	c.Set(AuthTypeKey, authTypeAPIKey)
-	c.Set(APIKeyKey, apiKey)
-
 	c.Set("currentUser", *user)
 
-	ctx := context.WithValue(c.Request().Context(), APIKeyContextKey, apiKey)
-	c.SetRequest(c.Request().WithContext(ctx))
+	authz.SetPrincipal(c, authz.NewPrincipal(user.ID, hasAdminRole(user.Roles), keyDescriptor(apiKey)))
 
 	return next(c)
+}
+
+func keyDescriptor(apiKey *apikey.APIKey) *authz.KeyDescriptor {
+	scopes := make([]authz.KeyScope, 0, len(apiKey.Scopes))
+	for _, scope := range apiKey.Scopes {
+		scopes = append(scopes, authz.KeyScope{
+			ServerID:     scope.ServerID,
+			StackPattern: scope.StackPattern,
+			Permission:   scope.Permission.Name,
+		})
+	}
+	return &authz.KeyDescriptor{ID: apiKey.ID, Scopes: scopes}
+}
+
+func hasAdminRole(roles []usermodel.Role) bool {
+	for _, role := range roles {
+		if role.IsAdmin {
+			return true
+		}
+	}
+	return false
 }
 
 func handleJWTAuth(c echo.Context, next echo.HandlerFunc, jwtService *tokens.Service, userProvider UserProvider, tokenString string) error {
@@ -114,26 +119,15 @@ func handleJWTAuth(c echo.Context, next echo.HandlerFunc, jwtService *tokens.Ser
 			return echo.NewHTTPError(http.StatusUnauthorized, "Authentication failed")
 		}
 		c.Set("currentUser", user)
+
+		if u, ok := user.(usermodel.User); ok {
+			authz.SetPrincipal(c, authz.NewPrincipal(u.ID, hasAdminRole(u.Roles), nil))
+		}
 	}
 
 	c.Set(UserIDKey, claims.UserID)
-	c.Set(AuthTypeKey, authTypeJWT)
 
 	return next(c)
-}
-
-func getAuthType(c echo.Context) authType {
-	if authType, ok := c.Get(AuthTypeKey).(authType); ok {
-		return authType
-	}
-	return ""
-}
-
-func GetAPIKey(c echo.Context) *apikey.APIKey {
-	if apiKey, ok := c.Get(APIKeyKey).(*apikey.APIKey); ok {
-		return apiKey
-	}
-	return nil
 }
 
 func GetUserID(c echo.Context) uint {
@@ -141,19 +135,4 @@ func GetUserID(c echo.Context) uint {
 		return userID
 	}
 	return 0
-}
-
-func IsAPIKeyAuth(c echo.Context) bool {
-	return getAuthType(c) == authTypeAPIKey
-}
-
-func IsJWTAuth(c echo.Context) bool {
-	return getAuthType(c) == authTypeJWT
-}
-
-func GetAPIKeyFromContext(ctx context.Context) *apikey.APIKey {
-	if apiKey, ok := ctx.Value(APIKeyContextKey).(*apikey.APIKey); ok {
-		return apiKey
-	}
-	return nil
 }

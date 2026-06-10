@@ -11,6 +11,7 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/auth/totp"
+	authzengine "berth/internal/domain/authz/engine"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -92,6 +93,7 @@ type Graph struct {
 
 	AgentSvc               *agent.Service
 	RBACSvc                *rbac.Service
+	AuthzEngine            *authzengine.Engine
 	RBACAPIHandler         *rbac.APIHandler
 	APIKeySvc              *apikey.Service
 	APIKeyHandler          *apikey.Handler
@@ -200,25 +202,27 @@ func Build(
 	g.RBACSvc = rbac.NewService(db, logger)
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
 
-	g.APIKeySvc = apikey.NewService(db, logger, g.RBACSvc)
+	g.AuthzEngine = authzengine.New(db, logger)
+
+	g.APIKeySvc = apikey.NewService(db, logger, g.AuthzEngine)
 	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, g.SecurityAuditSvc)
 
 	g.SetupSvc = setup.NewService(db, g.RBACSvc, logger)
 
-	g.ServerSvc = server.NewService(db, g.Crypto, g.RBACSvc, g.AgentSvc, logger)
+	g.ServerSvc = server.NewService(db, g.Crypto, g.AuthzEngine, g.RBACSvc, g.AgentSvc, logger)
 	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc)
 	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
-	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
+	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.StackAPIHandler = stack.NewAPIHandler(g.StackSvc, logger, g.SecurityAuditSvc)
 
-	g.MaintSvc = maintenance.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
+	g.MaintSvc = maintenance.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.MaintAPIHandler = maintenance.NewAPIHandler(g.MaintSvc, g.SecurityAuditSvc)
 
-	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
+	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.FilesAPIHandler = files.NewAPIHandler(g.FilesSvc, g.SecurityAuditSvc)
 
-	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.RBACSvc, logger)
+	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.LogsHandler = logs.NewHandler(g.LogsSvc)
 
 	g.OperationsSummaryParser = operations.NewSummaryParser(logger)
@@ -235,9 +239,9 @@ func Build(
 	g.OperationsAuditSvc = operations.NewAuditService(db, logger, g.OperationsSummaryParser)
 
 	g.RegistrySvc = registry.NewService(db, g.Crypto, logger)
-	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.RBACSvc, db)
+	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.AuthzEngine, db)
 
-	g.OperationsSvc = operations.NewService(g.ServerSvc, g.RBACSvc, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
+	g.OperationsSvc = operations.NewService(g.ServerSvc, g.AuthzEngine, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
 
@@ -247,12 +251,12 @@ func Build(
 	g.DataExportSvc = dataexport.NewService(db, logger)
 	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc, g.RBACSvc)
 
-	g.QueueSvc = queue.NewService(db, g.OperationsSvc, g.RBACSvc, logger, g.SecurityAuditSvc, cfg.Custom.OperationTimeoutSeconds)
+	g.QueueSvc = queue.NewService(db, g.OperationsSvc, g.AuthzEngine, logger, g.SecurityAuditSvc, cfg.Custom.OperationTimeoutSeconds)
 
 	g.ImageUpdatesSvc = imageupdates.NewService(db, g.AgentSvc, g.ServerSvc, g.Crypto, logger, cfg)
 	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, logger)
 
-	g.VulnscanSvc = vulnscan.NewService(db, g.ServerSvc, g.AgentSvc, g.RBACSvc, logger)
+	g.VulnscanSvc = vulnscan.NewService(db, g.ServerSvc, g.AgentSvc, g.AuthzEngine, logger)
 	g.VulnscanHandler = vulnscan.NewHandler(g.VulnscanSvc, logger)
 	g.VulnscanPoller = vulnscan.NewPoller(db, g.VulnscanSvc, logger)
 	g.addHook("vulnscan poller",

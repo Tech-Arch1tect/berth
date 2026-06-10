@@ -1,6 +1,7 @@
 package files
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/security"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -28,7 +29,7 @@ func NewAPIHandler(service *Service, auditSvc fileAuditLogger) *APIHandler {
 }
 
 func (h *APIHandler) ListDirectory(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -40,7 +41,7 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 
 	filePath := echoparams.GetQueryParam(c, "filePath")
 
-	result, err := h.service.ListDirectory(c.Request().Context(), userID, serverID, stackname, filePath)
+	result, err := h.service.ListDirectory(c.Request().Context(), p, serverID, stackname, filePath)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -49,7 +50,7 @@ func (h *APIHandler) ListDirectory(c echo.Context) error {
 }
 
 func (h *APIHandler) ReadFile(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -64,7 +65,7 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 		return response.BadRequest(c, "filePath parameter is required")
 	}
 
-	result, err := h.service.ReadFile(c.Request().Context(), userID, serverID, stackname, filePath)
+	result, err := h.service.ReadFile(c.Request().Context(), p, serverID, stackname, filePath)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -73,7 +74,7 @@ func (h *APIHandler) ReadFile(c echo.Context) error {
 }
 
 func (h *APIHandler) WriteFile(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -88,13 +89,13 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.WriteFile(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.WriteFile(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileUploaded,
-		userID,
+		p.UserID(),
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -107,7 +108,7 @@ func (h *APIHandler) WriteFile(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateDirectory(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.CreateDirectory(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.CreateDirectory(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
@@ -130,7 +131,7 @@ func (h *APIHandler) CreateDirectory(c echo.Context) error {
 }
 
 func (h *APIHandler) Delete(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -145,13 +146,13 @@ func (h *APIHandler) Delete(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.Delete(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.Delete(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileDeleted,
-		userID,
+		p.UserID(),
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -164,7 +165,7 @@ func (h *APIHandler) Delete(c echo.Context) error {
 }
 
 func (h *APIHandler) Rename(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -179,13 +180,13 @@ func (h *APIHandler) Rename(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.Rename(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.Rename(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileRenamed,
-		userID,
+		p.UserID(),
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -200,7 +201,7 @@ func (h *APIHandler) Rename(c echo.Context) error {
 }
 
 func (h *APIHandler) Copy(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -215,7 +216,7 @@ func (h *APIHandler) Copy(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.Copy(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.Copy(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
@@ -223,7 +224,7 @@ func (h *APIHandler) Copy(c echo.Context) error {
 }
 
 func (h *APIHandler) UploadFile(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -240,13 +241,13 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 		return response.BadRequest(c, "file is required")
 	}
 
-	if err := h.service.UploadFile(c.Request().Context(), userID, serverID, stackname, filePath, file); err != nil {
+	if err := h.service.UploadFile(c.Request().Context(), p, serverID, stackname, filePath, file); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileUploaded,
-		userID,
+		p.UserID(),
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -262,7 +263,7 @@ func (h *APIHandler) UploadFile(c echo.Context) error {
 }
 
 func (h *APIHandler) DownloadFile(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -279,7 +280,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	filename := echoparams.GetQueryParam(c, "filename")
 
-	result, err := h.service.DownloadFile(c.Request().Context(), userID, serverID, stackname, filePath, filename)
+	result, err := h.service.DownloadFile(c.Request().Context(), p, serverID, stackname, filePath, filename)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -287,7 +288,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 
 	_ = h.auditSvc.LogFileEvent(
 		security.EventFileDownloaded,
-		userID,
+		p.UserID(),
 		session.ResolveUsername(c),
 		serverID,
 		stackname,
@@ -307,7 +308,7 @@ func (h *APIHandler) DownloadFile(c echo.Context) error {
 }
 
 func (h *APIHandler) Chmod(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -322,7 +323,7 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.Chmod(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.Chmod(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
@@ -330,7 +331,7 @@ func (h *APIHandler) Chmod(c echo.Context) error {
 }
 
 func (h *APIHandler) Chown(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -345,7 +346,7 @@ func (h *APIHandler) Chown(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.Chown(c.Request().Context(), userID, serverID, stackname, req); err != nil {
+	if err := h.service.Chown(c.Request().Context(), p, serverID, stackname, req); err != nil {
 		return response.Internal(c, err.Error())
 	}
 
@@ -353,7 +354,7 @@ func (h *APIHandler) Chown(c echo.Context) error {
 }
 
 func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -368,7 +369,7 @@ func (h *APIHandler) GetDirectoryStats(c echo.Context) error {
 		filePath = "."
 	}
 
-	stats, err := h.service.GetDirectoryStats(c.Request().Context(), userID, serverID, stackname, filePath)
+	stats, err := h.service.GetDirectoryStats(c.Request().Context(), p, serverID, stackname, filePath)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}

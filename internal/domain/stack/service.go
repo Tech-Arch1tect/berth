@@ -20,27 +20,27 @@ type stackAgentClient interface {
 type stackServerProvider interface {
 	GetServer(id uint) (*server.Server, error)
 	GetServerResponse(id uint) (*server.ServerInfo, error)
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*server.Server, error)
 }
 
-type stackPermissionChecker interface {
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
-	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
-	GetUserStackPermissions(ctx context.Context, userID, serverID uint, stackname string) ([]string, error)
+type stackAuthorizer interface {
+	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
+	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
+	StackPermissions(p authz.Principal, serverID uint, stackname string) ([]string, error)
 }
 
 type Service struct {
 	agentSvc  stackAgentClient
 	serverSvc stackServerProvider
-	rbacSvc   stackPermissionChecker
+	authzSvc  stackAuthorizer
 	logger    *zap.Logger
 }
 
-func NewService(agentSvc stackAgentClient, serverSvc stackServerProvider, rbacSvc stackPermissionChecker, logger *zap.Logger) *Service {
+func NewService(agentSvc stackAgentClient, serverSvc stackServerProvider, authzSvc stackAuthorizer, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
-		rbacSvc:   rbacSvc,
+		authzSvc:  authzSvc,
 		logger:    logger,
 	}
 }
@@ -91,27 +91,27 @@ func (s *Service) ListStacksForServer(ctx context.Context, serverID uint, scope 
 	return accessibleStacks, nil
 }
 
-func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, name string) (*Stack, error) {
+func (s *Service) CreateStack(ctx context.Context, p authz.Principal, serverID uint, name string) (*Stack, error) {
 	s.logger.Debug("creating new stack",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", name),
 	)
 
 	if err := validation.ValidateStackName(name); err != nil {
 		s.logger.Warn("invalid stack name rejected",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", name),
 			zap.Error(err),
 		)
 		return nil, fmt.Errorf("invalid stack name: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, name, permnames.StacksCreate)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, name, permnames.StacksCreate)
 	if err != nil {
 		s.logger.Error("failed to check create permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", name),
 		)
@@ -120,18 +120,18 @@ func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, n
 
 	if !hasPermission {
 		s.logger.Warn("user denied create stack permission",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", name),
 		)
 		return nil, fmt.Errorf("permission denied: stacks.create required for pattern matching '%s'", name)
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for stack creation",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
@@ -152,7 +152,7 @@ func (s *Service) CreateStack(ctx context.Context, userID uint, serverID uint, n
 	stack.ServerName = server.Name
 
 	s.logger.Info("stack created successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("stack_name", name),
@@ -195,18 +195,18 @@ func (s *Service) createStackOnAgent(ctx context.Context, server *server.Server,
 	return result.Stack, nil
 }
 
-func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uint, stackname string) (*StackDetails, error) {
+func (s *Service) GetStackDetails(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*StackDetails, error) {
 	s.logger.Debug("getting stack details",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.StacksRead)
 	if err != nil {
 		s.logger.Error("failed to check stack permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
@@ -215,18 +215,18 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 
 	if !hasPermission {
 		s.logger.Warn("user denied access to stack details",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for stack details",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
@@ -247,7 +247,7 @@ func (s *Service) GetStackDetails(ctx context.Context, userID uint, serverID uin
 	stackDetails.ServerName = server.Name
 
 	s.logger.Info("stack details retrieved",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("stack_name", stackname),
@@ -319,18 +319,18 @@ func (s *Service) fetchStackDetailsFromAgent(ctx context.Context, server *server
 	return &stackDetails, nil
 }
 
-func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID uint, stackname string) ([]Network, error) {
+func (s *Service) GetStackNetworks(ctx context.Context, p authz.Principal, serverID uint, stackname string) ([]Network, error) {
 	s.logger.Debug("getting stack networks",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.StacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission for stack networks",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -338,18 +338,18 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 
 	if !hasPermission {
 		s.logger.Warn("user denied access to stack networks",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for stack networks",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
@@ -365,7 +365,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, userID uint, serverID ui
 	}
 
 	s.logger.Debug("stack networks retrieved",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.String("stack_name", stackname),
 		zap.Int("network_count", len(networks)),
 	)
@@ -392,8 +392,8 @@ func (s *Service) fetchStackNetworksFromAgent(ctx context.Context, server *serve
 	return networks, nil
 }
 
-func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uint, stackname string) ([]Volume, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksRead)
+func (s *Service) GetStackVolumes(ctx context.Context, p authz.Principal, serverID uint, stackname string) ([]Volume, error) {
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -402,7 +402,7 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -415,8 +415,8 @@ func (s *Service) GetStackVolumes(ctx context.Context, userID uint, serverID uin
 	return volumes, nil
 }
 
-func (s *Service) GetContainerImageDetails(ctx context.Context, userID uint, serverID uint, stackname string) ([]ContainerImageDetails, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksRead)
+func (s *Service) GetContainerImageDetails(ctx context.Context, p authz.Principal, serverID uint, stackname string) ([]ContainerImageDetails, error) {
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -425,7 +425,7 @@ func (s *Service) GetContainerImageDetails(ctx context.Context, userID uint, ser
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -457,13 +457,13 @@ func (s *Service) fetchStackVolumesFromAgent(ctx context.Context, server *server
 	return volumes, nil
 }
 
-func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint, serverID uint, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
+func (s *Service) GetStackEnvironmentVariables(ctx context.Context, p authz.Principal, serverID uint, stackname string, unmask bool) (map[string][]ServiceEnvironment, error) {
 	requiredPermission := permnames.StacksRead
 	if unmask {
 		requiredPermission = permnames.StacksManage
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, requiredPermission)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -472,7 +472,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, userID uint,
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -509,18 +509,18 @@ func (s *Service) fetchStackEnvironmentVariablesFromAgent(ctx context.Context, s
 	return environmentVariables, nil
 }
 
-func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint, stackname string) (*StackStats, error) {
+func (s *Service) GetStackStats(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*StackStats, error) {
 	s.logger.Debug("getting stack statistics",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.StacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission for stack stats",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -528,18 +528,18 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 
 	if !hasPermission {
 		s.logger.Warn("user denied access to stack statistics",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
 		return nil, fmt.Errorf("user does not have permission to access this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for stack stats",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
@@ -576,7 +576,7 @@ func (s *Service) GetStackStats(ctx context.Context, userID uint, serverID uint,
 	}
 
 	s.logger.Info("stack statistics retrieved",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("stack_name", stackname),
@@ -604,14 +604,14 @@ func (s *Service) fetchContainerImageDetailsFromAgent(ctx context.Context, serve
 	return imageDetails, nil
 }
 
-func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID uint, stackname string) (*RawComposeConfig, error) {
+func (s *Service) GetComposeConfig(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*RawComposeConfig, error) {
 	s.logger.Debug("getting compose config",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.FilesRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -620,7 +620,7 @@ func (s *Service) GetComposeConfig(ctx context.Context, userID uint, serverID ui
 		return nil, fmt.Errorf("user does not have permission to read files in this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -647,14 +647,14 @@ func (s *Service) fetchComposeConfigFromAgent(ctx context.Context, server *serve
 	return &composeConfig, nil
 }
 
-func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
+func (s *Service) UpdateCompose(ctx context.Context, p authz.Principal, serverID uint, stackname string, req *UpdateComposeRequest) (*UpdateComposeResponse, error) {
 	s.logger.Debug("updating compose config",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesWrite)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.FilesWrite)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
 	}
@@ -663,7 +663,7 @@ func (s *Service) UpdateCompose(ctx context.Context, userID uint, serverID uint,
 		return nil, fmt.Errorf("user does not have permission to write files in this stack")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}

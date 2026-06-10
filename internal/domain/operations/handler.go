@@ -1,7 +1,7 @@
 package operations
 
 import (
-	"berth/internal/domain/session"
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
@@ -21,7 +21,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) StartOperation(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -41,13 +41,13 @@ func (h *Handler) StartOperation(c echo.Context) error {
 		return err
 	}
 
-	resp, err := h.service.StartOperation(c.Request().Context(), userID, serverID, stackname, req)
+	resp, err := h.service.StartOperation(c.Request().Context(), p, serverID, stackname, req)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	startTime := time.Now()
-	h.service.auditSvc.LogOperationStart(userID, serverID, stackname, resp.OperationID, req, startTime)
+	h.service.auditSvc.LogOperationStart(p.UserID(), serverID, stackname, resp.OperationID, req, startTime)
 
 	return response.OK(c, *resp)
 }

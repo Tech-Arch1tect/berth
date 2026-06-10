@@ -1,6 +1,7 @@
 package vulnscan
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
@@ -24,24 +25,24 @@ type vulnscanAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
-type vulnscanPermissionChecker interface {
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+type vulnscanAuthorizer interface {
+	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
 }
 
 type Service struct {
 	db        *gorm.DB
 	serverSvc vulnscanServerProvider
 	agentSvc  vulnscanAgentClient
-	rbacSvc   vulnscanPermissionChecker
+	authzSvc  vulnscanAuthorizer
 	logger    *zap.Logger
 }
 
-func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, rbacSvc vulnscanPermissionChecker, logger *zap.Logger) *Service {
+func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, authzSvc vulnscanAuthorizer, logger *zap.Logger) *Service {
 	return &Service{
 		db:        db,
 		serverSvc: serverSvc,
 		agentSvc:  agentSvc,
-		rbacSvc:   rbacSvc,
+		authzSvc:  authzSvc,
 		logger:    logger,
 	}
 }
@@ -84,18 +85,18 @@ type StartScanOptions struct {
 	Services []string
 }
 
-func (s *Service) StartScan(ctx context.Context, userID, serverID uint, stackName string, opts *StartScanOptions) (*ImageScan, error) {
+func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uint, stackName string, opts *StartScanOptions) (*ImageScan, error) {
 	s.logger.Info("starting vulnerability scan",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackName),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		s.logger.Error("failed to check permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
@@ -213,13 +214,13 @@ func (s *Service) markScanFailed(scan *ImageScan, errorMsg string) {
 	}
 }
 
-func (s *Service) GetScan(ctx context.Context, userID, scanID uint) (*ImageScan, error) {
+func (s *Service) GetScan(ctx context.Context, p authz.Principal, scanID uint) (*ImageScan, error) {
 	var scan ImageScan
 	if err := s.db.Preload("Vulnerabilities").First(&scan, scanID).Error; err != nil {
 		return nil, err
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, scan.ServerID, scan.StackName, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, scan.ServerID, scan.StackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -235,8 +236,8 @@ type ScanWithSummary struct {
 	Summary *VulnerabilitySummary `json:"summary,omitempty"`
 }
 
-func (s *Service) GetScansForStack(ctx context.Context, userID, serverID uint, stackName string) ([]ImageScan, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
+func (s *Service) GetScansForStack(ctx context.Context, p authz.Principal, serverID uint, stackName string) ([]ImageScan, error) {
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -253,8 +254,8 @@ func (s *Service) GetScansForStack(ctx context.Context, userID, serverID uint, s
 	return scans, nil
 }
 
-func (s *Service) GetScansForStackWithSummaries(ctx context.Context, userID, serverID uint, stackName string) ([]ScanWithSummary, error) {
-	scans, err := s.GetScansForStack(ctx, userID, serverID, stackName)
+func (s *Service) GetScansForStackWithSummaries(ctx context.Context, p authz.Principal, serverID uint, stackName string) ([]ScanWithSummary, error) {
+	scans, err := s.GetScansForStack(ctx, p, serverID, stackName)
 	if err != nil {
 		return nil, err
 	}
@@ -483,8 +484,8 @@ func (s *Service) CleanupStaleScans() error {
 	return nil
 }
 
-func (s *Service) GetLatestScanForStack(ctx context.Context, userID, serverID uint, stackName string) (*ImageScan, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
+func (s *Service) GetLatestScanForStack(ctx context.Context, p authz.Principal, serverID uint, stackName string) (*ImageScan, error) {
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
@@ -524,13 +525,13 @@ type ScanComparison struct {
 	CommonImages      []string             `json:"common_images"`
 }
 
-func (s *Service) CompareScans(ctx context.Context, userID, baseScanID, compareScanID uint) (*ScanComparison, error) {
-	baseScan, err := s.GetScan(ctx, userID, baseScanID)
+func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanID, compareScanID uint) (*ScanComparison, error) {
+	baseScan, err := s.GetScan(ctx, p, baseScanID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get base scan: %w", err)
 	}
 
-	compareScan, err := s.GetScan(ctx, userID, compareScanID)
+	compareScan, err := s.GetScan(ctx, p, compareScanID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get compare scan: %w", err)
 	}
@@ -647,8 +648,8 @@ type ScanTrendResponse struct {
 	ScopeWarning  string           `json:"scope_warning,omitempty"`
 }
 
-func (s *Service) GetScanTrend(ctx context.Context, userID, serverID uint, stackName string, limit int) (*ScanTrendResponse, error) {
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackName, permnames.StacksRead)
+func (s *Service) GetScanTrend(ctx context.Context, p authz.Principal, serverID uint, stackName string, limit int) (*ScanTrendResponse, error) {
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}

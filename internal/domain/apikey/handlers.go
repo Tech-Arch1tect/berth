@@ -1,6 +1,7 @@
 package apikey
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/response"
@@ -174,10 +175,11 @@ func (h *Handler) ListScopes(c echo.Context) error {
 }
 
 func (h *Handler) AddScope(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return response.Unauthorized(c, "User not authenticated")
 	}
+	userID := p.UserID()
 
 	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -189,8 +191,7 @@ func (h *Handler) AddScope(c echo.Context) error {
 		return err
 	}
 
-	ctx := c.Request().Context()
-	err = h.service.AddScope(ctx, uint(apiKeyID), userID, req.ServerID, req.StackPattern, req.Permission)
+	err = h.service.AddScope(p, uint(apiKeyID), req.ServerID, req.StackPattern, req.Permission)
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}

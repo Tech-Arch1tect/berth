@@ -1,9 +1,9 @@
 package operations
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/compose"
 	"berth/internal/domain/files"
-	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/server"
 	"bufio"
@@ -23,12 +23,12 @@ import (
 )
 
 type opsServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*server.Server, error)
 	GetServer(id uint) (*server.Server, error)
 }
 
-type opsPermissionChecker interface {
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+type opsAuthorizer interface {
+	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
 }
 
 type opsRegistryProvider interface {
@@ -36,22 +36,22 @@ type opsRegistryProvider interface {
 }
 
 type opsFileReader interface {
-	ReadFile(ctx context.Context, userID, serverID uint, stackname, path string) (*files.FileContent, error)
+	ReadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*files.FileContent, error)
 }
 
 type Service struct {
 	serverSvc   opsServerProvider
-	rbacSvc     opsPermissionChecker
+	authzSvc    opsAuthorizer
 	auditSvc    *AuditService
 	registrySvc opsRegistryProvider
 	filesSvc    opsFileReader
 	logger      *zap.Logger
 }
 
-func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
+func NewService(serverSvc opsServerProvider, authzSvc opsAuthorizer, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
 	return &Service{
 		serverSvc:   serverSvc,
-		rbacSvc:     rbacSvc,
+		authzSvc:    authzSvc,
 		auditSvc:    auditSvc,
 		registrySvc: registrySvc,
 		filesSvc:    filesSvc,
@@ -59,36 +59,31 @@ func NewService(serverSvc opsServerProvider, rbacSvc opsPermissionChecker, audit
 	}
 }
 
-func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest) (*OperationStartData, error) {
+func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverID uint, stackname string, req OperationRequest) (*OperationStartData, error) {
 	s.logger.Debug("starting Docker operation",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("operation_command", req.Command),
 	)
 
-	serverModel, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	serverModel, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for operation",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	var requiredPermission string
-	if req.Command == "create-archive" || req.Command == "extract-archive" {
-		requiredPermission = permnames.FilesWrite
-	} else {
-		requiredPermission = permnames.StacksManage
-	}
+	requiredPermission := permissionForCommand(req.Command)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, requiredPermission)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, requiredPermission)
 	if err != nil {
 		s.logger.Error("failed to check operation permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 			zap.String("required_permission", requiredPermission),
@@ -98,7 +93,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 
 	if !hasPermission {
 		s.logger.Warn("operation permission denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 			zap.String("operation_command", req.Command),
@@ -108,7 +103,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	}
 
 	if req.Command == "up" || req.Command == "pull" {
-		credentials, err := s.fetchRegistryCredentials(ctx, userID, serverID, stackname)
+		credentials, err := s.fetchRegistryCredentials(ctx, p, serverID, stackname)
 		if err != nil {
 			s.logger.Warn("failed to fetch registry credentials, proceeding without them",
 				zap.Error(err),
@@ -182,7 +177,7 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	}
 
 	s.logger.Info("Docker operation started successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.String("server_name", serverModel.Name),
 		zap.String("stack_name", stackname),
 		zap.String("operation_command", req.Command),
@@ -192,22 +187,22 @@ func (s *Service) StartOperation(ctx context.Context, userID uint, serverID uint
 	return &response, nil
 }
 
-func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationStartData, error) {
+func (s *Service) StartAndExecuteOperation(ctx context.Context, p authz.Principal, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationStartData, error) {
 	s.logger.Debug("starting and executing Docker operation",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("operation_command", req.Command),
 		zap.Uint("operation_log_id", operationLogID),
 	)
 
-	response, err := s.StartOperation(ctx, userID, serverID, stackname, req)
+	response, err := s.StartOperation(ctx, p, serverID, stackname, req)
 	if err != nil {
 		return nil, err
 	}
 
 	auditWriter := NewAuditWriter(s.auditSvc, operationLogID)
-	err = s.StreamOperationToWriter(ctx, userID, serverID, stackname, response.OperationID, auditWriter)
+	err = s.StreamOperationToWriter(ctx, p, serverID, stackname, response.OperationID, auditWriter)
 	if err != nil {
 		s.logger.Error("failed to execute operation via streaming",
 			zap.Error(err),
@@ -217,7 +212,7 @@ func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, ser
 	}
 
 	s.logger.Info("Docker operation executed successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.String("stack_name", stackname),
 		zap.String("operation_command", req.Command),
 		zap.String("operation_id", response.OperationID),
@@ -226,9 +221,9 @@ func (s *Service) StartAndExecuteOperation(ctx context.Context, userID uint, ser
 	return response, nil
 }
 
-func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serverID uint, stackname string, operationID string, writer io.Writer) error {
+func (s *Service) StreamOperationToWriter(ctx context.Context, p authz.Principal, serverID uint, stackname string, operationID string, writer io.Writer) error {
 	s.logger.Debug("starting operation stream",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("operation_id", operationID),
@@ -244,11 +239,16 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 		return fmt.Errorf("failed to get server: %w", err)
 	}
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.StacksManage)
+	operationLog, err := s.auditSvc.FindOperationLogByOperationID(operationID)
+	if err != nil || operationLog.ServerID != serverID || operationLog.StackName != stackname {
+		return fmt.Errorf("operation '%s' not found for stack '%s' on server %d", operationID, stackname, serverID)
+	}
+
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permissionForCommand(operationLog.Command))
 	if err != nil {
 		s.logger.Error("failed to check stream permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("operation_id", operationID),
 		)
@@ -257,7 +257,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 
 	if !hasPermission {
 		s.logger.Warn("stream permission denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 			zap.String("operation_id", operationID),
@@ -294,7 +294,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, userID uint, serv
 	}
 
 	s.logger.Info("operation stream connected successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.String("server_name", serverModel.Name),
 		zap.String("stack_name", stackname),
 		zap.String("operation_id", operationID),
@@ -503,12 +503,12 @@ func (w *AuditWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (s *Service) fetchRegistryCredentials(ctx context.Context, userID uint, serverID uint, stackname string) ([]RegistryCredential, error) {
+func (s *Service) fetchRegistryCredentials(ctx context.Context, p authz.Principal, serverID uint, stackname string) ([]RegistryCredential, error) {
 
-	fileContent, err := s.filesSvc.ReadFile(ctx, userID, serverID, stackname, "docker-compose.yml")
+	fileContent, err := s.filesSvc.ReadFile(ctx, p, serverID, stackname, "docker-compose.yml")
 	if err != nil {
 
-		fileContent, err = s.filesSvc.ReadFile(ctx, userID, serverID, stackname, "docker-compose.yaml")
+		fileContent, err = s.filesSvc.ReadFile(ctx, p, serverID, stackname, "docker-compose.yaml")
 		if err != nil {
 			return nil, fmt.Errorf("failed to read compose file: %w", err)
 		}

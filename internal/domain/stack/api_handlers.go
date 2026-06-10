@@ -52,7 +52,7 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 }
 
 func (h *APIHandler) CreateStack(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -68,12 +68,12 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 	}
 
 	h.logger.Debug("creating stack via API",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", req.Name),
 	)
 
-	stack, err := h.service.CreateStack(c.Request().Context(), userID, serverID, req.Name)
+	stack, err := h.service.CreateStack(c.Request().Context(), p, serverID, req.Name)
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "permission denied") {
@@ -89,7 +89,7 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 
 	h.auditService.LogStackEvent(
 		security.EventStackCreated,
-		userID,
+		p.UserID(),
 		username,
 		serverID,
 		req.Name,
@@ -104,7 +104,7 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackDetails(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (h *APIHandler) GetStackDetails(c echo.Context) error {
 		return err
 	}
 
-	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), userID, serverID, stackname)
+	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -123,7 +123,7 @@ func (h *APIHandler) GetStackDetails(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackNetworks(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (h *APIHandler) GetStackNetworks(c echo.Context) error {
 		return err
 	}
 
-	networks, err := h.service.GetStackNetworks(c.Request().Context(), userID, serverID, stackname)
+	networks, err := h.service.GetStackNetworks(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -142,7 +142,7 @@ func (h *APIHandler) GetStackNetworks(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackVolumes(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 		return err
 	}
 
-	volumes, err := h.service.GetStackVolumes(c.Request().Context(), userID, serverID, stackname)
+	volumes, err := h.service.GetStackVolumes(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -161,7 +161,7 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 }
 
 func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
 		return err
 	}
 
-	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), userID, serverID, stackname)
+	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -180,7 +180,7 @@ func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -193,13 +193,13 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 	unmask := c.QueryParam("unmask") == "true"
 
 	h.logger.Debug("fetching stack environment variables",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.Bool("unmask", unmask),
 	)
 
-	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), userID, serverID, stackname, unmask)
+	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), p, serverID, stackname, unmask)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -209,7 +209,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 
 		h.auditService.LogStackEvent(
 			security.EventStackSecretsViewed,
-			userID,
+			p.UserID(),
 			username,
 			serverID,
 			stackname,
@@ -235,7 +235,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 }
 
 func (h *APIHandler) GetStackStats(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 		return err
 	}
 
-	stackStats, err := h.service.GetStackStats(c.Request().Context(), userID, serverID, stackname)
+	stackStats, err := h.service.GetStackStats(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -254,7 +254,7 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return err
 	}
 
-	permissions, err := h.service.rbacSvc.GetUserStackPermissions(c.Request().Context(), userID, serverID, stackname)
+	permissions, err := h.service.authzSvc.StackPermissions(p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, "Failed to get user permissions")
 	}
@@ -273,7 +273,7 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 }
 
 func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -283,7 +283,7 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 		return err
 	}
 
-	canCreate, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.StacksCreate)
+	canCreate, err := h.service.authzSvc.HasServerPermission(p, serverID, permnames.StacksCreate)
 	if err != nil {
 		return response.Internal(c, "Failed to check permissions")
 	}
@@ -292,7 +292,7 @@ func (h *APIHandler) CheckCanCreateStack(c echo.Context) error {
 }
 
 func (h *APIHandler) GetComposeConfig(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 		return err
 	}
 
-	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), userID, serverID, stackname)
+	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -311,7 +311,7 @@ func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 }
 
 func (h *APIHandler) UpdateCompose(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -326,7 +326,7 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.UpdateCompose(c.Request().Context(), userID, serverID, stackname, &req)
+	result, err := h.service.UpdateCompose(c.Request().Context(), p, serverID, stackname, &req)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}

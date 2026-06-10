@@ -1,6 +1,7 @@
 package files
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
@@ -34,36 +35,36 @@ type filesAgentClient interface {
 }
 
 type filesServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*server.Server, error)
 	GetServer(id uint) (*server.Server, error)
 }
 
-type filesPermissionChecker interface {
-	UserHasStackPermission(ctx context.Context, userID, serverID uint, stackname, permissionName string) (bool, error)
+type filesAuthorizer interface {
+	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
 }
 
 type Service struct {
 	agentSvc  filesAgentClient
 	serverSvc filesServerProvider
-	rbacSvc   filesPermissionChecker
+	authzSvc  filesAuthorizer
 	logger    *zap.Logger
 }
 
-func NewService(agentSvc filesAgentClient, serverSvc filesServerProvider, rbacSvc filesPermissionChecker, logger *zap.Logger) *Service {
+func NewService(agentSvc filesAgentClient, serverSvc filesServerProvider, authzSvc filesAuthorizer, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
-		rbacSvc:   rbacSvc,
+		authzSvc:  authzSvc,
 		logger:    logger,
 	}
 }
 
-func (s *Service) ListDirectory(ctx context.Context, userID uint, serverID uint, stackname, path string) (*DirectoryListing, error) {
-	if err := s.checkFileReadPermission(ctx, userID, serverID, stackname); err != nil {
+func (s *Service) ListDirectory(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*DirectoryListing, error) {
+	if err := s.checkFileReadPermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -91,25 +92,25 @@ func (s *Service) ListDirectory(ctx context.Context, userID uint, serverID uint,
 	return &listing, nil
 }
 
-func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stackname, path string) (*FileContent, error) {
+func (s *Service) ReadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*FileContent, error) {
 	s.logger.Debug("file read operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("file_path", path),
 	)
 
-	if err := s.checkFileReadPermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileReadPermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("file read permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("file_path", path),
 		)
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for file read",
 			zap.Error(err),
@@ -150,7 +151,7 @@ func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stac
 	}
 
 	s.logger.Debug("file read successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.String("stack_name", stackname),
 		zap.String("file_path", path),
 	)
@@ -158,9 +159,9 @@ func (s *Service) ReadFile(ctx context.Context, userID uint, serverID uint, stac
 	return &fileContent, nil
 }
 
-func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, stackname string, req WriteFileRequest) error {
+func (s *Service) WriteFile(ctx context.Context, p authz.Principal, serverID uint, stackname string, req WriteFileRequest) error {
 	s.logger.Info("file write operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("file_path", req.Path),
@@ -172,10 +173,10 @@ func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, sta
 		}
 	}
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("file write permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("file_path", req.Path),
 		)
@@ -213,7 +214,7 @@ func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, sta
 	}
 
 	s.logger.Info("file written successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("file_path", req.Path),
@@ -222,14 +223,14 @@ func (s *Service) WriteFile(ctx context.Context, userID uint, serverID uint, sta
 	return nil
 }
 
-func (s *Service) CreateDirectory(ctx context.Context, userID uint, serverID uint, stackname string, req CreateDirectoryRequest) error {
+func (s *Service) CreateDirectory(ctx context.Context, p authz.Principal, serverID uint, stackname string, req CreateDirectoryRequest) error {
 	if req.Mode != nil && *req.Mode != "" {
 		if err := validateFileMode(*req.Mode); err != nil {
 			return err
 		}
 	}
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		return err
 	}
 
@@ -252,8 +253,8 @@ func (s *Service) CreateDirectory(ctx context.Context, userID uint, serverID uin
 	return nil
 }
 
-func (s *Service) GetDirectoryStats(ctx context.Context, userID uint, serverID uint, stackname string, path string) (*DirectoryStats, error) {
-	if err := s.checkFileReadPermission(ctx, userID, serverID, stackname); err != nil {
+func (s *Service) GetDirectoryStats(ctx context.Context, p authz.Principal, serverID uint, stackname string, path string) (*DirectoryStats, error) {
+	if err := s.checkFileReadPermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
 
@@ -284,7 +285,7 @@ func (s *Service) GetDirectoryStats(ctx context.Context, userID uint, serverID u
 	}
 
 	s.logger.Info("directory stats retrieved successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("path", path),
@@ -293,18 +294,18 @@ func (s *Service) GetDirectoryStats(ctx context.Context, userID uint, serverID u
 	return &stats, nil
 }
 
-func (s *Service) Delete(ctx context.Context, userID uint, serverID uint, stackname string, req DeleteRequest) error {
+func (s *Service) Delete(ctx context.Context, p authz.Principal, serverID uint, stackname string, req DeleteRequest) error {
 	s.logger.Info("file deletion operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
 	)
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("file deletion permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("target_path", req.Path),
 		)
@@ -342,7 +343,7 @@ func (s *Service) Delete(ctx context.Context, userID uint, serverID uint, stackn
 	}
 
 	s.logger.Info("file deleted successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
@@ -351,8 +352,8 @@ func (s *Service) Delete(ctx context.Context, userID uint, serverID uint, stackn
 	return nil
 }
 
-func (s *Service) Rename(ctx context.Context, userID uint, serverID uint, stackname string, req RenameRequest) error {
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+func (s *Service) Rename(ctx context.Context, p authz.Principal, serverID uint, stackname string, req RenameRequest) error {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		return err
 	}
 
@@ -375,8 +376,8 @@ func (s *Service) Rename(ctx context.Context, userID uint, serverID uint, stackn
 	return nil
 }
 
-func (s *Service) Copy(ctx context.Context, userID uint, serverID uint, stackname string, req CopyRequest) error {
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+func (s *Service) Copy(ctx context.Context, p authz.Principal, serverID uint, stackname string, req CopyRequest) error {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		return err
 	}
 
@@ -399,12 +400,12 @@ func (s *Service) Copy(ctx context.Context, userID uint, serverID uint, stacknam
 	return nil
 }
 
-func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, stackname, path, filename string) (*http.Response, error) {
-	if err := s.checkFileReadPermission(ctx, userID, serverID, stackname); err != nil {
+func (s *Service) DownloadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path, filename string) (*http.Response, error) {
+	if err := s.checkFileReadPermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -427,9 +428,9 @@ func (s *Service) DownloadFile(ctx context.Context, userID uint, serverID uint, 
 	return resp, nil
 }
 
-func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, stackname, path string, fileHeader *multipart.FileHeader) error {
+func (s *Service) UploadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string, fileHeader *multipart.FileHeader) error {
 	s.logger.Info("file upload operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("upload_path", path),
@@ -437,10 +438,10 @@ func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, st
 		zap.Int64("file_size", fileHeader.Size),
 	)
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("file upload permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("filename", fileHeader.Filename),
 		)
@@ -479,7 +480,7 @@ func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, st
 	}
 
 	s.logger.Info("file uploaded successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("upload_path", path),
@@ -490,9 +491,9 @@ func (s *Service) UploadFile(ctx context.Context, userID uint, serverID uint, st
 	return nil
 }
 
-func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackname string, req ChmodRequest) error {
+func (s *Service) Chmod(ctx context.Context, p authz.Principal, serverID uint, stackname string, req ChmodRequest) error {
 	s.logger.Info("chmod operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
@@ -503,10 +504,10 @@ func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackna
 		return err
 	}
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("chmod permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("target_path", req.Path),
 			zap.String("mode", req.Mode),
@@ -547,7 +548,7 @@ func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackna
 	}
 
 	s.logger.Info("chmod completed successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
@@ -557,9 +558,9 @@ func (s *Service) Chmod(ctx context.Context, userID uint, serverID uint, stackna
 	return nil
 }
 
-func (s *Service) Chown(ctx context.Context, userID uint, serverID uint, stackname string, req ChownRequest) error {
+func (s *Service) Chown(ctx context.Context, p authz.Principal, serverID uint, stackname string, req ChownRequest) error {
 	s.logger.Info("chown operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
@@ -568,10 +569,10 @@ func (s *Service) Chown(ctx context.Context, userID uint, serverID uint, stackna
 		zap.Bool("recursive", req.Recursive),
 	)
 
-	if err := s.checkFileWritePermission(ctx, userID, serverID, stackname); err != nil {
+	if err := s.checkFileWritePermission(p, serverID, stackname); err != nil {
 		s.logger.Warn("chown permission denied",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 			zap.String("target_path", req.Path),
 		)
@@ -613,7 +614,7 @@ func (s *Service) Chown(ctx context.Context, userID uint, serverID uint, stackna
 	}
 
 	s.logger.Info("chown completed successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 		zap.String("target_path", req.Path),
@@ -622,18 +623,18 @@ func (s *Service) Chown(ctx context.Context, userID uint, serverID uint, stackna
 	return nil
 }
 
-func (s *Service) checkFileReadPermission(ctx context.Context, userID uint, serverID uint, stackname string) error {
+func (s *Service) checkFileReadPermission(p authz.Principal, serverID uint, stackname string) error {
 	s.logger.Debug("checking file read permission",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.FilesRead)
 	if err != nil {
 		s.logger.Error("failed to check file read permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 		)
 		return fmt.Errorf("failed to check permissions: %w", err)
@@ -641,7 +642,7 @@ func (s *Service) checkFileReadPermission(ctx context.Context, userID uint, serv
 
 	if !hasPermission {
 		s.logger.Warn("user lacks file read permission",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
@@ -651,18 +652,18 @@ func (s *Service) checkFileReadPermission(ctx context.Context, userID uint, serv
 	return nil
 }
 
-func (s *Service) checkFileWritePermission(ctx context.Context, userID uint, serverID uint, stackname string) error {
+func (s *Service) checkFileWritePermission(p authz.Principal, serverID uint, stackname string) error {
 	s.logger.Debug("checking file write permission",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("stack_name", stackname),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasStackPermission(ctx, userID, serverID, stackname, permnames.FilesWrite)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permnames.FilesWrite)
 	if err != nil {
 		s.logger.Error("failed to check file write permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.String("stack_name", stackname),
 		)
 		return fmt.Errorf("failed to check permissions: %w", err)
@@ -670,7 +671,7 @@ func (s *Service) checkFileWritePermission(ctx context.Context, userID uint, ser
 
 	if !hasPermission {
 		s.logger.Warn("user lacks file write permission",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)

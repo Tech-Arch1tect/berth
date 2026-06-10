@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"berth/internal/domain/apikey"
+	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 
 	"github.com/stretchr/testify/assert"
@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func scopeWithStack(permName string, serverID *uint, stackPattern string) apikey.APIKeyScope {
-	return apikey.APIKeyScope{
+func scopeWithStack(permName string, serverID *uint, stackPattern string) authz.KeyScope {
+	return authz.KeyScope{
 		ServerID:     serverID,
 		StackPattern: stackPattern,
-		Permission:   usermodel.Permission{Name: permName},
+		Permission:   permName,
 	}
 }
 
@@ -32,7 +32,7 @@ func TestAuthorizedScope_SystemPrincipal(t *testing.T) {
 	f := seedFixture(t)
 	e := New(f.db, zap.NewNop())
 
-	scope, err := e.AuthorizedScope(SystemPrincipal)
+	scope, err := e.AuthorizedScope(authz.SystemPrincipal)
 	require.NoError(t, err)
 
 	t.Run("allows any server", func(t *testing.T) {
@@ -354,11 +354,8 @@ func TestAuthorizedScope_DuplicatePatternDeduplication(t *testing.T) {
 
 	e := New(db, zap.NewNop())
 
-	p := Principal{UserID: u.ID}
 	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
-	p.Roles = u.Roles
-
-	scope, err := e.AuthorizedScope(p)
+	scope, err := e.AuthorizedScope(principalForRoles(u.ID, u.Roles))
 	require.NoError(t, err)
 
 	t.Run("duplicate pattern deduplicated for server", func(t *testing.T) {
@@ -372,10 +369,8 @@ func TestAuthorizedScope_DuplicatePatternDeduplication(t *testing.T) {
 		require.Equal(t, 2, len(ids))
 
 		firstCall := ids
-		p2 := Principal{UserID: u.ID}
 		require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
-		p2.Roles = u.Roles
-		scope2, err := e.AuthorizedScope(p2)
+		scope2, err := e.AuthorizedScope(principalForRoles(u.ID, u.Roles))
 		require.NoError(t, err)
 
 		secondCall := scope2.ServerIDs()
@@ -450,7 +445,7 @@ func TestAuthorizedScope_OverlappingPatternsSameRole(t *testing.T) {
 	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
 
 	e := New(db, zap.NewNop())
-	scope, err := e.AuthorizedScope(Principal{UserID: u.ID, Roles: u.Roles})
+	scope, err := e.AuthorizedScope(principalForRoles(u.ID, u.Roles))
 	require.NoError(t, err)
 
 	t.Run("specific pattern still matches", func(t *testing.T) {
@@ -498,7 +493,7 @@ func TestAuthorizedScope_MultiRoleUnion(t *testing.T) {
 	require.NoError(t, db.Preload("Roles").First(&u, u.ID).Error)
 
 	e := New(db, zap.NewNop())
-	scope, err := e.AuthorizedScope(Principal{UserID: u.ID, Roles: u.Roles})
+	scope, err := e.AuthorizedScope(principalForRoles(u.ID, u.Roles))
 	require.NoError(t, err)
 
 	t.Run("pattern from role A allowed", func(t *testing.T) {
@@ -622,17 +617,17 @@ func TestAuthorizedScope_EmptyAndMalformedPatterns(t *testing.T) {
 func TestFilterByListableScopes(t *testing.T) {
 	roleSet := []uint{1, 2, 3}
 
-	mkScope := func(perm string, serverID *uint) apikey.APIKeyScope {
-		return apikey.APIKeyScope{
+	mkScope := func(perm string, serverID *uint) authz.KeyScope {
+		return authz.KeyScope{
 			ServerID:     serverID,
 			StackPattern: "*",
-			Permission:   usermodel.Permission{Name: perm},
+			Permission:   perm,
 		}
 	}
 
 	tests := []struct {
 		name   string
-		scopes []apikey.APIKeyScope
+		scopes []authz.KeyScope
 		want   []uint
 	}{
 		{
@@ -642,21 +637,21 @@ func TestFilterByListableScopes(t *testing.T) {
 		},
 		{
 			name: "wildcard stacks.read preserves the role-derived set",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("stacks.read", nil),
 			},
 			want: roleSet,
 		},
 		{
 			name: "per-server stacks.read narrows to that server",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("stacks.read", ptr(uint(1))),
 			},
 			want: []uint{1},
 		},
 		{
 			name: "two per-server stacks.read scopes return their union",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("stacks.read", ptr(uint(1))),
 				mkScope("stacks.read", ptr(uint(3))),
 			},
@@ -664,21 +659,21 @@ func TestFilterByListableScopes(t *testing.T) {
 		},
 		{
 			name: "key with only servers.read on nil sees nothing",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("servers.read", nil),
 			},
 			want: nil,
 		},
 		{
 			name: "key with only servers.read on a single server sees nothing",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("servers.read", ptr(uint(1))),
 			},
 			want: nil,
 		},
 		{
 			name: "servers.read wildcard does not short-circuit a narrow stacks.read",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("servers.read", nil),
 				mkScope("stacks.read", ptr(uint(1))),
 			},
@@ -686,7 +681,7 @@ func TestFilterByListableScopes(t *testing.T) {
 		},
 		{
 			name: "servers.read on a different server does not widen stacks.read scope",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("stacks.read", ptr(uint(1))),
 				mkScope("servers.read", ptr(uint(2))),
 			},
@@ -694,7 +689,7 @@ func TestFilterByListableScopes(t *testing.T) {
 		},
 		{
 			name: "wildcard and per-server stacks.read together still preserve the role set",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("stacks.read", nil),
 				mkScope("stacks.read", ptr(uint(1))),
 			},
@@ -702,7 +697,7 @@ func TestFilterByListableScopes(t *testing.T) {
 		},
 		{
 			name: "files.read scopes do not contribute either",
-			scopes: []apikey.APIKeyScope{
+			scopes: []authz.KeyScope{
 				mkScope("files.read", nil),
 				mkScope("files.read", ptr(uint(2))),
 			},
@@ -712,7 +707,7 @@ func TestFilterByListableScopes(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			key := &apikey.APIKey{Scopes: tc.scopes}
+			key := &authz.KeyDescriptor{Scopes: tc.scopes}
 			got := filterByListableScopes(key, roleSet)
 
 			gotSorted := append([]uint(nil), got...)

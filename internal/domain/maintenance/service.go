@@ -1,6 +1,7 @@
 package maintenance
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/server"
 	"context"
@@ -17,40 +18,40 @@ type maintAgentClient interface {
 }
 
 type maintServerProvider interface {
-	GetActiveServerForUser(ctx context.Context, id, userID uint) (*server.Server, error)
+	GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*server.Server, error)
 }
 
-type maintPermissionChecker interface {
-	UserHasAnyStackPermission(ctx context.Context, userID, serverID uint, permissionName string) (bool, error)
+type maintAuthorizer interface {
+	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
 }
 
 type Service struct {
 	agentSvc  maintAgentClient
 	serverSvc maintServerProvider
-	rbacSvc   maintPermissionChecker
+	authzSvc  maintAuthorizer
 	logger    *zap.Logger
 }
 
-func NewService(agentSvc maintAgentClient, serverSvc maintServerProvider, rbacSvc maintPermissionChecker, logger *zap.Logger) *Service {
+func NewService(agentSvc maintAgentClient, serverSvc maintServerProvider, authzSvc maintAuthorizer, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
-		rbacSvc:   rbacSvc,
+		authzSvc:  authzSvc,
 		logger:    logger,
 	}
 }
 
-func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint) (*MaintenanceInfo, error) {
+func (s *Service) GetSystemInfo(ctx context.Context, p authz.Principal, serverID uint) (*MaintenanceInfo, error) {
 	s.logger.Debug("retrieving Docker system information",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.DockerMaintenanceRead)
+	hasPermission, err := s.authzSvc.HasServerPermission(p, serverID, permnames.DockerMaintenanceRead)
 	if err != nil {
 		s.logger.Error("failed to check system info permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -58,18 +59,18 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 
 	if !hasPermission {
 		s.logger.Warn("system info access denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("insufficient permissions to view Docker system information")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for system info",
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -105,7 +106,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 	}
 
 	s.logger.Debug("system information retrieved successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 	)
@@ -113,20 +114,20 @@ func (s *Service) GetSystemInfo(ctx context.Context, userID uint, serverID uint)
 	return &info, nil
 }
 
-func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, request *PruneRequest) (*PruneResult, error) {
+func (s *Service) PruneDocker(ctx context.Context, p authz.Principal, serverID uint, request *PruneRequest) (*PruneResult, error) {
 	s.logger.Info("Docker prune operation initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("prune_type", request.Type),
 		zap.Bool("force", request.Force),
 		zap.Bool("all", request.All),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.DockerMaintenanceWrite)
+	hasPermission, err := s.authzSvc.HasServerPermission(p, serverID, permnames.DockerMaintenanceWrite)
 	if err != nil {
 		s.logger.Error("failed to check Docker prune permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -134,18 +135,18 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 
 	if !hasPermission {
 		s.logger.Warn("Docker prune permission denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("insufficient permissions to perform Docker maintenance operations")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for Docker prune",
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -179,7 +180,7 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 	}
 
 	s.logger.Info("Docker prune operation completed successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("prune_type", request.Type),
@@ -190,19 +191,19 @@ func (s *Service) PruneDocker(ctx context.Context, userID uint, serverID uint, r
 	return &result, nil
 }
 
-func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint, request *DeleteRequest) (*DeleteResult, error) {
+func (s *Service) DeleteResource(ctx context.Context, p authz.Principal, serverID uint, request *DeleteRequest) (*DeleteResult, error) {
 	s.logger.Info("Docker resource deletion initiated",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("resource_type", request.Type),
 		zap.String("resource_id", request.ID),
 	)
 
-	hasPermission, err := s.rbacSvc.UserHasAnyStackPermission(ctx, userID, serverID, permnames.DockerMaintenanceWrite)
+	hasPermission, err := s.authzSvc.HasServerPermission(p, serverID, permnames.DockerMaintenanceWrite)
 	if err != nil {
 		s.logger.Error("failed to check Docker resource deletion permission",
 			zap.Error(err),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 		)
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -210,7 +211,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 
 	if !hasPermission {
 		s.logger.Warn("Docker resource deletion permission denied",
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 			zap.Uint("server_id", serverID),
 			zap.String("resource_type", request.Type),
 			zap.String("resource_id", request.ID),
@@ -218,12 +219,12 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 		return nil, fmt.Errorf("insufficient permissions to delete Docker resources")
 	}
 
-	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, userID)
+	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
 		s.logger.Error("failed to get server for resource deletion",
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
@@ -261,7 +262,7 @@ func (s *Service) DeleteResource(ctx context.Context, userID uint, serverID uint
 	}
 
 	s.logger.Info("Docker resource deleted successfully",
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("resource_type", request.Type),

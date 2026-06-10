@@ -1,6 +1,7 @@
 package maintenance
 
 import (
+	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
@@ -37,7 +38,7 @@ func NewAPIHandler(service *Service, auditService maintenanceAuditLogger) *APIHa
 }
 
 func (h *APIHandler) GetSystemInfo(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func (h *APIHandler) GetSystemInfo(c echo.Context) error {
 		return err
 	}
 
-	info, err := h.service.GetSystemInfo(c.Request().Context(), userID, serverID)
+	info, err := h.service.GetSystemInfo(c.Request().Context(), p, serverID)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
@@ -56,7 +57,7 @@ func (h *APIHandler) GetSystemInfo(c echo.Context) error {
 }
 
 func (h *APIHandler) PruneDocker(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -71,17 +72,18 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.PruneDocker(c.Request().Context(), userID, serverID, &request)
+	result, err := h.service.PruneDocker(c.Request().Context(), p, serverID, &request)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	username := session.ResolveUsername(c)
 
+	actorID := p.UserID()
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerPruneExecuted,
 		Success:       true,
-		ActorUserID:   &userID,
+		ActorUserID:   &actorID,
 		ActorUsername: username,
 		ActorIP:       c.RealIP(),
 		ServerID:      &serverID,
@@ -96,7 +98,7 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 }
 
 func (h *APIHandler) DeleteResource(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -111,17 +113,18 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.DeleteResource(c.Request().Context(), userID, serverID, &request)
+	result, err := h.service.DeleteResource(c.Request().Context(), p, serverID, &request)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
 
 	username := session.ResolveUsername(c)
 
+	actorID := p.UserID()
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerResourceDeleted,
 		Success:       true,
-		ActorUserID:   &userID,
+		ActorUserID:   &actorID,
 		ActorUsername: username,
 		ActorIP:       c.RealIP(),
 		ServerID:      &serverID,
@@ -135,7 +138,7 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 }
 
 func (h *APIHandler) CheckPermissions(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -145,12 +148,12 @@ func (h *APIHandler) CheckPermissions(c echo.Context) error {
 		return err
 	}
 
-	hasReadPermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.DockerMaintenanceRead)
+	hasReadPermission, err := h.service.authzSvc.HasServerPermission(p, serverID, permnames.DockerMaintenanceRead)
 	if err != nil {
 		return response.Internal(c, "Failed to check read permissions")
 	}
 
-	hasWritePermission, err := h.service.rbacSvc.UserHasAnyStackPermission(c.Request().Context(), userID, serverID, permnames.DockerMaintenanceWrite)
+	hasWritePermission, err := h.service.authzSvc.HasServerPermission(p, serverID, permnames.DockerMaintenanceWrite)
 	if err != nil {
 		return response.Internal(c, "Failed to check write permissions")
 	}

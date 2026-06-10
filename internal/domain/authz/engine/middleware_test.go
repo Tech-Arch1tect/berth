@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"berth/internal/domain/apikey"
-	"berth/internal/domain/auth"
 	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
 
@@ -30,14 +28,12 @@ func newMiddlewareCtx(t *testing.T, body io.Reader) echo.Context {
 }
 
 func setJWTPrincipal(c echo.Context, u usermodel.User) {
-	c.Set(auth.UserIDKey, u.ID)
-	c.Set("currentUser", u)
+	authz.SetPrincipal(c, principalForRoles(u.ID, u.Roles))
 }
 
-func setAPIKeyPrincipal(c echo.Context, u usermodel.User, key *apikey.APIKey) {
-	c.Set(auth.UserIDKey, u.ID)
-	c.Set("currentUser", u)
-	c.Set(auth.APIKeyKey, key)
+func setAPIKeyPrincipal(c echo.Context, u usermodel.User, key *authz.KeyDescriptor) {
+	p := principalForRoles(u.ID, u.Roles)
+	authz.SetPrincipal(c, authz.NewPrincipal(p.UserID(), p.IsAdmin(), key))
 }
 
 func runMiddleware(t *testing.T, engine *Engine, rule authz.Rule, c echo.Context) (handlerRan bool, err error) {
@@ -86,7 +82,7 @@ func TestMiddleware_APIKeyDenied_WithAPIKey_Returns403(t *testing.T) {
 
 	var u usermodel.User
 	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
-	key := &apikey.APIKey{Scopes: []apikey.APIKeyScope{scopeForPerm(testPermName, nil)}}
+	key := &authz.KeyDescriptor{Scopes: []authz.KeyScope{scopeForPerm(testPermName, nil)}}
 
 	c := newMiddlewareCtx(t, nil)
 	setAPIKeyPrincipal(c, u, key)
@@ -155,7 +151,7 @@ func TestMiddleware_APIKeyOutOfScope_Returns403(t *testing.T) {
 
 	var u usermodel.User
 	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
-	key := &apikey.APIKey{Scopes: []apikey.APIKeyScope{scopeForPerm("unrelated.perm", nil)}}
+	key := &authz.KeyDescriptor{Scopes: []authz.KeyScope{scopeForPerm("unrelated.perm", nil)}}
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)

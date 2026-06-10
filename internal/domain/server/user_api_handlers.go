@@ -2,7 +2,6 @@ package server
 
 import (
 	"berth/internal/domain/authz"
-	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 
@@ -42,7 +41,7 @@ func (h *UserAPIHandler) ListServers(c echo.Context) error {
 }
 
 func (h *UserAPIHandler) GetServer(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -53,7 +52,7 @@ func (h *UserAPIHandler) GetServer(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	if _, err := h.service.GetActiveServerForUser(ctx, serverID, userID); err != nil {
+	if _, err := h.service.GetActiveServerForUser(ctx, serverID, p); err != nil {
 		return response.NotFound(c, "Server not found")
 	}
 
@@ -66,7 +65,7 @@ func (h *UserAPIHandler) GetServer(c echo.Context) error {
 }
 
 func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
@@ -77,7 +76,7 @@ func (h *UserAPIHandler) GetServerStatistics(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	statistics, err := h.service.GetServerStatistics(ctx, userID, serverID)
+	statistics, err := h.service.GetServerStatistics(ctx, p, serverID)
 	if err != nil {
 		return response.Internal(c, "Failed to fetch server statistics")
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"berth/internal/domain/authz"
 	berthcrypto "berth/internal/pkg/crypto"
 	"context"
 	"crypto/tls"
@@ -16,8 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type accessChecker interface {
-	GetServerIDsUserCanReach(ctx context.Context, userID uint) ([]uint, error)
+type serverAuthorizer interface {
+	ReachableServerIDs(p authz.Principal) ([]uint, error)
+}
+
+type stackPatternProvider interface {
 	GetUserAccessibleStackPatterns(userID, serverID uint) ([]string, error)
 }
 
@@ -26,20 +30,22 @@ type serverAgentClient interface {
 }
 
 type Service struct {
-	db       *gorm.DB
-	crypto   *berthcrypto.Crypto
-	rbacSvc  accessChecker
-	agentSvc serverAgentClient
-	logger   *zap.Logger
+	db         *gorm.DB
+	crypto     *berthcrypto.Crypto
+	authzSvc   serverAuthorizer
+	patternSvc stackPatternProvider
+	agentSvc   serverAgentClient
+	logger     *zap.Logger
 }
 
-func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, rbacSvc accessChecker, agentSvc serverAgentClient, logger *zap.Logger) *Service {
+func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthorizer, patternSvc stackPatternProvider, agentSvc serverAgentClient, logger *zap.Logger) *Service {
 	return &Service{
-		db:       db,
-		crypto:   crypto,
-		rbacSvc:  rbacSvc,
-		agentSvc: agentSvc,
-		logger:   logger,
+		db:         db,
+		crypto:     crypto,
+		authzSvc:   authzSvc,
+		patternSvc: patternSvc,
+		agentSvc:   agentSvc,
+		logger:     logger,
 	}
 }
 
@@ -72,10 +78,10 @@ func (s *Service) GetServer(id uint) (*Server, error) {
 	return &server, nil
 }
 
-func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID uint) (*Server, error) {
+func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*Server, error) {
 	s.logger.Debug("getting active server for user",
 		zap.Uint("server_id", id),
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 	)
 
 	var server Server
@@ -83,7 +89,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 		s.logger.Error("failed to find server for user access",
 			zap.Error(err),
 			zap.Uint("server_id", id),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, err
 	}
@@ -92,17 +98,17 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 		s.logger.Warn("user attempted to access inactive server",
 			zap.Uint("server_id", id),
 			zap.String("server_name", server.Name),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("server is not active")
 	}
 
-	serverIDs, err := s.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
+	serverIDs, err := s.authzSvc.ReachableServerIDs(p)
 	if err != nil {
 		s.logger.Error("failed to check user server access",
 			zap.Error(err),
 			zap.Uint("server_id", id),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("failed to get user accessible servers: %w", err)
 	}
@@ -113,7 +119,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 		s.logger.Warn("user access denied to server",
 			zap.Uint("server_id", id),
 			zap.String("server_name", server.Name),
-			zap.Uint("user_id", userID),
+			zap.Uint("user_id", p.UserID()),
 		)
 		return nil, fmt.Errorf("user does not have access to this server")
 	}
@@ -131,7 +137,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, userID ui
 	s.logger.Debug("server access granted to user",
 		zap.Uint("server_id", id),
 		zap.String("server_name", server.Name),
-		zap.Uint("user_id", userID),
+		zap.Uint("user_id", p.UserID()),
 	)
 
 	return &server, nil
@@ -361,9 +367,9 @@ func (s *Service) ListServersByIDs(serverIDs []uint) ([]ServerInfo, error) {
 	return responses, nil
 }
 
-func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID uint) (*StackStatistics, error) {
+func (s *Service) GetServerStatistics(ctx context.Context, p authz.Principal, serverID uint) (*StackStatistics, error) {
 
-	accessibleServerIDs, err := s.rbacSvc.GetServerIDsUserCanReach(ctx, userID)
+	accessibleServerIDs, err := s.authzSvc.ReachableServerIDs(p)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +380,7 @@ func (s *Service) GetServerStatistics(ctx context.Context, userID uint, serverID
 		return nil, fmt.Errorf("user does not have access to server")
 	}
 
-	patterns, err := s.rbacSvc.GetUserAccessibleStackPatterns(userID, serverID)
+	patterns, err := s.patternSvc.GetUserAccessibleStackPatterns(p.UserID(), serverID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user accessible patterns: %w", err)
 	}
