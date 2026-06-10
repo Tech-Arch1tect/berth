@@ -430,6 +430,24 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey").
 		Build()
 
+	apiDoc.Document("GET", "/ws/api/servers/{serverid}/stacks/{stackname}/terminal").
+		Tags("websocket").
+		Summary("Interactive container terminal (WebSocket)").
+		Description("Upgrades to a bidirectional WebSocket proxied to a terminal session in one of the stack's containers. The client sends TerminalStartMessage to open a session, then TerminalInputMessage, TerminalResizeMessage and TerminalCloseMessage; the server pushes TerminalSuccessMessage, TerminalOutputMessage, TerminalCloseMessage and TerminalErrorMessage. A terminal_start naming a stack other than the URL's is refused. Authenticate with an Authorization Bearer header or the Bearer WebSocket subprotocol.").
+		WebSocket().
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		ResponseOneOf(http.StatusSwitchingProtocols, "WebSocket terminal session frames (both directions)",
+			websocket.TerminalStartMessage{}, websocket.TerminalInputMessage{}, websocket.TerminalResizeMessage{},
+			websocket.TerminalCloseMessage{}, websocket.TerminalOutputMessage{}, websocket.TerminalSuccessMessage{},
+			websocket.TerminalErrorMessage{}).
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusBadGateway, response.ErrorResponseBody{}, "Agent terminal unreachable").
+		Security("bearerAuth", "apiKey").
+		Build()
+
 	apiDoc.Document("GET", "/ws/api/servers/{serverid}/stacks/{stackname}/operations/{operationId}").
 		Tags("websocket").
 		Summary("Operation output stream (WebSocket)").

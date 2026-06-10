@@ -23,6 +23,13 @@ import type {
   ResponseEmpty,
   StackStatusEvent,
   StreamMessage,
+  TerminalCloseMessage,
+  TerminalErrorMessage,
+  TerminalInputMessage,
+  TerminalOutputMessage,
+  TerminalResizeMessage,
+  TerminalStartMessage,
+  TerminalSuccessMessage,
 } from '../models';
 
 import { apiClient } from '../../client';
@@ -410,6 +417,245 @@ export function useGetWsApiServersServeridStacksStacknameOperationsOperationId<
     serverid,
     stackname,
     operationId,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Upgrades to a bidirectional WebSocket proxied to a terminal session in one of the stack's containers. The client sends TerminalStartMessage to open a session, then TerminalInputMessage, TerminalResizeMessage and TerminalCloseMessage; the server pushes TerminalSuccessMessage, TerminalOutputMessage, TerminalCloseMessage and TerminalErrorMessage. A terminal_start naming a stack other than the URL's is refused. Authenticate with an Authorization Bearer header or the Bearer WebSocket subprotocol.
+ * @summary Interactive container terminal (WebSocket)
+ */
+export const getGetWsApiServersServeridStacksStacknameTerminalUrl = (
+  serverid: number,
+  stackname: string
+) => {
+  return `/ws/api/servers/${serverid}/stacks/${stackname}/terminal`;
+};
+
+export const getWsApiServersServeridStacksStacknameTerminal = async (
+  serverid: number,
+  stackname: string,
+  options?: RequestInit
+): Promise<void> => {
+  return apiClient<void>(
+    getGetWsApiServersServeridStacksStacknameTerminalUrl(serverid, stackname),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetWsApiServersServeridStacksStacknameTerminalQueryKey = (
+  serverid: number,
+  stackname: string
+) => {
+  return [`/ws/api/servers/${serverid}/stacks/${stackname}/terminal`] as const;
+};
+
+export const getGetWsApiServersServeridStacksStacknameTerminalQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+  TError =
+    | TerminalStartMessage
+    | TerminalInputMessage
+    | TerminalResizeMessage
+    | TerminalCloseMessage
+    | TerminalOutputMessage
+    | TerminalSuccessMessage
+    | TerminalErrorMessage
+    | ResponseEmpty
+    | void,
+>(
+  serverid: number,
+  stackname: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetWsApiServersServeridStacksStacknameTerminalQueryKey(serverid, stackname);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>
+  > = ({ signal }) =>
+    getWsApiServersServeridStacksStacknameTerminal(serverid, stackname, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(serverid && stackname),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWsApiServersServeridStacksStacknameTerminalQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>
+>;
+export type GetWsApiServersServeridStacksStacknameTerminalQueryError =
+  | TerminalStartMessage
+  | TerminalInputMessage
+  | TerminalResizeMessage
+  | TerminalCloseMessage
+  | TerminalOutputMessage
+  | TerminalSuccessMessage
+  | TerminalErrorMessage
+  | ResponseEmpty
+  | void;
+
+export function useGetWsApiServersServeridStacksStacknameTerminal<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+  TError =
+    | TerminalStartMessage
+    | TerminalInputMessage
+    | TerminalResizeMessage
+    | TerminalCloseMessage
+    | TerminalOutputMessage
+    | TerminalSuccessMessage
+    | TerminalErrorMessage
+    | ResponseEmpty
+    | void,
+>(
+  serverid: number,
+  stackname: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+          TError,
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWsApiServersServeridStacksStacknameTerminal<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+  TError =
+    | TerminalStartMessage
+    | TerminalInputMessage
+    | TerminalResizeMessage
+    | TerminalCloseMessage
+    | TerminalOutputMessage
+    | TerminalSuccessMessage
+    | TerminalErrorMessage
+    | ResponseEmpty
+    | void,
+>(
+  serverid: number,
+  stackname: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+          TError,
+          Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWsApiServersServeridStacksStacknameTerminal<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+  TError =
+    | TerminalStartMessage
+    | TerminalInputMessage
+    | TerminalResizeMessage
+    | TerminalCloseMessage
+    | TerminalOutputMessage
+    | TerminalSuccessMessage
+    | TerminalErrorMessage
+    | ResponseEmpty
+    | void,
+>(
+  serverid: number,
+  stackname: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Interactive container terminal (WebSocket)
+ */
+
+export function useGetWsApiServersServeridStacksStacknameTerminal<
+  TData = Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+  TError =
+    | TerminalStartMessage
+    | TerminalInputMessage
+    | TerminalResizeMessage
+    | TerminalCloseMessage
+    | TerminalOutputMessage
+    | TerminalSuccessMessage
+    | TerminalErrorMessage
+    | ResponseEmpty
+    | void,
+>(
+  serverid: number,
+  stackname: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWsApiServersServeridStacksStacknameTerminal>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetWsApiServersServeridStacksStacknameTerminalQueryOptions(
+    serverid,
+    stackname,
     options
   );
 

@@ -175,28 +175,6 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	return nil
 }
 
-type TerminalStartMessage struct {
-	Type          string `json:"type"`
-	StackName     string `json:"stack_name"`
-	ServiceName   string `json:"service_name"`
-	ContainerName string `json:"container_name"`
-}
-
-type TerminalInputMessage struct {
-	Type      string `json:"type"`
-	SessionID string `json:"session_id"`
-}
-
-type TerminalResizeMessage struct {
-	Type      string `json:"type"`
-	SessionID string `json:"session_id"`
-}
-
-type TerminalCloseMessage struct {
-	Type      string `json:"type"`
-	SessionID string `json:"session_id"`
-}
-
 func (h *Handler) prepareTerminalMessage(ctx context.Context, userID int, serverID int, urlStack string, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) ([]byte, bool) {
 	var baseMsg BaseMessage
 	if err := json.Unmarshal(message, &baseMsg); err != nil {
