@@ -70,6 +70,14 @@ func (ma *MockAgent) RegisterJSON(path string, status int, body any) {
 	})
 }
 
+func (ma *MockAgent) RegisterRaw(path string, status int, contentType, body string) {
+	ma.RegisterHandler(path, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", contentType)
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	})
+}
+
 func (ma *MockAgent) ResetHandlers() {
 	ma.mu.Lock()
 	defer ma.mu.Unlock()

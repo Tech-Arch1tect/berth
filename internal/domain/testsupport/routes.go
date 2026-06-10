@@ -19,6 +19,7 @@ func RegisterRoutes(e *echo.Echo, h *Handler, cfg *config.Config) {
 	g.POST("/servers", h.SeedServer)
 	g.POST("/agents/:id/handlers", h.RegisterAgentHandler)
 	g.POST("/agents/:id/reset", h.ResetAgent)
+	g.POST("/stack-events", h.PushStackEvent)
 }
 
 func guard(cfg *config.Config) echo.MiddlewareFunc {

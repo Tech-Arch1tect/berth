@@ -111,6 +111,26 @@ export class ApiHelpers {
     const res = await this.request.post(`/__test__/agents/${agentId}/reset`);
     expect(res.status(), 'reset agent').toBe(204);
   }
+
+  async registerAgentRawHandler(
+    agentId: number,
+    path: string,
+    status: number,
+    contentType: string,
+    rawBody: string
+  ): Promise<void> {
+    const res = await this.request.post(`/__test__/agents/${agentId}/handlers`, {
+      data: { path, status, content_type: contentType, raw_body: rawBody },
+    });
+    expect(res.status(), 'register agent raw handler').toBe(204);
+  }
+
+  async pushStackEvent(event: Record<string, unknown>): Promise<void> {
+    const res = await this.request.post('/__test__/stack-events', {
+      data: { event },
+    });
+    expect(res.status(), 'push stack event').toBe(204);
+  }
 }
 
 export class AuthHelpers {

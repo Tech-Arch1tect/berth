@@ -3,6 +3,7 @@
 package testsupport
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -17,6 +18,7 @@ import (
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
+	"berth/internal/domain/websocket"
 	"berth/internal/pkg/crypto"
 	"berth/seeds"
 
@@ -35,6 +37,7 @@ type Service struct {
 	crypto         *crypto.Crypto
 	models         DatabaseModels
 	externalSchema []EnsureSchemaFunc
+	eventRegistry  *websocket.StackEventRegistry
 	logger         *zap.Logger
 
 	mu      sync.Mutex
@@ -49,6 +52,7 @@ func NewService(
 	crypto *crypto.Crypto,
 	models DatabaseModels,
 	externalSchema []EnsureSchemaFunc,
+	eventRegistry *websocket.StackEventRegistry,
 	logger *zap.Logger,
 ) *Service {
 	return &Service{
@@ -58,8 +62,45 @@ func NewService(
 		crypto:         crypto,
 		models:         models,
 		externalSchema: externalSchema,
+		eventRegistry:  eventRegistry,
 		logger:         logger,
 		agents:         make(map[uint64]*MockAgent),
+	}
+}
+
+var (
+	ErrStackEventRequired    = errors.New("event required")
+	ErrStackEventUnknownType = errors.New("event type must be stack_status or container_status")
+	ErrEventRegistryAbsent   = errors.New("stack event registry not wired")
+)
+
+func (s *Service) PublishStackEvent(raw []byte) error {
+	if s.eventRegistry == nil {
+		return ErrEventRegistryAbsent
+	}
+
+	var base websocket.BaseMessage
+	if err := json.Unmarshal(raw, &base); err != nil {
+		return fmt.Errorf("parse event: %w", err)
+	}
+
+	switch base.Type {
+	case websocket.MessageTypeStackStatus:
+		var event websocket.StackStatusEvent
+		if err := json.Unmarshal(raw, &event); err != nil {
+			return fmt.Errorf("parse stack status event: %w", err)
+		}
+		s.eventRegistry.PublishStackStatus(event)
+		return nil
+	case websocket.MessageTypeContainerStatus:
+		var event websocket.ContainerStatusEvent
+		if err := json.Unmarshal(raw, &event); err != nil {
+			return fmt.Errorf("parse container status event: %w", err)
+		}
+		s.eventRegistry.PublishContainerStatus(event)
+		return nil
+	default:
+		return ErrStackEventUnknownType
 	}
 }
 
