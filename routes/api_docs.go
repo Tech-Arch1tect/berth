@@ -1453,8 +1453,11 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("GET", "/api/v1/profile").
 		Tags("profile").
 		Summary("Get current user profile").
-		Description("Returns the profile information for the authenticated user including roles and TOTP status.").
-		Response(http.StatusOK, response.Response[user.UserInfo]{}, "User profile").
+		Description("Returns the authenticated user's profile: UserInfo (including roles and TOTP status) for JWT callers, or UserIdentity (id and username only) for API-key callers.").
+		ResponseOneOf(http.StatusOK, "User profile (JWT) or owner identity (API key)",
+			response.Response[user.UserInfo]{},
+			response.Response[user.UserIdentity]{},
+		).
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").

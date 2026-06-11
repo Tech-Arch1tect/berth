@@ -38,6 +38,18 @@ type UserInfo struct {
 	Roles           []RoleInfo `json:"roles,omitempty"`
 }
 
+type UserIdentity struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+}
+
+func ToUserIdentity(u User) UserIdentity {
+	return UserIdentity{
+		ID:       u.ID,
+		Username: u.Username,
+	}
+}
+
 func FormatTimePtr(t *time.Time) *string {
 	if t == nil {
 		return nil

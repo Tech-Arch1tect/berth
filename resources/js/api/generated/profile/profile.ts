@@ -18,22 +18,24 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { ResponseEmpty, ResponseUserInfo } from '../models';
+import type { ResponseEmpty, ResponseUserIdentity, ResponseUserInfo } from '../models';
 
 import { apiClient } from '../../client';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns the profile information for the authenticated user including roles and TOTP status.
+ * Returns the authenticated user's profile: UserInfo (including roles and TOTP status) for JWT callers, or UserIdentity (id and username only) for API-key callers.
  * @summary Get current user profile
  */
 export const getGetApiV1ProfileUrl = () => {
   return `/api/v1/profile`;
 };
 
-export const getApiV1Profile = async (options?: RequestInit): Promise<ResponseUserInfo> => {
-  return apiClient<ResponseUserInfo>(getGetApiV1ProfileUrl(), {
+export const getApiV1Profile = async (
+  options?: RequestInit
+): Promise<ResponseUserInfo | ResponseUserIdentity> => {
+  return apiClient<ResponseUserInfo | ResponseUserIdentity>(getGetApiV1ProfileUrl(), {
     ...options,
     method: 'GET',
   });

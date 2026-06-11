@@ -10,6 +10,7 @@ import (
 
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/auth/totp"
+	"berth/internal/domain/authz"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	usermodel "berth/internal/domain/user"
@@ -275,18 +276,21 @@ func (h *APIHandler) RefreshToken(c echo.Context) error {
 }
 
 func (h *APIHandler) Profile(c echo.Context) error {
-	user := GetCurrentUser(c)
-	if user == nil {
-		return response.Err(c, http.StatusUnauthorized, "unauthorized", "Invalid or missing authentication token")
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
 	}
 
-	userModel, ok := user.(usermodel.User)
-	if !ok {
-		return response.Err(c, http.StatusInternalServerError, "user_data_error", "Failed to process user data")
+	if p.Key() != nil {
+		var owner usermodel.User
+		if err := h.db.Where("id = ?", p.UserID()).First(&owner).Error; err != nil {
+			return response.Err(c, http.StatusInternalServerError, "database_error", "Failed to load user profile")
+		}
+		return response.OK(c, usermodel.ToUserIdentity(owner))
 	}
 
 	var fullUser usermodel.User
-	if err := h.db.Preload("Roles").Where("id = ?", userModel.ID).First(&fullUser).Error; err != nil {
+	if err := h.db.Preload("Roles").Where("id = ?", p.UserID()).First(&fullUser).Error; err != nil {
 		return response.Err(c, http.StatusInternalServerError, "database_error", "Failed to load user profile")
 	}
 

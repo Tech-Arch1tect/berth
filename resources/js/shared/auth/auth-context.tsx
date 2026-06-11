@@ -52,7 +52,7 @@ async function refreshAccessTokenInternal(): Promise<string | null> {
 
 async function fetchProfile(): Promise<UserInfo | null> {
   const resp = await getApiV1Profile();
-  if (resp.success && resp.data) return resp.data;
+  if (resp.success && resp.data && 'email' in resp.data) return resp.data;
 
   return null;
 }
