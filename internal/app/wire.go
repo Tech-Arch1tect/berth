@@ -19,7 +19,6 @@ import (
 	"berth/internal/domain/maintenance"
 	"berth/internal/domain/operationlogs"
 	"berth/internal/domain/operations"
-	"berth/internal/domain/queue"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/security"
@@ -115,7 +114,6 @@ type Graph struct {
 	OperationLogsHandler   *operationlogs.Handler
 	DataExportSvc          *dataexport.Service
 	DataExportHandler      *dataexport.Handler
-	QueueSvc               *queue.Service
 	ImageUpdatesSvc        *imageupdates.Service
 	ImageUpdatesAPIHandler *imageupdates.APIHandler
 	VersionHandler         *version.Handler
@@ -250,8 +248,6 @@ func Build(
 
 	g.DataExportSvc = dataexport.NewService(db, logger)
 	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc, g.RBACSvc)
-
-	g.QueueSvc = queue.NewService(db, g.OperationsSvc, g.AuthzEngine, logger, g.SecurityAuditSvc, cfg.Custom.OperationTimeoutSeconds)
 
 	g.ImageUpdatesSvc = imageupdates.NewService(db, g.AgentSvc, g.ServerSvc, g.Crypto, logger, cfg)
 	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, logger)

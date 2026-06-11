@@ -216,7 +216,6 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           formatted_date: '',
           created_at: now,
           updated_at: now,
-          queued_at: '',
           deleted_at: { Time: '', Valid: false },
           server: {} as RunningOperation['server'],
           user: {} as RunningOperation['user'],

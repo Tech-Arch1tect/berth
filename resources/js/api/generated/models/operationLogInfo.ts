@@ -30,8 +30,6 @@ export interface OperationLogInfo {
   options?: string;
   /** @nullable */
   partial_duration_ms?: number | null;
-  /** @nullable */
-  queued_at?: string | null;
   server: Server;
   /** @minimum 0 */
   server_id: number;

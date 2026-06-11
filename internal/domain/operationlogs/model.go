@@ -11,7 +11,6 @@ import (
 type OperationStatus string
 
 const (
-	OperationStatusQueued    OperationStatus = "queued"
 	OperationStatusRunning   OperationStatus = "running"
 	OperationStatusCompleted OperationStatus = "completed"
 	OperationStatusFailed    OperationStatus = "failed"
@@ -30,7 +29,6 @@ type OperationLog struct {
 	Options       string          `json:"options,omitempty" gorm:"type:text"`
 	Services      string          `json:"services,omitempty" gorm:"type:text"`
 	Status        OperationStatus `json:"status,omitempty" gorm:"not null;default:'completed'"`
-	QueuedAt      *time.Time      `json:"queued_at,omitempty" gorm:"index"`
 	StartTime     time.Time       `json:"start_time,omitempty" gorm:"not null;index"`
 	EndTime       *time.Time      `json:"end_time,omitempty" gorm:"index"`
 	LastMessageAt *time.Time      `json:"last_message_at,omitempty" gorm:"index"`

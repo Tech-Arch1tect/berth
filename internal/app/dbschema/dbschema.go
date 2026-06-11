@@ -6,7 +6,6 @@ import (
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/imageupdates"
 	"berth/internal/domain/operationlogs"
-	"berth/internal/domain/queue"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
@@ -19,7 +18,7 @@ func Models() []any {
 		&server.ServerRegistryCredential{},
 		&operationlogs.OperationLog{}, &operationlogs.OperationLogMessage{},
 		&security.SecurityAuditLog{},
-		&queue.QueuedOperation{}, &session.UserSession{},
+		&session.UserSession{},
 		&imageupdates.ContainerImageUpdate{},
 		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{},
 		&totp.TOTPSecret{}, &totp.UsedCode{},

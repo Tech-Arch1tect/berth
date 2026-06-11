@@ -25,8 +25,6 @@ export interface OperationLog {
   last_message_at?: string | null;
   operation_id: string;
   options?: string;
-  /** @nullable */
-  queued_at?: string | null;
   server: Server;
   /** @minimum 0 */
   server_id: number;
