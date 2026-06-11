@@ -7,6 +7,11 @@ import (
 	"berth/e2e"
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/rbac/permnames"
+	"berth/internal/domain/stack"
+	"berth/internal/pkg/response"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func registerStackMetadataEndpoints(agent *e2e.MockAgent, stackName string) {
@@ -403,4 +408,108 @@ func TestAuthzStackCapabilityProbes(t *testing.T) {
 	t.Run("permissions probe returns 401 when unauthenticated", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: "/api/v1/servers/" + sid + "/stacks/some-stack/permissions"}, "", 401)
 	})
+}
+
+func TestAuthzStackPermissionsProbeBody(t *testing.T) {
+	t.Parallel()
+	app := e2e.SetupTestApp(t)
+	f := NewAuthzFixture(t, app)
+
+	sid := e2e.Itoa(f.Server.ID)
+	probeURL := "/api/v1/servers/" + sid + "/stacks/prod-web/permissions"
+
+	owner, jwtOwner, _ := f.UserWithRole("manage-owner", f.Server, permnames.StacksManage, "prod-*")
+	keyReadOnly := f.APIKeyFor(owner, "read-only-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksRead, "prod-*"),
+	})
+	keyNoScope := f.APIKeyFor(owner, "noscope-key", nil)
+	keyOtherStacks := f.APIKeyFor(owner, "other-stacks-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksRead, "ops-*"),
+	})
+
+	_, jwtNoRole := f.User("roleless")
+
+	t.Run("JWT owner sees its own granted permissions", func(t *testing.T) {
+		perms := getStackPermissionsBody(t, app, probeURL, bearer(jwtOwner))
+		assert.ElementsMatch(t, []string{permnames.StacksRead, permnames.StacksManage}, perms)
+	})
+
+	t.Run("JWT without roles sees an empty permission set", func(t *testing.T) {
+		assert.Empty(t, getStackPermissionsBody(t, app, probeURL, bearer(jwtNoRole)))
+	})
+
+	t.Run("API key sees only its scoped permissions, not the owner's", func(t *testing.T) {
+		perms := getStackPermissionsBody(t, app, probeURL, bearer(keyReadOnly))
+		assert.ElementsMatch(t, []string{permnames.StacksRead}, perms,
+			"the owner holds stacks.manage but the key's scope is stacks.read only")
+	})
+
+	t.Run("API key without scopes is admitted but sees no permissions", func(t *testing.T) {
+		assert.Empty(t, getStackPermissionsBody(t, app, probeURL, bearer(keyNoScope)),
+			"a scopeless key must not be shown the owner's permissions")
+	})
+
+	t.Run("API key scoped to other stacks sees no permissions on this stack", func(t *testing.T) {
+		assert.Empty(t, getStackPermissionsBody(t, app, probeURL, bearer(keyOtherStacks)))
+	})
+}
+
+func TestAuthzCanCreateStackProbeBody(t *testing.T) {
+	t.Parallel()
+	app := e2e.SetupTestApp(t)
+	f := NewAuthzFixture(t, app)
+
+	sid := e2e.Itoa(f.Server.ID)
+	probeURL := "/api/v1/servers/" + sid + "/stacks/can-create"
+
+	owner, jwtOwner, _ := f.UserWithRole("create-owner", f.Server, permnames.StacksCreate, "*")
+	keyCreate := f.APIKeyFor(owner, "create-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksCreate, "*"),
+	})
+	keyNoScope := f.APIKeyFor(owner, "noscope-key", nil)
+	keyReadOnly := f.APIKeyFor(owner, "read-only-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksRead, "*"),
+	})
+
+	_, jwtNoRole := f.User("roleless")
+
+	t.Run("JWT with stacks.create can create", func(t *testing.T) {
+		assert.True(t, getCanCreateBody(t, app, probeURL, bearer(jwtOwner)))
+	})
+
+	t.Run("JWT without stacks.create cannot create", func(t *testing.T) {
+		assert.False(t, getCanCreateBody(t, app, probeURL, bearer(jwtNoRole)))
+	})
+
+	t.Run("API key with a stacks.create scope can create", func(t *testing.T) {
+		assert.True(t, getCanCreateBody(t, app, probeURL, bearer(keyCreate)))
+	})
+
+	t.Run("API key without scopes is admitted but cannot create", func(t *testing.T) {
+		assert.False(t, getCanCreateBody(t, app, probeURL, bearer(keyNoScope)),
+			"a scopeless key must not inherit the owner's create capability")
+	})
+
+	t.Run("API key with only a stacks.read scope cannot create", func(t *testing.T) {
+		assert.False(t, getCanCreateBody(t, app, probeURL, bearer(keyReadOnly)),
+			"the owner can create but the key's scopes do not cover stacks.create")
+	})
+}
+
+func getStackPermissionsBody(t *testing.T, app *e2e.TestApp, path, authHeader string) []string {
+	t.Helper()
+	resp := mustRequest(t, app, http.MethodGet, path, authHeader)
+	require.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
+	var data response.Response[stack.StackPermissionsData]
+	require.NoError(t, resp.GetJSON(&data))
+	return data.Data.Permissions
+}
+
+func getCanCreateBody(t *testing.T, app *e2e.TestApp, path, authHeader string) bool {
+	t.Helper()
+	resp := mustRequest(t, app, http.MethodGet, path, authHeader)
+	require.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
+	var data response.Response[stack.CanCreateStackData]
+	require.NoError(t, resp.GetJSON(&data))
+	return data.Data.CanCreate
 }

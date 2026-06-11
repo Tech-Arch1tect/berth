@@ -6,7 +6,12 @@ import (
 
 	"berth/e2e"
 	e2etesting "berth/e2e/internal/harness"
+	"berth/internal/domain/maintenance"
 	"berth/internal/domain/rbac/permnames"
+	"berth/internal/pkg/response"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func registerMaintenanceAgentEndpoints(agent *e2e.MockAgent) {
@@ -319,4 +324,72 @@ func TestAuthzMaintenancePermissionsProbe(t *testing.T) {
 	t.Run("any authenticated user is admitted", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodGet, Path: url}, bearer(jwt), 200)
 	})
+}
+
+func TestAuthzMaintenancePermissionsProbeBody(t *testing.T) {
+	t.Parallel()
+	app := e2e.SetupTestApp(t)
+	f := NewAuthzFixture(t, app)
+
+	sid := e2e.Itoa(f.Server.ID)
+	probeURL := "/api/v1/servers/" + sid + "/maintenance/permissions"
+
+	owner, jwtOwner := f.UserWithRoles("rw-owner", []RoleSpec{
+		{Name: "rw", Grants: []RoleGrant{
+			{Server: f.Server, Permission: permnames.DockerMaintenanceRead, StackPattern: "*"},
+			{Server: f.Server, Permission: permnames.DockerMaintenanceWrite, StackPattern: "*"},
+		}},
+	})
+	keyReadOnly := f.APIKeyFor(owner, "read-scope-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.DockerMaintenanceRead, "*"),
+	})
+	keyNoScope := f.APIKeyFor(owner, "noscope-key", nil)
+
+	_, jwtReadOnly := f.UserWithRoles("read-owner", []RoleSpec{
+		{Name: "ro", Grants: []RoleGrant{
+			{Server: f.Server, Permission: permnames.DockerMaintenanceRead, StackPattern: "*"},
+		}},
+	})
+	_, jwtNoRole := f.User("roleless")
+
+	t.Run("JWT with read and write sees both", func(t *testing.T) {
+		perms := getMaintenancePermissionsBody(t, app, probeURL, bearer(jwtOwner))
+		assert.True(t, perms.Read)
+		assert.True(t, perms.Write)
+	})
+
+	t.Run("JWT with read only sees read only", func(t *testing.T) {
+		perms := getMaintenancePermissionsBody(t, app, probeURL, bearer(jwtReadOnly))
+		assert.True(t, perms.Read)
+		assert.False(t, perms.Write)
+	})
+
+	t.Run("JWT without roles sees neither", func(t *testing.T) {
+		perms := getMaintenancePermissionsBody(t, app, probeURL, bearer(jwtNoRole))
+		assert.False(t, perms.Read)
+		assert.False(t, perms.Write)
+	})
+
+	t.Run("API key with a read scope sees read but not the owner's write", func(t *testing.T) {
+		perms := getMaintenancePermissionsBody(t, app, probeURL, bearer(keyReadOnly))
+		assert.True(t, perms.Read)
+		assert.False(t, perms.Write,
+			"the owner holds docker.maintenance.write but the key's scope is read only")
+	})
+
+	t.Run("API key without scopes is admitted but sees neither", func(t *testing.T) {
+		perms := getMaintenancePermissionsBody(t, app, probeURL, bearer(keyNoScope))
+		assert.False(t, perms.Read,
+			"a scopeless key must not be shown the owner's capability")
+		assert.False(t, perms.Write)
+	})
+}
+
+func getMaintenancePermissionsBody(t *testing.T, app *e2e.TestApp, path, authHeader string) maintenance.MaintenancePermissions {
+	t.Helper()
+	resp := mustRequest(t, app, http.MethodGet, path, authHeader)
+	require.Equal(t, 200, resp.StatusCode, "body: %s", resp.GetString())
+	var data response.Response[maintenance.PermissionsData]
+	require.NoError(t, resp.GetJSON(&data))
+	return data.Data.Maintenance
 }
