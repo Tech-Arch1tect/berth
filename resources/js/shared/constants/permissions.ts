@@ -22,3 +22,4 @@ export const PERM_ADMIN_SYSTEM_IMPORT = 'admin.system.import';
 
 export const PERM_SERVERS_READ = 'servers.read';
 export const PERM_LOGS_OPERATIONS_READ = 'logs.operations.read';
+export const PERM_IMAGE_UPDATES_READ = 'image-updates.read';

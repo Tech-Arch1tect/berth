@@ -32,6 +32,7 @@ import {
   PERM_FILES_WRITE,
   PERM_LOGS_READ,
   PERM_LOGS_OPERATIONS_READ,
+  PERM_IMAGE_UPDATES_READ,
   PERM_REGISTRIES_MANAGE,
   PERM_DOCKER_MAINTENANCE_READ,
   PERM_DOCKER_MAINTENANCE_WRITE,
@@ -69,6 +70,7 @@ const PERMISSIONS = [
   { value: PERM_FILES_WRITE, label: 'Modify files within stacks' },
   { value: PERM_LOGS_READ, label: 'View container logs' },
   { value: PERM_LOGS_OPERATIONS_READ, label: 'View own operation logs' },
+  { value: PERM_IMAGE_UPDATES_READ, label: 'View available image updates' },
   { value: PERM_REGISTRIES_MANAGE, label: 'Create, update, and delete registry credentials' },
   {
     value: PERM_DOCKER_MAINTENANCE_READ,

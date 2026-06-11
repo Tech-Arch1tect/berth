@@ -48,6 +48,7 @@ func SeedRBACData(db *gorm.DB) error {
 		// user-level permissions for API key scope enforcement
 		{Name: permnames.ServersRead, Resource: "servers", Action: "read", Description: "View accessible servers", IsAPIKeyOnly: true},
 		{Name: permnames.LogsOperationsRead, Resource: "logs.operations", Action: "read", Description: "View own operation logs", IsAPIKeyOnly: true},
+		{Name: permnames.ImageUpdatesRead, Resource: "image-updates", Action: "read", Description: "View available image updates", IsAPIKeyOnly: true},
 	}
 
 	for _, permission := range permissions {

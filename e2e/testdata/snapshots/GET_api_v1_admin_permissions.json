@@ -183,6 +183,14 @@
           "is_api_key_only": true,
           "name": "logs.operations.read",
           "resource": "logs.operations"
+        },
+        {
+          "action": "read",
+          "description": "View available image updates",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": true,
+          "name": "image-updates.read",
+          "resource": "image-updates"
         }
       ]
     },

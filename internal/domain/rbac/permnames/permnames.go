@@ -29,4 +29,5 @@ const (
 const (
 	ServersRead        = "servers.read"
 	LogsOperationsRead = "logs.operations.read"
+	ImageUpdatesRead   = "image-updates.read"
 )

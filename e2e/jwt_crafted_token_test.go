@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -128,7 +127,7 @@ func TestJWTSignatureNegatives(t *testing.T) {
 	t.Run("tampered signature is rejected", func(t *testing.T) {
 		TagTest(t, "GET", "/api/v1/profile", e2etesting.CategorySecurity, e2etesting.ValueHigh)
 		token := craftAccessToken(t, app, user.ID, issuer, issuer)
-		assert.Equal(t, 401, apiGetProfile(t, app, tamperLastChar(token)),
+		assert.Equal(t, 401, apiGetProfile(t, app, tamperSignature(token)),
 			"flipping a byte in the signature must invalidate the token")
 	})
 
@@ -228,12 +227,14 @@ func TestAuthHeaderNegatives(t *testing.T) {
 	})
 }
 
-func tamperLastChar(token string) string {
-	if token == "" {
+func tamperSignature(token string) string {
+	if len(token) < 2 {
 		return token
 	}
-	if strings.HasSuffix(token, "a") {
-		return token[:len(token)-1] + "b"
+	i := len(token) - 2
+	replacement := "a"
+	if token[i] == 'a' {
+		replacement = "b"
 	}
-	return token[:len(token)-1] + "a"
+	return token[:i] + replacement + token[i+1:]
 }

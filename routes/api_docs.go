@@ -603,6 +603,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Description("Returns all container images with available updates across servers the user can access").
 		Response(http.StatusOK, response.Response[imageupdates.ImageUpdatesData]{}, "List of available image updates").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "API key lacks required scope").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

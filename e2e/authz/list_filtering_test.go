@@ -136,6 +136,7 @@ func TestImageUpdatesGlobalListFiltering(t *testing.T) {
 	t.Run("API key with stacks.read on prod-* sees only the prod-* rows", func(t *testing.T) {
 		owner, _, _ := f.UserWithRole("prodkeyowner", f.Server, permnames.StacksRead, "prod-*")
 		key := f.APIKeyFor(owner, "prodkey", []ScopeSpec{
+			{Permission: permnames.ImageUpdatesRead, ServerID: &f.Server.ID, StackPattern: "*"},
 			{Permission: permnames.StacksRead, ServerID: &f.Server.ID, StackPattern: "prod-*"},
 		})
 		updates := getImageUpdates(t, app, path, "Bearer "+key, 200)
@@ -145,10 +146,37 @@ func TestImageUpdatesGlobalListFiltering(t *testing.T) {
 	t.Run("API key pattern narrows an owner's wildcard role", func(t *testing.T) {
 		owner, _, _ := f.UserWithRole("wildowner", f.Server, permnames.StacksRead, "*")
 		key := f.APIKeyFor(owner, "stagingkey", []ScopeSpec{
+			{Permission: permnames.ImageUpdatesRead, ServerID: &f.Server.ID, StackPattern: "*"},
 			{Permission: permnames.StacksRead, ServerID: &f.Server.ID, StackPattern: "staging-*"},
 		})
 		updates := getImageUpdates(t, app, path, "Bearer "+key, 200)
 		assert.ElementsMatch(t, stackNamesOf(updates), []string{"staging-web"})
+	})
+
+	t.Run("API key without an image-updates.read scope returns 403", func(t *testing.T) {
+		owner, _, _ := f.UserWithRole("ungatedowner", f.Server, permnames.StacksRead, "*")
+		key := f.APIKeyFor(owner, "ungatedkey", []ScopeSpec{
+			{Permission: permnames.StacksRead, ServerID: &f.Server.ID, StackPattern: "*"},
+		})
+		resp := mustRequest(t, app, "GET", path, "Bearer "+key)
+		assert.Equal(t, 403, resp.StatusCode, "body: %s", resp.GetString())
+	})
+
+	t.Run("API key with no scopes returns 403", func(t *testing.T) {
+		owner, _, _ := f.UserWithRole("noscopeowner", f.Server, permnames.StacksRead, "*")
+		key := f.APIKeyFor(owner, "noscopekey", nil)
+		resp := mustRequest(t, app, "GET", path, "Bearer "+key)
+		assert.Equal(t, 403, resp.StatusCode, "body: %s", resp.GetString())
+	})
+
+	t.Run("API key with only image-updates.read sees an empty list", func(t *testing.T) {
+		owner, _, _ := f.UserWithRole("gateonlyowner", f.Server, permnames.StacksRead, "*")
+		key := f.APIKeyFor(owner, "gateonlykey", []ScopeSpec{
+			{Permission: permnames.ImageUpdatesRead, ServerID: &f.Server.ID, StackPattern: "*"},
+		})
+		updates := getImageUpdates(t, app, path, "Bearer "+key, 200)
+		assert.Empty(t, updates,
+			"the entry scope admits the key but row visibility still needs stacks.read scopes")
 	})
 }
 
