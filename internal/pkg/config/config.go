@@ -23,7 +23,14 @@ type Config struct {
 	RateLimit    RateLimitConfig    `envPrefix:"RATE_LIMIT_"`
 	Mail         MailConfig         `envPrefix:"MAIL_"`
 	Revocation   RevocationConfig   `envPrefix:"JWT_REVOCATION_"`
+	Retention    RetentionConfig    `envPrefix:"RETENTION_"`
 	Custom       AppCustomConfig    `envPrefix:""`
+}
+
+type RetentionConfig struct {
+	Interval         time.Duration `env:"INTERVAL" envDefault:"6h"`
+	AuditLogDays     int           `env:"AUDIT_LOG_DAYS" envDefault:"365"`
+	OperationLogDays int           `env:"OPERATION_LOG_DAYS" envDefault:"365"`
 }
 
 type AppConfig struct {

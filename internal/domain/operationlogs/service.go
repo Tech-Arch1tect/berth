@@ -1,6 +1,7 @@
 package operationlogs
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -18,6 +19,42 @@ func NewService(db *gorm.DB, logger *zap.Logger) *Service {
 		db:     db,
 		logger: logger,
 	}
+}
+
+func (s *Service) DeleteOldOperationLogs(retentionDays int) (int64, error) {
+	cutoff := time.Now().AddDate(0, 0, -retentionDays)
+
+	var deleted int64
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		oldLogIDs := tx.Model(&OperationLog{}).Select("id").Where("start_time < ?", cutoff)
+
+		if err := tx.Unscoped().Where("operation_log_id IN (?)", oldLogIDs).
+			Delete(&OperationLogMessage{}).Error; err != nil {
+			return fmt.Errorf("delete old operation log messages: %w", err)
+		}
+
+		result := tx.Unscoped().Where("start_time < ?", cutoff).Delete(&OperationLog{})
+		if result.Error != nil {
+			return fmt.Errorf("delete old operation logs: %w", result.Error)
+		}
+		deleted = result.RowsAffected
+		return nil
+	})
+	if err != nil {
+		s.logger.Error("failed to delete old operation logs",
+			zap.Int("retention_days", retentionDays),
+			zap.Error(err),
+		)
+		return 0, err
+	}
+
+	if deleted > 0 {
+		s.logger.Info("deleted old operation logs",
+			zap.Int64("count", deleted),
+			zap.Int("retention_days", retentionDays),
+		)
+	}
+	return deleted, nil
 }
 
 func (s *Service) calculatePartialDuration(log OperationLog) *int {

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -35,6 +36,7 @@ import (
 	"berth/internal/pkg/origin"
 	"berth/internal/platform/mail"
 	"berth/internal/platform/middleware/ratelimit"
+	"berth/internal/platform/retention"
 	"berth/internal/platform/spa"
 	"berth/routes"
 	"berth/seeds"
@@ -125,6 +127,8 @@ type Graph struct {
 	WSAgentMgr             *websocket.AgentManager
 	WSServiceMgr           *websocket.ServiceManager
 	WSHandler              *websocket.Handler
+
+	RetentionWorker *retention.Worker
 
 	SPASvc *spa.Service
 
@@ -250,6 +254,9 @@ func Build(
 	g.OperationLogsSvc = operationlogs.NewService(db, logger)
 	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, logger, cfg.Custom.OperationTimeoutSeconds)
 
+	g.RetentionWorker = retention.NewWorker(cfg.Retention.Interval, logger, retentionTasks(cfg, g)...)
+	g.addHook("retention worker", g.RetentionWorker.Start, g.RetentionWorker.Stop)
+
 	g.DataExportSvc = dataexport.NewService(db, logger)
 	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc)
 
@@ -316,6 +323,42 @@ func Build(
 
 func (g *Graph) addHook(name string, start, stop func(context.Context) error) {
 	g.Hooks = append(g.Hooks, Hook{Name: name, Start: start, Stop: stop})
+}
+
+func retentionTasks(cfg *config.Config, g *Graph) []retention.Task {
+	var tasks []retention.Task
+
+	if cfg.Retention.AuditLogDays > 0 {
+		tasks = append(tasks, retention.Task{
+			Name: "security audit logs",
+			Run: func() error {
+				_, err := g.SecurityAuditSvc.DeleteOldLogs(cfg.Retention.AuditLogDays)
+				return err
+			},
+		})
+	}
+
+	if cfg.Retention.OperationLogDays > 0 {
+		tasks = append(tasks, retention.Task{
+			Name: "operation logs",
+			Run: func() error {
+				_, err := g.OperationLogsSvc.DeleteOldOperationLogs(cfg.Retention.OperationLogDays)
+				return err
+			},
+		})
+	}
+
+	tasks = append(tasks, retention.Task{
+		Name: "expired password reset tokens",
+		Run: func() error {
+			if err := g.AuthSvc.CleanupExpiredTokens(); err != nil && !errors.Is(err, auth.ErrPasswordResetDisabled) {
+				return err
+			}
+			return nil
+		},
+	})
+
+	return tasks
 }
 
 func closeHook(name string, logger *zap.Logger, c io.Closer) func(context.Context) error {

@@ -348,7 +348,7 @@ func (s *AuditService) CountLogs(filters AuditLogFilters) (int64, error) {
 func (s *AuditService) DeleteOldLogs(retentionDays int) (int64, error) {
 	cutoffDate := time.Now().AddDate(0, 0, -retentionDays)
 
-	result := s.db.Where("created_at < ?", cutoffDate).Delete(&SecurityAuditLog{})
+	result := s.db.Unscoped().Where("created_at < ?", cutoffDate).Delete(&SecurityAuditLog{})
 	if result.Error != nil {
 		s.logger.Error("failed to delete old audit logs",
 			zap.Int("retention_days", retentionDays),

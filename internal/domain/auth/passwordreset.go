@@ -77,7 +77,7 @@ func (s *Service) CleanupExpiredTokens() error {
 	if !s.config.Auth.PasswordResetEnabled {
 		return ErrPasswordResetDisabled
 	}
-	result := s.db.Where("expires_at < ?", time.Now()).Delete(&PasswordResetToken{})
+	result := s.db.Unscoped().Where("expires_at < ?", time.Now()).Delete(&PasswordResetToken{})
 	if result.Error != nil {
 		return fmt.Errorf("cleanup expired reset tokens: %w", result.Error)
 	}
