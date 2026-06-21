@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -19,12 +20,12 @@ func (sr *StreamReader) Close() {
 	close(sr.lines)
 }
 
-func streamPipe() (*StreamReader, *StreamWriter) {
+func streamPipe(ctx context.Context) (*StreamReader, *StreamWriter) {
 	lines := make(chan string, 100)
 	done := make(chan struct{})
 
 	reader := &StreamReader{lines: lines, done: done}
-	writer := &StreamWriter{lines: lines, done: done}
+	writer := &StreamWriter{lines: lines, done: done, ctx: ctx}
 
 	return reader, writer
 }
@@ -32,12 +33,15 @@ func streamPipe() (*StreamReader, *StreamWriter) {
 type StreamWriter struct {
 	lines chan string
 	done  chan struct{}
+	ctx   context.Context
 }
 
 func (sw *StreamWriter) Write(p []byte) (n int, err error) {
 	select {
 	case <-sw.done:
 		return 0, fmt.Errorf("stream closed")
+	case <-sw.ctx.Done():
+		return 0, fmt.Errorf("stream cancelled")
 	default:
 	}
 
@@ -50,8 +54,8 @@ func (sw *StreamWriter) Write(p []byte) (n int, err error) {
 			case sw.lines <- line:
 			case <-sw.done:
 				return len(p), nil
-			default:
-
+			case <-sw.ctx.Done():
+				return len(p), nil
 			}
 		}
 	}

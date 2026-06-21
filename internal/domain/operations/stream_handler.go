@@ -93,7 +93,7 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 		}
 	}
 
-	pipeReader, pipeWriter := streamPipe()
+	pipeReader, pipeWriter := streamPipe(ctx)
 	streamFailed := make(chan string, 1)
 	streamEnded := make(chan struct{})
 
