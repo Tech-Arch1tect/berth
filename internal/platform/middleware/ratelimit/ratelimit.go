@@ -29,10 +29,20 @@ func New(cfg Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			key := "rate_limit:" + cfg.Name + ":" + cfg.KeyFunc(c)
-			now := time.Now()
-			resetTime := now.Add(cfg.Period)
+			freshReset := time.Now().Add(cfg.Period)
+
+			if cfg.CountMode == CountAll {
+				allowed, count, reset := cfg.Store.Allow(key, cfg.Rate, freshReset)
+				if !allowed {
+					writeHeaders(c, cfg.Rate, 0, reset)
+					return echo.NewHTTPError(http.StatusTooManyRequests, "Too Many Requests")
+				}
+				writeHeaders(c, cfg.Rate, cfg.Rate-count, reset)
+				return next(c)
+			}
 
 			count, existingReset, exists := cfg.Store.Get(key)
+			resetTime := freshReset
 			if exists {
 				resetTime = existingReset
 			}
@@ -41,18 +51,11 @@ func New(cfg Config) echo.MiddlewareFunc {
 				writeHeaders(c, cfg.Rate, 0, resetTime)
 				return echo.NewHTTPError(http.StatusTooManyRequests, "Too Many Requests")
 			}
-
-			var headerCount int
-			if cfg.CountMode == CountAll {
-				headerCount = cfg.Store.Increment(key, resetTime)
-			} else {
-				headerCount = count + 1
-			}
-			writeHeaders(c, cfg.Rate, cfg.Rate-headerCount, resetTime)
+			writeHeaders(c, cfg.Rate, cfg.Rate-(count+1), resetTime)
 
 			err := next(c)
 
-			if cfg.CountMode == CountNon2xx && c.Response().Status >= 300 {
+			if c.Response().Status >= 300 {
 				cfg.Store.Increment(key, resetTime)
 			}
 			return err
@@ -79,8 +82,10 @@ func KeyByIP(c echo.Context) string {
 }
 
 type Store struct {
-	mu   sync.Mutex
-	data map[string]*entry
+	mu       sync.Mutex
+	data     map[string]*entry
+	stop     chan struct{}
+	stopOnce sync.Once
 }
 
 type entry struct {
@@ -89,9 +94,13 @@ type entry struct {
 }
 
 func NewStore() *Store {
-	s := &Store{data: make(map[string]*entry)}
+	s := &Store{data: make(map[string]*entry), stop: make(chan struct{})}
 	go s.cleanupLoop()
 	return s
+}
+
+func (s *Store) Stop() {
+	s.stopOnce.Do(func() { close(s.stop) })
 }
 
 func (s *Store) Get(key string) (count int, resetTime time.Time, exists bool) {
@@ -101,6 +110,20 @@ func (s *Store) Get(key string) (count int, resetTime time.Time, exists bool) {
 		return e.count, e.resetTime, true
 	}
 	return 0, time.Time{}, false
+}
+
+func (s *Store) Allow(key string, rate int, resetTime time.Time) (allowed bool, count int, reset time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if e, ok := s.data[key]; ok && time.Now().Before(e.resetTime) {
+		if e.count >= rate {
+			return false, e.count, e.resetTime
+		}
+		e.count++
+		return true, e.count, e.resetTime
+	}
+	s.data[key] = &entry{count: 1, resetTime: resetTime}
+	return true, 1, resetTime
 }
 
 func (s *Store) Increment(key string, resetTime time.Time) int {
@@ -117,14 +140,19 @@ func (s *Store) Increment(key string, resetTime time.Time) int {
 func (s *Store) cleanupLoop() {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		s.mu.Lock()
-		now := time.Now()
-		for k, e := range s.data {
-			if now.After(e.resetTime) {
-				delete(s.data, k)
+	for {
+		select {
+		case <-s.stop:
+			return
+		case <-ticker.C:
+			s.mu.Lock()
+			now := time.Now()
+			for k, e := range s.data {
+				if now.After(e.resetTime) {
+					delete(s.data, k)
+				}
 			}
+			s.mu.Unlock()
 		}
-		s.mu.Unlock()
 	}
 }

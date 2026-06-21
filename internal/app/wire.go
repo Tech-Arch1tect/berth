@@ -150,6 +150,10 @@ func Build(
 	g.Crypto = crypto.NewCrypto(cfg.Custom.EncryptionSecret)
 	g.OriginCheck = origin.NewOriginChecker(cfg.App.URL)
 	g.RateLimit = ratelimit.NewStore()
+	g.addHook("rate limit store cleanup", nil, func(context.Context) error {
+		g.RateLimit.Stop()
+		return nil
+	})
 	g.APIDocs = apidocs.NewOpenAPI()
 	g.VersionHandler = version.NewHandler()
 

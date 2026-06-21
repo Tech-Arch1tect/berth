@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,6 +18,13 @@ func newTestEcho() *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 	return e
+}
+
+func newStore(t *testing.T) *Store {
+	t.Helper()
+	s := NewStore()
+	t.Cleanup(s.Stop)
+	return s
 }
 
 func sendN(t *testing.T, e *echo.Echo, path string, n int) []*httptest.ResponseRecorder {
@@ -34,7 +43,7 @@ func sendN(t *testing.T, e *echo.Echo, path string, n int) []*httptest.ResponseR
 func TestCountAllBlocksAtLimit(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/x", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 3, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 3, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/x", 4)
 	assert.Equal(t, http.StatusOK, recs[0].Code)
@@ -43,10 +52,41 @@ func TestCountAllBlocksAtLimit(t *testing.T) {
 	assert.Equal(t, http.StatusTooManyRequests, recs[3].Code)
 }
 
+func TestCountAllNoOverAdmissionUnderConcurrency(t *testing.T) {
+	e := newTestEcho()
+	const rate = 5
+	const n = 50
+	e.GET("/c", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
+		New(Config{Store: newStore(t), Rate: rate, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
+
+	var admitted, limited int32
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodGet, "/c", nil)
+			req.RemoteAddr = "10.0.0.9:1234"
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+			switch rec.Code {
+			case http.StatusOK:
+				atomic.AddInt32(&admitted, 1)
+			case http.StatusTooManyRequests:
+				atomic.AddInt32(&limited, 1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	assert.Equal(t, int32(rate), atomic.LoadInt32(&admitted), "exactly Rate requests may be admitted under concurrency")
+	assert.Equal(t, int32(n-rate), atomic.LoadInt32(&limited), "every request over Rate must be rejected")
+}
+
 func TestCountNon2xxAllowsExactlyRateFailures(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/fail", func(c echo.Context) error { return c.String(http.StatusUnauthorized, "bad") },
-		New(Config{Store: NewStore(), Rate: 5, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 5, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/fail", 6)
 	for i := 0; i < 5; i++ {
@@ -58,7 +98,7 @@ func TestCountNon2xxAllowsExactlyRateFailures(t *testing.T) {
 func TestCountNon2xxDoesNotCountSuccesses(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/ok", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/ok", 10)
 	for i, r := range recs {
@@ -69,7 +109,7 @@ func TestCountNon2xxDoesNotCountSuccesses(t *testing.T) {
 func TestCountNon2xxCountsRedirectsAsFailures(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/r", func(c echo.Context) error { return c.Redirect(http.StatusFound, "/elsewhere") },
-		New(Config{Store: NewStore(), Rate: 3, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 3, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/r", 4)
 	assert.Equal(t, http.StatusFound, recs[0].Code)
@@ -81,9 +121,9 @@ func TestCountNon2xxCountsRedirectsAsFailures(t *testing.T) {
 func TestCountNon2xxDoesNotCount2xx(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/ok", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
 	e.GET("/created", func(c echo.Context) error { return c.String(http.StatusCreated, "ok") },
-		New(Config{Store: NewStore(), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 2, Period: time.Minute, CountMode: CountNon2xx, KeyFunc: KeyByIP}))
 
 	for i := 0; i < 20; i++ {
 		require.Equal(t, http.StatusOK, sendN(t, e, "/ok", 1)[0].Code)
@@ -96,7 +136,7 @@ func TestCountNon2xxDoesNotCount2xx(t *testing.T) {
 func TestRateLimitHeaders(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/h", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 3, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 3, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/h", 4)
 	for _, r := range recs {
@@ -116,7 +156,7 @@ func TestRateLimitHeaders(t *testing.T) {
 func TestWindowResetsAfterPeriod(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/r", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 2, Period: 50 * time.Millisecond, CountMode: CountAll, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 2, Period: 50 * time.Millisecond, CountMode: CountAll, KeyFunc: KeyByIP}))
 
 	recs := sendN(t, e, "/r", 3)
 	require.Equal(t, http.StatusOK, recs[0].Code)
@@ -131,7 +171,7 @@ func TestWindowResetsAfterPeriod(t *testing.T) {
 func TestKeyByIPSeparatesByIP(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/i", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 1, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 1, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
 
 	send := func(ip string) int {
 		req := httptest.NewRequest(http.MethodGet, "/i", nil)
@@ -148,7 +188,7 @@ func TestKeyByIPSeparatesByIP(t *testing.T) {
 func TestKeyByIPIgnoresUserAgent(t *testing.T) {
 	e := newTestEcho()
 	e.GET("/s", func(c echo.Context) error { return c.String(http.StatusOK, "ok") },
-		New(Config{Store: NewStore(), Rate: 2, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
+		New(Config{Store: newStore(t), Rate: 2, Period: time.Minute, CountMode: CountAll, KeyFunc: KeyByIP}))
 
 	send := func(ua string) int {
 		req := httptest.NewRequest(http.MethodGet, "/s", nil)
@@ -165,7 +205,7 @@ func TestKeyByIPIgnoresUserAgent(t *testing.T) {
 }
 
 func TestStoreGetExpiredReturnsZero(t *testing.T) {
-	s := NewStore()
+	s := newStore(t)
 	s.data["k"] = &entry{count: 7, resetTime: time.Now().Add(20 * time.Millisecond)}
 
 	c, _, exists := s.Get("k")
@@ -179,7 +219,7 @@ func TestStoreGetExpiredReturnsZero(t *testing.T) {
 }
 
 func TestStoreIncrementAtomic(t *testing.T) {
-	s := NewStore()
+	s := newStore(t)
 	reset := time.Now().Add(time.Minute)
 	const n = 200
 	done := make(chan struct{}, n)
