@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 
 	"berth/internal/domain/authz"
 
 	"github.com/labstack/echo/v4"
 )
+
+type AuthorizationAuditor interface {
+	LogAuthorizationDenied(actorUserID *uint, actorUsername, ip, resource, permission string, metadata map[string]any) error
+}
 
 func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -21,6 +26,7 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
 			}
 			if rule.DeniesAPIKey() && p.Key() != nil {
+				e.auditDenied(c, p, "api key forbidden on this endpoint")
 				return echo.NewHTTPError(http.StatusForbidden, "API keys cannot access this endpoint")
 			}
 			bodyBuf, err := readBody(c)
@@ -38,6 +44,7 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusInternalServerError, "Authorisation check failed")
 			}
 			if !allowed {
+				e.auditDenied(c, p, permissionsString(reqs))
 				return echo.NewHTTPError(http.StatusForbidden, "Insufficient permissions")
 			}
 			if rule.WantsListScope() {
@@ -51,6 +58,33 @@ func (e *Engine) Middleware(rule authz.Rule) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+func (e *Engine) auditDenied(c echo.Context, p authz.Principal, permission string) {
+	if e.auditor == nil {
+		return
+	}
+
+	var actor *uint
+	if id := p.UserID(); id != 0 {
+		actor = &id
+	}
+	resource := c.Request().Method + " " + c.Path()
+	ip := c.RealIP()
+
+	go func() {
+		_ = e.auditor.LogAuthorizationDenied(actor, "", ip, resource, permission, nil)
+	}()
+}
+
+func permissionsString(reqs []authz.Requirement) string {
+	perms := make([]string, 0, len(reqs))
+	for _, r := range reqs {
+		if r.Permission != "" {
+			perms = append(perms, r.Permission)
+		}
+	}
+	return strings.Join(perms, ",")
 }
 
 func readBody(c echo.Context) ([]byte, error) {

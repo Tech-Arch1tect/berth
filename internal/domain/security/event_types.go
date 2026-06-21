@@ -82,6 +82,12 @@ const (
 	EventFileRenamed    = "file.renamed"
 )
 
+const (
+	EventRegistryCredentialCreated = "registry_credential_created"
+	EventRegistryCredentialUpdated = "registry_credential_updated"
+	EventRegistryCredentialDeleted = "registry_credential_deleted"
+)
+
 func GetEventCategory(eventType string) string {
 	switch eventType {
 	case EventAuthLoginSuccess, EventAuthLoginFailure, EventAuthLogout,
@@ -127,6 +133,9 @@ func GetEventCategory(eventType string) string {
 	case EventFileUploaded, EventFileDownloaded, EventFileDeleted, EventFileRenamed:
 		return "file"
 
+	case EventRegistryCredentialCreated, EventRegistryCredentialUpdated, EventRegistryCredentialDeleted:
+		return CategoryRegistry
+
 	default:
 		return "unknown"
 	}
@@ -152,7 +161,8 @@ func GetEventSeverity(eventType string) string {
 	case EventAuthPasswordResetRequested, EventAuthPasswordResetCompleted,
 		EventUserPasswordChanged, EventUserEmailChanged,
 		EventServerConnectionTestFailure, EventFileDeleted, EventFileRenamed,
-		EventAPIKeyValidationFailed:
+		EventAPIKeyValidationFailed,
+		EventRegistryCredentialCreated, EventRegistryCredentialUpdated, EventRegistryCredentialDeleted:
 		return "medium"
 
 	case EventAuthLoginSuccess, EventAuthLogout, EventAuthEmailVerified,

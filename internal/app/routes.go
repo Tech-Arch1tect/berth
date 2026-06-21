@@ -80,15 +80,15 @@ func registerRoutes(g *Graph) {
 	authzEngine := g.AuthzEngine
 
 	publicRegistrar := registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler, authzEngine)
-	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
 		g.AuthAPIHandler, g.ServerUserAPIHandler, authzEngine,
 		g.StackAPIHandler, g.FilesAPIHandler, g.LogsHandler, g.OperationsHandler,
 		g.OperationLogsHandler, g.MaintAPIHandler, g.VulnscanHandler,
 		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
-	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv,
+	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
 		g.RBACAPIHandler, g.OperationLogsHandler,
 		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, authzEngine)
-	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.WSHandler, g.WSEventsHandler, g.OperationsStreamHandler, authzEngine)
+	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc, g.WSHandler, g.WSEventsHandler, g.OperationsStreamHandler, authzEngine)
 
 	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
 	if wsRegistrar != nil {
@@ -109,7 +109,7 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 	return publicRegistrar
 }
 
-func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
+func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor,
 	mobileAuthHandler *auth.APIHandler, serverUserAPIHandler *server.UserAPIHandler,
 	authzEngine *authzengine.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
@@ -118,7 +118,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider, auditor))
 
 	protectedRegistrar := authz.NewRegistrar(apiProtected, "/api/v1", authzEngine.Middleware)
 
@@ -165,7 +165,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	return protectedRegistrar
 }
 
-func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider,
+func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor,
 	rbacAPIHandler *rbac.APIHandler, operationLogsHandler *operationlogs.Handler,
 	serverAPIHandler *server.APIHandler, migrationHandler *dataexport.Handler, securityHandler *security.Handler,
 	authzEngine *authzengine.Engine) *authz.Registrar {
@@ -176,7 +176,7 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 
 	apiProtected := api.Group("")
 	apiProtected.Use(generalApiRateLimit)
-	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+	apiProtected.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider, auditor))
 
 	apiAdmin := apiProtected.Group("/admin")
 	adminRegistrar := authz.NewRegistrar(apiAdmin, "/api/v1/admin", authzEngine.Middleware)
@@ -198,14 +198,14 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	return adminRegistrar
 }
 
-func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsStreamHandler *operations.StreamHandler, authzEngine *authzengine.Engine) *authz.Registrar {
+func registerAPIWebSocketRoutes(srv *echo.Echo, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor, wsHandler *websocket.Handler, eventsHandler *websocket.EventsHandler, operationsStreamHandler *operations.StreamHandler, authzEngine *authzengine.Engine) *authz.Registrar {
 	if wsHandler == nil {
 		return nil
 	}
 
 	wsGroup := srv.Group("/ws")
 	wsAPIGroup := wsGroup.Group("/api")
-	wsAPIGroup.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider))
+	wsAPIGroup.Use(auth.RequireAuth(jwtSvc, apiKeySvc, userProvider, auditor))
 
 	wsRegistrar := authz.NewRegistrar(wsAPIGroup, "/ws/api", authzEngine.Middleware)
 	wsHandler.RegisterProtectedAPIRoutes(wsRegistrar)

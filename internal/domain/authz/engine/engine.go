@@ -13,12 +13,17 @@ import (
 )
 
 type Engine struct {
-	db     *gorm.DB
-	logger *zap.Logger
+	db      *gorm.DB
+	logger  *zap.Logger
+	auditor AuthorizationAuditor
 }
 
 func New(db *gorm.DB, logger *zap.Logger) *Engine {
 	return &Engine{db: db, logger: logger}
+}
+
+func (e *Engine) SetAuthorizationAuditor(a AuthorizationAuditor) {
+	e.auditor = a
 }
 
 func (e *Engine) Authorize(p authz.Principal, reqs ...authz.Requirement) (bool, error) {

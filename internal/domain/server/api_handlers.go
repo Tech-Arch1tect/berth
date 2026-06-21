@@ -1,6 +1,8 @@
 package server
 
 import (
+	"berth/internal/domain/security"
+	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
@@ -8,14 +10,28 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type APIHandler struct {
-	service *Service
+type serverAuditLogger interface {
+	LogServerEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, serverName, ip string, success bool, failureReason string, metadata map[string]any) error
 }
 
-func NewAPIHandler(service *Service) *APIHandler {
+type APIHandler struct {
+	service      *Service
+	auditService serverAuditLogger
+}
+
+func NewAPIHandler(service *Service, auditService serverAuditLogger) *APIHandler {
 	return &APIHandler{
-		service: service,
+		service:      service,
+		auditService: auditService,
 	}
+}
+
+func (h *APIHandler) audit(c echo.Context, eventType string, serverID uint, serverName string, success bool, failureReason string) {
+	if h.auditService == nil {
+		return
+	}
+	actorID, _ := session.GetCurrentUserID(c)
+	_ = h.auditService.LogServerEvent(eventType, actorID, session.ResolveUsername(c), serverID, serverName, c.RealIP(), success, failureReason, nil)
 }
 
 func (h *APIHandler) ListServers(c echo.Context) error {
@@ -52,6 +68,8 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 		return response.Internal(c, "Failed to create server")
 	}
 
+	h.audit(c, security.EventServerCreated, server.ID, server.Name, true, "")
+
 	return response.Created(c, AdminCreateServerData{Server: server.ToResponse()})
 }
 
@@ -68,7 +86,8 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 
 	updates := req.ToServer()
 
-	if updates.AccessToken == "" {
+	tokenRotated := updates.AccessToken != ""
+	if !tokenRotated {
 		existing, err := h.service.GetServer(id)
 		if err != nil {
 			return response.NotFound(c, "Server not found")
@@ -81,6 +100,11 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		return response.Internal(c, "Failed to update server")
 	}
 
+	h.audit(c, security.EventServerUpdated, server.ID, server.Name, true, "")
+	if tokenRotated {
+		h.audit(c, security.EventServerAccessTokenRegenerated, server.ID, server.Name, true, "")
+	}
+
 	return response.OK(c, AdminUpdateServerData{Server: server.ToResponse()})
 }
 
@@ -90,9 +114,16 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 		return err
 	}
 
+	var name string
+	if srv, err := h.service.GetServer(id); err == nil {
+		name = srv.Name
+	}
+
 	if err := h.service.DeleteServer(id); err != nil {
 		return response.Internal(c, "Failed to delete server")
 	}
+
+	h.audit(c, security.EventServerDeleted, id, name, true, "")
 
 	return response.OK(c, MessageData{Message: "Server deleted successfully"})
 }
@@ -109,8 +140,11 @@ func (h *APIHandler) TestConnection(c echo.Context) error {
 	}
 
 	if err := h.service.TestServerConnection(server); err != nil {
+		h.audit(c, security.EventServerConnectionTestFailure, server.ID, server.Name, false, err.Error())
 		return response.ServiceUnavailable(c, "Connection test failed: "+err.Error())
 	}
+
+	h.audit(c, security.EventServerConnectionTestSuccess, server.ID, server.Name, true, "")
 
 	return response.OK(c, MessageData{Message: "Connection successful"})
 }

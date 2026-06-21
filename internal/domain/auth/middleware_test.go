@@ -41,7 +41,7 @@ func TestRequireAuthJWT_RejectsTokenForMissingUser(t *testing.T) {
 	require.NoError(t, err)
 
 	run := func(provider UserProvider) (handlerRan bool, mwErr error) {
-		mw := RequireAuth(jwtSvc, nil, provider)
+		mw := RequireAuth(jwtSvc, nil, provider, nil)
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/profile", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		c := echo.New().NewContext(req, httptest.NewRecorder())

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"berth/internal/domain/authz"
 	usermodel "berth/internal/domain/user"
@@ -124,6 +125,108 @@ func TestMiddleware_StackPerm_WithoutPerm_Returns403(t *testing.T) {
 	ran, err := runMiddleware(t, engine, authz.Stack(testPermName), c)
 	assert.False(t, ran)
 	assert.Equal(t, http.StatusForbidden, httpStatus(err))
+}
+
+type deniedCall struct {
+	userID     *uint
+	ip         string
+	resource   string
+	permission string
+}
+
+type fakeAuthzAuditor struct {
+	calls chan deniedCall
+}
+
+func (f *fakeAuthzAuditor) LogAuthorizationDenied(actorUserID *uint, _, ip, resource, permission string, _ map[string]any) error {
+	f.calls <- deniedCall{userID: actorUserID, ip: ip, resource: resource, permission: permission}
+	return nil
+}
+
+func (f *fakeAuthzAuditor) await(t *testing.T) deniedCall {
+	t.Helper()
+	select {
+	case call := <-f.calls:
+		return call
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected an authorization-denied audit record")
+		return deniedCall{}
+	}
+}
+
+func TestMiddleware_PermissionDenial_IsAudited(t *testing.T) {
+	f := seedFixture(t)
+	engine := New(f.db, zap.NewNop())
+	auditor := &fakeAuthzAuditor{calls: make(chan deniedCall, 1)}
+	engine.SetAuthorizationAuditor(auditor)
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.noRoleUserID).Error)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+	c.SetParamNames("serverid", "stackname")
+	c.SetParamValues(fmt.Sprintf("%d", f.serverID), testStackName)
+	setJWTPrincipal(c, u)
+
+	ran, err := runMiddleware(t, engine, authz.Stack(testPermName), c)
+	assert.False(t, ran)
+	require.Equal(t, http.StatusForbidden, httpStatus(err))
+
+	call := auditor.await(t)
+	require.NotNil(t, call.userID)
+	assert.Equal(t, u.ID, *call.userID)
+	assert.Contains(t, call.permission, testPermName, "the denied permission must be recorded")
+}
+
+func TestMiddleware_APIKeyForbiddenDenial_IsAudited(t *testing.T) {
+	f := seedFixture(t)
+	engine := New(f.db, zap.NewNop())
+	auditor := &fakeAuthzAuditor{calls: make(chan deniedCall, 1)}
+	engine.SetAuthorizationAuditor(auditor)
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+	key := &authz.KeyDescriptor{Scopes: []authz.KeyScope{scopeForPerm(testPermName, nil)}}
+
+	c := newMiddlewareCtx(t, nil)
+	setAPIKeyPrincipal(c, u, key)
+
+	ran, err := runMiddleware(t, engine, authz.APIKeyDenied(), c)
+	assert.False(t, ran)
+	require.Equal(t, http.StatusForbidden, httpStatus(err))
+
+	call := auditor.await(t)
+	require.NotNil(t, call.userID)
+	assert.Equal(t, u.ID, *call.userID)
+}
+
+func TestMiddleware_AllowedRequest_IsNotAudited(t *testing.T) {
+	f := seedFixture(t)
+	engine := New(f.db, zap.NewNop())
+	auditor := &fakeAuthzAuditor{calls: make(chan deniedCall, 1)}
+	engine.SetAuthorizationAuditor(auditor)
+
+	var u usermodel.User
+	require.NoError(t, f.db.Preload("Roles").First(&u, f.userID).Error)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c := e.NewContext(req, httptest.NewRecorder())
+	c.SetParamNames("serverid", "stackname")
+	c.SetParamValues(fmt.Sprintf("%d", f.serverID), testStackName)
+	setJWTPrincipal(c, u)
+
+	ran, err := runMiddleware(t, engine, authz.Stack(testPermName), c)
+	require.NoError(t, err)
+	require.True(t, ran)
+
+	select {
+	case <-auditor.calls:
+		t.Fatal("an allowed request must not produce a denial audit record")
+	case <-time.After(200 * time.Millisecond):
+	}
 }
 
 func TestMiddleware_StackPerm_WithPerm_Passes(t *testing.T) {

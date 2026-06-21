@@ -7,7 +7,6 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"encoding/json"
 	"errors"
 
 	"github.com/labstack/echo/v4"
@@ -19,17 +18,21 @@ type registryAuthorizer interface {
 	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
 }
 
-type APIHandler struct {
-	service  *Service
-	authzSvc registryAuthorizer
-	db       *gorm.DB
+type registryAuditLogger interface {
+	Log(event security.LogEvent) error
 }
 
-func NewAPIHandler(service *Service, authzSvc registryAuthorizer, db *gorm.DB) *APIHandler {
+type APIHandler struct {
+	service      *Service
+	authzSvc     registryAuthorizer
+	auditService registryAuditLogger
+}
+
+func NewAPIHandler(service *Service, authzSvc registryAuthorizer, auditService registryAuditLogger) *APIHandler {
 	return &APIHandler{
-		service:  service,
-		authzSvc: authzSvc,
-		db:       db,
+		service:      service,
+		authzSvc:     authzSvc,
+		auditService: auditService,
 	}
 }
 
@@ -142,18 +145,9 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		zap.String("username", credential.Username),
 	)
 
-	metadataJSON, _ := json.Marshal(map[string]any{
-		"registry_url":  credential.RegistryURL,
-		"stack_pattern": credential.StackPattern,
-		"username":      credential.Username,
-		"image_pattern": credential.ImagePattern,
-	})
-
 	actorID := p.UserID()
-	auditLog := &security.SecurityAuditLog{
-		EventType:      "registry_credential_created",
-		EventCategory:  security.CategoryRegistry,
-		Severity:       security.SeverityMedium,
+	_ = h.auditService.Log(security.LogEvent{
+		EventType:      security.EventRegistryCredentialCreated,
 		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
@@ -161,10 +155,14 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 		TargetID:       &credential.ID,
 		TargetName:     credential.RegistryURL,
 		Success:        true,
-		Metadata:       string(metadataJSON),
-		ServerID:       &serverID,
-	}
-	h.db.Create(auditLog)
+		Metadata: map[string]any{
+			"registry_url":  credential.RegistryURL,
+			"stack_pattern": credential.StackPattern,
+			"username":      credential.Username,
+			"image_pattern": credential.ImagePattern,
+		},
+		ServerID: &serverID,
+	})
 
 	return response.Created(c, GetCredentialData{
 		Credential: ToResponse(credential),
@@ -225,18 +223,9 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		zap.String("username", credential.Username),
 	)
 
-	metadataJSON, _ := json.Marshal(map[string]any{
-		"registry_url":  credential.RegistryURL,
-		"stack_pattern": credential.StackPattern,
-		"username":      credential.Username,
-		"image_pattern": credential.ImagePattern,
-	})
-
 	actorID := p.UserID()
-	auditLog := &security.SecurityAuditLog{
-		EventType:      "registry_credential_updated",
-		EventCategory:  security.CategoryRegistry,
-		Severity:       security.SeverityMedium,
+	_ = h.auditService.Log(security.LogEvent{
+		EventType:      security.EventRegistryCredentialUpdated,
 		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
@@ -244,10 +233,14 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 		TargetID:       &credID,
 		TargetName:     credential.RegistryURL,
 		Success:        true,
-		Metadata:       string(metadataJSON),
-		ServerID:       &serverID,
-	}
-	h.db.Create(auditLog)
+		Metadata: map[string]any{
+			"registry_url":  credential.RegistryURL,
+			"stack_pattern": credential.StackPattern,
+			"username":      credential.Username,
+			"image_pattern": credential.ImagePattern,
+		},
+		ServerID: &serverID,
+	})
 
 	return response.OK(c, GetCredentialData{
 		Credential: ToResponse(credential),
@@ -299,18 +292,9 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 	)
 
 	if err := h.service.DeleteCredential(credID); err != nil {
-		metadataJSON, _ := json.Marshal(map[string]any{
-			"registry_url":  existing.RegistryURL,
-			"stack_pattern": existing.StackPattern,
-			"username":      existing.Username,
-			"error":         err.Error(),
-		})
-
 		actorID := p.UserID()
-		auditLog := &security.SecurityAuditLog{
-			EventType:      "registry_credential_deleted",
-			EventCategory:  security.CategoryRegistry,
-			Severity:       security.SeverityMedium,
+		_ = h.auditService.Log(security.LogEvent{
+			EventType:      security.EventRegistryCredentialDeleted,
 			ActorUserID:    &actorID,
 			ActorIP:        c.RealIP(),
 			ActorUserAgent: c.Request().UserAgent(),
@@ -319,25 +303,21 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 			TargetName:     existing.RegistryURL,
 			Success:        false,
 			FailureReason:  err.Error(),
-			Metadata:       string(metadataJSON),
-			ServerID:       &serverID,
-		}
-		h.db.Create(auditLog)
+			Metadata: map[string]any{
+				"registry_url":  existing.RegistryURL,
+				"stack_pattern": existing.StackPattern,
+				"username":      existing.Username,
+				"error":         err.Error(),
+			},
+			ServerID: &serverID,
+		})
 
 		return response.Internal(c, "Failed to delete registry credential")
 	}
 
-	metadataJSON, _ := json.Marshal(map[string]any{
-		"registry_url":  existing.RegistryURL,
-		"stack_pattern": existing.StackPattern,
-		"username":      existing.Username,
-	})
-
 	actorID := p.UserID()
-	auditLog := &security.SecurityAuditLog{
-		EventType:      "registry_credential_deleted",
-		EventCategory:  security.CategoryRegistry,
-		Severity:       security.SeverityMedium,
+	_ = h.auditService.Log(security.LogEvent{
+		EventType:      security.EventRegistryCredentialDeleted,
 		ActorUserID:    &actorID,
 		ActorIP:        c.RealIP(),
 		ActorUserAgent: c.Request().UserAgent(),
@@ -345,10 +325,13 @@ func (h *APIHandler) DeleteCredential(c echo.Context) error {
 		TargetID:       &credID,
 		TargetName:     existing.RegistryURL,
 		Success:        true,
-		Metadata:       string(metadataJSON),
-		ServerID:       &serverID,
-	}
-	h.db.Create(auditLog)
+		Metadata: map[string]any{
+			"registry_url":  existing.RegistryURL,
+			"stack_pattern": existing.StackPattern,
+			"username":      existing.Username,
+		},
+		ServerID: &serverID,
+	})
 
 	return response.OK(c, DeleteCredentialMessageData{
 		Message: "Registry credential deleted successfully",

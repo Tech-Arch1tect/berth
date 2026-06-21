@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/apikey"
 	tokens "berth/internal/domain/auth/tokens"
 	"berth/internal/domain/authz"
+	"berth/internal/domain/security"
 	usermodel "berth/internal/domain/user"
 
 	"github.com/labstack/echo/v4"
@@ -18,7 +19,11 @@ const (
 	wsProtocolBearer = "Bearer"
 )
 
-func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider) echo.MiddlewareFunc {
+type APIKeyAuthAuditor interface {
+	LogAPIEvent(eventType string, userID *uint, username, ip, userAgent string, success bool, failureReason string, metadata map[string]any) error
+}
+
+func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, userProvider UserProvider, auditor APIKeyAuthAuditor) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -49,7 +54,7 @@ func RequireAuth(jwtService *tokens.Service, apiKeyService *apikey.Service, user
 			}
 
 			if strings.HasPrefix(tokenString, apikey.KeyPrefix) {
-				return handleAPIKeyAuth(c, next, apiKeyService, tokenString)
+				return handleAPIKeyAuth(c, next, apiKeyService, auditor, tokenString)
 			}
 
 			return handleJWTAuth(c, next, jwtService, userProvider, tokenString)
@@ -72,9 +77,12 @@ func tokenFromWSSubprotocol(value string) (string, bool) {
 	return token, true
 }
 
-func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apikey.Service, key string) error {
+func handleAPIKeyAuth(c echo.Context, next echo.HandlerFunc, apiKeyService *apikey.Service, auditor APIKeyAuthAuditor, key string) error {
 	user, apiKey, err := apiKeyService.ValidateAPIKey(key)
 	if err != nil {
+		if auditor != nil {
+			_ = auditor.LogAPIEvent(security.EventAPIKeyValidationFailed, nil, "", c.RealIP(), c.Request().UserAgent(), false, err.Error(), nil)
+		}
 		return echo.NewHTTPError(http.StatusUnauthorized, "Authentication failed")
 	}
 

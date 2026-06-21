@@ -209,6 +209,7 @@ func Build(
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
 
 	g.AuthzEngine = authzengine.New(db, logger)
+	g.AuthzEngine.SetAuthorizationAuditor(g.SecurityAuditSvc)
 
 	g.APIKeySvc = apikey.NewService(db, logger, g.AuthzEngine)
 	g.APIKeyHandler = apikey.NewHandler(g.APIKeySvc, g.SecurityAuditSvc)
@@ -216,7 +217,7 @@ func Build(
 	g.SetupSvc = setup.NewService(db, g.RBACSvc, logger)
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.AuthzEngine, g.RBACSvc, g.AgentSvc, logger)
-	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc)
+	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc, g.SecurityAuditSvc)
 	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
@@ -245,7 +246,7 @@ func Build(
 	g.OperationsAuditSvc = operations.NewAuditService(db, logger, g.OperationsSummaryParser)
 
 	g.RegistrySvc = registry.NewService(db, g.Crypto, logger)
-	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.AuthzEngine, db)
+	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.AuthzEngine, g.SecurityAuditSvc)
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.AuthzEngine, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
