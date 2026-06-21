@@ -74,7 +74,7 @@ func (s *Service) useEmailVerificationToken(token string) (*EmailVerificationTok
 
 func (s *Service) sendEmailVerificationEmail(email, verificationURL string, expiry time.Duration) error {
 	if s.mailService == nil {
-		return fmt.Errorf("mail service is not configured")
+		return ErrMailServiceUnavailable
 	}
 	return s.mailService.SendTemplate("email_verification", []string{email}, "Please verify your email address", map[string]any{
 		"Email":           email,

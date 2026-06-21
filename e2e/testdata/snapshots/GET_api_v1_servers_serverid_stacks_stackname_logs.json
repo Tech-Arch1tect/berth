@@ -9,7 +9,7 @@
     "data": {},
     "error": {
       "code": "internal_error",
-      "message": "failed to decode logs response: json: cannot unmarshal string into Go struct field LogsData.logs of type []logs.LogEntry"
+      "message": "Internal server error"
     },
     "success": false
   }

@@ -110,7 +110,7 @@ func (s *Service) ResetPassword(token, newPassword string) error {
 
 func (s *Service) sendPasswordResetEmail(email, resetURL string, expiry time.Duration) error {
 	if s.mailService == nil {
-		return fmt.Errorf("mail service is not configured")
+		return ErrMailServiceUnavailable
 	}
 	return s.mailService.SendTemplate("password_reset", []string{email}, "Password Reset Request", map[string]any{
 		"Email":          email,
@@ -122,7 +122,7 @@ func (s *Service) sendPasswordResetEmail(email, resetURL string, expiry time.Dur
 
 func (s *Service) sendPasswordResetSuccessEmail(email string) error {
 	if s.mailService == nil {
-		return fmt.Errorf("mail service is not configured")
+		return ErrMailServiceUnavailable
 	}
 	return s.mailService.SendTemplate("password_reset_success", []string{email}, "Password Reset Successful", map[string]any{
 		"Email":   email,

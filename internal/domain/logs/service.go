@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -14,6 +15,8 @@ import (
 
 	"go.uber.org/zap"
 )
+
+var ErrInsufficientPermissions = errors.New("insufficient permissions to view logs")
 
 type logsAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
@@ -194,7 +197,7 @@ func (s *Service) validateAccess(p authz.Principal, serverID uint, stackname str
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
-		return fmt.Errorf("insufficient permissions to view logs for stack '%s'", stackname)
+		return fmt.Errorf("%w: stack '%s'", ErrInsufficientPermissions, stackname)
 	}
 
 	return nil

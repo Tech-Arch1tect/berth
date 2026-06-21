@@ -4,10 +4,11 @@ import (
 	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
+	"errors"
 	"strconv"
-	"strings"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -42,13 +43,14 @@ func (h *Handler) GetStackLogs(c echo.Context) error {
 
 	logsData, err := h.service.GetStackLogs(c.Request().Context(), req)
 	if err != nil {
-		if strings.Contains(err.Error(), "insufficient permissions") {
-			return response.Forbidden(c, err.Error())
-		}
-		if strings.Contains(err.Error(), "record not found") {
+		switch {
+		case errors.Is(err, ErrInsufficientPermissions):
+			return response.Forbidden(c, "Insufficient permissions")
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			return response.NotFound(c, "Server not found")
+		default:
+			return response.Internal(c, "Internal server error")
 		}
-		return response.Internal(c, err.Error())
 	}
 
 	return response.OK(c, *logsData)
@@ -82,13 +84,14 @@ func (h *Handler) GetContainerLogs(c echo.Context) error {
 
 	logsData, err := h.service.GetContainerLogs(c.Request().Context(), req)
 	if err != nil {
-		if strings.Contains(err.Error(), "insufficient permissions") {
-			return response.Forbidden(c, err.Error())
-		}
-		if strings.Contains(err.Error(), "record not found") {
+		switch {
+		case errors.Is(err, ErrInsufficientPermissions):
+			return response.Forbidden(c, "Insufficient permissions")
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			return response.NotFound(c, "Server not found")
+		default:
+			return response.Internal(c, "Internal server error")
 		}
-		return response.Internal(c, err.Error())
 	}
 
 	return response.OK(c, *logsData)

@@ -10,7 +10,7 @@ import (
 
 func (s *Service) ValidatePassword(password string) error {
 	if len(password) < s.config.Auth.MinLength {
-		return fmt.Errorf("password must be at least %d characters", s.config.Auth.MinLength)
+		return fmt.Errorf("%w: must be at least %d characters", ErrWeakPassword, s.config.Auth.MinLength)
 	}
 
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
@@ -41,7 +41,7 @@ func (s *Service) ValidatePassword(password string) error {
 		missing = append(missing, "one special character")
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("password must contain at least %s", strings.Join(missing, ", "))
+		return fmt.Errorf("%w: must contain at least %s", ErrWeakPassword, strings.Join(missing, ", "))
 	}
 	return nil
 }

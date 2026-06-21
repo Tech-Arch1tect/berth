@@ -7,10 +7,18 @@ import (
 	"berth/internal/pkg/validation"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
+)
+
+var (
+	ErrPermissionDenied   = errors.New("permission denied")
+	ErrStackAlreadyExists = errors.New("stack already exists")
+	ErrInvalidStackName   = errors.New("invalid stack name")
 )
 
 type stackAgentClient interface {
@@ -104,7 +112,7 @@ func (s *Service) CreateStack(ctx context.Context, p authz.Principal, serverID u
 			zap.String("stack_name", name),
 			zap.Error(err),
 		)
-		return nil, fmt.Errorf("invalid stack name: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrInvalidStackName, err)
 	}
 
 	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, name, permnames.StacksCreate)
@@ -124,7 +132,7 @@ func (s *Service) CreateStack(ctx context.Context, p authz.Principal, serverID u
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", name),
 		)
-		return nil, fmt.Errorf("permission denied: stacks.create required for pattern matching '%s'", name)
+		return nil, fmt.Errorf("%w: stacks.create required for pattern matching '%s'", ErrPermissionDenied, name)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -187,6 +195,9 @@ func (s *Service) createStackOnAgent(ctx context.Context, server *server.Server,
 
 	if resp.StatusCode != http.StatusCreated {
 		if result.Error != "" {
+			if strings.Contains(strings.ToLower(result.Error), "already exists") {
+				return nil, fmt.Errorf("%w: %s", ErrStackAlreadyExists, result.Error)
+			}
 			return nil, fmt.Errorf("agent error: %s", result.Error)
 		}
 		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
@@ -219,7 +230,7 @@ func (s *Service) GetStackDetails(ctx context.Context, p authz.Principal, server
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -342,7 +353,7 @@ func (s *Service) GetStackNetworks(ctx context.Context, p authz.Principal, serve
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -399,7 +410,7 @@ func (s *Service) GetStackVolumes(ctx context.Context, p authz.Principal, server
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -422,7 +433,7 @@ func (s *Service) GetContainerImageDetails(ctx context.Context, p authz.Principa
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -469,7 +480,7 @@ func (s *Service) GetStackEnvironmentVariables(ctx context.Context, p authz.Prin
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -532,7 +543,7 @@ func (s *Service) GetStackStats(ctx context.Context, p authz.Principal, serverID
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackname),
 		)
-		return nil, fmt.Errorf("user does not have permission to access this stack")
+		return nil, fmt.Errorf("%w: cannot access this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -617,7 +628,7 @@ func (s *Service) GetComposeConfig(ctx context.Context, p authz.Principal, serve
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to read files in this stack")
+		return nil, fmt.Errorf("%w: cannot read files in this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
@@ -660,7 +671,7 @@ func (s *Service) UpdateCompose(ctx context.Context, p authz.Principal, serverID
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("user does not have permission to write files in this stack")
+		return nil, fmt.Errorf("%w: cannot write files in this stack", ErrPermissionDenied)
 	}
 
 	server, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)

@@ -8,7 +8,7 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"strings"
+	"errors"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -16,6 +16,23 @@ import (
 
 type stackAuditLogger interface {
 	LogStackEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName, ip string, metadata map[string]any) error
+}
+
+func (h *APIHandler) respondServiceError(c echo.Context, err error) error {
+	switch {
+	case errors.Is(err, ErrPermissionDenied):
+		return response.Forbidden(c, "Insufficient permissions")
+	case errors.Is(err, ErrStackAlreadyExists):
+		return response.Conflict(c, "Stack already exists")
+	case errors.Is(err, ErrInvalidStackName):
+		return response.BadRequest(c, "Invalid stack name")
+	default:
+		h.logger.Error("stack request failed",
+			zap.String("path", c.Path()),
+			zap.Error(err),
+		)
+		return response.Internal(c, "Internal server error")
+	}
 }
 
 type APIHandler struct {
@@ -45,7 +62,7 @@ func (h *APIHandler) ListServerStacks(c echo.Context) error {
 
 	stacks, err := h.service.ListStacksForServer(c.Request().Context(), serverID, scope)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, ListStacksData{Stacks: stacks})
@@ -75,14 +92,7 @@ func (h *APIHandler) CreateStack(c echo.Context) error {
 
 	stack, err := h.service.CreateStack(c.Request().Context(), p, serverID, req.Name)
 	if err != nil {
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "permission denied") {
-			return response.Forbidden(c, errMsg)
-		}
-		if strings.Contains(errMsg, "already exists") {
-			return response.Conflict(c, errMsg)
-		}
-		return response.BadRequest(c, errMsg)
+		return h.respondServiceError(c, err)
 	}
 
 	username := session.ResolveUsername(c)
@@ -116,7 +126,7 @@ func (h *APIHandler) GetStackDetails(c echo.Context) error {
 
 	stackDetails, err := h.service.GetStackDetails(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, stackDetails)
@@ -135,7 +145,7 @@ func (h *APIHandler) GetStackNetworks(c echo.Context) error {
 
 	networks, err := h.service.GetStackNetworks(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, StackNetworksData{Networks: networks})
@@ -154,7 +164,7 @@ func (h *APIHandler) GetStackVolumes(c echo.Context) error {
 
 	volumes, err := h.service.GetStackVolumes(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, StackVolumesData{Volumes: volumes})
@@ -173,7 +183,7 @@ func (h *APIHandler) GetContainerImageDetails(c echo.Context) error {
 
 	imageDetails, err := h.service.GetContainerImageDetails(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, StackImagesData{Images: imageDetails})
@@ -201,7 +211,7 @@ func (h *APIHandler) GetStackEnvironmentVariables(c echo.Context) error {
 
 	environmentVariables, err := h.service.GetStackEnvironmentVariables(c.Request().Context(), p, serverID, stackname, unmask)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	if unmask {
@@ -247,7 +257,7 @@ func (h *APIHandler) GetStackStats(c echo.Context) error {
 
 	stackStats, err := h.service.GetStackStats(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, *stackStats)
@@ -304,7 +314,7 @@ func (h *APIHandler) GetComposeConfig(c echo.Context) error {
 
 	composeConfig, err := h.service.GetComposeConfig(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, composeConfig)
@@ -328,7 +338,7 @@ func (h *APIHandler) UpdateCompose(c echo.Context) error {
 
 	result, err := h.service.UpdateCompose(c.Request().Context(), p, serverID, stackname, &req)
 	if err != nil {
-		return response.Internal(c, err.Error())
+		return h.respondServiceError(c, err)
 	}
 
 	return response.OK(c, result)

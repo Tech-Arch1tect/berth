@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"berth/internal/domain/security"
 	usermodel "berth/internal/domain/user"
@@ -43,7 +42,7 @@ func (h *APIHandler) RequestPasswordResetAPI(c echo.Context) error {
 		switch {
 		case errors.Is(err, ErrPasswordResetDisabled):
 			return response.Err(c, http.StatusServiceUnavailable, "password_reset_disabled", "Password reset is currently disabled")
-		case strings.Contains(err.Error(), "mail service is not configured"):
+		case errors.Is(err, ErrMailServiceUnavailable):
 			h.logger.Error("password reset mail service unavailable",
 				zap.String("email", req.Email),
 				zap.Error(err))
@@ -92,7 +91,7 @@ func (h *APIHandler) ConfirmPasswordResetAPI(c echo.Context) error {
 			errors.Is(err, ErrPasswordResetTokenUsed),
 			errors.Is(err, ErrPasswordResetTokenInvalid):
 			return passwordResetTokenError(c, err)
-		case strings.Contains(err.Error(), "password must"):
+		case errors.Is(err, ErrWeakPassword):
 			return response.Err(c, http.StatusBadRequest, "weak_password", err.Error())
 		default:
 			h.logger.Error("password reset completion failed",
@@ -189,7 +188,7 @@ func (h *APIHandler) ResendVerificationAPI(c echo.Context) error {
 		switch {
 		case errors.Is(err, ErrEmailVerificationDisabled):
 			return response.Err(c, http.StatusServiceUnavailable, "email_verification_disabled", "Email verification is currently disabled")
-		case strings.Contains(err.Error(), "mail service is not configured"):
+		case errors.Is(err, ErrMailServiceUnavailable):
 			h.logger.Error("resend verification mail service unavailable",
 				zap.String("email", req.Email),
 				zap.Error(err))

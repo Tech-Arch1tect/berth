@@ -26,6 +26,9 @@ var (
 	ErrEmailVerificationTokenInvalid = errors.New("invalid or expired email verification token")
 	ErrEmailVerificationTokenExpired = errors.New("email verification token has expired")
 	ErrEmailVerificationTokenUsed    = errors.New("email verification token has already been used")
+
+	ErrWeakPassword           = errors.New("password does not meet requirements")
+	ErrMailServiceUnavailable = errors.New("mail service is not configured")
 )
 
 type MailService interface {

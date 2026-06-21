@@ -1,15 +1,15 @@
 {
   "method": "POST",
   "path": "/api/v1/servers/:serverid/stacks",
-  "status_code": 400,
+  "status_code": 500,
   "headers": {
     "Content-Type": "application/json"
   },
   "body": {
     "data": {},
     "error": {
-      "code": "bad_request",
-      "message": "failed to decode agent response: json: cannot unmarshal array into Go value of type struct { Success bool \"json:\\\"success\\\"\"; Message string \"json:\\\"message\\\"\"; Error string \"json:\\\"error\\\"\"; Stack *stack.Stack \"json:\\\"stack\\\"\" }"
+      "code": "internal_error",
+      "message": "Internal server error"
     },
     "success": false
   }
