@@ -142,8 +142,8 @@ func (ac *AgentClient) connect() {
 }
 
 func (ac *AgentClient) closeConn(code websocket.StatusCode, reason string) {
-	if ac.conn != nil {
-		_ = ac.conn.Close(code, reason)
+	if conn := ac.getConn(); conn != nil {
+		_ = conn.Close(code, reason)
 	}
 }
 
@@ -178,7 +178,7 @@ func (ac *AgentClient) attemptConnection() error {
 	}
 	conn.SetReadLimit(agentReadLimit)
 
-	ac.conn = conn
+	ac.setConn(conn)
 	ac.setConnected(true)
 
 	ac.logger.Info("WebSocket connection established",
@@ -200,8 +200,13 @@ func (ac *AgentClient) readPump(ctx context.Context) {
 		}
 	}()
 
+	conn := ac.getConn()
+	if conn == nil {
+		return
+	}
+
 	for {
-		_, message, err := ac.conn.Read(ctx)
+		_, message, err := conn.Read(ctx)
 		if err != nil {
 			status := websocket.CloseStatus(err)
 			if status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway || ctx.Err() != nil {
@@ -227,13 +232,18 @@ func (ac *AgentClient) pingPump(ctx context.Context) {
 	ticker := time.NewTicker(54 * time.Second)
 	defer ticker.Stop()
 
+	conn := ac.getConn()
+	if conn == nil {
+		return
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			pingCtx, pingCancel := context.WithTimeout(ctx, 10*time.Second)
-			err := ac.conn.Ping(pingCtx)
+			err := conn.Ping(pingCtx)
 			pingCancel()
 			if err != nil {
 				ac.closeConn(websocket.StatusGoingAway, "ping failed")
@@ -309,4 +319,16 @@ func (ac *AgentClient) setConnected(connected bool) {
 	ac.mutex.Lock()
 	defer ac.mutex.Unlock()
 	ac.connected = connected
+}
+
+func (ac *AgentClient) setConn(conn *websocket.Conn) {
+	ac.mutex.Lock()
+	defer ac.mutex.Unlock()
+	ac.conn = conn
+}
+
+func (ac *AgentClient) getConn() *websocket.Conn {
+	ac.mutex.RLock()
+	defer ac.mutex.RUnlock()
+	return ac.conn
 }

@@ -124,7 +124,9 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 		}
 	}()
 
+	clientReadDone := make(chan struct{})
 	go func() {
+		defer close(clientReadDone)
 		defer cancel()
 		for {
 			messageType, message, err := clientConn.Read(ctx)
@@ -166,6 +168,8 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	}()
 
 	<-ctx.Done()
+
+	<-clientReadDone
 
 	if operationLogID != nil {
 		endTime := time.Now()
