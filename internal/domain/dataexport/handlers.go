@@ -1,8 +1,7 @@
 package dataexport
 
 import (
-	"berth/internal/domain/rbac"
-	"berth/internal/domain/session"
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
 	"fmt"
@@ -18,25 +17,23 @@ import (
 type Handler struct {
 	logger  *zap.Logger
 	service *Service
-	rbacSvc *rbac.Service
 }
 
-func NewHandler(logger *zap.Logger, service *Service, rbacSvc *rbac.Service) *Handler {
+func NewHandler(logger *zap.Logger, service *Service) *Handler {
 	return &Handler{
 		logger:  logger,
 		service: service,
-		rbacSvc: rbacSvc,
 	}
 }
 
 func (h *Handler) Export(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
+	userID := p.UserID()
 
-	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
-	if err != nil || !isAdmin {
+	if !p.IsAdmin() {
 		h.logger.Warn("unauthorized export attempt",
 			zap.Uint("user_id", userID),
 		)
@@ -82,13 +79,13 @@ func (h *Handler) Export(c echo.Context) error {
 }
 
 func (h *Handler) Import(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	p, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
+	userID := p.UserID()
 
-	isAdmin, err := h.rbacSvc.HasRole(userID, rbac.RoleAdmin)
-	if err != nil || !isAdmin {
+	if !p.IsAdmin() {
 		h.logger.Warn("unauthorized import attempt",
 			zap.Uint("user_id", userID),
 		)

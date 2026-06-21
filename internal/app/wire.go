@@ -251,7 +251,7 @@ func Build(
 	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, logger, cfg.Custom.OperationTimeoutSeconds)
 
 	g.DataExportSvc = dataexport.NewService(db, logger)
-	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc, g.RBACSvc)
+	g.DataExportHandler = dataexport.NewHandler(logger, g.DataExportSvc)
 
 	g.ImageUpdatesSvc = imageupdates.NewService(db, g.AgentSvc, g.ServerSvc, g.Crypto, logger, cfg)
 	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, logger)
