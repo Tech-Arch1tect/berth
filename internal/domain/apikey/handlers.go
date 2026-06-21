@@ -4,9 +4,9 @@ import (
 	"berth/internal/domain/authz"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
+	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -54,12 +54,12 @@ func (h *Handler) GetAPIKey(c echo.Context) error {
 		return response.Unauthorized(c, "User not authenticated")
 	}
 
-	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	apiKeyID, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
-		return response.BadRequest(c, "Invalid API key ID")
+		return err
 	}
 
-	apiKey, err := h.service.GetAPIKey(uint(apiKeyID), userID)
+	apiKey, err := h.service.GetAPIKey(apiKeyID, userID)
 	if err != nil {
 		return response.NotFound(c, "API key not found")
 	}
@@ -119,18 +119,18 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 		return response.Unauthorized(c, "User not authenticated")
 	}
 
-	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	apiKeyID, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
-		return response.BadRequest(c, "Invalid API key ID")
+		return err
 	}
 
-	apiKey, _ := h.service.GetAPIKey(uint(apiKeyID), userID)
+	apiKey, _ := h.service.GetAPIKey(apiKeyID, userID)
 	apiKeyName := ""
 	if apiKey != nil {
 		apiKeyName = apiKey.Name
 	}
 
-	err = h.service.RevokeAPIKey(uint(apiKeyID), userID)
+	err = h.service.RevokeAPIKey(apiKeyID, userID)
 	if err != nil {
 		return response.NotFound(c, "API key not found")
 	}
@@ -141,7 +141,7 @@ func (h *Handler) RevokeAPIKey(c echo.Context) error {
 		security.EventAPIKeyRevoked,
 		userID,
 		username,
-		uint(apiKeyID),
+		apiKeyID,
 		apiKeyName,
 		c.RealIP(),
 		nil,
@@ -156,12 +156,12 @@ func (h *Handler) ListScopes(c echo.Context) error {
 		return response.Unauthorized(c, "User not authenticated")
 	}
 
-	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	apiKeyID, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
-		return response.BadRequest(c, "Invalid API key ID")
+		return err
 	}
 
-	scopes, err := h.service.ListScopes(uint(apiKeyID), userID)
+	scopes, err := h.service.ListScopes(apiKeyID, userID)
 	if err != nil {
 		return response.NotFound(c, "API key not found")
 	}
@@ -181,9 +181,9 @@ func (h *Handler) AddScope(c echo.Context) error {
 	}
 	userID := p.UserID()
 
-	apiKeyID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	apiKeyID, err := echoparams.ParseUintParam(c, "id")
 	if err != nil {
-		return response.BadRequest(c, "Invalid API key ID")
+		return err
 	}
 
 	var req AddScopeRequest
@@ -191,7 +191,7 @@ func (h *Handler) AddScope(c echo.Context) error {
 		return err
 	}
 
-	err = h.service.AddScope(p, uint(apiKeyID), req.ServerID, req.StackPattern, req.Permission)
+	err = h.service.AddScope(p, apiKeyID, req.ServerID, req.StackPattern, req.Permission)
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}
@@ -202,7 +202,7 @@ func (h *Handler) AddScope(c echo.Context) error {
 		security.EventAPIKeyScopeAdded,
 		userID,
 		username,
-		uint(apiKeyID),
+		apiKeyID,
 		0,
 		c.RealIP(),
 		map[string]any{
@@ -221,14 +221,17 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 		return response.Unauthorized(c, "User not authenticated")
 	}
 
-	scopeID, err := strconv.ParseUint(c.Param("scopeId"), 10, 32)
+	scopeID, err := echoparams.ParseUintParam(c, "scopeId")
 	if err != nil {
-		return response.BadRequest(c, "Invalid scope ID")
+		return err
 	}
 
-	apiKeyID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	apiKeyID, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 
-	err = h.service.RemoveScope(uint(scopeID), userID)
+	err = h.service.RemoveScope(scopeID, userID)
 	if err != nil {
 		return response.NotFound(c, "Scope not found")
 	}
@@ -239,8 +242,8 @@ func (h *Handler) RemoveScope(c echo.Context) error {
 		security.EventAPIKeyScopeRemoved,
 		userID,
 		username,
-		uint(apiKeyID),
-		uint(scopeID),
+		apiKeyID,
+		scopeID,
 		c.RealIP(),
 		nil,
 	)
