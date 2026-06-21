@@ -277,6 +277,7 @@ func Build(
 	g.WSAgentMgr = websocket.NewAgentManager(g.WSEventRegistry, logger)
 	g.WSServiceMgr = websocket.NewServiceManager(g.ServerSvc, g.WSAgentMgr, logger)
 	g.WSHandler = websocket.NewHandler(g.ServerSvc, g.OperationsAuditSvc, g.OriginCheck)
+	g.ServerSvc.SetAgentLifecycle(g.WSAgentMgr)
 	g.addHook("websocket service manager",
 		func(context.Context) error {
 			go func() {
@@ -286,7 +287,10 @@ func Build(
 			}()
 			return nil
 		},
-		nil,
+		func(context.Context) error {
+			g.WSServiceMgr.Stop()
+			return nil
+		},
 	)
 
 	g.SPASvc = spa.New(cfg.Frontend.Development, cfg.Frontend.ViteDevURL, logger)

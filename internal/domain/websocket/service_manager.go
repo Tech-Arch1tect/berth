@@ -25,6 +25,11 @@ func NewServiceManager(serverService wsServerProvider, agentManager *AgentManage
 	}
 }
 
+func (sm *ServiceManager) Stop() {
+	sm.logger.Info("stopping WebSocket service manager")
+	sm.agentManager.Shutdown()
+}
+
 func (sm *ServiceManager) Start() error {
 	sm.logger.Info("starting WebSocket service manager")
 

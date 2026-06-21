@@ -29,12 +29,18 @@ type serverAgentClient interface {
 	MakeRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
+type agentLifecycle interface {
+	ConnectToAgent(server *Server) error
+	DisconnectAgent(serverID uint)
+}
+
 type Service struct {
 	db         *gorm.DB
 	crypto     *berthcrypto.Crypto
 	authzSvc   serverAuthorizer
 	patternSvc stackPatternProvider
 	agentSvc   serverAgentClient
+	agentLife  agentLifecycle
 	logger     *zap.Logger
 }
 
@@ -47,6 +53,10 @@ func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthoriz
 		agentSvc:   agentSvc,
 		logger:     logger,
 	}
+}
+
+func (s *Service) SetAgentLifecycle(a agentLifecycle) {
+	s.agentLife = a
 }
 
 func (s *Service) ListServers() ([]ServerInfo, error) {
@@ -193,6 +203,16 @@ func (s *Service) CreateServer(server *Server) error {
 		zap.Int("port", server.Port),
 	)
 
+	if s.agentLife != nil {
+		if connectServer, err := s.GetServer(server.ID); err != nil {
+			s.logger.Warn("failed to load server for agent connection after create",
+				zap.Error(err), zap.Uint("server_id", server.ID))
+		} else if err := s.agentLife.ConnectToAgent(connectServer); err != nil {
+			s.logger.Warn("failed to open agent connection for new server",
+				zap.Error(err), zap.Uint("server_id", server.ID))
+		}
+	}
+
 	return nil
 }
 
@@ -279,6 +299,10 @@ func (s *Service) DeleteServer(id uint) error {
 		zap.Uint("server_id", id),
 		zap.String("server_name", server.Name),
 	)
+
+	if s.agentLife != nil {
+		s.agentLife.DisconnectAgent(id)
+	}
 
 	return nil
 }

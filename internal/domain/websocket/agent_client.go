@@ -91,6 +91,19 @@ func (am *AgentManager) DisconnectAgent(serverID uint) {
 	}
 }
 
+func (am *AgentManager) Shutdown() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	for id, client := range am.clients {
+		select {
+		case client.stop <- true:
+		default:
+		}
+		delete(am.clients, id)
+	}
+}
+
 func (am *AgentManager) GetConnectionStatus(serverID uint) bool {
 	am.mutex.RLock()
 	defer am.mutex.RUnlock()
