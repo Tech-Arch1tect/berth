@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -45,11 +46,12 @@ func toLogResponseList(logs []SecurityAuditLog) []SecurityAuditLogInfo {
 }
 
 type Handler struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *zap.Logger
 }
 
-func NewHandler(db *gorm.DB) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *gorm.DB, logger *zap.Logger) *Handler {
+	return &Handler{db: db, logger: logger}
 }
 
 func (h *Handler) ListLogs(c echo.Context) error {
@@ -142,28 +144,38 @@ func (h *Handler) GetLog(c echo.Context) error {
 func (h *Handler) GetStats(c echo.Context) error {
 	var stats StatsResponseData
 
-	h.db.Model(&SecurityAuditLog{}).Count(&stats.TotalEvents)
+	if err := h.db.Model(&SecurityAuditLog{}).Count(&stats.TotalEvents).Error; err != nil {
+		return h.statsError(c, err)
+	}
 
-	h.db.Model(&SecurityAuditLog{}).Where("success = ?", false).Count(&stats.FailedEvents)
+	if err := h.db.Model(&SecurityAuditLog{}).Where("success = ?", false).Count(&stats.FailedEvents).Error; err != nil {
+		return h.statsError(c, err)
+	}
 
 	now := time.Now()
-	h.db.Model(&SecurityAuditLog{}).
+	if err := h.db.Model(&SecurityAuditLog{}).
 		Where("created_at >= ?", now.Add(-24*time.Hour)).
-		Count(&stats.EventsLast24Hours)
+		Count(&stats.EventsLast24Hours).Error; err != nil {
+		return h.statsError(c, err)
+	}
 
-	h.db.Model(&SecurityAuditLog{}).
+	if err := h.db.Model(&SecurityAuditLog{}).
 		Where("created_at >= ?", now.Add(-7*24*time.Hour)).
-		Count(&stats.EventsLast7Days)
+		Count(&stats.EventsLast7Days).Error; err != nil {
+		return h.statsError(c, err)
+	}
 
 	stats.EventsByCategory = make(map[string]int64)
 	var categoryRows []struct {
 		EventCategory string
 		Count         int64
 	}
-	h.db.Model(&SecurityAuditLog{}).
+	if err := h.db.Model(&SecurityAuditLog{}).
 		Select("event_category, COUNT(*) as count").
 		Group("event_category").
-		Scan(&categoryRows)
+		Scan(&categoryRows).Error; err != nil {
+		return h.statsError(c, err)
+	}
 	for _, row := range categoryRows {
 		stats.EventsByCategory[row.EventCategory] = row.Count
 	}
@@ -173,10 +185,12 @@ func (h *Handler) GetStats(c echo.Context) error {
 		Severity string
 		Count    int64
 	}
-	h.db.Model(&SecurityAuditLog{}).
+	if err := h.db.Model(&SecurityAuditLog{}).
 		Select("severity, COUNT(*) as count").
 		Group("severity").
-		Scan(&severityRows)
+		Scan(&severityRows).Error; err != nil {
+		return h.statsError(c, err)
+	}
 	for _, row := range severityRows {
 		stats.EventsBySeverity[row.Severity] = row.Count
 	}
@@ -185,12 +199,14 @@ func (h *Handler) GetStats(c echo.Context) error {
 		EventType string
 		Count     int64
 	}
-	h.db.Model(&SecurityAuditLog{}).
+	if err := h.db.Model(&SecurityAuditLog{}).
 		Select("event_type, COUNT(*) as count").
 		Group("event_type").
 		Order("count DESC").
 		Limit(10).
-		Scan(&eventTypeRows)
+		Scan(&eventTypeRows).Error; err != nil {
+		return h.statsError(c, err)
+	}
 	stats.RecentEventTypes = make([]EventTypeCount, len(eventTypeRows))
 	for i, row := range eventTypeRows {
 		stats.RecentEventTypes[i] = EventTypeCount{
@@ -200,4 +216,9 @@ func (h *Handler) GetStats(c echo.Context) error {
 	}
 
 	return response.OK(c, stats)
+}
+
+func (h *Handler) statsError(c echo.Context, err error) error {
+	h.logger.Error("failed to compute security statistics", zap.Error(err))
+	return response.Internal(c, "Failed to compute security statistics")
 }

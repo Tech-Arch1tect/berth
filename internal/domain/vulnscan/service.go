@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/server"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -126,6 +127,14 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 			zap.String("status", existingScan.Status),
 		)
 		return &existingScan, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		s.logger.Error("failed to check for an active scan",
+			zap.Error(err),
+			zap.Uint("server_id", serverID),
+			zap.String("stack_name", stackName),
+		)
+		return nil, fmt.Errorf("check for active scan: %w", err)
 	}
 
 	var serviceFilter string
@@ -541,8 +550,12 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 	}
 
 	var baseScopes, compareScopes []ScanScope
-	s.db.Where("scan_id = ?", baseScanID).Find(&baseScopes)
-	s.db.Where("scan_id = ?", compareScanID).Find(&compareScopes)
+	if err := s.db.Where("scan_id = ?", baseScanID).Find(&baseScopes).Error; err != nil {
+		return nil, fmt.Errorf("load base scan scopes: %w", err)
+	}
+	if err := s.db.Where("scan_id = ?", compareScanID).Find(&compareScopes).Error; err != nil {
+		return nil, fmt.Errorf("load compare scan scopes: %w", err)
+	}
 
 	baseImageSet := make(map[string]bool)
 	for _, scope := range baseScopes {

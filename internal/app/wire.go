@@ -199,7 +199,7 @@ func Build(
 	}
 	g.addHook("security audit logger", nil, closeHook("security audit logger", logger, g.SecurityAuditLogger))
 	g.SecurityAuditSvc = security.NewAuditService(db, logger)
-	g.SecurityHandler = security.NewHandler(db)
+	g.SecurityHandler = security.NewHandler(db, logger)
 
 	g.AuthAPIHandler = auth.NewAPIHandler(db, g.AuthSvc, jwtSvc, g.TOTPSvc, g.SessionSvc, logger, g.SecurityAuditSvc)
 
