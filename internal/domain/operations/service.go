@@ -303,9 +303,12 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, p authz.Principal
 	return s.relaySSEStream(ctx, agentResp.Body, writer)
 }
 
+const maxSSELineBytes = 1 << 20
+
 func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer io.Writer) error {
 	s.logger.Debug("starting SSE stream relay")
 	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineBytes)
 	lineCount := 0
 
 	for {
