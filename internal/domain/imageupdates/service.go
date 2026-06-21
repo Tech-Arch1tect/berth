@@ -81,16 +81,18 @@ func NewService(db *gorm.DB, agentSvc agentClient, serverSvc serverProvider,
 		cancel:             cancel,
 	}
 
-	if svc.enabled {
-		logger.Info("image update check is enabled, starting background job",
-			zap.Duration("interval", interval),
-		)
-		go svc.checkLoop()
-	} else {
-		logger.Info("image update check is disabled via configuration")
-	}
-
 	return svc
+}
+
+func (s *Service) Start() {
+	if !s.enabled {
+		s.logger.Info("image update check is disabled via configuration")
+		return
+	}
+	s.logger.Info("image update check is enabled, starting background job",
+		zap.Duration("interval", s.interval),
+	)
+	go s.checkLoop()
 }
 
 func (s *Service) checkLoop() {
@@ -464,8 +466,8 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []ContainerImageU
 	return enriched, nil
 }
 
-func (s *Service) Shutdown() {
-	s.logger.Info("shutting down image updates service")
+func (s *Service) Stop() {
+	s.logger.Info("stopping image updates service")
 	s.cancel()
 }
 

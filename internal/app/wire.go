@@ -263,6 +263,10 @@ func Build(
 
 	g.ImageUpdatesSvc = imageupdates.NewService(db, g.AgentSvc, g.ServerSvc, g.Crypto, logger, cfg)
 	g.ImageUpdatesAPIHandler = imageupdates.NewAPIHandler(g.ImageUpdatesSvc, logger)
+	g.addHook("image updates checker",
+		func(context.Context) error { g.ImageUpdatesSvc.Start(); return nil },
+		func(context.Context) error { g.ImageUpdatesSvc.Stop(); return nil },
+	)
 
 	g.VulnscanSvc = vulnscan.NewService(db, g.ServerSvc, g.AgentSvc, g.AuthzEngine, logger)
 	g.VulnscanHandler = vulnscan.NewHandler(g.VulnscanSvc, logger)
