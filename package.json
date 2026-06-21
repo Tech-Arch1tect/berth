@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && tsc",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"{resources,frontend-e2e}/**/*.{js,ts,tsx,jsx}\"",
