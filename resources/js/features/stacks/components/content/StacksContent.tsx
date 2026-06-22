@@ -23,6 +23,7 @@ interface StacksContentProps {
   };
   layoutMode: 'compact' | 'normal';
   isLoading: boolean;
+  loadingCount?: number;
   hasError: boolean;
   errors: Array<{ server: Server; error: Error }>;
   hasActiveFilters: boolean;
@@ -33,10 +34,12 @@ export const StacksContent: React.FC<StacksContentProps> = ({
   statistics,
   layoutMode,
   isLoading,
+  loadingCount = 0,
   hasError,
   errors,
   hasActiveFilters,
 }) => {
+  const hasLoadedAny = statistics.total > 0;
   return (
     <div className="flex-1 overflow-auto">
       <div className="p-6">
@@ -67,10 +70,20 @@ export const StacksContent: React.FC<StacksContentProps> = ({
         )}
 
         {/* Loading State */}
-        {isLoading ? (
+        {isLoading && !hasLoadedAny ? (
           <LoadingSpinner size="lg" text="Loading stacks from all servers..." fullScreen />
         ) : (
           <>
+            {loadingCount > 0 && hasLoadedAny && (
+              <div className={cn('mb-6 flex items-center gap-2 text-sm', theme.text.muted)}>
+                <div className={cn(theme.effects.spinnerSm, 'h-4 w-4')} />
+                <span>
+                  Loading stacks from {loadingCount} more{' '}
+                  {loadingCount === 1 ? 'server' : 'servers'}…
+                </span>
+              </div>
+            )}
+
             {/* Empty State or Grid */}
             {stacks.length === 0 ? (
               <EmptyState

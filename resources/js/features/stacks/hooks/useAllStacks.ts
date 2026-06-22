@@ -38,6 +38,7 @@ export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
 
   const isLoading = queries.some((query) => query.isLoading);
   const isFetching = queries.some((query) => query.isFetching);
+  const loadingCount = queries.filter((query) => query.isLoading).length;
   const hasError = queries.some((query) => query.error);
   const errors = queries
     .map((query, index) => ({
@@ -59,6 +60,7 @@ export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
     stacks: allStacks,
     isLoading,
     isFetching,
+    loadingCount,
     hasError,
     errors,
     refetchAll,
