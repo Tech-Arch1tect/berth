@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useQueries } from '@tanstack/react-query';
-import { useDashboardHealth, useDashboardActivity } from '../components';
+import { useState, useCallback } from 'react';
+import { useDashboardActivity } from '../components';
+import { useDashboardStatistics } from '../hooks/useDashboardStatistics';
 import { PanelLayout } from '../../../shared/components/PanelLayout';
 import { DashboardSidebar } from '../components/sidebar/DashboardSidebar';
 import { DashboardPage, SECTION_IDS } from '../components/content/DashboardPage';
@@ -9,11 +9,7 @@ import { DashboardStatusBar } from '../components/statusbar/DashboardStatusBar';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { useAuth } from '../../../shared/auth/auth-context';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
-import {
-  getApiV1ServersServeridStatistics,
-  getGetApiV1ServersServeridStatisticsQueryKey,
-  useGetApiV1Servers,
-} from '../../../api/generated/servers/servers';
+import { useGetApiV1Servers } from '../../../api/generated/servers/servers';
 
 export default function Dashboard() {
   useDocumentTitle('Dashboard');
@@ -28,59 +24,31 @@ export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const healthSummary = useDashboardHealth(servers);
+  const {
+    serverStats,
+    healthSummary,
+    isLoading: statisticsLoading,
+    refetch: refetchStatistics,
+  } = useDashboardStatistics(servers);
   const activitySummary = useDashboardActivity();
-
-  const activeServers = servers.filter((s) => s.is_active);
-  const statisticsQueries = useQueries({
-    queries: activeServers.map((server) => ({
-      queryKey: getGetApiV1ServersServeridStatisticsQueryKey(server.id),
-      queryFn: () => getApiV1ServersServeridStatistics(server.id),
-      staleTime: 30 * 1000,
-      gcTime: 5 * 60 * 1000,
-    })),
-  });
-
-  const serverStats = useMemo(() => {
-    const map = new Map<number, { total: number; healthy: number; unhealthy: number }>();
-    activeServers.forEach((server, index) => {
-      const query = statisticsQueries[index];
-      const stats = query?.data?.data?.statistics;
-      if (stats) {
-        map.set(server.id, {
-          total: stats.total_stacks,
-          healthy: stats.healthy_stacks,
-          unhealthy: stats.unhealthy_stacks,
-        });
-      }
-    });
-    return map;
-  }, [activeServers, statisticsQueries]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
 
-    statisticsQueries.forEach((query) => {
-      query.refetch();
-    });
+    refetchStatistics();
     setTimeout(() => {
       setIsRefreshing(false);
       setLastUpdated(new Date());
     }, 500);
-  }, [statisticsQueries]);
+  }, [refetchStatistics]);
 
   const handleSectionChange = useCallback((sectionId: string) => {
     setActiveSection(sectionId);
   }, []);
 
-  const isLoading =
-    serversLoading ||
-    statisticsQueries.some((q) => q.isLoading) ||
-    healthSummary.serversLoading > 0;
+  const isLoading = serversLoading || statisticsLoading;
 
-  const isInitialLoad = serversLoading || (isLoading && statisticsQueries.every((q) => !q.data));
-
-  if (isInitialLoad) {
+  if (serversLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="text-center">

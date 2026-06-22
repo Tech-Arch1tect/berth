@@ -20,7 +20,6 @@ export { StackCard } from './StackCard';
 export { default as EmptyServerState } from './EmptyServerState';
 
 // Hooks
-export { useDashboardHealth } from '../hooks/useDashboardHealth';
 export { useDashboardActivity } from '../hooks/useDashboardActivity';
 
 // Types
