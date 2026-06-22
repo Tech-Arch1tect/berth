@@ -139,7 +139,7 @@ func (h *APIHandler) TestConnection(c echo.Context) error {
 		return response.NotFound(c, "Server not found")
 	}
 
-	if err := h.service.TestServerConnection(server); err != nil {
+	if err := h.service.TestServerConnection(c.Request().Context(), server); err != nil {
 		h.audit(c, security.EventServerConnectionTestFailure, server.ID, server.Name, false, err.Error())
 		return response.ServiceUnavailable(c, "Connection test failed: "+err.Error())
 	}

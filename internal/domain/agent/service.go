@@ -226,7 +226,7 @@ func (s *Service) HealthCheck(ctx context.Context, server *server.Server) error 
 		zap.String("server_name", server.Name),
 	)
 
-	resp, err := s.MakeRequest(ctx, server, "GET", "/health", nil)
+	resp, err := s.MakeReadRequest(ctx, server, "GET", "/health", nil)
 	if err != nil {
 		s.logger.Error("health check request failed",
 			zap.Error(err),

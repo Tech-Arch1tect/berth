@@ -4,14 +4,12 @@ import (
 	"berth/internal/domain/authz"
 	berthcrypto "berth/internal/pkg/crypto"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
-	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -28,6 +26,7 @@ type stackPatternProvider interface {
 type serverAgentClient interface {
 	MakeRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeReadRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
+	HealthCheck(ctx context.Context, server *Server) error
 }
 
 type agentLifecycle interface {
@@ -308,59 +307,20 @@ func (s *Service) DeleteServer(id uint) error {
 	return nil
 }
 
-func (s *Service) TestServerConnection(server *Server) error {
+func (s *Service) TestServerConnection(ctx context.Context, server *Server) error {
 	s.logger.Info("testing server connection",
 		zap.Uint("server_id", server.ID),
 		zap.String("server_name", server.Name),
 		zap.String("host", server.Host),
 	)
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
-		s.logger.Warn("SSL verification disabled for connection test",
-			zap.Uint("server_id", server.ID),
-			zap.String("server_name", server.Name),
-		)
-		client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-	}
-
-	url := server.GetAPIURL() + "/health"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		s.logger.Error("failed to create test request",
-			zap.Error(err),
-			zap.Uint("server_id", server.ID),
-			zap.String("url", url),
-		)
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
+	if err := s.agentSvc.HealthCheck(ctx, server); err != nil {
 		s.logger.Error("server connection test failed",
 			zap.Error(err),
 			zap.Uint("server_id", server.ID),
 			zap.String("server_name", server.Name),
-			zap.String("url", url),
 		)
-		return fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Warn("server health check failed",
-			zap.Int("status_code", resp.StatusCode),
-			zap.Uint("server_id", server.ID),
-			zap.String("server_name", server.Name),
-		)
-		return fmt.Errorf("server health check failed with status: %d", resp.StatusCode)
+		return err
 	}
 
 	s.logger.Info("server connection test successful",
