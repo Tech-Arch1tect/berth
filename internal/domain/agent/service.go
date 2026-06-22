@@ -17,20 +17,22 @@ import (
 )
 
 type Service struct {
-	logger                  *zap.Logger
-	operationTimeoutSeconds int
+	logger           *zap.Logger
+	operationTimeout time.Duration
+	readTimeout      time.Duration
 }
 
-func NewService(logger *zap.Logger, operationTimeoutSeconds int) *Service {
+func NewService(logger *zap.Logger, operationTimeoutSeconds, readTimeoutSeconds int) *Service {
 	return &Service{
-		logger:                  logger,
-		operationTimeoutSeconds: operationTimeoutSeconds,
+		logger:           logger,
+		operationTimeout: time.Duration(operationTimeoutSeconds) * time.Second,
+		readTimeout:      time.Duration(readTimeoutSeconds) * time.Second,
 	}
 }
 
-func (s *Service) getClient(server *server.Server) *http.Client {
+func (s *Service) getClient(server *server.Server, timeout time.Duration) *http.Client {
 	client := &http.Client{
-		Timeout: time.Duration(s.operationTimeoutSeconds) * time.Second,
+		Timeout: timeout,
 	}
 
 	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {
@@ -47,6 +49,13 @@ func (s *Service) getClient(server *server.Server) *http.Client {
 }
 
 func (s *Service) MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
+	return s.doRequest(ctx, server, method, endpoint, payload, s.operationTimeout)
+}
+func (s *Service) MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
+	return s.doRequest(ctx, server, method, endpoint, payload, s.readTimeout)
+}
+
+func (s *Service) doRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any, timeout time.Duration) (*http.Response, error) {
 	url := server.GetAPIURL() + endpoint
 
 	s.logger.Debug("making agent request",
@@ -86,7 +95,7 @@ func (s *Service) MakeRequest(ctx context.Context, server *server.Server, method
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	client := s.getClient(server)
+	client := s.getClient(server, timeout)
 	resp, err := client.Do(req)
 	if err != nil {
 		s.logger.Error("agent request failed",
@@ -184,7 +193,7 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *server.Serve
 	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	client := s.getClient(server)
+	client := s.getClient(server, s.operationTimeout)
 	resp, err := client.Do(req)
 	if err != nil {
 		s.logger.Error("multipart agent request failed",

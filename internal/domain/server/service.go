@@ -27,6 +27,7 @@ type stackPatternProvider interface {
 
 type serverAgentClient interface {
 	MakeRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeReadRequest(ctx context.Context, server *Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type agentLifecycle interface {
@@ -425,7 +426,7 @@ func (s *Service) GetServerStatistics(ctx context.Context, p authz.Principal, se
 	patternsParam := strings.Join(patterns, ",")
 	endpoint := fmt.Sprintf("/stacks/summary?patterns=%s", url.QueryEscape(patternsParam))
 
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", endpoint, nil)
+	resp, err := s.agentSvc.MakeReadRequest(ctx, server, "GET", endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to agent: %w", err)
 	}

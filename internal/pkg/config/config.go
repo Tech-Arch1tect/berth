@@ -123,6 +123,7 @@ type AppCustomConfig struct {
 	SecurityAuditLogLogToFile          bool   `env:"SECURITY_AUDIT_LOG_TO_FILE" envDefault:"false"`
 	LogFileSizeLimitMB                 int    `env:"LOG_FILE_SIZE_LIMIT_MB" envDefault:"100"`
 	OperationTimeoutSeconds            int    `env:"OPERATION_TIMEOUT_SECONDS" envDefault:"600"`
+	AgentReadTimeoutSeconds            int    `env:"AGENT_READ_TIMEOUT_SECONDS" envDefault:"10"`
 	ImageUpdateCheckEnabled            bool   `env:"IMAGE_UPDATE_CHECK_ENABLED" envDefault:"true"`
 	ImageUpdateCheckInterval           string `env:"IMAGE_UPDATE_CHECK_INTERVAL" envDefault:"6h"`
 	ImageUpdateCheckDisabledRegistries string `env:"IMAGE_UPDATE_CHECK_DISABLED_REGISTRIES" envDefault:""`

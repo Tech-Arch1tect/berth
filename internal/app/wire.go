@@ -203,7 +203,7 @@ func Build(
 
 	g.AuthAPIHandler = auth.NewAPIHandler(db, g.AuthSvc, jwtSvc, g.TOTPSvc, g.SessionSvc, logger, g.SecurityAuditSvc)
 
-	g.AgentSvc = agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds)
+	g.AgentSvc = agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds, cfg.Custom.AgentReadTimeoutSeconds)
 
 	g.RBACSvc = rbac.NewService(db, logger)
 	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)

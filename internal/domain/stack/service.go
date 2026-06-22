@@ -23,6 +23,7 @@ var (
 
 type stackAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type stackServerProvider interface {
@@ -273,7 +274,7 @@ func (s *Service) fetchStacksFromAgent(ctx context.Context, server *server.Serve
 		zap.String("server_name", server.Name),
 	)
 
-	resp, err := s.agentSvc.MakeRequest(ctx, server, "GET", "/stacks", nil)
+	resp, err := s.agentSvc.MakeReadRequest(ctx, server, "GET", "/stacks", nil)
 	if err != nil {
 		s.logger.Error("failed to communicate with agent for stacks",
 			zap.Error(err),
