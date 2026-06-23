@@ -8,6 +8,7 @@ import { SidebarSection } from './SidebarSection';
 import { ServerListItem } from './ServerListItem';
 import { NegativeFilters } from '../../../../shared/components/NegativeFilters';
 import { Server } from '../../../../shared/types/server';
+import { ServerStatus } from '../../../../shared/utils/serverStatus';
 import { SortOption } from '../../types';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
@@ -27,6 +28,7 @@ interface StacksSidebarProps {
   showExclusionFilter: boolean;
   onToggleExclusionFilter: () => void;
   serverStackCounts?: Map<number, { total: number; healthy: number }>;
+  serverStatus?: Map<number, ServerStatus>;
   showServersSection?: boolean;
 }
 
@@ -45,6 +47,7 @@ export const StacksSidebar: React.FC<StacksSidebarProps> = ({
   showExclusionFilter,
   onToggleExclusionFilter,
   serverStackCounts,
+  serverStatus,
   showServersSection = true,
 }) => {
   const totalStacks = serverStackCounts
@@ -97,6 +100,7 @@ export const StacksSidebar: React.FC<StacksSidebarProps> = ({
               <ServerListItem
                 key={server.id}
                 server={server}
+                status={serverStatus?.get(server.id) ?? 'checking'}
                 isActive={serverFilter === server.id}
                 onClick={() => onServerFilterChange(server.id)}
                 stackCount={serverStackCounts.get(server.id)}

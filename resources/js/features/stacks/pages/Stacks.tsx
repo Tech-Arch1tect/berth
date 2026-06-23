@@ -26,10 +26,18 @@ export default function Stacks() {
   const [showExclusionFilter, setShowExclusionFilter] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
 
-  const { stacks, isLoading, isFetching, loadingCount, hasError, errors, refetchAll } =
-    useAllStacks({
-      servers,
-    });
+  const {
+    stacks,
+    serverStatus,
+    isLoading,
+    isFetching,
+    loadingCount,
+    hasError,
+    errors,
+    refetchAll,
+  } = useAllStacks({
+    servers,
+  });
 
   const toggleLayout = useCallback(() => {
     const newLayout = layoutMode === 'compact' ? 'normal' : 'compact';
@@ -157,6 +165,7 @@ export default function Stacks() {
             showExclusionFilter={showExclusionFilter}
             onToggleExclusionFilter={() => setShowExclusionFilter(!showExclusionFilter)}
             serverStackCounts={serverStackCounts}
+            serverStatus={serverStatus}
           />
         }
         content={

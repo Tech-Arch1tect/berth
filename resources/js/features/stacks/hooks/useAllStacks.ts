@@ -2,6 +2,7 @@ import { useQueries } from '@tanstack/react-query';
 import { StackService } from '../services/stackService';
 import type { Stack } from '../../../api/generated/models';
 import { Server } from '../../../shared/types/server';
+import { ServerStatus, deriveServerStatus } from '../../../shared/utils/serverStatus';
 
 export interface StackWithServer extends Stack {
   server: Server;
@@ -36,6 +37,12 @@ export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
     }));
   });
 
+  const serverStatus = new Map<number, ServerStatus>();
+  queries.forEach((query, index) => {
+    const server = servers[index];
+    serverStatus.set(server.id, deriveServerStatus(server.is_active, query));
+  });
+
   const isLoading = queries.some((query) => query.isLoading);
   const isFetching = queries.some((query) => query.isFetching);
   const loadingCount = queries.filter((query) => query.isLoading).length;
@@ -58,6 +65,7 @@ export function useAllStacks({ servers, enabled = true }: UseAllStacksOptions) {
 
   return {
     stacks: allStacks,
+    serverStatus,
     isLoading,
     isFetching,
     loadingCount,

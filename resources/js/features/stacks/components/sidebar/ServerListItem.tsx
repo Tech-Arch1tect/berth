@@ -1,9 +1,12 @@
 import { Server } from '../../../../shared/types/server';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { ServerStatus } from '../../../../shared/utils/serverStatus';
+import { ServerStatusDot } from '../../../../shared/components/ServerStatusBadge';
 
 interface ServerListItemProps {
   server: Server;
+  status: ServerStatus;
   isActive: boolean;
   onClick: () => void;
   stackCount?: {
@@ -14,6 +17,7 @@ interface ServerListItemProps {
 
 export const ServerListItem: React.FC<ServerListItemProps> = ({
   server,
+  status,
   isActive,
   onClick,
   stackCount,
@@ -30,12 +34,7 @@ export const ServerListItem: React.FC<ServerListItemProps> = ({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {/* Status dot */}
-          <span
-            className={cn(
-              'w-2 h-2 rounded-full flex-shrink-0',
-              server.is_active ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'
-            )}
-          />
+          <ServerStatusDot status={status} />
           <div className="min-w-0">
             {/* Server name */}
             <div
