@@ -20,6 +20,8 @@ import { ActivitySummary } from '../../hooks/useDashboardActivity';
 import type { OperationLogInfo } from '../../../../api/generated/models';
 import { useServerStatistics } from '../../../stacks/hooks/useServerStatistics';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { ServerStatus, deriveServerStatus } from '../../../../shared/utils/serverStatus';
+import { ServerStatusBadge } from '../../../../shared/components/ServerStatusBadge';
 
 interface DashboardPageProps {
   servers: Server[];
@@ -27,6 +29,7 @@ interface DashboardPageProps {
   activitySummary: ActivitySummary;
   userRoles: string[];
   serverStats: Map<number, { total: number; healthy: number; unhealthy: number }>;
+  serverStatus: Map<number, ServerStatus>;
   onSectionChange?: (sectionId: string) => void;
 }
 
@@ -102,8 +105,9 @@ const formatDuration = (duration: number | null, isPartial = false) => {
 };
 
 const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
-  const { data: statistics, isLoading, error } = useServerStatistics(server.id);
-  const isOnline = server.is_active;
+  const { data: statistics, dataUpdatedAt, errorUpdatedAt } = useServerStatistics(server.id);
+  const status = deriveServerStatus(server.is_active, { dataUpdatedAt, errorUpdatedAt });
+  const reachable = status === 'online';
 
   return (
     <section
@@ -127,7 +131,7 @@ const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
           <div
             className={cn(
               'w-8 h-8 rounded-lg flex items-center justify-center',
-              isOnline
+              reachable
                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
             )}
@@ -137,16 +141,7 @@ const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className={cn('font-semibold', theme.text.strong)}>{server.name}</h3>
-              <span
-                className={cn(
-                  'px-1.5 py-0.5 text-xs font-medium rounded',
-                  isOnline
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-                )}
-              >
-                {isOnline ? 'Online' : 'Offline'}
-              </span>
+              <ServerStatusBadge status={status} />
             </div>
             <p className={cn('text-xs font-mono', theme.text.subtle)}>
               {server.host}:{server.port}
@@ -170,21 +165,21 @@ const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
 
       {/* Server Content */}
       <div className="p-4">
-        {!isOnline ? (
+        {status === 'disabled' ? (
           <div className="flex items-center gap-3 py-4">
             <NoSymbolIcon className={cn('w-5 h-5', theme.text.subtle)} />
-            <span className={cn('text-sm', theme.text.muted)}>
+            <span className={cn('text-sm', theme.text.muted)}>Server is disabled</span>
+          </div>
+        ) : status === 'offline' ? (
+          <div className="flex items-center gap-3 py-4">
+            <ExclamationTriangleIcon className={cn('w-5 h-5', theme.text.danger)} />
+            <span className={cn('text-sm', theme.text.danger)}>
               Server is offline or unreachable
             </span>
           </div>
-        ) : isLoading ? (
+        ) : status === 'checking' ? (
           <div className="py-4 flex justify-center">
             <LoadingSpinner size="sm" text="Loading statistics..." />
-          </div>
-        ) : error ? (
-          <div className="flex items-center gap-3 py-4">
-            <ExclamationTriangleIcon className={cn('w-5 h-5', theme.text.danger)} />
-            <span className={cn('text-sm', theme.text.danger)}>Failed to load statistics</span>
           </div>
         ) : statistics ? (
           <div className="grid grid-cols-3 gap-4">
@@ -233,6 +228,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   activitySummary,
   userRoles,
   serverStats,
+  serverStatus,
   onSectionChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -241,8 +237,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const isAdmin = userRoles.includes('admin');
   const accessLevel = isAdmin ? 'Full' : 'Limited';
 
-  const onlineServers = servers.filter((s) => s.is_active);
-  const offlineServers = servers.filter((s) => !s.is_active);
+  const statusOf = (server: Server): ServerStatus => serverStatus.get(server.id) ?? 'checking';
+  const onlineCount = servers.filter((s) => statusOf(s) === 'online').length;
+  const unreachableServers = servers.filter((s) => statusOf(s) === 'offline');
+  const disabledCount = servers.filter((s) => statusOf(s) === 'disabled').length;
   const { recentOperations, failedOperations, loading: activityLoading } = activitySummary;
 
   const serversWithUnhealthyStacks = servers.filter((s) => {
@@ -250,10 +248,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return stats && stats.unhealthy > 0;
   });
 
-  const hasAlerts =
-    healthSummary.unhealthyStacks > 0 ||
-    healthSummary.totalOfflineServers > 0 ||
-    offlineServers.length > 0;
+  const serversSummary = [
+    `${onlineCount} online`,
+    unreachableServers.length > 0 ? `${unreachableServers.length} offline` : null,
+    disabledCount > 0 ? `${disabledCount} disabled` : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const hasAlerts = healthSummary.unhealthyStacks > 0 || unreachableServers.length > 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -382,7 +385,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {offlineServers.map((server) => (
+              {unreachableServers.map((server) => (
                 <div
                   key={server.id}
                   className={cn(
@@ -592,9 +595,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <section className="scroll-mt-4">
           <div className="mb-4">
             <h2 className={cn('text-lg font-bold', theme.text.strong)}>Servers</h2>
-            <p className={cn('text-sm', theme.text.subtle)}>
-              {onlineServers.length} online, {offlineServers.length} offline
-            </p>
+            <p className={cn('text-sm', theme.text.subtle)}>{serversSummary}</p>
           </div>
 
           <div className="space-y-4">

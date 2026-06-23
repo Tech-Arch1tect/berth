@@ -26,6 +26,7 @@ export default function Dashboard() {
 
   const {
     serverStats,
+    serverStatus,
     healthSummary,
     isLoading: statisticsLoading,
     refetch: refetchStatistics,
@@ -78,6 +79,7 @@ export default function Dashboard() {
             activeSection={activeSection}
             healthSummary={healthSummary}
             serverStats={serverStats}
+            serverStatus={serverStatus}
           />
         }
         content={
@@ -87,6 +89,7 @@ export default function Dashboard() {
             activitySummary={activitySummary}
             userRoles={userRoles}
             serverStats={serverStats}
+            serverStatus={serverStatus}
             onSectionChange={handleSectionChange}
           />
         }

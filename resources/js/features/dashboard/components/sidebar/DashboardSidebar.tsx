@@ -3,6 +3,8 @@ import { cn } from '../../../../shared/utils/cn';
 import { Server } from '../../../../shared/types/server';
 import { HealthSummary } from '../../types';
 import { SECTION_IDS } from '../content/DashboardPage';
+import { ServerStatus } from '../../../../shared/utils/serverStatus';
+import { ServerStatusDot } from '../../../../shared/components/ServerStatusBadge';
 import {
   ViewColumnsIcon,
   ClockIcon,
@@ -15,6 +17,7 @@ interface DashboardSidebarProps {
   activeSection: string;
   healthSummary: HealthSummary;
   serverStats: Map<number, { total: number; healthy: number }>;
+  serverStatus: Map<number, ServerStatus>;
 }
 
 interface NavItemProps {
@@ -43,6 +46,7 @@ const NavItem: React.FC<NavItemProps> = ({ label, icon, isActive, onClick, badge
 
 interface ServerItemProps {
   server: Server;
+  status: ServerStatus;
   isActive: boolean;
   onClick: () => void;
   stackCount?: number;
@@ -51,14 +55,12 @@ interface ServerItemProps {
 
 const ServerItem: React.FC<ServerItemProps> = ({
   server,
+  status,
   isActive,
   onClick,
   stackCount,
   healthyStacks,
 }) => {
-  const isOnline = server.is_active;
-  const statusColor = isOnline ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-500';
-
   return (
     <button
       onClick={onClick}
@@ -69,7 +71,7 @@ const ServerItem: React.FC<ServerItemProps> = ({
         isActive && 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
       )}
     >
-      <span className={cn('w-2 h-2 rounded-full flex-shrink-0', statusColor)} />
+      <ServerStatusDot status={status} />
       <div className="flex-1 min-w-0">
         <span className="text-sm font-medium truncate block">{server.name}</span>
         <span className="text-xs text-zinc-400 dark:text-zinc-500 truncate block">
@@ -111,9 +113,12 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   activeSection,
   healthSummary,
   serverStats,
+  serverStatus,
 }) => {
-  const onlineServers = servers.filter((s) => s.is_active);
-  const offlineServers = servers.filter((s) => !s.is_active);
+  const statusOf = (server: Server): ServerStatus => serverStatus.get(server.id) ?? 'checking';
+  const enabledServers = servers.filter((s) => s.is_active);
+  const disabledServers = servers.filter((s) => !s.is_active);
+  const reachableCount = servers.filter((s) => statusOf(s) === 'online').length;
 
   return (
     <div className="py-1">
@@ -156,19 +161,20 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             </span>
           </div>
           <span className="text-xs text-zinc-400 dark:text-zinc-500">
-            {onlineServers.length}/{servers.length}
+            {reachableCount}/{servers.length} online
           </span>
         </div>
 
-        {/* Online Servers */}
-        {onlineServers.length > 0 && (
+        {/* Enabled Servers */}
+        {enabledServers.length > 0 && (
           <div className="py-1">
-            {onlineServers.map((server) => {
+            {enabledServers.map((server) => {
               const stats = serverStats.get(server.id);
               return (
                 <ServerItem
                   key={server.id}
                   server={server}
+                  status={statusOf(server)}
                   isActive={activeSection === SECTION_IDS.server(server.id)}
                   onClick={() => scrollToSection(SECTION_IDS.server(server.id))}
                   stackCount={stats?.total}
@@ -179,16 +185,17 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           </div>
         )}
 
-        {/* Offline Servers */}
-        {offlineServers.length > 0 && (
+        {/* Disabled Servers */}
+        {disabledServers.length > 0 && (
           <div className="py-1">
             <div className="px-3 py-1 text-xs text-zinc-400 dark:text-zinc-500">
-              Offline ({offlineServers.length})
+              Disabled ({disabledServers.length})
             </div>
-            {offlineServers.map((server) => (
+            {disabledServers.map((server) => (
               <ServerItem
                 key={server.id}
                 server={server}
+                status={statusOf(server)}
                 isActive={activeSection === SECTION_IDS.server(server.id)}
                 onClick={() => scrollToSection(SECTION_IDS.server(server.id))}
               />

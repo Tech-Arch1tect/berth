@@ -1,5 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { HealthSummary, DashboardServer } from '../types';
+import { ServerStatus, deriveServerStatus } from '../../../shared/utils/serverStatus';
 import {
   getApiV1ServersServeridStatistics,
   getGetApiV1ServersServeridStatisticsQueryKey,
@@ -13,6 +14,7 @@ export interface ServerStat {
 
 export interface DashboardStatistics {
   serverStats: Map<number, ServerStat>;
+  serverStatus: Map<number, ServerStatus>;
   healthSummary: HealthSummary;
   isLoading: boolean;
   refetch: () => void;
@@ -31,6 +33,7 @@ export const useDashboardStatistics = (servers: DashboardServer[]): DashboardSta
   });
 
   const serverStats = new Map<number, ServerStat>();
+  const serverStatus = new Map<number, ServerStatus>();
   let totalStacks = 0;
   let healthyStacks = 0;
   let unhealthyStacks = 0;
@@ -40,6 +43,7 @@ export const useDashboardStatistics = (servers: DashboardServer[]): DashboardSta
 
   statisticsQueries.forEach((query, index) => {
     const server = activeServers[index];
+    serverStatus.set(server.id, deriveServerStatus(true, query));
     if (query.isLoading) {
       serversLoading++;
     } else if (query.error) {
@@ -55,6 +59,12 @@ export const useDashboardStatistics = (servers: DashboardServer[]): DashboardSta
         healthy: stats.healthy_stacks,
         unhealthy: stats.unhealthy_stacks,
       });
+    }
+  });
+
+  servers.forEach((server) => {
+    if (!server.is_active) {
+      serverStatus.set(server.id, 'disabled');
     }
   });
 
@@ -80,6 +90,7 @@ export const useDashboardStatistics = (servers: DashboardServer[]): DashboardSta
 
   return {
     serverStats,
+    serverStatus,
     healthSummary,
     isLoading: serversLoading > 0,
     refetch,
