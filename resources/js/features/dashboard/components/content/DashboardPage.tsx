@@ -1,262 +1,134 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-  ChartBarIcon,
   ServerIcon,
-  ShieldCheckIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  ClockIcon,
   XCircleIcon,
-  CubeIcon,
-  ArrowTopRightOnSquareIcon,
+  ClockIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ArrowRightIcon,
   NoSymbolIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { Server } from '../../../../shared/types/server';
-import { HealthSummary } from '../../types';
 import { ActivitySummary } from '../../hooks/useDashboardActivity';
 import type { OperationLogInfo } from '../../../../api/generated/models';
-import { useServerStatistics } from '../../../stacks/hooks/useServerStatistics';
-import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
-import { ServerStatus, deriveServerStatus } from '../../../../shared/utils/serverStatus';
-import { ServerStatusBadge } from '../../../../shared/components/ServerStatusBadge';
+import { ServerStatus, SERVER_STATUS_LABEL } from '../../../../shared/utils/serverStatus';
+import { ServerStatusDot } from '../../../../shared/components/ServerStatusBadge';
 
 interface DashboardPageProps {
   servers: Server[];
-  healthSummary: HealthSummary;
   activitySummary: ActivitySummary;
-  userRoles: string[];
   serverStats: Map<number, { total: number; healthy: number; unhealthy: number }>;
   serverStatus: Map<number, ServerStatus>;
   onSectionChange?: (sectionId: string) => void;
 }
 
 export const SECTION_IDS = {
-  overview: 'dashboard-overview',
+  attention: 'dashboard-attention',
+  servers: 'dashboard-servers',
   activity: 'dashboard-activity',
-  alerts: 'dashboard-alerts',
-  server: (id: number) => `dashboard-server-${id}`,
 };
 
-interface StatCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  sublabel?: string;
-  color: 'teal' | 'emerald' | 'amber' | 'blue' | 'red' | 'purple';
-}
-
-const colorClasses = {
-  teal: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
-  emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
-  amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
-  blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-  red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
-  purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+const operationIcon = (operation: OperationLogInfo) => {
+  if (operation.is_incomplete) {
+    return <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 text-amber-500" />;
+  }
+  if (operation.success === true) {
+    return <CheckCircleIcon className="h-4 w-4 flex-shrink-0 text-emerald-500" />;
+  }
+  if (operation.success === false) {
+    return <XCircleIcon className="h-4 w-4 flex-shrink-0 text-red-500" />;
+  }
+  return <ClockIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />;
 };
 
-const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, sublabel, color }) => (
-  <div
-    className={cn(
-      'rounded-lg border p-4',
-      'border-zinc-200 dark:border-zinc-800',
-      'bg-white dark:bg-zinc-900'
-    )}
-  >
-    <div className="flex items-center gap-3">
-      <div
-        className={cn('w-10 h-10 rounded-lg flex items-center justify-center', colorClasses[color])}
-      >
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className={cn('text-2xl font-bold tabular-nums', theme.text.strong)}>{value}</p>
-        <p className={cn('text-xs', theme.text.muted)}>
-          {label}
-          {sublabel && <span className="ml-1 text-zinc-400">· {sublabel}</span>}
-        </p>
-      </div>
-    </div>
+const formatDuration = (duration: number | null) => {
+  if (!duration || duration <= 0) return null;
+  if (duration < 1000) return `${duration}ms`;
+  if (duration < 60000) return `${(duration / 1000).toFixed(1)}s`;
+  return `${(duration / 60000).toFixed(1)}m`;
+};
+
+const serverPriority = (status: ServerStatus, hasUnhealthy: boolean): number => {
+  if (status === 'offline') return 0;
+  if (status === 'online' && hasUnhealthy) return 1;
+  if (status === 'checking') return 2;
+  if (status === 'online') return 3;
+  return 4;
+};
+
+const SectionHeading: React.FC<{
+  id: string;
+  title: string;
+  count?: number;
+  action?: React.ReactNode;
+}> = ({ id, title, count, action }) => (
+  <div id={id} className="scroll-mt-4 flex items-center justify-between mb-2">
+    <h2 className={cn('text-sm font-bold uppercase tracking-wider', theme.text.subtle)}>
+      {title}
+      {count !== undefined && count > 0 && <span className="ml-2 tabular-nums">{count}</span>}
+    </h2>
+    {action}
   </div>
 );
 
-const getStatusIcon = (operation: OperationLogInfo) => {
-  if (operation.is_incomplete) {
-    return <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" />;
-  }
-  if (operation.success === true) {
-    return <CheckCircleIcon className="h-4 w-4 text-emerald-500" />;
-  }
-  if (operation.success === false) {
-    return <XCircleIcon className="h-4 w-4 text-red-500" />;
-  }
-  return <ClockIcon className={cn('h-4 w-4', theme.text.subtle)} />;
-};
+const attentionRowClass = cn(
+  'group flex items-center gap-3 px-3 py-2 text-sm',
+  'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors'
+);
 
-const formatDuration = (duration: number | null, isPartial = false) => {
-  if (!duration || duration <= 0) return null;
-  let formatted = '';
-  if (duration < 1000) formatted = `${duration}ms`;
-  else if (duration < 60000) formatted = `${(duration / 1000).toFixed(1)}s`;
-  else formatted = `${(duration / 60000).toFixed(1)}m`;
-  return isPartial ? `~${formatted}` : formatted;
-};
-
-const ServerSection: React.FC<{ server: Server }> = ({ server }) => {
-  const { data: statistics, dataUpdatedAt, errorUpdatedAt } = useServerStatistics(server.id);
-  const status = deriveServerStatus(server.is_active, { dataUpdatedAt, errorUpdatedAt });
-  const reachable = status === 'online';
-
-  return (
-    <section
-      id={SECTION_IDS.server(server.id)}
+const AttentionRowContent: React.FC<{
+  icon: React.ReactNode;
+  name: string;
+  detail: string;
+  actionLabel: string;
+}> = ({ icon, name, detail, actionLabel }) => (
+  <>
+    {icon}
+    <span className={cn('font-medium flex-shrink-0', theme.text.strong)}>{name}</span>
+    <span className={cn('truncate', theme.text.muted)}>{detail}</span>
+    <span
       className={cn(
-        'rounded-lg border',
-        'border-zinc-200 dark:border-zinc-800',
-        'bg-white dark:bg-zinc-900',
-        'scroll-mt-4'
+        'ml-auto flex items-center gap-1 flex-shrink-0 text-xs font-medium',
+        'text-teal-600 dark:text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity'
       )}
     >
-      {/* Server Header */}
-      <div
-        className={cn(
-          'px-4 py-3 border-b flex items-center justify-between',
-          'border-zinc-200 dark:border-zinc-800',
-          theme.surface.muted
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'w-8 h-8 rounded-lg flex items-center justify-center',
-              reachable
-                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
-            )}
-          >
-            <ServerIcon className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className={cn('font-semibold', theme.text.strong)}>{server.name}</h3>
-              <ServerStatusBadge status={status} />
-            </div>
-            <p className={cn('text-xs font-mono', theme.text.subtle)}>
-              {server.host}:{server.port}
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/servers/$serverid/stacks"
-          params={{ serverid: String(server.id) }}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg',
-            'bg-teal-50 text-teal-700 hover:bg-teal-100',
-            'dark:bg-teal-900/20 dark:text-teal-400 dark:hover:bg-teal-900/30',
-            'transition-colors'
-          )}
-        >
-          View Stacks
-          <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-
-      {/* Server Content */}
-      <div className="p-4">
-        {status === 'disabled' ? (
-          <div className="flex items-center gap-3 py-4">
-            <NoSymbolIcon className={cn('w-5 h-5', theme.text.subtle)} />
-            <span className={cn('text-sm', theme.text.muted)}>Server is disabled</span>
-          </div>
-        ) : status === 'offline' ? (
-          <div className="flex items-center gap-3 py-4">
-            <ExclamationTriangleIcon className={cn('w-5 h-5', theme.text.danger)} />
-            <span className={cn('text-sm', theme.text.danger)}>
-              Server is offline or unreachable
-            </span>
-          </div>
-        ) : status === 'checking' ? (
-          <div className="py-4 flex justify-center">
-            <LoadingSpinner size="sm" text="Loading statistics..." />
-          </div>
-        ) : statistics ? (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800">
-              <p className={cn('text-xl font-bold', theme.text.strong)}>
-                {statistics.total_stacks}
-              </p>
-              <p className={cn('text-xs', theme.text.muted)}>Total Stacks</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                {statistics.healthy_stacks}
-              </p>
-              <p className={cn('text-xs', theme.text.muted)}>Healthy</p>
-            </div>
-            <div
-              className={cn(
-                'text-center p-3 rounded-lg',
-                statistics.unhealthy_stacks > 0
-                  ? 'bg-red-50 dark:bg-red-900/20'
-                  : 'bg-zinc-50 dark:bg-zinc-800'
-              )}
-            >
-              <p
-                className={cn(
-                  'text-xl font-bold',
-                  statistics.unhealthy_stacks > 0
-                    ? 'text-red-600 dark:text-red-400'
-                    : theme.text.strong
-                )}
-              >
-                {statistics.unhealthy_stacks}
-              </p>
-              <p className={cn('text-xs', theme.text.muted)}>Unhealthy</p>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-};
+      {actionLabel}
+      <ArrowRightIcon className="w-3 h-3" />
+    </span>
+  </>
+);
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   servers,
-  healthSummary,
   activitySummary,
-  userRoles,
   serverStats,
   serverStatus,
   onSectionChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.overview);
-
-  const isAdmin = userRoles.includes('admin');
-  const accessLevel = isAdmin ? 'Full' : 'Limited';
+  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.attention);
+  const [activityExpanded, setActivityExpanded] = useState(true);
 
   const statusOf = (server: Server): ServerStatus => serverStatus.get(server.id) ?? 'checking';
-  const onlineCount = servers.filter((s) => statusOf(s) === 'online').length;
+  const unhealthyOf = (server: Server): number => serverStats.get(server.id)?.unhealthy ?? 0;
+
   const unreachableServers = servers.filter((s) => statusOf(s) === 'offline');
-  const disabledCount = servers.filter((s) => statusOf(s) === 'disabled').length;
-  const { recentOperations, failedOperations, loading: activityLoading } = activitySummary;
+  const unhealthyServers = servers.filter((s) => unhealthyOf(s) > 0);
+  const { recentOperations, failedOperations } = activitySummary;
 
-  const serversWithUnhealthyStacks = servers.filter((s) => {
-    const stats = serverStats.get(s.id);
-    return stats && stats.unhealthy > 0;
+  const attentionCount =
+    unreachableServers.length + unhealthyServers.length + failedOperations.length;
+
+  const sortedServers = [...servers].sort((a, b) => {
+    const pa = serverPriority(statusOf(a), unhealthyOf(a) > 0);
+    const pb = serverPriority(statusOf(b), unhealthyOf(b) > 0);
+    return pa - pb || a.name.localeCompare(b.name);
   });
-
-  const serversSummary = [
-    `${onlineCount} online`,
-    unreachableServers.length > 0 ? `${unreachableServers.length} offline` : null,
-    disabledCount > 0 ? `${disabledCount} disabled` : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
-
-  const hasAlerts = healthSummary.unhealthyStacks > 0 || unreachableServers.length > 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -264,17 +136,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
     const handleScroll = () => {
       const sections = container.querySelectorAll('[id^="dashboard-"]');
-      let current = SECTION_IDS.overview;
-
+      let current = SECTION_IDS.attention;
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-
         if (rect.top <= containerRect.top + 100) {
           current = section.id;
         }
       });
-
       if (current !== activeSection) {
         setActiveSection(current);
         onSectionChange?.(current);
@@ -288,340 +157,225 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div ref={containerRef} className="h-full overflow-auto">
       <div className="p-6 space-y-6">
-        {/* Overview Section */}
-        <section id={SECTION_IDS.overview} className="scroll-mt-4 rounded-lg p-4 -m-4">
-          <div className="mb-4">
-            <h2 className={cn('text-lg font-bold', theme.text.strong)}>Overview</h2>
-            <p className={cn('text-sm', theme.text.subtle)}>
-              System health and infrastructure summary
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              icon={healthSummary.unhealthyStacks > 0 ? ExclamationTriangleIcon : CheckCircleIcon}
-              label="Health Problems"
-              value={healthSummary.unhealthyStacks}
-              sublabel={
-                healthSummary.unhealthyStacks > 0 ? 'stacks need attention' : 'all stacks healthy'
-              }
-              color={healthSummary.unhealthyStacks > 0 ? 'red' : 'emerald'}
-            />
-            <StatCard
-              icon={ChartBarIcon}
-              label="Stack Health"
-              value={`${healthSummary.healthyStacks}/${healthSummary.totalStacks}`}
-              sublabel="healthy stacks"
-              color={
-                healthSummary.healthyStacks === healthSummary.totalStacks ? 'emerald' : 'amber'
-              }
-            />
-            <StatCard
-              icon={ServerIcon}
-              label="Server Status"
-              value={`${healthSummary.serversOnline}/${healthSummary.totalActiveServers}`}
-              sublabel={
-                healthSummary.totalOfflineServers > 0
-                  ? `${healthSummary.totalOfflineServers} offline`
-                  : healthSummary.serversLoading > 0
-                    ? 'checking...'
-                    : 'all reachable'
-              }
-              color={healthSummary.totalOfflineServers > 0 ? 'red' : 'emerald'}
-            />
-            <div className="relative group">
-              <StatCard
-                icon={ShieldCheckIcon}
-                label="Your Access"
-                value={accessLevel}
-                sublabel={`${userRoles.length} role${userRoles.length !== 1 ? 's' : ''}`}
-                color="blue"
-              />
-              {userRoles.length > 0 && (
-                <div
-                  className={cn(
-                    'absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 rounded-lg shadow-lg',
-                    'bg-zinc-900 dark:bg-zinc-700 text-white text-xs',
-                    'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
-                    'pointer-events-none z-10 whitespace-nowrap'
-                  )}
-                >
-                  <div className="font-medium mb-1">Roles:</div>
-                  <div className="space-y-0.5">
-                    {userRoles.map((role) => (
-                      <div key={role}>{role}</div>
-                    ))}
-                  </div>
-                  <div
-                    className={cn(
-                      'absolute left-1/2 -translate-x-1/2 top-full',
-                      'border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-700'
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Alerts Section */}
-        <section id={SECTION_IDS.alerts} className="scroll-mt-4 rounded-lg p-4 -m-4">
-          <div className="mb-4">
-            <h2 className={cn('text-lg font-bold', theme.text.strong)}>Alerts</h2>
-            <p className={cn('text-sm', theme.text.subtle)}>Health problems and system warnings</p>
-          </div>
-
-          {!hasAlerts ? (
+        <section>
+          <SectionHeading
+            id={SECTION_IDS.attention}
+            title="Needs attention"
+            count={attentionCount}
+          />
+          {attentionCount === 0 ? (
             <div
               className={cn(
-                'rounded-lg border p-6 text-center',
-                'border-emerald-200 dark:border-emerald-900/50',
-                'bg-emerald-50 dark:bg-emerald-900/10'
+                'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm',
+                'bg-emerald-50 dark:bg-emerald-900/10',
+                'text-emerald-700 dark:text-emerald-400'
               )}
             >
-              <CheckCircleIcon className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
-              <h3 className={cn('font-semibold', theme.text.strong)}>All Systems Healthy</h3>
-              <p className={cn('text-sm', theme.text.muted)}>No alerts or warnings at this time</p>
+              <CheckCircleIcon className="w-4 h-4" />
+              All systems healthy
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
               {unreachableServers.map((server) => (
-                <div
-                  key={server.id}
-                  className={cn(
-                    'rounded-lg border p-4',
-                    'border-red-200 dark:border-red-900/50',
-                    'bg-red-50 dark:bg-red-900/10'
-                  )}
+                <Link
+                  key={`offline-${server.id}`}
+                  to="/servers/$serverid/stacks"
+                  params={{ serverid: String(server.id) }}
+                  className={attentionRowClass}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                      <ServerIcon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className={cn('font-medium', theme.text.strong)}>{server.name}</h4>
-                      <p className={cn('text-sm', theme.text.muted)}>
-                        Server at {server.host}:{server.port} is unreachable
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  <AttentionRowContent
+                    icon={<span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
+                    name={server.name}
+                    detail="unreachable"
+                    actionLabel="view"
+                  />
+                </Link>
               ))}
-              {serversWithUnhealthyStacks.map((server) => {
+              {unhealthyServers.map((server) => {
                 const stats = serverStats.get(server.id);
                 return (
-                  <div
+                  <Link
                     key={`unhealthy-${server.id}`}
-                    className={cn(
-                      'rounded-lg border p-4',
-                      'border-amber-200 dark:border-amber-900/50',
-                      'bg-amber-50 dark:bg-amber-900/10'
-                    )}
+                    to="/servers/$serverid/stacks"
+                    params={{ serverid: String(server.id) }}
+                    className={attentionRowClass}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-                        <CubeIcon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className={cn('font-medium', theme.text.strong)}>{server.name}</h4>
-                        <p className={cn('text-sm', theme.text.muted)}>
-                          {stats?.unhealthy || 0} of {stats?.total || 0} stacks need attention
-                        </p>
-                      </div>
-                      <Link
-                        to="/servers/$serverid/stacks"
-                        params={{ serverid: String(server.id) }}
-                        className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                      >
-                        Manage stacks
-                      </Link>
-                    </div>
-                  </div>
+                    <AttentionRowContent
+                      icon={
+                        <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                      }
+                      name={server.name}
+                      detail={`${stats?.unhealthy ?? 0} of ${stats?.total ?? 0} stacks unhealthy`}
+                      actionLabel="stacks"
+                    />
+                  </Link>
                 );
               })}
-            </div>
-          )}
-        </section>
-
-        {/* Activity Section */}
-        <section id={SECTION_IDS.activity} className="scroll-mt-4 rounded-lg p-4 -m-4">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className={cn('text-lg font-bold', theme.text.strong)}>Recent Activity</h2>
-              <p className={cn('text-sm', theme.text.subtle)}>Operations and system events</p>
-            </div>
-            <Link to="/operation-logs" className={cn('text-sm font-medium', theme.link.primary)}>
-              View all logs
-            </Link>
-          </div>
-
-          {activityLoading ? (
-            <div className="py-8 flex justify-center">
-              <LoadingSpinner size="md" text="Loading activity..." />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Recent Operations */}
-              <div
-                className={cn(
-                  'rounded-lg border',
-                  'border-zinc-200 dark:border-zinc-800',
-                  'bg-white dark:bg-zinc-900'
-                )}
-              >
-                <div
-                  className={cn(
-                    'px-4 py-2.5 border-b flex items-center gap-2',
-                    'border-zinc-200 dark:border-zinc-800',
-                    theme.surface.muted
-                  )}
+              {failedOperations.map((op) => (
+                <Link
+                  key={`failed-${op.id}`}
+                  to="/operation-logs"
+                  search={{ status: 'failed' }}
+                  className={attentionRowClass}
                 >
-                  <ClockIcon className={cn('w-4 h-4', theme.text.subtle)} />
-                  <span className={cn('text-sm font-medium', theme.text.strong)}>Recent</span>
-                </div>
-                <div className="p-3">
-                  {recentOperations.length === 0 ? (
-                    <p className={cn('text-sm text-center py-4', theme.text.muted)}>
-                      No recent operations
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {recentOperations.slice(0, 8).map((op) => (
-                        <div
-                          key={op.id}
-                          className={cn(
-                            'flex items-center gap-2 px-2 py-1.5 rounded',
-                            'bg-zinc-50 dark:bg-zinc-800/50'
-                          )}
-                        >
-                          {getStatusIcon(op)}
-                          <div className="flex-1 min-w-0">
-                            <span className={cn('text-sm font-mono', theme.text.strong)}>
-                              {op.command}
-                            </span>
-                            <span className={cn('text-sm mx-1', theme.text.muted)}>on</span>
-                            <span className={cn('text-sm', theme.text.strong)}>
-                              {op.stack_name}
-                            </span>
-                          </div>
-                          <span className={cn('text-xs', theme.text.subtle)}>
-                            {formatDuration(op.duration_ms ?? null) || op.formatted_date}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Failed Operations */}
-              <div
-                className={cn(
-                  'rounded-lg border',
-                  failedOperations.length > 0
-                    ? 'border-red-200 dark:border-red-900/50'
-                    : 'border-zinc-200 dark:border-zinc-800',
-                  'bg-white dark:bg-zinc-900'
-                )}
-              >
-                <div
-                  className={cn(
-                    'px-4 py-2.5 border-b flex items-center gap-2',
-                    failedOperations.length > 0
-                      ? 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10'
-                      : 'border-zinc-200 dark:border-zinc-800',
-                    failedOperations.length === 0 && theme.surface.muted
-                  )}
-                >
-                  <XCircleIcon
-                    className={cn(
-                      'w-4 h-4',
-                      failedOperations.length > 0 ? 'text-red-500' : theme.text.subtle
-                    )}
+                  <AttentionRowContent
+                    icon={<XCircleIcon className="w-4 h-4 flex-shrink-0 text-red-500" />}
+                    name={op.command}
+                    detail={`failed ${op.formatted_date} · ${op.server_name}`}
+                    actionLabel="logs"
                   />
-                  <span
-                    className={cn(
-                      'text-sm font-medium',
-                      failedOperations.length > 0
-                        ? 'text-red-700 dark:text-red-400'
-                        : theme.text.strong
-                    )}
-                  >
-                    Failed
-                  </span>
-                  {failedOperations.length > 0 && (
-                    <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                      {failedOperations.length}
-                    </span>
-                  )}
-                </div>
-                <div className="p-3">
-                  {failedOperations.length === 0 ? (
-                    <div className="text-center py-4">
-                      <CheckCircleIcon className={cn('w-8 h-8 mx-auto mb-1', theme.text.success)} />
-                      <p className={cn('text-sm', theme.text.muted)}>No recent failures</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {failedOperations.slice(0, 5).map((op) => (
-                        <div
-                          key={op.id}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded bg-red-50 dark:bg-red-900/10"
-                        >
-                          <XCircleIcon className="h-4 w-4 text-red-500 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <span className={cn('text-sm font-mono', theme.text.strong)}>
-                              {op.command}
-                            </span>
-                            <span className={cn('text-sm mx-1', theme.text.muted)}>on</span>
-                            <span className={cn('text-sm', theme.text.strong)}>
-                              {op.stack_name}
-                            </span>
-                          </div>
-                          <span className={cn('text-xs', theme.text.subtle)}>
-                            {op.formatted_date}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+                </Link>
+              ))}
             </div>
           )}
         </section>
 
-        {/* Servers Section */}
-        <section className="scroll-mt-4">
-          <div className="mb-4">
-            <h2 className={cn('text-lg font-bold', theme.text.strong)}>Servers</h2>
-            <p className={cn('text-sm', theme.text.subtle)}>{serversSummary}</p>
-          </div>
-
-          <div className="space-y-4">
-            {servers.map((server) => (
-              <ServerSection key={server.id} server={server} />
-            ))}
-
-            {servers.length === 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <section className="lg:col-span-2">
+            <SectionHeading
+              id={SECTION_IDS.servers}
+              title="Servers"
+              action={
+                <Link
+                  to="/stacks"
+                  className={cn('flex items-center gap-1 text-xs font-medium', theme.link.primary)}
+                >
+                  All stacks
+                  <ArrowRightIcon className="w-3 h-3" />
+                </Link>
+              }
+            />
+            {servers.length === 0 ? (
               <div
                 className={cn(
                   'rounded-lg border p-8 text-center',
-                  'border-zinc-200 dark:border-zinc-800',
-                  'bg-white dark:bg-zinc-900'
+                  'border-zinc-200 dark:border-zinc-800'
                 )}
               >
-                <ServerIcon className={cn('w-12 h-12 mx-auto mb-3', theme.text.subtle)} />
-                <h3 className={cn('font-semibold mb-1', theme.text.strong)}>
-                  No Servers Configured
-                </h3>
-                <p className={cn('text-sm', theme.text.muted)}>
-                  Add a server to start managing your Docker stacks
-                </p>
+                <ServerIcon className={cn('w-10 h-10 mx-auto mb-2', theme.text.subtle)} />
+                <p className={cn('text-sm', theme.text.muted)}>No servers configured</p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+                {sortedServers.map((server) => {
+                  const status = statusOf(server);
+                  const stats = serverStats.get(server.id);
+                  const disabled = status === 'disabled';
+                  return (
+                    <Link
+                      key={server.id}
+                      to="/servers/$serverid/stacks"
+                      params={{ serverid: String(server.id) }}
+                      className={cn(
+                        'group flex items-center gap-3 px-3 py-2.5 text-sm',
+                        'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors',
+                        disabled && 'opacity-60'
+                      )}
+                    >
+                      <ServerStatusDot status={status} />
+                      <div className="min-w-0 flex-1">
+                        <div className={cn('font-medium truncate', theme.text.strong)}>
+                          {server.name}
+                        </div>
+                        <div className={cn('text-xs font-mono truncate', theme.text.subtle)}>
+                          {server.host}:{server.port}
+                        </div>
+                      </div>
+                      <span className={cn('text-xs flex-shrink-0', theme.text.muted)}>
+                        {SERVER_STATUS_LABEL[status]}
+                      </span>
+                      {stats ? (
+                        <span
+                          className={cn(
+                            'flex-shrink-0 tabular-nums text-xs px-2 py-0.5 rounded-md',
+                            stats.unhealthy > 0
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+                          )}
+                          title={`${stats.healthy} healthy of ${stats.total} stacks`}
+                        >
+                          {stats.healthy}/{stats.total}
+                        </span>
+                      ) : (
+                        <span className="w-12 flex-shrink-0" />
+                      )}
+                      <ArrowRightIcon
+                        className={cn(
+                          'w-4 h-4 flex-shrink-0',
+                          theme.text.subtle,
+                          'opacity-0 group-hover:opacity-100 transition-opacity'
+                        )}
+                      />
+                    </Link>
+                  );
+                })}
               </div>
             )}
-          </div>
-        </section>
+          </section>
+
+          <section className="lg:col-span-1">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={() => setActivityExpanded((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider',
+                  theme.text.subtle
+                )}
+              >
+                {activityExpanded ? (
+                  <ChevronDownIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronRightIcon className="w-4 h-4" />
+                )}
+                <span id={SECTION_IDS.activity} className="scroll-mt-4">
+                  Recent activity
+                </span>
+              </button>
+              <Link to="/operation-logs" className={cn('text-xs font-medium', theme.link.primary)}>
+                View all logs
+              </Link>
+            </div>
+
+            {activityExpanded &&
+              (recentOperations.length === 0 ? (
+                <div
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm',
+                    theme.text.muted
+                  )}
+                >
+                  <NoSymbolIcon className="w-4 h-4" />
+                  No recent operations
+                </div>
+              ) : (
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {recentOperations.slice(0, 8).map((op) => {
+                    const duration = formatDuration(op.duration_ms ?? null);
+                    return (
+                      <div key={op.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                        {operationIcon(op)}
+                        <span className={cn('font-mono flex-shrink-0', theme.text.strong)}>
+                          {op.command}
+                        </span>
+                        <span className={cn('truncate', theme.text.muted)}>
+                          {op.stack_name} · {op.server_name}
+                        </span>
+                        <span
+                          className={cn(
+                            'ml-auto flex-shrink-0 text-xs tabular-nums',
+                            theme.text.subtle
+                          )}
+                        >
+                          {duration ? `${duration} · ` : ''}
+                          {op.formatted_date}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+          </section>
+        </div>
       </div>
     </div>
   );

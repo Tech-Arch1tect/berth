@@ -20,7 +20,7 @@ export default function Dashboard() {
   const userRoles = user?.roles?.map((role) => role.name) ?? [];
   const isAdmin = userRoles.includes('admin');
 
-  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.overview);
+  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.attention);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -73,21 +73,11 @@ export default function Dashboard() {
             isAdmin={isAdmin}
           />
         }
-        sidebar={
-          <DashboardSidebar
-            servers={servers}
-            activeSection={activeSection}
-            healthSummary={healthSummary}
-            serverStats={serverStats}
-            serverStatus={serverStatus}
-          />
-        }
+        sidebar={<DashboardSidebar activeSection={activeSection} healthSummary={healthSummary} />}
         content={
           <DashboardPage
             servers={servers}
-            healthSummary={healthSummary}
             activitySummary={activitySummary}
-            userRoles={userRoles}
             serverStats={serverStats}
             serverStatus={serverStatus}
             onSectionChange={handleSectionChange}

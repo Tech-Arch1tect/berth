@@ -22,15 +22,9 @@ test.describe('dashboard', () => {
     await page.goto('/');
 
     await expect(page.getByText('atlas-prod').first()).toBeVisible();
+    await expect(page.getByText('4/5', { exact: true }).first()).toBeVisible();
 
-    const totalStacks = page.getByText('Total Stacks').locator('..');
-    await expect(totalStacks.getByText('5', { exact: true })).toBeVisible();
-
-    const healthy = page.getByText('Healthy', { exact: true }).locator('..');
-    await expect(healthy.getByText('4', { exact: true })).toBeVisible();
-
-    const unhealthy = page.getByText('Unhealthy', { exact: true }).locator('..');
-    await expect(unhealthy.getByText('1', { exact: true })).toBeVisible();
+    await expect(page.getByText(/1 of 5 stacks unhealthy/i)).toBeVisible();
   });
 
   test('shows zero counts when the agent reports an empty stack list', async ({
