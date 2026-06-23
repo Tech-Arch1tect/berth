@@ -1,4 +1,5 @@
 import { isApiError } from '../../../api/client';
+import { messageFromApiError } from '../../../shared/utils/api-errors';
 import {
   getApiV1ServersServeridStacks,
   getApiV1ServersServeridStacksStacknameNetworks,
@@ -32,14 +33,14 @@ export class StackService {
       const stacks = response.data?.stacks || [];
       return stacks.sort((a: Stack, b: Stack) => a.name.localeCompare(b.name));
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this server');
         }
         if (error.status === 404) {
           throw new Error('Server not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch stacks');
+        throw new Error(messageFromApiError(error, 'Failed to fetch stacks'));
       }
       throw new Error('Network error occurred');
     }
@@ -50,14 +51,14 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksStacknameNetworks(serverid, stackname);
       return response.data?.networks || [];
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this server');
         }
         if (error.status === 404) {
           throw new Error('Stack or networks not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch networks');
+        throw new Error(messageFromApiError(error, 'Failed to fetch networks'));
       }
       throw new Error('Network error occurred');
     }
@@ -68,14 +69,14 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksStacknameVolumes(serverid, stackname);
       return response.data?.volumes || [];
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this server');
         }
         if (error.status === 404) {
           throw new Error('Stack or volumes not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch volumes');
+        throw new Error(messageFromApiError(error, 'Failed to fetch volumes'));
       }
       throw new Error('Network error occurred');
     }
@@ -95,14 +96,14 @@ export class StackService {
       );
       return response.data?.services || {};
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this server');
         }
         if (error.status === 404) {
           throw new Error('Stack or environment variables not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch environment variables');
+        throw new Error(messageFromApiError(error, 'Failed to fetch environment variables'));
       }
       throw new Error('Network error occurred');
     }
@@ -116,14 +117,14 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksStacknamePermissions(serverid, stackname);
       return response.data;
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this stack');
         }
         if (error.status === 404) {
           throw new Error('Stack not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch permissions');
+        throw new Error(messageFromApiError(error, 'Failed to fetch permissions'));
       }
       throw new Error('Network error occurred');
     }
@@ -137,14 +138,14 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksStacknameImages(serverid, stackname);
       return response.data?.images || [];
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this server');
         }
         if (error.status === 404) {
           throw new Error('Stack or images not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch image details');
+        throw new Error(messageFromApiError(error, 'Failed to fetch image details'));
       }
       throw new Error('Network error occurred');
     }
@@ -155,14 +156,14 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksStacknameCompose(serverid, stackname);
       return response.data;
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to access this stack');
         }
         if (error.status === 404) {
           throw new Error('Stack not found');
         }
-        throw new Error(error.data?.error || 'Failed to fetch compose configuration');
+        throw new Error(messageFromApiError(error, 'Failed to fetch compose configuration'));
       }
       throw new Error('Network error occurred');
     }
@@ -181,14 +182,14 @@ export class StackService {
       );
       return response.data;
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to modify this stack');
         }
         if (error.status === 404) {
           throw new Error('Stack not found');
         }
-        throw new Error(error.data?.error || 'Failed to update compose configuration');
+        throw new Error(messageFromApiError(error, 'Failed to update compose configuration'));
       }
       throw new Error('Network error occurred');
     }
@@ -202,14 +203,14 @@ export class StackService {
       }
       return response.data.stack;
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           throw new Error('You do not have permission to create stacks on this server');
         }
         if (error.status === 409) {
           throw new Error('A stack with this name already exists');
         }
-        throw new Error(error.data?.error || 'Failed to create stack');
+        throw new Error(messageFromApiError(error, 'Failed to create stack'));
       }
       throw new Error('Network error occurred');
     }
@@ -220,11 +221,11 @@ export class StackService {
       const response = await getApiV1ServersServeridStacksCanCreate(serverid);
       return response.data?.canCreate ?? false;
     } catch (error) {
-      if (isApiError<{ error?: string }>(error)) {
+      if (isApiError(error)) {
         if (error.status === 403) {
           return false;
         }
-        throw new Error(error.data?.error || 'Failed to check permissions');
+        throw new Error(messageFromApiError(error, 'Failed to check permissions'));
       }
       throw new Error('Network error occurred');
     }
