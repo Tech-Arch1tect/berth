@@ -1,5 +1,44 @@
-let getAccessToken: () => string | null = () => null;
-let onUnauthorized: (() => Promise<string | null>) | null = null;
+export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
+
+export type ApiClientConfig = {
+  baseUrl: string;
+  fetch: FetchLike;
+  getAccessToken: () => string | null;
+  onUnauthorized: (() => Promise<string | null>) | null;
+  headers: () => Record<string, string>;
+};
+
+const defaultConfig: ApiClientConfig = {
+  baseUrl: '',
+  fetch: (input, init) => fetch(input, init),
+  getAccessToken: () => null,
+  onUnauthorized: null,
+  headers: () => ({}),
+};
+
+let config: ApiClientConfig = { ...defaultConfig };
+
+export function configureApiClient(
+  partial: Partial<Omit<ApiClientConfig, 'headers'>> & {
+    headers?: Record<string, string> | (() => Record<string, string>);
+  }
+): void {
+  const { headers, ...rest } = partial;
+  config = {
+    ...config,
+    ...rest,
+    headers:
+      headers === undefined
+        ? config.headers
+        : typeof headers === 'function'
+          ? headers
+          : () => headers,
+  };
+}
+
+export function resetApiClient(): void {
+  config = { ...defaultConfig };
+}
 
 export type AuthHooks = {
   getAccessToken: () => string | null;
@@ -7,13 +46,14 @@ export type AuthHooks = {
 };
 
 export function configureAuth(hooks: AuthHooks): void {
-  getAccessToken = hooks.getAccessToken;
-  onUnauthorized = hooks.onUnauthorized;
+  configureApiClient({
+    getAccessToken: hooks.getAccessToken,
+    onUnauthorized: hooks.onUnauthorized,
+  });
 }
 
 export function resetAuth(): void {
-  getAccessToken = () => null;
-  onUnauthorized = null;
+  configureApiClient({ getAccessToken: () => null, onUnauthorized: null });
 }
 
 const REFRESH_URL = '/api/v1/auth/refresh';
@@ -44,23 +84,34 @@ async function parseBody(res: Response): Promise<unknown> {
 
 function buildHeaders(init: RequestInit | undefined, accessToken: string | null): Headers {
   const headers = new Headers(init?.headers);
+  for (const [key, value] of Object.entries(config.headers())) {
+    if (!headers.has(key)) headers.set(key, value);
+  }
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   return headers;
 }
 
 function shouldAttemptRefresh(url: string, status: number): boolean {
   if (status !== 401) return false;
-  if (!onUnauthorized) return false;
+  if (!config.onUnauthorized) return false;
   return url !== REFRESH_URL && url !== LOGIN_URL;
 }
 
 export const apiClient = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  let res = await fetch(url, { ...init, headers: buildHeaders(init, getAccessToken()) });
+  const target = config.baseUrl ? `${config.baseUrl}${url}` : url;
+
+  let res = await config.fetch(target, {
+    ...init,
+    headers: buildHeaders(init, config.getAccessToken()),
+  });
 
   if (shouldAttemptRefresh(url, res.status)) {
-    const newToken = await onUnauthorized!();
+    const newToken = await config.onUnauthorized!();
     if (newToken) {
-      res = await fetch(url, { ...init, headers: buildHeaders(init, newToken) });
+      res = await config.fetch(target, {
+        ...init,
+        headers: buildHeaders(init, newToken),
+      });
     }
   }
 

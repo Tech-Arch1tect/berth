@@ -46,7 +46,9 @@ jobs:
           fi
 
           rm -rf ./*
-          cp -r ../resources/js/api/generated/* .
+          mkdir generated
+          cp -r ../resources/js/api/generated/* generated/
+          cp ../resources/js/api/client.ts ./client.ts
 
           cat > package.json << 'PKGJSON'
           {
