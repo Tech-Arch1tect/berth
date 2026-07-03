@@ -8,6 +8,7 @@ import { AuthProvider } from './shared/auth/auth-context';
 import { OperationsProvider } from './features/operations/contexts/OperationsContext';
 import { TerminalPanelProvider } from './features/terminal/contexts/TerminalPanelContext';
 import { TerminalPanel } from './features/terminal/components/TerminalPanel';
+import { registerServiceWorker } from './shared/pwa/register-sw';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,3 +48,5 @@ root.render(
     </AuthProvider>
   </QueryClientProvider>
 );
+
+registerServiceWorker();

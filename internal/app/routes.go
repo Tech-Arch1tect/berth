@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"berth/internal/domain/apikey"
@@ -51,7 +52,7 @@ func registerRoutes(g *Graph) {
 	}))
 	httperr.SetupErrorHandler(e)
 
-	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir("public/build")))))
+	registerStaticAssetRoutes(e, "public")
 
 	if g.AuthAPIHandler == nil || g.JWTSvc == nil {
 		return
@@ -99,6 +100,25 @@ func registerRoutes(g *Graph) {
 	if g.SPASvc != nil {
 		e.GET("/*", g.SPASvc.Render)
 	}
+}
+
+func registerStaticAssetRoutes(e *echo.Echo, publicDir string) {
+	buildDir := filepath.Join(publicDir, "build")
+	pwaDir := filepath.Join(publicDir, "pwa")
+
+	e.GET("/build/sw.js", func(c echo.Context) error {
+		c.Response().Header().Set("Service-Worker-Allowed", "/")
+		c.Response().Header().Set("Cache-Control", "no-cache")
+		c.Response().Header().Set(echo.HeaderContentType, "text/javascript; charset=utf-8")
+		return c.File(filepath.Join(buildDir, "sw.js"))
+	})
+	e.GET("/build/*", echo.WrapHandler(http.StripPrefix("/build/", http.FileServer(http.Dir(buildDir)))))
+
+	e.GET("/pwa/manifest.webmanifest", func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, "application/manifest+json")
+		return c.File(filepath.Join(pwaDir, "manifest.webmanifest"))
+	})
+	e.GET("/pwa/*", echo.WrapHandler(http.StripPrefix("/pwa/", http.FileServer(http.Dir(pwaDir)))))
 }
 
 func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc, mobileAuthHandler *auth.APIHandler, authzEngine *authzengine.Engine) *authz.Registrar {

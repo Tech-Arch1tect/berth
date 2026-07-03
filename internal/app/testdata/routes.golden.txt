@@ -103,7 +103,10 @@ GET	/api/v1/version	internal/domain/version.(*Handler).GetVersion-fm
 GET	/api/v1/vulnscan/:scanid	internal/domain/vulnscan.(*Handler).GetScan-fm
 GET	/api/v1/vulnscan/:scanid/summary	internal/domain/vulnscan.(*Handler).GetScanSummary-fm
 GET	/api/v1/vulnscan/compare/:baseScanId/:compareScanId	internal/domain/vulnscan.(*Handler).CompareScans-fm
-GET	/build/*	internal/app.registerRoutes.WrapHandler.func4
+GET	/build/*	internal/app.registerStaticAssetRoutes.WrapHandler.func4
+GET	/build/sw.js	internal/app.registerStaticAssetRoutes.func1
+GET	/pwa/*	internal/app.registerStaticAssetRoutes.WrapHandler.func6
+GET	/pwa/manifest.webmanifest	internal/app.registerStaticAssetRoutes.func2
 GET	/ws/api/servers/:serverid/stacks/:stackname/events	internal/domain/websocket.(*EventsHandler).HandleStackEvents-fm
 GET	/ws/api/servers/:serverid/stacks/:stackname/operations/:operationId	internal/domain/operations.(*StreamHandler).HandleOperationStream-fm
 GET	/ws/api/servers/:serverid/stacks/:stackname/terminal	internal/domain/websocket.(*Handler).HandleFlutterTerminalWebSocket-fm

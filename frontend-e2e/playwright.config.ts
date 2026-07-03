@@ -11,6 +11,9 @@ export default defineConfig({
   globalTeardown: './global-teardown.ts',
   use: {
     ignoreHTTPSErrors: true,
+    launchOptions: {
+      args: ['--ignore-certificate-errors'],
+    },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
