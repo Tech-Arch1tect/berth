@@ -6,6 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY resources ./resources
+COPY utils ./utils
+COPY public/pwa ./public/pwa
 COPY vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js vite-env.d.ts ./
 RUN npm run build
 
@@ -39,6 +41,7 @@ FROM docker.io/techarchitect/berth-base:latest
 
 COPY --from=go-builder --chown=65532:65532 /app/berth ./berth
 COPY --from=frontend-builder --chown=65532:65532 /app/public/build ./public/build
+COPY --from=frontend-builder --chown=65532:65532 /app/public/pwa ./public/pwa
 COPY --chown=65532:65532 app.html ./app.html
 COPY --chown=65532:65532 templates ./templates
 
