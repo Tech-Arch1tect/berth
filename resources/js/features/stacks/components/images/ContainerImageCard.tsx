@@ -2,7 +2,9 @@ import { useState } from 'react';
 import type {
   ContainerImageDetails,
   ImageHistoryLayer as ImageHistoryLayerType,
+  ImageUpdate,
 } from '../../../../api/generated/models';
+import { UpdateAvailableBadge } from '../../../image-updates/components/UpdateAvailableBadge';
 import { ImageHistoryLayer } from './ImageHistoryLayer';
 import { ImageConfigDetails } from './ImageConfigDetails';
 import { formatImageSize, formatCreatedTime } from './utils/image-helpers';
@@ -19,9 +21,10 @@ import { theme } from '../../../../shared/theme';
 
 interface ContainerImageCardProps {
   imageDetails: ContainerImageDetails;
+  update?: ImageUpdate;
 }
 
-export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDetails }) => {
+export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDetails, update }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -46,7 +49,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
       {/* Header */}
       <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
             <div
               className={cn(
                 'p-2 rounded-lg',
@@ -58,7 +61,15 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className={cn('text-base font-semibold', theme.text.strong)}>{container_name}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className={cn('text-base font-semibold', theme.text.strong)}>
+                  {container_name}
+                </h3>
+                <UpdateAvailableBadge
+                  count={update && update.update_available && !update.check_error ? 1 : 0}
+                  variant="compact"
+                />
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <code className={cn('text-sm font-mono truncate', theme.text.muted)}>
                   {image_name}
@@ -121,6 +132,41 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
             </p>
           </div>
         </div>
+
+        {update && update.update_available && !update.check_error && (
+          <div
+            className={cn(
+              'mt-4 rounded-lg border px-3 py-2 text-sm',
+              theme.intent.info.border,
+              theme.intent.info.surface
+            )}
+          >
+            <p className={cn('font-medium', theme.intent.info.textStrong)}>
+              A newer image is available in the registry
+            </p>
+            <div className={cn('mt-1 grid gap-1 text-xs', theme.intent.info.textMuted)}>
+              <span className="truncate" title={update.current_repo_digest}>
+                Running: <code className="font-mono">{update.current_repo_digest}</code>
+              </span>
+              <span className="truncate" title={update.latest_repo_digest}>
+                Latest: <code className="font-mono">{update.latest_repo_digest}</code>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {update?.check_error && (
+          <div
+            className={cn(
+              'mt-4 rounded-lg border px-3 py-2 text-sm',
+              theme.intent.warning.border,
+              theme.intent.warning.surface,
+              theme.intent.warning.textStrong
+            )}
+          >
+            Image update check failed: {update.check_error}
+          </div>
+        )}
       </div>
 
       {/* Expanded Content */}

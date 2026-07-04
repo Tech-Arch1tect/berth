@@ -69,7 +69,7 @@ export default function StackDetails() {
   const canViewFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_READ) ?? false;
   const canWriteFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_WRITE) ?? false;
 
-  const { updates, hasUpdates, lastChecked } = useStackImageUpdates({
+  const { updates, lastChecked } = useStackImageUpdates({
     serverid,
     stackname,
     enabled: true,
@@ -134,14 +134,11 @@ export default function StackDetails() {
           />
         ) : stack.stackDetails ? (
           <div className="h-full flex flex-col">
-            {/* Image Update Banner */}
-            {hasUpdates && (
-              <ImageUpdateBanner
-                updates={updates}
-                stackName={stackname}
-                lastChecked={lastChecked}
-              />
-            )}
+            <ImageUpdateBanner
+              updates={updates}
+              lastChecked={lastChecked}
+              onViewDetails={() => setSelection({ type: 'images' })}
+            />
 
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
               <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
@@ -202,6 +199,7 @@ export default function StackDetails() {
                   statsError={stack.statsError ?? null}
                   onSelectService={(serviceName) => setSelection({ type: 'service', serviceName })}
                   onSelect={setSelection}
+                  imageUpdates={updates}
                 />
               </div>
 

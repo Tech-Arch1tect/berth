@@ -20,7 +20,7 @@ export const UpdateAvailableBadge: React.FC<UpdateAvailableBadgeProps> = ({
     <span
       className={cn(
         theme.badges.tag.base,
-        theme.badges.tag.warning,
+        theme.badges.tag.info,
         variant === 'compact' ? 'text-xs px-2 py-0.5' : 'text-sm px-2.5 py-1',
         className
       )}

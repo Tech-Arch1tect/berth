@@ -1,13 +1,20 @@
 import type { FC } from 'react';
-import type { ComposeService } from '../../../../api/generated/models';
+import type { ComposeService, ImageUpdate } from '../../../../api/generated/models';
 import { ChevronRightIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { UpdateAvailableBadge } from '../../../image-updates/components/UpdateAvailableBadge';
+import { serviceUpdateCount } from '../../../image-updates/updateMatching';
 
 interface ServicesListPanelProps {
   services: ComposeService[];
+  imageUpdates?: ImageUpdate[];
   onSelect: (serviceName: string) => void;
 }
 
-export const ServicesListPanel: FC<ServicesListPanelProps> = ({ services, onSelect }) => {
+export const ServicesListPanel: FC<ServicesListPanelProps> = ({
+  services,
+  imageUpdates,
+  onSelect,
+}) => {
   if (services.length === 0) {
     return (
       <div className="p-6 text-sm italic text-zinc-500 dark:text-zinc-400">
@@ -27,8 +34,14 @@ export const ServicesListPanel: FC<ServicesListPanelProps> = ({ services, onSele
         >
           <CubeIcon className="h-5 w-5 flex-shrink-0 text-zinc-400" />
           <div className="min-w-0 flex-1">
-            <div className="truncate font-medium text-zinc-900 dark:text-zinc-100">
-              {service.name}
+            <div className="flex items-center gap-2">
+              <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+                {service.name}
+              </span>
+              <UpdateAvailableBadge
+                count={serviceUpdateCount(imageUpdates, service)}
+                variant="compact"
+              />
             </div>
             <div className="text-xs text-zinc-500 dark:text-zinc-400">
               {service.containers?.length ?? 0} container

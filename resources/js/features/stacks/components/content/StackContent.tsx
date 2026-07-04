@@ -6,6 +6,7 @@ import type {
   Volume,
   StackEnvironmentDataServices,
   ContainerStats,
+  ImageUpdate,
 } from '../../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
 import { ServicesListPanel } from '../panels/ServicesListPanel';
@@ -49,6 +50,7 @@ interface StackContentProps {
   statsError: Error | null;
   onSelectService?: (serviceName: string) => void;
   onSelect?: (selection: SidebarSelection) => void;
+  imageUpdates?: ImageUpdate[];
 }
 
 export const StackContent: FC<StackContentProps> = ({
@@ -71,6 +73,7 @@ export const StackContent: FC<StackContentProps> = ({
   statsError,
   onSelectService,
   onSelect,
+  imageUpdates,
 }) => {
   if (!selection) {
     return (
@@ -85,6 +88,7 @@ export const StackContent: FC<StackContentProps> = ({
         isOperationRunning={isOperationRunning}
         runningOperation={runningOperation}
         onServiceClick={onSelectService}
+        imageUpdates={imageUpdates}
       />
     );
   }
@@ -103,6 +107,7 @@ export const StackContent: FC<StackContentProps> = ({
           isOperationRunning={isOperationRunning}
           runningOperation={runningOperation}
           onServiceClick={onSelectService}
+          imageUpdates={imageUpdates}
         />
       );
 
@@ -110,6 +115,7 @@ export const StackContent: FC<StackContentProps> = ({
       return (
         <ServicesListPanel
           services={services}
+          imageUpdates={imageUpdates}
           onSelect={(serviceName) => onSelect?.({ type: 'service', serviceName })}
         />
       );
@@ -143,6 +149,7 @@ export const StackContent: FC<StackContentProps> = ({
       return (
         <ServiceDetailPanel
           service={service}
+          imageUpdates={imageUpdates}
           canManage={permissions.canManage}
           canViewLogs={permissions.canViewLogs}
           onQuickOperation={onQuickOperation}
@@ -243,7 +250,7 @@ export const StackContent: FC<StackContentProps> = ({
     case 'images':
       return (
         <div className="h-full overflow-auto p-6">
-          <StackImagesTab />
+          <StackImagesTab imageUpdates={imageUpdates} />
         </div>
       );
 

@@ -1,5 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import type { ComposeService, Container, HealthStatus } from '../../../../api/generated/models';
+import type {
+  ComposeService,
+  Container,
+  HealthStatus,
+  ImageUpdate,
+} from '../../../../api/generated/models';
+import { UpdateAvailableBadge } from '../../../image-updates/components/UpdateAvailableBadge';
+import { serviceUpdateCount } from '../../../image-updates/updateMatching';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import { OperationRequest } from '../../../operations/types';
 import {
@@ -30,6 +37,7 @@ interface ServiceDetailPanelProps {
   runningOperation?: string;
   canManage: boolean;
   canViewLogs?: boolean;
+  imageUpdates?: ImageUpdate[];
 }
 
 const formatUptime = (startedAt?: string) => {
@@ -70,6 +78,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
   runningOperation,
   canManage,
   canViewLogs = false,
+  imageUpdates,
 }) => {
   const [logsExpanded, setLogsExpanded] = useState(true);
   const [logsHeight, setLogsHeight] = useState(() => {
@@ -166,6 +175,7 @@ export const ServiceDetailPanel: React.FC<ServiceDetailPanelProps> = ({
             </div>
             <div>
               <h2 className={cn('text-lg font-bold', theme.text.strong)}>{service.name}</h2>
+              <UpdateAvailableBadge count={serviceUpdateCount(imageUpdates, service)} />
               {service.image && (
                 <p className={cn('text-sm font-mono', theme.text.subtle)}>{service.image}</p>
               )}

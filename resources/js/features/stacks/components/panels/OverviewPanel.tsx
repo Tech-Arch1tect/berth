@@ -1,5 +1,13 @@
 import React from 'react';
-import type { ComposeService, Container, Network, Volume } from '../../../../api/generated/models';
+import type {
+  ComposeService,
+  Container,
+  ImageUpdate,
+  Network,
+  Volume,
+} from '../../../../api/generated/models';
+import { UpdateAvailableBadge } from '../../../image-updates/components/UpdateAvailableBadge';
+import { serviceUpdateCount } from '../../../image-updates/updateMatching';
 import { OperationRequest } from '../../../operations/types';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import {
@@ -27,6 +35,7 @@ interface OverviewPanelProps {
   isOperationRunning: boolean;
   runningOperation?: string;
   onServiceClick?: (serviceName: string) => void;
+  imageUpdates?: ImageUpdate[];
 }
 
 const formatUptime = (startedAt?: string) => {
@@ -141,6 +150,7 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
   isOperationRunning,
   runningOperation,
   onServiceClick,
+  imageUpdates,
 }) => {
   const totalContainers = services.reduce((sum, s) => sum + (s.containers?.length || 0), 0);
   const runningContainers = services.reduce(
@@ -238,7 +248,7 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
                 <div
                   key={service.name}
                   className={cn(
-                    'px-4 py-3 flex items-center justify-between gap-4',
+                    'px-4 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2',
                     onServiceClick &&
                       'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors'
                   )}
@@ -252,6 +262,10 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
                         <span className={cn('font-medium truncate', theme.text.strong)}>
                           {service.name}
                         </span>
+                        <UpdateAvailableBadge
+                          count={serviceUpdateCount(imageUpdates, service)}
+                          variant="compact"
+                        />
                         <span
                           className={cn(
                             'text-xs px-1.5 py-0.5 rounded hidden sm:inline',

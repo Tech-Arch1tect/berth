@@ -1,138 +1,108 @@
-import React, { useState } from 'react';
-import {
-  XMarkIcon,
-  InformationCircleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@heroicons/react/24/outline';
+import type { FC } from 'react';
+import { ArrowUpCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import type { ImageUpdate } from '../../../api/generated/models';
-import { ImageUpdateTable } from './ImageUpdateTable';
 
 interface ImageUpdateBannerProps {
   updates: ImageUpdate[];
-  stackName: string;
   lastChecked: string | null;
+  onViewDetails?: () => void;
   className?: string;
 }
 
-export const ImageUpdateBanner: React.FC<ImageUpdateBannerProps> = ({
+function describeServices(names: string[]): string {
+  if (names.length === 1) return `Image update available for ${names[0]}`;
+  if (names.length <= 3) {
+    const last = names[names.length - 1];
+    return `Image updates available for ${names.slice(0, -1).join(', ')} and ${last}`;
+  }
+  return `Image updates available for ${names.length} services`;
+}
+
+export const ImageUpdateBanner: FC<ImageUpdateBannerProps> = ({
   updates,
-  stackName,
   lastChecked,
+  onViewDetails,
   className,
 }) => {
-  const dismissKey = `image-update-banner-${stackName}`;
+  const available = updates.filter((u) => !u.check_error && u.update_available);
+  const failedChecks = updates.filter((u) => u.check_error).length;
 
-  const [isDismissed, setIsDismissed] = useState(() => localStorage.getItem(dismissKey) === 'true');
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [prevDismissKey, setPrevDismissKey] = useState(dismissKey);
+  if (available.length === 0 && failedChecks === 0) return null;
 
-  if (dismissKey !== prevDismissKey) {
-    setPrevDismissKey(dismissKey);
-    setIsDismissed(localStorage.getItem(dismissKey) === 'true');
-  }
-
-  const handleDismiss = () => {
-    setIsDismissed(true);
-    localStorage.setItem(dismissKey, 'true');
-  };
-
-  const handleToggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  if (isDismissed || updates.length === 0) {
-    return null;
-  }
-
-  const successfulUpdates = updates.filter((u) => !u.check_error && u.update_available);
-  const updateCount = successfulUpdates.length;
-  const containerCount = new Set(successfulUpdates.map((u) => u.container_name)).size;
-  const errorCount = updates.filter((u) => u.check_error).length;
+  const serviceNames = [...new Set(available.map((u) => u.container_name))];
+  const checkedAgo = lastChecked
+    ? formatDistanceToNow(new Date(lastChecked), { addSuffix: true })
+    : null;
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border p-4',
-        theme.intent.info.border,
-        theme.intent.info.surface,
-        className
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <InformationCircleIcon
-          className={cn('h-5 w-5 flex-shrink-0 mt-0.5', theme.intent.info.textStrong)}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className={cn('text-sm font-medium', theme.intent.info.textStrong)}>
-                {updateCount > 0 ? (
-                  <>
-                    {updateCount} container image update{updateCount !== 1 ? 's' : ''} available
-                  </>
-                ) : (
-                  <>Image update check results</>
-                )}
-              </p>
-              <p className={cn('mt-1 text-xs', theme.intent.info.textMuted)}>
-                {updateCount > 0 && (
-                  <>
-                    {containerCount} container{containerCount !== 1 ? 's' : ''} in this stack{' '}
-                    {containerCount !== 1 ? 'have' : 'has'} newer images available.
-                  </>
-                )}
-                {errorCount > 0 && (
-                  <>
-                    {updateCount > 0 && ' '}
-                    {errorCount} check{errorCount !== 1 ? 's' : ''} failed.
-                  </>
-                )}
-                {lastChecked && <> Last checked {new Date(lastChecked).toLocaleString()}.</>}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleToggleExpand}
-                className={cn(
-                  'flex items-center gap-1 text-xs font-medium transition-colors',
-                  theme.intent.info.textStrong,
-                  'hover:opacity-75'
-                )}
-              >
-                {isExpanded ? (
-                  <>
-                    Hide details <ChevronUpIcon className="h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    Show details <ChevronDownIcon className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleDismiss}
-                className={cn(
-                  'p-1 rounded transition-colors',
-                  theme.intent.info.textMuted,
-                  'hover:bg-black/5 dark:hover:bg-white/5'
-                )}
-                title="Dismiss"
-              >
-                <XMarkIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {isExpanded && (
-            <div className="mt-4">
-              <ImageUpdateTable updates={updates} />
-            </div>
+    <div className={className}>
+      {available.length > 0 && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2',
+            theme.intent.info.border,
+            theme.intent.info.surface
+          )}
+        >
+          <ArrowUpCircleIcon
+            className={cn('h-5 w-5 flex-shrink-0', theme.intent.info.textStrong)}
+          />
+          <p className={cn('min-w-0 flex-1 text-sm', theme.intent.info.textStrong)}>
+            {describeServices(serviceNames)}
+            {checkedAgo && (
+              <span className={cn('ml-2 text-xs', theme.intent.info.textMuted)}>
+                checked {checkedAgo}
+              </span>
+            )}
+          </p>
+          {onViewDetails && (
+            <button
+              type="button"
+              onClick={onViewDetails}
+              className={cn(
+                'min-h-[36px] flex-shrink-0 rounded-lg px-3 text-xs font-semibold',
+                theme.intent.info.textStrong,
+                'hover:bg-black/5 dark:hover:bg-white/10'
+              )}
+            >
+              View
+            </button>
           )}
         </div>
-      </div>
+      )}
+
+      {failedChecks > 0 && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2',
+            theme.intent.warning.border,
+            theme.intent.warning.surface
+          )}
+        >
+          <ExclamationTriangleIcon
+            className={cn('h-5 w-5 flex-shrink-0', theme.intent.warning.textStrong)}
+          />
+          <p className={cn('min-w-0 flex-1 text-sm', theme.intent.warning.textStrong)}>
+            {failedChecks} image update check{failedChecks !== 1 ? 's' : ''} failed
+          </p>
+          {onViewDetails && (
+            <button
+              type="button"
+              onClick={onViewDetails}
+              className={cn(
+                'min-h-[36px] flex-shrink-0 rounded-lg px-3 text-xs font-semibold',
+                theme.intent.warning.textStrong,
+                'hover:bg-black/5 dark:hover:bg-white/10'
+              )}
+            >
+              View
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useStackImages } from '../../hooks/useStackImages';
+import { updateForContainer } from '../../../image-updates/updateMatching';
 import { ContainerImageCard } from './ContainerImageCard';
 import { ArrowPathIcon, Square2StackIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
@@ -6,9 +7,13 @@ import { theme } from '../../../../shared/theme';
 import { EmptyState } from '../../../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useServerStack } from '../../../../shared/contexts/ServerStackContext';
-import type { ContainerImageDetails } from '../../../../api/generated/models';
+import type { ContainerImageDetails, ImageUpdate } from '../../../../api/generated/models';
 
-export const StackImagesTab: React.FC = () => {
+interface StackImagesTabProps {
+  imageUpdates?: ImageUpdate[];
+}
+
+export const StackImagesTab: React.FC<StackImagesTabProps> = ({ imageUpdates }) => {
   const { serverId, stackName } = useServerStack();
 
   const {
@@ -88,6 +93,7 @@ export const StackImagesTab: React.FC = () => {
           <ContainerImageCard
             key={`${imageDetail.container_name}-${imageDetail.image_id}`}
             imageDetails={imageDetail}
+            update={updateForContainer(imageUpdates, imageDetail.container_name ?? '', stackName)}
           />
         ))}
       </div>
