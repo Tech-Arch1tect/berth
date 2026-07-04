@@ -243,11 +243,11 @@ const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
       }
     >
       <div
-        className="-mx-6 -my-4 flex overflow-hidden bg-white dark:bg-zinc-900"
+        className="-mx-6 -my-4 flex flex-col lg:flex-row overflow-hidden bg-white dark:bg-zinc-900"
         style={{ height: '75vh' }}
       >
         {/* Operation Builder */}
-        <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
+        <div className="min-h-0 flex-1 lg:flex-none lg:w-1/2 border-b lg:border-b-0 lg:border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-4 bg-white dark:bg-zinc-900">
           <h4 className={cn('text-sm font-semibold mb-3', theme.text.strong)}>
             Build Custom Operation
           </h4>
@@ -261,7 +261,7 @@ const AdvancedOperationsModal: React.FC<AdvancedOperationsModalProps> = ({
         </div>
 
         {/* Running Operations */}
-        <div className="w-1/2 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
+        <div className="min-h-0 flex-1 lg:flex-none lg:w-1/2 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
             <h4 className={cn('text-sm font-semibold', theme.text.strong)}>
               Operations ({runningOps.length} running, {completedOps.length} completed)
@@ -366,7 +366,7 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   if (isMinimized && !advancedMode) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed right-4 z-50 bottom-[calc(3rem+env(safe-area-inset-bottom))]">
         <button
           onClick={() => setIsMinimized(false)}
           className={cn(
@@ -419,12 +419,13 @@ export const GlobalOperationsTracker: React.FC<GlobalOperationsTrackerProps> = (
 
   return (
     <div
-      className="fixed z-50"
+      className="fixed z-50 bottom-[calc(3rem+env(safe-area-inset-bottom))]"
       style={{
-        bottom: '1rem',
         right: '1rem',
         width: `${width}px`,
+        maxWidth: 'calc(100vw - 2rem)',
         height: `${height}px`,
+        maxHeight: 'calc(100dvh - 8rem)',
       }}
     >
       <div
