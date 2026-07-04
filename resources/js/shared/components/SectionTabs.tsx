@@ -171,6 +171,7 @@ export const SectionTabs: FC<SectionTabsProps> = ({
           <button
             ref={moreButtonRef}
             type="button"
+            aria-label="More sections"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}

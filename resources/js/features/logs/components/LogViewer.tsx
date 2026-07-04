@@ -6,8 +6,7 @@ import {
   ArrowPathIcon,
   ArrowDownIcon,
   DocumentDuplicateIcon,
-  PlayIcon,
-  PauseIcon,
+  ClockIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../shared/utils/cn';
@@ -34,7 +33,6 @@ const LogViewer: React.FC<LogViewerProps> = ({
     showTimestamps,
     setShowTimestamps,
     copied,
-    followMode,
     setFollowMode,
     silentLoading,
     logContainerRef,
@@ -48,7 +46,6 @@ const LogViewer: React.FC<LogViewerProps> = ({
     setLevelFilter,
     logStats,
     title,
-    subtitle,
     handleRefresh,
     scrollToBottom,
     handleScroll,
@@ -58,6 +55,49 @@ const LogViewer: React.FC<LogViewerProps> = ({
     stackname: stackName,
     containerName,
   });
+
+  const live = autoRefresh;
+  const toggleLive = () => {
+    setAutoRefresh(!live);
+    setFollowMode(!live);
+  };
+
+  const toolbarSelect = cn(
+    'min-h-[40px] w-full sm:w-auto rounded-lg border-2 border-zinc-200 bg-white px-2 text-xs',
+    'text-zinc-900 shadow-sm transition-all focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10',
+    'dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-teal-500'
+  );
+
+  const levelChip = (level: 'all' | 'error' | 'warn' | 'info', count: number, label: string) => {
+    if (level !== 'all' && count === 0) return null;
+    const active = levelFilter === level;
+    const color =
+      level === 'error'
+        ? 'text-red-600 dark:text-red-400'
+        : level === 'warn'
+          ? 'text-amber-600 dark:text-amber-400'
+          : level === 'info'
+            ? 'text-blue-600 dark:text-blue-400'
+            : theme.text.muted;
+    return (
+      <button
+        key={level}
+        type="button"
+        aria-pressed={active}
+        onClick={() => setLevelFilter(active && level !== 'all' ? 'all' : level)}
+        className={cn(
+          'min-h-[36px] rounded-full border px-2.5 font-mono text-xs transition-colors',
+          color,
+          active
+            ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30'
+            : 'border-zinc-200 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
+        )}
+        title={level === 'all' ? 'Show all levels' : `Show only ${level} lines`}
+      >
+        {count} {label}
+      </button>
+    );
+  };
 
   const getLogLevelColor = (level?: string) => {
     switch (level) {
@@ -87,36 +127,83 @@ const LogViewer: React.FC<LogViewerProps> = ({
     <div className={cn('flex flex-col h-full', !compact && 'min-h-[600px]')}>
       <div
         className={cn(
-          'flex items-center justify-between px-4 py-2 border-b',
+          'border-b px-3 py-2 space-y-2',
           theme.surface.muted,
           'border-zinc-200 dark:border-zinc-800'
         )}
       >
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <h3 className={cn('text-sm font-semibold truncate', theme.text.strong)}>{title}</h3>
-            <span className={cn('text-xs truncate', theme.text.muted)}>{subtitle}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className={cn('text-sm font-semibold truncate mr-1', theme.text.strong)}>{title}</h3>
+
+          <div className="flex items-center gap-1.5">
+            {levelChip('all', logStats.total, 'all')}
+            {levelChip('error', logStats.error, 'err')}
+            {levelChip('warn', logStats.warn, 'warn')}
+            {levelChip('info', logStats.info, 'info')}
           </div>
 
-          <div className="hidden lg:flex items-center gap-3 text-xs">
-            <span className={cn('font-mono', theme.text.muted)}>{logStats.total}</span>
-            {logStats.error > 0 && (
-              <span className="text-red-500 font-mono">{logStats.error}E</span>
-            )}
-            {logStats.warn > 0 && (
-              <span className="text-yellow-500 font-mono">{logStats.warn}W</span>
-            )}
-            {logStats.info > 0 && <span className="text-blue-500 font-mono">{logStats.info}I</span>}
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={toggleLive}
+              aria-pressed={live}
+              className={cn(
+                'min-h-[40px] flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors',
+                live ? theme.buttons.primary : theme.buttons.secondary
+              )}
+              title="Keep fetching new logs and scroll to follow them"
+            >
+              <span
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  live ? 'bg-white animate-pulse' : 'bg-zinc-400 dark:bg-zinc-500'
+                )}
+              />
+              Live
+            </button>
+
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className={cn(
+                'min-h-[40px] flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors disabled:opacity-50',
+                theme.buttons.secondary
+              )}
+              title="Fetch the latest logs once"
+            >
+              <ArrowPathIcon
+                className={cn('w-4 h-4', (loading || silentLoading) && 'animate-spin')}
+              />
+              Refresh
+            </button>
+
+            <button
+              onClick={copyAllLogs}
+              className={cn(
+                'min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg transition-colors',
+                theme.buttons.secondary
+              )}
+              title="Copy all logs"
+            >
+              <DocumentDuplicateIcon className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={scrollToBottom}
+              className={cn(
+                'min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg transition-colors',
+                theme.buttons.secondary
+              )}
+              title="Jump to bottom"
+            >
+              <ArrowDownIcon className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative hidden md:block">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="relative basis-full lg:basis-auto lg:flex-1 lg:max-w-md">
             <MagnifyingGlassIcon
-              className={cn(
-                'absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5',
-                theme.text.muted
-              )}
+              className={cn('absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4', theme.text.muted)}
             />
             <input
               type="text"
@@ -124,7 +211,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search logs..."
               className={cn(
-                'w-64 lg:w-80 pl-8 pr-2 py-1 text-xs rounded border',
+                'w-full min-h-[40px] pl-8 pr-2 text-xs rounded border',
                 theme.forms.input
               )}
             />
@@ -133,43 +220,32 @@ const LogViewer: React.FC<LogViewerProps> = ({
           <select
             value={tail}
             onChange={(e) => setTail(Number(e.target.value))}
-            className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
+            className={toolbarSelect}
           >
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={500}>500</option>
-            <option value={1000}>1k</option>
+            <option value={50}>Last 50 lines</option>
+            <option value={100}>Last 100 lines</option>
+            <option value={500}>Last 500 lines</option>
+            <option value={1000}>Last 1000 lines</option>
           </select>
 
           <select
             value={since}
             onChange={(e) => setSince(e.target.value)}
-            className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
+            className={toolbarSelect}
           >
-            <option value="">All</option>
-            <option value="5m">5m</option>
-            <option value="1h">1h</option>
-            <option value="24h">24h</option>
-          </select>
-
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
-          >
-            <option value="all">All</option>
-            <option value="error">ERR</option>
-            <option value="warn">WARN</option>
-            <option value="info">INFO</option>
+            <option value="">All time</option>
+            <option value="5m">Last 5 minutes</option>
+            <option value="1h">Last hour</option>
+            <option value="24h">Last 24 hours</option>
           </select>
 
           {containers && containers.length > 1 && (
             <select
               value={selectedContainer}
               onChange={(e) => setSelectedContainer(e.target.value)}
-              className={cn('px-2 py-1 text-xs rounded border', theme.forms.select)}
+              className={cn(toolbarSelect, 'sm:max-w-[16rem]')}
             >
-              <option value="">All</option>
+              <option value="">All containers</option>
               {containers.map((container) => (
                 <option key={container.name} value={container.name}>
                   {container.name}
@@ -180,62 +256,15 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
           <button
             onClick={() => setShowTimestamps(!showTimestamps)}
+            aria-pressed={showTimestamps}
             className={cn(
-              'p-1.5 text-xs rounded-lg transition-colors',
+              'min-h-[40px] flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors',
               showTimestamps ? theme.buttons.primary : theme.buttons.secondary
             )}
-            title="Toggle timestamps"
+            title="Show or hide timestamps"
           >
-            <span className="text-[10px] font-semibold">TS</span>
-          </button>
-
-          <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={cn(
-              'p-1.5 rounded-lg transition-colors',
-              autoRefresh ? theme.buttons.primary : theme.buttons.secondary
-            )}
-            title={autoRefresh ? 'Auto-refresh enabled' : 'Auto-refresh disabled'}
-          >
-            <ArrowPathIcon className={cn('w-4 h-4', silentLoading && 'animate-spin')} />
-          </button>
-
-          <button
-            onClick={() => setFollowMode(!followMode)}
-            className={cn(
-              'p-1.5 rounded-lg transition-colors',
-              followMode ? theme.buttons.primary : theme.buttons.secondary
-            )}
-            title={followMode ? 'Following (auto-scroll)' : 'Paused'}
-          >
-            {followMode ? <PlayIcon className="w-4 h-4" /> : <PauseIcon className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={copyAllLogs}
-            className={cn('p-1.5 rounded-lg transition-colors', theme.buttons.secondary)}
-            title="Copy all logs"
-          >
-            <DocumentDuplicateIcon className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className={cn(
-              'px-3 py-1.5 text-xs rounded-lg transition-colors disabled:opacity-50',
-              theme.buttons.primary
-            )}
-          >
-            Refresh
-          </button>
-
-          <button
-            onClick={scrollToBottom}
-            className={cn('p-1.5 rounded-lg transition-colors', theme.buttons.secondary)}
-            title="Jump to bottom"
-          >
-            <ArrowDownIcon className="w-4 h-4" />
+            <ClockIcon className="w-4 h-4" />
+            Timestamps
           </button>
         </div>
       </div>
