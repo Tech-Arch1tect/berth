@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
+import { ExclamationTriangleIcon, ServerIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useDashboardActivity } from '../components';
 import { useDashboardStatistics } from '../hooks/useDashboardStatistics';
-import { PanelLayout } from '../../../shared/components/PanelLayout';
-import { DashboardSidebar } from '../components/sidebar/DashboardSidebar';
+import { SectionTabs } from '../../../shared/components/SectionTabs';
+import type { Tab } from '../../../shared/components/Tabs';
 import { DashboardPage, SECTION_IDS } from '../components/content/DashboardPage';
 import { DashboardToolbar } from '../components/toolbar/DashboardToolbar';
 import { DashboardStatusBar } from '../components/statusbar/DashboardStatusBar';
@@ -10,6 +11,18 @@ import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { useAuth } from '../../../shared/auth/auth-context';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useGetApiV1Servers } from '../../../api/generated/servers/servers';
+
+function scrollToSection(sectionId: string) {
+  const element = document.getElementById(sectionId);
+  if (!element) return;
+  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  element.classList.add('animate-highlight-flash');
+  const handleAnimationEnd = () => {
+    element.classList.remove('animate-highlight-flash');
+    element.removeEventListener('animationend', handleAnimationEnd);
+  };
+  element.addEventListener('animationend', handleAnimationEnd);
+}
 
 export default function Dashboard() {
   useDocumentTitle('Dashboard');
@@ -49,6 +62,18 @@ export default function Dashboard() {
 
   const isLoading = serversLoading || statisticsLoading;
 
+  const attentionCount = healthSummary.serversWithErrors + healthSummary.unhealthyStacks;
+  const sectionTabs: Tab[] = [
+    {
+      id: SECTION_IDS.attention,
+      label: 'Needs attention',
+      icon: ExclamationTriangleIcon,
+      badge: attentionCount > 0 ? attentionCount : undefined,
+    },
+    { id: SECTION_IDS.servers, label: 'Servers', icon: ServerIcon },
+    { id: SECTION_IDS.activity, label: 'Activity', icon: ClockIcon },
+  ];
+
   if (serversLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
@@ -61,36 +86,40 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <PanelLayout
-        storageKey="dashboard"
-        sidebarTitle="Servers"
-        toolbar={
-          <DashboardToolbar
-            title="Dashboard"
-            isRefreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            isAdmin={isAdmin}
-          />
-        }
-        sidebar={<DashboardSidebar activeSection={activeSection} healthSummary={healthSummary} />}
-        content={
-          <DashboardPage
-            servers={servers}
-            activitySummary={activitySummary}
-            serverStats={serverStats}
-            serverStatus={serverStatus}
-            onSectionChange={handleSectionChange}
-          />
-        }
-        statusBar={
-          <DashboardStatusBar
-            healthSummary={healthSummary}
-            lastUpdated={lastUpdated}
-            isLoading={isLoading}
-          />
-        }
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+        <DashboardToolbar
+          title="Dashboard"
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          isAdmin={isAdmin}
+        />
+      </div>
+
+      <SectionTabs
+        tabs={sectionTabs}
+        activeTab={activeSection}
+        onTabChange={scrollToSection}
+        aria-label="Dashboard sections"
       />
+
+      <div className="flex-1 min-h-0 overflow-auto bg-white dark:bg-zinc-900">
+        <DashboardPage
+          servers={servers}
+          activitySummary={activitySummary}
+          serverStats={serverStats}
+          serverStatus={serverStatus}
+          onSectionChange={handleSectionChange}
+        />
+      </div>
+
+      <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800">
+        <DashboardStatusBar
+          healthSummary={healthSummary}
+          lastUpdated={lastUpdated}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 }

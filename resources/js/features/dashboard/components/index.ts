@@ -1,6 +1,3 @@
-// Sidebar
-export { DashboardSidebar } from './sidebar/DashboardSidebar';
-
 // Content
 export { DashboardPage, SECTION_IDS } from './content/DashboardPage';
 
