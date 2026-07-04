@@ -1,5 +1,7 @@
 export type SidebarSelection =
+  | { type: 'services' }
   | { type: 'service'; serviceName: string }
+  | { type: 'resources' }
   | { type: 'network'; networkName: string }
   | { type: 'volume'; volumeName: string }
   | { type: 'environment' }

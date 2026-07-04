@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 import { SidebarSelection } from '../sidebar/types';
 import type {
   ComposeService,
@@ -8,6 +8,8 @@ import type {
   ContainerStats,
 } from '../../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
+import { ServicesListPanel } from '../panels/ServicesListPanel';
+import { ResourcesListPanel } from '../panels/ResourcesListPanel';
 import { ServiceDetailPanel } from '../panels/ServiceDetailPanel';
 import { NetworkDetailPanel } from '../panels/NetworkDetailPanel';
 import { VolumeDetailPanel } from '../panels/VolumeDetailPanel';
@@ -46,9 +48,10 @@ interface StackContentProps {
   statsLoading: boolean;
   statsError: Error | null;
   onSelectService?: (serviceName: string) => void;
+  onSelect?: (selection: SidebarSelection) => void;
 }
 
-export const StackContent: React.FC<StackContentProps> = ({
+export const StackContent: FC<StackContentProps> = ({
   selection,
   serverid,
   stackname,
@@ -67,6 +70,7 @@ export const StackContent: React.FC<StackContentProps> = ({
   statsLoading,
   statsError,
   onSelectService,
+  onSelect,
 }) => {
   if (!selection) {
     return (
@@ -99,6 +103,25 @@ export const StackContent: React.FC<StackContentProps> = ({
           isOperationRunning={isOperationRunning}
           runningOperation={runningOperation}
           onServiceClick={onSelectService}
+        />
+      );
+
+    case 'services':
+      return (
+        <ServicesListPanel
+          services={services}
+          onSelect={(serviceName) => onSelect?.({ type: 'service', serviceName })}
+        />
+      );
+
+    case 'resources':
+      return (
+        <ResourcesListPanel
+          networks={networks}
+          volumes={volumes}
+          onSelectNetwork={(networkName) => onSelect?.({ type: 'network', networkName })}
+          onSelectVolume={(volumeName) => onSelect?.({ type: 'volume', volumeName })}
+          onSelectEnvironment={() => onSelect?.({ type: 'environment' })}
         />
       );
 

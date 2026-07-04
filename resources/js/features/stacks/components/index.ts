@@ -4,7 +4,6 @@ export { MemoryProgressBar } from './MemoryProgressBar';
 export { default as ServiceQuickActions } from './services/ServiceQuickActions';
 export { default as StackQuickActions } from './services/StackQuickActions';
 
-export { StackSidebar } from './sidebar/StackSidebar';
 export type { SidebarSelection } from './sidebar/types';
 
 export { OverviewPanel } from './panels/OverviewPanel';
