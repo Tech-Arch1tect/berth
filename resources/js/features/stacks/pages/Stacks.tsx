@@ -4,7 +4,7 @@ import { useAllStacks } from '../hooks/useAllStacks';
 import { StorageManager } from '../../../shared/utils/storage';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useGetApiV1Servers } from '../../../api/generated/servers/servers';
-import { PanelLayout } from '../../../shared/components/PanelLayout';
+import { FilterLayout } from '../../../shared/components/FilterLayout';
 import { StacksToolbar } from '../components/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/sidebar/StacksSidebar';
 import { StacksContent } from '../components/content/StacksContent';
@@ -137,9 +137,8 @@ export default function Stacks() {
 
   return (
     <div className="h-full flex flex-col">
-      <PanelLayout
-        storageKey="stacks"
-        sidebarTitle="Filters"
+      <FilterLayout
+        activeFilterCount={activeFilterCount}
         toolbar={
           <StacksToolbar
             title="All Stacks"
@@ -149,7 +148,7 @@ export default function Stacks() {
             onLayoutToggle={toggleLayout}
           />
         }
-        sidebar={
+        filters={
           <StacksSidebar
             servers={servers}
             searchTerm={searchTerm}

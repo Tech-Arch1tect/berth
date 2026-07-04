@@ -9,7 +9,7 @@ import { StorageManager } from '../../../shared/utils/storage';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
-import { PanelLayout } from '../../../shared/components/PanelLayout';
+import { FilterLayout } from '../../../shared/components/FilterLayout';
 import { StacksToolbar } from '../components/toolbar/StacksToolbar';
 import { StacksSidebar } from '../components/sidebar/StacksSidebar';
 import { StacksContent } from '../components/content/StacksContent';
@@ -156,9 +156,8 @@ export default function ServerStacks() {
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
       <div className="h-full flex flex-col">
-        <PanelLayout
-          storageKey="stacks"
-          sidebarTitle="Filters"
+        <FilterLayout
+          activeFilterCount={activeFilterCount}
           toolbar={
             <StacksToolbar
               title={`${server.name} - Docker Stacks`}
@@ -169,7 +168,7 @@ export default function ServerStacks() {
               onCreateStack={canCreateStack ? () => setShowCreateModal(true) : undefined}
             />
           }
-          sidebar={
+          filters={
             <StacksSidebar
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
