@@ -24,6 +24,7 @@ interface OperationLogsViewProps {
   title: string;
   subtitle: string;
   showUser: boolean;
+  liveOperations?: React.ReactNode;
   logs: OperationLogInfo[];
   stats: OperationLogStatsData | null;
   meta: Meta | null;
@@ -69,6 +70,7 @@ export const OperationLogsView: React.FC<OperationLogsViewProps> = ({
   title,
   subtitle,
   showUser,
+  liveOperations,
   logs,
   stats,
   meta,
@@ -301,6 +303,7 @@ export const OperationLogsView: React.FC<OperationLogsViewProps> = ({
 
   const content = (
     <div className="flex h-full min-h-0 flex-col">
+      {liveOperations}
       {statusChips}
       <div className="min-h-0 flex-1">
         <RecordList

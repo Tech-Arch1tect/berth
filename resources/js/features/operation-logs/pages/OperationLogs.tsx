@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { OperationLogsView } from '../components';
+import { RunningOperationsPanel } from '../../operations/components/RunningOperationsPanel';
 import {
   useGetApiV1OperationLogs,
   useGetApiV1OperationLogsStats,
@@ -60,9 +61,10 @@ export default function OperationLogs() {
 
   return (
     <OperationLogsView
-      title="Operation Logs"
+      title="Activity"
       subtitle="View your Docker stack operation history"
       showUser={false}
+      liveOperations={<RunningOperationsPanel />}
       logs={logsResponse?.data ?? []}
       stats={statsResponse?.data ?? null}
       meta={logsResponse?.meta ?? null}

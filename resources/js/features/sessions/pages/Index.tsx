@@ -123,9 +123,7 @@ export default function SessionsIndex() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-              <h1 className={cn('pl-12 text-3xl font-bold lg:pl-0', theme.text.strong)}>
-                Active Sessions
-              </h1>
+              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
               {sessions.filter((s) => !s.current).length > 0 && (
                 <button
                   onClick={() => setShowRevokeAllModal(true)}

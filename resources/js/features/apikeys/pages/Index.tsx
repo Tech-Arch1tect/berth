@@ -126,9 +126,7 @@ export default function APIKeysIndex() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-              <h1 className={cn('pl-12 text-3xl font-bold lg:pl-0', theme.text.strong)}>
-                API Keys
-              </h1>
+              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Keys</h1>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className={cn('inline-flex items-center', theme.buttons.primary)}

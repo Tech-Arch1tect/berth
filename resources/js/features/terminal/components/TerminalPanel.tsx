@@ -57,7 +57,8 @@ export const TerminalPanel: React.FC = () => {
     <div
       ref={panelRef}
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 shadow-2xl',
+        'fixed left-0 right-0 z-40 shadow-2xl',
+        'bottom-[calc(4rem+env(safe-area-inset-bottom))] lg:bottom-0',
         'border-t border-zinc-200 dark:border-zinc-700',
         'bg-white dark:bg-zinc-900',
         sidebarCollapsed ? 'lg:left-16' : 'lg:left-72'

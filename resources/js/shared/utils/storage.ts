@@ -100,7 +100,7 @@ class StorageManagerClass {
   sidebar = {
     isCollapsed: (): boolean => {
       const value = this.getItem('sidebar_collapsed');
-      return value !== 'false';
+      return value === 'true';
     },
 
     setCollapsed: (isCollapsed: boolean): void => {

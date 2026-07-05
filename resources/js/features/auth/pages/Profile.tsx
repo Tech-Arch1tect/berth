@@ -55,9 +55,7 @@ export default function Profile() {
       <div className="h-full overflow-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            <h1 className={cn('mb-8 pl-12 text-3xl font-bold lg:pl-0', theme.text.strong)}>
-              Profile
-            </h1>
+            <h1 className={cn('mb-8 text-3xl font-bold', theme.text.strong)}>Profile</h1>
 
             <div className="space-y-6">
               {/* User Information */}

@@ -21,13 +21,18 @@ interface OperationState {
   stream: OperationStream | null;
 }
 
+export type OperationsDockState = 'expanded' | 'collapsed' | 'hidden';
+
 interface OperationsContextType {
   operations: RunningOperation[];
   getOperationLogs: (operationId: string) => StreamMessage[];
   addOperation: (operation: NewOperationInput) => void;
   removeOperation: (operationId: string) => void;
+  clearCompleted: () => void;
   updateOperation: (operationId: string, updates: Partial<RunningOperation>) => void;
   refresh: () => void;
+  dockState: OperationsDockState;
+  setDockState: (state: OperationsDockState) => void;
 }
 
 const OperationsContext = createContext<OperationsContextType | undefined>(undefined);
@@ -252,6 +257,21 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
   }, []);
 
+  const clearCompleted = useCallback(() => {
+    setOperationStates((prev) => {
+      const newMap = new Map(prev);
+      for (const [operationId, state] of newMap.entries()) {
+        if (!state.operation.is_incomplete) {
+          state.stream?.close();
+          newMap.delete(operationId);
+        }
+      }
+      return newMap;
+    });
+  }, []);
+
+  const [dockState, setDockState] = useState<OperationsDockState>('collapsed');
+
   const updateOperation = useCallback((operationId: string, updates: Partial<RunningOperation>) => {
     setOperationStates((prev) => {
       const state = prev.get(operationId);
@@ -288,8 +308,11 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         getOperationLogs,
         addOperation,
         removeOperation,
+        clearCompleted,
         updateOperation,
         refresh: fetchRunningOperations,
+        dockState,
+        setDockState,
       }}
     >
       {children}

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { useStackDetailsPage } from '../hooks/useStackDetailsPage';
-import { GlobalOperationsTracker } from '../../operations/components/GlobalOperationsTracker';
+import { AdvancedOperationsModal } from '../../operations/components/AdvancedOperationsModal';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { ServerStackProvider } from '../../../shared/contexts/ServerStackContext';
@@ -226,8 +226,8 @@ export default function StackDetails() {
 
         {/* Advanced Operations Modal */}
         {stack.advancedOperationsOpen && (
-          <GlobalOperationsTracker
-            advancedMode={{
+          <AdvancedOperationsModal
+            config={{
               serverid: String(serverid),
               stackname,
               services:
