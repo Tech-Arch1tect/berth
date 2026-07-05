@@ -17,5 +17,7 @@ export interface ScanComparison {
   fixed_vulnerabilities: ImageVulnerability[];
   new_vulnerabilities: ImageVulnerability[];
   same_scope: boolean;
+  scanner_db_differs: boolean;
+  service_names: string[];
   unchanged_count: number;
 }

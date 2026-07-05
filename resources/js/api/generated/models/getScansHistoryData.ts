@@ -8,5 +8,8 @@
 import type { ScanWithSummary } from './scanWithSummary';
 
 export interface GetScansHistoryData {
+  page: number;
+  page_size: number;
   scans: ScanWithSummary[];
+  total: number;
 }

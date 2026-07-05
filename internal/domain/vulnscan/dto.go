@@ -27,7 +27,10 @@ type GetScanData struct {
 }
 
 type GetScansHistoryData struct {
-	Scans []ScanWithSummary `json:"scans"`
+	Scans    []ScanWithSummary `json:"scans"`
+	Total    int64             `json:"total"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"page_size"`
 }
 
 type GetLatestScanData struct {

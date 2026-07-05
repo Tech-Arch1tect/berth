@@ -31,6 +31,16 @@ func seedScan(t *testing.T, app *e2e.TestApp, serverID uint, stackName string) *
 		StartedAt: time.Now(),
 	}
 	require.NoError(t, app.DB.Create(scan).Error, "seed scan for %s/%d", stackName, serverID)
+	require.NoError(t, app.DB.Create(&vulnscan.ScanServiceImage{
+		ScanID:      scan.ID,
+		ServiceName: "web",
+		ImageName:   "example/" + stackName + ":1",
+		ImageDigest: "sha256:seed",
+	}).Error, "seed scan service image for %s/%d", stackName, serverID)
+	require.NoError(t, app.DB.Create(&vulnscan.ScanScope{
+		ScanID:    scan.ID,
+		ImageName: "example/" + stackName + ":1",
+	}).Error, "seed scan scope for %s/%d", stackName, serverID)
 	return scan
 }
 

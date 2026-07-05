@@ -38,6 +38,14 @@ var (
 	ErrCompareRequiresCompletedScans = errors.New("both scans must be completed before they can be compared")
 )
 
+type ScansNotComparableError struct {
+	Reason string
+}
+
+func (e *ScansNotComparableError) Error() string {
+	return "scans are not comparable: " + e.Reason
+}
+
 type ScanScopeConflictError struct {
 	Existing        *ImageScan
 	RequestedFilter string
@@ -313,42 +321,116 @@ type ScanWithSummary struct {
 	Summary *VulnerabilitySummary `json:"summary,omitempty"`
 }
 
-func (s *Service) GetScansForStack(ctx context.Context, p authz.Principal, serverID uint, stackName string) ([]ImageScan, error) {
+func (s *Service) GetScansForStack(ctx context.Context, p authz.Principal, serverID uint, stackName string, page, pageSize int) ([]ImageScan, int64, error) {
 	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check permission: %w", err)
+		return nil, 0, fmt.Errorf("failed to check permission: %w", err)
 	}
 	if !hasPermission {
-		return nil, fmt.Errorf("permission denied: stacks.read required")
+		return nil, 0, fmt.Errorf("permission denied: stacks.read required")
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 25
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	scoped := s.db.Model(&ImageScan{}).Where("server_id = ? AND stack_name = ?", serverID, stackName)
+
+	var total int64
+	if err := scoped.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
 	var scans []ImageScan
-	if err := s.db.Where("server_id = ? AND stack_name = ?", serverID, stackName).
+	if err := s.db.Preload("ServiceImages").
+		Where("server_id = ? AND stack_name = ?", serverID, stackName).
 		Order("created_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
 		Find(&scans).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return scans, nil
+	return scans, total, nil
 }
 
-func (s *Service) GetScansForStackWithSummaries(ctx context.Context, p authz.Principal, serverID uint, stackName string) ([]ScanWithSummary, error) {
-	scans, err := s.GetScansForStack(ctx, p, serverID, stackName)
+func (s *Service) GetScansForStackWithSummaries(ctx context.Context, p authz.Principal, serverID uint, stackName string, page, pageSize int) ([]ScanWithSummary, int64, error) {
+	scans, total, err := s.GetScansForStack(ctx, p, serverID, stackName, page, pageSize)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	scanIDs := make([]uint, 0, len(scans))
+	for _, scan := range scans {
+		if scan.Status == ScanStatusCompleted {
+			scanIDs = append(scanIDs, scan.ID)
+		}
+	}
+	summaries, err := s.vulnerabilitySummariesByScanID(scanIDs)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	result := make([]ScanWithSummary, len(scans))
 	for i, scan := range scans {
 		result[i].Scan = scan
-		if scan.Status == ScanStatusCompleted {
-			summary, err := s.GetVulnerabilitySummary(scan.ID)
-			if err == nil {
-				result[i].Summary = summary
-			}
-		}
+		result[i].Summary = summaries[scan.ID]
 	}
 
-	return result, nil
+	return result, total, nil
+}
+
+func (s *Service) vulnerabilitySummariesByScanID(scanIDs []uint) (map[uint]*VulnerabilitySummary, error) {
+	summaries := make(map[uint]*VulnerabilitySummary, len(scanIDs))
+	if len(scanIDs) == 0 {
+		return summaries, nil
+	}
+
+	var results []struct {
+		ScanID   uint
+		Severity string
+		Count    int
+	}
+	if err := s.db.Model(&ImageVulnerability{}).
+		Select("scan_id, severity, COUNT(*) as count").
+		Where("scan_id IN ?", scanIDs).
+		Group("scan_id, severity").
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	for _, id := range scanIDs {
+		summaries[id] = &VulnerabilitySummary{}
+	}
+	for _, r := range results {
+		summary := summaries[r.ScanID]
+		if summary == nil {
+			summary = &VulnerabilitySummary{}
+			summaries[r.ScanID] = summary
+		}
+		switch r.Severity {
+		case VulnSeverityCritical:
+			summary.Critical = r.Count
+		case VulnSeverityHigh:
+			summary.High = r.Count
+		case VulnSeverityMedium:
+			summary.Medium = r.Count
+		case VulnSeverityLow:
+			summary.Low = r.Count
+		case VulnSeverityNegligible:
+			summary.Negligible = r.Count
+		default:
+			summary.Unknown += r.Count
+		}
+		summary.Total += r.Count
+	}
+
+	return summaries, nil
 }
 
 func (s *Service) PollScan(ctx context.Context, scan *ImageScan) error {
@@ -652,6 +734,50 @@ type ScanComparison struct {
 	BaseOnlyImages    []string             `json:"base_only_images"`
 	CompareOnlyImages []string             `json:"compare_only_images"`
 	CommonImages      []string             `json:"common_images"`
+	ServiceNames      []string             `json:"service_names"`
+	ScannerDBDiffers  bool                 `json:"scanner_db_differs"`
+}
+
+func scanServiceNameSet(serviceImages []ScanServiceImage) map[string]bool {
+	names := make(map[string]bool, len(serviceImages))
+	for _, si := range serviceImages {
+		names[si.ServiceName] = true
+	}
+	return names
+}
+
+func sortedKeys(set map[string]bool) []string {
+	keys := make([]string, 0, len(set))
+	for k := range set {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func equalStringSets(a, b map[string]bool) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k := range a {
+		if !b[k] {
+			return false
+		}
+	}
+	return true
+}
+
+func scannerDBDiffers(base, compare *ImageScan) bool {
+	if base.ScannerVersion != compare.ScannerVersion {
+		return true
+	}
+	if (base.ScannerDBBuilt == nil) != (compare.ScannerDBBuilt == nil) {
+		return true
+	}
+	if base.ScannerDBBuilt != nil && !base.ScannerDBBuilt.Equal(*compare.ScannerDBBuilt) {
+		return true
+	}
+	return false
 }
 
 func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanID, compareScanID uint) (*ScanComparison, error) {
@@ -666,11 +792,25 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 	}
 
 	if baseScan.ServerID != compareScan.ServerID || baseScan.StackName != compareScan.StackName {
-		return nil, fmt.Errorf("scans must be from the same stack")
+		return nil, &ScansNotComparableError{Reason: "scans are from different stacks"}
 	}
 
 	if baseScan.Status != ScanStatusCompleted || compareScan.Status != ScanStatusCompleted {
 		return nil, ErrCompareRequiresCompletedScans
+	}
+
+	if len(baseScan.ServiceImages) == 0 || len(compareScan.ServiceImages) == 0 {
+		return nil, &ScansNotComparableError{Reason: "at least one scan predates scope recording and cannot be compared"}
+	}
+
+	baseServices := scanServiceNameSet(baseScan.ServiceImages)
+	compareServices := scanServiceNameSet(compareScan.ServiceImages)
+	if !equalStringSets(baseServices, compareServices) {
+		return nil, &ScansNotComparableError{
+			Reason: fmt.Sprintf("scans cover different services (%s vs %s)",
+				strings.Join(sortedKeys(baseServices), ", "),
+				strings.Join(sortedKeys(compareServices), ", ")),
+		}
 	}
 
 	var baseScopes, compareScopes []ScanScope
@@ -717,7 +857,7 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 		if len(baseScopes) > 0 && !commonImageSet[v.ImageName] {
 			continue
 		}
-		key := fmt.Sprintf("%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package)
+		key := fmt.Sprintf("%s|%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package, v.InstalledVersion)
 		baseVulnMap[key] = v
 	}
 
@@ -727,7 +867,7 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 		if len(compareScopes) > 0 && !commonImageSet[v.ImageName] {
 			continue
 		}
-		key := fmt.Sprintf("%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package)
+		key := fmt.Sprintf("%s|%s|%s|%s", v.VulnerabilityID, v.ImageName, v.Package, v.InstalledVersion)
 		compareVulnMap[key] = v
 	}
 
@@ -749,6 +889,12 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 		}
 	}
 
+	sortVulnerabilities(newVulns)
+	sortVulnerabilities(fixedVulns)
+	sort.Strings(commonImages)
+	sort.Strings(baseOnlyImages)
+	sort.Strings(compareOnlyImages)
+
 	return &ScanComparison{
 		BaseScan:          baseScan,
 		CompareScan:       compareScan,
@@ -759,7 +905,39 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 		BaseOnlyImages:    baseOnlyImages,
 		CompareOnlyImages: compareOnlyImages,
 		CommonImages:      commonImages,
+		ServiceNames:      sortedKeys(baseServices),
+		ScannerDBDiffers:  scannerDBDiffers(baseScan, compareScan),
 	}, nil
+}
+
+func severityOrder(severity string) int {
+	switch severity {
+	case VulnSeverityCritical:
+		return 0
+	case VulnSeverityHigh:
+		return 1
+	case VulnSeverityMedium:
+		return 2
+	case VulnSeverityLow:
+		return 3
+	case VulnSeverityNegligible:
+		return 4
+	default:
+		return 5
+	}
+}
+
+func sortVulnerabilities(vulns []ImageVulnerability) {
+	sort.SliceStable(vulns, func(i, j int) bool {
+		oi, oj := severityOrder(vulns[i].Severity), severityOrder(vulns[j].Severity)
+		if oi != oj {
+			return oi < oj
+		}
+		if vulns[i].VulnerabilityID != vulns[j].VulnerabilityID {
+			return vulns[i].VulnerabilityID < vulns[j].VulnerabilityID
+		}
+		return vulns[i].Package < vulns[j].Package
+	})
 }
 
 type ScanTrendPoint struct {
@@ -794,8 +972,11 @@ func (s *Service) GetScanTrend(ctx context.Context, p authz.Principal, serverID 
 		return nil, fmt.Errorf("permission denied: stacks.read required")
 	}
 
-	if limit <= 0 || limit > 50 {
+	if limit <= 0 {
 		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
 	}
 
 	var scans []ImageScan
@@ -811,7 +992,7 @@ func (s *Service) GetScanTrend(ctx context.Context, p authz.Principal, serverID 
 	for i := len(scans) - 1; i >= 0; i-- {
 		scan := scans[i]
 
-		if scan.ServiceFilter != "" {
+		if !scan.FullCoverage {
 			continue
 		}
 		summary, err := s.GetVulnerabilitySummary(scan.ID)
@@ -885,8 +1066,8 @@ func (s *Service) GetScanTrend(ctx context.Context, p authz.Principal, serverID 
 	}
 
 	var scopeWarning string
-	if !allSameScope && len(scans) >= 2 && len(perImageTrend) > 0 {
-		scopeWarning = "Some scans covered different sets of images. Per-image trends show only scans that included each image."
+	if !allSameScope && len(scans) >= 2 {
+		scopeWarning = "Some scans covered different sets of images. The stack trend includes only full-coverage scans; per-image trends show only scans that included each image."
 	}
 
 	return &ScanTrendResponse{

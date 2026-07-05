@@ -6,6 +6,8 @@ import (
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
 	"errors"
+
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 
@@ -98,6 +100,18 @@ func (h *Handler) GetScan(c echo.Context) error {
 	return response.OK(c, GetScanData{Scan: *scan})
 }
 
+func intQueryParam(c echo.Context, name string, fallback int) int {
+	raw := c.QueryParam(name)
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 {
+		return fallback
+	}
+	return value
+}
+
 func (h *Handler) GetScansForStack(c echo.Context) error {
 	p, err := authz.RequirePrincipal(c)
 	if err != nil {
@@ -109,12 +123,15 @@ func (h *Handler) GetScansForStack(c echo.Context) error {
 		return err
 	}
 
-	scans, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), p, serverID, stackName)
+	page := intQueryParam(c, "page", 1)
+	pageSize := intQueryParam(c, "page_size", 25)
+
+	scans, total, err := h.service.GetScansForStackWithSummaries(c.Request().Context(), p, serverID, stackName, page, pageSize)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
 
-	return response.OK(c, GetScansHistoryData{Scans: scans})
+	return response.OK(c, GetScansHistoryData{Scans: scans, Total: total, Page: page, PageSize: pageSize})
 }
 
 func (h *Handler) GetLatestScanForStack(c echo.Context) error {
@@ -186,8 +203,15 @@ func (h *Handler) CompareScans(c echo.Context) error {
 
 	comparison, err := h.service.CompareScans(c.Request().Context(), p, baseScanID, compareScanID)
 	if err != nil {
+		var notComparable *ScansNotComparableError
+		if errors.As(err, &notComparable) {
+			return response.UnprocessableEntity(c, notComparable.Error())
+		}
 		if errors.Is(err, ErrCompareRequiresCompletedScans) {
 			return response.UnprocessableEntity(c, err.Error())
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "scan not found")
 		}
 		h.logger.Error("failed to compare scans",
 			zap.Error(err),
