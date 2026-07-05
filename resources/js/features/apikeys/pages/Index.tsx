@@ -11,8 +11,6 @@ import {
   CheckIcon,
   InformationCircleIcon,
   EyeIcon,
-  ClockIcon,
-  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
@@ -127,8 +125,10 @@ export default function APIKeysIndex() {
       <div className="h-full overflow-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Keys</h1>
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+              <h1 className={cn('pl-12 text-3xl font-bold lg:pl-0', theme.text.strong)}>
+                API Keys
+              </h1>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className={cn('inline-flex items-center', theme.buttons.primary)}
@@ -179,8 +179,8 @@ export default function APIKeysIndex() {
                   />
                   <button
                     onClick={() => copyToClipboard(newKeyData?.key || '')}
+                    aria-label={copiedKey ? 'Copied' : 'Copy API key to clipboard'}
                     className={cn(theme.buttons.ghost, 'p-3')}
-                    title={copiedKey ? 'Copied!' : 'Copy to clipboard'}
                   >
                     {copiedKey ? (
                       <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
@@ -272,18 +272,24 @@ export default function APIKeysIndex() {
               <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
                 <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                   {apiKeys.map((apiKey: APIKeyInfo) => (
-                    <li key={apiKey.id} className="px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 flex-1">
+                    <li key={apiKey.id} className="px-4 py-4 sm:px-6">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-4">
                           <div className="flex-shrink-0">
                             <KeyIcon className={cn('h-8 w-8', theme.text.muted)} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1.5 flex flex-wrap items-center gap-2">
                               <p className={cn('text-sm font-medium', theme.text.strong)}>
                                 {apiKey.name}
                               </p>
-                              <span className={cn(theme.badges.tag.base, theme.badges.tag.neutral)}>
+                              <span
+                                className={cn(
+                                  theme.badges.tag.base,
+                                  theme.badges.tag.neutral,
+                                  'font-mono'
+                                )}
+                              >
                                 {apiKey.key_prefix}...
                               </span>
                               {apiKey.is_active ? (
@@ -300,31 +306,18 @@ export default function APIKeysIndex() {
                                 </span>
                               )}
                             </div>
-                            <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
-                              <p className="flex items-center">
-                                <ClockIcon className="h-4 w-4 mr-1" />
-                                <span className="font-medium">Last used:</span>{' '}
-                                {formatDate(apiKey.last_used_at)}
-                              </p>
-                              <p className="flex items-center">
-                                <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                                <span className="font-medium">Scopes:</span> {apiKey.scope_count}
-                              </p>
-                              {apiKey.expires_at && (
-                                <p className="flex items-center">
-                                  <span className="font-medium">Expires:</span>{' '}
-                                  {formatDate(apiKey.expires_at)}
-                                </p>
-                              )}
-                              <p className="flex items-center">
-                                <span className="font-medium">Created:</span>{' '}
-                                {formatDate(apiKey.created_at)}
-                              </p>
-                            </div>
+                            <p className={cn('text-sm', theme.text.muted)}>
+                              Last used {formatDate(apiKey.last_used_at)} · {apiKey.scope_count}{' '}
+                              scope{apiKey.scope_count !== 1 ? 's' : ''}
+                            </p>
+                            <p className={cn('mt-0.5 text-xs', theme.text.subtle)}>
+                              Created {formatDate(apiKey.created_at)}
+                              {apiKey.expires_at && <> · Expires {formatDate(apiKey.expires_at)}</>}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex-shrink-0 flex space-x-2">
+                        <div className="flex flex-shrink-0 gap-2 self-end sm:self-auto">
                           <button
                             onClick={() =>
                               navigate({
@@ -333,7 +326,7 @@ export default function APIKeysIndex() {
                               })
                             }
                             className={cn(
-                              'inline-flex items-center text-sm leading-4',
+                              'inline-flex min-h-[44px] items-center text-sm leading-4',
                               theme.buttons.secondary
                             )}
                           >
@@ -343,7 +336,7 @@ export default function APIKeysIndex() {
                           <button
                             onClick={() => handleRevokeClick(apiKey.id, apiKey.name)}
                             className={cn(
-                              'inline-flex items-center text-sm leading-4',
+                              'inline-flex min-h-[44px] items-center text-sm leading-4',
                               theme.buttons.danger
                             )}
                           >

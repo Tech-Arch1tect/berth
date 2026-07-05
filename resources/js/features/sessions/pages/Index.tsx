@@ -30,9 +30,10 @@ import type { SessionItem } from '../../../api/generated/models';
 export default function SessionsIndex() {
   useDocumentTitle('Active Sessions');
   const queryClient = useQueryClient();
-  const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
-  const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
+  const [sessionToRevoke, setSessionToRevoke] = useState<{ id: number; label: string } | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const { data: sessionsResponse, isLoading: sessionsLoading } = useGetApiV1Sessions();
@@ -44,9 +45,11 @@ export default function SessionsIndex() {
   const revokeMutation = usePostApiV1SessionsRevoke();
   const revokeAllMutation = usePostApiV1SessionsRevokeAllOthers();
 
-  const handleRevokeSessionClick = (sessionId: number) => {
-    setSessionToRevoke(sessionId);
-    setShowRevokeModal(true);
+  const handleRevokeSessionClick = (session: SessionItem) => {
+    setSessionToRevoke({
+      id: session.id,
+      label: `${session.browser} on ${session.os} (${session.ip_address})`,
+    });
     setError(null);
   };
 
@@ -57,13 +60,12 @@ export default function SessionsIndex() {
 
     try {
       await revokeMutation.mutateAsync({
-        data: { session_id: sessionToRevoke },
+        data: { session_id: sessionToRevoke.id },
       });
       invalidateSessions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke session');
     } finally {
-      setShowRevokeModal(false);
       setSessionToRevoke(null);
     }
   };
@@ -120,8 +122,10 @@ export default function SessionsIndex() {
       <div className="h-full overflow-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Active Sessions</h1>
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+              <h1 className={cn('pl-12 text-3xl font-bold lg:pl-0', theme.text.strong)}>
+                Active Sessions
+              </h1>
               {sessions.filter((s) => !s.current).length > 0 && (
                 <button
                   onClick={() => setShowRevokeAllModal(true)}
@@ -152,12 +156,12 @@ export default function SessionsIndex() {
             <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {sessions.map((session) => (
-                  <li key={session.id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                  <li key={session.id} className="px-4 py-4 sm:px-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-4">
                         <div className="flex-shrink-0">{getDeviceIcon(session)}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1.5 flex flex-wrap items-center gap-2">
                             <p className={cn('text-sm font-medium', theme.text.strong)}>
                               {session.browser}
                             </p>
@@ -173,48 +177,32 @@ export default function SessionsIndex() {
                               </span>
                             )}
                           </div>
-                          <div className={cn('mt-1 text-sm space-y-1', theme.text.muted)}>
-                            <p>
-                              <span className="font-medium">Operating System:</span> {session.os}
-                            </p>
-                            <p>
-                              <span className="font-medium">Device:</span> {session.device}
-                            </p>
-                            <p>
-                              <span className="font-medium">Location:</span> {session.location}
-                            </p>
-                            <p>
-                              <span className="font-medium">IP Address:</span> {session.ip_address}
-                            </p>
-                            <p>
-                              <span className="font-medium">Last Active:</span>{' '}
-                              {formatDate(session.last_used)}
-                            </p>
-                            <p>
-                              <span className="font-medium">Created:</span>{' '}
-                              {formatDate(session.created_at)}
-                            </p>
-                            <p>
-                              <span className="font-medium">Expires:</span>{' '}
-                              {formatDate(session.expires_at)}
-                            </p>
-                          </div>
+                          <p className={cn('text-sm', theme.text.muted)}>
+                            {session.os} · {session.device} ·{' '}
+                            <span className="font-mono">{session.ip_address}</span>
+                            {!/unknown/i.test(session.location) && <> · {session.location}</>}
+                          </p>
+                          <p className={cn('mt-0.5 text-xs', theme.text.subtle)}>
+                            Active {formatDate(session.last_used)} · Signed in{' '}
+                            {formatDate(session.created_at)} · Expires{' '}
+                            {formatDate(session.expires_at)}
+                          </p>
                         </div>
                       </div>
 
                       {!session.current && (
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 self-end sm:self-auto">
                           <button
-                            onClick={() => handleRevokeSessionClick(session.id)}
+                            onClick={() => handleRevokeSessionClick(session)}
                             disabled={revokeMutation.isPending || revokeAllMutation.isPending}
                             className={cn(
-                              'inline-flex items-center text-sm leading-4',
+                              'inline-flex min-h-[44px] items-center text-sm leading-4',
                               theme.buttons.danger,
                               (revokeMutation.isPending || revokeAllMutation.isPending) &&
                                 'opacity-50'
                             )}
                           >
-                            {revokeMutation.isPending && sessionToRevoke === session.id
+                            {revokeMutation.isPending && sessionToRevoke?.id === session.id
                               ? 'Revoking...'
                               : 'Revoke'}
                           </button>
@@ -255,14 +243,11 @@ export default function SessionsIndex() {
 
       {/* Revoke Session Confirmation Modal */}
       <ConfirmationModal
-        isOpen={showRevokeModal}
-        onClose={() => {
-          setShowRevokeModal(false);
-          setSessionToRevoke(null);
-        }}
+        isOpen={!!sessionToRevoke}
+        onClose={() => setSessionToRevoke(null)}
         onConfirm={confirmRevokeSession}
         title="Revoke Session"
-        message="Are you sure you want to revoke this session? You will be logged out from that device."
+        message={`Are you sure you want to revoke the session for ${sessionToRevoke?.label}? You will be logged out from that device.`}
         variant="danger"
       />
 

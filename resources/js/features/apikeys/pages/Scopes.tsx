@@ -95,13 +95,13 @@ const PERMISSIONS = [
 ];
 
 export default function APIKeyScopesPage() {
-  useDocumentTitle('Manage API Key Scopes');
+  useDocumentTitle('API Key Scopes');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { keyid?: string };
   const apiKeyIdNum = Number(params.keyid);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [scopeToRemove, setScopeToRemove] = useState<number | null>(null);
+  const [scopeToRemove, setScopeToRemove] = useState<{ id: number; label: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: serversResponse, isLoading: serversLoading } = useGetApiV1Servers();
@@ -175,13 +175,16 @@ export default function APIKeyScopesPage() {
     await Promise.all(promises);
   };
 
-  const handleRemoveClick = (scopeId: number) => {
-    setScopeToRemove(scopeId);
+  const handleRemoveClick = (scope: APIKeyScopeInfo) => {
+    setScopeToRemove({
+      id: scope.id,
+      label: `${scope.permission} on ${scope.server_name || (scope.server_id ? `server #${scope.server_id}` : 'all servers')} (pattern "${scope.stack_pattern}")`,
+    });
   };
 
   const confirmRemove = async () => {
     if (!scopeToRemove) return;
-    removeScopeMutation.mutate({ id: apiKeyIdNum, scopeId: scopeToRemove });
+    removeScopeMutation.mutate({ id: apiKeyIdNum, scopeId: scopeToRemove.id });
   };
 
   return (
@@ -203,8 +206,8 @@ export default function APIKeyScopesPage() {
               </button>
             </div>
 
-            <div className="flex justify-between items-center mb-8">
-              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>Manage API Key Scopes</h1>
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+              <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Key Scopes</h1>
               <button
                 onClick={() => setShowAddModal(true)}
                 className={cn('inline-flex items-center', theme.buttons.primary)}
@@ -347,14 +350,14 @@ export default function APIKeyScopesPage() {
               <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
                 <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                   {scopes.map((scope: APIKeyScopeInfo) => (
-                    <li key={scope.id} className="px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 flex-1">
+                    <li key={scope.id} className="px-4 py-4 sm:px-6">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-4">
                           <div className="flex-shrink-0">
                             <ShieldCheckIcon className={cn('h-8 w-8', theme.text.info)} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
                               <span className={cn(theme.badges.tag.base, theme.badges.tag.info)}>
                                 {scope.permission}
                               </span>
@@ -388,11 +391,11 @@ export default function APIKeyScopesPage() {
                           </div>
                         </div>
 
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 self-end sm:self-auto">
                           <button
-                            onClick={() => handleRemoveClick(scope.id)}
+                            onClick={() => handleRemoveClick(scope)}
                             className={cn(
-                              'inline-flex items-center text-sm leading-4',
+                              'inline-flex min-h-[44px] items-center text-sm leading-4',
                               theme.buttons.danger
                             )}
                           >
@@ -432,9 +435,9 @@ export default function APIKeyScopesPage() {
         onClose={() => setScopeToRemove(null)}
         onConfirm={confirmRemove}
         title="Remove Scope"
-        message="Are you sure you want to remove this scope? The API key will lose these permissions."
+        message={`Are you sure you want to remove ${scopeToRemove?.label}? The API key will lose this permission.`}
         confirmText="Remove"
-        variant="warning"
+        variant="danger"
         isLoading={removeScopeMutation.isPending}
       />
 

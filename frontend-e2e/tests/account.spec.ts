@@ -30,8 +30,6 @@ test.describe('account pages', () => {
     await auth.loginDirectly(admin);
 
     await page.goto('/api-keys/1/scopes');
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Manage API Key Scopes' })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'API Key Scopes' })).toBeVisible();
   });
 });
