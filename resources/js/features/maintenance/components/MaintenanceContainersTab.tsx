@@ -25,6 +25,28 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
+  const deleteButton = (container: ContainerInfo) => (
+    <button
+      onClick={() =>
+        onDelete({
+          type: 'container',
+          id: container.id,
+          name: container.name,
+        })
+      }
+      aria-label={`Delete container ${container.name}`}
+      className={cn(
+        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+        theme.text.danger,
+        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+        'disabled:cursor-not-allowed disabled:opacity-50'
+      )}
+      disabled={isDeleting}
+    >
+      <TrashIcon className="h-4 w-4" />
+    </button>
+  );
+
   return (
     <div
       className={cn(
@@ -90,23 +112,30 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
           {
             key: 'actions',
             header: 'Actions',
-            render: (container) => (
-              <button
-                onClick={() =>
-                  onDelete({
-                    type: 'container',
-                    id: container.id,
-                    name: container.name,
-                  })
-                }
-                className={cn(theme.text.danger, 'hover:opacity-75')}
-                disabled={isDeleting}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            ),
+            render: (container) => deleteButton(container),
           },
         ]}
+        renderCard={(container) => (
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className={cn('truncate text-sm font-medium', theme.text.strong)}>
+                  {container.name}
+                </p>
+                {getStatusBadge(container.state)}
+              </div>
+              <p className={cn('truncate text-xs', theme.text.muted)}>{container.image}</p>
+              <p className={cn('flex flex-wrap items-center gap-x-2 text-xs', theme.text.muted)}>
+                <span className="font-mono">{container.id.substring(0, 12)}</span>
+                <span>·</span>
+                <span>{formatBytes(container.size)}</span>
+                <span>·</span>
+                <span>{container.status}</span>
+              </p>
+            </div>
+            {deleteButton(container)}
+          </div>
+        )}
       />
     </div>
   );

@@ -25,6 +25,28 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
+  const deleteButton = (network: NetworkInfo) => (
+    <button
+      onClick={() =>
+        onDelete({
+          type: 'network',
+          id: network.id,
+          name: network.name,
+        })
+      }
+      aria-label={`Delete network ${network.name}`}
+      className={cn(
+        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+        theme.text.danger,
+        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+        'disabled:cursor-not-allowed disabled:opacity-50'
+      )}
+      disabled={isDeleting || ['bridge', 'host', 'none'].includes(network.name)}
+    >
+      <TrashIcon className="h-4 w-4" />
+    </button>
+  );
+
   return (
     <div
       className={cn(
@@ -111,23 +133,46 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
           {
             key: 'actions',
             header: 'Actions',
-            render: (network) => (
-              <button
-                onClick={() =>
-                  onDelete({
-                    type: 'network',
-                    id: network.id,
-                    name: network.name,
-                  })
-                }
-                className={cn(theme.text.danger, 'hover:opacity-75')}
-                disabled={isDeleting || ['bridge', 'host', 'none'].includes(network.name)}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            ),
+            render: (network) => deleteButton(network),
           },
         ]}
+        renderCard={(network) => (
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className={cn('truncate text-sm font-medium', theme.text.strong)}>
+                  {network.name}
+                </p>
+                {network.internal && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                      theme.badges.tag.info
+                    )}
+                  >
+                    Internal
+                  </span>
+                )}
+                {getStatusBadge('active', network.unused)}
+              </div>
+              <p className={cn('flex flex-wrap items-center gap-x-2 text-xs', theme.text.muted)}>
+                <span className="font-mono">{network.id.substring(0, 12)}</span>
+                <span>·</span>
+                <span>{network.driver}</span>
+                <span>·</span>
+                <span>{network.scope}</span>
+                {network.subnet && (
+                  <>
+                    <span>·</span>
+                    <span className="font-mono">{network.subnet}</span>
+                  </>
+                )}
+              </p>
+              <p className={cn('text-xs', theme.text.muted)}>{formatDate(network.created)}</p>
+            </div>
+            {deleteButton(network)}
+          </div>
+        )}
       />
     </div>
   );

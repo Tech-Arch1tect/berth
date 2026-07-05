@@ -1,7 +1,5 @@
 // Panel components
 export { MaintenanceToolbar } from './toolbar/MaintenanceToolbar';
-export { MaintenanceSidebar } from './sidebar/MaintenanceSidebar';
-export { MaintenanceContent } from './content/MaintenanceContent';
 export { MaintenanceStatusBar } from './statusbar/MaintenanceStatusBar';
 
 // Tab components

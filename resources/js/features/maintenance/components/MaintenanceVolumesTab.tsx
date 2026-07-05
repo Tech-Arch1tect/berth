@@ -25,6 +25,28 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
+  const deleteButton = (volume: VolumeInfo) => (
+    <button
+      onClick={() =>
+        onDelete({
+          type: 'volume',
+          id: volume.name,
+          name: volume.name,
+        })
+      }
+      aria-label={`Delete volume ${volume.name}`}
+      className={cn(
+        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+        theme.text.danger,
+        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+        'disabled:cursor-not-allowed disabled:opacity-50'
+      )}
+      disabled={isDeleting}
+    >
+      <TrashIcon className="h-4 w-4" />
+    </button>
+  );
+
   return (
     <div
       className={cn(
@@ -90,23 +112,32 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
           {
             key: 'actions',
             header: 'Actions',
-            render: (volume) => (
-              <button
-                onClick={() =>
-                  onDelete({
-                    type: 'volume',
-                    id: volume.name,
-                    name: volume.name,
-                  })
-                }
-                className={cn(theme.text.danger, 'hover:opacity-75')}
-                disabled={isDeleting}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            ),
+            render: (volume) => deleteButton(volume),
           },
         ]}
+        renderCard={(volume) => (
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className={cn('truncate text-sm font-medium', theme.text.strong)}>
+                  {volume.name}
+                </p>
+                {getStatusBadge('active', volume.unused)}
+              </div>
+              <p className={cn('truncate font-mono text-xs', theme.text.muted)}>
+                {volume.mountpoint}
+              </p>
+              <p className={cn('flex flex-wrap items-center gap-x-2 text-xs', theme.text.muted)}>
+                <span>{volume.driver}</span>
+                <span>·</span>
+                <span>{formatBytes(volume.size)}</span>
+                <span>·</span>
+                <span>{formatDate(volume.created)}</span>
+              </p>
+            </div>
+            {deleteButton(volume)}
+          </div>
+        )}
       />
     </div>
   );

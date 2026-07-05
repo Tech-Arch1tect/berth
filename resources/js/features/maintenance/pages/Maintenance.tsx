@@ -5,7 +5,8 @@ import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
-import { PanelLayout } from '../../../shared/components/PanelLayout';
+import { SectionTabs } from '../../../shared/components/SectionTabs';
+import type { Tab } from '../../../shared/components/Tabs';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 import {
@@ -15,11 +16,17 @@ import {
 } from '../hooks/useDockerMaintenance';
 import { showToast } from '../../../shared/utils/toast';
 import { formatBytes } from '../../../shared/utils/formatters';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  ChartBarIcon,
+  CircleStackIcon,
+  DocumentDuplicateIcon,
+  ExclamationTriangleIcon,
+  FolderIcon,
+  GlobeAltIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import {
   MaintenanceToolbar,
-  MaintenanceSidebar,
-  MaintenanceContent,
   MaintenanceStatusBar,
   MaintenanceOverview,
   MaintenanceImagesTab,
@@ -170,6 +177,25 @@ export default function Maintenance() {
       }
     : undefined;
 
+  const sectionTabs: Tab[] = [
+    { id: 'overview', label: 'Overview', icon: ChartBarIcon },
+    {
+      id: 'images',
+      label: 'Images',
+      icon: DocumentDuplicateIcon,
+      badge: summary?.totalImages,
+    },
+    {
+      id: 'containers',
+      label: 'Containers',
+      icon: CircleStackIcon,
+      badge: summary?.totalContainers,
+    },
+    { id: 'volumes', label: 'Volumes', icon: FolderIcon, badge: summary?.totalVolumes },
+    { id: 'networks', label: 'Networks', icon: GlobeAltIcon, badge: summary?.totalNetworks },
+    { id: 'actions', label: 'Cleanup', icon: TrashIcon },
+  ];
+
   return (
     <>
       <Breadcrumb
@@ -186,85 +212,81 @@ export default function Maintenance() {
 
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
-      <div className="h-full flex flex-col">
-        <PanelLayout
-          storageKey="maintenance"
-          sidebarTitle="Resources"
-          defaultWidth={260}
-          maxWidthPercent={35}
-          toolbar={
-            <MaintenanceToolbar
-              serverName={server.name}
-              onRefresh={refetch}
-              isRefreshing={isLoading}
-            />
-          }
-          sidebar={
-            <MaintenanceSidebar
-              activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as TabType)}
-              summary={summary}
-            />
-          }
-          content={
-            <MaintenanceContent>
-              {maintenanceInfo && (
-                <>
-                  {activeTab === 'overview' && (
-                    <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
-                  )}
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+          <MaintenanceToolbar
+            serverName={server.name}
+            onRefresh={refetch}
+            isRefreshing={isLoading}
+          />
+        </div>
 
-                  {activeTab === 'images' && (
-                    <MaintenanceImagesTab
-                      images={maintenanceInfo.image_summary.images}
-                      onDelete={setDeleteConfirm}
-                      isDeleting={deleteMutation.isPending}
-                    />
-                  )}
-
-                  {activeTab === 'containers' && (
-                    <MaintenanceContainersTab
-                      containers={maintenanceInfo.container_summary.containers}
-                      onDelete={setDeleteConfirm}
-                      isDeleting={deleteMutation.isPending}
-                    />
-                  )}
-
-                  {activeTab === 'volumes' && (
-                    <MaintenanceVolumesTab
-                      volumes={maintenanceInfo.volume_summary.volumes}
-                      onDelete={setDeleteConfirm}
-                      isDeleting={deleteMutation.isPending}
-                    />
-                  )}
-
-                  {activeTab === 'networks' && (
-                    <MaintenanceNetworksTab
-                      networks={maintenanceInfo.network_summary.networks}
-                      onDelete={setDeleteConfirm}
-                      isDeleting={deleteMutation.isPending}
-                    />
-                  )}
-
-                  {activeTab === 'actions' && (
-                    <MaintenanceActionsTab
-                      maintenanceInfo={maintenanceInfo}
-                      selectedPruneType={selectedPruneType}
-                      pruneAll={pruneAll}
-                      isPruning={pruneMutation.isPending}
-                      isLoading={isLoading}
-                      onPruneTypeChange={setSelectedPruneType}
-                      onPruneAllChange={setPruneAll}
-                      onStartPrune={() => setShowConfirm(true)}
-                      onRefresh={refetch}
-                    />
-                  )}
-                </>
-              )}
-            </MaintenanceContent>
-          }
-          statusBar={<MaintenanceStatusBar summary={summary} />}
+        <SectionTabs
+          tabs={sectionTabs}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+          aria-label="Maintenance sections"
         />
+
+        <div className="min-h-0 flex-1 overflow-auto bg-white p-4 dark:bg-zinc-900 lg:p-6">
+          {maintenanceInfo && (
+            <>
+              {activeTab === 'overview' && (
+                <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
+              )}
+
+              {activeTab === 'images' && (
+                <MaintenanceImagesTab
+                  images={maintenanceInfo.image_summary.images}
+                  onDelete={setDeleteConfirm}
+                  isDeleting={deleteMutation.isPending}
+                />
+              )}
+
+              {activeTab === 'containers' && (
+                <MaintenanceContainersTab
+                  containers={maintenanceInfo.container_summary.containers}
+                  onDelete={setDeleteConfirm}
+                  isDeleting={deleteMutation.isPending}
+                />
+              )}
+
+              {activeTab === 'volumes' && (
+                <MaintenanceVolumesTab
+                  volumes={maintenanceInfo.volume_summary.volumes}
+                  onDelete={setDeleteConfirm}
+                  isDeleting={deleteMutation.isPending}
+                />
+              )}
+
+              {activeTab === 'networks' && (
+                <MaintenanceNetworksTab
+                  networks={maintenanceInfo.network_summary.networks}
+                  onDelete={setDeleteConfirm}
+                  isDeleting={deleteMutation.isPending}
+                />
+              )}
+
+              {activeTab === 'actions' && (
+                <MaintenanceActionsTab
+                  maintenanceInfo={maintenanceInfo}
+                  selectedPruneType={selectedPruneType}
+                  pruneAll={pruneAll}
+                  isPruning={pruneMutation.isPending}
+                  isLoading={isLoading}
+                  onPruneTypeChange={setSelectedPruneType}
+                  onPruneAllChange={setPruneAll}
+                  onStartPrune={() => setShowConfirm(true)}
+                  onRefresh={refetch}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 border-t border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
+          <MaintenanceStatusBar summary={summary} />
+        </div>
       </div>
 
       {/* Prune Confirmation Modal */}
