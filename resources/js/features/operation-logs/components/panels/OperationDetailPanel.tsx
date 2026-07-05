@@ -1,9 +1,6 @@
 import React from 'react';
 import {
   XMarkIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon,
   ClockIcon,
   ServerIcon,
   UserIcon,
@@ -13,7 +10,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
-import type { OperationLogDetailData, OperationLogInfo } from '../../../../api/generated/models';
+import type { OperationLogDetailData } from '../../../../api/generated/models';
+import { StatusBadge } from '../badges';
+import { operationDuration } from '../../duration';
 
 interface OperationDetailPanelProps {
   detail: OperationLogDetailData | null;
@@ -32,85 +31,10 @@ const toPrettyJson = (payload: string) => {
   }
 };
 
-const formatDuration = (duration: number | null, isPartial: boolean = false) => {
-  if (duration === null || duration === undefined || duration === 0) return 'N/A';
-  if (duration < -1000000000) return 'N/A';
-  if (duration < 0) return 'N/A';
-
-  let formattedTime = '';
-  if (duration < 1000) formattedTime = `${duration}ms`;
-  else if (duration < 60000) formattedTime = `${(duration / 1000).toFixed(1)}s`;
-  else formattedTime = `${(duration / 60000).toFixed(1)}m`;
-
-  return isPartial ? `~${formattedTime}` : formattedTime;
-};
-
-const getOperationDuration = (log: OperationLogInfo) => {
-  if (log.duration_ms !== null && log.duration_ms !== undefined) {
-    return formatDuration(log.duration_ms, false);
-  } else if (log.partial_duration_ms !== null && log.partial_duration_ms !== undefined) {
-    return formatDuration(log.partial_duration_ms, true);
-  } else {
-    return 'N/A';
-  }
-};
-
 const formatTriggerSource = (triggerSource: string) => {
   if (triggerSource === 'scheduled' || triggerSource === 'cron') return 'Scheduled';
   if (triggerSource === 'api') return 'API';
   return 'Manual';
-};
-
-const StatusBadge: React.FC<{ log: OperationLogInfo }> = ({ log }) => {
-  if (log.is_incomplete) {
-    return (
-      <span
-        className={cn(
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-          'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
-        )}
-      >
-        <ExclamationTriangleIcon className="h-3.5 w-3.5" />
-        Incomplete
-      </span>
-    );
-  }
-  if (log.success === true) {
-    return (
-      <span
-        className={cn(
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-          'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-        )}
-      >
-        <CheckCircleIcon className="h-3.5 w-3.5" />
-        Success
-      </span>
-    );
-  }
-  if (log.success === false) {
-    return (
-      <span
-        className={cn(
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-        )}
-      >
-        <XCircleIcon className="h-3.5 w-3.5" />
-        Failed
-      </span>
-    );
-  }
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-        'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-      )}
-    >
-      Unknown
-    </span>
-  );
 };
 
 const InfoRow: React.FC<{
@@ -138,7 +62,7 @@ export const OperationDetailPanel: React.FC<OperationDetailPanelProps> = ({
       <div className="h-full flex flex-col border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
           <span className={cn('text-sm font-semibold', theme.text.strong)}>Operation Details</span>
-          <button onClick={onClose} className={cn(theme.buttons.icon, 'p-1')}>
+          <button onClick={onClose} aria-label="Close" className={cn(theme.buttons.icon, 'p-1')}>
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
@@ -157,7 +81,7 @@ export const OperationDetailPanel: React.FC<OperationDetailPanelProps> = ({
       <div className="h-full flex flex-col border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
           <span className={cn('text-sm font-semibold', theme.text.strong)}>Operation Details</span>
-          <button onClick={onClose} className={cn(theme.buttons.icon, 'p-1')}>
+          <button onClick={onClose} aria-label="Close" className={cn(theme.buttons.icon, 'p-1')}>
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
@@ -178,7 +102,7 @@ export const OperationDetailPanel: React.FC<OperationDetailPanelProps> = ({
           <span className={cn('text-sm font-semibold', theme.text.strong)}>Operation Details</span>
           <p className={cn('text-xs font-mono', theme.text.muted)}>{log.operation_id.slice(-12)}</p>
         </div>
-        <button onClick={onClose} className={cn(theme.buttons.icon, 'p-1')}>
+        <button onClick={onClose} aria-label="Close" className={cn(theme.buttons.icon, 'p-1')}>
           <XMarkIcon className="h-5 w-5" />
         </button>
       </div>
@@ -201,7 +125,7 @@ export const OperationDetailPanel: React.FC<OperationDetailPanelProps> = ({
               label="Trigger"
               value={formatTriggerSource(log.trigger_source)}
             />
-            <InfoRow icon={ClockIcon} label="Duration" value={getOperationDuration(log)} />
+            <InfoRow icon={ClockIcon} label="Duration" value={operationDuration(log)} />
             <InfoRow icon={CommandLineIcon} label="Exit Code" value={log.exit_code ?? 'N/A'} />
             {showUser && <InfoRow icon={UserIcon} label="User" value={log.user_name} />}
             <InfoRow icon={ClockIcon} label="Started" value={log.formatted_date} />

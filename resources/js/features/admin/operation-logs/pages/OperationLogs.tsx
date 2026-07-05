@@ -1,13 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
-import { PanelLayout } from '../../../../shared/components/PanelLayout';
-import {
-  OperationLogsSidebar,
-  OperationLogsToolbar,
-  OperationLogsStatusBar,
-  OperationLogsContent,
-} from '../../../operation-logs/components';
+import { OperationLogsView } from '../../../operation-logs/components';
 import {
   useGetApiV1AdminOperationLogs,
   useGetApiV1AdminOperationLogsStats,
@@ -15,7 +9,10 @@ import {
   getGetApiV1AdminOperationLogsQueryKey,
   getGetApiV1AdminOperationLogsStatsQueryKey,
 } from '../../../../api/generated/admin/admin';
-import type { GetApiV1AdminOperationLogsStatus } from '../../../../api/generated/models';
+import type {
+  GetApiV1AdminOperationLogsParams,
+  GetApiV1AdminOperationLogsStatus,
+} from '../../../../api/generated/models';
 
 export default function OperationLogs() {
   useDocumentTitle('Operation Logs');
@@ -24,30 +21,27 @@ export default function OperationLogs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCommand, setSelectedCommand] = useState('');
+  const [daysBack, setDaysBack] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const logsParams = {
+  const logsParams: GetApiV1AdminOperationLogsParams = {
     page: currentPage,
     page_size: 25,
     ...(searchTerm && { search: searchTerm }),
     ...(selectedStatus && { status: selectedStatus as GetApiV1AdminOperationLogsStatus }),
     ...(selectedCommand && { command: selectedCommand }),
+    ...(daysBack !== null && { days_back: daysBack }),
   };
 
   const { data: logsResponse, isLoading: logsLoading } = useGetApiV1AdminOperationLogs(logsParams);
   const { data: statsResponse, isLoading: statsLoading } = useGetApiV1AdminOperationLogsStats();
 
-  const logs = logsResponse?.data ?? [];
-  const meta = logsResponse?.meta ?? null;
-  const stats = statsResponse?.data ?? null;
-
   const fetchLogDetail = useCallback(async (logId: number) => {
     try {
       const response = await getApiV1AdminOperationLogsId(logId);
       return response.data ?? null;
-    } catch (error) {
-      console.error('Failed to fetch operation log details:', error);
+    } catch {
       return null;
     }
   }, []);
@@ -64,76 +58,50 @@ export default function OperationLogs() {
     setIsRefreshing(false);
   }, [queryClient, logsParams]);
 
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
-
-  const handleStatusChange = useCallback((status: string) => {
-    setSelectedStatus(status);
-    setCurrentPage(1);
-  }, []);
-
-  const handleCommandChange = useCallback((command: string) => {
-    setSelectedCommand(command);
-    setCurrentPage(1);
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedStatus('');
-    setSelectedCommand('');
-    setCurrentPage(1);
-  }, []);
-
-  const hasActiveFilters = searchTerm !== '' || selectedStatus !== '' || selectedCommand !== '';
-  const activeFilterCount = [searchTerm, selectedStatus, selectedCommand].filter(Boolean).length;
+  const resetToFirstPage = () => setCurrentPage(1);
 
   return (
-    <>
-      <PanelLayout
-        storageKey="operation-logs"
-        sidebarTitle="Filters"
-        defaultWidth={260}
-        maxWidthPercent={35}
-        toolbar={
-          <OperationLogsToolbar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-          />
-        }
-        sidebar={
-          <OperationLogsSidebar
-            stats={stats}
-            selectedStatus={selectedStatus}
-            selectedCommand={selectedCommand}
-            onStatusChange={handleStatusChange}
-            onCommandChange={handleCommandChange}
-            onClearFilters={handleClearFilters}
-            hasActiveFilters={hasActiveFilters}
-          />
-        }
-        content={
-          <OperationLogsContent
-            logs={logs}
-            loading={logsLoading || statsLoading}
-            meta={meta}
-            currentPage={currentPage}
-            showUser={true}
-            onPageChange={handlePageChange}
-            onFetchDetail={fetchLogDetail}
-          />
-        }
-        statusBar={
-          <OperationLogsStatusBar
-            meta={meta}
-            hasActiveFilters={hasActiveFilters}
-            activeFilterCount={activeFilterCount}
-            lastUpdated={lastUpdated}
-          />
-        }
-      />
-    </>
+    <OperationLogsView
+      title="Operation Logs"
+      subtitle="View Docker stack operation history across all users"
+      showUser={true}
+      logs={logsResponse?.data ?? []}
+      stats={statsResponse?.data ?? null}
+      meta={logsResponse?.meta ?? null}
+      isLoading={logsLoading || statsLoading}
+      page={currentPage}
+      onPageChange={setCurrentPage}
+      searchTerm={searchTerm}
+      onSearchChange={(value) => {
+        setSearchTerm(value);
+        resetToFirstPage();
+      }}
+      selectedStatus={selectedStatus}
+      onStatusChange={(status) => {
+        setSelectedStatus(status);
+        resetToFirstPage();
+      }}
+      selectedCommand={selectedCommand}
+      onCommandChange={(command) => {
+        setSelectedCommand(command);
+        resetToFirstPage();
+      }}
+      daysBack={daysBack}
+      onDaysBackChange={(value) => {
+        setDaysBack(value);
+        resetToFirstPage();
+      }}
+      onClearFilters={() => {
+        setSearchTerm('');
+        setSelectedStatus('');
+        setSelectedCommand('');
+        setDaysBack(null);
+        resetToFirstPage();
+      }}
+      isRefreshing={isRefreshing}
+      onRefresh={handleRefresh}
+      lastUpdated={lastUpdated}
+      onFetchDetail={fetchLogDetail}
+    />
   );
 }
