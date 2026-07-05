@@ -5,6 +5,8 @@ import (
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
+	"errors"
+	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -51,6 +53,20 @@ func (h *Handler) StartScan(c echo.Context) error {
 
 	scan, err := h.service.StartScan(c.Request().Context(), p, serverID, stackName, opts)
 	if err != nil {
+		var scopeConflict *ScanScopeConflictError
+		switch {
+		case errors.As(err, &scopeConflict):
+			return response.Conflict(c, scopeConflict.Error())
+		case errors.Is(err, ErrScanPermissionDenied):
+			return response.Forbidden(c, err.Error())
+		case errors.Is(err, ErrAgentDispatchFailed):
+			h.logger.Error("failed to dispatch scan to agent",
+				zap.Error(err),
+				zap.Uint("server_id", serverID),
+				zap.String("stack_name", stackName),
+			)
+			return response.Err(c, http.StatusBadGateway, "agent_unreachable", err.Error())
+		}
 		h.logger.Error("failed to start scan",
 			zap.Error(err),
 			zap.Uint("user_id", p.UserID()),
@@ -170,6 +186,9 @@ func (h *Handler) CompareScans(c echo.Context) error {
 
 	comparison, err := h.service.CompareScans(c.Request().Context(), p, baseScanID, compareScanID)
 	if err != nil {
+		if errors.Is(err, ErrCompareRequiresCompletedScans) {
+			return response.UnprocessableEntity(c, err.Error())
+		}
 		h.logger.Error("failed to compare scans",
 			zap.Error(err),
 			zap.Uint("user_id", p.UserID()),

@@ -11,7 +11,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -30,12 +32,59 @@ type vulnscanAuthorizer interface {
 	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
 }
 
+var (
+	ErrScanPermissionDenied          = errors.New("permission denied: stacks.manage required")
+	ErrAgentDispatchFailed           = errors.New("failed to dispatch scan to agent")
+	ErrCompareRequiresCompletedScans = errors.New("both scans must be completed before they can be compared")
+)
+
+type ScanScopeConflictError struct {
+	Existing        *ImageScan
+	RequestedFilter string
+}
+
+func (e *ScanScopeConflictError) Error() string {
+	existingScope := e.Existing.ServiceFilter
+	if existingScope == "" {
+		existingScope = "all services"
+	}
+	requestedScope := e.RequestedFilter
+	if requestedScope == "" {
+		requestedScope = "all services"
+	}
+	return fmt.Sprintf("a scan covering %s is already running; requested scope %s conflicts", existingScope, requestedScope)
+}
+
 type Service struct {
-	db        *gorm.DB
-	serverSvc vulnscanServerProvider
-	agentSvc  vulnscanAgentClient
-	authzSvc  vulnscanAuthorizer
-	logger    *zap.Logger
+	db         *gorm.DB
+	serverSvc  vulnscanServerProvider
+	agentSvc   vulnscanAgentClient
+	authzSvc   vulnscanAuthorizer
+	logger     *zap.Logger
+	startLocks sync.Map
+}
+
+func (s *Service) lockScanStart(serverID uint, stackName string) func() {
+	key := fmt.Sprintf("%d|%s", serverID, stackName)
+	muAny, _ := s.startLocks.LoadOrStore(key, &sync.Mutex{})
+	mu := muAny.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
+}
+
+func normalizeServiceFilter(services []string) string {
+	unique := make(map[string]bool, len(services))
+	cleaned := make([]string, 0, len(services))
+	for _, svc := range services {
+		svc = strings.TrimSpace(svc)
+		if svc == "" || unique[svc] {
+			continue
+		}
+		unique[svc] = true
+		cleaned = append(cleaned, svc)
+	}
+	sort.Strings(cleaned)
+	return strings.Join(cleaned, ",")
 }
 
 func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscanAgentClient, authzSvc vulnscanAuthorizer, logger *zap.Logger) *Service {
@@ -103,7 +152,7 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 		zap.String("stack_name", stackName),
 	)
 
-	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksRead)
+	hasPermission, err := s.authzSvc.HasStackPermission(p, serverID, stackName, permnames.StacksManage)
 	if err != nil {
 		s.logger.Error("failed to check permission",
 			zap.Error(err),
@@ -114,7 +163,7 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 		return nil, fmt.Errorf("failed to check permission: %w", err)
 	}
 	if !hasPermission {
-		return nil, fmt.Errorf("permission denied: stacks.read required")
+		return nil, ErrScanPermissionDenied
 	}
 
 	srv, err := s.serverSvc.GetServer(serverID)
@@ -126,30 +175,37 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
+	var serviceFilter string
+	if opts != nil {
+		serviceFilter = normalizeServiceFilter(opts.Services)
+	}
+
+	unlock := s.lockScanStart(serverID, stackName)
+
 	var existingScan ImageScan
 	err = s.db.Where("server_id = ? AND stack_name = ? AND status IN ?",
 		serverID, stackName, []string{ScanStatusPending, ScanStatusRunning}).
 		First(&existingScan).Error
 
 	if err == nil {
-		s.logger.Info("returning existing active scan",
-			zap.Uint("scan_id", existingScan.ID),
-			zap.String("status", existingScan.Status),
-		)
-		return &existingScan, nil
+		unlock()
+		if existingScan.ServiceFilter == serviceFilter {
+			s.logger.Info("returning existing active scan with matching scope",
+				zap.Uint("scan_id", existingScan.ID),
+				zap.String("status", existingScan.Status),
+			)
+			return &existingScan, nil
+		}
+		return nil, &ScanScopeConflictError{Existing: &existingScan, RequestedFilter: serviceFilter}
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		unlock()
 		s.logger.Error("failed to check for an active scan",
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
 			zap.String("stack_name", stackName),
 		)
 		return nil, fmt.Errorf("check for active scan: %w", err)
-	}
-
-	var serviceFilter string
-	if opts != nil && len(opts.Services) > 0 {
-		serviceFilter = strings.Join(opts.Services, ",")
 	}
 
 	scan := &ImageScan{
@@ -161,6 +217,7 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 	}
 
 	if err := s.db.Create(scan).Error; err != nil {
+		unlock()
 		s.logger.Error("failed to create scan record",
 			zap.Error(err),
 			zap.Uint("server_id", serverID),
@@ -168,29 +225,30 @@ func (s *Service) StartScan(ctx context.Context, p authz.Principal, serverID uin
 		)
 		return nil, fmt.Errorf("failed to create scan record: %w", err)
 	}
+	unlock()
 
 	endpoint := fmt.Sprintf("/stacks/%s/scan", stackName)
 
-	if opts != nil && len(opts.Services) > 0 {
-		endpoint += "?services=" + url.QueryEscape(strings.Join(opts.Services, ","))
+	if serviceFilter != "" {
+		endpoint += "?services=" + url.QueryEscape(serviceFilter)
 	}
 	resp, err := s.agentSvc.MakeRequest(ctx, srv, http.MethodPost, endpoint, nil)
 	if err != nil {
 		s.markScanFailed(scan, fmt.Sprintf("failed to contact agent: %v", err))
-		return scan, nil
+		return nil, fmt.Errorf("%w: %v", ErrAgentDispatchFailed, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		s.markScanFailed(scan, fmt.Sprintf("agent returned status %d: %s", resp.StatusCode, string(body)))
-		return scan, nil
+		return nil, fmt.Errorf("%w: agent returned status %d", ErrAgentDispatchFailed, resp.StatusCode)
 	}
 
 	var agentResp AgentScanResponse
 	if err := json.NewDecoder(resp.Body).Decode(&agentResp); err != nil {
 		s.markScanFailed(scan, fmt.Sprintf("failed to parse agent response: %v", err))
-		return scan, nil
+		return nil, fmt.Errorf("%w: unparseable agent response", ErrAgentDispatchFailed)
 	}
 
 	scan.AgentScanID = agentResp.ID
@@ -295,6 +353,19 @@ func (s *Service) GetScansForStackWithSummaries(ctx context.Context, p authz.Pri
 
 func (s *Service) PollScan(ctx context.Context, scan *ImageScan) error {
 	if scan.IsTerminal() {
+		return nil
+	}
+
+	if scan.AgentScanID == "" {
+		if time.Since(scan.StartedAt) > 2*time.Minute {
+			scan.Status = ScanStatusFailed
+			scan.ErrorMessage = "scan was never dispatched to the agent"
+			now := time.Now()
+			scan.CompletedAt = &now
+			if err := s.db.Save(scan).Error; err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
@@ -596,6 +667,10 @@ func (s *Service) CompareScans(ctx context.Context, p authz.Principal, baseScanI
 
 	if baseScan.ServerID != compareScan.ServerID || baseScan.StackName != compareScan.StackName {
 		return nil, fmt.Errorf("scans must be from the same stack")
+	}
+
+	if baseScan.Status != ScanStatusCompleted || compareScan.Status != ScanStatusCompleted {
+		return nil, ErrCompareRequiresCompletedScans
 	}
 
 	var baseScopes, compareScopes []ScanScope

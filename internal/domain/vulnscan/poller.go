@@ -79,10 +79,6 @@ func (p *Poller) pollActiveScans() {
 	for i := range scans {
 		scan := &scans[i]
 
-		if scan.AgentScanID == "" {
-			continue
-		}
-
 		if err := p.service.PollScan(p.ctx, scan); err != nil {
 			p.logger.Debug("poll failed for scan",
 				zap.Uint("scan_id", scan.ID),

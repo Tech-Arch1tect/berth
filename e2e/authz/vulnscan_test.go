@@ -171,31 +171,52 @@ func TestAuthzVulnscanStartScan(t *testing.T) {
 	}
 
 	_, jwtReader, _ := f.UserWithRole("reader", f.Server, permnames.StacksRead, "prod-*")
+	_, jwtManager, _ := f.UserWithRole("manager", f.Server, permnames.StacksManage, "prod-*")
 	_, jwtAdmin := f.Admin("write-admin")
 	_, jwtUnion := f.UserWithRoles("union", []RoleSpec{
-		{Name: "ra", Grants: []RoleGrant{{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "prod-*"}}},
-		{Name: "rb", Grants: []RoleGrant{{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "ops-*"}}},
+		{Name: "ra", Grants: []RoleGrant{
+			{Server: f.Server, Permission: permnames.StacksManage, StackPattern: "prod-*"},
+			{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "prod-*"},
+		}},
+		{Name: "rb", Grants: []RoleGrant{
+			{Server: f.Server, Permission: permnames.StacksManage, StackPattern: "ops-*"},
+			{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "ops-*"},
+		}},
 	})
 
-	noScopeOwner, _, _ := f.UserWithRole("noscope-owner", f.Server, permnames.StacksRead, "*")
+	noScopeOwner, _, _ := f.UserWithRole("noscope-owner", f.Server, permnames.StacksManage, "*")
 	keyNoScope := f.APIKeyFor(noScopeOwner, "noscope-key", nil)
 
-	matchingOwner, _, _ := f.UserWithRole("matching-owner", f.Server, permnames.StacksRead, "prod-*")
+	matchingOwner, _, _ := f.UserWithRole("matching-owner", f.Server, permnames.StacksManage, "prod-*")
 	keyMatching := f.APIKeyFor(matchingOwner, "matching-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksManage, "prod-*"),
 		keyScope(&f.Server.ID, permnames.StacksRead, "prod-*"),
 	})
 
-	narrowerOwner, _, _ := f.UserWithRole("narrower-owner", f.Server, permnames.StacksRead, "*")
+	readScopeOwner, _, _ := f.UserWithRole("read-scope-owner", f.Server, permnames.StacksManage, "*")
+	keyReadScope := f.APIKeyFor(readScopeOwner, "read-scope-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksRead, "*"),
+	})
+
+	narrowerOwner, _, _ := f.UserWithRole("narrower-owner", f.Server, permnames.StacksManage, "*")
 	keyNarrower := f.APIKeyFor(narrowerOwner, "narrower-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksManage, "prod-*"),
 		keyScope(&f.Server.ID, permnames.StacksRead, "prod-*"),
 	})
 
 	otherServer, _ := f.AddServer("other-srv")
 	wrongSrvOwner, _ := f.UserWithRoles("wrong-server-owner", []RoleSpec{
-		{Name: "rl", Grants: []RoleGrant{{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "*"}}},
-		{Name: "rr", Grants: []RoleGrant{{Server: otherServer, Permission: permnames.StacksRead, StackPattern: "*"}}},
+		{Name: "rl", Grants: []RoleGrant{
+			{Server: f.Server, Permission: permnames.StacksManage, StackPattern: "*"},
+			{Server: f.Server, Permission: permnames.StacksRead, StackPattern: "*"},
+		}},
+		{Name: "rr", Grants: []RoleGrant{
+			{Server: otherServer, Permission: permnames.StacksManage, StackPattern: "*"},
+			{Server: otherServer, Permission: permnames.StacksRead, StackPattern: "*"},
+		}},
 	})
 	keyWrongServer := f.APIKeyFor(wrongSrvOwner, "wrong-server-key", []ScopeSpec{
+		keyScope(&otherServer.ID, permnames.StacksManage, "*"),
 		keyScope(&otherServer.ID, permnames.StacksRead, "*"),
 	})
 
@@ -207,12 +228,17 @@ func TestAuthzVulnscanStartScan(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, "", 401)
 		assertNoScanStart(t, "prod-web")
 	})
-	t.Run("JWT with stacks.read on in-pattern is admitted", func(t *testing.T) {
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(jwtReader), 200)
-	})
-	t.Run("JWT with stacks.read out-of-pattern returns 403 with no agent call", func(t *testing.T) {
+	t.Run("JWT with only stacks.read returns 403 with no agent call", func(t *testing.T) {
 		f.Agent.ResetCalls()
-		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: stagingURL}, bearer(jwtReader), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(jwtReader), 403)
+		assertNoScanStart(t, "prod-web")
+	})
+	t.Run("JWT with stacks.manage on in-pattern is admitted", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(jwtManager), 200)
+	})
+	t.Run("JWT with stacks.manage out-of-pattern returns 403 with no agent call", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: stagingURL}, bearer(jwtManager), 403)
 		assertNoScanStart(t, "staging-web")
 	})
 	t.Run("JWT with multi-role union admits each unioned pattern", func(t *testing.T) {
@@ -232,8 +258,13 @@ func TestAuthzVulnscanStartScan(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(keyNoScope), 403)
 		assertNoScanStart(t, "prod-web")
 	})
-	t.Run("API key with matching scope is admitted", func(t *testing.T) {
+	t.Run("API key with stacks.manage scope is admitted", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(keyMatching), 200)
+	})
+	t.Run("API key with only stacks.read scope returns 403 despite manage role", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(keyReadScope), 403)
+		assertNoScanStart(t, "prod-web")
 	})
 	t.Run("API key narrower than role admits in-pattern, denies out-of-pattern", func(t *testing.T) {
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(keyNarrower), 200)
@@ -252,8 +283,9 @@ func TestAuthzVulnscanStartScan(t *testing.T) {
 		assertNoScanStart(t, "prod-web")
 	})
 	t.Run("API key fails after owner loses the role that granted it", func(t *testing.T) {
-		owner, _, roleName := f.UserWithRole("revoked-owner", f.Server, permnames.StacksRead, "*")
+		owner, _, roleName := f.UserWithRole("revoked-owner", f.Server, permnames.StacksManage, "*")
 		key := f.APIKeyFor(owner, "revoked-key", []ScopeSpec{
+			keyScope(&f.Server.ID, permnames.StacksManage, "*"),
 			keyScope(&f.Server.ID, permnames.StacksRead, "*"),
 		})
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL}, bearer(key), 200)
