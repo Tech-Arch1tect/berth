@@ -25,7 +25,7 @@ export const SecurityAuditDetailPanel: React.FC<SecurityAuditDetailPanelProps> =
   onClose,
 }) => {
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-900">
+    <div className="h-full flex flex-col border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
       {/* Header */}
       <div
         className={cn(
@@ -37,6 +37,7 @@ export const SecurityAuditDetailPanel: React.FC<SecurityAuditDetailPanelProps> =
         <h3 className={cn('text-sm font-semibold', theme.text.strong)}>Event Details</h3>
         <button
           onClick={onClose}
+          aria-label="Close"
           className={cn(
             'p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors',
             theme.text.muted
