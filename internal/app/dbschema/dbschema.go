@@ -20,7 +20,7 @@ func Models() []any {
 		&security.SecurityAuditLog{},
 		&session.UserSession{},
 		&imageupdates.ContainerImageUpdate{},
-		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{},
+		&vulnscan.ImageScan{}, &vulnscan.ImageVulnerability{}, &vulnscan.ScanScope{}, &vulnscan.ScanServiceImage{},
 		&totp.TOTPSecret{}, &totp.UsedCode{},
 		&auth.PasswordResetToken{}, &auth.EmailVerificationToken{},
 		&tokens.RevokedToken{}, &tokens.RefreshToken{},

@@ -13,6 +13,7 @@
         "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "deleted_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "error_message": "agent returned status 404: not found\n",
+        "full_coverage": false,
         "id": "\u003c\u003cID\u003e\u003e",
         "poll_failures": 0,
         "scanned_images": 0,

@@ -49,19 +49,29 @@ func NewService(db *gorm.DB, serverSvc vulnscanServerProvider, agentSvc vulnscan
 }
 
 type AgentScanResponse struct {
-	ID            string             `json:"id"`
-	StackName     string             `json:"stack_name"`
-	Status        string             `json:"status"`
-	TotalImages   int                `json:"total_images"`
-	ScannedImages int                `json:"scanned_images"`
-	StartedAt     time.Time          `json:"started_at"`
-	CompletedAt   *time.Time         `json:"completed_at,omitempty"`
-	Error         string             `json:"error,omitempty"`
-	Results       []AgentImageResult `json:"results,omitempty"`
+	ID             string              `json:"id"`
+	StackName      string              `json:"stack_name"`
+	Status         string              `json:"status"`
+	TotalImages    int                 `json:"total_images"`
+	ScannedImages  int                 `json:"scanned_images"`
+	ServiceImages  []AgentServiceImage `json:"service_images,omitempty"`
+	StartedAt      time.Time           `json:"started_at"`
+	CompletedAt    *time.Time          `json:"completed_at,omitempty"`
+	Error          string              `json:"error,omitempty"`
+	Results        []AgentImageResult  `json:"results,omitempty"`
+	ScannerVersion string              `json:"scanner_version,omitempty"`
+	ScannerDBBuilt *time.Time          `json:"scanner_db_built,omitempty"`
+}
+
+type AgentServiceImage struct {
+	Service string `json:"service"`
+	Image   string `json:"image"`
+	Digest  string `json:"digest,omitempty"`
 }
 
 type AgentImageResult struct {
 	ImageName       string               `json:"image_name"`
+	Digest          string               `json:"digest,omitempty"`
 	Status          string               `json:"status"`
 	Error           string               `json:"error,omitempty"`
 	Vulnerabilities []AgentVulnerability `json:"vulnerabilities,omitempty"`
@@ -225,7 +235,7 @@ func (s *Service) markScanFailed(scan *ImageScan, errorMsg string) {
 
 func (s *Service) GetScan(ctx context.Context, p authz.Principal, scanID uint) (*ImageScan, error) {
 	var scan ImageScan
-	if err := s.db.Preload("Vulnerabilities").First(&scan, scanID).Error; err != nil {
+	if err := s.db.Preload("Vulnerabilities").Preload("Scopes").Preload("ServiceImages").First(&scan, scanID).Error; err != nil {
 		return nil, err
 	}
 
@@ -325,10 +335,13 @@ func (s *Service) PollScan(ctx context.Context, scan *ImageScan) error {
 		scan.Status = agentResp.Status
 		scan.CompletedAt = agentResp.CompletedAt
 		scan.ErrorMessage = agentResp.Error
+		scan.ScannerVersion = agentResp.ScannerVersion
+		scan.ScannerDBBuilt = agentResp.ScannerDBBuilt
 
 		if agentResp.Status == "completed" {
-			if err := s.storeVulnerabilities(scan, agentResp.Results); err != nil {
-				s.logger.Error("failed to store vulnerabilities",
+			scan.FullCoverage = isFullCoverage(scan.ServiceFilter, &agentResp)
+			if err := s.storeScanResults(scan, &agentResp); err != nil {
+				s.logger.Error("failed to store scan results",
 					zap.Error(err),
 					zap.Uint("scan_id", scan.ID),
 				)
@@ -361,7 +374,42 @@ func (s *Service) recordPollFailure(scan *ImageScan, errMsg string) {
 	}
 }
 
-func (s *Service) storeVulnerabilities(scan *ImageScan, results []AgentImageResult) error {
+func isFullCoverage(serviceFilter string, agentResp *AgentScanResponse) bool {
+	if serviceFilter != "" {
+		return false
+	}
+	if len(agentResp.Results) == 0 || agentResp.ScannedImages != agentResp.TotalImages {
+		return false
+	}
+	for _, result := range agentResp.Results {
+		if result.Status != "completed" {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Service) storeScanResults(scan *ImageScan, agentResp *AgentScanResponse) error {
+	results := agentResp.Results
+
+	serviceImages := make([]ScanServiceImage, 0, len(agentResp.ServiceImages))
+	for _, si := range agentResp.ServiceImages {
+		serviceImages = append(serviceImages, ScanServiceImage{
+			ScanID:      scan.ID,
+			ServiceName: si.Service,
+			ImageName:   si.Image,
+			ImageDigest: si.Digest,
+		})
+	}
+	if len(serviceImages) > 0 {
+		if err := s.db.CreateInBatches(serviceImages, 100).Error; err != nil {
+			s.logger.Warn("failed to store scan service images",
+				zap.Uint("scan_id", scan.ID),
+				zap.Error(err),
+			)
+		}
+	}
+
 	var vulns []ImageVulnerability
 	var scopes []ScanScope
 	seenImages := make(map[string]bool)
@@ -371,8 +419,9 @@ func (s *Service) storeVulnerabilities(scan *ImageScan, results []AgentImageResu
 		if !seenImages[result.ImageName] {
 			seenImages[result.ImageName] = true
 			scopes = append(scopes, ScanScope{
-				ScanID:    scan.ID,
-				ImageName: result.ImageName,
+				ScanID:      scan.ID,
+				ImageName:   result.ImageName,
+				ImageDigest: result.Digest,
 			})
 		}
 
@@ -503,7 +552,7 @@ func (s *Service) GetLatestScanForStack(ctx context.Context, p authz.Principal, 
 	}
 
 	var scan ImageScan
-	if err := s.db.Preload("Vulnerabilities").
+	if err := s.db.Preload("Vulnerabilities").Preload("Scopes").Preload("ServiceImages").
 		Where("server_id = ? AND stack_name = ?", serverID, stackName).
 		Order("created_at DESC").
 		First(&scan).Error; err != nil {

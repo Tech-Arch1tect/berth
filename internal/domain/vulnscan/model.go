@@ -33,10 +33,27 @@ type ImageScan struct {
 
 	ServiceFilter string `json:"service_filter,omitempty" gorm:"type:text"`
 
+	ScannerVersion string     `json:"scanner_version,omitempty"`
+	ScannerDBBuilt *time.Time `json:"scanner_db_built,omitempty"`
+	FullCoverage   bool       `json:"full_coverage"`
+
 	Server          server.Server        `json:"-" gorm:"foreignKey:ServerID"`
 	Vulnerabilities []ImageVulnerability `json:"vulnerabilities,omitempty" gorm:"foreignKey:ScanID"`
 
-	Scopes []ScanScope `json:"scopes,omitempty" gorm:"foreignKey:ScanID"`
+	Scopes        []ScanScope        `json:"scopes,omitempty" gorm:"foreignKey:ScanID"`
+	ServiceImages []ScanServiceImage `json:"service_images,omitempty" gorm:"foreignKey:ScanID"`
+}
+
+type ScanServiceImage struct {
+	db.BaseModel
+	ScanID      uint   `json:"scan_id" gorm:"not null;index"`
+	ServiceName string `json:"service_name" gorm:"not null"`
+	ImageName   string `json:"image_name" gorm:"not null"`
+	ImageDigest string `json:"image_digest,omitempty"`
+}
+
+func (ScanServiceImage) TableName() string {
+	return "scan_service_images"
 }
 
 func (ImageScan) TableName() string {
@@ -83,8 +100,9 @@ func (ImageVulnerability) TableName() string {
 
 type ScanScope struct {
 	db.BaseModel
-	ScanID    uint   `json:"scan_id" gorm:"not null;index;uniqueIndex:idx_scan_image"`
-	ImageName string `json:"image_name" gorm:"not null;uniqueIndex:idx_scan_image"`
+	ScanID      uint   `json:"scan_id" gorm:"not null;index;uniqueIndex:idx_scan_image"`
+	ImageName   string `json:"image_name" gorm:"not null;uniqueIndex:idx_scan_image"`
+	ImageDigest string `json:"image_digest,omitempty"`
 
 	Scan ImageScan `json:"-" gorm:"foreignKey:ScanID"`
 }
