@@ -146,6 +146,10 @@ export const OperationsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         operations.forEach((serverOp: OperationLogInfo) => {
+          if (serverOp.command === 'terminal') {
+            return;
+          }
+
           const existing = newMap.get(serverOp.operation_id);
 
           if (existing) {
