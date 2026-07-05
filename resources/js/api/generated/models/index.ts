@@ -272,6 +272,7 @@ export * from './rootFS';
 export * from './runningOperationsData';
 export * from './scanComparison';
 export * from './scanScope';
+export * from './scanServiceImage';
 export * from './scanTrendPoint';
 export * from './scanWithSummary';
 export * from './secretConfig';

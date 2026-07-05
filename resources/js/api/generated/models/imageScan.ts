@@ -8,6 +8,7 @@
 import type { DeletedAt } from './deletedAt';
 import type { ImageVulnerability } from './imageVulnerability';
 import type { ScanScope } from './scanScope';
+import type { ScanServiceImage } from './scanServiceImage';
 
 export interface ImageScan {
   agent_scan_id: string;
@@ -16,6 +17,7 @@ export interface ImageScan {
   created_at: string;
   deleted_at?: DeletedAt;
   error_message?: string;
+  full_coverage: boolean;
   /** @minimum 0 */
   id: number;
   last_poll_error?: string;
@@ -23,10 +25,14 @@ export interface ImageScan {
   last_polled_at?: string | null;
   poll_failures: number;
   scanned_images: number;
+  /** @nullable */
+  scanner_db_built?: string | null;
+  scanner_version?: string;
   scopes?: ScanScope[];
   /** @minimum 0 */
   server_id: number;
   service_filter?: string;
+  service_images?: ScanServiceImage[];
   stack_name: string;
   started_at: string;
   status: string;

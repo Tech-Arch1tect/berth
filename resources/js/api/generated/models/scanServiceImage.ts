@@ -7,7 +7,7 @@
  */
 import type { DeletedAt } from './deletedAt';
 
-export interface ScanScope {
+export interface ScanServiceImage {
   created_at: string;
   deleted_at?: DeletedAt;
   /** @minimum 0 */
@@ -16,5 +16,6 @@ export interface ScanScope {
   image_name: string;
   /** @minimum 0 */
   scan_id: number;
+  service_name: string;
   updated_at: string;
 }
