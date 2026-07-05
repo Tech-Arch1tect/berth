@@ -46,7 +46,11 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
             <h2 className={cn('text-xl font-semibold', theme.text.strong)}>
               {isEditing ? 'Edit Credential' : 'Add Credential'}
             </h2>
-            <button onClick={onCancel} className={cn(theme.buttons.ghost, theme.text.subtle)}>
+            <button
+              onClick={onCancel}
+              aria-label="Close form"
+              className={cn(theme.buttons.ghost, theme.text.subtle)}
+            >
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -54,9 +58,12 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Stack Pattern *</label>
+                <label htmlFor="registry-stack-pattern" className={cn(theme.forms.label, 'mb-2')}>
+                  Stack Pattern *
+                </label>
                 <input
                   type="text"
+                  id="registry-stack-pattern"
                   value={formData.stack_pattern}
                   onChange={(e) => onFormDataChange('stack_pattern', e.target.value)}
                   placeholder="* (all stacks) or pattern like *dev*"
@@ -69,9 +76,12 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
               </div>
 
               <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Registry URL *</label>
+                <label htmlFor="registry-url" className={cn(theme.forms.label, 'mb-2')}>
+                  Registry URL *
+                </label>
                 <input
                   type="text"
+                  id="registry-url"
                   value={formData.registry_url}
                   onChange={(e) => onFormDataChange('registry_url', e.target.value)}
                   placeholder="ghcr.io or registry.company.com"
@@ -84,9 +94,12 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
               </div>
 
               <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Image Pattern (optional)</label>
+                <label htmlFor="registry-image-pattern" className={cn(theme.forms.label, 'mb-2')}>
+                  Image Pattern (optional)
+                </label>
                 <input
                   type="text"
+                  id="registry-image-pattern"
                   value={formData.image_pattern}
                   onChange={(e) => onFormDataChange('image_pattern', e.target.value)}
                   placeholder="ghcr.io/myorg/*"
@@ -98,9 +111,12 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
               </div>
 
               <div>
-                <label className={cn(theme.forms.label, 'mb-2')}>Username *</label>
+                <label htmlFor="registry-username" className={cn(theme.forms.label, 'mb-2')}>
+                  Username *
+                </label>
                 <input
                   type="text"
+                  id="registry-username"
                   value={formData.username}
                   onChange={(e) => onFormDataChange('username', e.target.value)}
                   placeholder="registry username"
@@ -111,9 +127,12 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
             </div>
 
             <div>
-              <label className={cn(theme.forms.label, 'mb-2')}>Password / Token *</label>
+              <label htmlFor="registry-password" className={cn(theme.forms.label, 'mb-2')}>
+                Password / Token *
+              </label>
               <input
                 type="password"
+                id="registry-password"
                 value={formData.password}
                 onChange={(e) => onFormDataChange('password', e.target.value)}
                 placeholder={
@@ -180,10 +199,10 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
                   'hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
                 )}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className={cn('text-lg font-semibold', theme.text.strong)}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <h3 className={cn('break-all text-lg font-semibold', theme.text.strong)}>
                         {credential.registry_url}
                       </h3>
                       <span
@@ -197,33 +216,33 @@ export const RegistriesContent: FC<RegistriesContentProps> = ({
                         <span className="font-medium">Username:</span> {credential.username}
                       </p>
                       {credential.image_pattern && (
-                        <p>
+                        <p className="break-all">
                           <span className="font-medium">Image Pattern:</span>{' '}
                           {credential.image_pattern}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 ml-4">
+                  <div className="flex flex-shrink-0 items-center gap-1">
                     <button
                       onClick={() => onEdit(credential)}
+                      aria-label={`Edit credential for ${credential.registry_url}`}
                       className={cn(
-                        'p-2 rounded-lg transition-colors',
+                        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
                         theme.text.info,
                         'hover:bg-blue-50 dark:hover:bg-blue-900/30'
                       )}
-                      title="Edit"
                     >
                       <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => onDelete(credential.id, credential.registry_url)}
+                      aria-label={`Delete credential for ${credential.registry_url}`}
                       className={cn(
-                        'p-2 rounded-lg transition-colors',
+                        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
                         theme.text.danger,
                         'hover:bg-red-50 dark:hover:bg-red-900/30'
                       )}
-                      title="Delete"
                     >
                       <TrashIcon className="w-5 h-5" />
                     </button>

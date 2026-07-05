@@ -41,12 +41,12 @@ export const RegistriesToolbar: FC<RegistriesToolbarProps> = ({
           onClick={onAddCredential}
           disabled={disableAdd}
           className={cn(
-            'px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5',
+            'min-h-[44px] px-3 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5',
             'bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700',
             'text-white',
             disableAdd && 'opacity-50 cursor-not-allowed'
           )}
-          title="Add new credential"
+          aria-label="Add credential"
         >
           <PlusIcon className="w-4 h-4" />
           <span className="hidden sm:inline">Add Credential</span>
@@ -55,8 +55,9 @@ export const RegistriesToolbar: FC<RegistriesToolbarProps> = ({
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
+          aria-label="Refresh credentials"
           className={cn(
-            'p-2 rounded-md transition-colors',
+            'flex h-11 w-11 items-center justify-center rounded-md transition-colors',
             'hover:bg-zinc-100 dark:hover:bg-zinc-800',
             theme.text.muted,
             isRefreshing && 'opacity-50'

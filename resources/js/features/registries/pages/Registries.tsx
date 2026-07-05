@@ -8,13 +8,7 @@ import { ConfirmationModal } from '../../../shared/components/ConfirmationModal'
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { theme } from '../../../shared/theme';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
-import { PanelLayout } from '../../../shared/components/PanelLayout';
-import {
-  RegistriesToolbar,
-  RegistriesSidebar,
-  RegistriesContent,
-  RegistriesStatusBar,
-} from '../components';
+import { RegistriesToolbar, RegistriesContent } from '../components';
 import { useGetApiV1ServersServerid } from '../../../api/generated/servers/servers';
 import {
   useGetApiV1ServersServeridRegistries,
@@ -183,12 +177,8 @@ export default function Registries() {
 
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
-      <PanelLayout
-        storageKey="registries"
-        sidebarTitle="Summary"
-        defaultWidth={260}
-        maxWidthPercent={35}
-        toolbar={
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
           <RegistriesToolbar
             serverName={server.name}
             onAddCredential={() => {
@@ -199,29 +189,30 @@ export default function Registries() {
             onRefresh={handleRefresh}
             disableAdd={showAddForm}
           />
-        }
-        sidebar={<RegistriesSidebar credentials={credentials} />}
-        content={
-          <RegistriesContent
-            credentials={credentials}
-            showForm={showAddForm || editingCredential !== null}
-            isEditing={editingCredential !== null}
-            processing={processing}
-            formData={data}
-            onFormDataChange={setData}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-            onShowAddForm={() => {
-              setEditingCredential(null);
-              reset();
-              setShowAddForm(true);
-            }}
-          />
-        }
-        statusBar={<RegistriesStatusBar credentialCount={credentials.length} />}
-      />
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto bg-white p-4 dark:bg-zinc-900 lg:p-6">
+          <div className="mx-auto max-w-4xl">
+            <RegistriesContent
+              credentials={credentials}
+              showForm={showAddForm || editingCredential !== null}
+              isEditing={editingCredential !== null}
+              processing={processing}
+              formData={data}
+              onFormDataChange={setData}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+              onShowAddForm={() => {
+                setEditingCredential(null);
+                reset();
+                setShowAddForm(true);
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Error Modal */}
       <Modal
