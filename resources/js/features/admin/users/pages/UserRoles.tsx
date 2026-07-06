@@ -1,24 +1,28 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { Breadcrumb } from '../../../../shared/components/Breadcrumb';
+import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import {
   useGetApiV1AdminUsersIdRoles,
   usePostApiV1AdminUsersAssignRole,
   usePostApiV1AdminUsersRevokeRole,
   getGetApiV1AdminUsersIdRolesQueryKey,
 } from '../../../../api/generated/admin/admin';
+import type { RoleInfo } from '../../../../api/generated/models';
 
 export default function UserRoles() {
-  useDocumentTitle('Manage User Roles');
-  const navigate = useNavigate();
+  useDocumentTitle('User Roles');
   const queryClient = useQueryClient();
   const params = useParams({ strict: false }) as { userid?: string };
   const userid = Number(params.userid);
   const [error, setError] = useState<string | null>(null);
+  const [roleToRemove, setRoleToRemove] = useState<RoleInfo | null>(null);
 
   const { data: rolesResponse, isLoading: rolesLoading } = useGetApiV1AdminUsersIdRoles(userid, {
     query: { enabled: Number.isFinite(userid) && userid > 0 },
@@ -52,19 +56,21 @@ export default function UserRoles() {
     );
   };
 
-  const revokeRole = (roleId: number) => {
-    if (processing || !user) return;
+  const confirmRemoveRole = () => {
+    if (!roleToRemove || !user) return;
     setError(null);
 
     revokeRoleMutation.mutate(
-      { data: { user_id: user.id, role_id: roleId } },
+      { data: { user_id: user.id, role_id: roleToRemove.id } },
       {
         onSuccess: () => {
           invalidateUserRoles();
+          setRoleToRemove(null);
         },
         onError: (err) => {
           const errorData = err as { message?: string };
-          setError(errorData.message || 'Failed to revoke role');
+          setError(errorData.message || 'Failed to remove role');
+          setRoleToRemove(null);
         },
       }
     );
@@ -74,128 +80,114 @@ export default function UserRoles() {
     return <LoadingSpinner size="lg" text="Loading user..." fullScreen />;
   }
 
-  const userRoles = user.roles ?? [];
-  const userRoleIds = userRoles.map((role) => role.id);
-  const availableRoles = allRoles.filter((role) => !userRoleIds.includes(role.id));
+  const assignedRoleIds = (user.roles ?? []).map((role) => role.id);
 
   return (
-    <>
-      <div className="h-full overflow-auto">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <h2
-                className={cn(
-                  'text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
-                  theme.text.strong
-                )}
-              >
-                Manage User Roles
-              </h2>
-              <p className={cn('mt-1 text-sm', theme.text.subtle)}>
-                Managing roles for {user.username} ({user.email})
-              </p>
-            </div>
-            <div className="mt-4 flex md:mt-0 md:ml-4">
-              <button
-                type="button"
-                onClick={() => navigate({ to: '/admin/users' })}
-                className={cn('ml-3', theme.buttons.secondary)}
-              >
-                Back to Users
-              </button>
-            </div>
+    <div className="h-full overflow-auto">
+      <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <Breadcrumb
+          homeHref="/admin/users"
+          items={[{ label: 'Users', href: '/admin/users' }, { label: user.username }]}
+        />
+
+        <div className="mb-6">
+          <h1 className={cn('text-2xl font-bold sm:text-3xl', theme.text.strong)}>User Roles</h1>
+          <p className={cn('mt-1 text-sm', theme.text.subtle)}>
+            Roles assigned to {user.username} ({user.email})
+          </p>
+        </div>
+
+        {error && (
+          <div
+            className={cn(
+              'mb-4 p-4 rounded-md border',
+              theme.intent.danger.surface,
+              theme.intent.danger.border
+            )}
+          >
+            <p className={cn('text-sm', theme.intent.danger.textStrong)}>{error}</p>
           </div>
+        )}
 
-          {error && (
-            <div className="mt-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <p className={cn('text-sm', theme.text.danger)}>{error}</p>
-            </div>
-          )}
-
-          <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* Current Roles */}
-            <div>
-              <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>Current Roles</h3>
-              <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
-                {userRoles.length > 0 ? (
-                  <ul className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {userRoles.map((role) => (
-                      <li key={role.id} className="px-6 py-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className={cn('text-sm font-medium capitalize', theme.text.strong)}>
-                              {role.name}
-                            </h4>
-                            <p className={cn('text-sm', theme.text.subtle)}>{role.description}</p>
-                          </div>
-                          <button
-                            onClick={() => revokeRole(role.id)}
-                            disabled={processing}
+        <div className={cn(theme.surface.panel, 'shadow overflow-hidden rounded-md')}>
+          <ul className="divide-y divide-slate-200 dark:divide-slate-700">
+            {allRoles.map((role) => {
+              const assigned = assignedRoleIds.includes(role.id);
+              return (
+                <li key={role.id} className="px-4 py-4 sm:px-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className={cn('text-sm font-medium capitalize', theme.text.strong)}>
+                          {role.name}
+                        </h3>
+                        {assigned && (
+                          <span
                             className={cn(
-                              'ml-4 text-xs font-medium px-2.5 py-0.5 rounded-full',
-                              'bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800',
-                              'text-red-800 dark:text-red-200',
-                              'focus:outline-none focus:ring-2 focus:ring-red-500',
-                              'disabled:opacity-50 transition-colors'
+                              theme.badges.tag.base,
+                              theme.badges.tag.success,
+                              'inline-flex items-center gap-1'
                             )}
                           >
-                            Remove
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className={cn('px-6 py-4 text-sm', theme.text.subtle)}>
-                    No roles assigned
+                            <CheckCircleIcon className="h-3.5 w-3.5" />
+                            Assigned
+                          </span>
+                        )}
+                      </div>
+                      {role.description && (
+                        <p className={cn('mt-0.5 text-sm', theme.text.subtle)}>
+                          {role.description}
+                        </p>
+                      )}
+                    </div>
+                    {assigned ? (
+                      <button
+                        onClick={() => setRoleToRemove(role)}
+                        disabled={processing}
+                        aria-label={`Remove role ${role.name} from ${user.username}`}
+                        className={cn(
+                          'inline-flex min-h-[44px] items-center text-sm disabled:opacity-50',
+                          theme.buttons.danger
+                        )}
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => assignRole(role.id)}
+                        disabled={processing}
+                        aria-label={`Assign role ${role.name} to ${user.username}`}
+                        className={cn(
+                          'inline-flex min-h-[44px] items-center text-sm disabled:opacity-50',
+                          theme.buttons.secondary
+                        )}
+                      >
+                        Assign
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Available Roles */}
-            <div>
-              <h3 className={cn('text-lg font-medium mb-4', theme.text.strong)}>Available Roles</h3>
-              <div className={cn(theme.surface.panel, 'shadow overflow-hidden sm:rounded-md')}>
-                {availableRoles.length > 0 ? (
-                  <ul className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {availableRoles.map((role) => (
-                      <li key={role.id} className="px-6 py-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className={cn('text-sm font-medium capitalize', theme.text.strong)}>
-                              {role.name}
-                            </h4>
-                            <p className={cn('text-sm', theme.text.subtle)}>{role.description}</p>
-                          </div>
-                          <button
-                            onClick={() => assignRole(role.id)}
-                            disabled={processing}
-                            className={cn(
-                              'ml-4 text-xs font-medium px-2.5 py-0.5 rounded-full',
-                              'bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800',
-                              'text-green-800 dark:text-green-200',
-                              'focus:outline-none focus:ring-2 focus:ring-green-500',
-                              'disabled:opacity-50 transition-colors'
-                            )}
-                          >
-                            Assign
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className={cn('px-6 py-4 text-sm', theme.text.subtle)}>
-                    All roles assigned
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+                </li>
+              );
+            })}
+            {allRoles.length === 0 && (
+              <li className={cn('px-4 py-4 text-sm sm:px-6', theme.text.subtle)}>
+                No roles defined
+              </li>
+            )}
+          </ul>
         </div>
       </div>
-    </>
+
+      <ConfirmationModal
+        isOpen={roleToRemove !== null}
+        onClose={() => setRoleToRemove(null)}
+        onConfirm={confirmRemoveRole}
+        title="Remove Role"
+        message={`Remove the role "${roleToRemove?.name}" from ${user.username}? They will lose the access this role grants.`}
+        confirmText="Remove"
+        variant="danger"
+        isLoading={revokeRoleMutation.isPending}
+      />
+    </div>
   );
 }

@@ -88,13 +88,44 @@ test.describe('admin servers page', () => {
 });
 
 test.describe('admin pages render', () => {
-  test('user roles page renders for an existing user', async ({ page, api, auth }) => {
-    const admin = await api.seedAdmin();
+  test('user roles page lists every role with its assignment state', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin({ username: 'roles-admin' });
     await auth.loginDirectly(admin);
 
     await page.goto(`/admin/users/${admin.id}/roles`);
-    await expect(page.getByText(/current roles/i)).toBeVisible();
-    await expect(page.getByText(/available roles/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'User Roles' })).toBeVisible();
+    await expect(page.getByText(`Roles assigned to ${admin.username}`)).toBeVisible();
+    await expect(page.getByText('Assigned', { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: `Remove role admin from ${admin.username}` })
+    ).toBeVisible();
+  });
+
+  test('admin assigns and removes a role, with a named confirmation on remove', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin();
+    const target = await api.seedUser({ username: 'role-target' });
+    await auth.loginDirectly(admin);
+
+    await page.goto(`/admin/users/${target.id}/roles`);
+    await page.getByRole('button', { name: 'Assign role admin to role-target' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Remove role admin from role-target' })
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove role admin from role-target' }).click();
+    await expect(page.getByText(/remove the role "admin" from role-target/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Remove', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Assign role admin to role-target' })
+    ).toBeVisible();
   });
 
   test('roles page lists the seeded role descriptions', async ({ page, api, auth }) => {
