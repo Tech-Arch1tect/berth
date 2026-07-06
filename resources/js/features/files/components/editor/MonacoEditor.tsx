@@ -3,6 +3,7 @@ import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { cn } from '../../../../shared/utils/cn';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
+import { useIsDesktop } from '../../../../shared/hooks/useMediaQuery';
 
 interface MonacoEditorProps {
   value: string;
@@ -88,6 +89,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
   onSave,
   className,
 }) => {
+  const isDesktop = useIsDesktop();
   const [isDarkTheme, setIsDarkTheme] = useState(() =>
     document.documentElement.classList.contains('dark')
   );
@@ -151,7 +153,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
         loading={<LoadingSpinner size="sm" text="Loading editor..." />}
         options={{
           readOnly,
-          minimap: { enabled: !readOnly },
+          minimap: { enabled: !readOnly && isDesktop },
           fontSize: 14,
           fontFamily:
             'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',

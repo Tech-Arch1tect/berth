@@ -61,6 +61,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
   const treeMenu = useContextMenu<null>();
 
   const [isSaving, setIsSaving] = React.useState(false);
+  const [mobilePane, setMobilePane] = React.useState<'explorer' | 'editor'>('explorer');
 
   const activeTab = useMemo(
     () => tabs.find((t) => t.id === activeTabId) || null,
@@ -80,6 +81,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         } else {
           openTab(fileContent);
         }
+        setMobilePane('editor');
       } catch (error) {
         console.error('Failed to open file:', error);
         showToast.error('Failed to open file');
@@ -178,6 +180,9 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         }
       }
       closeTab(tabId);
+      if (tabs.length === 1) {
+        setMobilePane('explorer');
+      }
     },
     [tabs, closeTab]
   );
@@ -328,6 +333,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
       }
     }
     closeAllTabs();
+    setMobilePane('explorer');
   }, [tabs, closeAllTabs]);
 
   const handleTabCopyPath = useCallback((tab: OpenTab) => {
@@ -421,6 +427,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ canRead, canWrite }) =
         sidebar={sidebarContent}
         editor={editorContent}
         statusBar={<StatusBar activeTab={activeTab} canWrite={canWrite} />}
+        mobilePane={mobilePane}
+        onShowExplorer={() => setMobilePane('explorer')}
       />
 
       <FileContextMenu

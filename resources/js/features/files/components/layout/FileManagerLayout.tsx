@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { useIsDesktop } from '../../../../shared/hooks/useMediaQuery';
 import { ResizableDivider } from './ResizableDivider';
 import { SidebarPanel } from './SidebarPanel';
 import { EditorPanel } from './EditorPanel';
@@ -16,6 +18,8 @@ interface FileManagerLayoutProps {
   editor: React.ReactNode;
   statusBar?: React.ReactNode;
   toolbar?: React.ReactNode;
+  mobilePane: 'explorer' | 'editor';
+  onShowExplorer: () => void;
 }
 
 export const FileManagerLayout: React.FC<FileManagerLayoutProps> = ({
@@ -23,7 +27,10 @@ export const FileManagerLayout: React.FC<FileManagerLayoutProps> = ({
   editor,
   statusBar,
   toolbar,
+  mobilePane,
+  onShowExplorer,
 }) => {
+  const isDesktop = useIsDesktop();
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return stored ? parseInt(stored, 10) : SIDEBAR_DEFAULT_WIDTH;
@@ -73,6 +80,54 @@ export const FileManagerLayout: React.FC<FileManagerLayoutProps> = ({
   }, []);
 
   const effectiveSidebarWidth = sidebarCollapsed ? 0 : sidebarWidth;
+
+  if (!isDesktop) {
+    return (
+      <div className={cn('h-full flex flex-col overflow-hidden', theme.surface.panel)}>
+        {toolbar && (
+          <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+            {toolbar}
+          </div>
+        )}
+
+        <div className="flex-1 flex overflow-hidden">
+          <div
+            className={cn(
+              'w-full flex-col overflow-hidden bg-white dark:bg-zinc-900',
+              mobilePane === 'explorer' ? 'flex' : 'hidden'
+            )}
+          >
+            {sidebar}
+          </div>
+          <div
+            className={cn(
+              'w-full flex-col overflow-hidden bg-white dark:bg-zinc-900',
+              mobilePane === 'editor' ? 'flex' : 'hidden'
+            )}
+          >
+            <button
+              onClick={onShowExplorer}
+              className={cn(
+                'flex min-h-[44px] flex-shrink-0 items-center gap-1 border-b px-3 text-sm font-medium',
+                'border-zinc-200 dark:border-zinc-800',
+                theme.text.standard
+              )}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              Files
+            </button>
+            <div className="flex flex-1 flex-col overflow-hidden">{editor}</div>
+          </div>
+        </div>
+
+        {statusBar && (
+          <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800">
+            {statusBar}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
