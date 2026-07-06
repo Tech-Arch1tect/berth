@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { PlusIcon, ServerStackIcon } from '@heroicons/react/24/outline';
 import {
   useGetApiV1AdminServers,
   usePostApiV1AdminServers,
@@ -32,7 +33,7 @@ const EMPTY_FORM: ServerForm = {
   description: '',
   host: '',
   port: 8080,
-  skip_ssl_verification: true,
+  skip_ssl_verification: false,
   access_token: '',
   is_active: true,
 };
@@ -40,12 +41,14 @@ const EMPTY_FORM: ServerForm = {
 export default function AdminServers() {
   useDocumentTitle('Servers');
   const queryClient = useQueryClient();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingServer, setEditingServer] = useState<ServerInfo | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; name: string } | null>(null);
-  const [testResultModal, setTestResultModal] = useState<{
-    success: boolean;
+  const [deleteConfirm, setDeleteConfirm] = useState<ServerInfo | null>(null);
+  const [deactivateConfirm, setDeactivateConfirm] = useState<ServerInfo | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [resultModal, setResultModal] = useState<{
+    title: string;
     message: string;
   } | null>(null);
 
@@ -60,59 +63,31 @@ export default function AdminServers() {
   const deleteServerMutation = useDeleteApiV1AdminServersId();
   const testConnectionMutation = usePostApiV1AdminServersIdTest();
 
-  const processing =
-    createServerMutation.isPending ||
-    updateServerMutation.isPending ||
-    deleteServerMutation.isPending;
+  const saving = createServerMutation.isPending || updateServerMutation.isPending;
 
   const [data, setFormData] = useState<ServerForm>(EMPTY_FORM);
 
   const setData = <K extends keyof ServerForm>(field: K, value: ServerForm[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
-  const reset = () => setFormData(EMPTY_FORM);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const onSuccess = () => {
-      invalidateServers();
-      if (editingServer) {
-        setEditingServer(null);
-      } else {
-        setShowAddForm(false);
-      }
-      reset();
-    };
-
-    const onError = (error: unknown) => {
-      const errorData = error as { message?: string; error?: string };
-      console.error('Operation failed:', errorData);
-      alert(
-        `Failed to ${editingServer ? 'update' : 'create'} server: ${errorData.message || errorData.error || 'Unknown error'}`
-      );
-    };
-
-    if (editingServer) {
-      updateServerMutation.mutate({ id: editingServer.id, data }, { onSuccess, onError });
-    } else {
-      createServerMutation.mutate({ data }, { onSuccess, onError });
-    }
+  const openCreateForm = () => {
+    setEditingServer(null);
+    setFormData(EMPTY_FORM);
+    setFormError(null);
+    setShowForm(true);
   };
 
-  const handleEdit = (server: ServerInfo) => {
+  const openEditForm = (server: ServerInfo) => {
     setEditingServer(server);
-    setShowAddForm(false);
     setFormData({
       name: server.name,
       description: server.description,
@@ -122,15 +97,36 @@ export default function AdminServers() {
       access_token: '',
       is_active: server.is_active,
     });
+    setFormError(null);
+    setShowForm(true);
   };
 
-  const handleCancelEdit = () => {
+  const closeForm = () => {
+    setShowForm(false);
     setEditingServer(null);
-    reset();
+    setFormData(EMPTY_FORM);
+    setFormError(null);
   };
 
-  const handleDeleteClick = (serverId: number, serverName: string) => {
-    setDeleteConfirm({ id: serverId, name: serverName });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    const onSuccess = () => {
+      invalidateServers();
+      closeForm();
+    };
+
+    const onError = (error: unknown) => {
+      const errorData = error as { message?: string; error?: string };
+      setFormError(errorData.message || errorData.error || 'Unknown error');
+    };
+
+    if (editingServer) {
+      updateServerMutation.mutate({ id: editingServer.id, data }, { onSuccess, onError });
+    } else {
+      createServerMutation.mutate({ data }, { onSuccess, onError });
+    }
   };
 
   const confirmDelete = () => {
@@ -145,9 +141,8 @@ export default function AdminServers() {
         },
         onError: (error) => {
           const errorData = error as { message?: string; error?: string };
-          console.error('Delete failed:', errorData);
-          setTestResultModal({
-            success: false,
+          setResultModal({
+            title: 'Delete Failed',
             message: `Failed to delete server: ${errorData.message || errorData.error || 'Unknown error'}`,
           });
           setDeleteConfirm(null);
@@ -156,22 +151,22 @@ export default function AdminServers() {
     );
   };
 
-  const handleTestConnection = (serverid: number) => {
-    setTestingConnection(serverid);
+  const handleTestConnection = (server: ServerInfo) => {
+    setTestingConnection(server.id);
     testConnectionMutation.mutate(
-      { id: serverid },
+      { id: server.id },
       {
         onSuccess: () => {
-          setTestResultModal({
-            success: true,
-            message: 'Connection successful!',
+          setResultModal({
+            title: 'Connection Successful',
+            message: `Connected to ${server.name} (https://${server.host}:${server.port}).`,
           });
           setTestingConnection(null);
         },
         onError: (error) => {
           const errorData = error as { error?: string; details?: string };
-          setTestResultModal({
-            success: false,
+          setResultModal({
+            title: 'Connection Failed',
             message:
               'Connection failed: ' + (errorData.error || errorData.details || 'Unknown error'),
           });
@@ -181,294 +176,325 @@ export default function AdminServers() {
     );
   };
 
-  const toggleServerStatus = (serverid: number, currentStatus: boolean) => {
-    const server = servers.find((s) => s.id === serverid);
-    if (!server) {
-      console.error('Server not found');
-      return;
-    }
-
+  const setServerActive = (server: ServerInfo, isActive: boolean) => {
     updateServerMutation.mutate(
       {
-        id: serverid,
+        id: server.id,
         data: {
           name: server.name,
           description: server.description,
           host: server.host,
           port: server.port,
           skip_ssl_verification: server.skip_ssl_verification,
-          is_active: !currentStatus,
+          is_active: isActive,
           access_token: '',
         },
       },
       {
         onSuccess: () => {
           invalidateServers();
+          setDeactivateConfirm(null);
         },
         onError: (error) => {
           const errorData = error as { message?: string; error?: string };
-          console.error('Update failed:', errorData);
-          alert(
-            `Failed to update server status: ${errorData.message || errorData.error || 'Unknown error'}`
-          );
+          setResultModal({
+            title: 'Update Failed',
+            message: `Failed to update server status: ${errorData.message || errorData.error || 'Unknown error'}`,
+          });
+          setDeactivateConfirm(null);
         },
       }
     );
   };
+
+  const statusBadge = (server: ServerInfo) => (
+    <span
+      className={cn(
+        theme.badges.tag.base,
+        server.is_active ? theme.badges.tag.success : theme.badges.tag.danger
+      )}
+    >
+      {server.is_active ? 'Active' : 'Inactive'}
+    </span>
+  );
+
+  const sslBadge = (server: ServerInfo) =>
+    server.skip_ssl_verification ? (
+      <span className={cn(theme.badges.tag.base, theme.badges.tag.warning)}>TLS unverified</span>
+    ) : null;
+
+  const hostText = (server: ServerInfo) => `https://${server.host}:${server.port}`;
+
+  const actionButtons = (server: ServerInfo) => (
+    <div className="flex flex-wrap justify-end gap-2 lg:flex-nowrap">
+      <button
+        onClick={() => openEditForm(server)}
+        aria-label={`Edit server ${server.name}`}
+        className={cn('inline-flex min-h-[44px] items-center text-sm', theme.buttons.secondary)}
+      >
+        Edit
+      </button>
+      <button
+        onClick={() => handleTestConnection(server)}
+        disabled={testingConnection === server.id}
+        aria-label={`Test connection to ${server.name}`}
+        className={cn(
+          'inline-flex min-h-[44px] items-center text-sm disabled:opacity-50',
+          theme.buttons.secondary
+        )}
+      >
+        {testingConnection === server.id ? 'Testing...' : 'Test'}
+      </button>
+      {server.is_active ? (
+        <button
+          onClick={() => setDeactivateConfirm(server)}
+          aria-label={`Deactivate server ${server.name}`}
+          className={cn('inline-flex min-h-[44px] items-center text-sm', theme.buttons.secondary)}
+        >
+          Deactivate
+        </button>
+      ) : (
+        <button
+          onClick={() => setServerActive(server, true)}
+          disabled={updateServerMutation.isPending}
+          aria-label={`Activate server ${server.name}`}
+          className={cn(
+            'inline-flex min-h-[44px] items-center text-sm disabled:opacity-50',
+            theme.buttons.secondary
+          )}
+        >
+          Activate
+        </button>
+      )}
+      <button
+        onClick={() => setDeleteConfirm(server)}
+        aria-label={`Delete server ${server.name}`}
+        className={cn('inline-flex min-h-[44px] items-center text-sm', theme.buttons.danger)}
+      >
+        Delete
+      </button>
+    </div>
+  );
 
   if (serversLoading) {
     return <LoadingSpinner size="lg" text="Loading servers..." fullScreen />;
   }
 
   return (
-    <>
-      <div className="h-full overflow-auto">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <h2
-                className={cn(
-                  'text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
-                  theme.text.strong
-                )}
-              >
-                Servers
-              </h2>
-            </div>
-            <div className="mt-4 flex md:mt-0 md:ml-4">
-              <button
-                onClick={() => {
-                  if (editingServer) {
-                    handleCancelEdit();
-                  } else {
-                    setShowAddForm(!showAddForm);
-                  }
-                }}
-                className={cn('ml-3', theme.buttons.primary)}
-              >
-                {editingServer ? 'Cancel Edit' : showAddForm ? 'Cancel' : 'Add Server'}
-              </button>
-            </div>
-          </div>
+    <div className="h-full overflow-auto">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className={cn('text-2xl font-bold sm:text-3xl', theme.text.strong)}>Servers</h1>
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className={cn('inline-flex items-center', theme.buttons.primary)}
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add Server
+          </button>
+        </div>
 
-          {(showAddForm || editingServer) && (
-            <div className={cn('mt-8 shadow rounded-lg', theme.surface.panel)}>
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className={cn('text-lg leading-6 font-medium mb-4', theme.text.strong)}>
-                  {editingServer ? `Edit Server: ${editingServer.name}` : 'Add New Server'}
-                </h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className={theme.forms.label}>Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={data.name}
-                        onChange={(e) => setData('name', e.target.value)}
-                        className={cn('mt-1', theme.forms.input)}
-                      />
+        <div className={theme.table.panel}>
+          <Table<ServerInfo>
+            data={servers}
+            keyExtractor={(server) => server.id.toString()}
+            emptyMessage="No servers configured yet."
+            emptyIcon={<ServerStackIcon className={cn('h-12 w-12 mx-auto', theme.text.info)} />}
+            columns={[
+              {
+                key: 'server',
+                header: 'Server',
+                render: (server) => (
+                  <div className="min-w-0">
+                    <div className={cn('text-sm font-medium', theme.text.strong)}>
+                      {server.name}
                     </div>
-                    <div>
-                      <label className={theme.forms.label}>Host</label>
-                      <input
-                        type="text"
-                        required
-                        value={data.host}
-                        onChange={(e) => setData('host', e.target.value)}
-                        className={cn('mt-1', theme.forms.input)}
-                      />
-                    </div>
-                    <div>
-                      <label className={theme.forms.label}>Port</label>
-                      <input
-                        type="number"
-                        required
-                        value={data.port}
-                        onChange={(e) => setData('port', parseInt(e.target.value))}
-                        className={cn('mt-1', theme.forms.input)}
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={data.skip_ssl_verification}
-                        onChange={(e) => setData('skip_ssl_verification', e.target.checked)}
-                        className={theme.forms.checkbox}
-                      />
-                      <label className={cn('ml-2 block text-sm', theme.text.standard)}>
-                        Skip SSL Verification
-                      </label>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className={theme.forms.label}>Description</label>
-                      <textarea
-                        value={data.description}
-                        onChange={(e) => setData('description', e.target.value)}
-                        rows={3}
-                        className={cn('mt-1', theme.forms.textarea)}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className={theme.forms.label}>
-                        Access Token{' '}
-                        {editingServer && (
-                          <span className={cn('text-sm', theme.text.subtle)}>
-                            (leave blank to keep current)
-                          </span>
-                        )}
-                      </label>
-                      <input
-                        type="password"
-                        required={!editingServer}
-                        value={data.access_token}
-                        onChange={(e) => setData('access_token', e.target.value)}
-                        placeholder={editingServer ? 'Enter new token or leave blank' : ''}
-                        className={cn('mt-1', theme.forms.input)}
-                      />
+                    {server.description && (
+                      <div className={cn('text-sm', theme.text.subtle)}>{server.description}</div>
+                    )}
+                    <div className={cn('text-xs', theme.text.subtle)}>
+                      Added {formatDate(server.created_at)}
                     </div>
                   </div>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (editingServer) {
-                          handleCancelEdit();
-                        } else {
-                          setShowAddForm(false);
-                        }
-                      }}
-                      className={theme.buttons.secondary}
+                ),
+              },
+              {
+                key: 'host',
+                header: 'Host',
+                render: (server) => (
+                  <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+                    <span
+                      className={cn('whitespace-nowrap text-sm font-mono', theme.text.standard)}
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={processing}
-                      className={cn(theme.buttons.primary, 'disabled:opacity-50')}
-                    >
-                      {processing ? 'Saving...' : editingServer ? 'Update Server' : 'Add Server'}
-                    </button>
+                      {hostText(server)}
+                    </span>
+                    {sslBadge(server)}
                   </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-8 flex flex-col">
-            <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-              <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                  <Table<ServerInfo>
-                    data={servers}
-                    keyExtractor={(server) => server.id.toString()}
-                    emptyMessage="No servers configured yet."
-                    columns={[
-                      {
-                        key: 'id',
-                        header: 'ID',
-                        render: (server) => (
-                          <div className={cn('text-sm font-mono', theme.text.strong)}>
-                            #{server.id}
-                          </div>
-                        ),
-                      },
-                      {
-                        key: 'server',
-                        header: 'Server',
-                        render: (server) => (
-                          <div className="flex items-center">
-                            <div>
-                              <div className={cn('text-sm font-medium', theme.text.strong)}>
-                                {server.name}
-                              </div>
-                              {server.description && (
-                                <div className={cn('text-sm', theme.text.subtle)}>
-                                  {server.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      },
-                      {
-                        key: 'host',
-                        header: 'Host',
-                        render: (server) => (
-                          <div className={cn('text-sm', theme.text.strong)}>
-                            https://{server.host}:{server.port}
-                            {server.skip_ssl_verification && (
-                              <span className={cn('ml-2 text-xs', theme.text.warning)}>
-                                (No SSL Verification)
-                              </span>
-                            )}
-                          </div>
-                        ),
-                      },
-                      {
-                        key: 'status',
-                        header: 'Status',
-                        render: (server) => (
-                          <button
-                            onClick={() => toggleServerStatus(server.id, server.is_active)}
-                            className={cn(
-                              'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                              server.is_active
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            )}
-                          >
-                            {server.is_active ? 'Active' : 'Inactive'}
-                          </button>
-                        ),
-                      },
-                      {
-                        key: 'created',
-                        header: 'Created',
-                        render: (server) => (
-                          <span className={cn('text-sm', theme.text.subtle)}>
-                            {formatDate(server.created_at)}
-                          </span>
-                        ),
-                      },
-                      {
-                        key: 'actions',
-                        header: '',
-                        className: 'text-right',
-                        render: (server) => (
-                          <div className="text-sm font-medium space-x-2">
-                            <button
-                              onClick={() => handleEdit(server)}
-                              className={cn('hover:underline', theme.text.info)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleTestConnection(server.id)}
-                              disabled={testingConnection === server.id}
-                              className={cn('hover:underline disabled:opacity-50', theme.text.info)}
-                            >
-                              {testingConnection === server.id ? 'Testing...' : 'Test'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(server.id, server.name)}
-                              className={cn('hover:underline', theme.text.danger)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                  />
+                ),
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: statusBadge,
+              },
+              {
+                key: 'actions',
+                header: '',
+                className: 'text-right',
+                render: actionButtons,
+              },
+            ]}
+            renderCard={(server) => (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={cn('text-sm font-medium', theme.text.strong)}>{server.name}</p>
+                  {statusBadge(server)}
+                  {sslBadge(server)}
                 </div>
+                {server.description && (
+                  <p className={cn('text-sm', theme.text.muted)}>{server.description}</p>
+                )}
+                <p className={cn('text-xs font-mono', theme.text.muted)}>{hostText(server)}</p>
+                <p className={cn('text-xs', theme.text.subtle)}>
+                  Added {formatDate(server.created_at)}
+                </p>
+                {actionButtons(server)}
               </div>
-            </div>
-          </div>
+            )}
+          />
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showForm}
+        onClose={closeForm}
+        title={editingServer ? `Edit Server: ${editingServer.name}` : 'Add Server'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div
+              className={cn(
+                'p-4 rounded-md border',
+                theme.intent.danger.surface,
+                theme.intent.danger.border
+              )}
+            >
+              <p className={cn('text-sm', theme.intent.danger.textStrong)}>{formError}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="server-name" className={theme.forms.label}>
+                Name
+              </label>
+              <input
+                type="text"
+                id="server-name"
+                required
+                value={data.name}
+                onChange={(e) => setData('name', e.target.value)}
+                className={cn('mt-1', theme.forms.input)}
+              />
+            </div>
+            <div>
+              <label htmlFor="server-host" className={theme.forms.label}>
+                Host
+              </label>
+              <input
+                type="text"
+                id="server-host"
+                required
+                value={data.host}
+                onChange={(e) => setData('host', e.target.value)}
+                className={cn('mt-1', theme.forms.input)}
+              />
+            </div>
+            <div>
+              <label htmlFor="server-port" className={theme.forms.label}>
+                Port
+              </label>
+              <input
+                type="number"
+                id="server-port"
+                required
+                value={data.port}
+                onChange={(e) => setData('port', parseInt(e.target.value))}
+                className={cn('mt-1', theme.forms.input)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="server-description" className={theme.forms.label}>
+                Description
+              </label>
+              <textarea
+                id="server-description"
+                value={data.description}
+                onChange={(e) => setData('description', e.target.value)}
+                rows={3}
+                className={cn('mt-1', theme.forms.textarea)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="server-token" className={theme.forms.label}>
+                Access Token{' '}
+                {editingServer && (
+                  <span className={cn('text-sm', theme.text.subtle)}>
+                    (leave blank to keep current)
+                  </span>
+                )}
+              </label>
+              <input
+                type="password"
+                id="server-token"
+                autoComplete="off"
+                required={!editingServer}
+                value={data.access_token}
+                onChange={(e) => setData('access_token', e.target.value)}
+                placeholder={editingServer ? 'Enter new token or leave blank' : ''}
+                className={cn('mt-1', theme.forms.input)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="server-skip-ssl"
+                  checked={data.skip_ssl_verification}
+                  onChange={(e) => setData('skip_ssl_verification', e.target.checked)}
+                  className={theme.forms.checkbox}
+                />
+                <label
+                  htmlFor="server-skip-ssl"
+                  className={cn('ml-2 block text-sm', theme.text.standard)}
+                >
+                  Skip SSL certificate verification
+                </label>
+              </div>
+              {data.skip_ssl_verification && (
+                <p className={cn('mt-2 text-sm', theme.text.warning)}>
+                  Connections to this server will not verify its TLS certificate. Only use this for
+                  agents with self-signed certificates on a trusted network.
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={closeForm} className={theme.buttons.secondary}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className={cn(theme.buttons.primary, 'disabled:opacity-50')}
+            >
+              {saving ? 'Saving...' : editingServer ? 'Update Server' : 'Add Server'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <ConfirmationModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -477,24 +503,35 @@ export default function AdminServers() {
         message={`Are you sure you want to delete ${deleteConfirm?.name}? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
+        isLoading={deleteServerMutation.isPending}
       />
 
-      {/* Test Result Modal */}
+      <ConfirmationModal
+        isOpen={!!deactivateConfirm}
+        onClose={() => setDeactivateConfirm(null)}
+        onConfirm={() => deactivateConfirm && setServerActive(deactivateConfirm, false)}
+        title="Deactivate Server"
+        message={`Deactivate ${deactivateConfirm?.name}? berth will stop using this server and its stacks become unavailable until it is reactivated.`}
+        confirmText="Deactivate"
+        variant="warning"
+        isLoading={updateServerMutation.isPending}
+      />
+
       <Modal
-        isOpen={!!testResultModal}
-        onClose={() => setTestResultModal(null)}
-        title={testResultModal?.success ? 'Connection Successful' : 'Connection Failed'}
+        isOpen={!!resultModal}
+        onClose={() => setResultModal(null)}
+        title={resultModal?.title ?? ''}
         size="sm"
         footer={
           <div className="flex justify-end">
-            <button onClick={() => setTestResultModal(null)} className={theme.buttons.primary}>
+            <button onClick={() => setResultModal(null)} className={theme.buttons.primary}>
               Close
             </button>
           </div>
         }
       >
-        <p className={theme.text.standard}>{testResultModal?.message}</p>
+        <p className={theme.text.standard}>{resultModal?.message}</p>
       </Modal>
-    </>
+    </div>
   );
 }

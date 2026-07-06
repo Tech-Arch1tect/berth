@@ -57,18 +57,22 @@ test.describe('admin users page', () => {
 });
 
 test.describe('admin servers page', () => {
-  test('lists seeded servers', async ({ page, api, auth }) => {
+  test('lists seeded servers with their status', async ({ page, api, auth }) => {
     const admin = await api.seedAdmin();
-    const server = await api.seedServerWithAgent('production-1');
+    await api.seedServerWithAgent('production-1');
 
     await auth.loginDirectly(admin);
     await page.goto('/admin/servers');
 
     await expect(page.getByText('production-1')).toBeVisible();
-    await expect(page.getByText(`#${server.serverId}`)).toBeVisible();
+    await expect(page.getByText('Active', { exact: true })).toBeVisible();
   });
 
-  test('admin creates a new server via the form', async ({ page, api, auth }) => {
+  test('admin creates a new server via the form, verifying TLS by default', async ({
+    page,
+    api,
+    auth,
+  }) => {
     const admin = await api.seedAdmin();
     await auth.loginDirectly(admin);
     await page.goto('/admin/servers');
@@ -76,6 +80,7 @@ test.describe('admin servers page', () => {
     await page.getByRole('button', { name: 'Add Server', exact: true }).click();
 
     const form = page.locator('form');
+    await expect(page.getByLabel('Skip SSL certificate verification')).not.toBeChecked();
     await form.locator('input[type="text"]').nth(0).fill('staging-eu');
     await form.locator('input[type="text"]').nth(1).fill('10.0.0.5');
     await form.locator('input[type="number"]').fill('9999');
@@ -84,6 +89,26 @@ test.describe('admin servers page', () => {
 
     await expect(page.getByText('staging-eu')).toBeVisible();
     await expect(page.getByText('https://10.0.0.5:9999')).toBeVisible();
+    await expect(page.getByText('TLS unverified')).not.toBeVisible();
+  });
+
+  test('admin deactivates and reactivates a server with a named confirmation', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin();
+    await api.seedServerWithAgent('toggle-target');
+    await auth.loginDirectly(admin);
+    await page.goto('/admin/servers');
+
+    await page.getByRole('button', { name: 'Deactivate server toggle-target' }).click();
+    await expect(page.getByText(/deactivate toggle-target\?/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Deactivate', exact: true }).click();
+    await expect(page.getByText('Inactive', { exact: true })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Activate server toggle-target' }).click();
+    await expect(page.getByText('Active', { exact: true })).toBeVisible();
   });
 });
 
