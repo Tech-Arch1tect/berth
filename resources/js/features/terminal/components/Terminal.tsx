@@ -8,6 +8,8 @@ import toast from 'react-hot-toast';
 import '@xterm/xterm/css/xterm.css';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
+import { TerminalKeyBar } from './TerminalKeyBar';
+import { applyStickyCtrl } from '../utils/keySequences';
 
 interface TerminalProps {
   serverid: number;
@@ -32,6 +34,13 @@ export const Terminal: React.FC<TerminalProps> = ({
   const resizeTerminalRef = useRef<(cols: number, rows: number) => boolean>(() => false);
   const closeTerminalRef = useRef<() => void>(() => {});
   const [isInitialised, setIsInitialised] = useState(false);
+  const [ctrlArmed, setCtrlArmed] = useState(false);
+  const ctrlArmedRef = useRef(false);
+
+  const armCtrl = useCallback((armed: boolean) => {
+    ctrlArmedRef.current = armed;
+    setCtrlArmed(armed);
+  }, []);
 
   const handleOutput = useCallback((data: Uint8Array) => {
     if (xtermRef.current) {
@@ -149,7 +158,12 @@ export const Terminal: React.FC<TerminalProps> = ({
       terminal.open(containerElement);
 
       terminal.onData((data) => {
-        sendInputRef.current?.(data);
+        const { output, consumed } = applyStickyCtrl(data, ctrlArmedRef.current);
+        if (consumed) {
+          ctrlArmedRef.current = false;
+          setCtrlArmed(false);
+        }
+        sendInputRef.current?.(output);
       });
 
       terminal.onResize((size) => {
@@ -296,6 +310,12 @@ export const Terminal: React.FC<TerminalProps> = ({
       <div className="flex-1 overflow-hidden">
         <div ref={terminalRef} className="w-full h-full" />
       </div>
+
+      <TerminalKeyBar
+        onSend={(sequence) => sendInputRef.current?.(sequence)}
+        ctrlArmed={ctrlArmed}
+        onToggleCtrl={() => armCtrl(!ctrlArmedRef.current)}
+      />
     </div>
   );
 };
