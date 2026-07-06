@@ -1,6 +1,7 @@
 import { CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { useIsDesktop } from '../../../../shared/hooks/useMediaQuery';
 import { ServerWithAgentStack } from '../types';
 
 interface AgentDiscoveryTableProps {
@@ -28,7 +29,23 @@ export function AgentDiscoveryTable({
   onDeselectAll,
   onRefresh,
 }: AgentDiscoveryTableProps) {
+  const isDesktop = useIsDesktop();
   const selectedAgentServers = agentServers.filter((s) => selectedServerIds.has(s.serverId));
+
+  const agentStatus = (server: ServerWithAgentStack) =>
+    server.hasAgentStack ? (
+      <span className="flex items-center gap-1.5 text-sm">
+        <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-green-500" />
+        <span className={cn('truncate font-mono', theme.text.muted)}>
+          {server.currentImages?.['berth-agent'] || 'berth-agent stack'}
+        </span>
+      </span>
+    ) : (
+      <span className="flex items-center gap-1.5 text-sm">
+        <XCircleIcon className="h-5 w-5 flex-shrink-0 text-gray-400" />
+        <span className={theme.text.subtle}>No agent stack</span>
+      </span>
+    );
 
   return (
     <div className={cn('rounded-lg p-6 mb-6', theme.surface.panel)}>
@@ -53,6 +70,38 @@ export function AgentDiscoveryTable({
         <div className={cn('p-4 rounded-lg', theme.intent.danger.surface)}>
           <p className={theme.intent.danger.textStrong}>{error}</p>
         </div>
+      ) : !isDesktop ? (
+        <ul className="space-y-2">
+          {servers.map((server) => (
+            <li key={server.serverId}>
+              <label
+                className={cn(
+                  'flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700',
+                  server.hasAgentStack && selectedServerIds.has(server.serverId)
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : '',
+                  !server.hasAgentStack && 'opacity-60'
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedServerIds.has(server.serverId)}
+                  onChange={() => onToggleSelection(server.serverId)}
+                  disabled={!server.hasAgentStack || isUpdating}
+                  aria-label={`Select ${server.serverName}`}
+                  className="mt-0.5 h-5 w-5 rounded border-gray-300 disabled:opacity-50 dark:border-gray-600"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className={cn('text-sm font-medium', theme.text.standard)}>
+                    {server.serverName}
+                  </p>
+                  <p className={cn('truncate text-sm', theme.text.muted)}>{server.serverHost}</p>
+                  <div className="mt-1">{agentStatus(server)}</div>
+                </div>
+              </label>
+            </li>
+          ))}
+        </ul>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -146,7 +195,7 @@ export function AgentDiscoveryTable({
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p className={cn('text-sm', theme.text.subtle)}>
           Found {agentServers.length} server(s) with berth-agent stacks
           {selectedAgentServers.length > 0 && (
