@@ -133,10 +133,32 @@ test.describe('admin pages render', () => {
     await auth.loginDirectly(admin);
 
     await page.goto('/admin/roles');
-    await expect(page).toHaveTitle(/Role Management/i);
+    await expect(page).toHaveTitle(/Roles/i);
     const table = page.getByRole('table');
     await expect(table.getByText(/system administrator with full access/i)).toBeVisible();
     await expect(table.getByText(/standard user with basic permissions/i)).toBeVisible();
+    await expect(table.getByText('System role')).toBeVisible();
+  });
+
+  test('admin creates a role via the modal and deletes it with a named confirmation', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin();
+    await auth.loginDirectly(admin);
+
+    await page.goto('/admin/roles');
+    await page.getByRole('button', { name: 'Add Role' }).click();
+    await page.locator('#role-name').fill('auditor');
+    await page.locator('#role-description').fill('Read-only reviewer');
+    await page.locator('form').getByRole('button', { name: 'Add Role' }).click();
+    await expect(page.getByText('Read-only reviewer')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Delete role auditor' }).click();
+    await expect(page.getByText(/delete the role "auditor"/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.getByText('Read-only reviewer')).not.toBeVisible();
   });
 
   test('role stack permissions page renders for a non-admin role', async ({ page, api, auth }) => {
@@ -155,6 +177,49 @@ test.describe('admin pages render', () => {
 
     await page.goto(`/admin/roles/${userRole!.id}/stack-permissions`);
     await expect(page.getByText(/manage stack-based permissions for the/i)).toBeVisible();
+  });
+
+  test('admin adds a permission rule and removes it with a named confirmation', async ({
+    page,
+    api,
+    auth,
+  }) => {
+    const admin = await api.seedAdmin();
+    await api.seedServerWithAgent('perms-server');
+    const token = await auth.loginDirectly(admin);
+
+    const rolesRes = await page.request.get('/api/v1/admin/roles', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(rolesRes.ok()).toBeTruthy();
+    const rolesBody = (await rolesRes.json()) as {
+      data: { roles: Array<{ id: number; is_admin: boolean }> };
+    };
+    const userRole = rolesBody.data.roles.find((r) => !r.is_admin);
+    expect(userRole, 'expected a seeded non-admin role').toBeDefined();
+
+    await page.goto(`/admin/roles/${userRole!.id}/stack-permissions`);
+    await page.getByRole('button', { name: 'Add Permission Rule' }).first().click();
+    await page.locator('#rule-server').selectOption({ label: 'perms-server' });
+    const firstPermission = page.locator('#add-rule-form input[type="checkbox"]').first();
+    await firstPermission.check();
+    const permissionName = await page
+      .locator('#add-rule-form label[for^="permission-"]')
+      .first()
+      .innerText();
+    await page.getByRole('button', { name: 'Add Rule' }).click();
+
+    await expect(page.getByRole('heading', { name: 'perms-server' })).toBeVisible();
+    await expect(page.getByText(permissionName, { exact: true })).toBeVisible();
+
+    await page
+      .getByRole('button', { name: `Remove ${permissionName} for perms-server pattern *` })
+      .click();
+    await expect(
+      page.getByText(new RegExp(`remove the "${permissionName}" permission on perms-server`, 'i'))
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Remove', exact: true }).click();
+    await expect(page.getByText('No permission rules')).toBeVisible();
   });
 
   test('security audit logs page renders', async ({ page, api, auth }) => {

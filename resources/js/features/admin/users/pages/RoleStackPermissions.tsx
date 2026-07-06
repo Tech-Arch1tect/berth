@@ -9,7 +9,7 @@ import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { EmptyState } from '../../../../shared/components/EmptyState';
-import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import {
   useGetApiV1AdminRolesRoleIdStackPermissions,
   usePostApiV1AdminRolesRoleIdStackPermissions,
@@ -18,8 +18,15 @@ import {
 } from '../../../../api/generated/admin/admin';
 import type { StackPermissionRule } from '../../../../api/generated/models';
 
+interface RuleGroup {
+  serverName: string;
+  serverid: number;
+  stackPattern: string;
+  rules: StackPermissionRule[];
+}
+
 export default function RoleStackPermissions() {
-  useDocumentTitle('Role Stack Permissions');
+  useDocumentTitle('Stack Permissions');
   const queryClient = useQueryClient();
   const params = useParams({ strict: false }) as { roleid?: string };
   const roleid = Number(params.roleid);
@@ -43,13 +50,16 @@ export default function RoleStackPermissions() {
     serverid: number;
     stackPattern: string;
   } | null>(null);
-  const [ruleToDelete, setRuleToDelete] = useState<number | null>(null);
+  const [ruleToDelete, setRuleToDelete] = useState<{
+    rule: StackPermissionRule;
+    serverName: string;
+    permissionName: string;
+  } | null>(null);
 
   const createPermissionMutation = usePostApiV1AdminRolesRoleIdStackPermissions();
   const deletePermissionMutation = useDeleteApiV1AdminRolesRoleIdStackPermissionsPermissionId();
 
   const adding = createPermissionMutation.isPending;
-  const deleting = deletePermissionMutation.isPending ? ruleToDelete : null;
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({
     isOpen: false,
     message: '',
@@ -171,10 +181,10 @@ export default function RoleStackPermissions() {
   };
 
   const handleDeleteRule = () => {
-    if (ruleToDelete === null || !role) return;
+    if (!ruleToDelete || !role) return;
 
     deletePermissionMutation.mutate(
-      { roleId: role.id, permissionId: ruleToDelete },
+      { roleId: role.id, permissionId: ruleToDelete.rule.id },
       {
         onSuccess: () => {
           invalidateStackPermissions();
@@ -209,10 +219,7 @@ export default function RoleStackPermissions() {
       acc[key].rules.push(rule);
       return acc;
     },
-    {} as Record<
-      string,
-      { serverName: string; serverid: number; stackPattern: string; rules: StackPermissionRule[] }
-    >
+    {} as Record<string, RuleGroup>
   );
 
   if (stackPermissionsLoading || !role) {
@@ -220,394 +227,398 @@ export default function RoleStackPermissions() {
   }
 
   return (
-    <>
-      <div className="h-full overflow-auto">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <Breadcrumb
-                homeHref="/admin/roles"
-                items={[
-                  { label: 'Roles', href: '/admin/roles' },
-                  { label: `${role.name} Stack Permissions` },
-                ]}
-              />
-              <h2
-                className={cn(
-                  'mt-2 text-2xl font-bold leading-7 sm:text-3xl sm:truncate',
-                  theme.text.strong
-                )}
+    <div className="h-full overflow-auto">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <Breadcrumb
+          homeHref="/admin/roles"
+          items={[{ label: 'Roles', href: '/admin/roles' }, { label: role.name }]}
+        />
+
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className={cn('text-2xl font-bold sm:text-3xl', theme.text.strong)}>
+              Stack Permissions
+            </h1>
+            <p className={cn('mt-1 text-sm', theme.text.subtle)}>
+              Manage stack-based permissions for the <strong>{role.name}</strong> role using
+              patterns
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddRule(true)}
+            className={cn('inline-flex items-center', theme.buttons.primary)}
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add Permission Rule
+          </button>
+        </div>
+
+        <Modal
+          isOpen={showAddRule}
+          onClose={() => setShowAddRule(false)}
+          title="Add Permission Rule"
+          size="md"
+          footer={
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddRule(false)}
+                className={theme.buttons.secondary}
               >
-                Role Stack Permissions
-              </h2>
-              <p className={cn('mt-1 text-sm', theme.text.subtle)}>
-                Manage stack-based permissions for the <strong>{role.name}</strong> role using
-                patterns
-              </p>
-            </div>
-            <div className="mt-4 flex md:mt-0 md:ml-4">
-              <button onClick={() => setShowAddRule(true)} className={theme.buttons.primary}>
-                Add Permission Rule
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="add-rule-form"
+                disabled={adding || newRule.permission_ids.length === 0}
+                className={cn(theme.buttons.primary, 'disabled:opacity-50')}
+              >
+                {adding ? 'Adding...' : 'Add Rule'}
               </button>
             </div>
-          </div>
-
-          {/* Add Rule Modal */}
-          <Modal
-            isOpen={showAddRule}
-            onClose={() => setShowAddRule(false)}
-            title="Add Permission Rule"
-            size="md"
-            footer={
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddRule(false)}
-                  className={theme.buttons.secondary}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  form="add-rule-form"
-                  disabled={adding}
-                  className={cn(theme.buttons.primary, 'disabled:opacity-50')}
-                >
-                  {adding ? 'Adding...' : 'Add Rule'}
-                </button>
-              </div>
-            }
-          >
-            <form id="add-rule-form" onSubmit={handleAddRule} className="space-y-4">
-              <div>
-                <label className={cn('block mb-1', theme.forms.label)}>Server</label>
-                <select
-                  value={newRule.server_id}
-                  onChange={(e) => setNewRule({ ...newRule, server_id: e.target.value })}
-                  className={cn('w-full', theme.forms.select)}
-                  required
-                >
-                  <option value="">Select a server</option>
-                  {servers.map((server) => (
-                    <option key={server.id} value={server.id}>
-                      {server.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={cn('block mb-3', theme.forms.label)}>Permissions</label>
-                <div className="space-y-3">
-                  {permissions.map((permission) => (
-                    <div key={permission.id} className="flex items-start">
-                      <div className="flex items-center h-5">
-                        <input
-                          id={`permission-${permission.id}`}
-                          type="checkbox"
-                          checked={newRule.permission_ids.includes(permission.id)}
-                          onChange={() => handlePermissionToggle(permission.id)}
-                          className={theme.forms.checkbox}
-                        />
-                      </div>
-                      <div className="ml-3 text-sm">
-                        <label
-                          htmlFor={`permission-${permission.id}`}
-                          className={cn('font-medium cursor-pointer', theme.text.standard)}
-                        >
-                          {permission.name}
-                        </label>
-                        <p className={theme.text.subtle}>{permission.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {newRule.permission_ids.length === 0 && (
-                  <p className={cn('mt-2 text-sm', theme.text.danger)}>
-                    Please select at least one permission.
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className={cn('block mb-1', theme.forms.label)}>Stack Pattern</label>
-                <input
-                  type="text"
-                  value={newRule.stack_pattern}
-                  onChange={(e) => setNewRule({ ...newRule, stack_pattern: e.target.value })}
-                  className={cn('w-full', theme.forms.input)}
-                  placeholder="* (all stacks)"
-                />
-                <p className={cn('mt-1 text-xs', theme.text.subtle)}>
-                  Use * for all stacks, *dev* for stacks containing 'dev', *dev*test* for complex
-                  patterns
-                </p>
-              </div>
-            </form>
-          </Modal>
-
-          {/* Add To Pattern Modal */}
-          <Modal
-            isOpen={showAddToPattern !== null}
-            onClose={() => setShowAddToPattern(null)}
-            title="Add Permissions to Pattern"
-            size="md"
-            footer={
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddToPattern(null)}
-                  className={theme.buttons.secondary}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  form="add-to-pattern-form"
-                  disabled={adding || addToPatternRule.permission_ids.length === 0}
-                  className={cn(theme.buttons.primary, 'disabled:opacity-50')}
-                >
-                  {adding ? 'Adding...' : 'Add Permissions'}
-                </button>
-              </div>
-            }
-          >
-            {showAddToPattern && (
-              <>
-                <div className={cn('mb-4 p-3 rounded-md', theme.intent.info.surface)}>
-                  <p className={cn('text-sm', theme.intent.info.textStrong)}>
-                    <strong>Server:</strong> {getServerName(showAddToPattern.serverid)}
-                    <br />
-                    <strong>Pattern:</strong>{' '}
-                    <code className={cn('px-1 rounded', theme.surface.code)}>
-                      {showAddToPattern.stackPattern}
-                    </code>
-                  </p>
-                </div>
-                <form id="add-to-pattern-form" onSubmit={handleAddToPattern} className="space-y-4">
-                  <div>
-                    <label className={cn('block mb-3', theme.forms.label)}>
-                      Available Permissions
-                    </label>
-                    <div className="space-y-3">
-                      {getAvailablePermissionsForPattern(
-                        showAddToPattern.serverid,
-                        showAddToPattern.stackPattern
-                      ).map((permission) => (
-                        <div key={permission.id} className="flex items-start">
-                          <div className="flex items-center h-5">
-                            <input
-                              id={`add-permission-${permission.id}`}
-                              type="checkbox"
-                              checked={addToPatternRule.permission_ids.includes(permission.id)}
-                              onChange={() => {
-                                const permissionIds = addToPatternRule.permission_ids.includes(
-                                  permission.id
-                                )
-                                  ? addToPatternRule.permission_ids.filter(
-                                      (id) => id !== permission.id
-                                    )
-                                  : [...addToPatternRule.permission_ids, permission.id];
-                                setAddToPatternRule({
-                                  ...addToPatternRule,
-                                  permission_ids: permissionIds,
-                                });
-                              }}
-                              className={theme.forms.checkbox}
-                            />
-                          </div>
-                          <div className="ml-3 text-sm">
-                            <label
-                              htmlFor={`add-permission-${permission.id}`}
-                              className={cn('font-medium cursor-pointer', theme.text.standard)}
-                            >
-                              {permission.name}
-                            </label>
-                            <p className={theme.text.subtle}>{permission.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {addToPatternRule.permission_ids.length === 0 && (
-                      <p className={cn('mt-2 text-sm', theme.text.danger)}>
-                        Please select at least one permission.
-                      </p>
-                    )}
-                  </div>
-                </form>
-              </>
-            )}
-          </Modal>
-
-          {/* Permission Rules */}
-          <div className="mt-8">
-            {(permissionRules || []).length === 0 ? (
-              <EmptyState
-                icon={ShieldCheckIcon}
-                title="No permission rules"
-                description="Get started by creating your first permission rule for this role."
-                variant="info"
-                action={{
-                  label: 'Add Permission Rule',
-                  onClick: () => setShowAddRule(true),
-                }}
-              />
-            ) : (
+          }
+        >
+          <form id="add-rule-form" onSubmit={handleAddRule} className="space-y-4">
+            <div>
+              <label htmlFor="rule-server" className={cn('block mb-1', theme.forms.label)}>
+                Server
+              </label>
+              <select
+                id="rule-server"
+                value={newRule.server_id}
+                onChange={(e) => setNewRule({ ...newRule, server_id: e.target.value })}
+                className={cn('w-full', theme.forms.select)}
+                required
+              >
+                <option value="">Select a server</option>
+                {servers.map((server) => (
+                  <option key={server.id} value={server.id}>
+                    {server.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <span className={cn('block mb-3', theme.forms.label)}>Permissions</span>
               <div className="space-y-3">
-                {Object.entries(groupedRules).map(([key, group]) => (
-                  <div
-                    key={key}
-                    className={cn(
-                      theme.surface.panel,
-                      'border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden'
-                    )}
-                  >
-                    <div className="px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <h3 className={cn('text-base font-medium', theme.text.strong)}>
-                            {group.serverName}
-                          </h3>
-                          <span className={cn(theme.badges.tag.base, theme.badges.tag.info)}>
-                            {group.stackPattern}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getAvailablePermissionsForPattern(group.serverid, group.stackPattern)
-                            .length > 0 && (
-                            <button
-                              onClick={() =>
-                                handleShowAddToPattern(group.serverid, group.stackPattern)
-                              }
-                              className={cn(
-                                'inline-flex items-center px-2 py-1 text-xs font-medium rounded',
-                                theme.buttons.secondary
-                              )}
-                            >
-                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              Add
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {group.rules.map((rule) => (
-                          <button
-                            key={rule.id}
-                            onClick={() => setRuleToDelete(rule.id)}
-                            disabled={deleting === rule.id}
-                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-gray-500 hover:bg-red-600 disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors"
-                            title={`Remove ${getPermissionName(rule.permission_id)} permission`}
-                          >
-                            {deleting === rule.id ? (
-                              <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1"></div>
-                            ) : (
-                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            )}
-                            {getPermissionName(rule.permission_id)}
-                          </button>
-                        ))}
-                      </div>
+                {permissions.map((permission) => (
+                  <div key={permission.id} className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id={`permission-${permission.id}`}
+                        type="checkbox"
+                        checked={newRule.permission_ids.includes(permission.id)}
+                        onChange={() => handlePermissionToggle(permission.id)}
+                        className={theme.forms.checkbox}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label
+                        htmlFor={`permission-${permission.id}`}
+                        className={cn('font-medium cursor-pointer', theme.text.standard)}
+                      >
+                        {permission.name}
+                      </label>
+                      <p className={theme.text.subtle}>{permission.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Pattern Examples */}
-          <div
-            className={cn(
-              'mt-6 rounded-lg p-4',
-              theme.intent.info.surface,
-              theme.intent.info.border
-            )}
-          >
-            <h3 className={cn('text-sm font-medium mb-2', theme.intent.info.textStrong)}>
-              Pattern Examples
-            </h3>
-            <div className={cn('text-xs space-y-2', theme.intent.info.textMuted)}>
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>*</code> All stacks
-                </span>
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>*dev*</code> Contains
-                  "dev"
-                </span>
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>*prod*</code> Contains
-                  "prod"
-                </span>
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>app*</code> Starts with
-                  "app"
-                </span>
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>*-staging</code> Ends
-                  with "-staging"
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>*dev*test*</code>{' '}
-                  Contains "dev" then "test"
-                </span>
-                <span>
-                  <code className={cn('px-1 rounded', theme.surface.code)}>api*staging*v1*</code>{' '}
-                  Complex matching
-                </span>
-              </div>
-              <p className="text-xs mt-2">
-                Pattern matching is case-insensitive. Use multiple rules for different permissions
-                per pattern.
+              {newRule.permission_ids.length === 0 && (
+                <p className={cn('mt-2 text-sm', theme.text.danger)}>
+                  Please select at least one permission.
+                </p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="rule-pattern" className={cn('block mb-1', theme.forms.label)}>
+                Stack Pattern
+              </label>
+              <input
+                type="text"
+                id="rule-pattern"
+                value={newRule.stack_pattern}
+                onChange={(e) => setNewRule({ ...newRule, stack_pattern: e.target.value })}
+                className={cn('w-full', theme.forms.input)}
+                placeholder="* (all stacks)"
+              />
+              <p className={cn('mt-1 text-xs', theme.text.subtle)}>
+                Use * for all stacks, *dev* for stacks containing 'dev', *dev*test* for complex
+                patterns
               </p>
             </div>
-          </div>
+          </form>
+        </Modal>
 
-          {/* Delete Confirmation Modal */}
-          <ConfirmationModal
-            isOpen={ruleToDelete !== null}
-            onClose={() => setRuleToDelete(null)}
-            onConfirm={handleDeleteRule}
-            title="Delete Permission Rule"
-            message="Are you sure you want to delete this permission rule? This action cannot be undone."
-            confirmText="Delete"
-            variant="danger"
-            isLoading={deleting !== null}
-          />
-
-          {/* Error Modal */}
-          <Modal
-            isOpen={errorModal.isOpen}
-            onClose={() => setErrorModal({ isOpen: false, message: '' })}
-            title="Error"
-            size="sm"
-            footer={
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setErrorModal({ isOpen: false, message: '' })}
-                  className={theme.buttons.primary}
-                >
-                  OK
-                </button>
+        <Modal
+          isOpen={showAddToPattern !== null}
+          onClose={() => setShowAddToPattern(null)}
+          title="Add Permissions to Pattern"
+          size="md"
+          footer={
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddToPattern(null)}
+                className={theme.buttons.secondary}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="add-to-pattern-form"
+                disabled={adding || addToPatternRule.permission_ids.length === 0}
+                className={cn(theme.buttons.primary, 'disabled:opacity-50')}
+              >
+                {adding ? 'Adding...' : 'Add Permissions'}
+              </button>
+            </div>
+          }
+        >
+          {showAddToPattern && (
+            <>
+              <div className={cn('mb-4 p-3 rounded-md', theme.intent.info.surface)}>
+                <p className={cn('text-sm', theme.intent.info.textStrong)}>
+                  <strong>Server:</strong> {getServerName(showAddToPattern.serverid)}
+                  <br />
+                  <strong>Pattern:</strong>{' '}
+                  <code className={cn('px-1 rounded', theme.surface.code)}>
+                    {showAddToPattern.stackPattern}
+                  </code>
+                </p>
               </div>
-            }
-          >
-            <p className={cn(theme.text.standard)}>{errorModal.message}</p>
-          </Modal>
+              <form id="add-to-pattern-form" onSubmit={handleAddToPattern} className="space-y-4">
+                <div>
+                  <span className={cn('block mb-3', theme.forms.label)}>Available Permissions</span>
+                  <div className="space-y-3">
+                    {getAvailablePermissionsForPattern(
+                      showAddToPattern.serverid,
+                      showAddToPattern.stackPattern
+                    ).map((permission) => (
+                      <div key={permission.id} className="flex items-start">
+                        <div className="flex items-center h-5">
+                          <input
+                            id={`add-permission-${permission.id}`}
+                            type="checkbox"
+                            checked={addToPatternRule.permission_ids.includes(permission.id)}
+                            onChange={() => {
+                              const permissionIds = addToPatternRule.permission_ids.includes(
+                                permission.id
+                              )
+                                ? addToPatternRule.permission_ids.filter(
+                                    (id) => id !== permission.id
+                                  )
+                                : [...addToPatternRule.permission_ids, permission.id];
+                              setAddToPatternRule({
+                                ...addToPatternRule,
+                                permission_ids: permissionIds,
+                              });
+                            }}
+                            className={theme.forms.checkbox}
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label
+                            htmlFor={`add-permission-${permission.id}`}
+                            className={cn('font-medium cursor-pointer', theme.text.standard)}
+                          >
+                            {permission.name}
+                          </label>
+                          <p className={theme.text.subtle}>{permission.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {addToPatternRule.permission_ids.length === 0 && (
+                    <p className={cn('mt-2 text-sm', theme.text.danger)}>
+                      Please select at least one permission.
+                    </p>
+                  )}
+                </div>
+              </form>
+            </>
+          )}
+        </Modal>
+
+        <div className="mt-2">
+          {(permissionRules || []).length === 0 ? (
+            <EmptyState
+              icon={ShieldCheckIcon}
+              title="No permission rules"
+              description="Get started by creating your first permission rule for this role."
+              variant="info"
+              action={{
+                label: 'Add Permission Rule',
+                onClick: () => setShowAddRule(true),
+              }}
+            />
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(groupedRules).map(([key, group]) => (
+                <div
+                  key={key}
+                  className={cn(
+                    theme.surface.panel,
+                    'border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3',
+                      theme.cards.sectionDivider
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <h3 className={cn('text-base font-medium', theme.text.strong)}>
+                        {group.serverName}
+                      </h3>
+                      <span
+                        className={cn(theme.badges.tag.base, theme.badges.tag.info, 'font-mono')}
+                      >
+                        {group.stackPattern}
+                      </span>
+                    </div>
+                    {getAvailablePermissionsForPattern(group.serverid, group.stackPattern).length >
+                      0 && (
+                      <button
+                        onClick={() => handleShowAddToPattern(group.serverid, group.stackPattern)}
+                        aria-label={`Add permissions for ${group.serverName} pattern ${group.stackPattern}`}
+                        className={cn(
+                          'inline-flex min-h-[44px] items-center text-sm',
+                          theme.buttons.secondary
+                        )}
+                      >
+                        <PlusIcon className="h-4 w-4 mr-1" />
+                        Add
+                      </button>
+                    )}
+                  </div>
+                  <ul className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {group.rules.map((rule) => {
+                      const permissionName = getPermissionName(rule.permission_id);
+                      const permission = permissions.find((p) => p.id === rule.permission_id);
+                      return (
+                        <li
+                          key={rule.id}
+                          className="flex items-center justify-between gap-3 px-4 py-1.5"
+                        >
+                          <div className="min-w-0">
+                            <p className={cn('text-sm font-medium', theme.text.standard)}>
+                              {permissionName}
+                            </p>
+                            {permission?.description && (
+                              <p className={cn('text-xs', theme.text.subtle)}>
+                                {permission.description}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() =>
+                              setRuleToDelete({
+                                rule,
+                                serverName: group.serverName,
+                                permissionName,
+                              })
+                            }
+                            disabled={deletePermissionMutation.isPending}
+                            aria-label={`Remove ${permissionName} for ${group.serverName} pattern ${group.stackPattern}`}
+                            className={cn(
+                              'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors',
+                              theme.text.danger,
+                              'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+                              'disabled:cursor-not-allowed disabled:opacity-50'
+                            )}
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
+        <div
+          className={cn(
+            'mt-6 rounded-lg p-4 border',
+            theme.intent.info.surface,
+            theme.intent.info.border
+          )}
+        >
+          <h3 className={cn('text-sm font-medium mb-2', theme.intent.info.textStrong)}>
+            Pattern Examples
+          </h3>
+          <div className={cn('text-xs space-y-2', theme.intent.info.textMuted)}>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>*</code> All stacks
+              </span>
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>*dev*</code> Contains "dev"
+              </span>
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>*prod*</code> Contains
+                "prod"
+              </span>
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>app*</code> Starts with
+                "app"
+              </span>
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>*-staging</code> Ends with
+                "-staging"
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>*dev*test*</code> Contains
+                "dev" then "test"
+              </span>
+              <span>
+                <code className={cn('px-1 rounded', theme.surface.code)}>api*staging*v1*</code>{' '}
+                Complex matching
+              </span>
+            </div>
+            <p className="text-xs mt-2">
+              Pattern matching is case-insensitive. Use multiple rules for different permissions per
+              pattern.
+            </p>
+          </div>
+        </div>
+
+        <ConfirmationModal
+          isOpen={ruleToDelete !== null}
+          onClose={() => setRuleToDelete(null)}
+          onConfirm={handleDeleteRule}
+          title="Remove Permission"
+          message={`Remove the "${ruleToDelete?.permissionName}" permission on ${ruleToDelete?.serverName} (pattern "${ruleToDelete?.rule.stack_pattern}") from the ${role.name} role?`}
+          confirmText="Remove"
+          variant="danger"
+          isLoading={deletePermissionMutation.isPending}
+        />
+
+        <Modal
+          isOpen={errorModal.isOpen}
+          onClose={() => setErrorModal({ isOpen: false, message: '' })}
+          title="Error"
+          size="sm"
+          footer={
+            <div className="flex justify-end">
+              <button
+                onClick={() => setErrorModal({ isOpen: false, message: '' })}
+                className={theme.buttons.primary}
+              >
+                OK
+              </button>
+            </div>
+          }
+        >
+          <p className={cn(theme.text.standard)}>{errorModal.message}</p>
+        </Modal>
       </div>
-    </>
+    </div>
   );
 }
