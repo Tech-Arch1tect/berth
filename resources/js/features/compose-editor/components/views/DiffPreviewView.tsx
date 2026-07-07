@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { useIsDesktop } from '../../../../shared/hooks/useMediaQuery';
 import { StackService } from '../../../stacks/services/stackService';
 import { ComposeChanges } from '../../types';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -19,11 +20,12 @@ export const DiffPreviewView: React.FC<DiffPreviewViewProps> = ({
   changes,
   hasChanges,
 }) => {
+  const isDesktop = useIsDesktop();
   const [originalYaml, setOriginalYaml] = useState<string>('');
   const [modifiedYaml, setModifiedYaml] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [splitView, setSplitView] = useState(true);
+  const [splitView, setSplitView] = useState(isDesktop);
 
   const fetchPreview = useCallback(async () => {
     if (!hasChanges) {

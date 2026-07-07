@@ -16,6 +16,7 @@ export interface ModalProps {
   footer?: React.ReactNode;
   headerExtra?: React.ReactNode;
   childrenHandleScroll?: boolean;
+  fullScreenOnMobile?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -30,6 +31,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   headerExtra,
   childrenHandleScroll = false,
+  fullScreenOnMobile = false,
 }) => {
   if (!isOpen) return null;
 
@@ -49,13 +51,18 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const modalContent = (
-    <div className={theme.modal.overlay} onClick={handleOverlayClick}>
+    <div
+      className={cn(theme.modal.overlay, fullScreenOnMobile && 'max-lg:p-0')}
+      onClick={handleOverlayClick}
+    >
       <div
         className={cn(
           'w-full mx-4 flex flex-col rounded-2xl border bg-white shadow-2xl dark:bg-zinc-900',
           'max-h-[90vh]',
           theme.containers.panel.split(' ').slice(1).join(' '),
-          sizeClasses[size]
+          sizeClasses[size],
+          fullScreenOnMobile &&
+            'max-lg:mx-0 max-lg:h-full max-lg:max-h-full max-lg:max-w-full max-lg:rounded-none max-lg:border-0'
         )}
         onClick={(e) => e.stopPropagation()}
       >

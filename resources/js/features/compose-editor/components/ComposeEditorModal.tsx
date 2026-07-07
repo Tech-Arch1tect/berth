@@ -191,14 +191,14 @@ const ComposeEditorContent: React.FC<{
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header with tabs and global save/discard */}
-      <div className="flex items-center justify-between mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-700 shrink-0">
-        <div className="flex space-x-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-700 shrink-0">
+        <div className="flex max-w-full gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {SECTION_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => selectSection(tab.key)}
               className={cn(
-                'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                'px-4 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 min-h-[44px] lg:min-h-0',
                 state.selectedSection === tab.key
                   ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                   : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
@@ -250,20 +250,20 @@ const ComposeEditorContent: React.FC<{
         </div>
       )}
 
-      <div className="flex flex-1 gap-4 min-h-0">
+      <div className="flex flex-col lg:flex-row flex-1 gap-4 min-h-0">
         {state.selectedSection === 'services' && (
           <>
-            <div className="w-56 shrink-0 overflow-y-auto">
+            <div className="w-full lg:w-56 shrink-0 overflow-y-auto max-h-48 lg:max-h-none">
               <div className="flex items-center justify-between mb-2">
                 <h4 className={cn('text-sm font-medium', theme.text.muted)}>Services</h4>
                 <button
                   type="button"
                   onClick={() => setShowAddDialog(true)}
+                  aria-label="Add service"
                   className={cn(
-                    'p-1 rounded',
+                    'flex h-9 w-9 lg:h-6 lg:w-6 items-center justify-center rounded',
                     'text-teal-600 hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-900/20'
                   )}
-                  title="Add service"
                 >
                   <PlusIcon className="w-4 h-4" />
                 </button>
@@ -309,24 +309,19 @@ const ComposeEditorContent: React.FC<{
                           </span>
                         )}
                       </button>
-                      <div
-                        className={cn(
-                          'flex items-center pr-1 opacity-0 group-hover:opacity-100 transition-opacity',
-                          state.selectedService === name && 'opacity-100'
-                        )}
-                      >
+                      <div className="flex items-center pr-1">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             openRenameDialog(name);
                           }}
+                          aria-label={`Rename service ${name}`}
                           className={cn(
-                            'p-1 rounded',
+                            'flex h-9 w-9 lg:h-6 lg:w-6 items-center justify-center rounded',
                             'text-zinc-400 hover:text-teal-600 hover:bg-teal-50',
                             'dark:hover:text-teal-400 dark:hover:bg-teal-900/30'
                           )}
-                          title="Rename service"
                         >
                           <PencilIcon className="w-3.5 h-3.5" />
                         </button>
@@ -336,12 +331,12 @@ const ComposeEditorContent: React.FC<{
                             e.stopPropagation();
                             openRemoveDialog(name);
                           }}
+                          aria-label={`Remove service ${name}`}
                           className={cn(
-                            'p-1 rounded',
+                            'flex h-9 w-9 lg:h-6 lg:w-6 items-center justify-center rounded',
                             'text-zinc-400 hover:text-rose-500 hover:bg-rose-50',
                             'dark:hover:bg-rose-900/20'
                           )}
-                          title="Remove service"
                         >
                           <TrashIcon className="w-3.5 h-3.5" />
                         </button>
@@ -351,7 +346,7 @@ const ComposeEditorContent: React.FC<{
                 })}
               </div>
             </div>
-            <div className="flex-1 border-l border-zinc-200 dark:border-zinc-700 pl-4 overflow-y-auto">
+            <div className="flex-1 border-t pt-4 lg:border-t-0 lg:pt-0 lg:border-l border-zinc-200 dark:border-zinc-700 lg:pl-4 overflow-y-auto">
               {state.selectedService ? (
                 <ServiceEditor serviceName={state.selectedService} disabled={saving} />
               ) : (
@@ -890,6 +885,7 @@ export const ComposeEditorModal: React.FC<ComposeEditorModalProps> = ({
       size="2xl"
       closeOnOverlayClick={false}
       childrenHandleScroll
+      fullScreenOnMobile
     >
       <ComposeEditorProvider>
         <ComposeEditorContent serverId={serverId} stackName={stackName} />
