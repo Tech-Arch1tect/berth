@@ -1,15 +1,10 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
-import {
-  PlusIcon,
-  TrashIcon,
-  ServerIcon,
-  ShieldCheckIcon,
-  ArrowLeftIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, ServerIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
+import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 import { Modal } from '../../../shared/components/Modal';
@@ -97,7 +92,6 @@ const PERMISSIONS = [
 export default function APIKeyScopesPage() {
   useDocumentTitle('API Key Scopes');
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const params = useParams({ strict: false }) as { keyid?: string };
   const apiKeyIdNum = Number(params.keyid);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -192,19 +186,10 @@ export default function APIKeyScopesPage() {
       <div className="h-full overflow-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            <div className="mb-6">
-              <button
-                onClick={() => navigate({ to: '/api-keys' })}
-                className={cn(
-                  'inline-flex items-center text-sm',
-                  theme.text.muted,
-                  'hover:text-slate-900 dark:hover:text-white'
-                )}
-              >
-                <ArrowLeftIcon className="h-4 w-4 mr-1" />
-                Back to API Keys
-              </button>
-            </div>
+            <Breadcrumb
+              homeHref="/api-keys"
+              items={[{ label: 'API Keys', href: '/api-keys' }, { label: 'Scopes' }]}
+            />
 
             <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
               <h1 className={cn('text-3xl font-bold', theme.text.strong)}>API Key Scopes</h1>

@@ -11,6 +11,7 @@ import {
   SignalIcon,
   SignalSlashIcon,
   HomeIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   ClipboardDocumentIcon,
@@ -111,31 +112,52 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
   const StatusIcon = status.icon;
 
   return (
-    <div className={cn('px-4 py-3 flex items-center justify-between gap-4', theme.surface.muted)}>
+    <div
+      className={cn(
+        'px-4 py-2 lg:py-3 flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap lg:justify-between',
+        theme.surface.muted
+      )}
+    >
       {/* Left: Breadcrumb navigation */}
-      <nav className="flex items-center gap-2 min-w-0" aria-label="Breadcrumb">
-        <Link
-          to="/"
-          className={cn(
-            theme.text.subtle,
-            'hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex-shrink-0'
-          )}
-        >
-          <HomeIcon className="h-4 w-4" />
-        </Link>
-        <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
+      <nav
+        className="flex flex-1 items-center gap-2 min-w-0 lg:flex-initial"
+        aria-label="Breadcrumb"
+      >
         <Link
           to="/servers/$serverid/stacks"
           params={{ serverid: String(serverId) }}
+          aria-label={`Back to ${serverName} stacks`}
           className={cn(
-            'text-sm font-medium transition-colors truncate',
-            theme.text.muted,
-            'hover:text-zinc-700 dark:hover:text-zinc-300'
+            'flex lg:hidden min-h-[44px] min-w-[32px] flex-shrink-0 items-center justify-center',
+            theme.text.standard
           )}
         >
-          {serverName}
+          <ChevronLeftIcon className="h-5 w-5" />
         </Link>
-        <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
+        <div className="hidden lg:flex items-center gap-2 min-w-0">
+          <Link
+            to="/"
+            className={cn(
+              theme.text.subtle,
+              'hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex-shrink-0'
+            )}
+          >
+            <HomeIcon className="h-4 w-4" />
+          </Link>
+          <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
+          <Link
+            to="/servers/$serverid/stacks"
+            params={{ serverid: String(serverId) }}
+            className={cn(
+              'text-sm font-medium transition-colors truncate',
+              theme.text.muted,
+              'hover:text-zinc-700 dark:hover:text-zinc-300'
+            )}
+          >
+            {serverName}
+          </Link>
+          <ChevronRightIcon className={cn('h-4 w-4 flex-shrink-0', theme.text.subtle)} />
+        </div>
         <span className={cn('text-sm font-semibold truncate', theme.text.strong)}>{stackName}</span>
         <div
           className={cn(
@@ -154,6 +176,7 @@ export const StackToolbar: React.FC<StackToolbarProps> = ({
         <div
           className={cn(
             'flex items-center rounded-lg overflow-hidden',
+            'order-last w-full lg:order-none lg:w-auto',
             'border border-zinc-200 dark:border-zinc-700'
           )}
         >

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { BackBar } from '../../../../shared/components/BackBar';
 import { useIsDesktop } from '../../../../shared/hooks/useMediaQuery';
 import { ResizableDivider } from './ResizableDivider';
 import { SidebarPanel } from './SidebarPanel';
@@ -105,17 +105,7 @@ export const FileManagerLayout: React.FC<FileManagerLayoutProps> = ({
               mobilePane === 'editor' ? 'flex' : 'hidden'
             )}
           >
-            <button
-              onClick={onShowExplorer}
-              className={cn(
-                'flex min-h-[44px] flex-shrink-0 items-center gap-1 border-b px-3 text-sm font-medium',
-                'border-zinc-200 dark:border-zinc-800',
-                theme.text.standard
-              )}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              Files
-            </button>
+            <BackBar label="Files" onBack={onShowExplorer} />
             <div className="flex flex-1 flex-col overflow-hidden">{editor}</div>
           </div>
         </div>

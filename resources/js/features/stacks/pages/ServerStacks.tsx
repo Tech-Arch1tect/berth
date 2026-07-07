@@ -141,17 +141,19 @@ export default function ServerStacks() {
 
   return (
     <>
-      <Breadcrumb
-        items={[
-          {
-            label: server.name,
-            href: `/servers/${serverid}/stacks`,
-          },
-          {
-            label: 'Docker Stacks',
-          },
-        ]}
-      />
+      <div className="px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumb
+          items={[
+            {
+              label: server.name,
+              href: `/servers/${serverid}/stacks`,
+            },
+            {
+              label: 'Docker Stacks',
+            },
+          ]}
+        />
+      </div>
 
       <ServerNavigation serverId={serverid} serverName={server.name} />
 

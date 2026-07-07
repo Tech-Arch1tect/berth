@@ -9,6 +9,7 @@ import type {
   ImageUpdate,
 } from '../../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
+import { BackBar } from '../../../../shared/components/BackBar';
 import { ServicesListPanel } from '../panels/ServicesListPanel';
 import { ResourcesListPanel } from '../panels/ResourcesListPanel';
 import { ServiceDetailPanel } from '../panels/ServiceDetailPanel';
@@ -147,15 +148,20 @@ export const StackContent: FC<StackContentProps> = ({
         );
       }
       return (
-        <ServiceDetailPanel
-          service={service}
-          imageUpdates={imageUpdates}
-          canManage={permissions.canManage}
-          canViewLogs={permissions.canViewLogs}
-          onQuickOperation={onQuickOperation}
-          isOperationRunning={isOperationRunning}
-          runningOperation={runningOperation}
-        />
+        <div className="flex h-full min-h-0 flex-col">
+          <BackBar label="Services" onBack={() => onSelect?.({ type: 'services' })} />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <ServiceDetailPanel
+              service={service}
+              imageUpdates={imageUpdates}
+              canManage={permissions.canManage}
+              canViewLogs={permissions.canViewLogs}
+              onQuickOperation={onQuickOperation}
+              isOperationRunning={isOperationRunning}
+              runningOperation={runningOperation}
+            />
+          </div>
+        </div>
       );
     }
 
@@ -170,7 +176,14 @@ export const StackContent: FC<StackContentProps> = ({
           </div>
         );
       }
-      return <NetworkDetailPanel network={network} />;
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <BackBar label="Resources" onBack={() => onSelect?.({ type: 'resources' })} />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <NetworkDetailPanel network={network} />
+          </div>
+        </div>
+      );
     }
 
     case 'volume': {
@@ -184,11 +197,25 @@ export const StackContent: FC<StackContentProps> = ({
           </div>
         );
       }
-      return <VolumeDetailPanel volume={volume} />;
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <BackBar label="Resources" onBack={() => onSelect?.({ type: 'resources' })} />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <VolumeDetailPanel volume={volume} />
+          </div>
+        </div>
+      );
     }
 
     case 'environment':
-      return <EnvironmentPanel environment={environment} />;
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <BackBar label="Resources" onBack={() => onSelect?.({ type: 'resources' })} />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <EnvironmentPanel environment={environment} />
+          </div>
+        </div>
+      );
 
     case 'stats':
       return (

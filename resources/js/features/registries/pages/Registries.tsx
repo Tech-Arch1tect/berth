@@ -168,12 +168,14 @@ export default function Registries() {
 
   return (
     <>
-      <Breadcrumb
-        items={[
-          { label: server.name, href: `/servers/${serverid}/stacks` },
-          { label: 'Registry Credentials' },
-        ]}
-      />
+      <div className="px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumb
+          items={[
+            { label: server.name, href: `/servers/${serverid}/stacks` },
+            { label: 'Registry Credentials' },
+          ]}
+        />
+      </div>
 
       <ServerNavigation serverId={serverid} serverName={server.name} />
 

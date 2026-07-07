@@ -198,17 +198,19 @@ export default function Maintenance() {
 
   return (
     <>
-      <Breadcrumb
-        items={[
-          {
-            label: server.name,
-            href: `/servers/${serverid}/stacks`,
-          },
-          {
-            label: 'Docker Maintenance',
-          },
-        ]}
-      />
+      <div className="px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumb
+          items={[
+            {
+              label: server.name,
+              href: `/servers/${serverid}/stacks`,
+            },
+            {
+              label: 'Docker Maintenance',
+            },
+          ]}
+        />
+      </div>
 
       <ServerNavigation serverId={serverid} serverName={server.name} />
 
