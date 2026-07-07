@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import type { FileEntry } from '../../../../api/generated/models';
 import { FileIcon } from '../FileIcon';
 import { cn } from '../../../../shared/utils/cn';
@@ -165,7 +166,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
     <>
       <div
         className={cn(
-          'flex items-center h-7 select-none',
+          'flex items-center h-11 lg:h-7 select-none',
           'transition-all duration-150',
           isDragging && 'opacity-40',
           !isDragging && 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800',
@@ -227,6 +228,22 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         >
           {entry.name}
         </span>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onContextMenu(e, entry);
+          }}
+          aria-label={`Actions for ${entry.name}`}
+          className={cn(
+            'mr-1 flex h-11 w-11 lg:h-6 lg:w-6 flex-shrink-0 items-center justify-center rounded',
+            theme.text.subtle,
+            'hover:bg-zinc-200 dark:hover:bg-zinc-700'
+          )}
+        >
+          <EllipsisVerticalIcon className="h-4 w-4" />
+        </button>
 
         {isDragOver && (
           <div className="flex items-center space-x-1 ml-2 mr-2">

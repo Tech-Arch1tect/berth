@@ -59,7 +59,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, item
             onClick={() => handleItemClick(item)}
             disabled={item.disabled}
             className={cn(
-              'w-full px-3 py-2 flex items-center gap-2.5 text-sm text-left',
+              'w-full px-3 py-2 flex min-h-[44px] lg:min-h-0 items-center gap-2.5 text-sm text-left',
               'transition-colors',
               item.disabled
                 ? cn(theme.text.subtle, 'cursor-not-allowed')
