@@ -59,7 +59,10 @@ const EMPTY_FORM: NewScopeForm = {
 const PERMISSIONS = [
   { value: PERM_SERVERS_READ, label: 'View accessible servers' },
   { value: PERM_STACKS_READ, label: 'View stacks and containers' },
-  { value: PERM_STACKS_MANAGE, label: 'Start/stop/deploy/remove stacks' },
+  {
+    value: PERM_STACKS_MANAGE,
+    label: 'Run compose operations on stacks (up, start, stop, restart, pull, down)',
+  },
   { value: PERM_STACKS_CREATE, label: 'Create new stacks' },
   { value: PERM_FILES_READ, label: 'Read files within stacks' },
   { value: PERM_FILES_WRITE, label: 'Modify files within stacks' },

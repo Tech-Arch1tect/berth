@@ -414,12 +414,19 @@ const ContainerDetail: React.FC<{
           {container.ports && container.ports.length > 0 && (
             <DetailSection title="Ports">
               <div className="flex flex-wrap gap-2">
-                {container.ports.map((port, i) => (
+                {[
+                  ...new Set(
+                    container.ports.map(
+                      (port) =>
+                        `${port.public ? `${port.public}:${port.private}` : port.private}/${port.type}`
+                    )
+                  ),
+                ].map((mapping) => (
                   <span
-                    key={i}
+                    key={mapping}
                     className={cn('px-2 py-1 rounded text-sm font-mono', theme.surface.code)}
                   >
-                    {port.public ? `${port.public}:${port.private}` : port.private}/{port.type}
+                    {mapping}
                   </span>
                 ))}
               </div>

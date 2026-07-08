@@ -66,14 +66,14 @@ export const StackQuickActions = ({
     {
       command: 'up' as const,
       label: 'Up',
-      title: 'Deploy/Update stack (applies configuration changes)',
+      title: 'docker compose up',
       visible: true,
       className: cn(theme.toolbar.button, theme.toolbar.buttonInfo),
     },
     {
       command: 'start' as const,
       label: 'Start',
-      title: 'Start stack',
+      title: 'docker compose start',
       visible:
         stackState === 'all-stopped' ||
         (stackState === 'mixed-running' && stackHasStoppedContainers(services)),
@@ -82,28 +82,28 @@ export const StackQuickActions = ({
     {
       command: 'stop' as const,
       label: 'Stop',
-      title: 'Stop stack',
+      title: 'docker compose stop',
       visible: stackState === 'all-running' || stackState === 'mixed-running',
       className: cn(theme.toolbar.button, theme.toolbar.buttonDanger),
     },
     {
       command: 'restart' as const,
       label: 'Restart',
-      title: 'Restart stack',
+      title: 'docker compose restart',
       visible: stackState === 'all-running',
       className: cn(theme.toolbar.button, theme.toolbar.buttonInfo),
     },
     {
       command: 'pull' as const,
       label: 'Pull',
-      title: 'Pull latest images',
+      title: 'docker compose pull',
       visible: stackState !== 'all-not-created',
       className: cn(theme.toolbar.button, theme.toolbar.buttonSecondary),
     },
     {
       command: 'down' as const,
       label: 'Down',
-      title: 'Stop and remove stack',
+      title: 'docker compose down',
       visible: stackState === 'all-running' || stackState === 'mixed-running',
       className: cn(theme.toolbar.button, theme.toolbar.buttonWarning),
     },
@@ -123,7 +123,7 @@ export const StackQuickActions = ({
   const visibleActions = actions.filter((action) => action.visible);
 
   return (
-    <div className="flex items-center">
+    <div className="flex w-full items-center lg:w-auto">
       {visibleActions.map((action) => {
         const Icon = iconMap[action.command];
         const busy = isBusy(action.command);
@@ -137,7 +137,7 @@ export const StackQuickActions = ({
             disabled={isDisabled}
             className={cn(
               'inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors',
-              'lg:min-w-[4.5rem] lg:px-2.5',
+              'min-h-[36px] flex-1 lg:min-h-0 lg:flex-none lg:min-w-[4.5rem] lg:px-2.5',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10',
               'disabled:cursor-not-allowed disabled:opacity-50',
               colorClasses[action.command],

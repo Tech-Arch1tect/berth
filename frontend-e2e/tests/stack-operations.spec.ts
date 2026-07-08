@@ -63,7 +63,7 @@ test.describe('stack operations', () => {
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
     await expect(page.getByText('nginx').first()).toBeVisible();
 
-    await page.getByTitle('Restart stack').click();
+    await page.getByTitle('docker compose restart', { exact: true }).click();
 
     await expect(page.getByText(/refreshing stack data/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/operation failed/i)).not.toBeVisible();
@@ -82,7 +82,7 @@ test.describe('stack operations', () => {
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
     await expect(page.getByText('nginx').first()).toBeVisible();
 
-    await page.getByTitle('Restart stack').click();
+    await page.getByTitle('docker compose restart', { exact: true }).click();
 
     await expect(page.getByText(/failed to start operation/i)).toBeVisible({ timeout: 10_000 });
   });

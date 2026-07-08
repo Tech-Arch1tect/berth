@@ -53,7 +53,7 @@ export const ImageUpdateBanner: FC<ImageUpdateBannerProps> = ({
           <p className={cn('min-w-0 flex-1 text-sm', theme.intent.info.textStrong)}>
             {describeServices(serviceNames)}
             {checkedAgo && (
-              <span className={cn('ml-2 text-xs', theme.intent.info.textMuted)}>
+              <span className={cn('ml-2 hidden text-xs sm:inline', theme.intent.info.textMuted)}>
                 checked {checkedAgo}
               </span>
             )}

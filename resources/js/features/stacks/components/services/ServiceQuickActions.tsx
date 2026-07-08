@@ -27,6 +27,7 @@ interface ServiceQuickActionsProps {
   disabled?: boolean;
   isOperationRunning?: boolean;
   runningOperation?: string;
+  compact?: boolean;
 }
 
 type ActionKey = 'up' | 'start' | 'stop' | 'restart' | 'down' | 'pull';
@@ -48,6 +49,7 @@ export const ServiceQuickActions = ({
   disabled = false,
   isOperationRunning = false,
   runningOperation,
+  compact = false,
 }: ServiceQuickActionsProps) => {
   const { serverId, stackName } = useServerStack();
   const { openTerminal } = useTerminalPanel();
@@ -75,7 +77,7 @@ export const ServiceQuickActions = ({
     {
       command: 'up',
       baseLabel: 'Up',
-      title: `Deploy/Update ${service.name}`,
+      title: `docker compose up ${service.name}`,
       visible: true,
       colorClass:
         'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-500/30 dark:text-teal-100 dark:hover:bg-teal-500/45',
@@ -83,7 +85,7 @@ export const ServiceQuickActions = ({
     {
       command: 'start',
       baseLabel: 'Start',
-      title: `Start ${service.name}`,
+      title: `docker compose start ${service.name}`,
       visible:
         serviceState === 'all-stopped' ||
         (serviceState === 'mixed-running' && hasStoppedContainers(service)),
@@ -93,7 +95,7 @@ export const ServiceQuickActions = ({
     {
       command: 'stop',
       baseLabel: 'Stop',
-      title: `Stop ${service.name}`,
+      title: `docker compose stop ${service.name}`,
       visible: serviceState === 'all-running' || serviceState === 'mixed-running',
       colorClass:
         'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/25 dark:text-rose-100 dark:hover:bg-rose-500/40',
@@ -101,7 +103,7 @@ export const ServiceQuickActions = ({
     {
       command: 'restart',
       baseLabel: 'Restart',
-      title: `Restart ${service.name}`,
+      title: `docker compose restart ${service.name}`,
       visible: serviceState === 'all-running',
       colorClass:
         'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/30 dark:text-blue-100 dark:hover:bg-blue-500/45',
@@ -109,7 +111,7 @@ export const ServiceQuickActions = ({
     {
       command: 'pull',
       baseLabel: 'Pull',
-      title: `Pull latest image for ${service.name}`,
+      title: `docker compose pull ${service.name}`,
       visible: true,
       colorClass:
         'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/25 dark:text-indigo-100 dark:hover:bg-indigo-500/40',
@@ -117,7 +119,7 @@ export const ServiceQuickActions = ({
     {
       command: 'down',
       baseLabel: 'Down',
-      title: `Stop and remove ${service.name}`,
+      title: `docker compose down ${service.name}`,
       visible: serviceState !== 'all-not-created' && hasCreatedContainers(service),
       colorClass:
         'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/25 dark:text-amber-100 dark:hover:bg-amber-500/40',
@@ -134,20 +136,25 @@ export const ServiceQuickActions = ({
     <div
       className={cn(
         'flex items-center rounded-lg overflow-hidden',
-        'border border-zinc-200 dark:border-zinc-700'
+        'border border-zinc-200 dark:border-zinc-700',
+        compact && 'w-full lg:w-fit'
       )}
     >
-      <span
-        className={cn(
-          'text-xs font-semibold uppercase tracking-wide px-3 py-1.5',
-          'bg-zinc-100 dark:bg-zinc-800',
-          theme.text.muted
-        )}
-      >
-        Service
-      </span>
-      <div className="w-px h-full bg-zinc-200 dark:bg-zinc-700" />
-      <div className="flex items-center">
+      {!compact && (
+        <>
+          <span
+            className={cn(
+              'text-xs font-semibold uppercase tracking-wide px-3 py-1.5',
+              'bg-zinc-100 dark:bg-zinc-800',
+              theme.text.muted
+            )}
+          >
+            Service
+          </span>
+          <div className="w-px h-full bg-zinc-200 dark:bg-zinc-700" />
+        </>
+      )}
+      <div className={cn('flex items-center', compact && 'w-full lg:w-auto')}>
         {visibleActions.map((action) => {
           const Icon = iconMap[action.command];
           const label = busy(action.command) ? `${action.baseLabel}…` : action.baseLabel;
@@ -161,6 +168,7 @@ export const ServiceQuickActions = ({
               className={cn(
                 'inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors',
                 'lg:min-w-[4.5rem] lg:px-2.5',
+                compact && 'min-h-[36px] flex-1 lg:min-h-0 lg:flex-none',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 action.colorClass,
@@ -191,6 +199,7 @@ export const ServiceQuickActions = ({
             className={cn(
               'inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors',
               'lg:min-w-[4.5rem] lg:px-2.5',
+              compact && 'min-h-[36px] flex-1 lg:min-h-0 lg:flex-none',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10',
               'disabled:cursor-not-allowed disabled:opacity-50',
               'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-500/25 dark:text-slate-100 dark:hover:bg-slate-500/40',

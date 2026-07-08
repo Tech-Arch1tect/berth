@@ -59,7 +59,11 @@ test.describe('stack live updates', () => {
     await page.goto(`/servers/${server.serverId}/stacks/${STACK_NAME}`);
 
     await expect(page.getByText('nginx').first()).toBeVisible();
-    await expect(page.getByText('all running')).toBeVisible();
+    const containersStat = page
+      .locator('span', { hasText: 'containers running' })
+      .locator('span')
+      .first();
+    await expect(containersStat).toHaveText('1/1');
 
     await mockStackDetailEndpoints(api, server, 'exited');
     await api.pushStackEvent({
@@ -74,6 +78,6 @@ test.describe('stack live updates', () => {
       image: 'nginx:alpine',
     });
 
-    await expect(page.getByText('1 stopped')).toBeVisible({ timeout: 10_000 });
+    await expect(containersStat).toHaveText('0/1', { timeout: 10_000 });
   });
 });

@@ -11,10 +11,7 @@ import { serviceUpdateCount } from '../../../image-updates/updateMatching';
 import { OperationRequest } from '../../../operations/types';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import {
-  CubeIcon,
-  ServerIcon,
-  GlobeAltIcon,
-  CircleStackIcon,
+  ChevronRightIcon,
   DocumentTextIcon,
   FolderIcon,
   ClockIcon,
@@ -175,44 +172,53 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
           <p className={cn('text-sm', theme.text.subtle)}>Stack dashboard and service status</p>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={CubeIcon}
-            label="Services"
-            value={`${healthyServices}/${services.length}`}
-            sublabel={
-              healthyServices === services.length
-                ? 'all healthy'
-                : `${services.length - healthyServices} need attention`
-            }
-            color={healthyServices === services.length ? 'emerald' : 'amber'}
-          />
-          <StatCard
-            icon={ServerIcon}
-            label="Containers"
-            value={`${runningContainers}/${totalContainers}`}
-            sublabel={
-              runningContainers === totalContainers
-                ? 'all running'
-                : `${totalContainers - runningContainers} stopped`
-            }
-            color={runningContainers === totalContainers ? 'emerald' : 'amber'}
-          />
-          <StatCard
-            icon={GlobeAltIcon}
-            label="Networks"
-            value={`${activeNetworks}/${networks.length}`}
-            sublabel="active"
-            color="blue"
-          />
-          <StatCard
-            icon={CircleStackIcon}
-            label="Volumes"
-            value={`${activeVolumes}/${volumes.length}`}
-            sublabel="active"
-            color="purple"
-          />
+        {/* Quick Stats */}
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-4 py-2.5',
+            'border-zinc-200 dark:border-zinc-800',
+            'bg-white dark:bg-zinc-900'
+          )}
+        >
+          {[
+            {
+              value: `${healthyServices}/${services.length}`,
+              label: 'services healthy',
+              alert: healthyServices !== services.length,
+            },
+            {
+              value: `${runningContainers}/${totalContainers}`,
+              label: 'containers running',
+              alert: runningContainers !== totalContainers,
+            },
+            {
+              value: `${activeNetworks}/${networks.length}`,
+              label: 'networks active',
+              alert: false,
+            },
+            {
+              value: `${activeVolumes}/${volumes.length}`,
+              label: 'volumes active',
+              alert: false,
+            },
+          ].map((stat, index) => (
+            <React.Fragment key={stat.label}>
+              {index > 0 && <span className={cn('hidden sm:inline', theme.text.subtle)}>·</span>}
+              <span className="whitespace-nowrap text-sm">
+                <span
+                  className={cn(
+                    'font-semibold tabular-nums',
+                    stat.alert
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  )}
+                >
+                  {stat.value}
+                </span>
+                <span className={cn('ml-1.5', theme.text.muted)}>{stat.label}</span>
+              </span>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Health Issues Section */}
@@ -276,16 +282,11 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
                           {status.label}
                         </span>
                       </div>
-                      {service.image && (
-                        <p className={cn('text-xs font-mono truncate', theme.text.subtle)}>
-                          {service.image}
-                        </p>
-                      )}
                     </div>
                   </div>
 
                   {/* Uptime & Containers */}
-                  <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="flex items-center gap-4 flex-shrink-0 lg:order-3">
                     {uptime && (
                       <div
                         className={cn(
@@ -309,17 +310,24 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
                       </span>
                       <span className={theme.text.subtle}>/{total}</span>
                     </div>
-                    {canManage && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <ServiceQuickActions
-                          service={service}
-                          onQuickOperation={onQuickOperation}
-                          isOperationRunning={isOperationRunning}
-                          runningOperation={runningOperation}
-                        />
-                      </div>
+                    {onServiceClick && (
+                      <ChevronRightIcon className={cn('h-4 w-4', theme.text.subtle)} />
                     )}
                   </div>
+                  {canManage && (
+                    <div
+                      className="order-last w-full lg:order-2 lg:w-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ServiceQuickActions
+                        service={service}
+                        onQuickOperation={onQuickOperation}
+                        isOperationRunning={isOperationRunning}
+                        runningOperation={runningOperation}
+                        compact
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -339,50 +347,6 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({
             <InfoRow icon={FolderIcon} label="Stack Path" value={stackPath} mono />
             <InfoRow icon={DocumentTextIcon} label="Compose File" value={composeFile} mono />
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const StatCard: React.FC<{
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  sublabel?: string;
-  color: 'teal' | 'emerald' | 'amber' | 'blue' | 'purple';
-}> = ({ icon: Icon, label, value, sublabel, color }) => {
-  const colorClasses = {
-    teal: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
-    emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
-    amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
-    blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-    purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
-  };
-
-  return (
-    <div
-      className={cn(
-        'rounded-lg border p-4',
-        'border-zinc-200 dark:border-zinc-800',
-        'bg-white dark:bg-zinc-900'
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            colorClasses[color]
-          )}
-        >
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <p className={cn('text-2xl font-bold tabular-nums', theme.text.strong)}>{value}</p>
-          <p className={cn('text-xs', theme.text.muted)}>
-            {label}
-            {sublabel && <span className="ml-1 text-zinc-400">· {sublabel}</span>}
-          </p>
         </div>
       </div>
     </div>
