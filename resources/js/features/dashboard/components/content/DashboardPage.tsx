@@ -8,6 +8,7 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ArrowPathIcon,
   ArrowRightIcon,
   NoSymbolIcon,
 } from '@heroicons/react/24/outline';
@@ -51,14 +52,6 @@ const formatDuration = (duration: number | null) => {
   if (duration < 1000) return `${duration}ms`;
   if (duration < 60000) return `${(duration / 1000).toFixed(1)}s`;
   return `${(duration / 60000).toFixed(1)}m`;
-};
-
-const serverPriority = (status: ServerStatus, hasUnhealthy: boolean): number => {
-  if (status === 'offline') return 0;
-  if (status === 'online' && hasUnhealthy) return 1;
-  if (status === 'checking') return 2;
-  if (status === 'online') return 3;
-  return 4;
 };
 
 const SectionHeading: React.FC<{
@@ -111,7 +104,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSectionChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.attention);
+  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.servers);
   const [activityExpanded, setActivityExpanded] = useState(true);
 
   const statusOf = (server: Server): ServerStatus => serverStatus.get(server.id) ?? 'checking';
@@ -124,11 +117,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const attentionCount =
     unreachableServers.length + unhealthyServers.length + failedOperations.length;
 
-  const sortedServers = [...servers].sort((a, b) => {
-    const pa = serverPriority(statusOf(a), unhealthyOf(a) > 0);
-    const pb = serverPriority(statusOf(b), unhealthyOf(b) > 0);
-    return pa - pb || a.name.localeCompare(b.name);
-  });
+  const sortedServers = [...servers].sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
     const container = containerRef.current;
@@ -136,7 +125,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
     const handleScroll = () => {
       const sections = container.querySelectorAll('[id^="dashboard-"]');
-      let current = SECTION_IDS.attention;
+      let current = SECTION_IDS.servers;
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
@@ -154,164 +143,183 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return () => container.removeEventListener('scroll', handleScroll);
   }, [activeSection, onSectionChange]);
 
+  const anyChecking = servers.some((server) => statusOf(server) === 'checking');
+
+  const attentionSection = (
+    <section>
+      <SectionHeading id={SECTION_IDS.attention} title="Needs attention" count={attentionCount} />
+      {attentionCount === 0 ? (
+        anyChecking ? (
+          <div
+            className={cn(
+              'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm',
+              'bg-zinc-50 dark:bg-zinc-800/50',
+              theme.text.muted
+            )}
+          >
+            <ArrowPathIcon className="w-4 h-4 animate-spin" />
+            Checking servers…
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm',
+              'bg-emerald-50 dark:bg-emerald-900/10',
+              'text-emerald-700 dark:text-emerald-400'
+            )}
+          >
+            <CheckCircleIcon className="w-4 h-4" />
+            All systems healthy
+          </div>
+        )
+      ) : (
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+          {unreachableServers.map((server) => (
+            <Link
+              key={`offline-${server.id}`}
+              to="/servers/$serverid/stacks"
+              params={{ serverid: String(server.id) }}
+              className={attentionRowClass}
+            >
+              <AttentionRowContent
+                icon={<span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
+                name={server.name}
+                detail="unreachable"
+                actionLabel="view"
+              />
+            </Link>
+          ))}
+          {unhealthyServers.map((server) => {
+            const stats = serverStats.get(server.id);
+            return (
+              <Link
+                key={`unhealthy-${server.id}`}
+                to="/servers/$serverid/stacks"
+                params={{ serverid: String(server.id) }}
+                className={attentionRowClass}
+              >
+                <AttentionRowContent
+                  icon={
+                    <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  }
+                  name={server.name}
+                  detail={`${stats?.unhealthy ?? 0} of ${stats?.total ?? 0} stacks unhealthy`}
+                  actionLabel="stacks"
+                />
+              </Link>
+            );
+          })}
+          {failedOperations.map((op) => (
+            <Link
+              key={`failed-${op.id}`}
+              to="/operation-logs"
+              search={{ status: 'failed' }}
+              className={attentionRowClass}
+            >
+              <AttentionRowContent
+                icon={<XCircleIcon className="w-4 h-4 flex-shrink-0 text-red-500" />}
+                name={op.command}
+                detail={`failed ${op.formatted_date} · ${op.server_name}`}
+                actionLabel="logs"
+              />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <div ref={containerRef} className="h-full overflow-auto">
       <div className="p-6 space-y-6">
-        <section>
-          <SectionHeading
-            id={SECTION_IDS.attention}
-            title="Needs attention"
-            count={attentionCount}
-          />
-          {attentionCount === 0 ? (
-            <div
-              className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm',
-                'bg-emerald-50 dark:bg-emerald-900/10',
-                'text-emerald-700 dark:text-emerald-400'
-              )}
-            >
-              <CheckCircleIcon className="w-4 h-4" />
-              All systems healthy
-            </div>
-          ) : (
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
-              {unreachableServers.map((server) => (
-                <Link
-                  key={`offline-${server.id}`}
-                  to="/servers/$serverid/stacks"
-                  params={{ serverid: String(server.id) }}
-                  className={attentionRowClass}
-                >
-                  <AttentionRowContent
-                    icon={<span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
-                    name={server.name}
-                    detail="unreachable"
-                    actionLabel="view"
-                  />
-                </Link>
-              ))}
-              {unhealthyServers.map((server) => {
-                const stats = serverStats.get(server.id);
-                return (
-                  <Link
-                    key={`unhealthy-${server.id}`}
-                    to="/servers/$serverid/stacks"
-                    params={{ serverid: String(server.id) }}
-                    className={attentionRowClass}
-                  >
-                    <AttentionRowContent
-                      icon={
-                        <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 text-amber-500" />
-                      }
-                      name={server.name}
-                      detail={`${stats?.unhealthy ?? 0} of ${stats?.total ?? 0} stacks unhealthy`}
-                      actionLabel="stacks"
-                    />
-                  </Link>
-                );
-              })}
-              {failedOperations.map((op) => (
-                <Link
-                  key={`failed-${op.id}`}
-                  to="/operation-logs"
-                  search={{ status: 'failed' }}
-                  className={attentionRowClass}
-                >
-                  <AttentionRowContent
-                    icon={<XCircleIcon className="w-4 h-4 flex-shrink-0 text-red-500" />}
-                    name={op.command}
-                    detail={`failed ${op.formatted_date} · ${op.server_name}`}
-                    actionLabel="logs"
-                  />
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <section className="lg:col-span-2">
-            <SectionHeading
-              id={SECTION_IDS.servers}
-              title="Servers"
-              action={
-                <Link
-                  to="/stacks"
-                  className={cn('flex items-center gap-1 text-xs font-medium', theme.link.primary)}
+          <div className="lg:col-span-2 space-y-6">
+            <section>
+              <SectionHeading
+                id={SECTION_IDS.servers}
+                title="Servers"
+                action={
+                  <Link
+                    to="/stacks"
+                    className={cn(
+                      'flex items-center gap-1 text-xs font-medium',
+                      theme.link.primary
+                    )}
+                  >
+                    All stacks
+                    <ArrowRightIcon className="w-3 h-3" />
+                  </Link>
+                }
+              />
+              {servers.length === 0 ? (
+                <div
+                  className={cn(
+                    'rounded-lg border p-8 text-center',
+                    'border-zinc-200 dark:border-zinc-800'
+                  )}
                 >
-                  All stacks
-                  <ArrowRightIcon className="w-3 h-3" />
-                </Link>
-              }
-            />
-            {servers.length === 0 ? (
-              <div
-                className={cn(
-                  'rounded-lg border p-8 text-center',
-                  'border-zinc-200 dark:border-zinc-800'
-                )}
-              >
-                <ServerIcon className={cn('w-10 h-10 mx-auto mb-2', theme.text.subtle)} />
-                <p className={cn('text-sm', theme.text.muted)}>No servers configured</p>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
-                {sortedServers.map((server) => {
-                  const status = statusOf(server);
-                  const stats = serverStats.get(server.id);
-                  const disabled = status === 'disabled';
-                  return (
-                    <Link
-                      key={server.id}
-                      to="/servers/$serverid/stacks"
-                      params={{ serverid: String(server.id) }}
-                      className={cn(
-                        'group flex items-center gap-3 px-3 py-2.5 text-sm',
-                        'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors',
-                        disabled && 'opacity-60'
-                      )}
-                    >
-                      <ServerStatusDot status={status} />
-                      <div className="min-w-0 flex-1">
-                        <div className={cn('font-medium truncate', theme.text.strong)}>
-                          {server.name}
-                        </div>
-                        <div className={cn('text-xs font-mono truncate', theme.text.subtle)}>
-                          {server.host}:{server.port}
-                        </div>
-                      </div>
-                      <span className={cn('text-xs flex-shrink-0', theme.text.muted)}>
-                        {SERVER_STATUS_LABEL[status]}
-                      </span>
-                      {stats ? (
-                        <span
-                          className={cn(
-                            'flex-shrink-0 tabular-nums text-xs px-2 py-0.5 rounded-md',
-                            stats.unhealthy > 0
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
-                          )}
-                          title={`${stats.healthy} healthy of ${stats.total} stacks`}
-                        >
-                          {stats.healthy}/{stats.total}
-                        </span>
-                      ) : (
-                        <span className="w-12 flex-shrink-0" />
-                      )}
-                      <ArrowRightIcon
+                  <ServerIcon className={cn('w-10 h-10 mx-auto mb-2', theme.text.subtle)} />
+                  <p className={cn('text-sm', theme.text.muted)}>No servers configured</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {sortedServers.map((server) => {
+                    const status = statusOf(server);
+                    const stats = serverStats.get(server.id);
+                    const disabled = status === 'disabled';
+                    return (
+                      <Link
+                        key={server.id}
+                        to="/servers/$serverid/stacks"
+                        params={{ serverid: String(server.id) }}
                         className={cn(
-                          'w-4 h-4 flex-shrink-0',
-                          theme.text.subtle,
-                          'opacity-0 group-hover:opacity-100 transition-opacity'
+                          'group flex items-center gap-3 px-3 py-2.5 text-sm',
+                          'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors',
+                          disabled && 'opacity-60'
                         )}
-                      />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                      >
+                        <ServerStatusDot status={status} />
+                        <div className="min-w-0 flex-1">
+                          <div className={cn('font-medium truncate', theme.text.strong)}>
+                            {server.name}
+                          </div>
+                          <div className={cn('text-xs font-mono truncate', theme.text.subtle)}>
+                            {server.host}:{server.port}
+                          </div>
+                        </div>
+                        <span className={cn('text-xs flex-shrink-0', theme.text.muted)}>
+                          {SERVER_STATUS_LABEL[status]}
+                        </span>
+                        {stats ? (
+                          <span
+                            className={cn(
+                              'flex-shrink-0 tabular-nums text-xs px-2 py-0.5 rounded-md',
+                              stats.unhealthy > 0
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+                            )}
+                            title={`${stats.healthy} healthy of ${stats.total} stacks`}
+                          >
+                            {stats.healthy}/{stats.total}
+                          </span>
+                        ) : (
+                          <span className="w-12 flex-shrink-0" />
+                        )}
+                        <ArrowRightIcon
+                          className={cn(
+                            'w-4 h-4 flex-shrink-0',
+                            theme.text.subtle,
+                            'opacity-0 group-hover:opacity-100 transition-opacity'
+                          )}
+                        />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+            {attentionSection}
+          </div>
 
           <section className="lg:col-span-1">
             <div className="flex items-center justify-between mb-2">

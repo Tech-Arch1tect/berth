@@ -33,7 +33,7 @@ export default function Dashboard() {
   const userRoles = user?.roles?.map((role) => role.name) ?? [];
   const isAdmin = userRoles.includes('admin');
 
-  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.attention);
+  const [activeSection, setActiveSection] = useState<string>(SECTION_IDS.servers);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -64,13 +64,13 @@ export default function Dashboard() {
 
   const attentionCount = healthSummary.serversWithErrors + healthSummary.unhealthyStacks;
   const sectionTabs: Tab[] = [
+    { id: SECTION_IDS.servers, label: 'Servers', icon: ServerIcon },
     {
       id: SECTION_IDS.attention,
       label: 'Needs attention',
       icon: ExclamationTriangleIcon,
       badge: attentionCount > 0 ? attentionCount : undefined,
     },
-    { id: SECTION_IDS.servers, label: 'Servers', icon: ServerIcon },
     { id: SECTION_IDS.activity, label: 'Activity', icon: ClockIcon },
   ];
 
