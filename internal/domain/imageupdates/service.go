@@ -402,7 +402,7 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []ContainerImageU
 	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
 	defer cancel()
 
-	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", "/stacks", nil)
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", "/images/running", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -412,33 +412,22 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []ContainerImageU
 		return nil, errors.New("agent returned non-200 status")
 	}
 
-	var stacksResp struct {
-		Stacks []struct {
-			Name     string `json:"name"`
-			Services []struct {
-				Containers []struct {
-					Name        string   `json:"name"`
-					RepoDigests []string `json:"repo_digests"`
-				} `json:"containers"`
-			} `json:"services"`
-		} `json:"stacks"`
+	var runningImages []struct {
+		StackName     string   `json:"stack_name"`
+		ContainerName string   `json:"container_name"`
+		RepoDigests   []string `json:"repo_digests"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&stacksResp); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&runningImages); err != nil {
 		return nil, err
 	}
 
-	liveDigests := make(map[string]string)
-	for _, stack := range stacksResp.Stacks {
-		for _, service := range stack.Services {
-			for _, container := range service.Containers {
-				key := stack.Name + "|" + container.Name
-				if len(container.RepoDigests) > 0 {
-					digest := container.RepoDigests[0]
-					if idx := strings.Index(digest, "@"); idx != -1 {
-						liveDigests[key] = digest[idx+1:]
-					}
-				}
+	liveDigests := make(map[string][]string)
+	for _, running := range runningImages {
+		key := running.StackName + "|" + running.ContainerName
+		for _, repoDigest := range running.RepoDigests {
+			if _, digest, found := strings.Cut(repoDigest, "@"); found {
+				liveDigests[key] = append(liveDigests[key], digest)
 			}
 		}
 	}
@@ -446,14 +435,27 @@ func (s *Service) enrichWithLiveDigests(serverID uint, updates []ContainerImageU
 	enriched := make([]ContainerImageUpdate, 0)
 	for _, update := range updates {
 		key := update.StackName + "|" + update.ContainerName
-		if liveDigest, found := liveDigests[key]; found {
-			update.CurrentRepoDigest = liveDigest
-			update.UpdateAvailable = (liveDigest != update.LatestRepoDigest) && update.LatestRepoDigest != ""
+		if digests, found := liveDigests[key]; found && len(digests) > 0 {
+			matched := ""
+			for _, digest := range digests {
+				if update.LatestRepoDigest != "" && digest == update.LatestRepoDigest {
+					matched = digest
+					break
+				}
+			}
 
-			s.logger.Debug("enriched update with live digest",
+			if matched != "" {
+				update.CurrentRepoDigest = matched
+				update.UpdateAvailable = false
+			} else {
+				update.CurrentRepoDigest = digests[0]
+				update.UpdateAvailable = update.LatestRepoDigest != ""
+			}
+
+			s.logger.Debug("enriched update with live digests",
 				zap.String("stack", update.StackName),
 				zap.String("container", update.ContainerName),
-				zap.String("live_digest", liveDigest),
+				zap.Strings("live_digests", digests),
 				zap.String("latest_digest", update.LatestRepoDigest),
 				zap.Bool("update_available", update.UpdateAvailable),
 			)
