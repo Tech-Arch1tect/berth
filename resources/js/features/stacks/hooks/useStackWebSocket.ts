@@ -6,6 +6,7 @@ import {
   getGetApiV1ServersServeridStacksQueryKey,
   getGetApiV1ServersServeridStacksStacknameQueryKey,
 } from '../../../api/generated/stacks/stacks';
+import { getGetApiV1ServersServeridImageUpdatesQueryKey } from '../../../api/generated/image-updates/image-updates';
 
 export interface UseStackWebSocketOptions {
   serverid: number;
@@ -28,6 +29,10 @@ export const useStackWebSocket = ({ serverid, stackname }: UseStackWebSocketOpti
 
       queryClient.invalidateQueries({
         queryKey: getGetApiV1ServersServeridStacksQueryKey(serverid),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: getGetApiV1ServersServeridImageUpdatesQueryKey(serverid),
       });
 
       invalidationTimeoutRef.current = null;

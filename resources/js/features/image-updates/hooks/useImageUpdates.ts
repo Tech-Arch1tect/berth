@@ -11,9 +11,9 @@ export function useAvailableUpdates({ enabled = true }: UseAvailableUpdatesOptio
   const query = useGetApiV1ImageUpdates({
     query: {
       enabled,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 30 * 1000,
       gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
@@ -34,9 +34,9 @@ export function useServerImageUpdates({ serverid, enabled = true }: UseServerIma
   const query = useGetApiV1ServersServeridImageUpdates(serverid, {
     query: {
       enabled: enabled && !!serverid,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 30 * 1000,
       gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
