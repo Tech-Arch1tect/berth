@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var ErrLastAdmin = errors.New("operation would leave the system without an administrator")
+
 type Service struct {
 	db     *gorm.DB
 	logger *zap.Logger
@@ -109,6 +111,18 @@ func (s *Service) AssignRole(userID uint, roleID uint) error {
 	return nil
 }
 
+func countAdminUsersExcluding(db *gorm.DB, excludeUserID, excludeRoleID uint) (int64, error) {
+	var count int64
+	err := db.Model(&usermodel.User{}).
+		Joins("JOIN user_roles ON user_roles.user_id = users.id").
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("roles.is_admin = ? AND roles.deleted_at IS NULL AND users.deleted_at IS NULL", true).
+		Where("NOT (user_roles.user_id = ? AND (? = 0 OR user_roles.role_id = ?))", excludeUserID, excludeRoleID, excludeRoleID).
+		Distinct("user_roles.user_id").
+		Count(&count).Error
+	return count, err
+}
+
 func (s *Service) RevokeRole(userID uint, roleID uint) error {
 	s.logger.Info("revoking role from user",
 		zap.Uint("user_id", userID),
@@ -131,6 +145,25 @@ func (s *Service) RevokeRole(userID uint, roleID uint) error {
 			zap.Uint("role_id", roleID),
 		)
 		return err
+	}
+
+	if role.IsAdmin {
+		remainingAdmins, err := countAdminUsersExcluding(s.db, userID, roleID)
+		if err != nil {
+			s.logger.Error("failed to count remaining admin users",
+				zap.Error(err),
+				zap.Uint("user_id", userID),
+				zap.Uint("role_id", roleID),
+			)
+			return err
+		}
+		if remainingAdmins == 0 {
+			s.logger.Warn("refusing to revoke the last administrator's admin role",
+				zap.Uint("user_id", userID),
+				zap.Uint("role_id", roleID),
+			)
+			return ErrLastAdmin
+		}
 	}
 
 	if err := s.db.Model(&user).Association("Roles").Delete(&role); err != nil {

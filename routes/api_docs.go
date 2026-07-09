@@ -1036,6 +1036,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Revocation would leave no administrator").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

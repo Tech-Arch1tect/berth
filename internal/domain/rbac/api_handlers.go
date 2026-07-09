@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"errors"
+
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -202,6 +204,9 @@ func (h *APIHandler) RevokeRole(c echo.Context) error {
 	h.db.First(&role, req.RoleID)
 
 	if err := h.rbacSvc.RevokeRole(req.UserID, req.RoleID); err != nil {
+		if errors.Is(err, ErrLastAdmin) {
+			return response.Conflict(c, "Cannot revoke the last administrator's admin role")
+		}
 		return response.Internal(c, "Failed to revoke role")
 	}
 
