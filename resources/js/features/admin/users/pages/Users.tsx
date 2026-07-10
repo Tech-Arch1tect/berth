@@ -5,12 +5,15 @@ import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 import { Table } from '../../../../shared/components/Table';
 import { Modal } from '../../../../shared/components/Modal';
+import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
-import { UserGroupIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../../../shared/auth/auth-context';
+import { UserGroupIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
   useGetApiV1AdminUsers,
   usePostApiV1AdminUsers,
+  useDeleteApiV1AdminUsersId,
   getGetApiV1AdminUsersQueryKey,
 } from '../../../../api/generated/admin/admin';
 import type { UserInfo } from '../../../../api/generated/models';
@@ -25,15 +28,39 @@ const EMPTY_FORM = {
 export default function AdminUsers() {
   useDocumentTitle('Users');
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   const { data: usersResponse, isLoading: usersLoading } = useGetApiV1AdminUsers();
   const users = usersResponse?.data?.users ?? [];
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserInfo | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const createUserMutation = usePostApiV1AdminUsers();
+  const deleteUserMutation = useDeleteApiV1AdminUsersId();
+
+  const confirmDeleteUser = () => {
+    if (!userToDelete) return;
+    setDeleteError(null);
+
+    deleteUserMutation.mutate(
+      { id: userToDelete.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetApiV1AdminUsersQueryKey() });
+          setUserToDelete(null);
+        },
+        onError: (err) => {
+          const errorData = err as { message?: string; error?: string };
+          setDeleteError(errorData.message || errorData.error || 'Failed to delete user');
+          setUserToDelete(null);
+        },
+      }
+    );
+  };
 
   const closeCreateModal = () => {
     setShowCreateModal(false);
@@ -107,6 +134,30 @@ export default function AdminUsers() {
     </Link>
   );
 
+  const userActions = (user: UserInfo) => {
+    const isSelf = user.id === currentUser?.id;
+    return (
+      <div className="flex items-center justify-end gap-2">
+        {manageRolesLink(user)}
+        <button
+          type="button"
+          onClick={() => setUserToDelete(user)}
+          disabled={isSelf}
+          aria-label={`Delete ${user.username}`}
+          title={isSelf ? 'You cannot delete your own account' : `Delete ${user.username}`}
+          className={cn(
+            'inline-flex min-h-[44px] items-center text-sm',
+            theme.buttons.danger,
+            isSelf && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          <TrashIcon className="h-4 w-4 mr-1.5" />
+          Delete
+        </button>
+      </div>
+    );
+  };
+
   if (usersLoading) {
     return <LoadingSpinner size="lg" text="Loading users..." fullScreen />;
   }
@@ -125,6 +176,18 @@ export default function AdminUsers() {
             Create User
           </button>
         </div>
+
+        {deleteError && (
+          <div
+            className={cn(
+              'mb-4 p-4 rounded-md border',
+              theme.intent.danger.surface,
+              theme.intent.danger.border
+            )}
+          >
+            <p className={cn('text-sm', theme.intent.danger.textStrong)}>{deleteError}</p>
+          </div>
+        )}
 
         <div className={theme.table.panel}>
           <Table<UserInfo>
@@ -177,7 +240,7 @@ export default function AdminUsers() {
                 key: 'actions',
                 header: '',
                 className: 'text-right',
-                render: manageRolesLink,
+                render: userActions,
               },
             ]}
             renderCard={(user) => (
@@ -187,7 +250,7 @@ export default function AdminUsers() {
                     <p className={cn('text-sm font-medium', theme.text.strong)}>{user.username}</p>
                     <p className={cn('truncate text-sm', theme.text.muted)}>{user.email}</p>
                   </div>
-                  {manageRolesLink(user)}
+                  {userActions(user)}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {roleBadges(user)}
@@ -308,6 +371,17 @@ export default function AdminUsers() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={userToDelete !== null}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete the user "${userToDelete?.username}"? Their sessions and API keys will be revoked immediately. Their operation history is kept. This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteUserMutation.isPending}
+      />
     </div>
   );
 }

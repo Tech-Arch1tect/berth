@@ -2898,6 +2898,88 @@ export const usePostApiV1AdminUsersRevokeRole = <TError = ResponseEmpty | void, 
   return useMutation(getPostApiV1AdminUsersRevokeRoleMutationOptions(options), queryClient);
 };
 /**
+ * Deletes a user and revokes their sessions, API keys and other credentials. Operation history is retained. Requires admin permissions.
+ * @summary Delete a user
+ */
+export const getDeleteApiV1AdminUsersIdUrl = (id: number) => {
+  return `/api/v1/admin/users/${id}`;
+};
+
+export const deleteApiV1AdminUsersId = async (
+  id: number,
+  options?: RequestInit
+): Promise<ResponseMessageData> => {
+  return apiClient<ResponseMessageData>(getDeleteApiV1AdminUsersIdUrl(id), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteApiV1AdminUsersIdMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1AdminUsersId'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteApiV1AdminUsersId(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1AdminUsersIdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>
+>;
+
+export type DeleteApiV1AdminUsersIdMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Delete a user
+ */
+export const useDeleteApiV1AdminUsersId = <TError = ResponseEmpty | void, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1AdminUsersId>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteApiV1AdminUsersIdMutationOptions(options), queryClient);
+};
+/**
  * Returns user details and all available roles. Requires admin permissions.
  * @summary Get user with roles
  */
