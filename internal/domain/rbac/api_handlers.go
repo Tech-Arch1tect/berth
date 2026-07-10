@@ -23,21 +23,27 @@ type rbacAuditLogger interface {
 	LogRBACEvent(eventType string, actorUserID uint, actorUsername string, targetType string, targetID uint, targetName, ip string, metadata map[string]any) error
 }
 
+type UserSessionRevoker interface {
+	RevokeAllUserSessions(userID uint) error
+}
+
 type APIHandler struct {
 	db           *gorm.DB
 	rbacSvc      *Service
 	totpSvc      *totp.Service
 	authSvc      *auth.Service
 	auditService rbacAuditLogger
+	sessionSvc   UserSessionRevoker
 }
 
-func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service, auditService rbacAuditLogger) *APIHandler {
+func NewAPIHandler(db *gorm.DB, rbacSvc *Service, totpSvc *totp.Service, authSvc *auth.Service, auditService rbacAuditLogger, sessionSvc UserSessionRevoker) *APIHandler {
 	return &APIHandler{
 		db:           db,
 		rbacSvc:      rbacSvc,
 		totpSvc:      totpSvc,
 		authSvc:      authSvc,
 		auditService: auditService,
+		sessionSvc:   sessionSvc,
 	}
 }
 
@@ -117,6 +123,55 @@ func (h *APIHandler) CreateUser(c echo.Context) error {
 	userInfo := usermodel.ToUserInfo(user, h.totpSvc.IsUserTOTPEnabled(user.ID))
 
 	return response.Created(c, userInfo)
+}
+
+func (h *APIHandler) DeleteUser(c echo.Context) error {
+	userID, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	actorUserID, _ := session.GetCurrentUserID(c)
+	if userID == actorUserID {
+		return response.BadRequest(c, "cannot delete your own account")
+	}
+
+	deletedUser, err := h.rbacSvc.DeleteUser(userID)
+	if err != nil {
+		if errors.Is(err, ErrLastAdmin) {
+			return response.Conflict(c, "Cannot delete the last administrator")
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "User not found")
+		}
+		return response.Internal(c, "Failed to delete user")
+	}
+
+	sessionsRevoked := false
+	if h.sessionSvc != nil {
+		sessionsRevoked = h.sessionSvc.RevokeAllUserSessions(userID) == nil
+	}
+
+	actorUser, _ := session.LoadCurrentUser(c, h.db)
+	actorUsername := ""
+	if actorUser != nil {
+		actorUsername = actorUser.Username
+	}
+
+	h.auditService.LogUserManagementEvent(
+		security.EventUserDeleted,
+		actorUserID,
+		actorUsername,
+		userID,
+		deletedUser.Email,
+		c.RealIP(),
+		map[string]any{
+			"username":         deletedUser.Username,
+			"sessions_revoked": sessionsRevoked,
+		},
+	)
+
+	return response.OK(c, MessageData{Message: "User deleted successfully"})
 }
 
 func (h *APIHandler) GetUserRoles(c echo.Context) error {

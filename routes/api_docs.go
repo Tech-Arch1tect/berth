@@ -1001,6 +1001,21 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("DELETE", "/api/v1/admin/users/{id}").
+		Tags("admin").
+		Summary("Delete a user").
+		Description("Deletes a user and revokes their sessions, API keys and other credentials. Operation history is retained. Requires admin permissions.").
+		PathParam("id", "User ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[rbac.MessageData]{}, "User deleted successfully").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or attempt to delete own account").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "User not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Deletion would leave no administrator").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/users").
 		Tags("admin").
 		Summary("Create a new user").

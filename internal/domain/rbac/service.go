@@ -1,6 +1,10 @@
 package rbac
 
 import (
+	"berth/internal/domain/apikey"
+	"berth/internal/domain/auth"
+	"berth/internal/domain/auth/tokens"
+	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/rbac/permnames"
 	usermodel "berth/internal/domain/user"
 	"errors"
@@ -121,6 +125,76 @@ func countAdminUsersExcluding(db *gorm.DB, excludeUserID, excludeRoleID uint) (i
 		Distinct("user_roles.user_id").
 		Count(&count).Error
 	return count, err
+}
+
+func (s *Service) DeleteUser(userID uint) (*usermodel.User, error) {
+	s.logger.Info("deleting user", zap.Uint("user_id", userID))
+
+	var deleted usermodel.User
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		var target usermodel.User
+		if err := tx.Preload("Roles").First(&target, userID).Error; err != nil {
+			return err
+		}
+
+		if target.IsAdmin() {
+			remainingAdmins, err := countAdminUsersExcluding(tx, userID, 0)
+			if err != nil {
+				return err
+			}
+			if remainingAdmins == 0 {
+				return ErrLastAdmin
+			}
+		}
+
+		if err := tx.Model(&target).Association("Roles").Clear(); err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&totp.TOTPSecret{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&totp.UsedCode{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ?", userID).Delete(&tokens.RefreshToken{}).Error; err != nil {
+			return err
+		}
+
+		var keys []apikey.APIKey
+		if err := tx.Where("user_id = ?", userID).Find(&keys).Error; err != nil {
+			return err
+		}
+		for i := range keys {
+			if err := tx.Delete(&keys[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Unscoped().Where("email = ?", target.Email).Delete(&auth.PasswordResetToken{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("email = ?", target.Email).Delete(&auth.EmailVerificationToken{}).Error; err != nil {
+			return err
+		}
+
+		deleted = target
+		return tx.Delete(&target).Error
+	})
+	if err != nil {
+		s.logger.Error("failed to delete user",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+		)
+		return nil, err
+	}
+
+	s.logger.Info("user deleted successfully",
+		zap.Uint("user_id", userID),
+		zap.String("username", deleted.Username),
+	)
+	return &deleted, nil
 }
 
 func (s *Service) RevokeRole(userID uint, roleID uint) error {

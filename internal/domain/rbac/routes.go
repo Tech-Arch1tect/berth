@@ -9,6 +9,7 @@ func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
 	reg.GET("/users", h.ListUsers, authz.Admin(permnames.AdminUsersRead))
 	reg.POST("/users", h.CreateUser, authz.Admin(permnames.AdminUsersWrite))
 	reg.GET("/users/:id/roles", h.GetUserRoles, authz.Admin(permnames.AdminUsersRead))
+	reg.DELETE("/users/:id", h.DeleteUser, authz.Admin(permnames.AdminUsersWrite))
 	reg.POST("/users/assign-role", h.AssignRole, authz.Admin(permnames.AdminUsersWrite))
 	reg.POST("/users/revoke-role", h.RevokeRole, authz.Admin(permnames.AdminUsersWrite))
 

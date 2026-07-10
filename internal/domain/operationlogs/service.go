@@ -141,11 +141,9 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) ([]Operation
 		var messageCount int64
 		s.db.Model(&OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
 
-		userName := "Unknown"
-		if log.User.Username != "" {
-			userName = log.User.Username
-		} else if log.User.Email != "" {
-			userName = log.User.Email
+		userName := log.UserName
+		if userName == "" {
+			userName = "Unknown"
 		}
 
 		serverName := "Unknown"
@@ -196,11 +194,9 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*OperationLo
 		return nil, err
 	}
 
-	userName := "Unknown"
-	if log.User.Username != "" {
-		userName = log.User.Username
-	} else if log.User.Email != "" {
-		userName = log.User.Email
+	userName := log.UserName
+	if userName == "" {
+		userName = "Unknown"
 	}
 
 	serverName := "Unknown"
@@ -251,11 +247,9 @@ func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID
 		return nil, err
 	}
 
-	userName := "Unknown"
-	if log.User.Username != "" {
-		userName = log.User.Username
-	} else if log.User.Email != "" {
-		userName = log.User.Email
+	userName := log.UserName
+	if userName == "" {
+		userName = "Unknown"
 	}
 
 	serverName := "Unknown"
@@ -369,11 +363,9 @@ func (s *Service) GetRunningOperations(userID uint) ([]OperationLogInfo, error) 
 		var messageCount int64
 		s.db.Model(&OperationLogMessage{}).Where("operation_log_id = ?", log.ID).Count(&messageCount)
 
-		userName := "Unknown"
-		if log.User.Username != "" {
-			userName = log.User.Username
-		} else if log.User.Email != "" {
-			userName = log.User.Email
+		userName := log.UserName
+		if userName == "" {
+			userName = "Unknown"
 		}
 
 		serverName := "Unknown"

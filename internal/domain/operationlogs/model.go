@@ -21,6 +21,7 @@ type OperationLog struct {
 	db.BaseModel
 	UserID        uint            `json:"user_id" gorm:"not null;index"`
 	User          user.User       `json:"user" gorm:"foreignKey:UserID"`
+	UserName      string          `json:"-" gorm:"size:255;index"`
 	ServerID      uint            `json:"server_id" gorm:"not null;index"`
 	Server        server.Server   `json:"server" gorm:"foreignKey:ServerID"`
 	StackName     string          `json:"stack_name" gorm:"not null;index"`

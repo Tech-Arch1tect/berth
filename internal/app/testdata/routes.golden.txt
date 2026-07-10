@@ -23,6 +23,7 @@ PUT	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).UpdateServer-
 POST	/api/v1/admin/servers/:id/test	internal/domain/server.(*APIHandler).TestConnection-fm
 GET	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).ListUsers-fm
 POST	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).CreateUser-fm
+DELETE	/api/v1/admin/users/:id	internal/domain/rbac.(*APIHandler).DeleteUser-fm
 GET	/api/v1/admin/users/:id/roles	internal/domain/rbac.(*APIHandler).GetUserRoles-fm
 POST	/api/v1/admin/users/assign-role	internal/domain/rbac.(*APIHandler).AssignRole-fm
 POST	/api/v1/admin/users/revoke-role	internal/domain/rbac.(*APIHandler).RevokeRole-fm

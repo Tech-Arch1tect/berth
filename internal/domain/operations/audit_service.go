@@ -2,6 +2,7 @@ package operations
 
 import (
 	"berth/internal/domain/operationlogs"
+	"berth/internal/domain/user"
 	"encoding/json"
 	"time"
 
@@ -49,8 +50,18 @@ func (s *AuditService) LogOperationStart(userID uint, serverID uint, stackName s
 		)
 	}
 
+	var username string
+	if err := s.db.Model(&user.User{}).Select("username").Where("id = ?", userID).Scan(&username).Error; err != nil {
+		s.logger.Warn("failed to resolve username for operation log",
+			zap.Error(err),
+			zap.Uint("user_id", userID),
+			zap.String("operation_id", operationID),
+		)
+	}
+
 	log := &operationlogs.OperationLog{
 		UserID:      userID,
+		UserName:    username,
 		ServerID:    serverID,
 		StackName:   stackName,
 		OperationID: operationID,

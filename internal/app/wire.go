@@ -206,7 +206,11 @@ func Build(
 	g.AgentSvc = agent.NewService(logger, cfg.Custom.OperationTimeoutSeconds, cfg.Custom.AgentReadTimeoutSeconds)
 
 	g.RBACSvc = rbac.NewService(db, logger)
-	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc)
+	var userSessionRevoker rbac.UserSessionRevoker
+	if g.SessionSvc != nil {
+		userSessionRevoker = g.SessionSvc
+	}
+	g.RBACAPIHandler = rbac.NewAPIHandler(db, g.RBACSvc, g.TOTPSvc, g.AuthSvc, g.SecurityAuditSvc, userSessionRevoker)
 
 	g.AuthzEngine = authzengine.New(db, logger)
 	g.AuthzEngine.SetAuthorizationAuditor(g.SecurityAuditSvc)
@@ -322,6 +326,10 @@ func Build(
 
 	if err := seeds.SeedRBACData(db); err != nil {
 		return nil, fmt.Errorf("seed rbac: %w", err)
+	}
+
+	if err := seeds.BackfillOperationLogUserNames(db); err != nil {
+		return nil, fmt.Errorf("backfill operation log user names: %w", err)
 	}
 
 	httpSvr := newHTTPServer(e, cfg, ssl, logger)
