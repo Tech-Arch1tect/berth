@@ -7,6 +7,7 @@ import (
 
 	"berth/internal/domain/apikey"
 	"berth/internal/domain/auth"
+	"berth/internal/domain/backups"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -674,6 +675,36 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Build()
 
 	// Files
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups").
+		Tags("backups").
+		Summary("List stack backups").
+		Description("Returns the stack's backup runs recorded on the agent, newest first, and whether backups are configured on the agent").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		Response(http.StatusOK, response.Response[backups.ListResponse]{}, "Backup runs").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups/{backupid}").
+		Tags("backups").
+		Summary("Get a stack backup").
+		Description("Returns a single backup run including its per-component snapshots and any skipped mounts").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("backupid", "Backup run ID").Required().
+		Response(http.StatusOK, response.Response[backups.Run]{}, "Backup run detail").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Backup not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files").
 		Tags("files").
 		Summary("List directory contents").

@@ -64,6 +64,8 @@ PUT	/api/v1/servers/:serverid/registries/:id	internal/domain/registry.(*APIHandl
 GET	/api/v1/servers/:serverid/stacks	internal/domain/stack.(*APIHandler).ListServerStacks-fm
 POST	/api/v1/servers/:serverid/stacks	internal/domain/stack.(*APIHandler).CreateStack-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname	internal/domain/stack.(*APIHandler).GetStackDetails-fm
+GET	/api/v1/servers/:serverid/stacks/:stackname/backups	internal/domain/backups.(*APIHandler).ListBackups-fm
+GET	/api/v1/servers/:serverid/stacks/:stackname/backups/:backupid	internal/domain/backups.(*APIHandler).GetBackup-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/compose	internal/domain/stack.(*APIHandler).GetComposeConfig-fm
 PATCH	/api/v1/servers/:serverid/stacks/:stackname/compose	internal/domain/stack.(*APIHandler).UpdateCompose-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs	internal/domain/logs.(*Handler).GetContainerLogs-fm

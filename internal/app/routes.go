@@ -10,6 +10,7 @@ import (
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/authz"
 	authzengine "berth/internal/domain/authz/engine"
+	"berth/internal/domain/backups"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -83,7 +84,7 @@ func registerRoutes(g *Graph) {
 	publicRegistrar := registerAPIAuthRoutes(api, authApiRateLimit, g.AuthAPIHandler, authzEngine)
 	protectedRegistrar := registerProtectedAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
 		g.AuthAPIHandler, g.ServerUserAPIHandler, authzEngine,
-		g.StackAPIHandler, g.FilesAPIHandler, g.LogsHandler, g.OperationsHandler,
+		g.StackAPIHandler, g.FilesAPIHandler, g.BackupsAPIHandler, g.LogsHandler, g.OperationsHandler,
 		g.OperationLogsHandler, g.MaintAPIHandler, g.VulnscanHandler,
 		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
@@ -131,7 +132,7 @@ func registerAPIAuthRoutes(api *echo.Group, authApiRateLimit echo.MiddlewareFunc
 
 func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor,
 	mobileAuthHandler *auth.APIHandler, serverUserAPIHandler *server.UserAPIHandler,
-	authzEngine *authzengine.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, logsHandler *logs.Handler,
+	authzEngine *authzengine.Engine, stackAPIHandler *stack.APIHandler, filesAPIHandler *files.APIHandler, backupsAPIHandler *backups.APIHandler, logsHandler *logs.Handler,
 	operationsHandler *operations.Handler, operationLogsHandler *operationlogs.Handler, maintenanceAPIHandler *maintenance.APIHandler,
 	vulnscanHandler *vulnscan.Handler, imageUpdatesAPIHandler *imageupdates.APIHandler, apiKeyHandler *apikey.Handler,
 	versionHandler *version.Handler, registryAPIHandler *registry.APIHandler) *authz.Registrar {
@@ -159,6 +160,9 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 	}
 	if filesAPIHandler != nil {
 		filesAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
+	}
+	if backupsAPIHandler != nil {
+		backupsAPIHandler.RegisterProtectedAPIRoutes(protectedRegistrar)
 	}
 	if logsHandler != nil {
 		logsHandler.RegisterProtectedAPIRoutes(protectedRegistrar)

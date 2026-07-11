@@ -17,5 +17,8 @@ func AdminStackPermissions() []string {
 		permnames.FilesRead,
 		permnames.FilesWrite,
 		permnames.LogsRead,
+		permnames.BackupsRead,
+		permnames.BackupsManage,
+		permnames.BackupsRestore,
 	}
 }

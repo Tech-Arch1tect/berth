@@ -13,6 +13,7 @@ import (
 	"berth/internal/domain/auth/tokens"
 	"berth/internal/domain/auth/totp"
 	authzengine "berth/internal/domain/authz/engine"
+	"berth/internal/domain/backups"
 	"berth/internal/domain/dataexport"
 	"berth/internal/domain/files"
 	"berth/internal/domain/imageupdates"
@@ -108,6 +109,8 @@ type Graph struct {
 	MaintAPIHandler        *maintenance.APIHandler
 	FilesSvc               *files.Service
 	FilesAPIHandler        *files.APIHandler
+	BackupsSvc             *backups.Service
+	BackupsAPIHandler      *backups.APIHandler
 	LogsSvc                *logs.Service
 	LogsHandler            *logs.Handler
 	RegistrySvc            *registry.Service
@@ -232,6 +235,9 @@ func Build(
 
 	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.FilesAPIHandler = files.NewAPIHandler(g.FilesSvc, g.SecurityAuditSvc)
+
+	g.BackupsSvc = backups.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
+	g.BackupsAPIHandler = backups.NewAPIHandler(g.BackupsSvc)
 
 	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.LogsHandler = logs.NewHandler(g.LogsSvc)

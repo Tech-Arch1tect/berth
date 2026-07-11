@@ -13,7 +13,10 @@
         "stacks.create",
         "files.read",
         "files.write",
-        "logs.read"
+        "logs.read",
+        "backups.read",
+        "backups.manage",
+        "backups.restore"
       ]
     },
     "success": true
