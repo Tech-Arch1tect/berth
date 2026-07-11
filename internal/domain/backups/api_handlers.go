@@ -36,6 +36,34 @@ func (h *APIHandler) ListBackups(c echo.Context) error {
 	return response.OK(c, *result)
 }
 
+func (h *APIHandler) DeleteBackup(c echo.Context) error {
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	backupID := c.Param("backupid")
+	if backupID == "" {
+		return response.BadRequest(c, "backup id is required")
+	}
+
+	if err := h.service.DeleteBackup(c.Request().Context(), p, serverID, stackname, backupID); err != nil {
+		if errors.Is(err, ErrBackupNotFound) {
+			return response.NotFound(c, "backup not found")
+		}
+		if errors.Is(err, ErrRepositoryBusy) {
+			return response.Conflict(c, err.Error())
+		}
+		return response.Internal(c, err.Error())
+	}
+	return response.OK(c, DeleteResponse{Message: "backup deleted"})
+}
+
 func (h *APIHandler) GetBackup(c echo.Context) error {
 	p, err := authz.RequirePrincipal(c)
 	if err != nil {

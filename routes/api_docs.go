@@ -675,6 +675,23 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Build()
 
 	// Files
+	apiDoc.Document("DELETE", "/api/v1/servers/{serverid}/stacks/{stackname}/backups/{backupid}").
+		Tags("backups").
+		Summary("Delete a stack backup").
+		Description("Deletes a backup run's snapshots from the agent's repository and removes its metadata; reclaims repository space").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("backupid", "Backup run ID").Required().
+		Response(http.StatusOK, response.Response[backups.DeleteResponse]{}, "Backup deleted").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Backup not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Repository in use by another operation").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups").
 		Tags("backups").
 		Summary("List stack backups").

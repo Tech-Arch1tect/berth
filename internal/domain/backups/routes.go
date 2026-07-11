@@ -8,4 +8,5 @@ import (
 func (h *APIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
 	reg.GET("/servers/:serverid/stacks/:stackname/backups", h.ListBackups, authz.Stack(permnames.BackupsRead))
 	reg.GET("/servers/:serverid/stacks/:stackname/backups/:backupid", h.GetBackup, authz.Stack(permnames.BackupsRead))
+	reg.DELETE("/servers/:serverid/stacks/:stackname/backups/:backupid", h.DeleteBackup, authz.Stack(permnames.BackupsManage))
 }
