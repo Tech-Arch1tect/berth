@@ -7,6 +7,9 @@ export const PERM_LOGS_READ = 'logs.read';
 export const PERM_DOCKER_MAINTENANCE_READ = 'docker.maintenance.read';
 export const PERM_DOCKER_MAINTENANCE_WRITE = 'docker.maintenance.write';
 export const PERM_REGISTRIES_MANAGE = 'registries.manage';
+export const PERM_BACKUPS_READ = 'backups.read';
+export const PERM_BACKUPS_MANAGE = 'backups.manage';
+export const PERM_BACKUPS_RESTORE = 'backups.restore';
 
 export const PERM_ADMIN_USERS_READ = 'admin.users.read';
 export const PERM_ADMIN_USERS_WRITE = 'admin.users.write';

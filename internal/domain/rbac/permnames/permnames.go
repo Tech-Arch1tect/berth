@@ -10,6 +10,9 @@ const (
 	DockerMaintenanceRead  = "docker.maintenance.read"
 	DockerMaintenanceWrite = "docker.maintenance.write"
 	RegistriesManage       = "registries.manage"
+	BackupsRead            = "backups.read"
+	BackupsManage          = "backups.manage"
+	BackupsRestore         = "backups.restore"
 )
 
 const (

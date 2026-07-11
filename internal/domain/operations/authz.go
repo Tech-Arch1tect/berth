@@ -12,10 +12,16 @@ import (
 )
 
 func permissionForCommand(command string) string {
-	if command == "create-archive" || command == "extract-archive" {
+	switch command {
+	case "create-archive", "extract-archive":
 		return permnames.FilesWrite
+	case "create-backup":
+		return permnames.BackupsManage
+	case "restore-backup":
+		return permnames.BackupsRestore
+	default:
+		return permnames.StacksManage
 	}
-	return permnames.StacksManage
 }
 
 func operationRequirement(c echo.Context) ([]authz.Requirement, error) {

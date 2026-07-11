@@ -29,6 +29,9 @@ import {
   PERM_LOGS_OPERATIONS_READ,
   PERM_IMAGE_UPDATES_READ,
   PERM_REGISTRIES_MANAGE,
+  PERM_BACKUPS_READ,
+  PERM_BACKUPS_MANAGE,
+  PERM_BACKUPS_RESTORE,
   PERM_DOCKER_MAINTENANCE_READ,
   PERM_DOCKER_MAINTENANCE_WRITE,
   PERM_ADMIN_SERVERS_READ,
@@ -56,7 +59,7 @@ const EMPTY_FORM: NewScopeForm = {
   permissions: [],
 };
 
-const PERMISSIONS = [
+export const PERMISSIONS = [
   { value: PERM_SERVERS_READ, label: 'View accessible servers' },
   { value: PERM_STACKS_READ, label: 'View stacks and containers' },
   {
@@ -70,6 +73,15 @@ const PERMISSIONS = [
   { value: PERM_LOGS_OPERATIONS_READ, label: 'View own operation logs' },
   { value: PERM_IMAGE_UPDATES_READ, label: 'View available image updates' },
   { value: PERM_REGISTRIES_MANAGE, label: 'Create, update, and delete registry credentials' },
+  { value: PERM_BACKUPS_READ, label: 'View stack backups' },
+  {
+    value: PERM_BACKUPS_MANAGE,
+    label: 'Create and delete stack backups (reads all stack data including volumes)',
+  },
+  {
+    value: PERM_BACKUPS_RESTORE,
+    label: 'Restore stack backups (overwrites current stack data)',
+  },
   {
     value: PERM_DOCKER_MAINTENANCE_READ,
     label: 'View Docker usage statistics and system information (server-wide)',

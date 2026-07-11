@@ -31,6 +31,9 @@ func SeedRBACData(db *gorm.DB) error {
 		{Name: permnames.DockerMaintenanceRead, Resource: "docker", Action: "maintenance.read", Description: "View Docker usage statistics and system information (server-wide, not stack-specific)", IsAPIKeyOnly: false},
 		{Name: permnames.DockerMaintenanceWrite, Resource: "docker", Action: "maintenance.write", Description: "Run Docker maintenance tasks like pruning images and containers (server-wide, not stack-specific)", IsAPIKeyOnly: false},
 		{Name: permnames.RegistriesManage, Resource: "registries", Action: "manage", Description: "Create, update, and delete registry credentials", IsAPIKeyOnly: false},
+		{Name: permnames.BackupsRead, Resource: "backups", Action: "read", Description: "View stack backups", IsAPIKeyOnly: false},
+		{Name: permnames.BackupsManage, Resource: "backups", Action: "manage", Description: "Create and delete stack backups (reads all stack data including volumes)", IsAPIKeyOnly: false},
+		{Name: permnames.BackupsRestore, Resource: "backups", Action: "restore", Description: "Restore stack backups, overwriting current stack data", IsAPIKeyOnly: false},
 
 		// admin permissions for API key scope enforcement
 		{Name: permnames.AdminUsersRead, Resource: "admin.users", Action: "read", Description: "View users and their roles", IsAPIKeyOnly: true},

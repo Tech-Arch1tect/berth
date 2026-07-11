@@ -363,4 +363,117 @@ func TestAuthzOperationsBodyResolverDispatch(t *testing.T) {
 		}, bearer(jwtManage), 403)
 		assertNoOperation(t)
 	})
+
+	_, jwtBackupsManage, _ := f.UserWithRole("backups-manage", f.Server, permnames.BackupsManage, "prod-*")
+	_, jwtBackupsRestore, _ := f.UserWithRole("backups-restore", f.Server, permnames.BackupsRestore, "prod-*")
+
+	t.Run("'create-backup' dispatches to backups.manage, not stacks.manage", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "create-backup"},
+		}, bearer(jwtBackupsManage), 200)
+
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "create-backup"},
+		}, bearer(jwtManage), 403)
+		assertNoOperation(t)
+	})
+
+	t.Run("'restore-backup' dispatches to backups.restore; backups.manage is denied", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "restore-backup"},
+		}, bearer(jwtBackupsRestore), 200)
+
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "restore-backup"},
+		}, bearer(jwtBackupsManage), 403)
+		assertNoOperation(t)
+
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "restore-backup"},
+		}, bearer(jwtManage), 403)
+		assertNoOperation(t)
+	})
+
+	t.Run("backup permissions admit no other command", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "up"},
+		}, bearer(jwtBackupsManage), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "create-archive"},
+		}, bearer(jwtBackupsManage), 403)
+		assertStatus(t, app, &e2etesting.RequestOptions{
+			Method: http.MethodPost, Path: url,
+			Body: map[string]any{"command": "create-backup"},
+		}, bearer(jwtBackupsRestore), 403)
+		assertNoOperation(t)
+	})
+}
+
+func TestAuthzOperationsBackupCommandScoping(t *testing.T) {
+	t.Parallel()
+	app := e2e.SetupTestApp(t)
+	f := NewAuthzFixture(t, app)
+	registerOperationsAgentEndpoints(f.Agent, "prod-web")
+	registerOperationsAgentEndpoints(f.Agent, "staging-web")
+
+	sid := e2e.Itoa(f.Server.ID)
+	prodURL := "/api/v1/servers/" + sid + "/stacks/prod-web/operations"
+	stagingURL := "/api/v1/servers/" + sid + "/stacks/staging-web/operations"
+
+	body := map[string]any{"command": "create-backup"}
+
+	assertNoOperation := func(t *testing.T) {
+		t.Helper()
+		f.Agent.AssertNotCalled(t, http.MethodPost, "/operations")
+	}
+
+	_, jwtBackups, _ := f.UserWithRole("backups", f.Server, permnames.BackupsManage, "prod-*")
+	_, jwtAdmin := f.Admin("backups-admin")
+
+	matchingOwner, _, _ := f.UserWithRole("matching-owner", f.Server, permnames.BackupsManage, "prod-*")
+	keyMatching := f.APIKeyFor(matchingOwner, "matching-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.BackupsManage, "prod-*"),
+		keyScope(&f.Server.ID, permnames.StacksRead, "prod-*"),
+	})
+
+	wrongPermOwner, _, _ := f.UserWithRole("wrongperm-owner", f.Server, permnames.BackupsManage, "*")
+	keyWrongPerm := f.APIKeyFor(wrongPermOwner, "wrongperm-key", []ScopeSpec{
+		keyScope(&f.Server.ID, permnames.StacksRead, "*"),
+	})
+
+	t.Run("unauthenticated returns 401 with no agent call", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, "", 401)
+		assertNoOperation(t)
+	})
+	t.Run("JWT with backups.manage on in-pattern is admitted", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(jwtBackups), 200)
+	})
+	t.Run("JWT with backups.manage out-of-pattern returns 403 with no agent call", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: stagingURL, Body: body}, bearer(jwtBackups), 403)
+		assertNoOperation(t)
+	})
+	t.Run("JWT admin is admitted", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(jwtAdmin), 200)
+	})
+	t.Run("API key with backups.manage scope is admitted", func(t *testing.T) {
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(keyMatching), 200)
+	})
+	t.Run("API key without backups.manage scope returns 403 with no agent call even though owner holds the role", func(t *testing.T) {
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(keyWrongPerm), 403)
+		assertNoOperation(t)
+	})
 }

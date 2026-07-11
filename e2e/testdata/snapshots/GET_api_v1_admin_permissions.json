@@ -82,6 +82,30 @@
         },
         {
           "action": "read",
+          "description": "View stack backups",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "backups.read",
+          "resource": "backups"
+        },
+        {
+          "action": "manage",
+          "description": "Create and delete stack backups (reads all stack data including volumes)",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "backups.manage",
+          "resource": "backups"
+        },
+        {
+          "action": "restore",
+          "description": "Restore stack backups, overwriting current stack data",
+          "id": "\u003c\u003cID\u003e\u003e",
+          "is_api_key_only": false,
+          "name": "backups.restore",
+          "resource": "backups"
+        },
+        {
+          "action": "read",
           "description": "View users and their roles",
           "id": "\u003c\u003cID\u003e\u003e",
           "is_api_key_only": true,
