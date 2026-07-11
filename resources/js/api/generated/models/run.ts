@@ -20,4 +20,7 @@ export interface Run {
   started_at: string;
   status: string;
   stop_mode?: string;
+  /** @nullable */
+  verified?: boolean | null;
+  verify_error?: string;
 }

@@ -5,20 +5,28 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { ResponseEmpty, ResponseListResponse, ResponseRun } from '../models';
+import type {
+  ResponseDeleteResponse,
+  ResponseEmpty,
+  ResponseListResponse,
+  ResponseRun,
+} from '../models';
 
 import { apiClient } from '../../client';
 
@@ -209,6 +217,109 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+/**
+ * Deletes a backup run's snapshots from the agent's repository and removes its metadata; reclaims repository space
+ * @summary Delete a stack backup
+ */
+export const getDeleteApiV1ServersServeridStacksStacknameBackupsBackupidUrl = (
+  serverid: number,
+  stackname: string,
+  backupid: string
+) => {
+  return `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}`;
+};
+
+export const deleteApiV1ServersServeridStacksStacknameBackupsBackupid = async (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  options?: RequestInit
+): Promise<ResponseDeleteResponse> => {
+  return apiClient<ResponseDeleteResponse>(
+    getDeleteApiV1ServersServeridStacksStacknameBackupsBackupidUrl(serverid, stackname, backupid),
+    {
+      ...options,
+      method: 'DELETE',
+    }
+  );
+};
+
+export const getDeleteApiV1ServersServeridStacksStacknameBackupsBackupidMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>,
+    TError,
+    { serverid: number; stackname: string; backupid: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>,
+  TError,
+  { serverid: number; stackname: string; backupid: string },
+  TContext
+> => {
+  const mutationKey = ['deleteApiV1ServersServeridStacksStacknameBackupsBackupid'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>,
+    { serverid: number; stackname: string; backupid: string }
+  > = (props) => {
+    const { serverid, stackname, backupid } = props ?? {};
+
+    return deleteApiV1ServersServeridStacksStacknameBackupsBackupid(
+      serverid,
+      stackname,
+      backupid,
+      requestOptions
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiV1ServersServeridStacksStacknameBackupsBackupidMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>
+>;
+
+export type DeleteApiV1ServersServeridStacksStacknameBackupsBackupidMutationError =
+  ResponseEmpty | void;
+
+/**
+ * @summary Delete a stack backup
+ */
+export const useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>,
+      TError,
+      { serverid: number; stackname: string; backupid: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApiV1ServersServeridStacksStacknameBackupsBackupid>>,
+  TError,
+  { serverid: number; stackname: string; backupid: string },
+  TContext
+> => {
+  return useMutation(
+    getDeleteApiV1ServersServeridStacksStacknameBackupsBackupidMutationOptions(options),
+    queryClient
+  );
+};
 /**
  * Returns a single backup run including its per-component snapshots and any skipped mounts
  * @summary Get a stack backup
