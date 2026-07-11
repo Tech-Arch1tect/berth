@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ArchiveBoxIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { useGetApiV1ServersServeridStacksStacknameBackups } from '../../../api/generated/backups/backups';
+import {
+  useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid,
+  useGetApiV1ServersServeridStacksStacknameBackups,
+} from '../../../api/generated/backups/backups';
+import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { formatDate } from '../../../shared/utils/formatters';
 import type { Run } from '../../../api/generated/models';
 import { useOperations } from '../../operations/hooks/useOperations';
 import { RecordList, RecordListColumn } from '../../../shared/components/RecordList';
@@ -34,6 +39,7 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -70,6 +76,20 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
       setIsStarting(false);
     }
   };
+
+  const deleteMutation = useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid({
+    mutation: {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        setSelectedRunId(null);
+        backupsQuery.refetch();
+      },
+      onError: (error) => {
+        setDeleteOpen(false);
+        setStartError(error instanceof Error ? error.message : 'Failed to delete the backup');
+      },
+    },
+  });
 
   const startRestore = async (componentIds: string[], keepExtraFiles: boolean) => {
     if (!selectedRun) return;
@@ -244,8 +264,10 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
               <BackupRunDetail
                 run={selectedRun}
                 canRestore={canRestore}
-                isOperationRunning={backupOperationRunning}
+                canManage={canManage}
+                isOperationRunning={backupOperationRunning || deleteMutation.isPending}
                 onRestore={() => setRestoreOpen(true)}
+                onDelete={() => setDeleteOpen(true)}
               />
             ) : null
           }
@@ -268,6 +290,18 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
           isStarting={isStarting}
           onClose={() => setRestoreOpen(false)}
           onConfirm={startRestore}
+        />
+      )}
+      {selectedRun && (
+        <ConfirmationModal
+          isOpen={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={() => deleteMutation.mutate({ serverid, stackname, backupid: selectedRun.id })}
+          title="Delete backup"
+          message={`Delete the backup of ${stackname} from ${formatDate(selectedRun.started_at)}? Its snapshots are removed from the repository and cannot be restored afterwards.`}
+          confirmText="Delete backup"
+          variant="danger"
+          isLoading={deleteMutation.isPending}
         />
       )}
     </div>

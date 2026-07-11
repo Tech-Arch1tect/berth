@@ -8,15 +8,19 @@ import { BackupStatusBadge } from './BackupStatusBadge';
 interface BackupRunDetailProps {
   run: Run;
   canRestore: boolean;
+  canManage: boolean;
   isOperationRunning: boolean;
   onRestore: () => void;
+  onDelete: () => void;
 }
 
 export function BackupRunDetail({
   run,
   canRestore,
+  canManage,
   isOperationRunning,
   onRestore,
+  onDelete,
 }: BackupRunDetailProps) {
   const hasRestorableComponents = run.components.some((component) => !!component.snapshot_id);
   return (
@@ -27,27 +31,55 @@ export function BackupRunDetail({
             <BackupStatusBadge status={run.status} />
             <span className={cn('text-xs font-mono', theme.text.subtle)}>{run.id.slice(0, 8)}</span>
           </div>
-          {canRestore && hasRestorableComponents && (
-            <button
-              type="button"
-              onClick={onRestore}
-              disabled={isOperationRunning}
-              className={cn(
-                'px-3 py-2 rounded-lg text-sm font-medium min-h-[44px]',
-                'border border-red-300 dark:border-red-800',
-                'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
-                'disabled:opacity-50'
-              )}
-            >
-              Restore…
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {canRestore && hasRestorableComponents && (
+              <button
+                type="button"
+                onClick={onRestore}
+                disabled={isOperationRunning}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium min-h-[44px]',
+                  'border border-red-300 dark:border-red-800',
+                  'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
+                  'disabled:opacity-50'
+                )}
+              >
+                Restore…
+              </button>
+            )}
+            {canManage && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={isOperationRunning}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium min-h-[44px]',
+                  'border border-zinc-200 dark:border-zinc-700',
+                  theme.text.muted,
+                  'hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50'
+                )}
+              >
+                Delete…
+              </button>
+            )}
+          </div>
         </div>
         <p className={cn('text-sm', theme.text.muted)}>
           Started {formatDate(run.started_at)}
           {run.finished_at ? `, finished ${formatDate(run.finished_at)}` : ''}
         </p>
         <p className={cn('text-sm', theme.text.muted)}>{describeStopMode(run.stop_mode)}</p>
+        {run.verified === true && (
+          <p className={cn('text-sm', 'text-emerald-700 dark:text-emerald-400')}>
+            Repository integrity verified after this backup
+          </p>
+        )}
+        {run.verified === false && (
+          <p className="text-sm text-red-700 dark:text-red-400">
+            Repository integrity check failed after this backup
+            {run.verify_error ? `: ${run.verify_error}` : ''}
+          </p>
+        )}
         {run.restic_version && (
           <p className={cn('text-xs', theme.text.subtle)}>{run.restic_version}</p>
         )}
