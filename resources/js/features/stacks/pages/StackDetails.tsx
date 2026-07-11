@@ -17,6 +17,8 @@ import {
   PERM_LOGS_READ,
   PERM_FILES_READ,
   PERM_FILES_WRITE,
+  PERM_BACKUPS_READ,
+  PERM_BACKUPS_MANAGE,
 } from '../../../shared/constants/permissions';
 import { SectionTabs } from '../../../shared/components/SectionTabs';
 import type { Tab } from '../../../shared/components/Tabs';
@@ -33,6 +35,7 @@ import {
   ShieldExclamationIcon,
   Square2StackIcon,
   CircleStackIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline';
 
 const TAB_FOR_SELECTION: Record<SidebarSelection['type'], string> = {
@@ -48,6 +51,7 @@ const TAB_FOR_SELECTION: Record<SidebarSelection['type'], string> = {
   stats: 'stats',
   security: 'security',
   images: 'images',
+  backups: 'backups',
 };
 
 export default function StackDetails() {
@@ -68,6 +72,9 @@ export default function StackDetails() {
   const canViewLogs = stack.stackPermissions?.permissions?.includes(PERM_LOGS_READ) ?? false;
   const canViewFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_READ) ?? false;
   const canWriteFiles = stack.stackPermissions?.permissions?.includes(PERM_FILES_WRITE) ?? false;
+  const canViewBackups = stack.stackPermissions?.permissions?.includes(PERM_BACKUPS_READ) ?? false;
+  const canManageBackups =
+    stack.stackPermissions?.permissions?.includes(PERM_BACKUPS_MANAGE) ?? false;
 
   const { updates, lastChecked } = useStackImageUpdates({
     serverid,
@@ -103,6 +110,7 @@ export default function StackDetails() {
     { id: 'stats', label: 'Stats', icon: ChartBarIcon },
     { id: 'security', label: 'Security', icon: ShieldExclamationIcon },
     { id: 'images', label: 'Images', icon: Square2StackIcon },
+    { id: 'backups', label: 'Backups', icon: ArchiveBoxIcon, disabled: !canViewBackups },
     { id: 'resources', label: 'Resources', icon: CircleStackIcon },
   ];
 
@@ -191,6 +199,8 @@ export default function StackDetails() {
                     canViewLogs,
                     canViewFiles,
                     canWriteFiles,
+                    canViewBackups,
+                    canManageBackups,
                   }}
                   onQuickOperation={stack.handleQuickOperation}
                   isOperationRunning={stack.quickOperationState.isRunning}

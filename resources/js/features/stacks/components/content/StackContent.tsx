@@ -21,6 +21,7 @@ import StackStats from '../StackStats';
 import LogViewer from '../../../logs/components/LogViewer';
 import { FileManager } from '../../../files/components/FileManager';
 import { VulnerabilityScanPanel } from '../../../vulnerability-scan/components';
+import { BackupsPanel } from '../../../backups/components';
 import { StackImagesTab } from '../images';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
@@ -43,6 +44,8 @@ interface StackContentProps {
     canViewLogs: boolean;
     canViewFiles: boolean;
     canWriteFiles: boolean;
+    canViewBackups: boolean;
+    canManageBackups: boolean;
   };
   onQuickOperation: (operation: OperationRequest) => void;
   isOperationRunning: boolean;
@@ -278,6 +281,29 @@ export const StackContent: FC<StackContentProps> = ({
       return (
         <div className="h-full overflow-auto p-6">
           <StackImagesTab imageUpdates={imageUpdates} />
+        </div>
+      );
+
+    case 'backups':
+      if (!permissions.canViewBackups) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className={cn('text-lg font-medium', theme.text.muted)}>Permission denied</p>
+              <p className={cn('text-sm', theme.text.subtle)}>
+                You don't have permission to view backups
+              </p>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="h-full">
+          <BackupsPanel
+            serverid={serverid}
+            stackname={stackname}
+            canManage={permissions.canManageBackups}
+          />
         </div>
       );
 

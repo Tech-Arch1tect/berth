@@ -10,7 +10,8 @@ export type SidebarSelection =
   | { type: 'files' }
   | { type: 'stats' }
   | { type: 'security' }
-  | { type: 'images' };
+  | { type: 'images' }
+  | { type: 'backups' };
 
 export const isSameSelection = (
   a: SidebarSelection | null,
