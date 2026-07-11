@@ -39,3 +39,23 @@ export function describeStopMode(stopMode: string | undefined): string {
   if (stopMode === 'pause') return 'Stack paused during backup';
   return 'Stack kept running';
 }
+
+export function restorableComponents(run: Run): Component[] {
+  return run.components.filter((component) => !!component.snapshot_id);
+}
+
+export function buildRestoreOptions(
+  backupId: string,
+  componentIds: string[],
+  keepExtraFiles: boolean
+): string[] {
+  const options = ['--backup-id', backupId];
+  for (const id of componentIds) {
+    options.push('--component', id);
+  }
+  options.push('--stop');
+  if (keepExtraFiles) {
+    options.push('--keep-extra-files');
+  }
+  return options;
+}

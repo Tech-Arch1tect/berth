@@ -19,6 +19,7 @@ import {
   PERM_FILES_WRITE,
   PERM_BACKUPS_READ,
   PERM_BACKUPS_MANAGE,
+  PERM_BACKUPS_RESTORE,
 } from '../../../shared/constants/permissions';
 import { SectionTabs } from '../../../shared/components/SectionTabs';
 import type { Tab } from '../../../shared/components/Tabs';
@@ -75,6 +76,8 @@ export default function StackDetails() {
   const canViewBackups = stack.stackPermissions?.permissions?.includes(PERM_BACKUPS_READ) ?? false;
   const canManageBackups =
     stack.stackPermissions?.permissions?.includes(PERM_BACKUPS_MANAGE) ?? false;
+  const canRestoreBackups =
+    stack.stackPermissions?.permissions?.includes(PERM_BACKUPS_RESTORE) ?? false;
 
   const { updates, lastChecked } = useStackImageUpdates({
     serverid,
@@ -201,6 +204,7 @@ export default function StackDetails() {
                     canWriteFiles,
                     canViewBackups,
                     canManageBackups,
+                    canRestoreBackups,
                   }}
                   onQuickOperation={stack.handleQuickOperation}
                   isOperationRunning={stack.quickOperationState.isRunning}

@@ -7,15 +7,41 @@ import { BackupStatusBadge } from './BackupStatusBadge';
 
 interface BackupRunDetailProps {
   run: Run;
+  canRestore: boolean;
+  isOperationRunning: boolean;
+  onRestore: () => void;
 }
 
-export function BackupRunDetail({ run }: BackupRunDetailProps) {
+export function BackupRunDetail({
+  run,
+  canRestore,
+  isOperationRunning,
+  onRestore,
+}: BackupRunDetailProps) {
+  const hasRestorableComponents = run.components.some((component) => !!component.snapshot_id);
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <BackupStatusBadge status={run.status} />
-          <span className={cn('text-xs font-mono', theme.text.subtle)}>{run.id.slice(0, 8)}</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <BackupStatusBadge status={run.status} />
+            <span className={cn('text-xs font-mono', theme.text.subtle)}>{run.id.slice(0, 8)}</span>
+          </div>
+          {canRestore && hasRestorableComponents && (
+            <button
+              type="button"
+              onClick={onRestore}
+              disabled={isOperationRunning}
+              className={cn(
+                'px-3 py-2 rounded-lg text-sm font-medium min-h-[44px]',
+                'border border-red-300 dark:border-red-800',
+                'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
+                'disabled:opacity-50'
+              )}
+            >
+              Restore…
+            </button>
+          )}
         </div>
         <p className={cn('text-sm', theme.text.muted)}>
           Started {formatDate(run.started_at)}

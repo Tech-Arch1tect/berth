@@ -8,9 +8,16 @@ import { EmptyState } from '../../../shared/components/EmptyState';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { formatBytes, formatRelativeTime } from '../../../shared/utils/formatters';
-import { buildCreateBackupOptions, runBytesAdded, runHasComponentErrors, StopMode } from '../utils';
+import {
+  buildCreateBackupOptions,
+  buildRestoreOptions,
+  runBytesAdded,
+  runHasComponentErrors,
+  StopMode,
+} from '../utils';
 import { BackupOptionsModal } from './BackupOptionsModal';
 import { BackupRunDetail } from './BackupRunDetail';
+import { RestoreBackupModal } from './RestoreBackupModal';
 import { BackupStatusBadge } from './BackupStatusBadge';
 
 const PAGE_SIZE = 20;
@@ -19,12 +26,14 @@ interface BackupsPanelProps {
   serverid: number;
   stackname: string;
   canManage: boolean;
+  canRestore: boolean;
 }
 
-export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelProps) {
+export function BackupsPanel({ serverid, stackname, canManage, canRestore }: BackupsPanelProps) {
   const [page, setPage] = useState(1);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -38,8 +47,12 @@ export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelPro
     onOperationComplete: () => backupsQuery.refetch(),
     onError: () => backupsQuery.refetch(),
   });
-  const backupRunning =
-    operations.operationStatus.isRunning && operations.operationStatus.command === 'create-backup';
+  const backupOperationRunning =
+    operations.operationStatus.isRunning &&
+    (operations.operationStatus.command === 'create-backup' ||
+      operations.operationStatus.command === 'restore-backup');
+  const restoreRunning =
+    operations.operationStatus.isRunning && operations.operationStatus.command === 'restore-backup';
 
   const startBackup = async (stopMode: StopMode) => {
     setIsStarting(true);
@@ -53,6 +66,24 @@ export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelPro
       setOptionsOpen(false);
     } catch (error) {
       setStartError(error instanceof Error ? error.message : 'Failed to start the backup');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const startRestore = async (componentIds: string[], keepExtraFiles: boolean) => {
+    if (!selectedRun) return;
+    setIsStarting(true);
+    setStartError(null);
+    try {
+      await operations.startOperation({
+        command: 'restore-backup',
+        options: buildRestoreOptions(selectedRun.id, componentIds, keepExtraFiles),
+        services: [],
+      });
+      setRestoreOpen(false);
+    } catch (error) {
+      setStartError(error instanceof Error ? error.message : 'Failed to start the restore');
     } finally {
       setIsStarting(false);
     }
@@ -146,26 +177,28 @@ export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelPro
             <button
               type="button"
               onClick={() => setOptionsOpen(true)}
-              disabled={backupRunning}
+              disabled={backupOperationRunning}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium min-h-[44px]',
                 'bg-teal-600 text-white hover:bg-teal-500 disabled:opacity-50'
               )}
             >
-              {backupRunning ? 'Backing up…' : 'Back up'}
+              {backupOperationRunning ? 'Working…' : 'Back up'}
             </button>
           )}
         </div>
       </div>
 
-      {backupRunning && (
+      {backupOperationRunning && (
         <div
           className={cn(
             'border-b border-zinc-200 dark:border-zinc-800 px-4 py-2 text-sm',
             theme.text.muted
           )}
         >
-          A backup is running — live output is in the operations panel.
+          {restoreRunning
+            ? 'A restore is running — live output is in the operations panel.'
+            : 'A backup is running — live output is in the operations panel.'}
         </div>
       )}
       {(startError || operations.error) && (
@@ -206,7 +239,16 @@ export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelPro
           pageSize={PAGE_SIZE}
           totalCount={runs.length}
           onPageChange={setPage}
-          detail={selectedRun ? <BackupRunDetail run={selectedRun} /> : null}
+          detail={
+            selectedRun ? (
+              <BackupRunDetail
+                run={selectedRun}
+                canRestore={canRestore}
+                isOperationRunning={backupOperationRunning}
+                onRestore={() => setRestoreOpen(true)}
+              />
+            ) : null
+          }
           onCloseDetail={() => setSelectedRunId(null)}
         />
       </div>
@@ -218,6 +260,16 @@ export function BackupsPanel({ serverid, stackname, canManage }: BackupsPanelPro
         onClose={() => setOptionsOpen(false)}
         onConfirm={startBackup}
       />
+      {selectedRun && (
+        <RestoreBackupModal
+          isOpen={restoreOpen}
+          run={selectedRun}
+          stackname={stackname}
+          isStarting={isStarting}
+          onClose={() => setRestoreOpen(false)}
+          onConfirm={startRestore}
+        />
+      )}
     </div>
   );
 }

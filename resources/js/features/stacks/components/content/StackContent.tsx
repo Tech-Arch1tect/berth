@@ -46,6 +46,7 @@ interface StackContentProps {
     canWriteFiles: boolean;
     canViewBackups: boolean;
     canManageBackups: boolean;
+    canRestoreBackups: boolean;
   };
   onQuickOperation: (operation: OperationRequest) => void;
   isOperationRunning: boolean;
@@ -303,6 +304,7 @@ export const StackContent: FC<StackContentProps> = ({
             serverid={serverid}
             stackname={stackname}
             canManage={permissions.canManageBackups}
+            canRestore={permissions.canRestoreBackups}
           />
         </div>
       );
