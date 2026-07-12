@@ -9,6 +9,7 @@ import type { RunSummary } from './runSummary';
 
 export interface ListResponse {
   configured: boolean;
+  enabled: boolean;
   runs: RunSummary[];
   total: number;
 }

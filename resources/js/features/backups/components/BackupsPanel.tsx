@@ -180,13 +180,27 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
     },
   ];
 
+  if (listing && !listing.enabled) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <EmptyState
+          icon={ArchiveBoxIcon}
+          title="Backups are not enabled for this server"
+          description="An administrator can enable backups and set an encryption password for this server under Admin -> Servers. Keep the password safe: without it, backups cannot be restored."
+          variant="info"
+          size="lg"
+        />
+      </div>
+    );
+  }
+
   if (listing && !listing.configured) {
     return (
       <div className="flex h-full items-center justify-center p-6">
         <EmptyState
           icon={ArchiveBoxIcon}
-          title="Backups are not configured on this agent"
-          description="Set BACKUP_LOCATION and BACKUP_PASSWORD in the agent's environment to enable stack backups. Keep the password safe: without it, backups cannot be restored."
+          title="The agent has no backup storage configured"
+          description="Backups are enabled for this server, but the agent does not have a storage location. Set BACKUP_LOCATION in the agent's environment to a host path where backup repositories should live."
           variant="info"
           size="lg"
         />
