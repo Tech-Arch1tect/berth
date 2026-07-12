@@ -61,6 +61,7 @@ const (
 	TargetTypePermission         = "permission"
 	TargetTypeServer             = "server"
 	TargetTypeFile               = "file"
+	TargetTypeBackup             = "backup"
 	TargetTypeSession            = "session"
 	TargetTypeStack              = "stack"
 	TargetTypeRegistryCredential = "registry_credential"

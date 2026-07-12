@@ -134,32 +134,44 @@ func (s *Service) checkManagePermission(p authz.Principal, serverID uint, stackn
 	return nil
 }
 
-func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID string) error {
+func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID string) (*Run, error) {
 	if err := s.checkManagePermission(p, serverID, stackname); err != nil {
-		return err
+		return nil, err
 	}
 
 	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
-		return fmt.Errorf("failed to get server: %w", err)
+		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/stacks/%s/backups/%s", url.PathEscape(stackname), url.PathEscape(backupID))
+
+	var deleted *Run
+	if detail, err := s.agentSvc.MakeRequest(ctx, srv, "GET", endpoint, nil); err == nil {
+		if detail.StatusCode == http.StatusOK {
+			var run Run
+			if err := json.NewDecoder(detail.Body).Decode(&run); err == nil {
+				deleted = &run
+			}
+		}
+		_ = detail.Body.Close()
+	}
+
 	resp, err := s.agentSvc.MakeRequest(ctx, srv, "DELETE", endpoint, nil)
 	if err != nil {
-		return fmt.Errorf("failed to communicate with agent: %w", err)
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		return nil
+		return deleted, nil
 	case http.StatusNotFound:
-		return ErrBackupNotFound
+		return nil, ErrBackupNotFound
 	case http.StatusConflict:
-		return ErrRepositoryBusy
+		return nil, ErrRepositoryBusy
 	default:
-		return s.handleAgentError(resp)
+		return nil, s.handleAgentError(resp)
 	}
 }
 

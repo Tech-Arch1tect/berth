@@ -237,7 +237,7 @@ func Build(
 	g.FilesAPIHandler = files.NewAPIHandler(g.FilesSvc, g.SecurityAuditSvc)
 
 	g.BackupsSvc = backups.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
-	g.BackupsAPIHandler = backups.NewAPIHandler(g.BackupsSvc)
+	g.BackupsAPIHandler = backups.NewAPIHandler(g.BackupsSvc, g.SecurityAuditSvc)
 
 	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.LogsHandler = logs.NewHandler(g.LogsSvc)
@@ -260,7 +260,7 @@ func Build(
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.AuthzEngine, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
-	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
+	g.OperationsHandler = operations.NewHandler(g.OperationsSvc, g.SecurityAuditSvc)
 
 	g.OperationLogsSvc = operationlogs.NewService(db, logger)
 	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, logger, cfg.Custom.OperationTimeoutSeconds)

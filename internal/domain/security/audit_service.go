@@ -190,6 +190,21 @@ func (s *AuditService) LogFileEvent(eventType string, actorUserID uint, actorUse
 	})
 }
 
+func (s *AuditService) LogBackupEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName string, backupID string, ip string, metadata map[string]any) error {
+	return s.Log(LogEvent{
+		EventType:     eventType,
+		Success:       true,
+		ActorUserID:   &actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		TargetType:    TargetTypeBackup,
+		TargetName:    backupID,
+		ServerID:      &serverID,
+		StackName:     stackName,
+		Metadata:      metadata,
+	})
+}
+
 func (s *AuditService) LogAPIKeyEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID uint, apiKeyName string, ip string, metadata map[string]any) error {
 	return s.Log(LogEvent{
 		EventType:     eventType,

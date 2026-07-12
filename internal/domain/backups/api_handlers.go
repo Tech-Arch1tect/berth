@@ -5,18 +5,25 @@ import (
 	"strconv"
 
 	"berth/internal/domain/authz"
+	"berth/internal/domain/security"
+	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 
 	"github.com/labstack/echo/v4"
 )
 
-type APIHandler struct {
-	service *Service
+type backupSecurityAuditor interface {
+	LogBackupEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName string, backupID string, ip string, metadata map[string]any) error
 }
 
-func NewAPIHandler(service *Service) *APIHandler {
-	return &APIHandler{service: service}
+type APIHandler struct {
+	service     *Service
+	securityLog backupSecurityAuditor
+}
+
+func NewAPIHandler(service *Service, securityLog backupSecurityAuditor) *APIHandler {
+	return &APIHandler{service: service, securityLog: securityLog}
 }
 
 func (h *APIHandler) ListBackups(c echo.Context) error {
@@ -69,7 +76,8 @@ func (h *APIHandler) DeleteBackup(c echo.Context) error {
 		return response.BadRequest(c, "backup id is required")
 	}
 
-	if err := h.service.DeleteBackup(c.Request().Context(), p, serverID, stackname, backupID); err != nil {
+	deleted, err := h.service.DeleteBackup(c.Request().Context(), p, serverID, stackname, backupID)
+	if err != nil {
 		if errors.Is(err, ErrBackupNotFound) {
 			return response.NotFound(c, "backup not found")
 		}
@@ -78,6 +86,30 @@ func (h *APIHandler) DeleteBackup(c echo.Context) error {
 		}
 		return response.Internal(c, err.Error())
 	}
+	metadata := map[string]any{"stack": stackname, "server_id": serverID}
+	if deleted != nil {
+		var sizeBytes, addedBytes uint64
+		for _, component := range deleted.Components {
+			sizeBytes += component.BytesProcessed
+			addedBytes += component.BytesAdded
+		}
+		metadata["backup_taken_at"] = deleted.StartedAt
+		metadata["backup_status"] = deleted.Status
+		metadata["component_count"] = len(deleted.Components)
+		metadata["data_size_bytes"] = sizeBytes
+		metadata["repo_growth_bytes"] = addedBytes
+	}
+	_ = h.securityLog.LogBackupEvent(
+		security.EventBackupDeleted,
+		p.UserID(),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		backupID,
+		c.RealIP(),
+		metadata,
+	)
+
 	return response.OK(c, DeleteResponse{Message: "backup deleted"})
 }
 
