@@ -61,7 +61,7 @@ func (s *Service) checkReadPermission(p authz.Principal, serverID uint, stacknam
 	return nil
 }
 
-func (s *Service) ListBackups(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*ListResponse, error) {
+func (s *Service) ListBackups(ctx context.Context, p authz.Principal, serverID uint, stackname string, limit, offset int) (*ListResponse, error) {
 	if err := s.checkReadPermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *Service) ListBackups(ctx context.Context, p authz.Principal, serverID u
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
-	endpoint := fmt.Sprintf("/stacks/%s/backups", url.PathEscape(stackname))
+	endpoint := fmt.Sprintf("/stacks/%s/backups?limit=%d&offset=%d", url.PathEscape(stackname), limit, offset)
 	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
@@ -87,7 +87,7 @@ func (s *Service) ListBackups(ctx context.Context, p authz.Principal, serverID u
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
 	if listing.Runs == nil {
-		listing.Runs = []Run{}
+		listing.Runs = []RunSummary{}
 	}
 	return &listing, nil
 }

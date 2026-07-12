@@ -2,6 +2,7 @@ package backups
 
 import (
 	"errors"
+	"strconv"
 
 	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
@@ -29,11 +30,27 @@ func (h *APIHandler) ListBackups(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.ListBackups(c.Request().Context(), p, serverID, stackname)
+	limit, offset := listPagination(c)
+	result, err := h.service.ListBackups(c.Request().Context(), p, serverID, stackname, limit, offset)
 	if err != nil {
 		return response.Internal(c, err.Error())
 	}
 	return response.OK(c, *result)
+}
+
+func listPagination(c echo.Context) (limit, offset int) {
+	limit = 20
+	if raw := c.QueryParam("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed >= 1 {
+			limit = min(parsed, 100)
+		}
+	}
+	if raw := c.QueryParam("offset"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+	return limit, offset
 }
 
 func (h *APIHandler) DeleteBackup(c echo.Context) error {

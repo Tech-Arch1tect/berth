@@ -695,10 +695,12 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups").
 		Tags("backups").
 		Summary("List stack backups").
-		Description("Returns the stack's backup runs recorded on the agent, newest first, and whether backups are configured on the agent").
+		Description("Returns one page of the stack's backup run summaries, newest first, with the total run count and whether backups are configured on the agent; full component detail comes from the single-backup endpoint").
 		PathParam("serverid", "Server ID").TypeInt().Required().
 		PathParam("stackname", "Stack name").Required().
-		Response(http.StatusOK, response.Response[backups.ListResponse]{}, "Backup runs").
+		QueryParam("limit", "Page size (default 20, maximum 100)").TypeInt().Optional().
+		QueryParam("offset", "Number of runs to skip").TypeInt().Optional().
+		Response(http.StatusOK, response.Response[backups.ListResponse]{}, "Backup run summaries").
 		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").

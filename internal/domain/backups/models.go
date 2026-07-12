@@ -42,9 +42,24 @@ type Run struct {
 	Error         string         `json:"error,omitempty"`
 }
 
+type RunSummary struct {
+	ID                   string     `json:"id"`
+	StackName            string     `json:"stack_name"`
+	StartedAt            time.Time  `json:"started_at"`
+	FinishedAt           *time.Time `json:"finished_at,omitempty"`
+	Status               string     `json:"status"`
+	StopMode             string     `json:"stop_mode,omitempty"`
+	Verified             *bool      `json:"verified,omitempty"`
+	SizeBytes            uint64     `json:"size_bytes"`
+	AddedBytes           uint64     `json:"added_bytes"`
+	ComponentCount       int        `json:"component_count"`
+	ComponentsWithErrors int        `json:"components_with_errors"`
+}
+
 type ListResponse struct {
-	Configured bool  `json:"configured"`
-	Runs       []Run `json:"runs"`
+	Configured bool         `json:"configured"`
+	Total      int          `json:"total"`
+	Runs       []RunSummary `json:"runs"`
 }
 
 type DeleteResponse struct {
