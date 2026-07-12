@@ -5,9 +5,10 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
-import type { Run } from './run';
+import type { RunSummary } from './runSummary';
 
 export interface ListResponse {
   configured: boolean;
-  runs: Run[];
+  runs: RunSummary[];
+  total: number;
 }

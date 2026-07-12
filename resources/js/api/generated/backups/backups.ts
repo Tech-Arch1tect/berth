@@ -22,6 +22,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetApiV1ServersServeridStacksStacknameBackupsParams,
   ResponseDeleteResponse,
   ResponseEmpty,
   ResponseListResponse,
@@ -33,23 +34,37 @@ import { apiClient } from '../../client';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns the stack's backup runs recorded on the agent, newest first, and whether backups are configured on the agent
+ * Returns one page of the stack's backup run summaries, newest first, with the total run count and whether backups are configured on the agent; full component detail comes from the single-backup endpoint
  * @summary List stack backups
  */
 export const getGetApiV1ServersServeridStacksStacknameBackupsUrl = (
   serverid: number,
-  stackname: string
+  stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams
 ) => {
-  return `/api/v1/servers/${serverid}/stacks/${stackname}/backups`;
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/backups?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/backups`;
 };
 
 export const getApiV1ServersServeridStacksStacknameBackups = async (
   serverid: number,
   stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams,
   options?: RequestInit
 ): Promise<ResponseListResponse> => {
   return apiClient<ResponseListResponse>(
-    getGetApiV1ServersServeridStacksStacknameBackupsUrl(serverid, stackname),
+    getGetApiV1ServersServeridStacksStacknameBackupsUrl(serverid, stackname, params),
     {
       ...options,
       method: 'GET',
@@ -59,9 +74,13 @@ export const getApiV1ServersServeridStacksStacknameBackups = async (
 
 export const getGetApiV1ServersServeridStacksStacknameBackupsQueryKey = (
   serverid: number,
-  stackname: string
+  stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams
 ) => {
-  return [`/api/v1/servers/${serverid}/stacks/${stackname}/backups`] as const;
+  return [
+    `/api/v1/servers/${serverid}/stacks/${stackname}/backups`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getGetApiV1ServersServeridStacksStacknameBackupsQueryOptions = <
@@ -70,6 +89,7 @@ export const getGetApiV1ServersServeridStacksStacknameBackupsQueryOptions = <
 >(
   serverid: number,
   stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -85,12 +105,12 @@ export const getGetApiV1ServersServeridStacksStacknameBackupsQueryOptions = <
 
   const queryKey =
     queryOptions?.queryKey ??
-    getGetApiV1ServersServeridStacksStacknameBackupsQueryKey(serverid, stackname);
+    getGetApiV1ServersServeridStacksStacknameBackupsQueryKey(serverid, stackname, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackups>>
   > = ({ signal }) =>
-    getApiV1ServersServeridStacksStacknameBackups(serverid, stackname, {
+    getApiV1ServersServeridStacksStacknameBackups(serverid, stackname, params, {
       signal,
       ...requestOptions,
     });
@@ -118,6 +138,7 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
 >(
   serverid: number,
   stackname: string,
+  params: undefined | GetApiV1ServersServeridStacksStacknameBackupsParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -144,6 +165,7 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
 >(
   serverid: number,
   stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -170,6 +192,7 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
 >(
   serverid: number,
   stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -192,6 +215,7 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
 >(
   serverid: number,
   stackname: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -207,6 +231,7 @@ export function useGetApiV1ServersServeridStacksStacknameBackups<
   const queryOptions = getGetApiV1ServersServeridStacksStacknameBackupsQueryOptions(
     serverid,
     stackname,
+    params,
     options
   );
 
