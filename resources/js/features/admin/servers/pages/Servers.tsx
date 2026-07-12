@@ -26,6 +26,8 @@ interface ServerForm {
   skip_ssl_verification: boolean;
   access_token: string;
   is_active: boolean;
+  backups_enabled: boolean;
+  backup_password: string;
 }
 
 const EMPTY_FORM: ServerForm = {
@@ -36,6 +38,8 @@ const EMPTY_FORM: ServerForm = {
   skip_ssl_verification: false,
   access_token: '',
   is_active: true,
+  backups_enabled: false,
+  backup_password: '',
 };
 
 export default function AdminServers() {
@@ -96,6 +100,8 @@ export default function AdminServers() {
       skip_ssl_verification: server.skip_ssl_verification,
       access_token: '',
       is_active: server.is_active,
+      backups_enabled: server.backups_enabled,
+      backup_password: '',
     });
     setFormError(null);
     setShowForm(true);
@@ -188,6 +194,8 @@ export default function AdminServers() {
           skip_ssl_verification: server.skip_ssl_verification,
           is_active: isActive,
           access_token: '',
+          backups_enabled: server.backups_enabled,
+          backup_password: '',
         },
       },
       {
@@ -221,6 +229,11 @@ export default function AdminServers() {
   const sslBadge = (server: ServerInfo) =>
     server.skip_ssl_verification ? (
       <span className={cn(theme.badges.tag.base, theme.badges.tag.warning)}>TLS unverified</span>
+    ) : null;
+
+  const backupsBadge = (server: ServerInfo) =>
+    server.backups_enabled ? (
+      <span className={cn(theme.badges.tag.base, theme.badges.tag.info)}>Backups</span>
     ) : null;
 
   const hostText = (server: ServerInfo) => `https://${server.host}:${server.port}`;
@@ -330,6 +343,7 @@ export default function AdminServers() {
                       {hostText(server)}
                     </span>
                     {sslBadge(server)}
+                    {backupsBadge(server)}
                   </div>
                 ),
               },
@@ -351,6 +365,7 @@ export default function AdminServers() {
                   <p className={cn('text-sm font-medium', theme.text.strong)}>{server.name}</p>
                   {statusBadge(server)}
                   {sslBadge(server)}
+                  {backupsBadge(server)}
                 </div>
                 {server.description && (
                   <p className={cn('text-sm', theme.text.muted)}>{server.description}</p>
@@ -455,6 +470,50 @@ export default function AdminServers() {
                 placeholder={editingServer ? 'Enter new token or leave blank' : ''}
                 className={cn('mt-1', theme.forms.input)}
               />
+            </div>
+            <div className="sm:col-span-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="server-backups-enabled"
+                  checked={data.backups_enabled}
+                  onChange={(e) => setData('backups_enabled', e.target.checked)}
+                  className={theme.forms.checkbox}
+                />
+                <label
+                  htmlFor="server-backups-enabled"
+                  className={cn('ml-2 block text-sm', theme.text.standard)}
+                >
+                  Enable stack backups
+                </label>
+              </div>
+              {data.backups_enabled && (
+                <div className="mt-3">
+                  <label htmlFor="server-backup-password" className={theme.forms.label}>
+                    Backup encryption password{' '}
+                    {editingServer && (
+                      <span className={cn('text-sm', theme.text.subtle)}>
+                        (leave blank to keep current)
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="password"
+                    id="server-backup-password"
+                    autoComplete="off"
+                    required={!editingServer}
+                    value={data.backup_password}
+                    onChange={(e) => setData('backup_password', e.target.value)}
+                    placeholder={editingServer ? 'Enter new password or leave blank' : ''}
+                    className={cn('mt-1', theme.forms.input)}
+                  />
+                  <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+                    Encrypts this server's backup repositories. Existing repositories can only be
+                    opened with the password they were created with, so changing it here does not
+                    re-encrypt old backups.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="sm:col-span-2">
               <div className="flex items-center">
