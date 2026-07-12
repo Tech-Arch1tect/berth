@@ -3,23 +3,18 @@ import { ArchiveBoxIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid,
   useGetApiV1ServersServeridStacksStacknameBackups,
+  useGetApiV1ServersServeridStacksStacknameBackupsBackupid,
 } from '../../../api/generated/backups/backups';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
 import { formatDate } from '../../../shared/utils/formatters';
-import type { Run } from '../../../api/generated/models';
+import type { RunSummary } from '../../../api/generated/models';
 import { useOperations } from '../../operations/hooks/useOperations';
 import { RecordList, RecordListColumn } from '../../../shared/components/RecordList';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { formatBytes, formatRelativeTime } from '../../../shared/utils/formatters';
-import {
-  buildCreateBackupOptions,
-  buildRestoreOptions,
-  runBytesAdded,
-  runHasComponentErrors,
-  StopMode,
-} from '../utils';
+import { buildCreateBackupOptions, buildRestoreOptions, StopMode } from '../utils';
 import { BackupOptionsModal } from './BackupOptionsModal';
 import { BackupRunDetail } from './BackupRunDetail';
 import { RestoreBackupModal } from './RestoreBackupModal';
@@ -43,9 +38,20 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
-  const backupsQuery = useGetApiV1ServersServeridStacksStacknameBackups(serverid, stackname);
+  const backupsQuery = useGetApiV1ServersServeridStacksStacknameBackups(serverid, stackname, {
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
   const listing = backupsQuery.data?.data;
   const runs = useMemo(() => listing?.runs ?? [], [listing]);
+
+  const detailQuery = useGetApiV1ServersServeridStacksStacknameBackupsBackupid(
+    serverid,
+    stackname,
+    selectedRunId ?? '',
+    { query: { enabled: !!selectedRunId } }
+  );
+  const selectedRun = selectedRunId ? (detailQuery.data?.data ?? null) : null;
 
   const operations = useOperations({
     serverid: String(serverid),
@@ -109,14 +115,14 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
     }
   };
 
-  const columns: RecordListColumn<Run>[] = [
+  const columns: RecordListColumn<RunSummary>[] = [
     {
       key: 'status',
       header: 'Status',
       render: (run) => (
         <div>
           <BackupStatusBadge status={run.status} />
-          {runHasComponentErrors(run) && run.status === 'completed' && (
+          {run.components_with_errors > 0 && run.status === 'completed' && (
             <div className="text-xs text-amber-700 dark:text-amber-400">with component errors</div>
           )}
         </div>
@@ -135,14 +141,21 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
       key: 'components',
       header: 'Components',
       render: (run) => (
-        <span className={cn('text-sm', theme.text.standard)}>{run.components.length}</span>
+        <span className={cn('text-sm', theme.text.standard)}>{run.component_count}</span>
+      ),
+    },
+    {
+      key: 'size',
+      header: 'Size',
+      render: (run) => (
+        <span className={cn('text-sm', theme.text.standard)}>{formatBytes(run.size_bytes)}</span>
       ),
     },
     {
       key: 'added',
-      header: 'Data added',
+      header: 'Added',
       render: (run) => (
-        <span className={cn('text-sm', theme.text.muted)}>{formatBytes(runBytesAdded(run))}</span>
+        <span className={cn('text-sm', theme.text.muted)}>{formatBytes(run.added_bytes)}</span>
       ),
     },
     {
@@ -153,9 +166,6 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
       ),
     },
   ];
-
-  const selectedRun = runs.find((run) => run.id === selectedRunId) ?? null;
-  const pagedRuns = runs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   if (listing && !listing.configured) {
     return (
@@ -228,8 +238,8 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
       )}
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        <RecordList<Run>
-          records={pagedRuns}
+        <RecordList<RunSummary>
+          records={runs}
           columns={columns}
           recordKey={(run) => run.id}
           renderCard={(run) => (
@@ -241,8 +251,8 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
                 </span>
               </div>
               <div className={cn('text-xs', theme.text.muted)}>
-                {run.components.length} {run.components.length === 1 ? 'component' : 'components'} ·{' '}
-                {formatBytes(runBytesAdded(run))} added
+                {run.component_count} {run.component_count === 1 ? 'component' : 'components'} ·{' '}
+                {formatBytes(run.size_bytes)} · {formatBytes(run.added_bytes)} added
               </div>
             </div>
           )}
@@ -257,7 +267,7 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
           }
           page={page}
           pageSize={PAGE_SIZE}
-          totalCount={runs.length}
+          totalCount={listing?.total ?? 0}
           onPageChange={setPage}
           detail={
             selectedRun ? (

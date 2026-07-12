@@ -26,14 +26,6 @@ export function describeComponent(component: Component): { label: string; detail
   }
 }
 
-export function runBytesAdded(run: Run): number {
-  return run.components.reduce((total, component) => total + (component.bytes_added ?? 0), 0);
-}
-
-export function runHasComponentErrors(run: Run): boolean {
-  return run.components.some((component) => !!component.error);
-}
-
 export function describeStopMode(stopMode: string | undefined): string {
   if (stopMode === 'stop') return 'Stack stopped during backup';
   if (stopMode === 'pause') return 'Stack paused during backup';
