@@ -37,6 +37,7 @@ type Run struct {
 	ResticVersion string         `json:"restic_version,omitempty"`
 	Verified      *bool          `json:"verified,omitempty"`
 	VerifyError   string         `json:"verify_error,omitempty"`
+	RepoSizeBytes uint64         `json:"repo_size_bytes,omitempty"`
 	Components    []Component    `json:"components"`
 	Skipped       []SkippedMount `json:"skipped,omitempty"`
 	Error         string         `json:"error,omitempty"`
@@ -50,6 +51,7 @@ type RunSummary struct {
 	Status               string     `json:"status"`
 	StopMode             string     `json:"stop_mode,omitempty"`
 	Verified             *bool      `json:"verified,omitempty"`
+	RepoSizeBytes        uint64     `json:"repo_size_bytes,omitempty"`
 	SizeBytes            uint64     `json:"size_bytes"`
 	AddedBytes           uint64     `json:"added_bytes"`
 	ComponentCount       int        `json:"component_count"`
