@@ -85,6 +85,12 @@ func (s *Service) GetServer(id uint) (*Server, error) {
 	}
 	server.AccessToken = decryptedToken
 
+	decryptedBackupPassword, err := s.crypto.Decrypt(server.BackupPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt backup password: %w", err)
+	}
+	server.BackupPassword = decryptedBackupPassword
+
 	return &server, nil
 }
 
@@ -144,6 +150,16 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, p authz.P
 	}
 	server.AccessToken = decryptedToken
 
+	decryptedBackupPassword, err := s.crypto.Decrypt(server.BackupPassword)
+	if err != nil {
+		s.logger.Error("failed to decrypt server backup password",
+			zap.Error(err),
+			zap.Uint("server_id", id),
+		)
+		return nil, fmt.Errorf("failed to decrypt backup password: %w", err)
+	}
+	server.BackupPassword = decryptedBackupPassword
+
 	s.logger.Debug("server access granted to user",
 		zap.Uint("server_id", id),
 		zap.String("server_name", server.Name),
@@ -186,6 +202,19 @@ func (s *Service) CreateServer(server *Server) error {
 		return fmt.Errorf("failed to encrypt access token: %w", err)
 	}
 	server.AccessToken = encryptedToken
+
+	if server.BackupsEnabled && server.BackupPassword == "" {
+		return ErrServerBackupPasswordRequired
+	}
+	encryptedBackupPassword, err := s.crypto.Encrypt(server.BackupPassword)
+	if err != nil {
+		s.logger.Error("failed to encrypt server backup password",
+			zap.Error(err),
+			zap.String("server_name", server.Name),
+		)
+		return fmt.Errorf("failed to encrypt backup password: %w", err)
+	}
+	server.BackupPassword = encryptedBackupPassword
 
 	if err := s.db.Create(server).Error; err != nil {
 		s.logger.Error("failed to create server in database",
@@ -244,7 +273,22 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 		updates.AccessToken = encryptedToken
 	}
 
-	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active").Updates(updates).Error; err != nil {
+	if updates.BackupsEnabled && updates.BackupPassword == "" {
+		return nil, ErrServerBackupPasswordRequired
+	}
+	if updates.BackupPassword != "" {
+		encryptedBackupPassword, err := s.crypto.Encrypt(updates.BackupPassword)
+		if err != nil {
+			s.logger.Error("failed to encrypt updated backup password",
+				zap.Error(err),
+				zap.Uint("server_id", id),
+			)
+			return nil, fmt.Errorf("failed to encrypt backup password: %w", err)
+		}
+		updates.BackupPassword = encryptedBackupPassword
+	}
+
+	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active", "backups_enabled", "backup_password").Updates(updates).Error; err != nil {
 		s.logger.Error("failed to update server in database",
 			zap.Error(err),
 			zap.Uint("server_id", id),
@@ -262,6 +306,16 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
 	}
 	server.AccessToken = decryptedToken
+
+	decryptedBackupPassword, err := s.crypto.Decrypt(server.BackupPassword)
+	if err != nil {
+		s.logger.Error("failed to decrypt backup password after update",
+			zap.Error(err),
+			zap.Uint("server_id", id),
+		)
+		return nil, fmt.Errorf("failed to decrypt backup password: %w", err)
+	}
+	server.BackupPassword = decryptedBackupPassword
 
 	s.logger.Info("server updated successfully",
 		zap.Uint("server_id", id),

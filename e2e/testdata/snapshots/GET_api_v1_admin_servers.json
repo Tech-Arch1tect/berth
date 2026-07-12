@@ -9,6 +9,7 @@
     "data": {
       "servers": [
         {
+          "backups_enabled": false,
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
           "description": "",
           "host": "127.0.0.1",
@@ -20,6 +21,7 @@
           "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         },
         {
+          "backups_enabled": false,
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
           "description": "",
           "host": "127.0.0.1",

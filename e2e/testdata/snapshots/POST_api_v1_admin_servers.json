@@ -8,6 +8,7 @@
   "body": {
     "data": {
       "server": {
+        "backups_enabled": false,
         "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "description": "",
         "host": "10.0.0.99",

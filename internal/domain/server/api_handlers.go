@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -87,22 +89,34 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	updates := req.ToServer()
 
 	tokenRotated := updates.AccessToken != ""
-	if !tokenRotated {
+	backupPasswordChanged := updates.BackupPassword != ""
+	if !tokenRotated || !backupPasswordChanged {
 		existing, err := h.service.GetServer(id)
 		if err != nil {
 			return response.NotFound(c, "Server not found")
 		}
-		updates.AccessToken = existing.AccessToken
+		if !tokenRotated {
+			updates.AccessToken = existing.AccessToken
+		}
+		if !backupPasswordChanged {
+			updates.BackupPassword = existing.BackupPassword
+		}
 	}
 
 	server, err := h.service.UpdateServer(id, updates)
 	if err != nil {
+		if errors.Is(err, ErrServerBackupPasswordRequired) {
+			return response.BadRequest(c, err.Error())
+		}
 		return response.Internal(c, "Failed to update server")
 	}
 
 	h.audit(c, security.EventServerUpdated, server.ID, server.Name, true, "")
 	if tokenRotated {
 		h.audit(c, security.EventServerAccessTokenRegenerated, server.ID, server.Name, true, "")
+	}
+	if backupPasswordChanged {
+		h.audit(c, security.EventServerBackupPasswordChanged, server.ID, server.Name, true, "")
 	}
 
 	return response.OK(c, AdminUpdateServerData{Server: server.ToResponse()})

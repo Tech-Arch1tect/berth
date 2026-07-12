@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	ErrServerNameRequired        = errors.New("name is required")
-	ErrServerHostRequired        = errors.New("host is required")
-	ErrServerPortRequired        = errors.New("port must be greater than 0")
-	ErrServerAccessTokenRequired = errors.New("access token is required")
+	ErrServerNameRequired           = errors.New("name is required")
+	ErrServerHostRequired           = errors.New("host is required")
+	ErrServerPortRequired           = errors.New("port must be greater than 0")
+	ErrServerAccessTokenRequired    = errors.New("access token is required")
+	ErrServerBackupPasswordRequired = errors.New("a backup encryption password is required when backups are enabled")
 )
 
 type StackStatistics struct {
@@ -29,6 +30,8 @@ type Server struct {
 	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty" gorm:"default:true"`
 	AccessToken         string `json:"-" gorm:"not null"`
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
+	BackupsEnabled      bool   `json:"backups_enabled" gorm:"not null;default:false"`
+	BackupPassword      string `json:"-"`
 }
 
 type ServerInfo struct {
@@ -41,6 +44,7 @@ type ServerInfo struct {
 	Port                int    `json:"port"`
 	SkipSSLVerification bool   `json:"skip_ssl_verification"`
 	IsActive            bool   `json:"is_active"`
+	BackupsEnabled      bool   `json:"backups_enabled"`
 }
 
 type ServerCreateRequest struct {
@@ -51,6 +55,8 @@ type ServerCreateRequest struct {
 	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty"`
 	AccessToken         string `json:"access_token"`
 	IsActive            bool   `json:"is_active,omitempty"`
+	BackupsEnabled      bool   `json:"backups_enabled,omitempty"`
+	BackupPassword      string `json:"backup_password,omitempty"`
 }
 
 func (r *ServerCreateRequest) Validate() error {
@@ -66,6 +72,9 @@ func (r *ServerCreateRequest) Validate() error {
 	if r.AccessToken == "" {
 		return ErrServerAccessTokenRequired
 	}
+	if r.BackupsEnabled && r.BackupPassword == "" {
+		return ErrServerBackupPasswordRequired
+	}
 	return nil
 }
 
@@ -77,6 +86,8 @@ type ServerUpdateRequest struct {
 	SkipSSLVerification *bool  `json:"skip_ssl_verification,omitempty"`
 	AccessToken         string `json:"access_token,omitempty"`
 	IsActive            bool   `json:"is_active,omitempty"`
+	BackupsEnabled      bool   `json:"backups_enabled,omitempty"`
+	BackupPassword      string `json:"backup_password,omitempty"`
 }
 
 func (r *ServerUpdateRequest) Validate() error {
@@ -101,6 +112,8 @@ func (r *ServerCreateRequest) ToServer() *Server {
 		SkipSSLVerification: r.SkipSSLVerification,
 		AccessToken:         r.AccessToken,
 		IsActive:            r.IsActive,
+		BackupsEnabled:      r.BackupsEnabled,
+		BackupPassword:      r.BackupPassword,
 	}
 }
 
@@ -113,6 +126,8 @@ func (r *ServerUpdateRequest) ToServer() *Server {
 		SkipSSLVerification: r.SkipSSLVerification,
 		AccessToken:         r.AccessToken,
 		IsActive:            r.IsActive,
+		BackupsEnabled:      r.BackupsEnabled,
+		BackupPassword:      r.BackupPassword,
 	}
 }
 
@@ -153,6 +168,7 @@ func (s *Server) ToResponse() ServerInfo {
 		Port:                s.Port,
 		SkipSSLVerification: skipSSL,
 		IsActive:            s.IsActive,
+		BackupsEnabled:      s.BackupsEnabled,
 	}
 }
 
