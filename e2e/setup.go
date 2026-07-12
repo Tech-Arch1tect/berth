@@ -142,6 +142,9 @@ func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL strin
 	encryptedToken, err := crypto.Encrypt("test-access-token")
 	require.NoError(t, err, "failed to encrypt access tokene")
 
+	encryptedBackupPassword, err := crypto.Encrypt("test-backup-password")
+	require.NoError(t, err, "failed to encrypt backup password")
+
 	host := mockAgentURL
 	port := 443
 
@@ -164,6 +167,8 @@ func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL strin
 		AccessToken:         encryptedToken,
 		SkipSSLVerification: &skipSSL,
 		IsActive:            true,
+		BackupsEnabled:      true,
+		BackupPassword:      encryptedBackupPassword,
 	}
 
 	err = a.DB.Create(srv).Error

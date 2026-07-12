@@ -11,6 +11,11 @@ type OperationRequest struct {
 	RegistryCredentials []RegistryCredential `json:"registry_credentials,omitempty"`
 }
 
+type agentOperationRequest struct {
+	OperationRequest
+	BackupPassword string `json:"backup_password,omitempty"`
+}
+
 func (r *OperationRequest) Validate() error {
 	if r.Command == "" {
 		return ErrOperationCommandRequired

@@ -7,6 +7,8 @@ import (
 	"berth/e2e"
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/rbac/permnames"
+
+	"github.com/stretchr/testify/require"
 )
 
 func registerOperationsAgentEndpoints(agent *e2e.MockAgent, stackName string) {
@@ -474,6 +476,12 @@ func TestAuthzOperationsBackupCommandScoping(t *testing.T) {
 	t.Run("API key without backups.manage scope returns 403 with no agent call even though owner holds the role", func(t *testing.T) {
 		f.Agent.ResetCalls()
 		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(keyWrongPerm), 403)
+		assertNoOperation(t)
+	})
+	t.Run("server with backups disabled returns 409 with no agent call even for admin", func(t *testing.T) {
+		require.NoError(t, app.DB.Model(f.Server).Update("backups_enabled", false).Error)
+		f.Agent.ResetCalls()
+		assertStatus(t, app, &e2etesting.RequestOptions{Method: http.MethodPost, Path: prodURL, Body: body}, bearer(jwtAdmin), 409)
 		assertNoOperation(t)
 	})
 }

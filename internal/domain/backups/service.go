@@ -17,6 +17,11 @@ import (
 
 var ErrBackupNotFound = errors.New("backup not found")
 var ErrRepositoryBusy = errors.New("the backup repository is in use by another operation; try again once it finishes")
+var ErrBackupsNotEnabled = errors.New("backups are not enabled for this server; an administrator can enable them and set an encryption password in the server settings")
+
+type agentDeleteRequest struct {
+	BackupPassword string `json:"backup_password"`
+}
 
 type agentErrorBody struct {
 	Error string `json:"error"`
@@ -86,6 +91,7 @@ func (s *Service) ListBackups(ctx context.Context, p authz.Principal, serverID u
 	if err := json.NewDecoder(resp.Body).Decode(&listing); err != nil {
 		return nil, fmt.Errorf("failed to decode agent response: %w", err)
 	}
+	listing.Enabled = srv.BackupsEnabled
 	if listing.Runs == nil {
 		listing.Runs = []RunSummary{}
 	}
@@ -144,6 +150,10 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 		return nil, fmt.Errorf("failed to get server: %w", err)
 	}
 
+	if !srv.BackupsEnabled || srv.BackupPassword == "" {
+		return nil, ErrBackupsNotEnabled
+	}
+
 	endpoint := fmt.Sprintf("/stacks/%s/backups/%s", url.PathEscape(stackname), url.PathEscape(backupID))
 
 	var deleted *Run
@@ -157,7 +167,7 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 		_ = detail.Body.Close()
 	}
 
-	resp, err := s.agentSvc.MakeRequest(ctx, srv, "DELETE", endpoint, nil)
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "DELETE", endpoint, agentDeleteRequest{BackupPassword: srv.BackupPassword})
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}

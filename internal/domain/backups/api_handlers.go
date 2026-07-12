@@ -81,7 +81,7 @@ func (h *APIHandler) DeleteBackup(c echo.Context) error {
 		if errors.Is(err, ErrBackupNotFound) {
 			return response.NotFound(c, "backup not found")
 		}
-		if errors.Is(err, ErrRepositoryBusy) {
+		if errors.Is(err, ErrRepositoryBusy) || errors.Is(err, ErrBackupsNotEnabled) {
 			return response.Conflict(c, err.Error())
 		}
 		return response.Internal(c, err.Error())

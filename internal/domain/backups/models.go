@@ -59,6 +59,7 @@ type RunSummary struct {
 }
 
 type ListResponse struct {
+	Enabled    bool         `json:"enabled"`
 	Configured bool         `json:"configured"`
 	Total      int          `json:"total"`
 	Runs       []RunSummary `json:"runs"`

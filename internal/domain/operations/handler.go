@@ -1,13 +1,16 @@
 package operations
 
 import (
+	"errors"
+	"time"
+
 	"berth/internal/domain/authz"
+	"berth/internal/domain/backups"
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 	"berth/internal/pkg/validation"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -112,6 +115,9 @@ func (h *Handler) StartOperation(c echo.Context) error {
 
 	resp, err := h.service.StartOperation(c.Request().Context(), p, serverID, stackname, req)
 	if err != nil {
+		if errors.Is(err, backups.ErrBackupsNotEnabled) {
+			return response.Conflict(c, err.Error())
+		}
 		return response.Internal(c, err.Error())
 	}
 

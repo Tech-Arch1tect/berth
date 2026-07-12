@@ -2,6 +2,7 @@ package operations
 
 import (
 	"berth/internal/domain/authz"
+	"berth/internal/domain/backups"
 	"berth/internal/domain/compose"
 	"berth/internal/domain/files"
 	"berth/internal/domain/registry"
@@ -119,9 +120,23 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 		}
 	}
 
+	agentReq := agentOperationRequest{OperationRequest: req}
+	if req.Command == "create-backup" || req.Command == "restore-backup" {
+		if !serverModel.BackupsEnabled || serverModel.BackupPassword == "" {
+			s.logger.Warn("backup operation refused: backups are not enabled for this server",
+				zap.Uint("user_id", p.UserID()),
+				zap.Uint("server_id", serverID),
+				zap.String("stack_name", stackname),
+				zap.String("operation_command", req.Command),
+			)
+			return nil, backups.ErrBackupsNotEnabled
+		}
+		agentReq.BackupPassword = serverModel.BackupPassword
+	}
+
 	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackname))
 
-	reqBody, err := json.Marshal(req)
+	reqBody, err := json.Marshal(agentReq)
 	if err != nil {
 		s.logger.Error("failed to marshal operation request",
 			zap.Error(err),
