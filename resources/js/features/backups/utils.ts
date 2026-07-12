@@ -1,4 +1,4 @@
-import type { Component, Run } from '../../api/generated/models';
+import type { Component, Run, RunSummary } from '../../api/generated/models';
 
 export type StopMode = '' | 'stop' | 'pause';
 
@@ -50,4 +50,13 @@ export function buildRestoreOptions(
     options.push('--keep-extra-files');
   }
   return options;
+}
+
+export function latestRepoSizeBytes(summaries: RunSummary[]): number | null {
+  for (const summary of summaries) {
+    if (summary.repo_size_bytes) {
+      return summary.repo_size_bytes;
+    }
+  }
+  return null;
 }

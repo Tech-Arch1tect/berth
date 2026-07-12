@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArchiveBoxIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid,
@@ -14,7 +14,12 @@ import { EmptyState } from '../../../shared/components/EmptyState';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { formatBytes, formatRelativeTime } from '../../../shared/utils/formatters';
-import { buildCreateBackupOptions, buildRestoreOptions, StopMode } from '../utils';
+import {
+  buildCreateBackupOptions,
+  buildRestoreOptions,
+  latestRepoSizeBytes,
+  StopMode,
+} from '../utils';
 import { BackupOptionsModal } from './BackupOptionsModal';
 import { BackupRunDetail } from './BackupRunDetail';
 import { RestoreBackupModal } from './RestoreBackupModal';
@@ -44,6 +49,14 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
   });
   const listing = backupsQuery.data?.data;
   const runs = useMemo(() => listing?.runs ?? [], [listing]);
+  const [headline, setHeadline] = useState<{
+    newest: RunSummary;
+    repoSize: number | null;
+  } | null>(null);
+  useEffect(() => {
+    if (page !== 1 || backupsQuery.isLoading) return;
+    setHeadline(runs.length > 0 ? { newest: runs[0], repoSize: latestRepoSizeBytes(runs) } : null);
+  }, [page, runs, backupsQuery.isLoading]);
 
   const detailQuery = useGetApiV1ServersServeridStacksStacknameBackupsBackupid(
     serverid,
@@ -216,6 +229,35 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
               {backupOperationRunning ? 'Working…' : 'Back up'}
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4 sm:grid-cols-4">
+        <div title="Measured after the most recent backup; deleting runs frees space that shows here after the next backup">
+          <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
+            {headline?.repoSize != null ? formatBytes(headline.repoSize) : '—'}
+          </p>
+          <p className={cn('text-xs', theme.text.muted)}>Total backup size on disk</p>
+        </div>
+        <div>
+          <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
+            {listing?.total ?? '—'}
+          </p>
+          <p className={cn('text-xs', theme.text.muted)}>Backups</p>
+        </div>
+        <div>
+          <p className={cn('text-xl font-semibold', theme.text.strong)}>
+            {headline ? formatRelativeTime(headline.newest.started_at) : 'Never'}
+          </p>
+          <p className={cn('text-xs', theme.text.muted)}>
+            Last backup{headline ? ` · ${headline.newest.status}` : ''}
+          </p>
+        </div>
+        <div>
+          <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
+            {headline ? formatBytes(headline.newest.size_bytes) : '—'}
+          </p>
+          <p className={cn('text-xs', theme.text.muted)}>Data size at last backup</p>
         </div>
       </div>
 
