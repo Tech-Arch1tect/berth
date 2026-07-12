@@ -15,6 +15,8 @@ export interface RunSummary {
   finished_at?: string | null;
   id: string;
   /** @minimum 0 */
+  repo_size_bytes?: number;
+  /** @minimum 0 */
   size_bytes: number;
   stack_name: string;
   started_at: string;
