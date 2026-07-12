@@ -7,6 +7,7 @@
  */
 
 export interface ServerInfo {
+  backups_enabled: boolean;
   created_at: string;
   description: string;
   host: string;

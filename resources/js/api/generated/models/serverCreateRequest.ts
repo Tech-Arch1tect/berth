@@ -8,6 +8,8 @@
 
 export interface ServerCreateRequest {
   access_token: string;
+  backup_password?: string;
+  backups_enabled?: boolean;
   description?: string;
   host: string;
   is_active?: boolean;

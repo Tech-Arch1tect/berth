@@ -8,6 +8,7 @@
 import type { DeletedAt } from './deletedAt';
 
 export interface Server {
+  backups_enabled: boolean;
   created_at: string;
   deleted_at?: DeletedAt;
   description: string;
