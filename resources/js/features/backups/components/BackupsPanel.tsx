@@ -20,6 +20,7 @@ import {
   latestRepoSizeBytes,
   StopMode,
 } from '../utils';
+import { BackupFileBrowser } from './BackupFileBrowser';
 import { BackupOptionsModal } from './BackupOptionsModal';
 import { BackupRunDetail } from './BackupRunDetail';
 import { RestoreBackupModal } from './RestoreBackupModal';
@@ -32,14 +33,22 @@ interface BackupsPanelProps {
   stackname: string;
   canManage: boolean;
   canRestore: boolean;
+  canBrowseFiles: boolean;
 }
 
-export function BackupsPanel({ serverid, stackname, canManage, canRestore }: BackupsPanelProps) {
+export function BackupsPanel({
+  serverid,
+  stackname,
+  canManage,
+  canRestore,
+  canBrowseFiles,
+}: BackupsPanelProps) {
   const [page, setPage] = useState(1);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [browseTarget, setBrowseTarget] = useState<{ id: string; label: string } | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -331,9 +340,11 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
                 run={selectedRun}
                 canRestore={canRestore}
                 canManage={canManage}
+                canBrowseFiles={canBrowseFiles}
                 isOperationRunning={backupOperationRunning || deleteMutation.isPending}
                 onRestore={() => setRestoreOpen(true)}
                 onDelete={() => setDeleteOpen(true)}
+                onBrowse={(id, label) => setBrowseTarget({ id, label })}
               />
             ) : null
           }
@@ -356,6 +367,16 @@ export function BackupsPanel({ serverid, stackname, canManage, canRestore }: Bac
           isStarting={isStarting}
           onClose={() => setRestoreOpen(false)}
           onConfirm={startRestore}
+        />
+      )}
+      {selectedRun && browseTarget && (
+        <BackupFileBrowser
+          serverid={serverid}
+          stackname={stackname}
+          backupId={selectedRun.id}
+          componentId={browseTarget.id}
+          componentLabel={browseTarget.label}
+          onClose={() => setBrowseTarget(null)}
         />
       )}
       {selectedRun && (

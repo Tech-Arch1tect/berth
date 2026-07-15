@@ -9,18 +9,22 @@ interface BackupRunDetailProps {
   run: Run;
   canRestore: boolean;
   canManage: boolean;
+  canBrowseFiles: boolean;
   isOperationRunning: boolean;
   onRestore: () => void;
   onDelete: () => void;
+  onBrowse: (componentId: string, componentLabel: string) => void;
 }
 
 export function BackupRunDetail({
   run,
   canRestore,
   canManage,
+  canBrowseFiles,
   isOperationRunning,
   onRestore,
   onDelete,
+  onBrowse,
 }: BackupRunDetailProps) {
   const hasRestorableComponents = run.components.some((component) => !!component.snapshot_id);
   return (
@@ -110,11 +114,22 @@ export function BackupRunDetail({
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={cn('text-sm font-medium', theme.text.strong)}>{label}</span>
-                  {component.snapshot_id && (
-                    <span className={cn('text-xs font-mono', theme.text.subtle)}>
-                      {component.snapshot_id.slice(0, 8)}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-2">
+                    {component.snapshot_id && canBrowseFiles && (
+                      <button
+                        type="button"
+                        onClick={() => onBrowse(component.id, label)}
+                        className={cn('text-xs font-medium hover:underline', theme.text.info)}
+                      >
+                        Browse files
+                      </button>
+                    )}
+                    {component.snapshot_id && (
+                      <span className={cn('text-xs font-mono', theme.text.subtle)}>
+                        {component.snapshot_id.slice(0, 8)}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 {detail && (
                   <p className={cn('text-xs font-mono break-all mt-0.5', theme.text.muted)}>

@@ -305,6 +305,7 @@ export const StackContent: FC<StackContentProps> = ({
             stackname={stackname}
             canManage={permissions.canManageBackups}
             canRestore={permissions.canRestoreBackups}
+            canBrowseFiles={permissions.canViewBackups && permissions.canViewFiles}
           />
         </div>
       );
