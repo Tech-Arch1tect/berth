@@ -34,7 +34,7 @@
         },
         {
           "action": "read",
-          "description": "Read files within stacks",
+          "description": "Read files within stacks. Browsing and downloading backup contents (including volume data) requires this permission plus backups.read",
           "id": "\u003c\u003cID\u003e\u003e",
           "is_api_key_only": false,
           "name": "files.read",
@@ -82,7 +82,7 @@
         },
         {
           "action": "read",
-          "description": "View stack backups",
+          "description": "View stack backups. Browsing and downloading backup contents (including volume data) requires this permission plus files.read",
           "id": "\u003c\u003cID\u003e\u003e",
           "is_api_key_only": false,
           "name": "backups.read",
