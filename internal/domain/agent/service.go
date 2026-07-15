@@ -49,13 +49,19 @@ func (s *Service) getClient(server *server.Server, timeout time.Duration) *http.
 }
 
 func (s *Service) MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
-	return s.doRequest(ctx, server, method, endpoint, payload, s.operationTimeout)
+	return s.doRequest(ctx, server, method, endpoint, payload, s.operationTimeout, nil)
 }
 func (s *Service) MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
-	return s.doRequest(ctx, server, method, endpoint, payload, s.readTimeout)
+	return s.doRequest(ctx, server, method, endpoint, payload, s.readTimeout, nil)
+}
+func (s *Service) MakeReadRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, payload any, headers map[string]string) (*http.Response, error) {
+	return s.doRequest(ctx, server, method, endpoint, payload, s.readTimeout, headers)
+}
+func (s *Service) MakeStreamRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, headers map[string]string) (*http.Response, error) {
+	return s.doRequest(ctx, server, method, endpoint, nil, 0, headers)
 }
 
-func (s *Service) doRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any, timeout time.Duration) (*http.Response, error) {
+func (s *Service) doRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any, timeout time.Duration, headers map[string]string) (*http.Response, error) {
 	url := server.GetAPIURL() + endpoint
 
 	s.logger.Debug("making agent request",
@@ -93,6 +99,9 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	for name, value := range headers {
+		req.Header.Set(name, value)
 	}
 
 	client := s.getClient(server, timeout)

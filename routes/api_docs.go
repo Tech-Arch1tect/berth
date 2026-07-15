@@ -724,6 +724,44 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups/{backupid}/files").
+		Tags("backups").
+		Summary("List files inside a backup").
+		Description("Returns one directory level of a backup component's snapshot. Requires both backups.read and files.read on the stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("backupid", "Backup run ID").Required().
+		QueryParam("component", "Backup component ID").Required().
+		QueryParam("path", "Directory inside the component (default the component root)").Optional().
+		Response(http.StatusOK, response.Response[backups.BackupFileListing]{}, "Directory listing").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Backup, component or path not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backups not enabled for this server, or repository in use").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups/{backupid}/download").
+		Tags("backups").
+		Summary("Download files from a backup").
+		Description("Streams a single selected file as-is, or any folder / multi-path selection as a tar.gz archive. Requires both backups.read and files.read on the stack").
+		PathParam("serverid", "Server ID").TypeInt().Required().
+		PathParam("stackname", "Stack name").Required().
+		PathParam("backupid", "Backup run ID").Required().
+		QueryParam("component", "Backup component ID").Required().
+		QueryParam("path", "File or directory to download; repeat for a multi-path selection").Required().
+		ResponseBinary(http.StatusOK, "application/octet-stream", "File content, or a tar.gz archive for folder and multi-path selections").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Backup, component or path not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backups not enabled for this server, or repository in use").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/files").
 		Tags("files").
 		Summary("List directory contents").

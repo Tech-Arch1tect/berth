@@ -84,9 +84,10 @@ const (
 )
 
 const (
-	EventBackupCreated  = "backup.created"
-	EventBackupRestored = "backup.restored"
-	EventBackupDeleted  = "backup.deleted"
+	EventBackupCreated        = "backup.created"
+	EventBackupRestored       = "backup.restored"
+	EventBackupDeleted        = "backup.deleted"
+	EventBackupFileDownloaded = "backup.file_downloaded"
 )
 
 const (
@@ -140,7 +141,7 @@ func GetEventCategory(eventType string) string {
 	case EventFileUploaded, EventFileDownloaded, EventFileDeleted, EventFileRenamed:
 		return "file"
 
-	case EventBackupCreated, EventBackupRestored, EventBackupDeleted:
+	case EventBackupCreated, EventBackupRestored, EventBackupDeleted, EventBackupFileDownloaded:
 		return "backup"
 
 	case EventRegistryCredentialCreated, EventRegistryCredentialUpdated, EventRegistryCredentialDeleted:
@@ -184,7 +185,8 @@ func GetEventSeverity(eventType string) string {
 		EventTOTPVerificationSuccess, EventTOTPSetupInitiated,
 		EventAPITokenIssued, EventAPITokenRefreshed, EventAPITokenRevoked,
 		EventServerConnectionTestSuccess,
-		EventFileUploaded, EventFileDownloaded, EventBackupCreated:
+		EventFileUploaded, EventFileDownloaded, EventBackupCreated,
+		EventBackupFileDownloaded:
 		return "low"
 
 	default:

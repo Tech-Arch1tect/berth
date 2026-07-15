@@ -18,6 +18,9 @@ import (
 var ErrBackupNotFound = errors.New("backup not found")
 var ErrRepositoryBusy = errors.New("the backup repository is in use by another operation; try again once it finishes")
 var ErrBackupsNotEnabled = errors.New("backups are not enabled for this server; an administrator can enable them and set an encryption password in the server settings")
+var ErrAccessDenied = errors.New("access denied")
+
+const backupPasswordHeader = "X-Backup-Password"
 
 type agentDeleteRequest struct {
 	BackupPassword string `json:"backup_password"`
@@ -29,6 +32,8 @@ type agentErrorBody struct {
 
 type backupsAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeReadRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, payload any, headers map[string]string) (*http.Response, error)
+	MakeStreamRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, headers map[string]string) (*http.Response, error)
 }
 
 type backupsServerProvider interface {
@@ -191,4 +196,98 @@ func (s *Service) handleAgentError(resp *http.Response) error {
 		return fmt.Errorf("agent error: %s", errorResp.Error)
 	}
 	return fmt.Errorf("agent returned status %d", resp.StatusCode)
+}
+
+func (s *Service) checkBrowsePermission(p authz.Principal, serverID uint, stackname string) error {
+	for _, permission := range []string{permnames.BackupsRead, permnames.FilesRead} {
+		allowed, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permission)
+		if err != nil {
+			return fmt.Errorf("failed to verify permission: %w", err)
+		}
+		if !allowed {
+			return ErrAccessDenied
+		}
+	}
+	return nil
+}
+
+func (s *Service) browseServer(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*server.Server, error) {
+	if err := s.checkBrowsePermission(p, serverID, stackname); err != nil {
+		return nil, err
+	}
+	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+	if !srv.BackupsEnabled || srv.BackupPassword == "" {
+		return nil, ErrBackupsNotEnabled
+	}
+	return srv, nil
+}
+
+func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID, componentID, path string) (*BackupFileListing, error) {
+	srv, err := s.browseServer(ctx, p, serverID, stackname)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/files?component=%s&path=%s",
+		url.PathEscape(stackname), url.PathEscape(backupID), url.QueryEscape(componentID), url.QueryEscape(path))
+	resp, err := s.agentSvc.MakeReadRequestWithHeaders(ctx, srv, "GET", endpoint, nil, map[string]string{backupPasswordHeader: srv.BackupPassword})
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotFound:
+		return nil, ErrBackupNotFound
+	case http.StatusConflict:
+		return nil, ErrRepositoryBusy
+	default:
+		return nil, s.handleAgentError(resp)
+	}
+
+	var listing BackupFileListing
+	if err := json.NewDecoder(resp.Body).Decode(&listing); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+	if listing.Entries == nil {
+		listing.Entries = []BackupFileEntry{}
+	}
+	return &listing, nil
+}
+
+func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID, componentID string, paths []string) (*http.Response, error) {
+	srv, err := s.browseServer(ctx, p, serverID, stackname)
+	if err != nil {
+		return nil, err
+	}
+
+	query := url.Values{"component": {componentID}}
+	for _, path := range paths {
+		query.Add("path", path)
+	}
+	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/download?%s",
+		url.PathEscape(stackname), url.PathEscape(backupID), query.Encode())
+
+	resp, err := s.agentSvc.MakeStreamRequestWithHeaders(ctx, srv, "GET", endpoint, map[string]string{backupPasswordHeader: srv.BackupPassword})
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return resp, nil
+	case http.StatusNotFound:
+		_ = resp.Body.Close()
+		return nil, ErrBackupNotFound
+	case http.StatusConflict:
+		_ = resp.Body.Close()
+		return nil, ErrRepositoryBusy
+	default:
+		defer func() { _ = resp.Body.Close() }()
+		return nil, s.handleAgentError(resp)
+	}
 }

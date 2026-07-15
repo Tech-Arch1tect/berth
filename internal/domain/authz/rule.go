@@ -128,6 +128,22 @@ func Stack(perm string) Rule {
 	return r
 }
 
+func StackAll(perms ...string) Rule {
+	r := newRule(ruleResolved)
+	r.customFn = func(c echo.Context) ([]Requirement, error) {
+		id, stack, err := r.parseServerIDAndStack(c)
+		if err != nil {
+			return nil, err
+		}
+		reqs := make([]Requirement, 0, len(perms))
+		for _, perm := range perms {
+			reqs = append(reqs, Requirement{Kind: KindStack, Permission: perm, ServerID: id, Stack: stack})
+		}
+		return reqs, nil
+	}
+	return r
+}
+
 func Server(perm string) Rule {
 	r := newRule(ruleServer)
 	r.perm = perm

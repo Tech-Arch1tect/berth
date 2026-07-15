@@ -68,3 +68,15 @@ type ListResponse struct {
 type DeleteResponse struct {
 	Message string `json:"message"`
 }
+
+type BackupFileEntry struct {
+	Name  string    `json:"name"`
+	Type  string    `json:"type"`
+	Size  uint64    `json:"size"`
+	MTime time.Time `json:"mtime"`
+}
+
+type BackupFileListing struct {
+	Path    string            `json:"path"`
+	Entries []BackupFileEntry `json:"entries"`
+}
