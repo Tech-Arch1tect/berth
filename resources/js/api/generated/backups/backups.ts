@@ -22,7 +22,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
   GetApiV1ServersServeridStacksStacknameBackupsParams,
+  ResponseBackupFileListing,
   ResponseDeleteResponse,
   ResponseEmpty,
   ResponseListResponse,
@@ -529,6 +532,470 @@ export function useGetApiV1ServersServeridStacksStacknameBackupsBackupid<
     serverid,
     stackname,
     backupid,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Streams a single selected file as-is, or any folder / multi-path selection as a tar.gz archive. Requires both backups.read and files.read on the stack
+ * @summary Download files from a backup
+ */
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadUrl = (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/download?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/download`;
+};
+
+export const getApiV1ServersServeridStacksStacknameBackupsBackupidDownload = async (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options?: RequestInit
+): Promise<Blob> => {
+  return apiClient<Blob>(
+    getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadUrl(
+      serverid,
+      stackname,
+      backupid,
+      params
+    ),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryKey = (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams
+) => {
+  return [
+    `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/download`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryKey(
+      serverid,
+      stackname,
+      backupid,
+      params
+    );
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameBackupsBackupidDownload(
+      serverid,
+      stackname,
+      backupid,
+      params,
+      { signal, ...requestOptions }
+    );
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(serverid && stackname && backupid),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>
+>;
+export type GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryError =
+  ResponseEmpty | void;
+
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidDownload<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidDownload<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidDownload<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Download files from a backup
+ */
+
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidDownload<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidDownload>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1ServersServeridStacksStacknameBackupsBackupidDownloadQueryOptions(
+    serverid,
+    stackname,
+    backupid,
+    params,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns one directory level of a backup component's snapshot. Requires both backups.read and files.read on the stack
+ * @summary List files inside a backup
+ */
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesUrl = (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/files?${stringifiedParams}`
+    : `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/files`;
+};
+
+export const getApiV1ServersServeridStacksStacknameBackupsBackupidFiles = async (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options?: RequestInit
+): Promise<ResponseBackupFileListing> => {
+  return apiClient<ResponseBackupFileListing>(
+    getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesUrl(
+      serverid,
+      stackname,
+      backupid,
+      params
+    ),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryKey = (
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params?: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams
+) => {
+  return [
+    `/api/v1/servers/${serverid}/stacks/${stackname}/backups/${backupid}/files`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryKey(
+      serverid,
+      stackname,
+      backupid,
+      params
+    );
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>
+  > = ({ signal }) =>
+    getApiV1ServersServeridStacksStacknameBackupsBackupidFiles(
+      serverid,
+      stackname,
+      backupid,
+      params,
+      { signal, ...requestOptions }
+    );
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(serverid && stackname && backupid),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>
+>;
+export type GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryError =
+  ResponseEmpty | void;
+
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidFiles<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidFiles<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidFiles<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List files inside a backup
+ */
+
+export function useGetApiV1ServersServeridStacksStacknameBackupsBackupidFiles<
+  TData = Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+  TError = ResponseEmpty | void,
+>(
+  serverid: number,
+  stackname: string,
+  backupid: string,
+  params: GetApiV1ServersServeridStacksStacknameBackupsBackupidFilesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getApiV1ServersServeridStacksStacknameBackupsBackupidFiles>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1ServersServeridStacksStacknameBackupsBackupidFilesQueryOptions(
+    serverid,
+    stackname,
+    backupid,
+    params,
     options
   );
 
