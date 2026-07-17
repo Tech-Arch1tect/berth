@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/pkg/response"
@@ -55,14 +56,16 @@ func TestOperationStreamWSDeliversOperationOutput(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
 	const opID = "stream-deliver-op"
-	startStreamTestOperation(t, app, mockAgent, jwt, testServer.ID, "web-stack", opID)
 
 	mockAgent.RegisterHandler("/api/operations/"+opID+"/stream", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "data: {\"type\":\"stdout\",\"data\":\"restarting web-stack\",\"timestamp\":\"2026-06-09T12:00:00Z\"}\n\n")
-		fmt.Fprint(w, "data: {\"type\":\"complete\",\"success\":true,\"exitCode\":0,\"timestamp\":\"2026-06-09T12:00:01Z\"}\n\n")
+		now := time.Now().UTC().Format(time.RFC3339Nano)
+		fmt.Fprintf(w, "data: {\"type\":\"stdout\",\"data\":\"restarting web-stack\",\"timestamp\":\"%s\"}\n\n", now)
+		fmt.Fprintf(w, "data: {\"type\":\"complete\",\"success\":true,\"exitCode\":0,\"timestamp\":\"%s\"}\n\n", now)
 	})
+
+	startStreamTestOperation(t, app, mockAgent, jwt, testServer.ID, "web-stack", opID)
 
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+jwt)
@@ -122,7 +125,6 @@ func TestOperationStreamWSClosesOnClientFrame(t *testing.T) {
 	mockAgent.RegisterJSONHandler("/api/health", map[string]string{"status": "ok"})
 
 	const opID = "stream-frame-op"
-	startStreamTestOperation(t, app, mockAgent, jwt, testServer.ID, "web-stack", opID)
 
 	mockAgent.RegisterHandler("/api/operations/"+opID+"/stream", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -133,6 +135,8 @@ func TestOperationStreamWSClosesOnClientFrame(t *testing.T) {
 		}
 		<-r.Context().Done()
 	})
+
+	startStreamTestOperation(t, app, mockAgent, jwt, testServer.ID, "web-stack", opID)
 
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+jwt)

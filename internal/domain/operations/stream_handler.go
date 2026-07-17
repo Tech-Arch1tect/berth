@@ -1,7 +1,6 @@
 package operations
 
 import (
-	"berth/internal/domain/authz"
 	"context"
 	"encoding/json"
 	"time"
@@ -18,6 +17,7 @@ import (
 const (
 	streamPingInterval = 30 * time.Second
 	streamWriteTimeout = 10 * time.Second
+	streamPollInterval = 150 * time.Millisecond
 )
 
 type StreamHandler struct {
@@ -42,11 +42,6 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 	operationID := c.Param("operationId")
 	if operationID == "" {
 		return response.BadRequest(c, "operationId is required")
-	}
-
-	p, err := authz.RequirePrincipal(c)
-	if err != nil {
-		return err
 	}
 
 	operationLog, err := h.service.auditSvc.FindOperationLogByOperationID(operationID)
@@ -84,51 +79,54 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 		cancel()
 	}()
 
-	pipeReader, pipeWriter := streamPipe(ctx)
-	streamFailed := make(chan string, 1)
-	streamEnded := make(chan struct{})
-
-	go func() {
-		defer close(streamEnded)
-		defer func() { _ = pipeWriter.Close() }()
-		if err := h.service.StreamOperationToWriter(ctx, p, serverID, stackname, operationID, pipeWriter); err != nil {
-			select {
-			case streamFailed <- err.Error():
-			default:
-			}
-		}
-	}()
-
-	return h.relay(ctx, conn, pipeReader, streamFailed, streamEnded)
+	return h.tailOperationLog(ctx, conn, operationID, operationLog.ID)
 }
 
-func (h *StreamHandler) relay(ctx context.Context, conn *websocket.Conn, reader *StreamReader, streamFailed <-chan string, streamEnded <-chan struct{}) error {
+func (h *StreamHandler) tailOperationLog(ctx context.Context, conn *websocket.Conn, operationID string, operationLogID uint) error {
 	pingTicker := time.NewTicker(streamPingInterval)
 	defer pingTicker.Stop()
 
-	emit := func(line string) (ok bool) {
-		if len(line) <= 6 || line[:6] != "data: " {
-			return true
-		}
-		jsonData := line[6:]
-
-		writeCtx, writeCancel := context.WithTimeout(ctx, streamWriteTimeout)
-		err := conn.Write(writeCtx, websocket.MessageText, []byte(jsonData))
-		writeCancel()
-		return err == nil
-	}
-
-	finish := func() {
-		select {
-		case errMsg := <-streamFailed:
-			h.writeStreamError(ctx, conn, errMsg)
-			_ = conn.Close(websocket.StatusInternalError, "stream failed")
-		default:
-			_ = conn.Close(websocket.StatusNormalClosure, "")
-		}
-	}
-
+	lastSeq := 0
 	for {
+		operationLog, err := h.service.auditSvc.FindOperationLogByOperationID(operationID)
+		if err != nil {
+			_ = conn.Close(websocket.StatusInternalError, "operation lookup failed")
+			return nil
+		}
+		ended := operationLog.EndTime != nil
+
+		messages, err := h.service.auditSvc.GetOperationMessagesSince(operationLogID, lastSeq)
+		if err != nil {
+			_ = conn.Close(websocket.StatusInternalError, "operation lookup failed")
+			return nil
+		}
+		for _, m := range messages {
+			lastSeq = m.SequenceNumber
+			if m.MessageType == string(StreamTypeComplete) {
+				continue
+			}
+			if !h.writeFrame(ctx, conn, StreamMessage{
+				Type:      m.MessageType,
+				Data:      m.MessageData,
+				Timestamp: m.Timestamp,
+			}) {
+				return nil
+			}
+		}
+
+		if ended {
+			if !h.writeFrame(ctx, conn, StreamMessage{
+				Type:      string(StreamTypeComplete),
+				Timestamp: *operationLog.EndTime,
+				Success:   operationLog.Success,
+				ExitCode:  operationLog.ExitCode,
+			}) {
+				return nil
+			}
+			_ = conn.Close(websocket.StatusNormalClosure, "")
+			return nil
+		}
+
 		select {
 		case <-ctx.Done():
 			_ = conn.Close(websocket.StatusGoingAway, "server closing")
@@ -140,37 +138,18 @@ func (h *StreamHandler) relay(ctx context.Context, conn *websocket.Conn, reader 
 			if err != nil {
 				return nil
 			}
-		case line := <-reader.Lines():
-			if !emit(line) {
-				return nil
-			}
-		case <-streamEnded:
-			for {
-				select {
-				case line := <-reader.Lines():
-					if !emit(line) {
-						return nil
-					}
-				default:
-					finish()
-					return nil
-				}
-			}
+		case <-time.After(streamPollInterval):
 		}
 	}
 }
 
-func (h *StreamHandler) writeStreamError(ctx context.Context, conn *websocket.Conn, message string) {
-	frame := StreamMessage{
-		Type:      string(StreamTypeError),
-		Data:      message,
-		Timestamp: time.Now(),
-	}
+func (h *StreamHandler) writeFrame(ctx context.Context, conn *websocket.Conn, frame StreamMessage) bool {
 	data, err := json.Marshal(frame)
 	if err != nil {
-		return
+		return false
 	}
 	writeCtx, writeCancel := context.WithTimeout(ctx, streamWriteTimeout)
-	defer writeCancel()
-	_ = conn.Write(writeCtx, websocket.MessageText, data)
+	err = conn.Write(writeCtx, websocket.MessageText, data)
+	writeCancel()
+	return err == nil
 }

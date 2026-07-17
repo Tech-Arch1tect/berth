@@ -144,6 +144,22 @@ func (s *AuditService) FindOperationLogByOperationID(operationID string) (*opera
 	return &log, nil
 }
 
+func (s *AuditService) GetOperationMessagesSince(operationLogID uint, afterSequence int) ([]operationlogs.OperationLogMessage, error) {
+	var messages []operationlogs.OperationLogMessage
+	err := s.db.
+		Where("operation_log_id = ? AND sequence_number > ?", operationLogID, afterSequence).
+		Order("sequence_number ASC").
+		Find(&messages).Error
+	if err != nil {
+		s.logger.Error("failed to load operation messages",
+			zap.Error(err),
+			zap.Uint("operation_log_id", operationLogID),
+		)
+		return nil, err
+	}
+	return messages, nil
+}
+
 func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error {
 	s.logger.Debug("logging operation end",
 		zap.Uint("operation_log_id", operationLogID),
