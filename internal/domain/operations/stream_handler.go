@@ -84,15 +84,6 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 		cancel()
 	}()
 
-	var auditLogID *uint
-	logAllMessages := false
-	if operationLog.EndTime == nil {
-		auditLogID = &operationLog.ID
-		if count, err := h.service.auditSvc.GetOperationMessageCount(operationLog.ID); err == nil && count == 0 {
-			logAllMessages = true
-		}
-	}
-
 	pipeReader, pipeWriter := streamPipe(ctx)
 	streamFailed := make(chan string, 1)
 	streamEnded := make(chan struct{})
@@ -108,43 +99,18 @@ func (h *StreamHandler) HandleOperationStream(c echo.Context) error {
 		}
 	}()
 
-	return h.relay(ctx, conn, pipeReader, streamFailed, streamEnded, auditLogID, logAllMessages)
+	return h.relay(ctx, conn, pipeReader, streamFailed, streamEnded)
 }
 
-func (h *StreamHandler) relay(ctx context.Context, conn *websocket.Conn, reader *StreamReader, streamFailed <-chan string, streamEnded <-chan struct{}, auditLogID *uint, logAllMessages bool) error {
+func (h *StreamHandler) relay(ctx context.Context, conn *websocket.Conn, reader *StreamReader, streamFailed <-chan string, streamEnded <-chan struct{}) error {
 	pingTicker := time.NewTicker(streamPingInterval)
 	defer pingTicker.Stop()
-
-	sequenceNumber := 0
 
 	emit := func(line string) (ok bool) {
 		if len(line) <= 6 || line[:6] != "data: " {
 			return true
 		}
 		jsonData := line[6:]
-
-		var streamMsg StreamMessage
-		if json.Unmarshal([]byte(jsonData), &streamMsg) == nil && auditLogID != nil {
-			if logAllMessages {
-				sequenceNumber++
-				_ = h.service.auditSvc.LogOperationMessage(
-					*auditLogID,
-					streamMsg.Type,
-					streamMsg.Data,
-					streamMsg.Timestamp,
-					sequenceNumber,
-				)
-			}
-
-			if streamMsg.Type == string(StreamTypeComplete) {
-				success := streamMsg.Success != nil && *streamMsg.Success
-				exitCode := 0
-				if streamMsg.ExitCode != nil {
-					exitCode = *streamMsg.ExitCode
-				}
-				_ = h.service.auditSvc.LogOperationEnd(*auditLogID, streamMsg.Timestamp, success, exitCode)
-			}
-		}
 
 		writeCtx, writeCancel := context.WithTimeout(ctx, streamWriteTimeout)
 		err := conn.Write(writeCtx, websocket.MessageText, []byte(jsonData))

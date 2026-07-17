@@ -76,6 +76,7 @@ func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {
 
 func (ma *MockAgent) Close() {
 	if ma.Server != nil {
+		ma.Server.CloseClientConnections()
 		ma.Server.Close()
 	}
 }

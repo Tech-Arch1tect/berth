@@ -122,7 +122,7 @@ func (h *Handler) StartOperation(c echo.Context) error {
 	}
 
 	startTime := time.Now()
-	h.service.auditSvc.LogOperationStart(p.UserID(), serverID, stackname, resp.OperationID, req, startTime)
+	h.service.RecordStartAndPersist(p, serverID, stackname, resp.OperationID, req, startTime)
 
 	if eventType, isBackup := backupSecurityEvent(req.Command); isBackup {
 		_ = h.securityLog.LogBackupEvent(

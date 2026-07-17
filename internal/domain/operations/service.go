@@ -202,38 +202,29 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 	return &response, nil
 }
 
-func (s *Service) StartAndExecuteOperation(ctx context.Context, p authz.Principal, serverID uint, stackname string, req OperationRequest, operationLogID uint) (*OperationStartData, error) {
-	s.logger.Debug("starting and executing Docker operation",
-		zap.Uint("user_id", p.UserID()),
-		zap.Uint("server_id", serverID),
-		zap.String("stack_name", stackname),
-		zap.String("operation_command", req.Command),
-		zap.Uint("operation_log_id", operationLogID),
-	)
-
-	response, err := s.StartOperation(ctx, p, serverID, stackname, req)
-	if err != nil {
-		return nil, err
-	}
-
-	auditWriter := NewAuditWriter(s.auditSvc, operationLogID)
-	err = s.StreamOperationToWriter(ctx, p, serverID, stackname, response.OperationID, auditWriter)
-	if err != nil {
-		s.logger.Error("failed to execute operation via streaming",
+func (s *Service) RecordStartAndPersist(p authz.Principal, serverID uint, stackname string, operationID string, req OperationRequest, startTime time.Time) {
+	operationLog, err := s.auditSvc.LogOperationStart(p.UserID(), serverID, stackname, operationID, req, startTime)
+	if err != nil || operationLog == nil {
+		s.logger.Error("failed to record operation start; output will not be persisted",
 			zap.Error(err),
-			zap.String("operation_id", response.OperationID),
+			zap.String("operation_id", operationID),
 		)
-		return response, err
+		return
 	}
+	s.PersistOperation(p, serverID, stackname, operationID, operationLog.ID)
+}
 
-	s.logger.Info("Docker operation executed successfully",
-		zap.Uint("user_id", p.UserID()),
-		zap.String("stack_name", stackname),
-		zap.String("operation_command", req.Command),
-		zap.String("operation_id", response.OperationID),
-	)
-
-	return response, nil
+func (s *Service) PersistOperation(p authz.Principal, serverID uint, stackname string, operationID string, operationLogID uint) {
+	go func() {
+		writer := NewAuditWriter(s.auditSvc, operationLogID)
+		if err := s.StreamOperationToWriter(context.Background(), p, serverID, stackname, operationID, writer); err != nil {
+			s.logger.Warn("operation output persister stopped early",
+				zap.Error(err),
+				zap.String("operation_id", operationID),
+				zap.String("stack_name", stackname),
+			)
+		}
+	}()
 }
 
 func (s *Service) StreamOperationToWriter(ctx context.Context, p authz.Principal, serverID uint, stackname string, operationID string, writer io.Writer) error {
@@ -462,15 +453,20 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 	return resp, nil
 }
 
+type operationLogSink interface {
+	LogOperationMessage(operationLogID uint, messageType string, messageData string, timestamp time.Time, sequenceNumber int) error
+	LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error
+}
+
 type AuditWriter struct {
-	auditSvc       *AuditService
+	sink           operationLogSink
 	operationLogID uint
 	sequenceNumber int
 }
 
-func NewAuditWriter(auditSvc *AuditService, operationLogID uint) *AuditWriter {
+func NewAuditWriter(sink operationLogSink, operationLogID uint) *AuditWriter {
 	return &AuditWriter{
-		auditSvc:       auditSvc,
+		sink:           sink,
 		operationLogID: operationLogID,
 		sequenceNumber: 0,
 	}
@@ -492,7 +488,7 @@ func (w *AuditWriter) Write(p []byte) (n int, err error) {
 			if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
 				w.sequenceNumber++
 
-				_ = w.auditSvc.LogOperationMessage(
+				_ = w.sink.LogOperationMessage(
 					w.operationLogID,
 					streamMsg.Type,
 					streamMsg.Data,
@@ -507,7 +503,7 @@ func (w *AuditWriter) Write(p []byte) (n int, err error) {
 						exitCode = *streamMsg.ExitCode
 					}
 
-					_ = w.auditSvc.LogOperationEnd(
+					_ = w.sink.LogOperationEnd(
 						w.operationLogID,
 						streamMsg.Timestamp,
 						success,
