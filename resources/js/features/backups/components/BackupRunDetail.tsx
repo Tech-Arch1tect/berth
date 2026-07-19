@@ -26,7 +26,7 @@ export function BackupRunDetail({
   onDelete,
   onBrowse,
 }: BackupRunDetailProps) {
-  const hasRestorableComponents = run.components.some((component) => !!component.snapshot_id);
+  const canRestoreRun = run.status === 'completed';
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-1">
@@ -36,7 +36,7 @@ export function BackupRunDetail({
             <span className={cn('text-xs font-mono', theme.text.subtle)}>{run.id.slice(0, 8)}</span>
           </div>
           <div className="flex items-center gap-2">
-            {canRestore && hasRestorableComponents && (
+            {canRestore && canRestoreRun && (
               <button
                 type="button"
                 onClick={onRestore}
