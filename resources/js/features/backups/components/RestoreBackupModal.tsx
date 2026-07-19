@@ -141,7 +141,7 @@ export function RestoreBackupModal({
                 )}
               >
                 <span className={cn('block text-sm', theme.text.subtle)}>
-                  {label} {detail && <span className="font-mono">{detail}</span>} — cannot be
+                  {label} {detail && <span className="font-mono">{detail}</span>}: cannot be
                   restored (no snapshot was taken during this backup)
                 </span>
               </div>

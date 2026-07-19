@@ -508,9 +508,10 @@ export default function AdminServers() {
                     className={cn('mt-1', theme.forms.input)}
                   />
                   <p className={cn('mt-2 text-sm', theme.text.subtle)}>
-                    Encrypts this server's backup repositories. Existing repositories can only be
-                    opened with the password they were created with, so changing it here does not
-                    re-encrypt old backups.
+                    Encrypts this server's backup repositories. Existing repositories only open with
+                    the password they were created with: after changing it, every backup action on
+                    stacks with existing backups (new backups, restores, browsing and deletion) is
+                    refused until the matching password is restored. Keep the old password safe.
                   </p>
                 </div>
               )}
@@ -559,7 +560,7 @@ export default function AdminServers() {
         onClose={() => setDeleteConfirm(null)}
         onConfirm={confirmDelete}
         title="Delete Server"
-        message={`Are you sure you want to delete ${deleteConfirm?.name}? This action cannot be undone.`}
+        message={`Are you sure you want to delete ${deleteConfirm?.name}? This action cannot be undone.${deleteConfirm?.backups_enabled ? ' The backup encryption password stored for this server is deleted with it; any backup repositories remain on the host but cannot be opened without that password.' : ''}`}
         confirmText="Delete"
         variant="danger"
         isLoading={deleteServerMutation.isPending}

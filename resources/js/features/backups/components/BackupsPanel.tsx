@@ -100,7 +100,7 @@ export function BackupsPanel({
       });
       setOptionsOpen(false);
     } catch (error) {
-      setStartError(error instanceof Error ? error.message : 'Failed to start the backup');
+      setStartError(messageFromApiError(error, 'Failed to start the backup'));
     } finally {
       setIsStarting(false);
     }
@@ -115,7 +115,7 @@ export function BackupsPanel({
       },
       onError: (error) => {
         setDeleteOpen(false);
-        setStartError(error instanceof Error ? error.message : 'Failed to delete the backup');
+        setStartError(messageFromApiError(error, 'Failed to delete the backup'));
       },
     },
   });
@@ -132,7 +132,7 @@ export function BackupsPanel({
       });
       setRestoreOpen(false);
     } catch (error) {
-      setStartError(error instanceof Error ? error.message : 'Failed to start the restore');
+      setStartError(messageFromApiError(error, 'Failed to start the restore'));
     } finally {
       setIsStarting(false);
     }
@@ -328,8 +328,8 @@ export function BackupsPanel({
           )}
         >
           {restoreRunning
-            ? 'A restore is running — live output is in the operations panel.'
-            : 'A backup is running — live output is in the operations panel.'}
+            ? 'A restore is running; live output is in the operations panel.'
+            : 'A backup is running; live output is in the operations panel.'}
         </div>
       )}
       {(startError || operations.error) && (
