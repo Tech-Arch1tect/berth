@@ -120,14 +120,14 @@ export function BackupsPanel({
     },
   });
 
-  const startRestore = async (componentIds: string[], keepExtraFiles: boolean) => {
+  const startRestore = async (componentIds: string[], keepExtraFiles: boolean, sparse: boolean) => {
     if (!selectedRun) return;
     setIsStarting(true);
     setStartError(null);
     try {
       await operations.startOperation({
         command: 'restore-backup',
-        options: buildRestoreOptions(selectedRun.id, componentIds, keepExtraFiles),
+        options: buildRestoreOptions(selectedRun.id, componentIds, keepExtraFiles, sparse),
         services: [],
       });
       setRestoreOpen(false);

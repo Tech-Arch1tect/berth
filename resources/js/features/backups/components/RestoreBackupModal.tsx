@@ -12,7 +12,7 @@ interface RestoreBackupModalProps {
   stackname: string;
   isStarting: boolean;
   onClose: () => void;
-  onConfirm: (componentIds: string[], keepExtraFiles: boolean) => void;
+  onConfirm: (componentIds: string[], keepExtraFiles: boolean, sparse: boolean) => void;
 }
 
 export function RestoreBackupModal({
@@ -26,11 +26,13 @@ export function RestoreBackupModal({
   const restorable = restorableComponents(run);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [keepExtraFiles, setKeepExtraFiles] = useState(false);
+  const [sparse, setSparse] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
       setSelected(new Set(restorable.map((component) => component.id)));
       setKeepExtraFiles(false);
+      setSparse(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, run.id]);
@@ -79,7 +81,7 @@ export function RestoreBackupModal({
             </button>
             <button
               type="button"
-              onClick={() => onConfirm([...selected], keepExtraFiles)}
+              onClick={() => onConfirm([...selected], keepExtraFiles, sparse)}
               disabled={isStarting || selected.size === 0}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium min-h-[44px]',
@@ -164,6 +166,25 @@ export function RestoreBackupModal({
               By default the restored data matches the backup exactly, removing files that did not
               exist when it was taken. Keeping later files can leave applications (databases in
               particular) with inconsistent state.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex gap-3 items-start cursor-pointer" title="restic restore --sparse">
+          <input
+            type="checkbox"
+            className="mt-1 shrink-0"
+            checked={sparse}
+            onChange={() => setSparse((value) => !value)}
+          />
+          <span>
+            <span className={cn('block text-sm font-medium', theme.text.strong)}>
+              Sparse restore
+            </span>
+            <span className={cn('block text-xs mt-0.5', theme.text.muted)}>
+              Long runs of zeros are written as holes, so the restore never needs more disk space
+              than the real data. Untick this if an application in the stack relies on preallocated
+              files.
             </span>
           </span>
         </label>

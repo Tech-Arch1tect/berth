@@ -39,7 +39,8 @@ export function restorableComponents(run: Run): Component[] {
 export function buildRestoreOptions(
   backupId: string,
   componentIds: string[],
-  keepExtraFiles: boolean
+  keepExtraFiles: boolean,
+  sparse: boolean
 ): string[] {
   const options = ['--backup-id', backupId];
   for (const id of componentIds) {
@@ -48,6 +49,9 @@ export function buildRestoreOptions(
   options.push('--stop');
   if (keepExtraFiles) {
     options.push('--keep-extra-files');
+  }
+  if (sparse) {
+    options.push('--sparse');
   }
   return options;
 }
