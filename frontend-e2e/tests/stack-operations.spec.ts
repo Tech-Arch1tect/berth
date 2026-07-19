@@ -55,8 +55,8 @@ test.describe('stack operations', () => {
       `/operations/${OPERATION_ID}/stream`,
       200,
       'text/event-stream',
-      'data: {"type":"stdout","data":"Restarting nginx ...","timestamp":"2026-06-10T12:00:00Z"}\n\n' +
-        'data: {"type":"complete","success":true,"exitCode":0,"timestamp":"2026-06-10T12:00:01Z"}\n\n'
+      `data: {"type":"stdout","data":"Restarting nginx ...","timestamp":"${new Date(Date.now() + 60_000).toISOString()}"}\n\n` +
+        `data: {"type":"complete","success":true,"exitCode":0,"timestamp":"${new Date(Date.now() + 61_000).toISOString()}"}\n\n`
     );
 
     await auth.loginDirectly(admin);

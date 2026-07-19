@@ -20,6 +20,7 @@ import {
   latestRepoSizeBytes,
   StopMode,
 } from '../utils';
+import { messageFromApiError } from '../../../shared/utils/api-errors';
 import { BackupFileBrowser } from './BackupFileBrowser';
 import { BackupOptionsModal } from './BackupOptionsModal';
 import { BackupRunDetail } from './BackupRunDetail';
@@ -189,6 +190,34 @@ export function BackupsPanel({
     },
   ];
 
+  if (backupsQuery.isError && !listing) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
+        <EmptyState
+          icon={ArchiveBoxIcon}
+          title="Could not load this stack's backups"
+          description={messageFromApiError(
+            backupsQuery.error,
+            'The agent could not be reached; existing backups are unaffected.'
+          )}
+          variant="error"
+          size="lg"
+        />
+        <button
+          type="button"
+          onClick={() => backupsQuery.refetch()}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium min-h-[44px]',
+            theme.surface.muted,
+            theme.text.standard
+          )}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (listing && !listing.enabled) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -283,6 +312,13 @@ export function BackupsPanel({
           <p className={cn('text-xs', theme.text.muted)}>Data size at last backup</p>
         </div>
       </div>
+
+      {backupsQuery.isError && listing && (
+        <div className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-2 text-sm text-red-700 dark:text-red-400">
+          Couldn't refresh backups:{' '}
+          {messageFromApiError(backupsQuery.error, 'the agent could not be reached')}
+        </div>
+      )}
 
       {backupOperationRunning && (
         <div
