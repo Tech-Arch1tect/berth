@@ -7,6 +7,10 @@
  */
 
 export interface ServerInfo {
+  agent_cert_authority_fingerprint?: string;
+  agent_cert_expires_at?: string;
+  agent_cert_fingerprint?: string;
+  agent_cert_issued_at?: string;
   backups_enabled: boolean;
   created_at: string;
   description: string;

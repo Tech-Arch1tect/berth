@@ -34,6 +34,7 @@ import type {
   ResponseAdminCreateServerData,
   ResponseAdminListServersData,
   ResponseAdminUpdateServerData,
+  ResponseAgentAuthorityData,
   ResponseEmpty,
   ResponseGetServerData,
   ResponseGetUserRolesData,
@@ -62,6 +63,300 @@ import { apiClient } from '../../client';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+/**
+ * Return whether berth's agent certificate authority exists, when it expires, and the expiry and fingerprint of the client certificate berth presents to agents. Requires admin access.
+ * @summary Get agent certificate authority status
+ */
+export const getGetApiV1AdminAgentAuthorityUrl = () => {
+  return `/api/v1/admin/agent-authority`;
+};
+
+export const getApiV1AdminAgentAuthority = async (
+  options?: RequestInit
+): Promise<ResponseAgentAuthorityData> => {
+  return apiClient<ResponseAgentAuthorityData>(getGetApiV1AdminAgentAuthorityUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetApiV1AdminAgentAuthorityQueryKey = () => {
+  return [`/api/v1/admin/agent-authority`] as const;
+};
+
+export const getGetApiV1AdminAgentAuthorityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+  TError = ResponseEmpty | void,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1AdminAgentAuthorityQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>> = ({
+    signal,
+  }) => getApiV1AdminAgentAuthority({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1AdminAgentAuthorityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>
+>;
+export type GetApiV1AdminAgentAuthorityQueryError = ResponseEmpty | void;
+
+export function useGetApiV1AdminAgentAuthority<
+  TData = Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+  TError = ResponseEmpty | void,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminAgentAuthority<
+  TData = Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1AdminAgentAuthority<
+  TData = Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get agent certificate authority status
+ */
+
+export function useGetApiV1AdminAgentAuthority<
+  TData = Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getApiV1AdminAgentAuthority>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1AdminAgentAuthorityQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Issue a new client certificate for berth to present to agents. Agents trust the certificate authority rather than this certificate, so no agent needs reinstalling or restarting. Requires admin access.
+ * @summary Reissue the client certificate
+ */
+export const getPostApiV1AdminAgentAuthorityClientCertificateUrl = () => {
+  return `/api/v1/admin/agent-authority/client-certificate`;
+};
+
+export const postApiV1AdminAgentAuthorityClientCertificate = async (
+  options?: RequestInit
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getPostApiV1AdminAgentAuthorityClientCertificateUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostApiV1AdminAgentAuthorityClientCertificateMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminAgentAuthorityClientCertificate'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>,
+    void
+  > = () => {
+    return postApiV1AdminAgentAuthorityClientCertificate(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminAgentAuthorityClientCertificateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>
+>;
+
+export type PostApiV1AdminAgentAuthorityClientCertificateMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Reissue the client certificate
+ */
+export const usePostApiV1AdminAgentAuthorityClientCertificate = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityClientCertificate>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(
+    getPostApiV1AdminAgentAuthorityClientCertificateMutationOptions(options),
+    queryClient
+  );
+};
+/**
+ * Replace the certificate authority and its key, and issue berth a new client certificate under it. Every certificate issued by the previous authority stops being trusted, so berth cannot reach any agent until a new bundle is installed on each one. Requires admin access.
+ * @summary Rotate the certificate authority
+ */
+export const getPostApiV1AdminAgentAuthorityRotateUrl = () => {
+  return `/api/v1/admin/agent-authority/rotate`;
+};
+
+export const postApiV1AdminAgentAuthorityRotate = async (
+  options?: RequestInit
+): Promise<ResponseMessageData2> => {
+  return apiClient<ResponseMessageData2>(getPostApiV1AdminAgentAuthorityRotateUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostApiV1AdminAgentAuthorityRotateMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminAgentAuthorityRotate'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>,
+    void
+  > = () => {
+    return postApiV1AdminAgentAuthorityRotate(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminAgentAuthorityRotateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>
+>;
+
+export type PostApiV1AdminAgentAuthorityRotateMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Rotate the certificate authority
+ */
+export const usePostApiV1AdminAgentAuthorityRotate = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminAgentAuthorityRotate>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminAgentAuthorityRotateMutationOptions(options), queryClient);
+};
 /**
  * Export all configuration data (users, roles, servers, etc.) as an encrypted backup file. Requires admin.system.export permission.
  * @summary Export data
@@ -2446,6 +2741,91 @@ export const usePutApiV1AdminServersId = <TError = ResponseEmpty | void, TContex
   TContext
 > => {
   return useMutation(getPutApiV1AdminServersIdMutationOptions(options), queryClient);
+};
+/**
+ * Issue a new certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.
+ * @summary Issue agent certificate bundle
+ */
+export const getPostApiV1AdminServersIdAgentBundleUrl = (id: number) => {
+  return `/api/v1/admin/servers/${id}/agent-bundle`;
+};
+
+export const postApiV1AdminServersIdAgentBundle = async (
+  id: number,
+  options?: RequestInit
+): Promise<Blob> => {
+  return apiClient<Blob>(getPostApiV1AdminServersIdAgentBundleUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPostApiV1AdminServersIdAgentBundleMutationOptions = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ['postApiV1AdminServersIdAgentBundle'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return postApiV1AdminServersIdAgentBundle(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiV1AdminServersIdAgentBundleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>
+>;
+
+export type PostApiV1AdminServersIdAgentBundleMutationError = ResponseEmpty | void;
+
+/**
+ * @summary Issue agent certificate bundle
+ */
+export const usePostApiV1AdminServersIdAgentBundle = <
+  TError = ResponseEmpty | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof postApiV1AdminServersIdAgentBundle>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPostApiV1AdminServersIdAgentBundleMutationOptions(options), queryClient);
 };
 /**
  * Test the connection to a server. Requires admin access.
