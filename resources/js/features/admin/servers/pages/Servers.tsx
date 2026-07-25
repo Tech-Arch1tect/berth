@@ -17,6 +17,11 @@ import {
   getGetApiV1AdminServersQueryKey,
 } from '../../../../api/generated/admin/admin';
 import type { ServerInfo } from '../../../../api/generated/models';
+import {
+  AgentAuthorityPanel,
+  AgentCertificateBadge,
+  AgentCertificateSection,
+} from '../components/AgentCertificates';
 
 interface ServerForm {
   name: string;
@@ -46,7 +51,7 @@ export default function AdminServers() {
   useDocumentTitle('Servers');
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [editingServer, setEditingServer] = useState<ServerInfo | null>(null);
+  const [editingServerId, setEditingServerId] = useState<number | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<ServerInfo | null>(null);
   const [deactivateConfirm, setDeactivateConfirm] = useState<ServerInfo | null>(null);
@@ -58,6 +63,7 @@ export default function AdminServers() {
 
   const { data: serversResponse, isLoading: serversLoading } = useGetApiV1AdminServers();
   const servers = serversResponse?.data?.servers ?? [];
+  const editingServer = servers.find((server) => server.id === editingServerId) ?? null;
 
   const invalidateServers = () =>
     queryClient.invalidateQueries({ queryKey: getGetApiV1AdminServersQueryKey() });
@@ -84,14 +90,14 @@ export default function AdminServers() {
   };
 
   const openCreateForm = () => {
-    setEditingServer(null);
+    setEditingServerId(null);
     setFormData(EMPTY_FORM);
     setFormError(null);
     setShowForm(true);
   };
 
   const openEditForm = (server: ServerInfo) => {
-    setEditingServer(server);
+    setEditingServerId(server.id);
     setFormData({
       name: server.name,
       description: server.description,
@@ -109,7 +115,7 @@ export default function AdminServers() {
 
   const closeForm = () => {
     setShowForm(false);
-    setEditingServer(null);
+    setEditingServerId(null);
     setFormData(EMPTY_FORM);
     setFormError(null);
   };
@@ -308,6 +314,8 @@ export default function AdminServers() {
           </button>
         </div>
 
+        <AgentAuthorityPanel onError={(title, message) => setResultModal({ title, message })} />
+
         <div className={theme.table.panel}>
           <Table<ServerInfo>
             data={servers}
@@ -344,6 +352,7 @@ export default function AdminServers() {
                     </span>
                     {sslBadge(server)}
                     {backupsBadge(server)}
+                    <AgentCertificateBadge server={server} />
                   </div>
                 ),
               },
@@ -366,6 +375,7 @@ export default function AdminServers() {
                   {statusBadge(server)}
                   {sslBadge(server)}
                   {backupsBadge(server)}
+                  <AgentCertificateBadge server={server} />
                 </div>
                 {server.description && (
                   <p className={cn('text-sm', theme.text.muted)}>{server.description}</p>
@@ -540,6 +550,12 @@ export default function AdminServers() {
               )}
             </div>
           </div>
+          {editingServer && (
+            <AgentCertificateSection
+              server={editingServer}
+              onError={(title, message) => setResultModal({ title, message })}
+            />
+          )}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={closeForm} className={theme.buttons.secondary}>
               Cancel
