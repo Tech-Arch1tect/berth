@@ -20,4 +20,8 @@ func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
 	reg.PUT("/servers/:id", h.UpdateServer, write)
 	reg.DELETE("/servers/:id", h.DeleteServer, write)
 	reg.POST("/servers/:id/test", h.TestConnection, write)
+	reg.POST("/servers/:id/agent-bundle", h.IssueAgentBundle, write)
+	reg.GET("/agent-authority", h.GetAgentAuthority, read)
+	reg.POST("/agent-authority/client-certificate", h.ReissueClientCertificate, write)
+	reg.POST("/agent-authority/rotate", h.RotateAgentAuthority, write)
 }

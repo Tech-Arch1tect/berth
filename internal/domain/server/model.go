@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"berth/internal/platform/db"
 )
@@ -32,19 +33,28 @@ type Server struct {
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
 	BackupsEnabled      bool   `json:"backups_enabled" gorm:"not null;default:false"`
 	BackupPassword      string `json:"-"`
+
+	AgentCertFingerprint          string     `json:"-"`
+	AgentCertAuthorityFingerprint string     `json:"-"`
+	AgentCertIssuedAt             *time.Time `json:"-"`
+	AgentCertExpiresAt            *time.Time `json:"-"`
 }
 
 type ServerInfo struct {
-	ID                  uint   `json:"id"`
-	CreatedAt           string `json:"created_at"`
-	UpdatedAt           string `json:"updated_at"`
-	Name                string `json:"name"`
-	Description         string `json:"description"`
-	Host                string `json:"host"`
-	Port                int    `json:"port"`
-	SkipSSLVerification bool   `json:"skip_ssl_verification"`
-	IsActive            bool   `json:"is_active"`
-	BackupsEnabled      bool   `json:"backups_enabled"`
+	ID                            uint   `json:"id"`
+	CreatedAt                     string `json:"created_at"`
+	UpdatedAt                     string `json:"updated_at"`
+	Name                          string `json:"name"`
+	Description                   string `json:"description"`
+	Host                          string `json:"host"`
+	Port                          int    `json:"port"`
+	SkipSSLVerification           bool   `json:"skip_ssl_verification"`
+	IsActive                      bool   `json:"is_active"`
+	BackupsEnabled                bool   `json:"backups_enabled"`
+	AgentCertFingerprint          string `json:"agent_cert_fingerprint,omitempty"`
+	AgentCertAuthorityFingerprint string `json:"agent_cert_authority_fingerprint,omitempty"`
+	AgentCertIssuedAt             string `json:"agent_cert_issued_at,omitempty"`
+	AgentCertExpiresAt            string `json:"agent_cert_expires_at,omitempty"`
 }
 
 type ServerCreateRequest struct {
@@ -159,17 +169,28 @@ func (s *Server) ToResponse() ServerInfo {
 	}
 
 	return ServerInfo{
-		ID:                  s.ID,
-		CreatedAt:           s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:           s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Name:                s.Name,
-		Description:         s.Description,
-		Host:                s.Host,
-		Port:                s.Port,
-		SkipSSLVerification: skipSSL,
-		IsActive:            s.IsActive,
-		BackupsEnabled:      s.BackupsEnabled,
+		ID:                            s.ID,
+		CreatedAt:                     s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:                     s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Name:                          s.Name,
+		Description:                   s.Description,
+		Host:                          s.Host,
+		Port:                          s.Port,
+		SkipSSLVerification:           skipSSL,
+		IsActive:                      s.IsActive,
+		BackupsEnabled:                s.BackupsEnabled,
+		AgentCertFingerprint:          s.AgentCertFingerprint,
+		AgentCertAuthorityFingerprint: s.AgentCertAuthorityFingerprint,
+		AgentCertIssuedAt:             formatTimestamp(s.AgentCertIssuedAt),
+		AgentCertExpiresAt:            formatTimestamp(s.AgentCertExpiresAt),
 	}
+}
+
+func formatTimestamp(value *time.Time) string {
+	if value == nil {
+		return ""
+	}
+	return value.Format("2006-01-02T15:04:05Z07:00")
 }
 
 func (s *Server) ToResponseWithStatistics(statistics *StackStatistics) ServerWithStatistics {

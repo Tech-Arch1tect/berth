@@ -37,13 +37,16 @@ const (
 )
 
 const (
-	EventServerCreated                = "server.created"
-	EventServerUpdated                = "server.updated"
-	EventServerDeleted                = "server.deleted"
-	EventServerAccessTokenRegenerated = "server.access_token.regenerated"
-	EventServerBackupPasswordChanged  = "server.backup_password.changed"
-	EventServerConnectionTestSuccess  = "server.connection.test_success"
-	EventServerConnectionTestFailure  = "server.connection.test_failure"
+	EventServerCreated                  = "server.created"
+	EventServerUpdated                  = "server.updated"
+	EventServerDeleted                  = "server.deleted"
+	EventServerAccessTokenRegenerated   = "server.access_token.regenerated"
+	EventServerAgentCertificateIssued   = "server.agent_certificate.issued"
+	EventAgentClientCertificateReissued = "agent_authority.client_certificate.reissued"
+	EventAgentAuthorityRotated          = "agent_authority.rotated"
+	EventServerBackupPasswordChanged    = "server.backup_password.changed"
+	EventServerConnectionTestSuccess    = "server.connection.test_success"
+	EventServerConnectionTestFailure    = "server.connection.test_failure"
 )
 
 const (
@@ -118,6 +121,8 @@ func GetEventCategory(eventType string) string {
 
 	case EventServerCreated, EventServerUpdated, EventServerDeleted,
 		EventServerAccessTokenRegenerated, EventServerBackupPasswordChanged,
+		EventServerAgentCertificateIssued, EventAgentClientCertificateReissued,
+		EventAgentAuthorityRotated,
 		EventServerConnectionTestSuccess, EventServerConnectionTestFailure:
 		return "server"
 
@@ -156,7 +161,8 @@ func GetEventSeverity(eventType string) string {
 	switch eventType {
 
 	case EventUserDeleted, EventRoleDeleted, EventServerDeleted,
-		EventServerAccessTokenRegenerated,
+		EventServerAccessTokenRegenerated, EventServerAgentCertificateIssued,
+		EventAgentAuthorityRotated,
 		EventAPIKeyRevoked, EventStackDeleted, EventDockerPruneExecuted:
 		return "critical"
 
@@ -164,6 +170,7 @@ func GetEventSeverity(eventType string) string {
 		EventUserCreated, EventUserRoleAssigned, EventUserRoleRevoked,
 		EventRoleCreated, EventRoleUpdated, EventPermissionAdded, EventPermissionRemoved,
 		EventServerCreated, EventServerUpdated, EventServerBackupPasswordChanged,
+		EventAgentClientCertificateReissued,
 		EventTOTPEnabled, EventTOTPDisabled,
 		EventAPIKeyCreated, EventAPIKeyScopeAdded, EventAPIKeyScopeRemoved,
 		EventStackCreated, EventStackSecretsViewed, EventDockerResourceDeleted,

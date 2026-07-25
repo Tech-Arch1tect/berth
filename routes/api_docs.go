@@ -1330,6 +1330,52 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/agent-bundle").
+		Tags("admin").
+		Summary("Issue agent certificate bundle").
+		Description("Issue a new certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		ResponseBinary(http.StatusOK, "application/gzip", "Certificate bundle containing server.crt, server.key and ca.crt").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to issue the agent certificate bundle").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/agent-authority").
+		Tags("admin").
+		Summary("Get agent certificate authority status").
+		Description("Return whether berth's agent certificate authority exists, when it expires, and the expiry and fingerprint of the client certificate berth presents to agents. Requires admin access.").
+		Response(http.StatusOK, response.Response[server.AgentAuthorityData]{}, "Authority status").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to read the agent certificate authority").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/agent-authority/client-certificate").
+		Tags("admin").
+		Summary("Reissue the client certificate").
+		Description("Issue a new client certificate for berth to present to agents. Agents trust the certificate authority rather than this certificate, so no agent needs reinstalling or restarting. Requires admin access.").
+		Response(http.StatusOK, response.Response[server.MessageData]{}, "Client certificate reissued").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to reissue the client certificate").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/agent-authority/rotate").
+		Tags("admin").
+		Summary("Rotate the certificate authority").
+		Description("Replace the certificate authority and its key, and issue berth a new client certificate under it. Every certificate issued by the previous authority stops being trusted, so berth cannot reach any agent until a new bundle is installed on each one. Requires admin access.").
+		Response(http.StatusOK, response.Response[server.MessageData]{}, "Authority rotated").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Failed to rotate the certificate authority").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	// Admin Migration
 	apiDoc.Document("POST", "/api/v1/admin/migration/export").
 		Tags("admin").

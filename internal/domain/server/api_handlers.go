@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 
 	"berth/internal/domain/security"
 	"berth/internal/domain/session"
@@ -140,6 +142,60 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 	h.audit(c, security.EventServerDeleted, id, name, true, "")
 
 	return response.OK(c, MessageData{Message: "Server deleted successfully"})
+}
+
+func (h *APIHandler) GetAgentAuthority(c echo.Context) error {
+	status, err := h.service.AgentAuthorityStatus()
+	if err != nil {
+		return response.Internal(c, "Failed to read the agent certificate authority")
+	}
+	return response.OK(c, AgentAuthorityData{Authority: status})
+}
+
+func (h *APIHandler) ReissueClientCertificate(c echo.Context) error {
+	if err := h.service.ReissueClientCertificate(); err != nil {
+		h.audit(c, security.EventAgentClientCertificateReissued, 0, "", false, err.Error())
+		return response.Internal(c, "Failed to reissue the client certificate")
+	}
+
+	h.audit(c, security.EventAgentClientCertificateReissued, 0, "", true, "")
+
+	return response.OK(c, MessageData{Message: "Client certificate reissued"})
+}
+
+func (h *APIHandler) RotateAgentAuthority(c echo.Context) error {
+	if err := h.service.RotateAgentAuthority(); err != nil {
+		h.audit(c, security.EventAgentAuthorityRotated, 0, "", false, err.Error())
+		return response.Internal(c, "Failed to rotate the certificate authority")
+	}
+
+	h.audit(c, security.EventAgentAuthorityRotated, 0, "", true, "")
+
+	return response.OK(c, MessageData{Message: "Certificate authority rotated. Every agent needs a new bundle installed."})
+}
+
+func (h *APIHandler) IssueAgentBundle(c echo.Context) error {
+	id, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	server, err := h.service.GetServer(id)
+	if err != nil {
+		return response.NotFound(c, "Server not found")
+	}
+
+	bundle, err := h.service.IssueAgentBundle(id)
+	if err != nil {
+		h.audit(c, security.EventServerAgentCertificateIssued, server.ID, server.Name, false, err.Error())
+		return response.Internal(c, "Failed to issue the agent certificate bundle")
+	}
+
+	h.audit(c, security.EventServerAgentCertificateIssued, server.ID, server.Name, true, "")
+
+	c.Response().Header().Set("Cache-Control", "no-store")
+	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", bundleFilename(server)))
+	return c.Blob(http.StatusOK, "application/gzip", bundle)
 }
 
 func (h *APIHandler) TestConnection(c echo.Context) error {

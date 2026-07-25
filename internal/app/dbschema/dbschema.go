@@ -16,6 +16,7 @@ import (
 func Models() []any {
 	return append(seeds.RBACModels(),
 		&server.ServerRegistryCredential{},
+		&server.AgentAuthority{},
 		&operationlogs.OperationLog{}, &operationlogs.OperationLogMessage{},
 		&security.SecurityAuditLog{},
 		&session.UserSession{},

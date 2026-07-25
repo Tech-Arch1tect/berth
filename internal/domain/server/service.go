@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -35,13 +36,14 @@ type agentLifecycle interface {
 }
 
 type Service struct {
-	db         *gorm.DB
-	crypto     *berthcrypto.Crypto
-	authzSvc   serverAuthorizer
-	patternSvc stackPatternProvider
-	agentSvc   serverAgentClient
-	agentLife  agentLifecycle
-	logger     *zap.Logger
+	db             *gorm.DB
+	crypto         *berthcrypto.Crypto
+	authzSvc       serverAuthorizer
+	patternSvc     stackPatternProvider
+	agentSvc       serverAgentClient
+	agentLife      agentLifecycle
+	logger         *zap.Logger
+	authorityMutex sync.Mutex
 }
 
 func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthorizer, patternSvc stackPatternProvider, agentSvc serverAgentClient, logger *zap.Logger) *Service {

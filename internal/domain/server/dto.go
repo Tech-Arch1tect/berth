@@ -23,3 +23,7 @@ type AdminUpdateServerData struct {
 type MessageData struct {
 	Message string `json:"message"`
 }
+
+type AgentAuthorityData struct {
+	Authority AgentAuthorityStatus `json:"authority"`
+}

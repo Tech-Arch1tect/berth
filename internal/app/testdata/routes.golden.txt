@@ -1,4 +1,7 @@
 GET	/*	internal/platform/spa.(*Service).Render-fm
+GET	/api/v1/admin/agent-authority	internal/domain/server.(*APIHandler).GetAgentAuthority-fm
+POST	/api/v1/admin/agent-authority/client-certificate	internal/domain/server.(*APIHandler).ReissueClientCertificate-fm
+POST	/api/v1/admin/agent-authority/rotate	internal/domain/server.(*APIHandler).RotateAgentAuthority-fm
 POST	/api/v1/admin/migration/export	internal/domain/dataexport.(*Handler).Export-fm
 POST	/api/v1/admin/migration/import	internal/domain/dataexport.(*Handler).Import-fm
 GET	/api/v1/admin/operation-logs	internal/domain/operationlogs.(*Handler).ListOperationLogs-fm
@@ -20,6 +23,7 @@ POST	/api/v1/admin/servers	internal/domain/server.(*APIHandler).CreateServer-fm
 DELETE	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).DeleteServer-fm
 GET	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).GetServer-fm
 PUT	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).UpdateServer-fm
+POST	/api/v1/admin/servers/:id/agent-bundle	internal/domain/server.(*APIHandler).IssueAgentBundle-fm
 POST	/api/v1/admin/servers/:id/test	internal/domain/server.(*APIHandler).TestConnection-fm
 GET	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).ListUsers-fm
 POST	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).CreateUser-fm
