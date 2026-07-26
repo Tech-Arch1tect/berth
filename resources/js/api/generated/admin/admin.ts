@@ -2743,7 +2743,7 @@ export const usePutApiV1AdminServersId = <TError = ResponseEmpty | void, TContex
   return useMutation(getPutApiV1AdminServersIdMutationOptions(options), queryClient);
 };
 /**
- * Issue a new certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.
+ * Issue a new signing certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.
  * @summary Issue agent certificate bundle
  */
 export const getPostApiV1AdminServersIdAgentBundleUrl = (id: number) => {

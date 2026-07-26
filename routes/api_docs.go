@@ -1333,9 +1333,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/agent-bundle").
 		Tags("admin").
 		Summary("Issue agent certificate bundle").
-		Description("Issue a new certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.").
+		Description("Issue a new signing certificate for this server's agent and return it with its key and the berth certificate authority as a tar.gz. The key is returned once and never stored. Issuing replaces any previously issued certificate for this server, which stops working immediately. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
-		ResponseBinary(http.StatusOK, "application/gzip", "Certificate bundle containing server.crt, server.key and ca.crt").
+		ResponseBinary(http.StatusOK, "application/gzip", "Certificate bundle containing agent.crt, agent.key and ca.crt").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
 		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").

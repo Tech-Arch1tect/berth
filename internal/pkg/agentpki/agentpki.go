@@ -21,8 +21,8 @@ import (
 
 const (
 	ServerIdentity      = "berth-server"
-	AgentCertFile       = "server.crt"
-	AgentKeyFile        = "server.key"
+	AgentCertFile       = "agent.crt"
+	AgentKeyFile        = "agent.key"
 	AuthorityFile       = "ca.crt"
 	authorityName       = "berth agent authority"
 	authorityValidUntil = 20 * 365 * 24 * time.Hour

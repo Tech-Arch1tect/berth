@@ -291,8 +291,9 @@ export function AgentCertificateSection({ server, onError }: AgentCertificateSec
       </button>
 
       <p className={cn('mt-2 text-sm', theme.text.subtle)}>
-        Downloads server.crt, server.key and ca.crt for this agent. Place them in the agent's ssl
-        directory. The key is only offered once: if it is lost, issue the bundle again.
+        Downloads agent.crt, agent.key and ca.crt for this agent. Place them in the agent's ssl
+        directory alongside its existing files. The key is only offered once: if it is lost, issue
+        the bundle again.
         {issued &&
           !stale &&
           ' Issuing a new bundle stops the current certificate being accepted, so this agent is unreachable until the new files are installed on it.'}
