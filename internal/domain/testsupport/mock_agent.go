@@ -1,9 +1,6 @@
-//go:build e2e
-
 package testsupport
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -18,23 +15,11 @@ type MockAgent struct {
 	mu             sync.RWMutex
 	handlers       map[string]http.HandlerFunc
 	responseSigner *AgentResponseSigner
-}
-
-func (ma *MockAgent) SignResponsesWith(signer *AgentResponseSigner) {
-	ma.mu.Lock()
-	ma.responseSigner = signer
-	ma.mu.Unlock()
+	intercept      func(http.ResponseWriter, *http.Request) bool
 }
 
 func NewMockAgent() *MockAgent {
-	ma := &MockAgent{
-		handlers: make(map[string]http.HandlerFunc),
-	}
-
-	ma.handlers["/health"] = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	}
+	ma := &MockAgent{handlers: defaultHandlers()}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", ma.dispatch)
@@ -55,17 +40,36 @@ func NewMockAgent() *MockAgent {
 	return ma
 }
 
+func defaultHandlers() map[string]http.HandlerFunc {
+	return map[string]http.HandlerFunc{
+		"/health": func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		},
+	}
+}
+
+func (ma *MockAgent) SignResponsesWith(signer *AgentResponseSigner) {
+	ma.mu.Lock()
+	ma.responseSigner = signer
+	ma.mu.Unlock()
+}
+
+func (ma *MockAgent) Intercept(intercept func(http.ResponseWriter, *http.Request) bool) {
+	ma.mu.Lock()
+	ma.intercept = intercept
+	ma.mu.Unlock()
+}
+
 func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api")
-	if path == "" {
-		path = "/"
+	ma.mu.RLock()
+	intercept := ma.intercept
+	ma.mu.RUnlock()
+	if intercept != nil && intercept(w, r) {
+		return
 	}
 
-	ma.mu.RLock()
-	handler, exists := ma.handlers[path]
-	ma.mu.RUnlock()
-
-	if exists {
+	if handler, exists := ma.handlerFor(r.URL.Path); exists {
 		handler(w, r)
 		return
 	}
@@ -73,10 +77,25 @@ func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "not found", http.StatusNotFound)
 }
 
+func (ma *MockAgent) handlerFor(path string) (http.HandlerFunc, bool) {
+	ma.mu.RLock()
+	defer ma.mu.RUnlock()
+
+	if handler, exists := ma.handlers[path]; exists {
+		return handler, true
+	}
+	handler, exists := ma.handlers[strings.TrimPrefix(path, "/api")]
+	return handler, exists
+}
+
 func (ma *MockAgent) RegisterHandler(path string, handler http.HandlerFunc) {
 	ma.mu.Lock()
 	defer ma.mu.Unlock()
 	ma.handlers[path] = handler
+}
+
+func (ma *MockAgent) RegisterJSONHandler(path string, body any) {
+	ma.RegisterJSON(path, http.StatusOK, body)
 }
 
 func (ma *MockAgent) RegisterJSON(path string, status int, body any) {
@@ -98,24 +117,12 @@ func (ma *MockAgent) RegisterRaw(path string, status int, contentType, body stri
 func (ma *MockAgent) ResetHandlers() {
 	ma.mu.Lock()
 	defer ma.mu.Unlock()
-	ma.handlers = map[string]http.HandlerFunc{
-		"/health": func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-		},
-	}
+	ma.handlers = defaultHandlers()
 }
 
 func (ma *MockAgent) Close() {
 	if ma.server != nil {
+		ma.server.CloseClientConnections()
 		ma.server.Close()
-	}
-}
-
-func insecureClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 	}
 }

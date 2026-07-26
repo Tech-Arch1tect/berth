@@ -1,27 +1,21 @@
 package e2e
 
 import (
-	"berth/internal/domain/testsupport"
-	"crypto/tls"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
+
+	"berth/internal/domain/testsupport"
 )
 
 type MockAgent struct {
-	Server *httptest.Server
-	URL    string
+	*testsupport.MockAgent
 
-	mu       sync.RWMutex
-	handlers map[string]http.HandlerFunc
-
+	mu             sync.RWMutex
 	forceError     bool
 	forceErrorCode int
 	forceErrorMsg  string
-	responseSigner *testsupport.AgentResponseSigner
 
 	callsMu sync.Mutex
 	calls   []AgentCall
@@ -33,93 +27,25 @@ type AgentCall struct {
 }
 
 func NewMockAgent() *MockAgent {
-	ma := &MockAgent{
-		handlers: make(map[string]http.HandlerFunc),
-	}
-
-	ma.handlers["/health"] = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", ma.dispatch)
-
-	ma.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ma.mu.RLock()
-		signer := ma.responseSigner
-		ma.mu.RUnlock()
-		if signer == nil {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		signer.Wrap(mux).ServeHTTP(w, r)
-	}))
-	ma.Server.StartTLS()
-	ma.URL = ma.Server.URL
-
+	ma := &MockAgent{MockAgent: testsupport.NewMockAgent()}
+	ma.Intercept(ma.recordAndMaybeFail)
 	return ma
 }
 
-func (ma *MockAgent) SignResponsesWith(signer *testsupport.AgentResponseSigner) {
-	ma.mu.Lock()
-	ma.responseSigner = signer
-	ma.mu.Unlock()
-}
-
-func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {
+func (ma *MockAgent) recordAndMaybeFail(w http.ResponseWriter, r *http.Request) bool {
 	ma.callsMu.Lock()
 	ma.calls = append(ma.calls, AgentCall{Method: r.Method, Path: r.URL.Path})
 	ma.callsMu.Unlock()
 
 	ma.mu.RLock()
-	if ma.forceError {
-		code := ma.forceErrorCode
-		msg := ma.forceErrorMsg
-		ma.mu.RUnlock()
-		http.Error(w, msg, code)
-		return
-	}
-
-	handler, exists := ma.handlers[r.URL.Path]
+	forceError, code, message := ma.forceError, ma.forceErrorCode, ma.forceErrorMsg
 	ma.mu.RUnlock()
 
-	if exists {
-		handler(w, r)
-		return
+	if forceError {
+		http.Error(w, message, code)
+		return true
 	}
-
-	http.Error(w, "not found", http.StatusNotFound)
-}
-
-func (ma *MockAgent) Close() {
-	if ma.Server != nil {
-		ma.Server.CloseClientConnections()
-		ma.Server.Close()
-	}
-}
-
-func (ma *MockAgent) GetHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-}
-
-func (ma *MockAgent) RegisterHandler(path string, handler http.HandlerFunc) {
-	ma.mu.Lock()
-	defer ma.mu.Unlock()
-	ma.handlers[path] = handler
-}
-
-func (ma *MockAgent) RegisterJSONHandler(path string, response any) {
-	ma.RegisterHandler(path, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	})
+	return false
 }
 
 func (ma *MockAgent) SetError(code int, message string) {
