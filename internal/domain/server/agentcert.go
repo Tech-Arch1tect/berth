@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"berth/internal/pkg/agentpki"
+	"berth/internal/pkg/agentsign"
 	"berth/internal/platform/db"
 
 	"gorm.io/gorm"
@@ -93,6 +94,7 @@ func (s *Service) RotateAgentAuthority() error {
 	var existing AgentAuthority
 	err = s.db.First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		s.forgetClientSigner()
 		return s.db.Create(&AgentAuthority{
 			CertPEM:       authority.CertPEM,
 			KeyPEM:        authorityKey,
@@ -112,6 +114,7 @@ func (s *Service) RotateAgentAuthority() error {
 	}).Error; err != nil {
 		return fmt.Errorf("failed to store the new agent certificate authority: %w", err)
 	}
+	s.forgetClientSigner()
 	return nil
 }
 
@@ -152,7 +155,42 @@ func (s *Service) ReissueClientCertificate() error {
 	}).Error; err != nil {
 		return fmt.Errorf("failed to store the new client certificate: %w", err)
 	}
+	s.forgetClientSigner()
 	return nil
+}
+
+func (s *Service) ClientSigner() (*agentsign.Signer, error) {
+	s.signerMutex.Lock()
+	defer s.signerMutex.Unlock()
+	if s.signer != nil {
+		return s.signer, nil
+	}
+
+	var record AgentAuthority
+	if err := s.db.First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("berth has no agent certificate authority yet; issue an agent certificate bundle for a server to create one")
+		}
+		return nil, fmt.Errorf("failed to read the agent certificate authority: %w", err)
+	}
+
+	clientKey, err := s.crypto.Decrypt(record.ClientKeyPEM)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt the client key: %w", err)
+	}
+	signer, err := agentsign.NewSigner(record.ClientCertPEM, clientKey)
+	if err != nil {
+		return nil, err
+	}
+
+	s.signer = signer
+	return signer, nil
+}
+
+func (s *Service) forgetClientSigner() {
+	s.signerMutex.Lock()
+	s.signer = nil
+	s.signerMutex.Unlock()
 }
 
 func (s *Service) IssueAgentBundle(serverID uint) ([]byte, error) {

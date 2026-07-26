@@ -292,6 +292,9 @@ func Build(
 	g.WSServiceMgr = websocket.NewServiceManager(g.ServerSvc, g.WSAgentMgr, logger)
 	g.WSHandler = websocket.NewHandler(g.ServerSvc, g.OperationsAuditSvc, g.OriginCheck)
 	g.ServerSvc.SetAgentLifecycle(g.WSAgentMgr)
+	g.AgentSvc.SetSignerProvider(g.ServerSvc)
+	g.OperationsSvc.SetSignerProvider(g.ServerSvc)
+	g.WSAgentMgr.SetSignerProvider(g.ServerSvc)
 	g.addHook("websocket service manager",
 		func(context.Context) error {
 			go func() {

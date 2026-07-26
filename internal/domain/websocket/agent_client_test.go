@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"berth/internal/pkg/agentpki"
+	"berth/internal/pkg/agentsign"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -67,6 +69,23 @@ func agentServerModel(t *testing.T, srv *httptest.Server, id uint, accessToken s
 	}
 }
 
+type testSigners struct {
+	signer *agentsign.Signer
+}
+
+func (t testSigners) ClientSigner() (*agentsign.Signer, error) { return t.signer, nil }
+
+func newTestSigners(t *testing.T) testSigners {
+	t.Helper()
+	authority, err := agentpki.NewAuthority()
+	require.NoError(t, err)
+	client, err := agentpki.IssueClient(authority)
+	require.NoError(t, err)
+	signer, err := agentsign.NewSigner(client.CertPEM, client.KeyPEM)
+	require.NoError(t, err)
+	return testSigners{signer: signer}
+}
+
 func TestAgentClientPublishesStatusEventsToRegistry(t *testing.T) {
 	agent := fakeAgent(t, "agent-token", []map[string]any{
 		{
@@ -104,6 +123,7 @@ func TestAgentClientPublishesStatusEventsToRegistry(t *testing.T) {
 	defer cancel()
 
 	mgr := NewAgentManager(registry, zap.NewNop())
+	mgr.SetSignerProvider(newTestSigners(t))
 	require.NoError(t, mgr.ConnectToAgent(agentServerModel(t, agent, 7, "agent-token")))
 	defer mgr.DisconnectAgent(7)
 
@@ -129,6 +149,7 @@ func TestAgentClientReportsConnectionStatus(t *testing.T) {
 
 	registry := NewStackEventRegistry(zap.NewNop())
 	mgr := NewAgentManager(registry, zap.NewNop())
+	mgr.SetSignerProvider(newTestSigners(t))
 	require.NoError(t, mgr.ConnectToAgent(agentServerModel(t, agent, 3, "agent-token")))
 	defer mgr.DisconnectAgent(3)
 

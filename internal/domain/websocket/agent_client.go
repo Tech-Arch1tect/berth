@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentsign"
 
 	"github.com/coder/websocket"
 	"go.uber.org/zap"
@@ -17,8 +18,13 @@ import (
 
 const agentReadLimit = 1 << 20
 
+type agentSignerProvider interface {
+	ClientSigner() (*agentsign.Signer, error)
+}
+
 type AgentClient struct {
 	server    *server.Server
+	signers   agentSignerProvider
 	conn      *websocket.Conn
 	registry  *StackEventRegistry
 	reconnect chan bool
@@ -30,6 +36,7 @@ type AgentClient struct {
 
 type AgentManager struct {
 	clients  map[uint]*AgentClient
+	signers  agentSignerProvider
 	registry *StackEventRegistry
 	mutex    sync.RWMutex
 	logger   *zap.Logger
@@ -41,6 +48,12 @@ func NewAgentManager(registry *StackEventRegistry, logger *zap.Logger) *AgentMan
 		registry: registry,
 		logger:   logger,
 	}
+}
+
+func (am *AgentManager) SetSignerProvider(provider agentSignerProvider) {
+	am.mutex.Lock()
+	am.signers = provider
+	am.mutex.Unlock()
 }
 
 func (am *AgentManager) ConnectToAgent(server *server.Server) error {
@@ -64,6 +77,7 @@ func (am *AgentManager) ConnectToAgent(server *server.Server) error {
 
 	client := &AgentClient{
 		server:    server,
+		signers:   am.signers,
 		registry:  am.registry,
 		reconnect: make(chan bool, 1),
 		stop:      make(chan bool, 1),
@@ -160,6 +174,8 @@ func (ac *AgentClient) closeConn(code websocket.StatusCode, reason string) {
 	}
 }
 
+const agentStatusPath = "/ws/agent/status"
+
 func (ac *AgentClient) attemptConnection() error {
 	wsURL := fmt.Sprintf("wss://%s:%d/ws/agent/status", ac.server.Host, ac.server.Port)
 
@@ -174,6 +190,17 @@ func (ac *AgentClient) attemptConnection() error {
 
 	dialCtx, dialCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer dialCancel()
+
+	if ac.signers == nil {
+		return fmt.Errorf("berth cannot reach agents until its agent certificate authority is configured")
+	}
+	signer, err := ac.signers.ClientSigner()
+	if err != nil {
+		return err
+	}
+	if err := signer.SignHeaders("GET", agentStatusPath, "", nil, headers); err != nil {
+		return err
+	}
 
 	dialOpts := &websocket.DialOptions{HTTPHeader: headers}
 	if ac.server.SkipSSLVerification != nil && *ac.server.SkipSSLVerification {

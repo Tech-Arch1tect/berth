@@ -34,6 +34,8 @@ func NewHandler(serverService *server.Service, auditService *operations.AuditSer
 	}
 }
 
+const terminalPath = "/ws/terminal"
+
 func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
 	userID := int(auth.GetUserID(c))
 	serverID, err := strconv.Atoi(c.Param("serverid"))
@@ -70,6 +72,14 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 
 	headers := make(http.Header)
 	headers.Set("Authorization", fmt.Sprintf("Bearer %s", server.AccessToken))
+
+	signer, err := h.serverService.ClientSigner()
+	if err != nil {
+		return response.BadGateway(c, "Failed to connect to agent terminal")
+	}
+	if err := signer.SignHeaders("GET", terminalPath, "", nil, headers); err != nil {
+		return response.BadGateway(c, "Failed to connect to agent terminal")
+	}
 
 	dialOpts := &websocket.DialOptions{HTTPHeader: headers}
 	if server.SkipSSLVerification != nil && *server.SkipSSLVerification {

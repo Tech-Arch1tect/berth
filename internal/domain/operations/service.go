@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/files"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentsign"
 	"bufio"
 	"context"
 	"crypto/tls"
@@ -40,13 +41,22 @@ type opsFileReader interface {
 	ReadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*files.FileContent, error)
 }
 
+type opsSignerProvider interface {
+	ClientSigner() (*agentsign.Signer, error)
+}
+
 type Service struct {
 	serverSvc   opsServerProvider
+	signers     opsSignerProvider
 	authzSvc    opsAuthorizer
 	auditSvc    *AuditService
 	registrySvc opsRegistryProvider
 	filesSvc    opsFileReader
 	logger      *zap.Logger
+}
+
+func (s *Service) SetSignerProvider(provider opsSignerProvider) {
+	s.signers = provider
 }
 
 func NewService(serverSvc opsServerProvider, authzSvc opsAuthorizer, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
@@ -431,6 +441,17 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 	if isStreamRequest {
 		req.Header.Set("Accept", "text/event-stream")
 		req.Header.Set("Cache-Control", "no-cache")
+	}
+
+	if s.signers == nil {
+		return nil, fmt.Errorf("berth cannot reach agents until its agent certificate authority is configured")
+	}
+	signer, err := s.signers.ClientSigner()
+	if err != nil {
+		return nil, err
+	}
+	if err := signer.SignRequest(req, body); err != nil {
+		return nil, err
 	}
 
 	resp, err := client.Do(req)

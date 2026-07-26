@@ -2,6 +2,7 @@ package server
 
 import (
 	"berth/internal/domain/authz"
+	"berth/internal/pkg/agentsign"
 	berthcrypto "berth/internal/pkg/crypto"
 	"context"
 	"encoding/json"
@@ -44,6 +45,8 @@ type Service struct {
 	agentLife      agentLifecycle
 	logger         *zap.Logger
 	authorityMutex sync.Mutex
+	signerMutex    sync.Mutex
+	signer         *agentsign.Signer
 }
 
 func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthorizer, patternSvc stackPatternProvider, agentSvc serverAgentClient, logger *zap.Logger) *Service {

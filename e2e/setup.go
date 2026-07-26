@@ -10,6 +10,7 @@ import (
 
 	"berth/internal/app"
 	"berth/internal/app/apptest"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/crypto"
 
 	e2etesting "berth/e2e/internal/harness"
@@ -137,8 +138,35 @@ func (a *TestApp) CreateVerifiedTestUser(t *testing.T) *e2etesting.TestUser {
 	return user
 }
 
+func ensureAgentAuthority(t *testing.T, db *gorm.DB, encryption *crypto.Crypto) {
+	t.Helper()
+	var existing int64
+	require.NoError(t, db.Model(&server.AgentAuthority{}).Count(&existing).Error)
+	if existing > 0 {
+		return
+	}
+
+	authority, err := agentpki.NewAuthority()
+	require.NoError(t, err)
+	client, err := agentpki.IssueClient(authority)
+	require.NoError(t, err)
+
+	authorityKey, err := encryption.Encrypt(authority.KeyPEM)
+	require.NoError(t, err)
+	clientKey, err := encryption.Encrypt(client.KeyPEM)
+	require.NoError(t, err)
+
+	require.NoError(t, db.Create(&server.AgentAuthority{
+		CertPEM:       authority.CertPEM,
+		KeyPEM:        authorityKey,
+		ClientCertPEM: client.CertPEM,
+		ClientKeyPEM:  clientKey,
+	}).Error)
+}
+
 func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *server.Server {
 	crypto := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
+	ensureAgentAuthority(t, a.DB, crypto)
 	encryptedToken, err := crypto.Encrypt("test-access-token")
 	require.NoError(t, err, "failed to encrypt access tokene")
 

@@ -19,6 +19,7 @@ import (
 	"berth/internal/domain/server"
 	usermodel "berth/internal/domain/user"
 	"berth/internal/domain/websocket"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/crypto"
 	"berth/seeds"
 
@@ -220,6 +221,40 @@ type SeedServerResult struct {
 	AgentURL string `json:"agent_url"`
 }
 
+func (s *Service) ensureAgentAuthority() error {
+	var existing int64
+	if err := s.db.Model(&server.AgentAuthority{}).Count(&existing).Error; err != nil {
+		return fmt.Errorf("count agent authority: %w", err)
+	}
+	if existing > 0 {
+		return nil
+	}
+
+	authority, err := agentpki.NewAuthority()
+	if err != nil {
+		return fmt.Errorf("create agent authority: %w", err)
+	}
+	client, err := agentpki.IssueClient(authority)
+	if err != nil {
+		return fmt.Errorf("issue client certificate: %w", err)
+	}
+	authorityKey, err := s.crypto.Encrypt(authority.KeyPEM)
+	if err != nil {
+		return fmt.Errorf("encrypt authority key: %w", err)
+	}
+	clientKey, err := s.crypto.Encrypt(client.KeyPEM)
+	if err != nil {
+		return fmt.Errorf("encrypt client key: %w", err)
+	}
+
+	return s.db.Create(&server.AgentAuthority{
+		CertPEM:       authority.CertPEM,
+		KeyPEM:        authorityKey,
+		ClientCertPEM: client.CertPEM,
+		ClientKeyPEM:  clientKey,
+	}).Error
+}
+
 func (s *Service) SeedServerWithAgent(in SeedServerInput) (*SeedServerResult, error) {
 	if in.Name == "" {
 		return nil, ErrSeedServerNameRequired
@@ -241,6 +276,11 @@ func (s *Service) SeedServerWithAgent(in SeedServerInput) (*SeedServerResult, er
 	if err != nil {
 		agent.Close()
 		return nil, fmt.Errorf("encrypt token: %w", err)
+	}
+
+	if err := s.ensureAgentAuthority(); err != nil {
+		agent.Close()
+		return nil, err
 	}
 
 	skipSSL := true

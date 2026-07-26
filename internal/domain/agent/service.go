@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -12,14 +13,35 @@ import (
 	"time"
 
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentsign"
 
 	"go.uber.org/zap"
 )
+
+type signerProvider interface {
+	ClientSigner() (*agentsign.Signer, error)
+}
 
 type Service struct {
 	logger           *zap.Logger
 	operationTimeout time.Duration
 	readTimeout      time.Duration
+	signers          signerProvider
+}
+
+func (s *Service) SetSignerProvider(provider signerProvider) {
+	s.signers = provider
+}
+
+func (s *Service) signRequest(req *http.Request, body []byte) error {
+	if s.signers == nil {
+		return errors.New("berth cannot reach agents until its agent certificate authority is configured")
+	}
+	signer, err := s.signers.ClientSigner()
+	if err != nil {
+		return err
+	}
+	return signer.SignRequest(req, body)
 }
 
 func NewService(logger *zap.Logger, operationTimeoutSeconds, readTimeoutSeconds int) *Service {
@@ -73,6 +95,7 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 	)
 
 	var body io.Reader
+	var signedBody []byte
 	if payload != nil {
 		jsonData, err := json.Marshal(payload)
 		if err != nil {
@@ -84,6 +107,7 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 			return nil, fmt.Errorf("failed to marshal payload: %w", err)
 		}
 		body = bytes.NewBuffer(jsonData)
+		signedBody = jsonData
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
@@ -102,6 +126,9 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 	}
 	for name, value := range headers {
 		req.Header.Set(name, value)
+	}
+	if err := s.signRequest(req, signedBody); err != nil {
+		return nil, err
 	}
 
 	client := s.getClient(server, timeout)
@@ -201,6 +228,9 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *server.Serve
 
 	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if err := s.signRequest(req, body.Bytes()); err != nil {
+		return nil, err
+	}
 
 	client := s.getClient(server, s.operationTimeout)
 	resp, err := client.Do(req)
