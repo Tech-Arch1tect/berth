@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"berth/internal/pkg/agentsign"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -88,9 +89,16 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 		}
 	}
 
-	agentConn, _, err := websocket.Dial(dialCtx, agentWSURL, dialOpts)
+	agentConn, upgrade, err := websocket.Dial(dialCtx, agentWSURL, dialOpts)
 	if err != nil {
 
+		return response.BadGateway(c, "Failed to connect to agent terminal")
+	}
+	if verifier, verifyErr := h.serverService.ResponseVerifier(server); verifyErr != nil {
+		agentConn.Close(websocket.StatusPolicyViolation, "unverified agent")
+		return response.BadGateway(c, "Failed to connect to agent terminal")
+	} else if verifyErr := agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0); verifyErr != nil {
+		agentConn.Close(websocket.StatusPolicyViolation, "unverified agent")
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
 	defer agentConn.Close(websocket.StatusInternalError, "proxy ended")

@@ -16,6 +16,7 @@ import (
 	e2etesting "berth/e2e/internal/harness"
 	"berth/internal/domain/auth"
 	"berth/internal/domain/server"
+	"berth/internal/domain/testsupport"
 	"berth/internal/domain/user"
 	"berth/internal/pkg/config"
 
@@ -164,6 +165,27 @@ func ensureAgentAuthority(t *testing.T, db *gorm.DB, encryption *crypto.Crypto) 
 	}).Error)
 }
 
+func issueAgentIdentity(t *testing.T, db *gorm.DB, srv *server.Server) *testsupport.AgentResponseSigner {
+	t.Helper()
+	encryption := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
+
+	var record server.AgentAuthority
+	require.NoError(t, db.First(&record).Error)
+	authorityKey, err := encryption.Decrypt(record.KeyPEM)
+	require.NoError(t, err)
+	authority, err := agentpki.Load(record.CertPEM, authorityKey)
+	require.NoError(t, err)
+
+	identity, err := agentpki.IssueAgent(authority, srv.ID)
+	require.NoError(t, err)
+	require.NoError(t, db.Model(&server.Server{}).Where("id = ?", srv.ID).
+		Update("agent_cert_fingerprint", identity.Fingerprint()).Error)
+
+	signer, err := testsupport.NewAgentResponseSigner(identity.CertPEM, identity.KeyPEM)
+	require.NoError(t, err)
+	return signer
+}
+
 func (a *TestApp) CreateTestServer(t *testing.T, name string, mockAgentURL string) *server.Server {
 	crypto := crypto.NewCrypto("test-encryption-secret-key-32chars!!")
 	ensureAgentAuthority(t, a.DB, crypto)
@@ -210,6 +232,7 @@ func (a *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAge
 	t.Cleanup(mockAgent.Close)
 
 	srv := a.CreateTestServer(t, name, mockAgent.URL)
+	mockAgent.SignResponsesWith(issueAgentIdentity(t, a.DB, srv))
 	return mockAgent, srv
 }
 

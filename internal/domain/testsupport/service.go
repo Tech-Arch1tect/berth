@@ -221,6 +221,37 @@ type SeedServerResult struct {
 	AgentURL string `json:"agent_url"`
 }
 
+func (s *Service) giveAgentAnIdentity(srv *server.Server, agent *MockAgent) error {
+	var record server.AgentAuthority
+	if err := s.db.First(&record).Error; err != nil {
+		return fmt.Errorf("read agent authority: %w", err)
+	}
+	authorityKey, err := s.crypto.Decrypt(record.KeyPEM)
+	if err != nil {
+		return fmt.Errorf("decrypt authority key: %w", err)
+	}
+	authority, err := agentpki.Load(record.CertPEM, authorityKey)
+	if err != nil {
+		return err
+	}
+
+	identity, err := agentpki.IssueAgent(authority, srv.ID)
+	if err != nil {
+		return fmt.Errorf("issue agent certificate: %w", err)
+	}
+	if err := s.db.Model(&server.Server{}).Where("id = ?", srv.ID).
+		Update("agent_cert_fingerprint", identity.Fingerprint()).Error; err != nil {
+		return fmt.Errorf("record agent fingerprint: %w", err)
+	}
+
+	signer, err := NewAgentResponseSigner(identity.CertPEM, identity.KeyPEM)
+	if err != nil {
+		return err
+	}
+	agent.SignResponsesWith(signer)
+	return nil
+}
+
 func (s *Service) ensureAgentAuthority() error {
 	var existing int64
 	if err := s.db.Model(&server.AgentAuthority{}).Count(&existing).Error; err != nil {
@@ -295,6 +326,11 @@ func (s *Service) SeedServerWithAgent(in SeedServerInput) (*SeedServerResult, er
 	if err := s.db.Create(srv).Error; err != nil {
 		agent.Close()
 		return nil, fmt.Errorf("create server: %w", err)
+	}
+
+	if err := s.giveAgentAnIdentity(srv, agent); err != nil {
+		agent.Close()
+		return nil, err
 	}
 
 	return &SeedServerResult{ServerID: srv.ID, AgentID: id, AgentURL: agent.URL}, nil

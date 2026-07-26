@@ -20,6 +20,7 @@ const agentReadLimit = 1 << 20
 
 type agentSignerProvider interface {
 	ClientSigner() (*agentsign.Signer, error)
+	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
 }
 
 type AgentClient struct {
@@ -212,7 +213,17 @@ func (ac *AgentClient) attemptConnection() error {
 		}
 	}
 
-	conn, _, err := websocket.Dial(dialCtx, wsURL, dialOpts)
+	conn, upgrade, err := websocket.Dial(dialCtx, wsURL, dialOpts)
+	if err == nil {
+		verifier, verifyErr := ac.signers.ResponseVerifier(ac.server)
+		if verifyErr == nil {
+			verifyErr = agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0)
+		}
+		if verifyErr != nil {
+			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
+			return verifyErr
+		}
+	}
 	if err != nil {
 		return err
 	}

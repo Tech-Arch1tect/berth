@@ -135,6 +135,8 @@ var volatileFieldPatterns = []string{
 	"token",   // bare "token" field
 	"secret",  // totp secret, etc.
 	"expires", // token expiry timestamps
+
+	"fingerprint", // certificate fingerprints, freshly generated per run
 }
 
 var volatileFieldExact = map[string]bool{
@@ -194,6 +196,8 @@ func placeholder(key string, val interface{}) interface{} {
 		return "<<QR_CODE_URI>>"
 	case lower == "key_prefix" || lower == "plain_key":
 		return "<<KEY>>"
+	case strings.HasSuffix(lower, "fingerprint"):
+		return "<<FINGERPRINT>>"
 	default:
 		return "<<SANITIZED>>"
 	}

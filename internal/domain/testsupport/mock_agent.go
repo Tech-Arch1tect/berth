@@ -15,8 +15,15 @@ type MockAgent struct {
 	server *httptest.Server
 	URL    string
 
-	mu       sync.RWMutex
-	handlers map[string]http.HandlerFunc
+	mu             sync.RWMutex
+	handlers       map[string]http.HandlerFunc
+	responseSigner *AgentResponseSigner
+}
+
+func (ma *MockAgent) SignResponsesWith(signer *AgentResponseSigner) {
+	ma.mu.Lock()
+	ma.responseSigner = signer
+	ma.mu.Unlock()
 }
 
 func NewMockAgent() *MockAgent {
@@ -32,7 +39,17 @@ func NewMockAgent() *MockAgent {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", ma.dispatch)
 
-	ma.server = httptest.NewTLSServer(mux)
+	ma.server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ma.mu.RLock()
+		signer := ma.responseSigner
+		ma.mu.RUnlock()
+		if signer == nil {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		signer.Wrap(mux).ServeHTTP(w, r)
+	}))
+	ma.server.StartTLS()
 	ma.URL = ma.server.URL
 
 	return ma

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"berth/internal/domain/testsupport"
 	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
 	"net/http"
@@ -20,7 +21,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func fakeAgent(t *testing.T, accessToken string, messages []map[string]any) *httptest.Server {
+func fakeAgent(t *testing.T, accessToken string, responder *testsupport.AgentResponseSigner, messages []map[string]any) *httptest.Server {
 	t.Helper()
 
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +32,10 @@ func fakeAgent(t *testing.T, accessToken string, messages []map[string]any) *htt
 		if r.Header.Get("Authorization") != "Bearer "+accessToken {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
+		}
+
+		if responder != nil {
+			responder.Apply(w.Header(), r.Header.Get(agentsign.HeaderNonce), http.StatusSwitchingProtocols, "", agentsign.BodyUnsigned)
 		}
 
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
@@ -70,12 +75,17 @@ func agentServerModel(t *testing.T, srv *httptest.Server, id uint, accessToken s
 }
 
 type testSigners struct {
-	signer *agentsign.Signer
+	signer   *agentsign.Signer
+	verifier *agentsign.ResponseVerifier
 }
 
 func (t testSigners) ClientSigner() (*agentsign.Signer, error) { return t.signer, nil }
 
-func newTestSigners(t *testing.T) testSigners {
+func (t testSigners) ResponseVerifier(*server.Server) (*agentsign.ResponseVerifier, error) {
+	return t.verifier, nil
+}
+
+func newTestSigners(t *testing.T, serverID uint) (testSigners, *testsupport.AgentResponseSigner) {
 	t.Helper()
 	authority, err := agentpki.NewAuthority()
 	require.NoError(t, err)
@@ -83,11 +93,20 @@ func newTestSigners(t *testing.T) testSigners {
 	require.NoError(t, err)
 	signer, err := agentsign.NewSigner(client.CertPEM, client.KeyPEM)
 	require.NoError(t, err)
-	return testSigners{signer: signer}
+
+	identity, err := agentpki.IssueAgent(authority, serverID)
+	require.NoError(t, err)
+	verifier, err := agentsign.NewResponseVerifier(authority.CertPEM, agentpki.AgentIdentity(serverID), identity.Fingerprint(), time.Minute)
+	require.NoError(t, err)
+	responder, err := testsupport.NewAgentResponseSigner(identity.CertPEM, identity.KeyPEM)
+	require.NoError(t, err)
+
+	return testSigners{signer: signer, verifier: verifier}, responder
 }
 
 func TestAgentClientPublishesStatusEventsToRegistry(t *testing.T) {
-	agent := fakeAgent(t, "agent-token", []map[string]any{
+	signers, responder := newTestSigners(t, 7)
+	agent := fakeAgent(t, "agent-token", responder, []map[string]any{
 		{
 			"type":       "stack_status",
 			"timestamp":  "2026-06-10T00:00:00Z",
@@ -123,7 +142,7 @@ func TestAgentClientPublishesStatusEventsToRegistry(t *testing.T) {
 	defer cancel()
 
 	mgr := NewAgentManager(registry, zap.NewNop())
-	mgr.SetSignerProvider(newTestSigners(t))
+	mgr.SetSignerProvider(signers)
 	require.NoError(t, mgr.ConnectToAgent(agentServerModel(t, agent, 7, "agent-token")))
 	defer mgr.DisconnectAgent(7)
 
@@ -145,11 +164,12 @@ func TestAgentClientPublishesStatusEventsToRegistry(t *testing.T) {
 }
 
 func TestAgentClientReportsConnectionStatus(t *testing.T) {
-	agent := fakeAgent(t, "agent-token", nil)
+	signers, responder := newTestSigners(t, 3)
+	agent := fakeAgent(t, "agent-token", responder, nil)
 
 	registry := NewStackEventRegistry(zap.NewNop())
 	mgr := NewAgentManager(registry, zap.NewNop())
-	mgr.SetSignerProvider(newTestSigners(t))
+	mgr.SetSignerProvider(signers)
 	require.NoError(t, mgr.ConnectToAgent(agentServerModel(t, agent, 3, "agent-token")))
 	defer mgr.DisconnectAgent(3)
 

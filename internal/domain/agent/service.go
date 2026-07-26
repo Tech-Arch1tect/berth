@@ -20,7 +20,10 @@ import (
 
 type signerProvider interface {
 	ClientSigner() (*agentsign.Signer, error)
+	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
 }
+
+const maxVerifiedResponseBytes = 128 * 1024 * 1024
 
 type Service struct {
 	logger           *zap.Logger
@@ -42,6 +45,23 @@ func (s *Service) signRequest(req *http.Request, body []byte) error {
 		return err
 	}
 	return signer.SignRequest(req, body)
+}
+
+func (s *Service) verifyResponse(target *server.Server, req *http.Request, resp *http.Response) error {
+	verifier, err := s.signers.ResponseVerifier(target)
+	if err != nil {
+		return err
+	}
+	if err := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes); err != nil {
+		s.logger.Warn("rejected a response that the agent did not sign",
+			zap.Uint("server_id", target.ID),
+			zap.String("server_name", target.Name),
+			zap.Error(err),
+		)
+		_ = resp.Body.Close()
+		return err
+	}
+	return nil
 }
 
 func NewService(logger *zap.Logger, operationTimeoutSeconds, readTimeoutSeconds int) *Service {
@@ -145,6 +165,10 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 		return nil, fmt.Errorf("failed to make request to %s: %w", url, err)
 	}
 
+	if err := s.verifyResponse(server, req, resp); err != nil {
+		return nil, err
+	}
+
 	s.logger.Info("agent request completed",
 		zap.String("method", method),
 		zap.String("endpoint", endpoint),
@@ -244,6 +268,10 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *server.Serve
 			zap.String("server_name", server.Name),
 		)
 		return nil, fmt.Errorf("failed to make request to %s: %w", url, err)
+	}
+
+	if err := s.verifyResponse(server, req, resp); err != nil {
+		return nil, err
 	}
 
 	s.logger.Info("multipart agent request completed",

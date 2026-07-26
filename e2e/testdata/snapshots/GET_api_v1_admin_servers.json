@@ -9,6 +9,7 @@
     "data": {
       "servers": [
         {
+          "agent_cert_fingerprint": "\u003c\u003cFINGERPRINT\u003e\u003e",
           "backups_enabled": true,
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
           "description": "",
@@ -21,6 +22,7 @@
           "updated_at": "\u003c\u003cTIMESTAMP\u003e\u003e"
         },
         {
+          "agent_cert_fingerprint": "\u003c\u003cFINGERPRINT\u003e\u003e",
           "backups_enabled": true,
           "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
           "description": "",

@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"berth/internal/domain/testsupport"
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
@@ -20,6 +21,7 @@ type MockAgent struct {
 	forceError     bool
 	forceErrorCode int
 	forceErrorMsg  string
+	responseSigner *testsupport.AgentResponseSigner
 
 	callsMu sync.Mutex
 	calls   []AgentCall
@@ -43,10 +45,26 @@ func NewMockAgent() *MockAgent {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", ma.dispatch)
 
-	ma.Server = httptest.NewTLSServer(mux)
+	ma.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ma.mu.RLock()
+		signer := ma.responseSigner
+		ma.mu.RUnlock()
+		if signer == nil {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		signer.Wrap(mux).ServeHTTP(w, r)
+	}))
+	ma.Server.StartTLS()
 	ma.URL = ma.Server.URL
 
 	return ma
+}
+
+func (ma *MockAgent) SignResponsesWith(signer *testsupport.AgentResponseSigner) {
+	ma.mu.Lock()
+	ma.responseSigner = signer
+	ma.mu.Unlock()
 }
 
 func (ma *MockAgent) dispatch(w http.ResponseWriter, r *http.Request) {

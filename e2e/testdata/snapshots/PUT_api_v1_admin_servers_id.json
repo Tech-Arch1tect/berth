@@ -8,6 +8,7 @@
   "body": {
     "data": {
       "server": {
+        "agent_cert_fingerprint": "\u003c\u003cFINGERPRINT\u003e\u003e",
         "backups_enabled": false,
         "created_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
         "description": "",

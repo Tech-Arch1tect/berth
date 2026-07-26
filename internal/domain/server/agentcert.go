@@ -187,6 +187,22 @@ func (s *Service) ClientSigner() (*agentsign.Signer, error) {
 	return signer, nil
 }
 
+func (s *Service) ResponseVerifier(target *Server) (*agentsign.ResponseVerifier, error) {
+	var record AgentAuthority
+	if err := s.db.First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("berth has no agent certificate authority yet; issue an agent certificate bundle for a server to create one")
+		}
+		return nil, fmt.Errorf("failed to read the agent certificate authority: %w", err)
+	}
+	return agentsign.NewResponseVerifier(
+		record.CertPEM,
+		agentpki.AgentIdentity(target.ID),
+		target.AgentCertFingerprint,
+		agentsign.VerificationSkew,
+	)
+}
+
 func (s *Service) forgetClientSigner() {
 	s.signerMutex.Lock()
 	s.signer = nil
