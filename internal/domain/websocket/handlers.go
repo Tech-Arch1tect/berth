@@ -176,7 +176,9 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 			}
 
 			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
-			err = agentConn.Write(writeCtx, websocket.MessageBinary, agentFrames.WrapTyped(byte(messageType), message))
+			err = agentFrames.SendTyped(byte(messageType), message, func(frame []byte) error {
+				return agentConn.Write(writeCtx, websocket.MessageBinary, frame)
+			})
 			writeCancel()
 			if err != nil {
 				return

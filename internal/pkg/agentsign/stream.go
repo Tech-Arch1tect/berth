@@ -70,9 +70,19 @@ func NewFrameWriter(key []byte, direction string) *FrameWriter {
 
 func (w *FrameWriter) Wrap(payload []byte) []byte {
 	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	return w.wrapLocked(payload)
+}
+
+func (w *FrameWriter) SendTyped(kind byte, payload []byte, deliver func([]byte) error) error {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	return deliver(w.wrapLocked(append([]byte{kind}, payload...)))
+}
+
+func (w *FrameWriter) wrapLocked(payload []byte) []byte {
 	sequence := w.sequence
 	w.sequence++
-	w.mutex.Unlock()
 
 	frame := make([]byte, frameOverhead+len(payload))
 	binary.BigEndian.PutUint64(frame[:sequenceBytes], sequence)
