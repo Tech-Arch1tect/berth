@@ -113,12 +113,19 @@ func (v *ResponseVerifier) Verify(resp *http.Response, requestNonce string, body
 }
 
 func BodyWasSigned(resp *http.Response) bool {
-	return resp.Header.Get(HeaderBodyDigest) != BodyUnsigned
+	return resp != nil && resp.Header.Get(HeaderBodyDigest) != BodyUnsigned
 }
 
 func VerifyResponse(verifier *ResponseVerifier, requestNonce string, resp *http.Response, limit int64) (*x509.Certificate, error) {
+	if resp == nil || resp.Header.Get(HeaderSignature) == "" {
+		return nil, ErrUnverified
+	}
+
 	var body []byte
 	if BodyWasSigned(resp) {
+		if resp.Body == nil {
+			return nil, ErrUnverified
+		}
 		collected, err := io.ReadAll(io.LimitReader(resp.Body, limit))
 		if err != nil {
 			return nil, ErrUnverified
