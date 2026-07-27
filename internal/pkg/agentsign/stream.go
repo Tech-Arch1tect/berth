@@ -6,18 +6,26 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"io"
 	"sync"
 )
 
 const (
 	StreamContext = "berth-stream-v1"
 
-	DirectionToAgent = "to-agent"
-	DirectionToBerth = "to-berth"
+	DirectionToAgent     = "to-agent"
+	DirectionToBerth     = "to-berth"
+	DirectionBodyToBerth = "body-to-berth"
 
 	sequenceBytes = 8
 	macBytes      = 32
 	frameOverhead = sequenceBytes + macBytes
+
+	lengthBytes   = 4
+	maxFrameBytes = 256 * 1024
+
+	bodyChunk byte = 1
+	bodyEnd   byte = 2
 )
 
 var ErrFrameRejected = errors.New("stream frame rejected")
@@ -119,6 +127,65 @@ func (r *FrameReader) UnwrapTyped(frame []byte) (byte, []byte, error) {
 		return 0, nil, ErrFrameRejected
 	}
 	return payload[0], payload[1:], nil
+}
+
+type BodyReader struct {
+	source  io.ReadCloser
+	frames  *FrameReader
+	pending []byte
+	ended   bool
+}
+
+func NewBodyReader(source io.ReadCloser, key []byte) *BodyReader {
+	return &BodyReader{source: source, frames: NewFrameReader(key, DirectionBodyToBerth)}
+}
+
+func (r *BodyReader) Read(destination []byte) (int, error) {
+	for len(r.pending) == 0 {
+		if r.ended {
+			return 0, io.EOF
+		}
+		if err := r.next(); err != nil {
+			return 0, err
+		}
+	}
+	taken := copy(destination, r.pending)
+	r.pending = r.pending[taken:]
+	return taken, nil
+}
+
+func (r *BodyReader) Close() error {
+	return r.source.Close()
+}
+
+func (r *BodyReader) next() error {
+	var length [lengthBytes]byte
+	if _, err := io.ReadFull(r.source, length[:]); err != nil {
+		return ErrFrameRejected
+	}
+	size := binary.BigEndian.Uint32(length[:])
+	if size < frameOverhead+1 || size > maxFrameBytes+frameOverhead+1 {
+		return ErrFrameRejected
+	}
+
+	frame := make([]byte, size)
+	if _, err := io.ReadFull(r.source, frame); err != nil {
+		return ErrFrameRejected
+	}
+	kind, payload, err := r.frames.UnwrapTyped(frame)
+	if err != nil {
+		return err
+	}
+
+	switch kind {
+	case bodyChunk:
+		r.pending = payload
+	case bodyEnd:
+		r.ended = true
+	default:
+		return ErrFrameRejected
+	}
+	return nil
 }
 
 func frameMAC(key []byte, direction string, sequence uint64, payload []byte) []byte {

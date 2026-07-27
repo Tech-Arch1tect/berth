@@ -42,8 +42,6 @@ type opsFileReader interface {
 	ReadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*files.FileContent, error)
 }
 
-const maxVerifiedResponseBytes = 128 * 1024 * 1024
-
 type opsSignerProvider interface {
 	ClientSigner() (*agentsign.Signer, error)
 	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
@@ -477,15 +475,10 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 			_ = resp.Body.Close()
 			return nil, nil, verifyErr
 		}
-		peer, verifyErr := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes)
+		peer, verifyErr := agentsign.VerifyResponse(verifier, signer, req.Header.Get(agentsign.HeaderNonce), resp, agentsign.MaxBufferedResponseBytes)
 		if verifyErr != nil {
 			_ = resp.Body.Close()
 			return nil, nil, verifyErr
-		}
-		signer, signerErr := s.signers.ClientSigner()
-		if signerErr != nil {
-			_ = resp.Body.Close()
-			return nil, nil, signerErr
 		}
 		sessionKey, keyErr := signer.SessionKeyFor(peer, req.Header.Get(agentsign.HeaderNonce))
 		if keyErr != nil {

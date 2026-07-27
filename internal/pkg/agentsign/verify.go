@@ -18,8 +18,11 @@ import (
 const (
 	ResponseContext = "berth-response-v1"
 	BodyUnsigned    = "unsigned"
+	BodyFramed      = "framed"
 
 	VerificationSkew = time.Minute
+
+	MaxBufferedResponseBytes = 8 * 1024 * 1024
 )
 
 var ErrUnverified = errors.New("the agent's response could not be verified")
@@ -99,23 +102,24 @@ func (v *ResponseVerifier) Verify(resp *http.Response, requestNonce string, body
 		return nil, ErrUnverified
 	}
 
-	if claimedDigest != BodyUnsigned && BodyDigest(body) != claimedDigest {
+	if !bodyTravelsSeparately(claimedDigest) && BodyDigest(body) != claimedDigest {
 		return nil, fmt.Errorf("%w: the response body does not match what the agent signed", ErrUnverified)
 	}
 	return certificate, nil
 }
 
-func BodyWasSigned(resp *http.Response) bool {
-	return resp != nil && resp.Header.Get(HeaderBodyDigest) != BodyUnsigned
+func bodyTravelsSeparately(claimedDigest string) bool {
+	return claimedDigest == BodyUnsigned || claimedDigest == BodyFramed
 }
 
-func VerifyResponse(verifier *ResponseVerifier, requestNonce string, resp *http.Response, limit int64) (*x509.Certificate, error) {
+func VerifyResponse(verifier *ResponseVerifier, signer *Signer, requestNonce string, resp *http.Response, limit int64) (*x509.Certificate, error) {
 	if resp == nil || resp.Header.Get(HeaderSignature) == "" {
 		return nil, ErrUnverified
 	}
+	claimedDigest := resp.Header.Get(HeaderBodyDigest)
 
 	var body []byte
-	if BodyWasSigned(resp) {
+	if !bodyTravelsSeparately(claimedDigest) {
 		if resp.Body == nil {
 			return nil, ErrUnverified
 		}
@@ -127,5 +131,21 @@ func VerifyResponse(verifier *ResponseVerifier, requestNonce string, resp *http.
 		resp.Body = io.NopCloser(bytes.NewReader(collected))
 		body = collected
 	}
-	return verifier.Verify(resp, requestNonce, body)
+
+	certificate, err := verifier.Verify(resp, requestNonce, body)
+	if err != nil {
+		return nil, err
+	}
+
+	if claimedDigest == BodyFramed {
+		if resp.Body == nil || signer == nil {
+			return nil, ErrUnverified
+		}
+		key, keyErr := signer.SessionKeyFor(certificate, requestNonce)
+		if keyErr != nil {
+			return nil, ErrUnverified
+		}
+		resp.Body = NewBodyReader(resp.Body, key)
+	}
+	return certificate, nil
 }

@@ -42,7 +42,7 @@ func (h *Handler) agentStreamSession(target *server.Server, signer *agentsign.Si
 	if err != nil {
 		return nil, nil, err
 	}
-	peer, err := agentsign.VerifyResponse(verifier, requestNonce, upgrade, 0)
+	peer, err := agentsign.VerifyResponse(verifier, signer, requestNonce, upgrade, 0)
 	if err != nil {
 		return nil, nil, err
 	}

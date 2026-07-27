@@ -221,18 +221,13 @@ func (ac *AgentClient) attemptConnection() error {
 		verifier, verifyErr := ac.signers.ResponseVerifier(ac.server)
 		var peer *x509.Certificate
 		if verifyErr == nil {
-			peer, verifyErr = agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0)
+			peer, verifyErr = agentsign.VerifyResponse(verifier, signer, headers.Get(agentsign.HeaderNonce), upgrade, 0)
 		}
 		if verifyErr != nil {
 			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
 			return verifyErr
 		}
 
-		signer, signerErr := ac.signers.ClientSigner()
-		if signerErr != nil {
-			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
-			return signerErr
-		}
 		sessionKey, keyErr := signer.SessionKeyFor(peer, headers.Get(agentsign.HeaderNonce))
 		if keyErr != nil {
 			conn.Close(websocket.StatusPolicyViolation, "unverified agent")

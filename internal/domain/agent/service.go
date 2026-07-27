@@ -23,8 +23,6 @@ type signerProvider interface {
 	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
 }
 
-const maxVerifiedResponseBytes = 128 * 1024 * 1024
-
 type Service struct {
 	logger           *zap.Logger
 	operationTimeout time.Duration
@@ -52,7 +50,11 @@ func (s *Service) verifyResponse(target *server.Server, req *http.Request, resp 
 	if err != nil {
 		return err
 	}
-	if _, err := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes); err != nil {
+	signer, err := s.signers.ClientSigner()
+	if err != nil {
+		return err
+	}
+	if _, err := agentsign.VerifyResponse(verifier, signer, req.Header.Get(agentsign.HeaderNonce), resp, agentsign.MaxBufferedResponseBytes); err != nil {
 		s.logger.Warn("rejected a response that the agent did not sign",
 			zap.Uint("server_id", target.ID),
 			zap.String("server_name", target.Name),
