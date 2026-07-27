@@ -1,6 +1,8 @@
 package e2e
 
 import (
+	"berth/internal/pkg/agentsign"
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -9,10 +11,17 @@ import (
 	e2etesting "berth/e2e/internal/harness"
 
 	"github.com/coder/websocket"
-	"github.com/coder/websocket/wsjson"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func writeFramed(ctx context.Context, conn *websocket.Conn, frames *agentsign.FrameWriter, value any) {
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return
+	}
+	_ = conn.Write(ctx, websocket.MessageBinary, frames.WrapTyped(byte(websocket.MessageText), payload))
+}
 
 func TestTerminalWSRelaysBetweenClientAndAgent(t *testing.T) {
 	t.Parallel()
@@ -35,6 +44,10 @@ func TestTerminalWSRelaysBetweenClientAndAgent(t *testing.T) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		frames, unframe, sessionErr := mockAgent.Signer().StreamSession(r)
+		if sessionErr != nil {
+			return
+		}
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
 		if err != nil {
 			return
@@ -42,13 +55,21 @@ func TestTerminalWSRelaysBetweenClientAndAgent(t *testing.T) {
 		defer conn.Close(websocket.StatusNormalClosure, "")
 
 		ctx := r.Context()
+		_, framed, readErr := conn.Read(ctx)
+		if readErr != nil {
+			return
+		}
+		_, payload, unwrapErr := unframe.UnwrapTyped(framed)
+		if unwrapErr != nil {
+			return
+		}
 		var frame map[string]any
-		if err := wsjson.Read(ctx, conn, &frame); err != nil {
+		if err := json.Unmarshal(payload, &frame); err != nil {
 			return
 		}
 		agentSawFrame <- frame
 
-		_ = wsjson.Write(ctx, conn, map[string]any{
+		writeFramed(ctx, conn, frames, map[string]any{
 			"type":       "terminal_output",
 			"session_id": "session-1",
 			"output":     "aGVsbG8=",

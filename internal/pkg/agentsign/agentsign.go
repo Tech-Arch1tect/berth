@@ -3,6 +3,7 @@ package agentsign
 import (
 	"bytes"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
@@ -85,6 +86,18 @@ func NewSigner(certPEM, keyPEM string) (*Signer, error) {
 	}
 
 	return &Signer{certificate: certificate.Raw, key: key}, nil
+}
+
+func (s *Signer) SessionKeyFor(peer *x509.Certificate, salt string) ([]byte, error) {
+	local, ok := s.key.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("berth's client key cannot agree a session key")
+	}
+	remote, ok := peer.PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("the agent's certificate cannot agree a session key")
+	}
+	return SessionKey(local, remote, salt)
 }
 
 func (s *Signer) SignRequest(req *http.Request, body []byte) error {

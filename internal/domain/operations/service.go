@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -164,7 +165,7 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 		zap.String("operation_command", req.Command),
 	)
 
-	agentResp, err := s.makeAgentRequest(ctx, serverModel, "POST", endpoint, reqBody)
+	agentResp, _, err := s.makeAgentRequest(ctx, serverModel, "POST", endpoint, reqBody)
 	if err != nil {
 		s.logger.Error("failed to communicate with agent for operation",
 			zap.Error(err),
@@ -292,7 +293,7 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, p authz.Principal
 		zap.String("operation_id", operationID),
 	)
 
-	agentResp, err := s.makeAgentRequest(ctx, serverModel, "GET", endpoint, nil)
+	agentResp, unframe, err := s.makeAgentRequest(ctx, serverModel, "GET", endpoint, nil)
 	if err != nil {
 		s.logger.Error("failed to connect to agent stream",
 			zap.Error(err),
@@ -319,12 +320,12 @@ func (s *Service) StreamOperationToWriter(ctx context.Context, p authz.Principal
 		zap.String("operation_id", operationID),
 	)
 
-	return s.relaySSEStream(ctx, agentResp.Body, writer)
+	return s.relaySSEStream(ctx, agentResp.Body, writer, unframe)
 }
 
 const maxSSELineBytes = 1 << 20
 
-func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer io.Writer) error {
+func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer io.Writer, unframe *agentsign.FrameReader) error {
 	s.logger.Debug("starting SSE stream relay")
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineBytes)
@@ -355,6 +356,17 @@ func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer i
 		lineCount++
 
 		if strings.HasPrefix(line, "data: ") {
+			payload, decodeErr := base64.StdEncoding.DecodeString(strings.TrimPrefix(line, "data: "))
+			if decodeErr != nil {
+				return fmt.Errorf("the agent sent an operation frame berth could not decode")
+			}
+			frame, unwrapErr := unframe.Unwrap(payload)
+			if unwrapErr != nil {
+				s.logger.Error("rejected an operation frame the agent did not authenticate")
+				return unwrapErr
+			}
+			line = "data: " + string(frame)
+
 			if _, err := writer.Write([]byte(line + "\n\n")); err != nil {
 				s.logger.Error("failed to write to output stream",
 					zap.Error(err),
@@ -385,7 +397,8 @@ func (s *Service) relaySSEStream(ctx context.Context, reader io.Reader, writer i
 	return nil
 }
 
-func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Server, method, endpoint string, body []byte) (*http.Response, error) {
+func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Server, method, endpoint string, body []byte) (*http.Response, *agentsign.FrameReader, error) {
+	var unframe *agentsign.FrameReader
 	isStreamRequest := strings.Contains(endpoint, "/stream")
 
 	s.logger.Debug("making agent request",
@@ -430,7 +443,7 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 			zap.String("method", method),
 			zap.String("url", agentURL),
 		)
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	if serverModel.AccessToken != "" {
@@ -447,14 +460,14 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 	}
 
 	if s.signers == nil {
-		return nil, fmt.Errorf("berth cannot reach agents until its agent certificate authority is configured")
+		return nil, nil, fmt.Errorf("berth cannot reach agents until its agent certificate authority is configured")
 	}
 	signer, err := s.signers.ClientSigner()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := signer.SignRequest(req, body); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	resp, err := client.Do(req)
@@ -462,12 +475,24 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 		verifier, verifyErr := s.signers.ResponseVerifier(serverModel)
 		if verifyErr != nil {
 			_ = resp.Body.Close()
-			return nil, verifyErr
+			return nil, nil, verifyErr
 		}
-		if verifyErr := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes); verifyErr != nil {
+		peer, verifyErr := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes)
+		if verifyErr != nil {
 			_ = resp.Body.Close()
-			return nil, verifyErr
+			return nil, nil, verifyErr
 		}
+		signer, signerErr := s.signers.ClientSigner()
+		if signerErr != nil {
+			_ = resp.Body.Close()
+			return nil, nil, signerErr
+		}
+		sessionKey, keyErr := signer.SessionKeyFor(peer, req.Header.Get(agentsign.HeaderNonce))
+		if keyErr != nil {
+			_ = resp.Body.Close()
+			return nil, nil, keyErr
+		}
+		unframe = agentsign.NewFrameReader(sessionKey, agentsign.DirectionToBerth)
 	}
 	if err != nil {
 		s.logger.Error("agent request failed",
@@ -475,7 +500,7 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 			zap.String("method", method),
 			zap.String("url", agentURL),
 		)
-		return nil, err
+		return nil, nil, err
 	}
 
 	s.logger.Debug("agent request completed",
@@ -485,7 +510,7 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 		zap.String("status", resp.Status),
 	)
 
-	return resp, nil
+	return resp, unframe, nil
 }
 
 type operationLogSink interface {

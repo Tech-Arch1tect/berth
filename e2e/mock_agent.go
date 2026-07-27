@@ -1,6 +1,8 @@
 package e2e
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -46,6 +48,20 @@ func (ma *MockAgent) recordAndMaybeFail(w http.ResponseWriter, r *http.Request) 
 		return true
 	}
 	return false
+}
+
+func (ma *MockAgent) StreamFrames(w http.ResponseWriter, r *http.Request, payloads ...string) {
+	frames, _, err := ma.Signer().StreamSession(r)
+	if err != nil {
+		http.Error(w, "no stream session", http.StatusInternalServerError)
+		return
+	}
+	for _, payload := range payloads {
+		fmt.Fprintf(w, "data: %s\n\n", base64.StdEncoding.EncodeToString(frames.Wrap([]byte(payload))))
+		if flusher, ok := w.(http.Flusher); ok {
+			flusher.Flush()
+		}
+	}
 }
 
 func (ma *MockAgent) SetError(code int, message string) {

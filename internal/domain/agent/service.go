@@ -52,7 +52,7 @@ func (s *Service) verifyResponse(target *server.Server, req *http.Request, resp 
 	if err != nil {
 		return err
 	}
-	if err := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes); err != nil {
+	if _, err := agentsign.VerifyResponse(verifier, req.Header.Get(agentsign.HeaderNonce), resp, maxVerifiedResponseBytes); err != nil {
 		s.logger.Warn("rejected a response that the agent did not sign",
 			zap.Uint("server_id", target.ID),
 			zap.String("server_name", target.Name),

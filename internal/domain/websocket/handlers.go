@@ -37,6 +37,23 @@ func NewHandler(serverService *server.Service, auditService *operations.AuditSer
 
 const terminalPath = "/ws/terminal"
 
+func (h *Handler) agentStreamSession(target *server.Server, signer *agentsign.Signer, requestNonce string, upgrade *http.Response) (*agentsign.FrameWriter, *agentsign.FrameReader, error) {
+	verifier, err := h.serverService.ResponseVerifier(target)
+	if err != nil {
+		return nil, nil, err
+	}
+	peer, err := agentsign.VerifyResponse(verifier, requestNonce, upgrade, 0)
+	if err != nil {
+		return nil, nil, err
+	}
+	sessionKey, err := signer.SessionKeyFor(peer, requestNonce)
+	if err != nil {
+		return nil, nil, err
+	}
+	return agentsign.NewFrameWriter(sessionKey, agentsign.DirectionToAgent),
+		agentsign.NewFrameReader(sessionKey, agentsign.DirectionToBerth), nil
+}
+
 func (h *Handler) HandleFlutterTerminalWebSocket(c echo.Context) error {
 	userID := int(auth.GetUserID(c))
 	serverID, err := strconv.Atoi(c.Param("serverid"))
@@ -94,10 +111,8 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
-	if verifier, verifyErr := h.serverService.ResponseVerifier(server); verifyErr != nil {
-		agentConn.Close(websocket.StatusPolicyViolation, "unverified agent")
-		return response.BadGateway(c, "Failed to connect to agent terminal")
-	} else if verifyErr := agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0); verifyErr != nil {
+	agentFrames, agentUnframe, err := h.agentStreamSession(server, signer, headers.Get(agentsign.HeaderNonce), upgrade)
+	if err != nil {
 		agentConn.Close(websocket.StatusPolicyViolation, "unverified agent")
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
@@ -161,7 +176,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 			}
 
 			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
-			err = agentConn.Write(writeCtx, messageType, message)
+			err = agentConn.Write(writeCtx, websocket.MessageBinary, agentFrames.WrapTyped(byte(messageType), message))
 			writeCancel()
 			if err != nil {
 				return
@@ -172,12 +187,16 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	go func() {
 		defer cancel()
 		for {
-			messageType, message, err := agentConn.Read(ctx)
+			_, framed, err := agentConn.Read(ctx)
 			if err != nil {
 				return
 			}
+			kind, message, unwrapErr := agentUnframe.UnwrapTyped(framed)
+			if unwrapErr != nil {
+				return
+			}
 			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
-			err = clientConn.Write(writeCtx, messageType, message)
+			err = clientConn.Write(writeCtx, websocket.MessageType(kind), message)
 			writeCancel()
 			if err != nil {
 				return

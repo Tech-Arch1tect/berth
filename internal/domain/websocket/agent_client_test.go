@@ -4,6 +4,7 @@ import (
 	"berth/internal/domain/testsupport"
 	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 	"berth/internal/platform/db"
 
 	"github.com/coder/websocket"
-	"github.com/coder/websocket/wsjson"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -34,8 +34,14 @@ func fakeAgent(t *testing.T, accessToken string, responder *testsupport.AgentRes
 			return
 		}
 
+		var frames *agentsign.FrameWriter
 		if responder != nil {
 			responder.Apply(w.Header(), r.Header.Get(agentsign.HeaderNonce), http.StatusSwitchingProtocols, "", agentsign.BodyUnsigned)
+			var sessionErr error
+			frames, _, sessionErr = responder.StreamSession(r)
+			if sessionErr != nil {
+				return
+			}
 		}
 
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
@@ -46,7 +52,11 @@ func fakeAgent(t *testing.T, accessToken string, responder *testsupport.AgentRes
 
 		ctx := r.Context()
 		for _, msg := range messages {
-			if err := wsjson.Write(ctx, conn, msg); err != nil {
+			payload, marshalErr := json.Marshal(msg)
+			if marshalErr != nil {
+				return
+			}
+			if err := conn.Write(ctx, websocket.MessageBinary, frames.WrapTyped(byte(websocket.MessageText), payload)); err != nil {
 				return
 			}
 		}

@@ -61,8 +61,9 @@ func TestOperationStreamWSDeliversOperationOutput(t *testing.T) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
 		now := time.Now().UTC().Format(time.RFC3339Nano)
-		fmt.Fprintf(w, "data: {\"type\":\"stdout\",\"data\":\"restarting web-stack\",\"timestamp\":\"%s\"}\n\n", now)
-		fmt.Fprintf(w, "data: {\"type\":\"complete\",\"success\":true,\"exitCode\":0,\"timestamp\":\"%s\"}\n\n", now)
+		mockAgent.StreamFrames(w, r,
+			fmt.Sprintf("{\"type\":\"stdout\",\"data\":\"restarting web-stack\",\"timestamp\":\"%s\"}", now),
+			fmt.Sprintf("{\"type\":\"complete\",\"success\":true,\"exitCode\":0,\"timestamp\":\"%s\"}", now))
 	})
 
 	startStreamTestOperation(t, app, mockAgent, jwt, testServer.ID, "web-stack", opID)
@@ -129,7 +130,7 @@ func TestOperationStreamWSClosesOnClientFrame(t *testing.T) {
 	mockAgent.RegisterHandler("/api/operations/"+opID+"/stream", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "data: {\"type\":\"stdout\",\"data\":\"running\",\"timestamp\":\"2026-06-09T12:00:00Z\"}\n\n")
+		mockAgent.StreamFrames(w, r, "{\"type\":\"stdout\",\"data\":\"running\",\"timestamp\":\"2026-06-09T12:00:00Z\"}")
 		if flusher, ok := w.(http.Flusher); ok {
 			flusher.Flush()
 		}

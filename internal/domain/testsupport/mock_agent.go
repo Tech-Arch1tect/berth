@@ -1,7 +1,9 @@
 package testsupport
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -110,14 +112,41 @@ func (ma *MockAgent) RegisterRaw(path string, status int, contentType, body stri
 	ma.RegisterHandler(path, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", contentType)
 		w.WriteHeader(status)
+		if strings.HasPrefix(contentType, "text/event-stream") {
+			ma.writeFramedEvents(w, r, body)
+			return
+		}
 		_, _ = w.Write([]byte(body))
 	})
+}
+
+func (ma *MockAgent) writeFramedEvents(w http.ResponseWriter, r *http.Request, body string) {
+	frames, _, err := ma.Signer().StreamSession(r)
+	if err != nil {
+		return
+	}
+	for _, line := range strings.Split(body, "\n") {
+		payload, isEvent := strings.CutPrefix(line, "data: ")
+		if !isEvent {
+			continue
+		}
+		_, _ = fmt.Fprintf(w, "data: %s\n\n", base64.StdEncoding.EncodeToString(frames.Wrap([]byte(payload))))
+		if flusher, ok := w.(http.Flusher); ok {
+			flusher.Flush()
+		}
+	}
 }
 
 func (ma *MockAgent) ResetHandlers() {
 	ma.mu.Lock()
 	defer ma.mu.Unlock()
 	ma.handlers = defaultHandlers()
+}
+
+func (ma *MockAgent) Signer() *AgentResponseSigner {
+	ma.mu.RLock()
+	defer ma.mu.RUnlock()
+	return ma.responseSigner
 }
 
 func (ma *MockAgent) Close() {

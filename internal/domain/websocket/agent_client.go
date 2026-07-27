@@ -3,6 +3,7 @@ package websocket
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,6 +25,8 @@ type agentSignerProvider interface {
 }
 
 type AgentClient struct {
+	frames    *agentsign.FrameWriter
+	unframe   *agentsign.FrameReader
 	server    *server.Server
 	signers   agentSignerProvider
 	conn      *websocket.Conn
@@ -216,13 +219,27 @@ func (ac *AgentClient) attemptConnection() error {
 	conn, upgrade, err := websocket.Dial(dialCtx, wsURL, dialOpts)
 	if err == nil {
 		verifier, verifyErr := ac.signers.ResponseVerifier(ac.server)
+		var peer *x509.Certificate
 		if verifyErr == nil {
-			verifyErr = agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0)
+			peer, verifyErr = agentsign.VerifyResponse(verifier, headers.Get(agentsign.HeaderNonce), upgrade, 0)
 		}
 		if verifyErr != nil {
 			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
 			return verifyErr
 		}
+
+		signer, signerErr := ac.signers.ClientSigner()
+		if signerErr != nil {
+			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
+			return signerErr
+		}
+		sessionKey, keyErr := signer.SessionKeyFor(peer, headers.Get(agentsign.HeaderNonce))
+		if keyErr != nil {
+			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
+			return keyErr
+		}
+		ac.frames = agentsign.NewFrameWriter(sessionKey, agentsign.DirectionToAgent)
+		ac.unframe = agentsign.NewFrameReader(sessionKey, agentsign.DirectionToBerth)
 	}
 	if err != nil {
 		return err
@@ -257,7 +274,7 @@ func (ac *AgentClient) readPump(ctx context.Context) {
 	}
 
 	for {
-		_, message, err := conn.Read(ctx)
+		_, framed, err := conn.Read(ctx)
 		if err != nil {
 			status := websocket.CloseStatus(err)
 			if status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway || ctx.Err() != nil {
@@ -272,6 +289,15 @@ func (ac *AgentClient) readPump(ctx context.Context) {
 					zap.String("server_name", ac.server.Name),
 				)
 			}
+			break
+		}
+
+		_, message, unwrapErr := ac.unframe.UnwrapTyped(framed)
+		if unwrapErr != nil {
+			ac.logger.Error("rejected a status frame the agent did not authenticate",
+				zap.Uint("server_id", ac.server.ID),
+				zap.String("server_name", ac.server.Name),
+			)
 			break
 		}
 

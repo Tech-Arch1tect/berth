@@ -57,71 +57,71 @@ func NewResponseVerifier(authorityPEM, identity, pinnedFingerprint string, skew 
 	return &ResponseVerifier{authority: authority, identity: identity, pinned: pinnedFingerprint, skew: skew}, nil
 }
 
-func (v *ResponseVerifier) Verify(resp *http.Response, requestNonce string, body []byte) error {
+func (v *ResponseVerifier) Verify(resp *http.Response, requestNonce string, body []byte) (*x509.Certificate, error) {
 	signature, err := base64.StdEncoding.DecodeString(resp.Header.Get(HeaderSignature))
 	if err != nil || len(signature) == 0 {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	certificateDER, err := base64.StdEncoding.DecodeString(resp.Header.Get(HeaderCertificate))
 	if err != nil || len(certificateDER) == 0 {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	timestamp, err := strconv.ParseInt(resp.Header.Get(HeaderTimestamp), 10, 64)
 	if err != nil {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	if difference := time.Since(time.Unix(timestamp, 0)); difference > v.skew || difference < -v.skew {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 
 	certificate, err := x509.ParseCertificate(certificateDER)
 	if err != nil {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	if _, err := certificate.Verify(x509.VerifyOptions{
 		Roots:     v.authority,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}); err != nil {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	if err := certificate.VerifyHostname(v.identity); err != nil {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 	if v.pinned != "" {
 		presented := sha256.Sum256(certificate.Raw)
 		if hex.EncodeToString(presented[:]) != v.pinned {
-			return fmt.Errorf("%w: the agent presented a certificate berth did not issue for it", ErrUnverified)
+			return nil, fmt.Errorf("%w: the agent presented a certificate berth did not issue for it", ErrUnverified)
 		}
 	}
 
 	publicKey, ok := certificate.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 
 	claimedDigest := resp.Header.Get(HeaderBodyDigest)
 	base := ResponseBase(requestNonce, resp.StatusCode, resp.Header.Get("Content-Type"), claimedDigest, timestamp)
 	digest := sha256.Sum256(base)
 	if !ecdsa.VerifyASN1(publicKey, digest[:], signature) {
-		return ErrUnverified
+		return nil, ErrUnverified
 	}
 
 	if claimedDigest != BodyUnsigned && BodyDigest(body) != claimedDigest {
-		return fmt.Errorf("%w: the response body does not match what the agent signed", ErrUnverified)
+		return nil, fmt.Errorf("%w: the response body does not match what the agent signed", ErrUnverified)
 	}
-	return nil
+	return certificate, nil
 }
 
 func BodyWasSigned(resp *http.Response) bool {
 	return resp.Header.Get(HeaderBodyDigest) != BodyUnsigned
 }
 
-func VerifyResponse(verifier *ResponseVerifier, requestNonce string, resp *http.Response, limit int64) error {
+func VerifyResponse(verifier *ResponseVerifier, requestNonce string, resp *http.Response, limit int64) (*x509.Certificate, error) {
 	var body []byte
 	if BodyWasSigned(resp) {
 		collected, err := io.ReadAll(io.LimitReader(resp.Body, limit))
 		if err != nil {
-			return ErrUnverified
+			return nil, ErrUnverified
 		}
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(collected))

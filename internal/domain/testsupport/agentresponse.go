@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
@@ -60,6 +61,31 @@ func (s *AgentResponseSigner) Apply(header http.Header, requestNonce string, sta
 	header.Set(agentsign.HeaderCertificate, base64.StdEncoding.EncodeToString(s.certificate))
 	header.Set(agentsign.HeaderTimestamp, strconv.FormatInt(timestamp, 10))
 	header.Set(agentsign.HeaderBodyDigest, bodyDigest)
+}
+
+func (s *AgentResponseSigner) StreamSession(r *http.Request) (*agentsign.FrameWriter, *agentsign.FrameReader, error) {
+	peerDER, err := base64.StdEncoding.DecodeString(r.Header.Get(agentsign.HeaderCertificate))
+	if err != nil {
+		return nil, nil, err
+	}
+	peer, err := x509.ParseCertificate(peerDER)
+	if err != nil {
+		return nil, nil, err
+	}
+	local, ok := s.key.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, nil, errors.New("the agent key cannot agree a session key")
+	}
+	remote, ok := peer.PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, nil, errors.New("berth's certificate cannot agree a session key")
+	}
+	key, err := agentsign.SessionKey(local, remote, r.Header.Get(agentsign.HeaderNonce))
+	if err != nil {
+		return nil, nil, err
+	}
+	return agentsign.NewFrameWriter(key, agentsign.DirectionToBerth),
+		agentsign.NewFrameReader(key, agentsign.DirectionToAgent), nil
 }
 
 func (s *AgentResponseSigner) Wrap(next http.Handler) http.Handler {
