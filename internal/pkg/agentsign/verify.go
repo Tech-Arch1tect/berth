@@ -19,8 +19,6 @@ const (
 	ResponseContext = "berth-response-v1"
 	BodyUnsigned    = "unsigned"
 
-	HeaderBodyDigest = "X-Berth-Body-Digest"
-
 	VerificationSkew = time.Minute
 )
 
@@ -35,11 +33,6 @@ func ResponseBase(requestNonce string, status int, contentType string, bodyDiges
 		bodyDigest,
 		strconv.FormatInt(timestamp, 10),
 	)
-}
-
-func BodyDigest(body []byte) string {
-	digest := sha256.Sum256(body)
-	return hex.EncodeToString(digest[:])
 }
 
 type ResponseVerifier struct {
