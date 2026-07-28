@@ -191,7 +191,7 @@ export default function StackDetails() {
                   networks={stack.networks || []}
                   volumes={stack.volumes || []}
                   environment={stack.environmentVariables || {}}
-                  statsContainers={stack.stackStats?.containers || []}
+                  stats={stack.stackStats}
                   logContainers={
                     stack.stackDetails.services?.flatMap((s) =>
                       s.containers.map((c) => ({ name: c.name, service_name: s.name }))

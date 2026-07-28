@@ -5,7 +5,7 @@ import type {
   Network,
   Volume,
   StackEnvironmentDataServices,
-  ContainerStats,
+  StackStats as StackStatsData,
   ImageUpdate,
 } from '../../../../api/generated/models';
 import { OverviewPanel } from '../panels/OverviewPanel';
@@ -37,7 +37,7 @@ interface StackContentProps {
   networks: Network[];
   volumes: Volume[];
   environment: StackEnvironmentDataServices;
-  statsContainers: ContainerStats[];
+  stats?: StackStatsData;
   logContainers: Array<{ name: string; service_name: string }>;
   permissions: {
     canManage: boolean;
@@ -68,7 +68,7 @@ export const StackContent: FC<StackContentProps> = ({
   networks,
   volumes,
   environment,
-  statsContainers,
+  stats,
   logContainers,
   permissions,
   onQuickOperation,
@@ -224,7 +224,7 @@ export const StackContent: FC<StackContentProps> = ({
     case 'stats':
       return (
         <div className="h-full overflow-auto p-6">
-          <StackStats containers={statsContainers} isLoading={statsLoading} error={statsError} />
+          <StackStats stats={stats} isLoading={statsLoading} error={statsError} />
         </div>
       );
 
