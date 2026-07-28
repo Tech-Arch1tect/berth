@@ -7,9 +7,8 @@
  */
 
 export interface ResourceLimits {
-  cpu_period?: number;
-  cpu_quota?: number;
-  cpu_shares?: number;
+  cpu_cores?: number;
   memory?: number;
+  memory_reservation?: number;
   memory_swap?: number;
 }
