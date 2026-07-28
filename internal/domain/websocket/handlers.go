@@ -13,6 +13,7 @@ import (
 	"berth/internal/domain/auth"
 	"berth/internal/domain/operations"
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/origin"
 	"berth/internal/pkg/response"
 
@@ -95,7 +96,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	if err != nil {
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
-	if err := signer.SignHeaders("GET", terminalPath, "", nil, headers); err != nil {
+	if err := signer.SignHeaders(agentpki.AgentIdentity(server.ID), "GET", terminalPath, "", nil, headers); err != nil {
 		return response.BadGateway(c, "Failed to connect to agent terminal")
 	}
 

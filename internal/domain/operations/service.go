@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/files"
 	"berth/internal/domain/registry"
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
 	"bufio"
 	"context"
@@ -464,7 +465,7 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := signer.SignRequest(req, body); err != nil {
+	if err := signer.SignRequest(agentpki.AgentIdentity(serverModel.ID), req, body); err != nil {
 		return nil, nil, err
 	}
 

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
 
 	"go.uber.org/zap"
@@ -34,7 +35,7 @@ func (s *Service) SetSignerProvider(provider signerProvider) {
 	s.signers = provider
 }
 
-func (s *Service) signRequest(req *http.Request, body []byte) error {
+func (s *Service) signRequest(target *server.Server, req *http.Request, body []byte) error {
 	if s.signers == nil {
 		return errors.New("berth cannot reach agents until its agent certificate authority is configured")
 	}
@@ -42,7 +43,7 @@ func (s *Service) signRequest(req *http.Request, body []byte) error {
 	if err != nil {
 		return err
 	}
-	return signer.SignRequest(req, body)
+	return signer.SignRequest(agentpki.AgentIdentity(target.ID), req, body)
 }
 
 func (s *Service) verifyResponse(target *server.Server, req *http.Request, resp *http.Response) error {
@@ -149,7 +150,7 @@ func (s *Service) doRequest(ctx context.Context, server *server.Server, method, 
 	for name, value := range headers {
 		req.Header.Set(name, value)
 	}
-	if err := s.signRequest(req, signedBody); err != nil {
+	if err := s.signRequest(server, req, signedBody); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +255,7 @@ func (s *Service) MakeMultipartRequest(ctx context.Context, server *server.Serve
 
 	req.Header.Set("Authorization", "Bearer "+server.AccessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	if err := s.signRequest(req, body.Bytes()); err != nil {
+	if err := s.signRequest(server, req, body.Bytes()); err != nil {
 		return nil, err
 	}
 

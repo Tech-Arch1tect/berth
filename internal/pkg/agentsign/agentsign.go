@@ -42,9 +42,10 @@ func BodyDigest(body []byte) string {
 	return hex.EncodeToString(digest[:])
 }
 
-func RequestBase(method, target, contentType, bodyDigest string, timestamp int64, nonce string) []byte {
+func RequestBase(audience, method, target, contentType, bodyDigest string, timestamp int64, nonce string) []byte {
 	return Canonical(
 		RequestContext,
+		audience,
 		method,
 		target,
 		contentType,
@@ -105,11 +106,11 @@ func (s *Signer) SessionKeyFor(peer *x509.Certificate, salt string) ([]byte, err
 	return SessionKey(local, remote, salt)
 }
 
-func (s *Signer) SignRequest(req *http.Request, body []byte) error {
-	return s.SignHeaders(req.Method, req.URL.RequestURI(), req.Header.Get("Content-Type"), body, req.Header)
+func (s *Signer) SignRequest(audience string, req *http.Request, body []byte) error {
+	return s.SignHeaders(audience, req.Method, req.URL.RequestURI(), req.Header.Get("Content-Type"), body, req.Header)
 }
 
-func (s *Signer) SignHeaders(method, target, contentType string, body []byte, header http.Header) error {
+func (s *Signer) SignHeaders(audience, method, target, contentType string, body []byte, header http.Header) error {
 	nonce, err := NewNonce()
 	if err != nil {
 		return err
@@ -117,7 +118,7 @@ func (s *Signer) SignHeaders(method, target, contentType string, body []byte, he
 	timestamp := time.Now().Unix()
 	bodyDigest := BodyDigest(body)
 
-	base := RequestBase(method, target, contentType, bodyDigest, timestamp, nonce)
+	base := RequestBase(audience, method, target, contentType, bodyDigest, timestamp, nonce)
 	digest := sha256.Sum256(base)
 	signature, err := s.key.Sign(rand.Reader, digest[:], crypto.SHA256)
 	if err != nil {

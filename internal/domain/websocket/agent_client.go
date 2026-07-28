@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"berth/internal/domain/server"
+	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
 
 	"github.com/coder/websocket"
@@ -202,7 +203,7 @@ func (ac *AgentClient) attemptConnection() error {
 	if err != nil {
 		return err
 	}
-	if err := signer.SignHeaders("GET", agentStatusPath, "", nil, headers); err != nil {
+	if err := signer.SignHeaders(agentpki.AgentIdentity(ac.server.ID), "GET", agentStatusPath, "", nil, headers); err != nil {
 		return err
 	}
 
