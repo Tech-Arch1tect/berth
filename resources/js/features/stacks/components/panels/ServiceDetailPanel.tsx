@@ -10,6 +10,7 @@ import { serviceUpdateCount } from '../../../image-updates/updateMatching';
 import { ServiceQuickActions } from '../services/ServiceQuickActions';
 import { OperationRequest } from '../../../operations/types';
 import {
+  CircleStackIcon,
   ClockIcon,
   CpuChipIcon,
   ServerIcon,
@@ -52,6 +53,8 @@ const formatUptime = (startedAt?: string) => {
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 };
+
+const formatCores = (cores: number) => `${cores} core${cores === 1 ? '' : 's'}`;
 
 const formatMemory = (bytes?: number) => {
   if (!bytes) return null;
@@ -454,11 +457,25 @@ const ContainerDetail: React.FC<{
                   mono
                 />
               )}
-              {container.resource_limits?.memory && (
+              {container.resource_limits?.cpu_cores && (
                 <DetailRow
                   icon={CpuChipIcon}
+                  label="CPU Limit"
+                  value={formatCores(container.resource_limits.cpu_cores)}
+                />
+              )}
+              {container.resource_limits?.memory && (
+                <DetailRow
+                  icon={CircleStackIcon}
                   label="Memory Limit"
                   value={formatMemory(container.resource_limits.memory) || ''}
+                />
+              )}
+              {container.resource_limits?.memory_reservation && (
+                <DetailRow
+                  icon={CircleStackIcon}
+                  label="Memory Reservation"
+                  value={formatMemory(container.resource_limits.memory_reservation) || ''}
                 />
               )}
             </div>
