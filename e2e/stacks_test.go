@@ -90,14 +90,35 @@ func TestStackEndpointsJWT(t *testing.T) {
 	})
 
 	mockAgent.RegisterJSONHandler("/api/stacks/test-stack/stats", map[string]interface{}{
-		"stack_name": "test-stack",
+		"stack_name":            "test-stack",
+		"collected_at":          "2026-07-28T12:00:00Z",
+		"sample_window_seconds": 1.0,
+		"host": map[string]interface{}{
+			"memory_total":     8589934592,
+			"memory_available": 4294967296,
+			"cpu_cores":        4,
+			"load_1":           1.5,
+		},
 		"containers": []map[string]interface{}{
 			{
-				"name":           "test-stack-web-1",
-				"service_name":   "web",
-				"cpu_percent":    2.5,
-				"memory_usage":   52428800,
-				"memory_percent": 4.88,
+				"name":                    "test-stack-web-1",
+				"service_name":            "web",
+				"state":                   "running",
+				"cpu_usage_cores":         0.25,
+				"cpu_quota_cores":         0.5,
+				"cpu_percent_of_quota":    50.0,
+				"memory_working_set":      52428800,
+				"memory_limit":            268435456,
+				"memory_percent_of_limit": 19.53,
+				"oom_kills":               2,
+			},
+			{
+				"name":               "test-stack-worker-1",
+				"service_name":       "worker",
+				"state":              "running",
+				"cpu_usage_cores":    0.1,
+				"memory_working_set": 10485760,
+				"memory_limit":       0,
 			},
 		},
 	})
@@ -220,6 +241,27 @@ func TestStackEndpointsJWT(t *testing.T) {
 		require.NoError(t, resp.GetJSON(&statsResp))
 		assert.True(t, statsResp.Success)
 		assert.Equal(t, "test-stack", statsResp.Data.StackName)
+
+		assert.Equal(t, uint64(8589934592), statsResp.Data.Host.MemoryTotal)
+		assert.Equal(t, 4, statsResp.Data.Host.CPUCores)
+		require.Len(t, statsResp.Data.Containers, 2)
+
+		limited := statsResp.Data.Containers[0]
+		assert.Equal(t, "running", limited.State)
+		assert.Equal(t, 0.5, limited.CPUQuotaCores)
+		assert.Equal(t, uint64(268435456), limited.MemoryLimit)
+		assert.Equal(t, uint64(52428800), limited.MemoryWorkingSet)
+		assert.Equal(t, uint64(2), limited.OOMKills)
+		require.NotNil(t, limited.CPUUsageCores)
+		assert.Equal(t, 0.25, *limited.CPUUsageCores)
+		require.NotNil(t, limited.MemoryPercentOfLimit)
+		assert.Equal(t, 19.53, *limited.MemoryPercentOfLimit)
+
+		unlimited := statsResp.Data.Containers[1]
+		assert.Zero(t, unlimited.MemoryLimit)
+		assert.Zero(t, unlimited.CPUQuotaCores)
+		assert.Nil(t, unlimited.MemoryPercentOfLimit)
+		assert.Nil(t, unlimited.CPUPercentOfQuota)
 	})
 }
 

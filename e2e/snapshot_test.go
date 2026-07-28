@@ -555,9 +555,17 @@ func TestSnapshotServerAPI(t *testing.T) {
 		{"container_name": "snap-stack-web-1", "image_id": "sha256:abc123", "image_name": "nginx:latest"},
 	})
 	mockAgent.RegisterJSONHandler("/api/stacks/snap-stack/stats", map[string]interface{}{
-		"stack_name": "snap-stack",
+		"stack_name":            "snap-stack",
+		"collected_at":          "2026-07-28T12:00:00Z",
+		"sample_window_seconds": 1.0,
+		"host": map[string]interface{}{
+			"memory_total": 8589934592, "memory_available": 4294967296, "cpu_cores": 4,
+		},
 		"containers": []map[string]interface{}{
-			{"name": "snap-stack-web-1", "cpu_percent": 2.5, "memory_usage": 52428800},
+			{
+				"name": "snap-stack-web-1", "service_name": "web", "state": "running",
+				"cpu_usage_cores": 0.25, "memory_working_set": 52428800, "memory_limit": 268435456,
+			},
 		},
 	})
 	mockAgent.RegisterJSONHandler("/api/stacks/snap-stack/logs", map[string]interface{}{

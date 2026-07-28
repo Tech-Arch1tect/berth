@@ -7,31 +7,56 @@
   },
   "body": {
     "data": {
+      "collected_at": "\u003c\u003cTIMESTAMP\u003e\u003e",
       "containers": [
         {
           "block_read_bytes": 0,
+          "block_read_bytes_per_second": null,
           "block_read_ops": 0,
           "block_write_bytes": 0,
+          "block_write_bytes_per_second": null,
           "block_write_ops": 0,
-          "cpu_percent": 2.5,
+          "cpu_percent_of_host": null,
+          "cpu_percent_of_quota": null,
+          "cpu_quota_cores": 0,
           "cpu_system_time": 0,
+          "cpu_throttled_percent": null,
+          "cpu_usage_cores": 0.25,
           "cpu_user_time": 0,
-          "memory_cache": 0,
-          "memory_limit": 0,
-          "memory_percent": 0,
-          "memory_rss": 0,
+          "memory_anon": 0,
+          "memory_current": 0,
+          "memory_file": 0,
+          "memory_inactive_file": 0,
+          "memory_limit": 268435456,
+          "memory_limit_hits": 0,
+          "memory_peak": 0,
+          "memory_percent_of_host": null,
+          "memory_percent_of_limit": null,
           "memory_swap": 0,
-          "memory_usage": 52428800,
+          "memory_working_set": 52428800,
           "name": "snap-stack-web-1",
           "network_rx_bytes": 0,
+          "network_rx_bytes_per_second": null,
           "network_rx_packets": 0,
           "network_tx_bytes": 0,
+          "network_tx_bytes_per_second": null,
           "network_tx_packets": 0,
+          "oom_kills": 0,
           "page_faults": 0,
           "page_major_faults": 0,
-          "service_name": ""
+          "service_name": "web",
+          "state": "running"
         }
       ],
+      "host": {
+        "cpu_cores": 4,
+        "load_1": 0,
+        "load_15": 0,
+        "load_5": 0,
+        "memory_available": 4294967296,
+        "memory_total": 8589934592
+      },
+      "sample_window_seconds": 1,
       "stack_name": "snap-stack"
     },
     "success": true
