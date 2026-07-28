@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import type { DirectoryStats } from '../../../../api/generated/models';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { formatBytes } from '../../../../shared/utils/formatters';
 import { Modal } from '../../../../shared/components/Modal';
 
 interface FileUploadModalProps {
@@ -117,14 +118,6 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
   const removeFile = (index: number) => {
     setSelectedFiles((files) => files.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   if (!isOpen) return null;
@@ -257,9 +250,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                     </svg>
                     <div>
                       <p className={cn('text-sm font-medium', theme.text.strong)}>{file.name}</p>
-                      <p className={cn('text-xs', theme.text.subtle)}>
-                        {formatFileSize(file.size)}
-                      </p>
+                      <p className={cn('text-xs', theme.text.subtle)}>{formatBytes(file.size)}</p>
                     </div>
                   </div>
                   <button

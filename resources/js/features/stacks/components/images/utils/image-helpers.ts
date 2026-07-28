@@ -1,15 +1,5 @@
 import { formatDistanceToNow } from 'date-fns';
 
-export const formatImageSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-};
-
 export const formatCreatedTime = (timestamp: number | string): string => {
   const date = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp);
   return formatDistanceToNow(date, { addSuffix: true });

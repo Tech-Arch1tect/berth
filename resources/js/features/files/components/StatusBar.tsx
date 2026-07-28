@@ -2,6 +2,7 @@ import React from 'react';
 import { OpenTab } from '../types';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
+import { formatBytes } from '../../../shared/utils/formatters';
 
 interface StatusBarProps {
   activeTab: OpenTab | null;
@@ -68,14 +69,6 @@ const getLanguage = (filename: string): string => {
   return languageMap[ext] || ext.toUpperCase() || 'Plain Text';
 };
 
-const formatSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
 const countLines = (content: string): number => {
   if (!content) return 0;
   return content.split('\n').length;
@@ -122,7 +115,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ activeTab, canWrite }) => 
 
         <span className="text-zinc-300 dark:text-zinc-600">|</span>
 
-        <span className={cn('text-xs', theme.text.muted)}>{formatSize(activeTab.size)}</span>
+        <span className={cn('text-xs', theme.text.muted)}>{formatBytes(activeTab.size)}</span>
 
         {!canWrite && (
           <>

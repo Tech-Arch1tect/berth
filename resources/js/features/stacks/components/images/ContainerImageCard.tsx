@@ -7,7 +7,8 @@ import type {
 import { UpdateAvailableBadge } from '../../../image-updates/components/UpdateAvailableBadge';
 import { ImageHistoryLayer } from './ImageHistoryLayer';
 import { ImageConfigDetails } from './ImageConfigDetails';
-import { formatImageSize, formatCreatedTime } from './utils/image-helpers';
+import { formatCreatedTime } from './utils/image-helpers';
+import { formatBytes } from '../../../../shared/utils/formatters';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -121,7 +122,7 @@ export const ContainerImageCard: React.FC<ContainerImageCardProps> = ({ imageDet
           <div>
             <p className={cn('text-xs', theme.text.muted)}>Size</p>
             <p className={cn('text-sm font-medium', theme.text.strong)}>
-              {formatImageSize(image_info.size)}
+              {formatBytes(image_info.size)}
             </p>
           </div>
 

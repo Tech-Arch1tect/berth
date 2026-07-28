@@ -24,6 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { formatBytes } from '../../../../shared/utils/formatters';
 import {
   getContainerStatus,
   getContainerHealthStatus,
@@ -55,13 +56,6 @@ const formatUptime = (startedAt?: string) => {
 };
 
 const formatCores = (cores: number) => `${cores} core${cores === 1 ? '' : 's'}`;
-
-const formatMemory = (bytes?: number) => {
-  if (!bytes) return null;
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(0)} MB`;
-  return `${(mb / 1024).toFixed(1)} GB`;
-};
 
 const formatDateTime = (dateStr?: string) => {
   if (!dateStr) return null;
@@ -468,14 +462,14 @@ const ContainerDetail: React.FC<{
                 <DetailRow
                   icon={CircleStackIcon}
                   label="Memory Limit"
-                  value={formatMemory(container.resource_limits.memory) || ''}
+                  value={formatBytes(container.resource_limits.memory)}
                 />
               )}
               {container.resource_limits?.memory_reservation && (
                 <DetailRow
                   icon={CircleStackIcon}
                   label="Memory Reservation"
-                  value={formatMemory(container.resource_limits.memory_reservation) || ''}
+                  value={formatBytes(container.resource_limits.memory_reservation)}
                 />
               )}
             </div>

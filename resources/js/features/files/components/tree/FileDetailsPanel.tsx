@@ -2,19 +2,12 @@ import React, { useState } from 'react';
 import type { FileEntry } from '../../../../api/generated/models';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { formatBytes } from '../../../../shared/utils/formatters';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface FileDetailsPanelProps {
   entry: FileEntry | null;
 }
-
-const formatSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
 
 const formatDate = (dateString: string): string => {
   try {
@@ -81,7 +74,7 @@ export const FileDetailsPanel: React.FC<FileDetailsPanelProps> = ({ entry }) => 
               <DetailRow label="Name" value={entry.name} />
               <DetailRow label="Path" value={entry.path} truncate />
               <DetailRow label="Type" value={entry.is_directory ? 'Directory' : 'File'} />
-              {!entry.is_directory && <DetailRow label="Size" value={formatSize(entry.size)} />}
+              {!entry.is_directory && <DetailRow label="Size" value={formatBytes(entry.size)} />}
               <DetailRow label="Modified" value={formatDate(entry.mod_time)} />
               <DetailRow
                 label="Permissions"

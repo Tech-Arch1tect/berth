@@ -3,6 +3,7 @@ import type { FileContent } from '../../../api/generated/models';
 import { MonacoEditor } from './editor/MonacoEditor';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
+import { formatBytes } from '../../../shared/utils/formatters';
 
 interface FileViewerProps {
   file: FileContent;
@@ -82,14 +83,6 @@ const getFileType = (path: string, encoding: string) => {
   return 'text';
 };
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
 export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) => {
   const [copied, setCopied] = useState(false);
 
@@ -131,7 +124,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
               <span className="mx-2">•</span>
               <span>{lineCount} lines</span>
               <span className="mx-2">•</span>
-              <span>{formatFileSize(file.size)}</span>
+              <span>{formatBytes(file.size)}</span>
             </div>
           </div>
 
@@ -225,7 +218,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
               <span className="mx-2">•</span>
               <span>{lineCount} lines</span>
               <span className="mx-2">•</span>
-              <span>{formatFileSize(file.size)}</span>
+              <span>{formatBytes(file.size)}</span>
             </div>
           </div>
 
@@ -317,7 +310,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
               <div className={cn('mt-4 text-center text-sm', theme.text.muted)}>
                 <span className="font-mono">{file.path.split('/').pop()}</span>
                 <span className="mx-2">•</span>
-                <span>{formatFileSize(file.size)}</span>
+                <span>{formatBytes(file.size)}</span>
               </div>
             </div>
           );
@@ -390,7 +383,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                 <strong>File type:</strong> .{ext}
               </div>
               <div>
-                <strong>Size:</strong> {formatFileSize(file.size)}
+                <strong>Size:</strong> {formatBytes(file.size)}
               </div>
               <div>
                 <strong>Encoding:</strong> {file.encoding}
@@ -471,7 +464,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ file, className = '' }) 
                 <strong>File type:</strong> .{file.path.split('.').pop()?.toLowerCase()}
               </div>
               <div>
-                <strong>Size:</strong> {formatFileSize(file.size)}
+                <strong>Size:</strong> {formatBytes(file.size)}
               </div>
             </div>
           </div>

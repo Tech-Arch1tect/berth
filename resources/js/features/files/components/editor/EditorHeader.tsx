@@ -2,6 +2,7 @@ import React from 'react';
 import { OpenTab } from '../../types';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { formatBytes } from '../../../../shared/utils/formatters';
 
 interface EditorHeaderProps {
   tab: OpenTab;
@@ -11,14 +12,6 @@ interface EditorHeaderProps {
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({ tab, canWrite, isSaving, onSave }) => {
-  const formatSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <div
       className={cn(
@@ -33,7 +26,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ tab, canWrite, isSav
         </span>
 
         <div className="flex items-center gap-2">
-          <span className={cn('text-xs', theme.text.subtle)}>{formatSize(tab.size)}</span>
+          <span className={cn('text-xs', theme.text.subtle)}>{formatBytes(tab.size)}</span>
           <span className={cn('text-xs capitalize', theme.text.subtle)}>{tab.encoding}</span>
           {tab.isDirty && (
             <span className={cn('text-xs font-medium', theme.text.warning)}>Modified</span>

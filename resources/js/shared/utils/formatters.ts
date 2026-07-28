@@ -1,9 +1,9 @@
+const BYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+
 export const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const unit = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), BYTE_UNITS.length - 1);
+  return `${parseFloat((bytes / 1024 ** unit).toFixed(1))} ${BYTE_UNITS[unit]}`;
 };
 
 export const formatNumber = (num: number): string => {

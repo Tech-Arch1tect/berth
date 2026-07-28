@@ -1,10 +1,6 @@
 import type { ImageHistoryLayer as ImageHistoryLayerType } from '../../../../api/generated/models';
-import {
-  formatImageSize,
-  formatCreatedTime,
-  parseDockerfileCommand,
-  getCommandType,
-} from './utils/image-helpers';
+import { formatBytes } from '../../../../shared/utils/formatters';
+import { formatCreatedTime, parseDockerfileCommand, getCommandType } from './utils/image-helpers';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
 
@@ -45,9 +41,7 @@ export const ImageHistoryLayer: React.FC<ImageHistoryLayerProps> = ({ layer }) =
               </span>
             )}
             {layer.size > 0 && (
-              <span className={cn('text-xs', theme.text.subtle)}>
-                {formatImageSize(layer.size)}
-              </span>
+              <span className={cn('text-xs', theme.text.subtle)}>{formatBytes(layer.size)}</span>
             )}
           </div>
 
