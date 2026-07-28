@@ -9,40 +9,70 @@
 export interface ContainerStats {
   /** @minimum 0 */
   block_read_bytes: number;
+  /** @nullable */
+  block_read_bytes_per_second: number | null;
   /** @minimum 0 */
   block_read_ops: number;
   /** @minimum 0 */
   block_write_bytes: number;
+  /** @nullable */
+  block_write_bytes_per_second: number | null;
   /** @minimum 0 */
   block_write_ops: number;
-  cpu_percent: number;
+  /** @nullable */
+  cpu_percent_of_host: number | null;
+  /** @nullable */
+  cpu_percent_of_quota: number | null;
+  cpu_quota_cores: number;
   /** @minimum 0 */
   cpu_system_time: number;
+  /** @nullable */
+  cpu_throttled_percent: number | null;
+  /** @nullable */
+  cpu_usage_cores: number | null;
   /** @minimum 0 */
   cpu_user_time: number;
   /** @minimum 0 */
-  memory_cache: number;
+  memory_anon: number;
+  /** @minimum 0 */
+  memory_current: number;
+  /** @minimum 0 */
+  memory_file: number;
+  /** @minimum 0 */
+  memory_inactive_file: number;
   /** @minimum 0 */
   memory_limit: number;
-  memory_percent: number;
   /** @minimum 0 */
-  memory_rss: number;
+  memory_limit_hits: number;
+  /** @minimum 0 */
+  memory_peak: number;
+  /** @nullable */
+  memory_percent_of_host: number | null;
+  /** @nullable */
+  memory_percent_of_limit: number | null;
   /** @minimum 0 */
   memory_swap: number;
   /** @minimum 0 */
-  memory_usage: number;
+  memory_working_set: number;
   name: string;
   /** @minimum 0 */
   network_rx_bytes: number;
+  /** @nullable */
+  network_rx_bytes_per_second: number | null;
   /** @minimum 0 */
   network_rx_packets: number;
   /** @minimum 0 */
   network_tx_bytes: number;
+  /** @nullable */
+  network_tx_bytes_per_second: number | null;
   /** @minimum 0 */
   network_tx_packets: number;
+  /** @minimum 0 */
+  oom_kills: number;
   /** @minimum 0 */
   page_faults: number;
   /** @minimum 0 */
   page_major_faults: number;
   service_name: string;
+  state: string;
 }

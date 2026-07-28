@@ -6,8 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ContainerStats } from './containerStats';
+import type { HostStats } from './hostStats';
 
 export interface StackStats {
+  collected_at: string;
   containers: ContainerStats[];
+  host: HostStats;
+  /** @nullable */
+  sample_window_seconds: number | null;
   stack_name: string;
 }

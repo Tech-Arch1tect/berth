@@ -118,6 +118,7 @@ export * from './getUserRolesData';
 export * from './healthcheckConfig';
 export * from './healthLog';
 export * from './healthStatus';
+export * from './hostStats';
 export * from './imageConfig';
 export * from './imageConfigExposedPorts';
 export * from './imageConfigLabels';
