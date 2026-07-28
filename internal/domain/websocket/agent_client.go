@@ -26,7 +26,6 @@ type agentSignerProvider interface {
 }
 
 type AgentClient struct {
-	frames    *agentsign.FrameWriter
 	unframe   *agentsign.FrameReader
 	server    *server.Server
 	signers   agentSignerProvider
@@ -234,7 +233,6 @@ func (ac *AgentClient) attemptConnection() error {
 			conn.Close(websocket.StatusPolicyViolation, "unverified agent")
 			return keyErr
 		}
-		ac.frames = agentsign.NewFrameWriter(sessionKey, agentsign.DirectionToAgent)
 		ac.unframe = agentsign.NewFrameReader(sessionKey, agentsign.DirectionToBerth)
 	}
 	if err != nil {
