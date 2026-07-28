@@ -143,11 +143,10 @@ type RestartPolicy struct {
 }
 
 type ResourceLimits struct {
-	CPUShares  int64 `json:"cpu_shares,omitempty"`
-	Memory     int64 `json:"memory,omitempty"`
-	MemorySwap int64 `json:"memory_swap,omitempty"`
-	CPUQuota   int64 `json:"cpu_quota,omitempty"`
-	CPUPeriod  int64 `json:"cpu_period,omitempty"`
+	CPUCores          float64 `json:"cpu_cores,omitempty"`
+	Memory            int64   `json:"memory,omitempty"`
+	MemoryReservation int64   `json:"memory_reservation,omitempty"`
+	MemorySwap        int64   `json:"memory_swap,omitempty"`
 }
 
 type HealthStatus struct {
