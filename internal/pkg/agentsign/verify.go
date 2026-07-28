@@ -50,6 +50,9 @@ func NewResponseVerifier(authorityPEM, identity, pinnedFingerprint string, skew 
 	if !authority.AppendCertsFromPEM([]byte(authorityPEM)) {
 		return nil, errors.New("the stored certificate authority does not contain a certificate")
 	}
+	if pinnedFingerprint == "" {
+		return nil, errors.New("no agent certificate bundle has been issued for this server, so berth cannot tell which agent it should be talking to")
+	}
 	return &ResponseVerifier{authority: authority, identity: identity, pinned: pinnedFingerprint, skew: skew}, nil
 }
 
@@ -83,11 +86,9 @@ func (v *ResponseVerifier) Verify(resp *http.Response, requestNonce string, body
 	if err := certificate.VerifyHostname(v.identity); err != nil {
 		return nil, ErrUnverified
 	}
-	if v.pinned != "" {
-		presented := sha256.Sum256(certificate.Raw)
-		if hex.EncodeToString(presented[:]) != v.pinned {
-			return nil, fmt.Errorf("%w: the agent presented a certificate berth did not issue for it", ErrUnverified)
-		}
+	presented := sha256.Sum256(certificate.Raw)
+	if hex.EncodeToString(presented[:]) != v.pinned {
+		return nil, fmt.Errorf("%w: the agent presented a certificate berth did not issue for it", ErrUnverified)
 	}
 
 	publicKey, ok := certificate.PublicKey.(*ecdsa.PublicKey)
