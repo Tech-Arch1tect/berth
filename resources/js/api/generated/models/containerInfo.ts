@@ -13,6 +13,7 @@ export interface ContainerInfo {
   image: string;
   labels: ContainerInfoLabels;
   name: string;
+  removal: string;
   size: number;
   state: string;
   status: string;

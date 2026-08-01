@@ -13,7 +13,6 @@ export interface SystemInfo {
   kernel_version: string;
   ncpu: number;
   os: string;
-  server_version: string;
   storage_driver: string;
   total_memory: number;
   version: string;

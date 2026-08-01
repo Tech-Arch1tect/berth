@@ -5,12 +5,11 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Amount } from './amount';
 import type { VolumeInfo } from './volumeInfo';
 
 export interface VolumeSummary {
-  total_count: number;
-  total_size: number;
-  unused_count: number;
-  unused_size: number;
+  total: Amount;
+  unused: Amount;
   volumes: VolumeInfo[];
 }

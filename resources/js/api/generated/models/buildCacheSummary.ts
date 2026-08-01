@@ -5,10 +5,10 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Amount } from './amount';
 import type { BuildCacheInfo } from './buildCacheInfo';
 
 export interface BuildCacheSummary {
   cache: BuildCacheInfo[];
-  total_count: number;
-  total_size: number;
+  total: Amount;
 }

@@ -14,6 +14,7 @@ export interface NetworkInfo {
   internal: boolean;
   labels: NetworkInfoLabels;
   name: string;
+  removal: string;
   scope: string;
   subnet: string;
   unused: boolean;

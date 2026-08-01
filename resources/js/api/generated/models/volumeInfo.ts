@@ -8,11 +8,13 @@
 import type { VolumeInfoLabels } from './volumeInfoLabels';
 
 export interface VolumeInfo {
+  anonymous: boolean;
   created: string;
   driver: string;
   labels: VolumeInfoLabels;
   mountpoint: string;
   name: string;
+  removal: string;
   size: number;
   unused: boolean;
 }

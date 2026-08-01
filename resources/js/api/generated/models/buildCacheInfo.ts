@@ -12,7 +12,7 @@ export interface BuildCacheInfo {
   id: string;
   in_use: boolean;
   last_used: string;
-  parent?: string;
+  removal: string;
   shared: boolean;
   size: number;
   type: string;

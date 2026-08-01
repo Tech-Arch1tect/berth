@@ -6,14 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface ImageInfo {
-  containers: number;
-  created: string;
-  dangling: boolean;
-  id: string;
-  removal: string;
-  shared_size: number;
+export interface Amount {
+  count: number;
   size: number;
-  tags: string[];
-  unused: boolean;
 }

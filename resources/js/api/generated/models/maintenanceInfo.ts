@@ -7,7 +7,6 @@
  */
 import type { BuildCacheSummary } from './buildCacheSummary';
 import type { ContainerSummary } from './containerSummary';
-import type { DiskUsage } from './diskUsage';
 import type { ImageSummary } from './imageSummary';
 import type { NetworkSummary } from './networkSummary';
 import type { SystemInfo } from './systemInfo';
@@ -16,10 +15,10 @@ import type { VolumeSummary } from './volumeSummary';
 export interface MaintenanceInfo {
   build_cache_summary: BuildCacheSummary;
   container_summary: ContainerSummary;
-  disk_usage: DiskUsage;
   image_summary: ImageSummary;
   last_updated: string;
   network_summary: NetworkSummary;
+  system_cleanup_covers: string[];
   system_info: SystemInfo;
   volume_summary: VolumeSummary;
 }

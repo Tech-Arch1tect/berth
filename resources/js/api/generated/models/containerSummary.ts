@@ -5,12 +5,11 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Amount } from './amount';
 import type { ContainerInfo } from './containerInfo';
 
 export interface ContainerSummary {
   containers: ContainerInfo[];
   running_count: number;
-  stopped_count: number;
-  total_count: number;
-  total_size: number;
+  total: Amount;
 }

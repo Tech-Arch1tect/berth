@@ -8,7 +8,5 @@
 
 export interface PruneRequest {
   all: boolean;
-  filters: string;
-  force: boolean;
   type: string;
 }

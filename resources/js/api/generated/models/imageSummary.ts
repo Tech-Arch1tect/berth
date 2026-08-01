@@ -5,14 +5,11 @@
  * Berth: Opinionated docker compose stack management API
  * OpenAPI spec version: 1.0.0
  */
+import type { Amount } from './amount';
 import type { ImageInfo } from './imageInfo';
 
 export interface ImageSummary {
-  dangling_count: number;
-  dangling_size: number;
   images: ImageInfo[];
-  total_count: number;
-  total_size: number;
+  total: Amount;
   unused_count: number;
-  unused_size: number;
 }
