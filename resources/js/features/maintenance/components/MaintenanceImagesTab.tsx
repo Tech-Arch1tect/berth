@@ -25,16 +25,19 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
+  const imageName = (image: ImageInfo) =>
+    image.tags.length > 0 ? image.tags.join(', ') : `<untagged> ${image.id.substring(0, 12)}`;
+
   const deleteButton = (image: ImageInfo) => (
     <button
       onClick={() =>
         onDelete({
           type: 'image',
           id: image.id,
-          name: `${image.repository}:${image.tag}`,
+          name: imageName(image),
         })
       }
-      aria-label={`Delete image ${image.repository}:${image.tag}`}
+      aria-label={`Delete image ${imageName(image)}`}
       className={cn(
         'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
         theme.text.danger,
@@ -68,19 +71,12 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
         emptyMessage="No Docker images found"
         columns={[
           {
-            key: 'repository',
-            header: 'Repository',
+            key: 'tags',
+            header: 'Tags',
             render: (image) => (
               <span className={cn('text-sm font-medium', theme.text.strong)}>
-                {image.repository || '<none>'}
+                {image.tags.length > 0 ? image.tags.join(', ') : '<untagged>'}
               </span>
-            ),
-          },
-          {
-            key: 'tag',
-            header: 'Tag',
-            render: (image) => (
-              <span className={cn('text-sm', theme.text.muted)}>{image.tag || '<none>'}</span>
             ),
           },
           {
@@ -97,6 +93,15 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
             header: 'Size',
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatBytes(image.size)}</span>
+            ),
+          },
+          {
+            key: 'shared_size',
+            header: 'Not shared',
+            render: (image) => (
+              <span className={cn('text-sm', theme.text.muted)}>
+                {image.shared_size >= 0 ? formatBytes(image.size - image.shared_size) : 'unknown'}
+              </span>
             ),
           },
           {
@@ -121,7 +126,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1 space-y-1">
               <p className={cn('truncate text-sm font-medium', theme.text.strong)}>
-                {image.repository || '<none>'}:{image.tag || '<none>'}
+                {image.tags.length > 0 ? image.tags.join(', ') : '<untagged>'}
               </p>
               <p className={cn('flex flex-wrap items-center gap-x-2 text-xs', theme.text.muted)}>
                 <span className="font-mono">{image.id.substring(0, 12)}</span>

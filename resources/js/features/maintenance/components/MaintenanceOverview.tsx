@@ -2,276 +2,155 @@ import React from 'react';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
 import { StatCard } from '../../../shared/components/StatCard';
-import { formatBytes, formatNumber } from '../../../shared/utils/formatters';
+import { formatBytes } from '../../../shared/utils/formatters';
 import {
   ServerIcon,
   DocumentDuplicateIcon,
   CircleStackIcon,
   FolderIcon,
   GlobeAltIcon,
+  CubeIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import type { MaintenanceInfo } from '../../../api/generated/models';
+import { totalDiskUsage } from '../pruneModes';
 
 interface MaintenanceOverviewProps {
   maintenanceInfo: MaintenanceInfo;
 }
 
+const systemFacts = (info: MaintenanceInfo): Array<{ label: string; value: string }> => [
+  { label: 'Docker Version', value: info.system_info.version },
+  { label: 'API Version', value: info.system_info.api_version },
+  { label: 'Storage Driver', value: info.system_info.storage_driver },
+  { label: 'Architecture', value: info.system_info.architecture },
+  { label: 'Operating System', value: info.system_info.os },
+  { label: 'Kernel Version', value: info.system_info.kernel_version },
+  { label: 'CPU Cores', value: String(info.system_info.ncpu) },
+  { label: 'Total Memory', value: formatBytes(info.system_info.total_memory) },
+  { label: 'Docker Root Directory', value: info.system_info.docker_root_dir },
+];
+
 export const MaintenanceOverview: React.FC<MaintenanceOverviewProps> = ({ maintenanceInfo }) => {
-  if (!maintenanceInfo) return null;
+  const images = maintenanceInfo.image_summary;
+  const containers = maintenanceInfo.container_summary;
+  const volumes = maintenanceInfo.volume_summary;
+  const networks = maintenanceInfo.network_summary;
+  const buildCache = maintenanceInfo.build_cache_summary;
+
+  const storage = [
+    { label: 'Images', value: images.total.size, color: theme.text.info },
+    { label: 'Containers', value: containers.total.size, color: theme.text.success },
+    { label: 'Volumes', value: volumes.total.size, color: theme.text.info },
+    { label: 'Build Cache', value: buildCache.total.size, color: theme.text.warning },
+  ];
 
   return (
     <>
-      {/* System Information */}
-      <div className={cn(theme.containers.panel, 'rounded-lg mb-8')}>
-        <div className={cn('px-6 py-4', theme.cards.sectionDivider)}>
-          <h3 className={cn('text-lg font-medium flex items-center', theme.text.strong)}>
-            <ServerIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
-            System Information
-          </h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Docker Version</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.version}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>API Version</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.api_version}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Server Version</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.server_version}
-                </dd>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Architecture</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.architecture}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Operating System</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.os}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Kernel Version</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.kernel_version}
-                </dd>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>CPU Cores</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.ncpu}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Total Memory</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {formatBytes(maintenanceInfo.system_info.total_memory)}
-                </dd>
-              </div>
-              <div>
-                <dt className={cn('text-sm font-medium', theme.text.muted)}>Storage Driver</dt>
-                <dd className={cn('text-sm font-mono', theme.text.strong)}>
-                  {maintenanceInfo.system_info.storage_driver}
-                </dd>
-              </div>
-            </div>
-          </div>
-          <div className={cn('mt-6 pt-6 border-t', theme.cards.sectionDivider)}>
-            <div>
-              <dt className={cn('text-sm font-medium', theme.text.muted)}>Docker Root Directory</dt>
-              <dd className={cn('text-sm font-mono break-all', theme.text.strong)}>
-                {maintenanceInfo.system_info.docker_root_dir}
-              </dd>
-            </div>
-          </div>
-        </div>
+      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <StatCard
+          label="Total Docker disk usage"
+          value={formatBytes(totalDiskUsage(maintenanceInfo))}
+          icon={ChartBarIcon}
+          iconColor={theme.text.info}
+          iconBg={theme.intent.info.surface}
+        />
+        <StatCard
+          label="Build cache records"
+          value={buildCache.total.count}
+          icon={CubeIcon}
+          iconColor={theme.text.warning}
+          iconBg={theme.intent.warning.surface}
+          subtext={formatBytes(buildCache.total.size)}
+          subtextColor={theme.text.warning}
+        />
       </div>
 
-      {/* Resource Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Images"
-          value={maintenanceInfo.image_summary.total_count}
+          value={images.total.count}
           icon={DocumentDuplicateIcon}
           iconColor={theme.text.info}
           iconBg={theme.intent.info.surface}
-          subtext={
-            maintenanceInfo.image_summary.unused_count > 0
-              ? `${maintenanceInfo.image_summary.unused_count} unused`
-              : undefined
-          }
+          subtext={images.unused_count > 0 ? `${images.unused_count} unused` : undefined}
           subtextColor={theme.text.danger}
         />
         <StatCard
           label="Containers"
-          value={maintenanceInfo.container_summary.total_count}
+          value={containers.total.count}
           icon={CircleStackIcon}
           iconColor={theme.text.success}
           iconBg={theme.intent.success.surface}
-          subtext={`${maintenanceInfo.container_summary.running_count} running`}
+          subtext={`${containers.running_count} running`}
           subtextColor={theme.text.success}
         />
         <StatCard
           label="Volumes"
-          value={maintenanceInfo.volume_summary.total_count}
+          value={volumes.total.count}
           icon={FolderIcon}
           iconColor={theme.text.info}
           iconBg={theme.intent.info.surface}
           subtext={
-            maintenanceInfo.volume_summary.unused_count > 0
-              ? `${maintenanceInfo.volume_summary.unused_count} unused`
+            volumes.unused.count > 0
+              ? `${volumes.unused.count} unused · ${formatBytes(volumes.unused.size)}`
               : undefined
           }
           subtextColor={theme.text.danger}
         />
         <StatCard
           label="Networks"
-          value={maintenanceInfo.network_summary.total_count}
+          value={networks.total_count}
           icon={GlobeAltIcon}
           iconColor={theme.text.info}
           iconBg={theme.intent.info.surface}
-          subtext={
-            maintenanceInfo.network_summary.unused_count > 0
-              ? `${maintenanceInfo.network_summary.unused_count} unused`
-              : undefined
-          }
+          subtext={networks.unused_count > 0 ? `${networks.unused_count} unused` : undefined}
           subtextColor={theme.text.danger}
         />
       </div>
 
-      {/* Disk Usage Breakdown */}
       <div
         className={cn(
           theme.containers.panel,
-          'p-6 rounded-lg shadow-sm border',
-          theme.cards.sectionDivider,
-          'mb-8'
+          'mb-8 rounded-lg border p-6 shadow-sm',
+          theme.cards.sectionDivider
         )}
       >
-        <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-          <ChartBarIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
-          Detailed Storage Usage
+        <h3 className={cn('mb-4 flex items-center text-lg font-medium', theme.text.strong)}>
+          <ChartBarIcon className={cn('mr-2 h-5 w-5', theme.text.info)} />
+          Where the space goes
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {formatBytes(maintenanceInfo.disk_usage.images_size)}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {storage.map(({ label, value, color }) => (
+            <div key={label} className="text-center">
+              <div className={cn('text-2xl font-bold', color)}>{formatBytes(value)}</div>
+              <div className={cn('text-sm', theme.text.muted)}>{label}</div>
             </div>
-            <div className={cn('text-sm', theme.text.muted)}>Images</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.success)}>
-              {formatBytes(maintenanceInfo.disk_usage.containers_size)}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Containers</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {formatBytes(maintenanceInfo.disk_usage.volumes_size)}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Volumes</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.warning)}>
-              {formatBytes(maintenanceInfo.disk_usage.layers_size)}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Layers</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {formatBytes(maintenanceInfo.disk_usage.build_cache_size)}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Build Cache</div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Resource Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div
-          className={cn(
-            theme.containers.panel,
-            'p-6 rounded-lg shadow-sm border',
-            theme.cards.sectionDivider
-          )}
-        >
-          <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-            <DocumentDuplicateIcon className={cn('h-5 w-5 mr-2', theme.text.info)} />
-            Images Summary
+      <div
+        className={cn(
+          theme.containers.panel,
+          'rounded-lg border shadow-sm',
+          theme.cards.sectionDivider
+        )}
+      >
+        <div className={cn('border-b px-6 py-4', theme.cards.sectionDivider)}>
+          <h3 className={cn('flex items-center text-lg font-medium', theme.text.strong)}>
+            <ServerIcon className={cn('mr-2 h-5 w-5', theme.text.info)} />
+            Docker Engine
           </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Total Images:</span>
-              <span className={cn('font-medium', theme.text.strong)}>
-                {formatNumber(maintenanceInfo.image_summary.total_count)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Dangling Images:</span>
-              <span className={cn('font-medium', theme.text.warning)}>
-                {formatNumber(maintenanceInfo.image_summary.dangling_count)} (
-                {formatBytes(maintenanceInfo.image_summary.dangling_size)})
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Unused Images:</span>
-              <span className={cn('font-medium', theme.text.danger)}>
-                {formatNumber(maintenanceInfo.image_summary.unused_count)} (
-                {formatBytes(maintenanceInfo.image_summary.unused_size)})
-              </span>
-            </div>
-          </div>
         </div>
-
-        <div
-          className={cn(
-            theme.containers.panel,
-            'p-6 rounded-lg shadow-sm border',
-            theme.cards.sectionDivider
-          )}
-        >
-          <h3 className={cn('text-lg font-medium mb-4 flex items-center', theme.text.strong)}>
-            <CircleStackIcon className={cn('h-5 w-5 mr-2', theme.text.success)} />
-            Container Summary
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Running:</span>
-              <span className={cn('font-medium', theme.text.success)}>
-                {formatNumber(maintenanceInfo.container_summary.running_count)}
-              </span>
+        <dl className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
+          {systemFacts(maintenanceInfo).map(({ label, value }) => (
+            <div key={label}>
+              <dt className={cn('text-sm font-medium', theme.text.muted)}>{label}</dt>
+              <dd className={cn('break-all font-mono text-sm', theme.text.strong)}>{value}</dd>
             </div>
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Stopped:</span>
-              <span className={cn('font-medium', theme.text.warning)}>
-                {formatNumber(maintenanceInfo.container_summary.stopped_count)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className={cn(theme.text.muted)}>Total:</span>
-              <span className={cn('font-medium', theme.text.strong)}>
-                {formatNumber(maintenanceInfo.container_summary.total_count)}
-              </span>
-            </div>
-          </div>
-        </div>
+          ))}
+        </dl>
       </div>
     </>
   );

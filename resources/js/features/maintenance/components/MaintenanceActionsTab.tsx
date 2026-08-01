@@ -6,7 +6,7 @@ import {
   TrashIcon,
   InformationCircleIcon,
   CheckCircleIcon,
-  CloudIcon,
+  ArrowPathIcon,
   DocumentDuplicateIcon,
   CircleStackIcon,
   FolderIcon,
@@ -15,330 +15,257 @@ import {
   WrenchIcon,
 } from '@heroicons/react/24/outline';
 import type { MaintenanceInfo } from '../../../api/generated/models';
-
-type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
+import {
+  PRUNE_TYPES,
+  allModeLabels,
+  pruneDescription,
+  pruneTypeLabels,
+  removalRows,
+  supportsAllMode,
+  type PruneType,
+} from '../pruneModes';
 
 interface MaintenanceActionsTabProps {
   maintenanceInfo: MaintenanceInfo | undefined;
   selectedPruneType: PruneType;
   pruneAll: boolean;
   isPruning: boolean;
-  isLoading: boolean;
+  isFetching: boolean;
   onPruneTypeChange: (type: PruneType) => void;
   onPruneAllChange: (pruneAll: boolean) => void;
   onStartPrune: () => void;
   onRefresh: () => void;
 }
 
+const pruneIcons: Record<PruneType, React.ComponentType<{ className?: string }>> = {
+  images: DocumentDuplicateIcon,
+  containers: CircleStackIcon,
+  volumes: FolderIcon,
+  networks: GlobeAltIcon,
+  'build-cache': CubeIcon,
+  system: WrenchIcon,
+};
+
+const pruneTaglines: Record<PruneType, string> = {
+  images: 'Images no container uses',
+  containers: 'Containers that are not running',
+  volumes: 'Volumes no container mounts',
+  networks: 'Networks with nothing attached',
+  'build-cache': 'Cached build layers',
+  system: 'Everything except volumes',
+};
+
 export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
   maintenanceInfo,
   selectedPruneType,
   pruneAll,
   isPruning,
-  isLoading,
+  isFetching,
   onPruneTypeChange,
   onPruneAllChange,
   onStartPrune,
   onRefresh,
 }) => {
-  const getPruneIcon = (type: PruneType) => {
-    const icons = {
-      images: DocumentDuplicateIcon,
-      containers: CircleStackIcon,
-      volumes: FolderIcon,
-      networks: GlobeAltIcon,
-      'build-cache': CubeIcon,
-      system: WrenchIcon,
-    };
-    return icons[type];
-  };
-
-  const getPruneDescription = (type: PruneType): string => {
-    const descriptions = {
-      images: pruneAll
-        ? 'Remove all unused images (not just dangling)'
-        : 'Remove dangling images only',
-      containers: 'Remove all stopped containers',
-      volumes: pruneAll
-        ? 'Remove all unused volumes (including named volumes)'
-        : 'Remove dangling volumes only (anonymous volumes)',
-      networks: 'Remove all unused networks',
-      'build-cache': pruneAll
-        ? 'Remove all build cache entries'
-        : 'Remove unused build cache entries only',
-      system: 'Remove all unused containers, networks, images, and optionally volumes',
-    };
-    return descriptions[type];
-  };
-
-  const getPruneStats = (type: PruneType) => {
-    if (!maintenanceInfo) return null;
-
-    const stats = {
-      images: {
-        total: maintenanceInfo.image_summary.total_count,
-        problematic:
-          maintenanceInfo.image_summary.dangling_count + maintenanceInfo.image_summary.unused_count,
-        size:
-          maintenanceInfo.image_summary.dangling_size + maintenanceInfo.image_summary.unused_size,
-      },
-      containers: {
-        total: maintenanceInfo.container_summary.total_count,
-        problematic: maintenanceInfo.container_summary.stopped_count,
-        size: 0,
-      },
-      volumes: {
-        total: maintenanceInfo.volume_summary.total_count,
-        problematic: maintenanceInfo.volume_summary.unused_count,
-        size: maintenanceInfo.volume_summary.unused_size,
-      },
-      networks: {
-        total: maintenanceInfo.network_summary.total_count,
-        problematic: maintenanceInfo.network_summary.unused_count,
-        size: 0,
-      },
-      'build-cache': {
-        total: maintenanceInfo.build_cache_summary.total_count,
-        problematic: maintenanceInfo.build_cache_summary.cache.filter((c) => !c.in_use).length,
-        size: maintenanceInfo.build_cache_summary.total_size,
-      },
-      system: {
-        total:
-          maintenanceInfo.image_summary.total_count +
-          maintenanceInfo.container_summary.total_count +
-          maintenanceInfo.volume_summary.total_count +
-          maintenanceInfo.network_summary.total_count,
-        problematic:
-          maintenanceInfo.image_summary.dangling_count +
-          maintenanceInfo.image_summary.unused_count +
-          maintenanceInfo.container_summary.stopped_count +
-          maintenanceInfo.volume_summary.unused_count +
-          maintenanceInfo.network_summary.unused_count,
-        size: maintenanceInfo.disk_usage.total_size,
-      },
-    };
-    return stats[type];
-  };
+  const selectedRows = removalRows(maintenanceInfo, selectedPruneType, pruneAll);
+  const nothingToRemove = maintenanceInfo !== undefined && selectedRows.length === 0;
+  const showKind = selectedPruneType === 'system';
+  const showNotShared = selectedRows.some((row) => row.uniqueSize !== undefined);
 
   return (
-    <div className="space-y-6">
-      {/* Cleanup Type Selection */}
-      <div
-        className={cn(
-          theme.containers.panel,
-          'p-6 rounded-lg shadow-sm border',
-          theme.cards.sectionDivider
-        )}
-      >
-        <h3 className={cn('text-lg font-medium mb-6 flex items-center', theme.text.strong)}>
-          <TrashIcon className="h-5 w-5 text-red-600 mr-2" />
-          Docker Cleanup Actions
-        </h3>
+    <div
+      className={cn(
+        theme.containers.panel,
+        'p-6 rounded-lg shadow-sm border',
+        theme.cards.sectionDivider
+      )}
+    >
+      <h3 className={cn('text-lg font-medium mb-6 flex items-center', theme.text.strong)}>
+        <TrashIcon className={cn('h-5 w-5 mr-2', theme.text.danger)} />
+        Docker Cleanup
+      </h3>
 
-        {/* Cleanup Type Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {[
-            {
-              type: 'images' as const,
-              name: 'Images',
-              description: 'Remove unused Docker images',
-            },
-            {
-              type: 'containers' as const,
-              name: 'Containers',
-              description: 'Remove stopped containers',
-            },
-            {
-              type: 'volumes' as const,
-              name: 'Volumes',
-              description: 'Remove unused volumes',
-            },
-            {
-              type: 'networks' as const,
-              name: 'Networks',
-              description: 'Remove unused networks',
-            },
-            {
-              type: 'build-cache' as const,
-              name: 'Build Cache',
-              description: 'Remove build cache entries',
-            },
-            {
-              type: 'system' as const,
-              name: 'System',
-              description: 'Full system cleanup',
-            },
-          ].map(({ type, name, description }) => {
-            const Icon = getPruneIcon(type);
-            const stats = getPruneStats(type);
-            const isSelected = selectedPruneType === type;
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {PRUNE_TYPES.map((type) => {
+          const Icon = pruneIcons[type];
+          const isSelected = selectedPruneType === type;
+          const rows = removalRows(maintenanceInfo, type, isSelected && pruneAll);
 
-            return (
-              <div
-                key={type}
-                onClick={() => onPruneTypeChange(type)}
-                className={cn(
-                  'p-4 rounded-lg border-2 cursor-pointer transition-all duration-200',
-                  isSelected
-                    ? cn(theme.selection.tile.selected, 'border-2')
-                    : cn(theme.selection.tile.unselected, 'border-2', theme.containers.panel)
-                )}
-              >
-                <div className="flex items-start space-x-3">
-                  <Icon
-                    className={cn('h-6 w-6 mt-1', isSelected ? theme.text.info : theme.text.muted)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4
-                      className={cn(
-                        'font-medium',
-                        isSelected ? theme.intent.info.textStrong : theme.text.strong
-                      )}
-                    >
-                      {name}
-                    </h4>
-                    <p className={cn('text-sm mt-1', theme.text.muted)}>{description}</p>
-                    {stats && (
-                      <div className="mt-2 text-xs space-y-1">
-                        <div className="flex justify-between">
-                          <span className={cn(theme.text.muted)}>Total:</span>
-                          <span className="font-medium text-gray-700 dark:text-slate-300">
-                            {stats.total}
-                          </span>
-                        </div>
-                        {stats.problematic > 0 && (
-                          <div className="flex justify-between">
-                            <span className={theme.text.warning}>To Clean:</span>
-                            <span className={cn('font-medium', theme.text.warning)}>
-                              {stats.problematic}
-                            </span>
-                          </div>
-                        )}
-                        {stats.size > 0 && (
-                          <div className="flex justify-between">
-                            <span className={cn(theme.text.muted)}>Size:</span>
-                            <span className="font-medium text-gray-700 dark:text-slate-300">
-                              {formatBytes(stats.size)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => onPruneTypeChange(type)}
+              aria-pressed={isSelected}
+              className={cn(
+                'w-full rounded-lg border-2 p-4 text-left transition-colors',
+                isSelected
+                  ? theme.selection.tile.selected
+                  : cn(theme.selection.tile.unselected, theme.containers.panel)
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Icon
+                  className={cn(
+                    'mt-1 h-6 w-6 flex-shrink-0',
+                    isSelected ? theme.text.info : theme.text.muted
+                  )}
+                />
+                <div className="min-w-0 flex-1">
+                  <h4
+                    className={cn(
+                      'font-medium',
+                      isSelected ? theme.intent.info.textStrong : theme.text.strong
                     )}
-                  </div>
-                  {isSelected && <CheckCircleIcon className={cn('h-5 w-5', theme.text.info)} />}
+                  >
+                    {pruneTypeLabels[type]}
+                  </h4>
+                  <p className={cn('mt-1 text-sm', theme.text.muted)}>{pruneTaglines[type]}</p>
+                  {maintenanceInfo && (
+                    <p className={cn('mt-2 text-sm font-medium', theme.text.strong)}>
+                      {rows.length === 0 ? (
+                        <span className={theme.text.muted}>Nothing to remove</span>
+                      ) : (
+                        `${rows.length} to remove`
+                      )}
+                    </p>
+                  )}
                 </div>
+                {isSelected && (
+                  <CheckCircleIcon className={cn('h-5 w-5 flex-shrink-0', theme.text.info)} />
+                )}
               </div>
-            );
-          })}
+            </button>
+          );
+        })}
+      </div>
+
+      {supportsAllMode(selectedPruneType) && (
+        <div className={cn('mb-6 rounded-lg p-4', theme.surface.muted)}>
+          <label htmlFor="prune-all" className="flex items-center gap-2">
+            <input
+              id="prune-all"
+              type="checkbox"
+              checked={pruneAll}
+              onChange={(event) => onPruneAllChange(event.target.checked)}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-600"
+              disabled={isPruning}
+            />
+            <span className={cn('text-sm', theme.text.strong)}>
+              {allModeLabels[selectedPruneType]}
+            </span>
+          </label>
         </div>
+      )}
 
-        {/* Options */}
-        {(selectedPruneType === 'images' ||
-          selectedPruneType === 'volumes' ||
-          selectedPruneType === 'build-cache') && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center">
-              <input
-                id="prune-all"
-                type="checkbox"
-                checked={pruneAll}
-                onChange={(e) => onPruneAllChange(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
-                disabled={isPruning}
-              />
-              <label htmlFor="prune-all" className={cn('ml-2 block text-sm', theme.text.strong)}>
-                {selectedPruneType === 'images'
-                  ? 'Remove all unused images (not just dangling)'
-                  : selectedPruneType === 'volumes'
-                    ? 'Remove all unused volumes (including named volumes)'
-                    : 'Remove all build cache entries (not just unused)'}
-              </label>
-            </div>
+      <div className={cn('mb-6 rounded-lg p-4', theme.intent.info.surface)}>
+        <div className="flex items-start gap-3">
+          <InformationCircleIcon className={cn('mt-0.5 h-5 w-5', theme.text.info)} />
+          <div>
+            <p className={cn('mb-1 text-sm font-medium', theme.intent.info.textStrong)}>
+              {pruneTypeLabels[selectedPruneType]} cleanup
+            </p>
+            <p className={cn('text-sm', theme.intent.info.textMuted)}>
+              {pruneDescription(selectedPruneType, pruneAll)}
+            </p>
           </div>
-        )}
-
-        {/* Description */}
-        <div className={cn('mb-6 p-4 rounded-lg', theme.intent.info.surface)}>
-          <div className="flex items-start space-x-3">
-            <InformationCircleIcon className={cn('h-5 w-5 mt-0.5', theme.text.info)} />
-            <div>
-              <p className={cn('text-sm font-medium mb-1', theme.intent.info.textStrong)}>
-                {selectedPruneType.charAt(0).toUpperCase() + selectedPruneType.slice(1)} Cleanup
-              </p>
-              <p className={cn('text-sm', theme.intent.info.textMuted)}>
-                {getPruneDescription(selectedPruneType)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={onStartPrune}
-            disabled={isPruning}
-            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-          >
-            {isPruning ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Cleaning...
-              </>
-            ) : (
-              <>
-                <TrashIcon className="h-5 w-5 mr-3" />
-                Start {selectedPruneType.charAt(0).toUpperCase() + selectedPruneType.slice(1)}{' '}
-                Cleanup
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={onRefresh}
-            disabled={isLoading || isPruning}
-            className="px-6 py-3 bg-gray-600 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-          >
-            <CloudIcon className="h-5 w-5 mr-2" />
-            Refresh Data
-          </button>
         </div>
       </div>
 
-      {/* Quick Stats */}
       <div
         className={cn(
-          theme.containers.panel,
-          'p-6 rounded-lg shadow-sm border',
-          theme.cards.sectionDivider
+          'mb-6 overflow-hidden rounded-lg border',
+          theme.cards.sectionDivider,
+          theme.surface.muted
         )}
       >
-        <h4 className={cn('text-md font-medium mb-4', theme.text.strong)}>System Overview</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {maintenanceInfo?.image_summary.total_count || 0}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Images</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.success)}>
-              {maintenanceInfo?.container_summary.total_count || 0}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Containers</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {maintenanceInfo?.volume_summary.total_count || 0}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Volumes</div>
-          </div>
-          <div className="text-center">
-            <div className={cn('text-2xl font-bold', theme.text.info)}>
-              {maintenanceInfo?.network_summary.total_count || 0}
-            </div>
-            <div className={cn('text-sm', theme.text.muted)}>Networks</div>
-          </div>
+        <div className={cn('border-b px-4 py-3', theme.cards.sectionDivider)}>
+          <h4 className={cn('text-sm font-medium', theme.text.strong)}>
+            {selectedRows.length === 0
+              ? 'Nothing would be removed'
+              : `These ${selectedRows.length} will be removed`}
+          </h4>
         </div>
+        {selectedRows.length > 0 && (
+          <div className="max-h-80 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className={cn('sticky top-0', theme.surface.muted)}>
+                <tr className={cn('border-b text-left', theme.cards.sectionDivider)}>
+                  {showKind && (
+                    <th className={cn('px-4 py-2 font-medium', theme.text.muted)}>Kind</th>
+                  )}
+                  <th className={cn('px-4 py-2 font-medium', theme.text.muted)}>Name</th>
+                  <th className={cn('px-4 py-2 text-right font-medium', theme.text.muted)}>Size</th>
+                  {showNotShared && (
+                    <th className={cn('px-4 py-2 text-right font-medium', theme.text.muted)}>
+                      Not shared
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {selectedRows.map((row) => (
+                  <tr
+                    key={row.key}
+                    className={cn('border-b last:border-0', theme.cards.sectionDivider)}
+                  >
+                    {showKind && (
+                      <td className={cn('px-4 py-2 whitespace-nowrap', theme.text.muted)}>
+                        {row.category}
+                      </td>
+                    )}
+                    <td className="px-4 py-2">
+                      <span className={cn('break-all', theme.text.strong)}>{row.name}</span>
+                      {row.detail && (
+                        <span className={cn('ml-2 font-mono text-xs', theme.text.muted)}>
+                          {row.detail}
+                        </span>
+                      )}
+                    </td>
+                    <td className={cn('px-4 py-2 text-right whitespace-nowrap', theme.text.muted)}>
+                      {row.size === undefined ? 'n/a' : formatBytes(row.size)}
+                    </td>
+                    {showNotShared && (
+                      <td
+                        className={cn('px-4 py-2 text-right whitespace-nowrap', theme.text.muted)}
+                      >
+                        {row.uniqueSize === undefined ? '' : formatBytes(row.uniqueSize)}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          onClick={onStartPrune}
+          disabled={isPruning || nothingToRemove}
+          className="flex flex-1 items-center justify-center rounded-lg bg-red-600 px-6 py-3 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPruning ? (
+            <>
+              <div className="mr-3 h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+              Cleaning...
+            </>
+          ) : (
+            <>
+              <TrashIcon className="mr-3 h-5 w-5" />
+              Remove {selectedRows.length} {selectedRows.length === 1 ? 'item' : 'items'}
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={onRefresh}
+          disabled={isFetching || isPruning}
+          className="flex items-center justify-center rounded-lg bg-zinc-600 px-6 py-3 text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ArrowPathIcon className={cn('mr-2 h-5 w-5', isFetching && 'animate-spin')} />
+          Recalculate
+        </button>
       </div>
     </div>
   );

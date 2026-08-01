@@ -15,7 +15,7 @@ import {
   useDeleteResource,
 } from '../hooks/useDockerMaintenance';
 import { showToast } from '../../../shared/utils/toast';
-import { formatBytes } from '../../../shared/utils/formatters';
+import { pruneDescription, pruneTypeLabels, totalDiskUsage, type PruneType } from '../pruneModes';
 import {
   ChartBarIcon,
   CircleStackIcon,
@@ -37,7 +37,6 @@ import {
 } from '../components';
 
 type TabType = 'overview' | 'images' | 'containers' | 'volumes' | 'networks' | 'actions';
-type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
 export default function Maintenance() {
@@ -50,7 +49,7 @@ export default function Maintenance() {
   useDocumentTitle(server ? `Docker Maintenance - ${server.name}` : 'Docker Maintenance');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedPruneType, setSelectedPruneType] = useState<PruneType>('images');
-  const [pruneAll, setPruneAll] = useState(false);
+  const [pruneAllByType, setPruneAllByType] = useState<Partial<Record<PruneType, boolean>>>({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: DeleteResourceType;
@@ -58,9 +57,17 @@ export default function Maintenance() {
     name?: string;
   } | null>(null);
 
-  const { data: maintenanceInfo, isLoading, error, refetch } = useMaintenanceInfo(serverid);
+  const {
+    data: maintenanceInfo,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useMaintenanceInfo(serverid);
   const pruneMutation = useDockerPrune();
   const deleteMutation = useDeleteResource();
+
+  const pruneAllFor = (type: PruneType) => pruneAllByType[type] ?? false;
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -80,7 +87,6 @@ export default function Maintenance() {
         showToast.success(
           `Successfully deleted ${deleteConfirm.type}: ${deleteConfirm.name || deleteConfirm.id}`
         );
-        refetch();
       }
     } catch (error) {
       showToast.error(`Failed to delete ${deleteConfirm.type}`);
@@ -98,24 +104,18 @@ export default function Maintenance() {
         serverid,
         request: {
           type: selectedPruneType,
-          all: pruneAll,
-          force: false,
-          filters: '',
+          all: pruneAllFor(selectedPruneType),
         },
       });
 
       const pruneData = result.data;
+      const label = pruneTypeLabels[selectedPruneType];
       if (pruneData?.error) {
-        showToast.error(`Cleanup failed: ${pruneData.error}`);
+        showToast.error(`${label} cleanup failed: ${pruneData.error}`);
+      } else if (pruneData?.items_deleted?.length) {
+        showToast.success(`${label} cleanup finished, updated totals below`);
       } else {
-        const itemCount = pruneData?.items_deleted ? pruneData.items_deleted.length : 0;
-        const spaceFreed = formatBytes(pruneData?.space_reclaimed || 0);
-        if (itemCount === 0 && (pruneData?.space_reclaimed || 0) === 0) {
-          showToast.success(`Cleanup completed: No items needed to be removed`);
-        } else {
-          showToast.success(`Cleanup completed: ${itemCount} items removed, ${spaceFreed} freed`);
-        }
-        refetch();
+        showToast.success(`${label} cleanup finished, nothing needed removing`);
       }
     } catch (error) {
       showToast.error('Failed to perform cleanup operation');
@@ -125,55 +125,17 @@ export default function Maintenance() {
     }
   };
 
-  const getPruneDescription = (type: PruneType): string => {
-    const descriptions = {
-      images: pruneAll
-        ? 'Remove all unused images (not just dangling)'
-        : 'Remove dangling images only',
-      containers: 'Remove all stopped containers',
-      volumes: pruneAll
-        ? 'Remove all unused volumes (including named volumes)'
-        : 'Remove dangling volumes only (anonymous volumes)',
-      networks: 'Remove all unused networks',
-      'build-cache': pruneAll
-        ? 'Remove all build cache entries'
-        : 'Remove unused build cache entries only',
-      system: 'Remove all unused containers, networks, images, and optionally volumes',
-    };
-    return descriptions[type];
-  };
-
   if (serverLoading || !server) {
     return <LoadingSpinner size="lg" text="Loading server..." fullScreen />;
   }
 
-  if (isLoading) {
-    return <LoadingSpinner size="lg" text="Loading maintenance information..." fullScreen />;
-  }
-
-  if (error) {
-    return (
-      <EmptyState
-        icon={ExclamationTriangleIcon}
-        title="Failed to load maintenance information"
-        description="Unable to connect to the Docker maintenance service."
-        variant="error"
-        size="lg"
-        action={{
-          label: 'Retry',
-          onClick: () => refetch(),
-        }}
-      />
-    );
-  }
-
   const summary = maintenanceInfo
     ? {
-        totalImages: maintenanceInfo.image_summary.total_count,
-        totalContainers: maintenanceInfo.container_summary.total_count,
-        totalVolumes: maintenanceInfo.volume_summary.total_count,
+        totalImages: maintenanceInfo.image_summary.total.count,
+        totalContainers: maintenanceInfo.container_summary.total.count,
+        totalVolumes: maintenanceInfo.volume_summary.total.count,
         totalNetworks: maintenanceInfo.network_summary.total_count,
-        spaceUsed: maintenanceInfo.image_summary.total_size,
+        spaceUsed: totalDiskUsage(maintenanceInfo),
       }
     : undefined;
 
@@ -219,7 +181,7 @@ export default function Maintenance() {
           <MaintenanceToolbar
             serverName={server.name}
             onRefresh={refetch}
-            isRefreshing={isLoading}
+            isRefreshing={isFetching}
           />
         </div>
 
@@ -231,6 +193,24 @@ export default function Maintenance() {
         />
 
         <div className="min-h-0 flex-1 overflow-auto bg-white p-4 dark:bg-zinc-900 lg:p-6">
+          {isLoading && <LoadingSpinner size="lg" text="Reading Docker disk usage..." />}
+
+          {Boolean(error) && !maintenanceInfo && (
+            <EmptyState
+              icon={ExclamationTriangleIcon}
+              title="Failed to load maintenance information"
+              description={
+                error instanceof Error ? error.message : 'The agent did not return disk usage.'
+              }
+              variant="error"
+              size="lg"
+              action={{
+                label: 'Retry',
+                onClick: () => refetch(),
+              }}
+            />
+          )}
+
           {maintenanceInfo && (
             <>
               {activeTab === 'overview' && (
@@ -273,11 +253,13 @@ export default function Maintenance() {
                 <MaintenanceActionsTab
                   maintenanceInfo={maintenanceInfo}
                   selectedPruneType={selectedPruneType}
-                  pruneAll={pruneAll}
+                  pruneAll={pruneAllFor(selectedPruneType)}
                   isPruning={pruneMutation.isPending}
-                  isLoading={isLoading}
+                  isFetching={isFetching}
                   onPruneTypeChange={setSelectedPruneType}
-                  onPruneAllChange={setPruneAll}
+                  onPruneAllChange={(value) =>
+                    setPruneAllByType((current) => ({ ...current, [selectedPruneType]: value }))
+                  }
                   onStartPrune={() => setShowConfirm(true)}
                   onRefresh={refetch}
                 />
@@ -296,8 +278,8 @@ export default function Maintenance() {
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handlePrune}
-        title="Confirm Cleanup"
-        message={getPruneDescription(selectedPruneType)}
+        title={`Confirm ${pruneTypeLabels[selectedPruneType]} Cleanup`}
+        message={pruneDescription(selectedPruneType, pruneAllFor(selectedPruneType))}
         variant="danger"
         isLoading={pruneMutation.isPending}
       />
