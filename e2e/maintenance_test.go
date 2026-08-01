@@ -12,23 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type SystemInfoData struct {
-	SystemInfo struct {
-		Version       string `json:"version"`
-		APIVersion    string `json:"api_version"`
-		Architecture  string `json:"architecture"`
-		OS            string `json:"os"`
-		KernelVersion string `json:"kernel_version"`
-	} `json:"system_info"`
-	DiskUsage struct {
-		LayersSize     int64 `json:"layers_size"`
-		ImagesSize     int64 `json:"images_size"`
-		ContainersSize int64 `json:"containers_size"`
-		VolumesSize    int64 `json:"volumes_size"`
-		BuildCacheSize int64 `json:"build_cache_size"`
-		TotalSize      int64 `json:"total_size"`
-	} `json:"disk_usage"`
-}
+type SystemInfoData = maintenance.MaintenanceInfo
 
 type PruneResponse struct {
 	Type           string   `json:"type"`
@@ -167,33 +151,41 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 			"os":             "linux",
 			"kernel_version": "6.1.0",
 		},
-		"disk_usage": map[string]interface{}{
-			"layers_size":      5368709120,
-			"images_size":      2147483648,
-			"containers_size":  536870912,
-			"volumes_size":     1073741824,
-			"build_cache_size": 268435456,
-			"total_size":       9395240960,
-		},
 		"image_summary": map[string]interface{}{
-			"total_count":    15,
-			"dangling_count": 3,
-			"unused_count":   5,
-			"total_size":     2147483648,
-			"images":         []interface{}{},
+			"total":        map[string]interface{}{"count": 15, "size": 5368709120},
+			"unused_count": 5,
+			"images": []interface{}{
+				map[string]interface{}{
+					"id":          "aaa111",
+					"tags":        []interface{}{"registry.example.com:8888/demo:latest"},
+					"size":        134217728,
+					"shared_size": 12582912,
+					"containers":  0,
+					"dangling":    false,
+					"unused":      true,
+					"removal":     "with_all",
+				},
+				map[string]interface{}{
+					"id":          "bbb222",
+					"tags":        []interface{}{},
+					"size":        67108864,
+					"shared_size": -1,
+					"containers":  0,
+					"dangling":    true,
+					"unused":      true,
+					"removal":     "always",
+				},
+			},
 		},
 		"container_summary": map[string]interface{}{
+			"total":         map[string]interface{}{"count": 7, "size": 536870912},
 			"running_count": 5,
-			"stopped_count": 2,
-			"total_count":   7,
-			"total_size":    536870912,
 			"containers":    []interface{}{},
 		},
 		"volume_summary": map[string]interface{}{
-			"total_count":  10,
-			"unused_count": 3,
-			"total_size":   1073741824,
-			"volumes":      []interface{}{},
+			"total":   map[string]interface{}{"count": 10, "size": 1073741824},
+			"unused":  map[string]interface{}{"count": 3, "size": 268435456},
+			"volumes": []interface{}{},
 		},
 		"network_summary": map[string]interface{}{
 			"total_count":  8,
@@ -201,11 +193,11 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 			"networks":     []interface{}{},
 		},
 		"build_cache_summary": map[string]interface{}{
-			"total_count": 20,
-			"total_size":  268435456,
-			"cache":       []interface{}{},
+			"total": map[string]interface{}{"count": 20, "size": 268435456},
+			"cache": []interface{}{},
 		},
-		"last_updated": "2024-01-15T14:00:00Z",
+		"system_cleanup_covers": []interface{}{"images", "containers", "networks", "build_cache"},
+		"last_updated":          "2024-01-15T14:00:00Z",
 	})
 
 	t.Run("GET /api/servers/:serverid/maintenance/info returns system info", func(t *testing.T) {
@@ -225,6 +217,27 @@ func TestMaintenanceInfoJWT(t *testing.T) {
 		assert.True(t, infoResp.Success)
 		assert.Equal(t, "24.0.7", infoResp.Data.SystemInfo.Version)
 		assert.Equal(t, "1.43", infoResp.Data.SystemInfo.APIVersion)
+
+		assert.Equal(t, maintenance.Amount{Count: 15, Size: 5368709120}, infoResp.Data.ImageSummary.Total)
+		assert.Equal(t, 5, infoResp.Data.ImageSummary.UnusedCount)
+		assert.Equal(t, maintenance.Amount{Count: 7, Size: 536870912}, infoResp.Data.ContainerSummary.Total)
+		assert.Equal(t, maintenance.Amount{Count: 10, Size: 1073741824}, infoResp.Data.VolumeSummary.Total)
+		assert.Equal(t, maintenance.Amount{Count: 3, Size: 268435456}, infoResp.Data.VolumeSummary.Unused)
+		assert.Equal(t, maintenance.Amount{Count: 20, Size: 268435456}, infoResp.Data.BuildCacheSummary.Total)
+
+		assert.Equal(t, []string{"images", "containers", "networks", "build_cache"}, infoResp.Data.SystemCleanupCovers)
+		assert.NotContains(t, infoResp.Data.SystemCleanupCovers, "volumes")
+
+		require.Len(t, infoResp.Data.ImageSummary.Images, 2)
+		tagged := infoResp.Data.ImageSummary.Images[0]
+		assert.Equal(t, []string{"registry.example.com:8888/demo:latest"}, tagged.Tags)
+		assert.Equal(t, maintenance.RemovalWithAll, tagged.Removal)
+		assert.EqualValues(t, 12582912, tagged.SharedSize)
+
+		untagged := infoResp.Data.ImageSummary.Images[1]
+		assert.Empty(t, untagged.Tags)
+		assert.Equal(t, maintenance.RemovalAlways, untagged.Removal)
+		assert.EqualValues(t, -1, untagged.SharedSize)
 	})
 }
 

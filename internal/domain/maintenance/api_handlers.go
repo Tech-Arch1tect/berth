@@ -82,15 +82,17 @@ func (h *APIHandler) PruneDocker(c echo.Context) error {
 	actorID := p.UserID()
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerPruneExecuted,
-		Success:       true,
+		Success:       result.Error == "",
+		FailureReason: result.Error,
 		ActorUserID:   &actorID,
 		ActorUsername: username,
 		ActorIP:       c.RealIP(),
 		ServerID:      &serverID,
 		Metadata: map[string]any{
-			"prune_type": request.Type,
-			"force":      request.Force,
-			"all":        request.All,
+			"prune_type":             request.Type,
+			"all":                    request.All,
+			"docker_delete_records":  len(result.ItemsDeleted),
+			"docker_space_reclaimed": result.SpaceReclaimed,
 		},
 	})
 
@@ -123,7 +125,8 @@ func (h *APIHandler) DeleteResource(c echo.Context) error {
 	actorID := p.UserID()
 	h.auditService.Log(security.LogEvent{
 		EventType:     security.EventDockerResourceDeleted,
-		Success:       true,
+		Success:       result.Success,
+		FailureReason: result.Error,
 		ActorUserID:   &actorID,
 		ActorUsername: username,
 		ActorIP:       c.RealIP(),

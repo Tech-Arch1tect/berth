@@ -28,10 +28,8 @@ var validDeleteTypes = map[string]struct{}{
 }
 
 type PruneRequest struct {
-	Type    string `json:"type"`
-	Force   bool   `json:"force"`
-	All     bool   `json:"all"`
-	Filters string `json:"filters"`
+	Type string `json:"type"`
+	All  bool   `json:"all"`
 }
 
 func (r *PruneRequest) Validate() error {

@@ -9,7 +9,7 @@
     "data": {},
     "error": {
       "code": "internal_error",
-      "message": "agent returned status 404: not found\n"
+      "message": "agent returned status 404"
     },
     "success": false
   }

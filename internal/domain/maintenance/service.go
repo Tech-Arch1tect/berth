@@ -93,7 +93,7 @@ func (s *Service) GetSystemInfo(ctx context.Context, p authz.Principal, serverID
 			zap.String("response", string(bodyBytes)),
 			zap.Uint("server_id", serverID),
 		)
-		return nil, fmt.Errorf("agent returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
 	}
 
 	var info MaintenanceInfo
@@ -119,7 +119,6 @@ func (s *Service) PruneDocker(ctx context.Context, p authz.Principal, serverID u
 		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("prune_type", request.Type),
-		zap.Bool("force", request.Force),
 		zap.Bool("all", request.All),
 	)
 
@@ -162,6 +161,16 @@ func (s *Service) PruneDocker(ctx context.Context, p authz.Principal, serverID u
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		s.logger.Warn("Docker prune operation failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("response", string(bodyBytes)),
+			zap.Uint("server_id", serverID),
+		)
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
 	var result PruneResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		s.logger.Error("failed to decode Docker prune response",
@@ -171,21 +180,15 @@ func (s *Service) PruneDocker(ctx context.Context, p authz.Principal, serverID u
 		return nil, fmt.Errorf("failed to decode prune response: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Warn("Docker prune operation failed",
-			zap.Int("status_code", resp.StatusCode),
-			zap.Uint("server_id", serverID),
-		)
-		return &result, fmt.Errorf("agent returned status %d", resp.StatusCode)
-	}
-
-	s.logger.Info("Docker prune operation completed successfully",
+	s.logger.Info("Docker prune operation completed",
 		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("prune_type", request.Type),
-		zap.Bool("force", request.Force),
 		zap.Bool("all", request.All),
+		zap.Int("items_deleted", len(result.ItemsDeleted)),
+		zap.Int64("space_reclaimed", result.SpaceReclaimed),
+		zap.String("agent_error", result.Error),
 	)
 
 	return &result, nil
@@ -242,6 +245,17 @@ func (s *Service) DeleteResource(ctx context.Context, p authz.Principal, serverI
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		s.logger.Warn("Docker resource deletion failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("response", string(bodyBytes)),
+			zap.String("resource_type", request.Type),
+			zap.String("resource_id", request.ID),
+		)
+		return nil, fmt.Errorf("agent returned status %d", resp.StatusCode)
+	}
+
 	var result DeleteResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		s.logger.Error("failed to decode resource deletion response",
@@ -252,21 +266,14 @@ func (s *Service) DeleteResource(ctx context.Context, p authz.Principal, serverI
 		return nil, fmt.Errorf("failed to decode delete response: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Warn("Docker resource deletion failed",
-			zap.Int("status_code", resp.StatusCode),
-			zap.String("resource_type", request.Type),
-			zap.String("resource_id", request.ID),
-		)
-		return &result, fmt.Errorf("agent returned status %d", resp.StatusCode)
-	}
-
-	s.logger.Info("Docker resource deleted successfully",
+	s.logger.Info("Docker resource deletion completed",
 		zap.Uint("user_id", p.UserID()),
 		zap.Uint("server_id", serverID),
 		zap.String("server_name", server.Name),
 		zap.String("resource_type", request.Type),
 		zap.String("resource_id", request.ID),
+		zap.Bool("success", result.Success),
+		zap.String("agent_error", result.Error),
 	)
 
 	return &result, nil

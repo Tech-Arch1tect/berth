@@ -9,7 +9,7 @@
     "data": {},
     "error": {
       "code": "internal_error",
-      "message": "failed to decode prune response: invalid character 'o' in literal null (expecting 'u')"
+      "message": "agent returned status 404"
     },
     "success": false
   }

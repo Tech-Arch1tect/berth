@@ -19,7 +19,7 @@ func TestPruneRequest_Validate(t *testing.T) {
 		{"networks", PruneRequest{Type: "networks"}, nil},
 		{"build-cache", PruneRequest{Type: "build-cache"}, nil},
 		{"system", PruneRequest{Type: "system"}, nil},
-		{"flags ignored on validation", PruneRequest{Type: "images", Force: true, All: true, Filters: "x"}, nil},
+		{"all mode ignored on validation", PruneRequest{Type: "images", All: true}, nil},
 	}
 
 	for _, tt := range tests {
