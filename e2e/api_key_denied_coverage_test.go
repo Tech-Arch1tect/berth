@@ -127,7 +127,7 @@ func TestCrossUserResourceAccess_APIKeys(t *testing.T) {
 		resp, err := clientA.Get("/api/v1/api-keys/" + bKeyID)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode,
-			"A reading B's key must 404 (not 200, not 403 — the resource isn't visible to A); body=%s", resp.GetString())
+			"A reading B's key must 404 (not 200, not 403; the resource isn't visible to A); body=%s", resp.GetString())
 	})
 
 	t.Run("user A cannot DELETE user B's key", func(t *testing.T) {

@@ -69,7 +69,7 @@ func TestBoot_AuditCallbacksFireOnInsert(t *testing.T) {
 		assert.Equal(t, "op-1", got.OperationID,
 			"the gorm callback registered by RegisterAuditCallbacks must forward the create to the auditor")
 	case <-time.After(2 * time.Second):
-		t.Fatal("operation auditor never received the create — RegisterAuditCallbacks invoke likely missing")
+		t.Fatal("operation auditor never received the create; RegisterAuditCallbacks invoke likely missing")
 	}
 }
 

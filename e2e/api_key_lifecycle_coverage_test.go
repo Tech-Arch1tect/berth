@@ -314,5 +314,5 @@ func TestAPIKeyScopeRuntime_AdminScopedKeyDeniedAfterRoleRemoval(t *testing.T) {
 
 	resp := authedGet(t, app, "/api/v1/admin/users", plainKey)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode,
-		"admin-scoped key must be DENIED on admin endpoints once the granting user loses admin role — RBAC is re-checked at request time, not snapshotted at scope-grant. Locks in the security-conscious semantic. body=%s", resp.GetString())
+		"admin-scoped key must be DENIED on admin endpoints once the granting user loses admin role; RBAC is re-checked at request time, not snapshotted at scope-grant. Locks in the security-conscious semantic. body=%s", resp.GetString())
 }

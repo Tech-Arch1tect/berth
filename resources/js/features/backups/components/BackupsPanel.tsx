@@ -287,13 +287,13 @@ export function BackupsPanel({
       <div className="grid grid-cols-2 gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4 sm:grid-cols-4">
         <div title="Measured after the most recent backup; deleting runs frees space that shows here after the next backup">
           <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
-            {headline?.repoSize != null ? formatBytes(headline.repoSize) : '—'}
+            {headline?.repoSize != null ? formatBytes(headline.repoSize) : 'n/a'}
           </p>
           <p className={cn('text-xs', theme.text.muted)}>Total backup size on disk</p>
         </div>
         <div>
           <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
-            {listing?.total ?? '—'}
+            {listing?.total ?? 'n/a'}
           </p>
           <p className={cn('text-xs', theme.text.muted)}>Backups</p>
         </div>
@@ -307,7 +307,7 @@ export function BackupsPanel({
         </div>
         <div>
           <p className={cn('text-xl font-semibold tabular-nums', theme.text.strong)}>
-            {headline ? formatBytes(headline.newest.size_bytes) : '—'}
+            {headline ? formatBytes(headline.newest.size_bytes) : 'n/a'}
           </p>
           <p className={cn('text-xs', theme.text.muted)}>Data size at last backup</p>
         </div>

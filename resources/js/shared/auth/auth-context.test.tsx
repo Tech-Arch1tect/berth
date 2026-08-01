@@ -262,7 +262,7 @@ describe('useAuth.initialise', () => {
     expect(onAuthFailed).not.toHaveBeenCalled();
   });
 
-  it('is idempotent — concurrent and repeat calls trigger only one refresh', async () => {
+  it('is idempotent: concurrent and repeat calls trigger only one refresh', async () => {
     let resolveRefresh: (v: unknown) => void = () => {};
     mockRefresh.mockReturnValue(
       new Promise((resolve) => {

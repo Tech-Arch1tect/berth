@@ -24,7 +24,7 @@ interface StackStatsProps {
 
 type Tone = 'neutral' | 'ok' | 'warning' | 'danger';
 
-const missing = '—';
+const missing = 'n/a';
 
 const toneText: Record<Tone, string> = {
   neutral: theme.text.strong,

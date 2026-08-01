@@ -52,7 +52,7 @@ func TestAPIAuthLoginRateLimitIgnoresSuccessfulLogins(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode,
-		"26th failure must be blocked — proving only failures consumed the budget")
+		"26th failure must be blocked, proving only failures consumed the budget")
 }
 
 func TestAPIAuthRateLimitIgnoresUserAgentRotation(t *testing.T) {
@@ -84,7 +84,7 @@ func TestAPIAuthRateLimitIgnoresUserAgentRotation(t *testing.T) {
 			"bad login #%d must still be within budget", i)
 	}
 	assert.Equal(t, http.StatusTooManyRequests, badLogin("agent-final"),
-		"rotating the User-Agent must not earn a fresh budget — the bucket keys on IP")
+		"rotating the User-Agent must not earn a fresh budget; the bucket keys on IP")
 }
 
 func TestRateLimitBucketScope(t *testing.T) {
@@ -124,7 +124,7 @@ func TestRateLimitBucketScope(t *testing.T) {
 		resp, err := app.HTTPClient.Get("/api/v1/profile")
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode,
-			"the api_general bucket is separate — exhausting api_auth must not throttle protected routes")
+			"the api_general bucket is separate; exhausting api_auth must not throttle protected routes")
 	})
 }
 

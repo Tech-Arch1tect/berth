@@ -89,7 +89,7 @@ func TestSessionsRevokeAllOthersIsIdempotent(t *testing.T) {
 	require.Equal(t, 200, revokeAllOthersViaJWT(t, app, login2.Data.AccessToken, session.RevokeAllOtherSessionsRequest{}),
 		"first revoke should succeed and remove login1's session")
 	require.Equal(t, 200, revokeAllOthersViaJWT(t, app, login2.Data.AccessToken, session.RevokeAllOtherSessionsRequest{}),
-		"second revoke must be a no-op, not 400 — caller's session is the only one left")
+		"second revoke must be a no-op, not 400; caller's session is the only one left")
 
 	_, status1 := apiRefresh(t, app, login1.Data.RefreshToken)
 	assert.Equal(t, 401, status1, "login1 refresh stays revoked across repeated calls")

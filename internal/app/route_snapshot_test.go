@@ -38,10 +38,10 @@ func TestRouteSnapshot(t *testing.T) {
 	}
 
 	wantBytes, err := os.ReadFile(goldenPath)
-	require.NoError(t, err, "missing %s — run `go test -update-routes` to create it", goldenPath)
+	require.NoError(t, err, "missing %s; run `go test -update-routes` to create it", goldenPath)
 
 	if got != string(wantBytes) {
-		t.Errorf("route snapshot drift — re-run with -update-routes if intentional\n--- lines only in want / only in got ---\n%s",
+		t.Errorf("route snapshot drift; re-run with -update-routes if intentional\n--- lines only in want / only in got ---\n%s",
 			lineDiff(string(wantBytes), got))
 	}
 }

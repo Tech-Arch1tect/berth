@@ -39,5 +39,5 @@ export default async function globalSetup() {
   process.env.BERTH_E2E_TEMP_ROOT = tempRoot;
   process.env.BERTH_E2E_REPO_ROOT = REPO_ROOT;
 
-  console.log(`[e2e] globalSetup total ${t2 - t0}ms — workers will spawn their own instances`);
+  console.log(`[e2e] globalSetup total ${t2 - t0}ms; workers will spawn their own instances`);
 }

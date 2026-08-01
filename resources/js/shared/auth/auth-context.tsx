@@ -158,7 +158,7 @@ export function AuthProvider({ children, onAuthFailed }: AuthProviderProps) {
   const verifyTOTP = useCallback(async (code: string) => {
     const tokenAtCallTime = totpPendingTokenRef.current;
     if (!tokenAtCallTime) {
-      throw new Error('no pending TOTP challenge — call login first');
+      throw new Error('no pending TOTP challenge: call login first');
     }
     const resp = (await postApiV1AuthTotpVerify(
       { code },

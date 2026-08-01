@@ -237,7 +237,7 @@ func (f *AuthzFixture) lookupJWT(u *e2etesting.TestUser) string {
 	f.mu.Lock()
 	jwt, ok := f.userJWTs[u.ID]
 	f.mu.Unlock()
-	require.True(f.T, ok, "AuthzFixture has no JWT recorded for user %q (id=%d) — was the user created via the fixture?", u.Username, u.ID)
+	require.True(f.T, ok, "AuthzFixture has no JWT recorded for user %q (id=%d). Was the user created via the fixture?", u.Username, u.ID)
 	return jwt
 }
 

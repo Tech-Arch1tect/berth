@@ -51,7 +51,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Login with username and password").
 		Description("Authenticates a user with username and password. The 200 response is one of two shapes: AuthLoginData (full access and refresh tokens, plus user info) when login completes immediately, or AuthTOTPRequiredData (totp_required=true with a temporary token) when TOTP is enabled and the caller must complete /auth/totp/verify next. Clients should branch on the totp_required field. On full success the response also sets a `berth_refresh` cookie (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth) carrying the refresh token for browser clients; mobile/CLI clients can keep using the body-returned `refresh_token`.").
 		Body(auth.AuthLoginRequest{}, "Login credentials").
-		ResponseOneOf(http.StatusOK, "Login outcome — full tokens or a TOTP challenge",
+		ResponseOneOf(http.StatusOK, "Login outcome: full tokens or a TOTP challenge",
 			response.Response[auth.AuthLoginData]{},
 			response.Response[auth.AuthTOTPRequiredData]{},
 		).

@@ -183,5 +183,5 @@ func TestAPIKeyScopeRuntime_ServerScopedKeyDeniedAfterAccessLoss(t *testing.T) {
 	TagTest(t, http.MethodGet, "/api/v1/servers/:id/stacks", e2etesting.CategorySecurity, e2etesting.ValueHigh)
 	resp := authedGet(t, app, stacksPath, plainKey)
 	assert.NotEqual(t, http.StatusOK, resp.StatusCode,
-		"a server-scoped key must be denied once the granting user loses access to that server — RBAC is re-checked at request time, not snapshotted at scope-grant; body=%s", resp.GetString())
+		"a server-scoped key must be denied once the granting user loses access to that server; RBAC is re-checked at request time, not snapshotted at scope-grant; body=%s", resp.GetString())
 }

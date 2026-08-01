@@ -96,7 +96,7 @@ func TestDoSetup_CreatesAdminWithHashedPassword(t *testing.T) {
 
 	exists, err := setupSvc.AdminExists()
 	require.NoError(t, err)
-	assert.True(t, exists, "AdminExists should report true after CLI run — proves admin role was assigned")
+	assert.True(t, exists, "AdminExists should report true after CLI run; proves admin role was assigned")
 
 	var u user.User
 	require.NoError(t, db.Where("username = ?", "alice").First(&u).Error)
