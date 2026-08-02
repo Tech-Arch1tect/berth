@@ -13,7 +13,6 @@ export const useMaintenanceInfo = (serverid: number, enabled: boolean = true) =>
       enabled: enabled && serverid > 0,
       staleTime: 5 * 60 * 1000,
       gcTime: 15 * 60 * 1000,
-      refetchOnWindowFocus: false,
       select: (response) => response.data,
     },
   });

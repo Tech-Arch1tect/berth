@@ -30,6 +30,7 @@ interface MaintenanceActionsTabProps {
   selectedPruneType: PruneType;
   pruneAll: boolean;
   isPruning: boolean;
+  isRechecking: boolean;
   isFetching: boolean;
   onPruneTypeChange: (type: PruneType) => void;
   onPruneAllChange: (pruneAll: boolean) => void;
@@ -60,6 +61,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
   selectedPruneType,
   pruneAll,
   isPruning,
+  isRechecking,
   isFetching,
   onPruneTypeChange,
   onPruneAllChange,
@@ -242,13 +244,13 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           onClick={onStartPrune}
-          disabled={isPruning || nothingToRemove}
+          disabled={isPruning || isRechecking || nothingToRemove}
           className="flex flex-1 items-center justify-center rounded-lg bg-red-600 px-6 py-3 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPruning ? (
+          {isPruning || isRechecking ? (
             <>
               <div className="mr-3 h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
-              Cleaning...
+              {isRechecking ? 'Re-reading Docker state...' : 'Cleaning...'}
             </>
           ) : (
             <>
@@ -260,7 +262,7 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
 
         <button
           onClick={onRefresh}
-          disabled={isFetching || isPruning}
+          disabled={isFetching || isPruning || isRechecking}
           className="flex items-center justify-center rounded-lg bg-zinc-600 px-6 py-3 text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowPathIcon className={cn('mr-2 h-5 w-5', isFetching && 'animate-spin')} />

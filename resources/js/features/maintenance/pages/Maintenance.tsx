@@ -15,7 +15,13 @@ import {
   useDeleteResource,
 } from '../hooks/useDockerMaintenance';
 import { showToast } from '../../../shared/utils/toast';
-import { pruneDescription, pruneTypeLabels, totalDiskUsage, type PruneType } from '../pruneModes';
+import {
+  pruneDescription,
+  pruneTypeLabels,
+  removalRows,
+  totalDiskUsage,
+  type PruneType,
+} from '../pruneModes';
 import {
   ChartBarIcon,
   CircleStackIcon,
@@ -51,6 +57,8 @@ export default function Maintenance() {
   const [selectedPruneType, setSelectedPruneType] = useState<PruneType>('images');
   const [pruneAllByType, setPruneAllByType] = useState<Partial<Record<PruneType, boolean>>>({});
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isRechecking, setIsRechecking] = useState(false);
+  const [confirmCounts, setConfirmCounts] = useState<{ shown: number; fresh: number } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: DeleteResourceType;
     id: string;
@@ -96,6 +104,47 @@ export default function Maintenance() {
     }
   };
 
+  const startPrune = async () => {
+    const shownCount = removalRows(
+      maintenanceInfo,
+      selectedPruneType,
+      pruneAllFor(selectedPruneType)
+    ).length;
+
+    setIsRechecking(true);
+    const refreshed = await refetch();
+    setIsRechecking(false);
+
+    const label = pruneTypeLabels[selectedPruneType];
+    if (refreshed.error || !refreshed.data) {
+      showToast.error(`Could not re-read the Docker state, ${label} cleanup not started`);
+      return;
+    }
+
+    const freshCount = removalRows(
+      refreshed.data,
+      selectedPruneType,
+      pruneAllFor(selectedPruneType)
+    ).length;
+
+    if (freshCount === 0) {
+      showToast.success(`${label} cleanup not needed, nothing left to remove`);
+      return;
+    }
+
+    setConfirmCounts({ shown: shownCount, fresh: freshCount });
+    setShowConfirm(true);
+  };
+
+  const confirmMessage = () => {
+    const description = pruneDescription(selectedPruneType, pruneAllFor(selectedPruneType));
+    if (!confirmCounts) return description;
+    if (confirmCounts.shown !== confirmCounts.fresh) {
+      return `This changed since you last looked: ${confirmCounts.fresh} will now be removed, not ${confirmCounts.shown}.\n\n${description}`;
+    }
+    return `${confirmCounts.fresh} will be removed.\n\n${description}`;
+  };
+
   const handlePrune = async () => {
     if (!selectedPruneType) return;
 
@@ -136,6 +185,7 @@ export default function Maintenance() {
         totalVolumes: maintenanceInfo.volume_summary.total.count,
         totalNetworks: maintenanceInfo.network_summary.total_count,
         spaceUsed: totalDiskUsage(maintenanceInfo),
+        lastUpdated: maintenanceInfo.last_updated,
       }
     : undefined;
 
@@ -255,12 +305,13 @@ export default function Maintenance() {
                   selectedPruneType={selectedPruneType}
                   pruneAll={pruneAllFor(selectedPruneType)}
                   isPruning={pruneMutation.isPending}
+                  isRechecking={isRechecking}
                   isFetching={isFetching}
                   onPruneTypeChange={setSelectedPruneType}
                   onPruneAllChange={(value) =>
                     setPruneAllByType((current) => ({ ...current, [selectedPruneType]: value }))
                   }
-                  onStartPrune={() => setShowConfirm(true)}
+                  onStartPrune={startPrune}
                   onRefresh={refetch}
                 />
               )}
@@ -279,7 +330,7 @@ export default function Maintenance() {
         onClose={() => setShowConfirm(false)}
         onConfirm={handlePrune}
         title={`Confirm ${pruneTypeLabels[selectedPruneType]} Cleanup`}
-        message={pruneDescription(selectedPruneType, pruneAllFor(selectedPruneType))}
+        message={confirmMessage()}
         variant="danger"
         isLoading={pruneMutation.isPending}
       />

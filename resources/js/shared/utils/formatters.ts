@@ -25,13 +25,16 @@ export const formatDuration = (seconds: number): string => {
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 };
 
+const plural = (count: number, unit: string): string =>
+  `${count} ${unit}${count === 1 ? '' : 's'} ago`;
+
 export const formatRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-  return `${Math.floor(diff / 86400)} days ago`;
+  if (diff < 3600) return plural(Math.floor(diff / 60), 'minute');
+  if (diff < 86400) return plural(Math.floor(diff / 3600), 'hour');
+  return plural(Math.floor(diff / 86400), 'day');
 };

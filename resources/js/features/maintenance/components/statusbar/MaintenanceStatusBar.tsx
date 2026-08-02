@@ -1,7 +1,7 @@
-import type { FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
-import { formatBytes } from '../../../../shared/utils/formatters';
+import { formatBytes, formatRelativeTime } from '../../../../shared/utils/formatters';
 
 interface MaintenanceStatusBarProps {
   summary?: {
@@ -10,10 +10,22 @@ interface MaintenanceStatusBarProps {
     totalVolumes: number;
     totalNetworks: number;
     spaceUsed: number;
+    lastUpdated: string;
   };
 }
 
+const useTickEveryMinute = () => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((value) => value + 1), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+};
+
 export const MaintenanceStatusBar: FC<MaintenanceStatusBarProps> = ({ summary }) => {
+  useTickEveryMinute();
+
   if (!summary) {
     return (
       <div className="flex items-center justify-between">
@@ -26,9 +38,12 @@ export const MaintenanceStatusBar: FC<MaintenanceStatusBarProps> = ({ summary })
     summary.totalImages + summary.totalContainers + summary.totalVolumes + summary.totalNetworks;
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
       <span className={cn('text-sm', theme.text.standard)}>
         {totalResources} total resources · {formatBytes(summary.spaceUsed)} used
+      </span>
+      <span className={cn('text-sm', theme.text.muted)}>
+        read {formatRelativeTime(summary.lastUpdated)}
       </span>
     </div>
   );
