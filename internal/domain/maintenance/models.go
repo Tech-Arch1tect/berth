@@ -101,16 +101,16 @@ type NetworkSummary struct {
 }
 
 type BuildCacheInfo struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"`
-	Description string    `json:"description"`
-	Size        int64     `json:"size"`
-	Created     time.Time `json:"created"`
-	LastUsed    time.Time `json:"last_used"`
-	UsageCount  int       `json:"usage_count"`
-	InUse       bool      `json:"in_use"`
-	Shared      bool      `json:"shared"`
-	Removal     Removal   `json:"removal"`
+	ID          string     `json:"id"`
+	Type        string     `json:"type"`
+	Description string     `json:"description"`
+	Size        int64      `json:"size"`
+	Created     time.Time  `json:"created"`
+	LastUsed    *time.Time `json:"last_used"`
+	UsageCount  int        `json:"usage_count"`
+	InUse       bool       `json:"in_use"`
+	Shared      bool       `json:"shared"`
+	Removal     Removal    `json:"removal"`
 }
 
 type BuildCacheSummary struct {

@@ -11,7 +11,8 @@ export interface BuildCacheInfo {
   description: string;
   id: string;
   in_use: boolean;
-  last_used: string;
+  /** @nullable */
+  last_used: string | null;
   removal: string;
   shared: boolean;
   size: number;

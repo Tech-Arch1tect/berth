@@ -1,4 +1,4 @@
-import type { MaintenanceInfo } from '../../api/generated/models';
+import type { BuildCacheInfo, MaintenanceInfo } from '../../api/generated/models';
 
 export type PruneType = 'images' | 'containers' | 'volumes' | 'networks' | 'build-cache' | 'system';
 
@@ -69,6 +69,7 @@ export interface RemovalRow {
   detail?: string;
   size?: number;
   uniqueSize?: number;
+  lastUsed?: string | null;
 }
 
 const willBeRemoved = (removal: string, all: boolean) =>
@@ -118,6 +119,13 @@ const networkRows = (info: MaintenanceInfo, all: boolean): RemovalRow[] =>
       detail: network.driver,
     }));
 
+const buildCacheDetail = (record: BuildCacheInfo): string => {
+  const parts = [record.type];
+  if (record.shared) parts.push('shared with an image');
+  parts.push(record.usage_count === 1 ? 'used once' : `used ${record.usage_count} times`);
+  return parts.join(', ');
+};
+
 const buildCacheRows = (info: MaintenanceInfo, all: boolean): RemovalRow[] =>
   info.build_cache_summary.cache
     .filter((record) => willBeRemoved(record.removal, all))
@@ -125,8 +133,9 @@ const buildCacheRows = (info: MaintenanceInfo, all: boolean): RemovalRow[] =>
       key: `cache:${record.id}`,
       category: 'Build Cache',
       name: record.description || record.id,
-      detail: record.shared ? `${record.type}, shared with an image` : record.type,
+      detail: buildCacheDetail(record),
       size: record.size,
+      lastUsed: record.last_used,
     }));
 
 const rowsByCategory: Record<string, (info: MaintenanceInfo, all: boolean) => RemovalRow[]> = {
@@ -150,6 +159,24 @@ export const removalRows = (
   }
   const key = type === 'build-cache' ? 'build_cache' : type;
   return rowsByCategory[key]?.(info, all) ?? [];
+};
+
+const retainedCounts: Record<string, (info: MaintenanceInfo) => number> = {
+  images: (info) => info.image_summary.images.filter((i) => i.removal === 'never').length,
+  containers: (info) =>
+    info.container_summary.containers.filter((c) => c.removal === 'never').length,
+  volumes: (info) => info.volume_summary.volumes.filter((v) => v.removal === 'never').length,
+  networks: (info) => info.network_summary.networks.filter((n) => n.removal === 'never').length,
+  build_cache: (info) => info.build_cache_summary.cache.filter((r) => r.removal === 'never').length,
+};
+
+export const retainedCount = (info: MaintenanceInfo | undefined, type: PruneType): number => {
+  if (!info) return 0;
+  const categories =
+    type === 'system'
+      ? info.system_cleanup_covers
+      : [type === 'build-cache' ? 'build_cache' : type];
+  return categories.reduce((total, category) => total + (retainedCounts[category]?.(info) ?? 0), 0);
 };
 
 export const totalDiskUsage = (info: MaintenanceInfo) =>

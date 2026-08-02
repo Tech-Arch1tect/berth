@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
-import { formatBytes } from '../../../shared/utils/formatters';
+import { formatBytes, formatRelativeTime } from '../../../shared/utils/formatters';
 import {
   TrashIcon,
   InformationCircleIcon,
@@ -19,6 +19,7 @@ import {
   PRUNE_TYPES,
   allModeLabels,
   pruneDescription,
+  retainedCount,
   pruneTypeLabels,
   removalRows,
   supportsAllMode,
@@ -72,6 +73,8 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
   const nothingToRemove = maintenanceInfo !== undefined && selectedRows.length === 0;
   const showKind = selectedPruneType === 'system';
   const showNotShared = selectedRows.some((row) => row.uniqueSize !== undefined);
+  const showLastUsed = selectedRows.some((row) => row.lastUsed !== undefined);
+  const retained = retainedCount(maintenanceInfo, selectedPruneType);
 
   return (
     <div
@@ -202,6 +205,11 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
                       Not shared
                     </th>
                   )}
+                  {showLastUsed && (
+                    <th className={cn('px-4 py-2 text-right font-medium', theme.text.muted)}>
+                      Last used
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -233,11 +241,33 @@ export const MaintenanceActionsTab: React.FC<MaintenanceActionsTabProps> = ({
                         {row.uniqueSize === undefined ? '' : formatBytes(row.uniqueSize)}
                       </td>
                     )}
+                    {showLastUsed && (
+                      <td
+                        className={cn('px-4 py-2 text-right whitespace-nowrap', theme.text.muted)}
+                      >
+                        {row.lastUsed === undefined
+                          ? ''
+                          : row.lastUsed === null
+                            ? 'never'
+                            : formatRelativeTime(row.lastUsed)}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+        {retained > 0 && (
+          <p
+            className={cn(
+              'border-t px-4 py-2 text-sm',
+              theme.cards.sectionDivider,
+              theme.text.muted
+            )}
+          >
+            {retained} cannot be removed by this cleanup
+          </p>
         )}
       </div>
 
