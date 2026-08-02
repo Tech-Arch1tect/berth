@@ -14,12 +14,14 @@ interface MaintenanceNetworksTabProps {
   networks: NetworkInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
 export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
   networks,
   onDelete,
   isDeleting,
+  canWrite,
 }) => {
   const getStatusBadge = (status: string, isUnused?: boolean) => {
     const badgeInfo = getResourceStatusBadge(status, isUnused);
@@ -135,11 +137,15 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
             header: 'Status',
             render: (network) => getStatusBadge('active', network.unused),
           },
-          {
-            key: 'actions',
-            header: 'Actions',
-            render: (network) => deleteButton(network),
-          },
+          ...(canWrite
+            ? [
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (network: NetworkInfo) => deleteButton(network),
+                },
+              ]
+            : []),
         ]}
         renderCard={(network) => (
           <div className="flex items-start justify-between gap-2">
@@ -175,7 +181,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
               </p>
               <p className={cn('text-xs', theme.text.muted)}>{formatDate(network.created)}</p>
             </div>
-            {deleteButton(network)}
+            {canWrite && deleteButton(network)}
           </div>
         )}
       />

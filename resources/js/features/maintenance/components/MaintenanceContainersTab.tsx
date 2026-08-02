@@ -14,12 +14,14 @@ interface MaintenanceContainersTabProps {
   containers: ContainerInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
 export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> = ({
   containers,
   onDelete,
   isDeleting,
+  canWrite,
 }) => {
   const getStatusBadge = (status: string) => {
     const badgeInfo = getContainerStatusBadge(status);
@@ -114,11 +116,15 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
               <span className={cn('text-sm', theme.text.muted)}>{formatBytes(container.size)}</span>
             ),
           },
-          {
-            key: 'actions',
-            header: 'Actions',
-            render: (container) => deleteButton(container),
-          },
+          ...(canWrite
+            ? [
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (container: ContainerInfo) => deleteButton(container),
+                },
+              ]
+            : []),
         ]}
         renderCard={(container) => (
           <div className="flex items-start justify-between gap-2">
@@ -138,7 +144,7 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
                 <span>{container.status}</span>
               </p>
             </div>
-            {deleteButton(container)}
+            {canWrite && deleteButton(container)}
           </div>
         )}
       />

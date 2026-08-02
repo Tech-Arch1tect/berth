@@ -14,12 +14,14 @@ interface MaintenanceVolumesTabProps {
   volumes: VolumeInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
 export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
   volumes,
   onDelete,
   isDeleting,
+  canWrite,
 }) => {
   const getStatusBadge = (status: string, isUnused?: boolean) => {
     const badgeInfo = getResourceStatusBadge(status, isUnused);
@@ -114,11 +116,15 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
             header: 'Status',
             render: (volume) => getStatusBadge('active', volume.unused),
           },
-          {
-            key: 'actions',
-            header: 'Actions',
-            render: (volume) => deleteButton(volume),
-          },
+          ...(canWrite
+            ? [
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (volume: VolumeInfo) => deleteButton(volume),
+                },
+              ]
+            : []),
         ]}
         renderCard={(volume) => (
           <div className="flex items-start justify-between gap-2">
@@ -140,7 +146,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
                 <span>{formatDate(volume.created)}</span>
               </p>
             </div>
-            {deleteButton(volume)}
+            {canWrite && deleteButton(volume)}
           </div>
         )}
       />

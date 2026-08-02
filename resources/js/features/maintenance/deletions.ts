@@ -1,4 +1,13 @@
-import type { ContainerInfo, ImageInfo, NetworkInfo, VolumeInfo } from '../../api/generated/models';
+import type {
+  ContainerInfo,
+  ImageInfo,
+  NetworkInfo,
+  PermissionsData,
+  VolumeInfo,
+} from '../../api/generated/models';
+
+export const canRunCleanups = (permissions?: PermissionsData): boolean =>
+  permissions?.maintenance?.write === true;
 
 export const containerCount = (count: number) => `${count} container${count === 1 ? '' : 's'}`;
 

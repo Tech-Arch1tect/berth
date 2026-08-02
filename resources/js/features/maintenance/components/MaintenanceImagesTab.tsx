@@ -14,12 +14,14 @@ interface MaintenanceImagesTabProps {
   images: ImageInfo[];
   onDelete: (deleteRequest: { type: DeleteResourceType; id: string; name?: string }) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
 export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
   images,
   onDelete,
   isDeleting,
+  canWrite,
 }) => {
   const getStatusBadge = (status: string, isUnused?: boolean, isDangling?: boolean) => {
     const badgeInfo = getResourceStatusBadge(status, isUnused, isDangling);
@@ -130,11 +132,15 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
             header: 'Status',
             render: (image) => getStatusBadge('active', image.unused, image.dangling),
           },
-          {
-            key: 'actions',
-            header: 'Actions',
-            render: (image) => deleteButton(image),
-          },
+          ...(canWrite
+            ? [
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (image: ImageInfo) => deleteButton(image),
+                },
+              ]
+            : []),
         ]}
         renderCard={(image) => (
           <div className="flex items-start justify-between gap-2">
@@ -151,7 +157,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
               </p>
               {getStatusBadge('active', image.unused, image.dangling)}
             </div>
-            {deleteButton(image)}
+            {canWrite && deleteButton(image)}
           </div>
         )}
       />

@@ -12,6 +12,7 @@ interface MaintenanceStatusBarProps {
     spaceUsed: number;
     lastUpdated: string;
   };
+  canWrite: boolean;
 }
 
 const useTickEveryMinute = () => {
@@ -23,7 +24,7 @@ const useTickEveryMinute = () => {
   }, []);
 };
 
-export const MaintenanceStatusBar: FC<MaintenanceStatusBarProps> = ({ summary }) => {
+export const MaintenanceStatusBar: FC<MaintenanceStatusBarProps> = ({ summary, canWrite }) => {
   useTickEveryMinute();
 
   if (!summary) {
@@ -42,8 +43,9 @@ export const MaintenanceStatusBar: FC<MaintenanceStatusBarProps> = ({ summary })
       <span className={cn('text-sm', theme.text.standard)}>
         {totalResources} total resources · {formatBytes(summary.spaceUsed)} used
       </span>
-      <span className={cn('text-sm', theme.text.muted)}>
-        read {formatRelativeTime(summary.lastUpdated)}
+      <span className={cn('flex items-center gap-3 text-sm', theme.text.muted)}>
+        {!canWrite && <span>Read-only</span>}
+        <span>read {formatRelativeTime(summary.lastUpdated)}</span>
       </span>
     </div>
   );

@@ -14,6 +14,8 @@ import {
   useDockerPrune,
   useDeleteResource,
 } from '../hooks/useDockerMaintenance';
+import { useMaintenancePermissions } from '../hooks/useMaintenancePermissions';
+import { canRunCleanups } from '../deletions';
 import { showToast } from '../../../shared/utils/toast';
 import {
   pruneDescription,
@@ -72,6 +74,8 @@ export default function Maintenance() {
     error,
     refetch,
   } = useMaintenanceInfo(serverid);
+  const { data: permissions } = useMaintenancePermissions({ serverid });
+  const canWrite = canRunCleanups(permissions);
   const pruneMutation = useDockerPrune();
   const deleteMutation = useDeleteResource();
 
@@ -205,8 +209,10 @@ export default function Maintenance() {
     },
     { id: 'volumes', label: 'Volumes', icon: FolderIcon, badge: summary?.totalVolumes },
     { id: 'networks', label: 'Networks', icon: GlobeAltIcon, badge: summary?.totalNetworks },
-    { id: 'actions', label: 'Cleanup', icon: TrashIcon },
+    ...(canWrite ? [{ id: 'actions', label: 'Cleanup', icon: TrashIcon }] : []),
   ];
+
+  const visibleTab = activeTab === 'actions' && !canWrite ? 'overview' : activeTab;
 
   return (
     <>
@@ -237,7 +243,7 @@ export default function Maintenance() {
 
         <SectionTabs
           tabs={sectionTabs}
-          activeTab={activeTab}
+          activeTab={visibleTab}
           onTabChange={(tabId) => setActiveTab(tabId as TabType)}
           aria-label="Maintenance sections"
         />
@@ -263,43 +269,47 @@ export default function Maintenance() {
 
           {maintenanceInfo && (
             <>
-              {activeTab === 'overview' && (
+              {visibleTab === 'overview' && (
                 <MaintenanceOverview maintenanceInfo={maintenanceInfo} />
               )}
 
-              {activeTab === 'images' && (
+              {visibleTab === 'images' && (
                 <MaintenanceImagesTab
                   images={maintenanceInfo.image_summary.images}
                   onDelete={setDeleteConfirm}
                   isDeleting={deleteMutation.isPending}
+                  canWrite={canWrite}
                 />
               )}
 
-              {activeTab === 'containers' && (
+              {visibleTab === 'containers' && (
                 <MaintenanceContainersTab
                   containers={maintenanceInfo.container_summary.containers}
                   onDelete={setDeleteConfirm}
                   isDeleting={deleteMutation.isPending}
+                  canWrite={canWrite}
                 />
               )}
 
-              {activeTab === 'volumes' && (
+              {visibleTab === 'volumes' && (
                 <MaintenanceVolumesTab
                   volumes={maintenanceInfo.volume_summary.volumes}
                   onDelete={setDeleteConfirm}
                   isDeleting={deleteMutation.isPending}
+                  canWrite={canWrite}
                 />
               )}
 
-              {activeTab === 'networks' && (
+              {visibleTab === 'networks' && (
                 <MaintenanceNetworksTab
                   networks={maintenanceInfo.network_summary.networks}
                   onDelete={setDeleteConfirm}
                   isDeleting={deleteMutation.isPending}
+                  canWrite={canWrite}
                 />
               )}
 
-              {activeTab === 'actions' && (
+              {visibleTab === 'actions' && (
                 <MaintenanceActionsTab
                   maintenanceInfo={maintenanceInfo}
                   selectedPruneType={selectedPruneType}
@@ -320,7 +330,7 @@ export default function Maintenance() {
         </div>
 
         <div className="flex-shrink-0 border-t border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
-          <MaintenanceStatusBar summary={summary} />
+          <MaintenanceStatusBar summary={summary} canWrite={canWrite} />
         </div>
       </div>
 
