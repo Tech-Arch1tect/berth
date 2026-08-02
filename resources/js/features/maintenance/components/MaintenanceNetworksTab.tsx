@@ -6,6 +6,7 @@ import { formatDate } from '../../../shared/utils/formatters';
 import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { NetworkInfo } from '../../../api/generated/models';
+import { networkDeleteBlockedReason } from '../deletions';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -25,27 +26,31 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
-  const deleteButton = (network: NetworkInfo) => (
-    <button
-      onClick={() =>
-        onDelete({
-          type: 'network',
-          id: network.id,
-          name: network.name,
-        })
-      }
-      aria-label={`Delete network ${network.name}`}
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
-        theme.text.danger,
-        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
-        'disabled:cursor-not-allowed disabled:opacity-50'
-      )}
-      disabled={isDeleting || ['bridge', 'host', 'none'].includes(network.name)}
-    >
-      <TrashIcon className="h-4 w-4" />
-    </button>
-  );
+  const deleteButton = (network: NetworkInfo) => {
+    const blocked = networkDeleteBlockedReason(network);
+    return (
+      <button
+        onClick={() =>
+          onDelete({
+            type: 'network',
+            id: network.id,
+            name: network.name,
+          })
+        }
+        aria-label={`Delete network ${network.name}`}
+        title={blocked}
+        className={cn(
+          'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+          theme.text.danger,
+          'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+          'disabled:cursor-not-allowed disabled:opacity-50'
+        )}
+        disabled={isDeleting || blocked !== undefined}
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    );
+  };
 
   return (
     <div

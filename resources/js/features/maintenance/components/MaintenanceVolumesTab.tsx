@@ -6,6 +6,7 @@ import { formatBytes, formatDate } from '../../../shared/utils/formatters';
 import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { FolderIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { VolumeInfo } from '../../../api/generated/models';
+import { volumeDeleteBlockedReason } from '../deletions';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -25,27 +26,31 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
-  const deleteButton = (volume: VolumeInfo) => (
-    <button
-      onClick={() =>
-        onDelete({
-          type: 'volume',
-          id: volume.name,
-          name: volume.name,
-        })
-      }
-      aria-label={`Delete volume ${volume.name}`}
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
-        theme.text.danger,
-        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
-        'disabled:cursor-not-allowed disabled:opacity-50'
-      )}
-      disabled={isDeleting}
-    >
-      <TrashIcon className="h-4 w-4" />
-    </button>
-  );
+  const deleteButton = (volume: VolumeInfo) => {
+    const blocked = volumeDeleteBlockedReason(volume);
+    return (
+      <button
+        onClick={() =>
+          onDelete({
+            type: 'volume',
+            id: volume.name,
+            name: volume.name,
+          })
+        }
+        aria-label={`Delete volume ${volume.name}`}
+        title={blocked}
+        className={cn(
+          'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+          theme.text.danger,
+          'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+          'disabled:cursor-not-allowed disabled:opacity-50'
+        )}
+        disabled={isDeleting || blocked !== undefined}
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    );
+  };
 
   return (
     <div

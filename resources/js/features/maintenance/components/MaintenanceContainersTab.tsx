@@ -6,6 +6,7 @@ import { formatBytes } from '../../../shared/utils/formatters';
 import { getContainerStatusBadge } from '../../stacks/utils/statusHelpers';
 import { CircleStackIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { ContainerInfo } from '../../../api/generated/models';
+import { containerDeleteBlockedReason } from '../deletions';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -25,27 +26,31 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
     return <span className={badgeInfo.className}>{badgeInfo.label}</span>;
   };
 
-  const deleteButton = (container: ContainerInfo) => (
-    <button
-      onClick={() =>
-        onDelete({
-          type: 'container',
-          id: container.id,
-          name: container.name,
-        })
-      }
-      aria-label={`Delete container ${container.name}`}
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
-        theme.text.danger,
-        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
-        'disabled:cursor-not-allowed disabled:opacity-50'
-      )}
-      disabled={isDeleting}
-    >
-      <TrashIcon className="h-4 w-4" />
-    </button>
-  );
+  const deleteButton = (container: ContainerInfo) => {
+    const blocked = containerDeleteBlockedReason(container);
+    return (
+      <button
+        onClick={() =>
+          onDelete({
+            type: 'container',
+            id: container.id,
+            name: container.name,
+          })
+        }
+        aria-label={`Delete container ${container.name}`}
+        title={blocked}
+        className={cn(
+          'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+          theme.text.danger,
+          'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+          'disabled:cursor-not-allowed disabled:opacity-50'
+        )}
+        disabled={isDeleting || blocked !== undefined}
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    );
+  };
 
   return (
     <div

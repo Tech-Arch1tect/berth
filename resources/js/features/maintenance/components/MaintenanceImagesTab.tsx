@@ -6,6 +6,7 @@ import { formatBytes, formatDate } from '../../../shared/utils/formatters';
 import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { DocumentDuplicateIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { ImageInfo } from '../../../api/generated/models';
+import { containerCount, imageDeleteBlockedReason } from '../deletions';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -28,27 +29,31 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
   const imageName = (image: ImageInfo) =>
     image.tags.length > 0 ? image.tags.join(', ') : `<untagged> ${image.id.substring(0, 12)}`;
 
-  const deleteButton = (image: ImageInfo) => (
-    <button
-      onClick={() =>
-        onDelete({
-          type: 'image',
-          id: image.id,
-          name: imageName(image),
-        })
-      }
-      aria-label={`Delete image ${imageName(image)}`}
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
-        theme.text.danger,
-        'hover:bg-rose-50 dark:hover:bg-rose-900/20',
-        'disabled:cursor-not-allowed disabled:opacity-50'
-      )}
-      disabled={isDeleting}
-    >
-      <TrashIcon className="h-4 w-4" />
-    </button>
-  );
+  const deleteButton = (image: ImageInfo) => {
+    const blocked = imageDeleteBlockedReason(image);
+    return (
+      <button
+        onClick={() =>
+          onDelete({
+            type: 'image',
+            id: image.id,
+            name: imageName(image),
+          })
+        }
+        aria-label={`Delete image ${imageName(image)}`}
+        title={blocked}
+        className={cn(
+          'flex h-11 w-11 items-center justify-center rounded-lg transition-colors',
+          theme.text.danger,
+          'hover:bg-rose-50 dark:hover:bg-rose-900/20',
+          'disabled:cursor-not-allowed disabled:opacity-50'
+        )}
+        disabled={isDeleting || blocked !== undefined}
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    );
+  };
 
   return (
     <div
@@ -101,6 +106,15 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>
                 {image.shared_size >= 0 ? formatBytes(image.size - image.shared_size) : 'unknown'}
+              </span>
+            ),
+          },
+          {
+            key: 'containers',
+            header: 'Used by',
+            render: (image) => (
+              <span className={cn('text-sm', theme.text.muted)}>
+                {image.containers === 0 ? 'nothing' : containerCount(image.containers)}
               </span>
             ),
           },
