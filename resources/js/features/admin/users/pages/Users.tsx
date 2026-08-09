@@ -165,7 +165,7 @@ export default function AdminUsers() {
 
   return (
     <div className="h-full overflow-auto">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className={cn('text-2xl font-bold sm:text-3xl', theme.text.strong)}>Users</h1>
           <button
