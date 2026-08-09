@@ -11,6 +11,7 @@ import {
   ComputerDesktopIcon,
   ArrowLeftOnRectangleIcon,
   XMarkIcon,
+  ArchiveBoxIcon,
   ClipboardDocumentListIcon,
   ArrowUpTrayIcon,
   ArrowPathIcon,
@@ -55,6 +56,12 @@ const primaryNavigation: NavItem[] = [
     href: '/stacks',
     icon: CircleStackIcon,
     isActive: (p) => p.startsWith('/stacks') || p.startsWith('/servers'),
+  },
+  {
+    name: 'Backups',
+    href: '/backups',
+    icon: ArchiveBoxIcon,
+    isActive: (p) => p.startsWith('/backups'),
   },
   {
     name: 'Activity',
