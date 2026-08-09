@@ -46,6 +46,7 @@ POST	/api/v1/auth/refresh	internal/domain/auth.(*APIHandler).RefreshToken-fm
 POST	/api/v1/auth/resend-verification	internal/domain/auth.(*APIHandler).ResendVerificationAPI-fm
 POST	/api/v1/auth/totp/verify	internal/domain/auth.(*APIHandler).VerifyTOTP-fm
 POST	/api/v1/auth/verify-email	internal/domain/auth.(*APIHandler).VerifyEmailAPI-fm
+GET	/api/v1/backups	internal/domain/backups.(*APIHandler).ListAllBackups-fm
 GET	/api/v1/image-updates	internal/domain/imageupdates.(*APIHandler).ListAvailableUpdates-fm
 GET	/api/v1/operation-logs	internal/domain/operationlogs.(*Handler).ListUserOperationLogs-fm
 GET	/api/v1/operation-logs/:id	internal/domain/operationlogs.(*Handler).GetUserOperationLogDetails-fm

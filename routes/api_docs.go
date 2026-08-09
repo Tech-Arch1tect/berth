@@ -692,6 +692,15 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("GET", "/api/v1/backups").
+		Tags("backups").
+		Summary("List backup coverage across every reachable server").
+		Description("Returns each server the caller can see, with the stacks on it that the caller may read backups for. Includes stacks that have never been backed up, and stacks whose directory no longer exists but whose backups remain").
+		Response(http.StatusOK, response.Response[backups.OverviewResponse]{}, "Backup coverage per server").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Build()
+
 	apiDoc.Document("GET", "/api/v1/servers/{serverid}/stacks/{stackname}/backups").
 		Tags("backups").
 		Summary("List stack backups").

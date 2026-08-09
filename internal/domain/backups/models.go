@@ -80,3 +80,24 @@ type BackupFileListing struct {
 	Path    string            `json:"path"`
 	Entries []BackupFileEntry `json:"entries"`
 }
+
+type StackBackupSummary struct {
+	StackName     string      `json:"stack_name"`
+	StackExists   bool        `json:"stack_exists"`
+	RunCount      int         `json:"run_count"`
+	LatestRun     *RunSummary `json:"latest_run,omitempty"`
+	RepoSizeBytes uint64      `json:"repo_size_bytes,omitempty"`
+}
+
+type ServerBackups struct {
+	ServerID   uint                 `json:"server_id"`
+	ServerName string               `json:"server_name"`
+	Enabled    bool                 `json:"enabled"`
+	Configured bool                 `json:"configured"`
+	Error      string               `json:"error,omitempty"`
+	Stacks     []StackBackupSummary `json:"stacks"`
+}
+
+type OverviewResponse struct {
+	Servers []ServerBackups `json:"servers"`
+}

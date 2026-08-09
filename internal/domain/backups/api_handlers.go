@@ -226,3 +226,22 @@ func (h *APIHandler) GetBackup(c echo.Context) error {
 	}
 	return response.OK(c, *result)
 }
+
+func (h *APIHandler) ListAllBackups(c echo.Context) error {
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
+	}
+
+	scope, ok := authz.GetScopeSet(c)
+	if !ok {
+		return response.Internal(c, "Authorisation scope is unavailable")
+	}
+
+	overview, err := h.service.ListAllBackups(c.Request().Context(), p, scope)
+	if err != nil {
+		return response.Internal(c, "Failed to list backups")
+	}
+
+	return response.OK(c, overview)
+}

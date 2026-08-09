@@ -42,6 +42,7 @@ type backupsServerProvider interface {
 
 type backupsAuthorizer interface {
 	HasStackPermission(p authz.Principal, serverID uint, stackname, permission string) (bool, error)
+	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
 }
 
 type Service struct {
@@ -290,4 +291,66 @@ func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, se
 		defer func() { _ = resp.Body.Close() }()
 		return nil, s.handleAgentError(resp)
 	}
+}
+
+type agentOverview struct {
+	Configured bool                 `json:"configured"`
+	Stacks     []StackBackupSummary `json:"stacks"`
+}
+
+func (s *Service) serverOverview(ctx context.Context, p authz.Principal, serverID uint) ServerBackups {
+	entry := ServerBackups{ServerID: serverID, Stacks: []StackBackupSummary{}}
+
+	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
+	if err != nil {
+		entry.Error = "this server could not be reached"
+		return entry
+	}
+	entry.ServerName = srv.Name
+	entry.Enabled = srv.BackupsEnabled
+
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", "/backups", nil)
+	if err != nil {
+		entry.Error = "the agent could not be reached"
+		return entry
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		entry.Error = fmt.Sprintf("the agent returned status %d", resp.StatusCode)
+		return entry
+	}
+
+	var overview agentOverview
+	if err := json.NewDecoder(resp.Body).Decode(&overview); err != nil {
+		entry.Error = "the agent returned a response that could not be read"
+		return entry
+	}
+
+	entry.Configured = overview.Configured
+	for _, stack := range overview.Stacks {
+		allowed, err := s.authzSvc.HasStackPermission(p, serverID, stack.StackName, permnames.BackupsRead)
+		if err != nil || !allowed {
+			continue
+		}
+		entry.Stacks = append(entry.Stacks, stack)
+	}
+	return entry
+}
+
+func (s *Service) ListAllBackups(ctx context.Context, p authz.Principal, scope authz.ScopeSet) (*OverviewResponse, error) {
+	overview := &OverviewResponse{Servers: []ServerBackups{}}
+
+	for _, serverID := range scope.ServerIDs() {
+		allowed, err := s.authzSvc.HasServerPermission(p, serverID, permnames.BackupsRead)
+		if err != nil {
+			return nil, fmt.Errorf("failed to verify permission: %w", err)
+		}
+		if !allowed {
+			continue
+		}
+		overview.Servers = append(overview.Servers, s.serverOverview(ctx, p, serverID))
+	}
+
+	return overview, nil
 }
