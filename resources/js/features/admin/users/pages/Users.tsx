@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../../../shared/utils/cn';
 import { theme } from '../../../../shared/theme';
+import { timeValue } from '../../../../shared/utils/tableRows';
 import { Table } from '../../../../shared/components/Table';
 import { Modal } from '../../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../../shared/components/ConfirmationModal';
@@ -195,10 +196,14 @@ export default function AdminUsers() {
             keyExtractor={(user) => user.id.toString()}
             emptyMessage="No users found"
             emptyIcon={<UserGroupIcon className={cn('h-12 w-12 mx-auto', theme.text.info)} />}
+            defaultSortKey="user"
+            searchValue={(user) => `${user.username} ${user.email}`}
+            searchPlaceholder="Search users by name or email"
             columns={[
               {
                 key: 'user',
                 header: 'User',
+                sortValue: (user) => user.username,
                 render: (user) => (
                   <div className="min-w-0">
                     <div className={cn('text-sm font-medium', theme.text.strong)}>
@@ -216,11 +221,13 @@ export default function AdminUsers() {
               {
                 key: '2fa',
                 header: '2FA',
+                sortValue: (user) => (user.totp_enabled ? '2FA enabled' : '2FA off'),
                 render: totpBadge,
               },
               {
                 key: 'last_login',
                 header: 'Last Login',
+                sortValue: (user) => timeValue(user.last_login_at),
                 render: (user) => (
                   <span className={cn('text-sm', theme.text.muted)}>
                     {user.last_login_at ? formatDate(user.last_login_at) : 'Never'}
@@ -230,6 +237,7 @@ export default function AdminUsers() {
               {
                 key: 'joined',
                 header: 'Joined',
+                sortValue: (user) => timeValue(user.created_at),
                 render: (user) => (
                   <span className={cn('text-sm', theme.text.muted)}>
                     {formatDate(user.created_at)}

@@ -188,10 +188,14 @@ export default function AdminRoles() {
             keyExtractor={(role) => role.id.toString()}
             emptyMessage="No roles defined yet"
             emptyIcon={<ShieldCheckIcon className={cn('h-12 w-12 mx-auto', theme.text.info)} />}
+            defaultSortKey="role"
+            searchValue={(role) => `${role.name} ${role.description ?? ''}`}
+            searchPlaceholder="Search roles by name or description"
             columns={[
               {
                 key: 'role',
                 header: 'Role',
+                sortValue: (role) => role.name,
                 render: (role) => (
                   <div className="min-w-0">
                     <div className={cn('text-sm font-medium capitalize', theme.text.strong)}>
@@ -206,6 +210,8 @@ export default function AdminRoles() {
               {
                 key: 'access',
                 header: 'Access',
+                sortValue: (role) =>
+                  role.is_admin ? 'Full access to all servers' : 'Pattern-based stack access',
                 render: accessBadge,
               },
               {

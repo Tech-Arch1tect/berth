@@ -322,10 +322,16 @@ export default function AdminServers() {
             keyExtractor={(server) => server.id.toString()}
             emptyMessage="No servers configured yet."
             emptyIcon={<ServerStackIcon className={cn('h-12 w-12 mx-auto', theme.text.info)} />}
+            defaultSortKey="server"
+            searchValue={(server) =>
+              `${server.name} ${server.description ?? ''} ${hostText(server)}`
+            }
+            searchPlaceholder="Search servers by name or host"
             columns={[
               {
                 key: 'server',
                 header: 'Server',
+                sortValue: (server) => server.name,
                 render: (server) => (
                   <div className="min-w-0">
                     <div className={cn('text-sm font-medium', theme.text.strong)}>
@@ -343,6 +349,7 @@ export default function AdminServers() {
               {
                 key: 'host',
                 header: 'Host',
+                sortValue: (server) => hostText(server),
                 render: (server) => (
                   <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
                     <span
@@ -359,6 +366,7 @@ export default function AdminServers() {
               {
                 key: 'status',
                 header: 'Status',
+                sortValue: (server) => (server.is_active ? 'Active' : 'Inactive'),
                 render: statusBadge,
               },
               {
