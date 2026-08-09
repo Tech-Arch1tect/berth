@@ -7,6 +7,7 @@ import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { NetworkInfo } from '../../../api/generated/models';
 import { networkDeleteBlockedReason } from '../deletions';
+import { timeValue } from '../../../shared/utils/tableRows';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -73,10 +74,14 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
         data={networks}
         keyExtractor={(network) => network.id}
         emptyMessage="No Docker networks found"
+        defaultSortKey="name"
+        searchValue={(network) => `${network.name} ${network.driver} ${network.subnet}`}
+        searchPlaceholder="Search networks by name or subnet"
         columns={[
           {
             key: 'name',
             header: 'Name',
+            sortValue: (network) => network.name,
             render: (network) => (
               <span className={cn('text-sm font-medium', theme.text.strong)}>
                 {network.name}
@@ -105,6 +110,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
           {
             key: 'driver',
             header: 'Driver',
+            sortValue: (network) => network.driver,
             render: (network) => (
               <span className={cn('text-sm', theme.text.muted)}>{network.driver}</span>
             ),
@@ -112,6 +118,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
           {
             key: 'scope',
             header: 'Scope',
+            sortValue: (network) => network.scope,
             render: (network) => (
               <span className={cn('text-sm', theme.text.muted)}>{network.scope}</span>
             ),
@@ -128,6 +135,7 @@ export const MaintenanceNetworksTab: React.FC<MaintenanceNetworksTabProps> = ({
           {
             key: 'created',
             header: 'Created',
+            sortValue: (network) => timeValue(network.created),
             render: (network) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatDate(network.created)}</span>
             ),

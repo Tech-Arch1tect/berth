@@ -7,6 +7,7 @@ import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { DocumentDuplicateIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { ImageInfo } from '../../../api/generated/models';
 import { containerCount, imageDeleteBlockedReason } from '../deletions';
+import { timeValue } from '../../../shared/utils/tableRows';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -76,10 +77,14 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
         data={images}
         keyExtractor={(image) => image.id}
         emptyMessage="No Docker images found"
+        defaultSortKey="size"
+        searchValue={(image) => `${image.tags.join(' ')} ${image.id}`}
+        searchPlaceholder="Search images by tag or ID"
         columns={[
           {
             key: 'tags',
             header: 'Tags',
+            sortValue: (image) => image.tags.join(', '),
             render: (image) => (
               <span className={cn('text-sm font-medium', theme.text.strong)}>
                 {image.tags.length > 0 ? image.tags.join(', ') : '<untagged>'}
@@ -98,6 +103,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           {
             key: 'size',
             header: 'Size',
+            sortValue: (image) => image.size,
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatBytes(image.size)}</span>
             ),
@@ -105,6 +111,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           {
             key: 'shared_size',
             header: 'Not shared',
+            sortValue: (image) => (image.shared_size >= 0 ? image.size - image.shared_size : null),
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>
                 {image.shared_size >= 0 ? formatBytes(image.size - image.shared_size) : 'unknown'}
@@ -114,6 +121,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           {
             key: 'containers',
             header: 'Used by',
+            sortValue: (image) => image.containers,
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>
                 {image.containers === 0 ? 'nothing' : containerCount(image.containers)}
@@ -123,6 +131,7 @@ export const MaintenanceImagesTab: React.FC<MaintenanceImagesTabProps> = ({
           {
             key: 'created',
             header: 'Created',
+            sortValue: (image) => timeValue(image.created),
             render: (image) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatDate(image.created)}</span>
             ),

@@ -7,6 +7,7 @@ import { getResourceStatusBadge } from '../../stacks/utils/statusHelpers';
 import { FolderIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { VolumeInfo } from '../../../api/generated/models';
 import { volumeDeleteBlockedReason } from '../deletions';
+import { timeValue } from '../../../shared/utils/tableRows';
 
 type DeleteResourceType = 'image' | 'container' | 'volume' | 'network';
 
@@ -73,10 +74,14 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
         data={volumes}
         keyExtractor={(volume) => volume.name}
         emptyMessage="No Docker volumes found"
+        defaultSortKey="size"
+        searchValue={(volume) => `${volume.name} ${volume.mountpoint} ${volume.driver}`}
+        searchPlaceholder="Search volumes by name or mountpoint"
         columns={[
           {
             key: 'name',
             header: 'Name',
+            sortValue: (volume) => volume.name,
             render: (volume) => (
               <span className={cn('text-sm font-medium', theme.text.strong)}>{volume.name}</span>
             ),
@@ -84,6 +89,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
           {
             key: 'driver',
             header: 'Driver',
+            sortValue: (volume) => volume.driver,
             render: (volume) => (
               <span className={cn('text-sm', theme.text.muted)}>{volume.driver}</span>
             ),
@@ -100,6 +106,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
           {
             key: 'size',
             header: 'Size',
+            sortValue: (volume) => volume.size,
             render: (volume) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatBytes(volume.size)}</span>
             ),
@@ -107,6 +114,7 @@ export const MaintenanceVolumesTab: React.FC<MaintenanceVolumesTabProps> = ({
           {
             key: 'created',
             header: 'Created',
+            sortValue: (volume) => timeValue(volume.created),
             render: (volume) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatDate(volume.created)}</span>
             ),

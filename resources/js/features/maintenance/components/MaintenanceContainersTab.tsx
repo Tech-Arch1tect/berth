@@ -73,10 +73,14 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
         data={containers}
         keyExtractor={(container) => container.id}
         emptyMessage="No Docker containers found"
+        defaultSortKey="name"
+        searchValue={(container) => `${container.name} ${container.image} ${container.id}`}
+        searchPlaceholder="Search containers by name or image"
         columns={[
           {
             key: 'name',
             header: 'Name',
+            sortValue: (container) => container.name,
             render: (container) => (
               <span className={cn('text-sm font-medium', theme.text.strong)}>{container.name}</span>
             ),
@@ -93,6 +97,7 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
           {
             key: 'image',
             header: 'Image',
+            sortValue: (container) => container.image,
             render: (container) => (
               <span className={cn('text-sm', theme.text.muted)}>{container.image}</span>
             ),
@@ -100,6 +105,7 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
           {
             key: 'state',
             header: 'State',
+            sortValue: (container) => container.state,
             render: (container) => getStatusBadge(container.state),
           },
           {
@@ -112,6 +118,7 @@ export const MaintenanceContainersTab: React.FC<MaintenanceContainersTabProps> =
           {
             key: 'size',
             header: 'Size',
+            sortValue: (container) => container.size,
             render: (container) => (
               <span className={cn('text-sm', theme.text.muted)}>{formatBytes(container.size)}</span>
             ),
