@@ -29,12 +29,125 @@ import type {
   ResponseDeleteResponse,
   ResponseEmpty,
   ResponseListResponse,
+  ResponseOverviewResponse,
   ResponseRun,
 } from '../models';
 
 import { apiClient } from '../../client';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * Returns each server the caller can see, with the stacks on it that the caller may read backups for. Includes stacks that have never been backed up, and stacks whose directory no longer exists but whose backups remain
+ * @summary List backup coverage across every reachable server
+ */
+export const getGetApiV1BackupsUrl = () => {
+  return `/api/v1/backups`;
+};
+
+export const getApiV1Backups = async (options?: RequestInit): Promise<ResponseOverviewResponse> => {
+  return apiClient<ResponseOverviewResponse>(getGetApiV1BackupsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetApiV1BackupsQueryKey = () => {
+  return [`/api/v1/backups`] as const;
+};
+
+export const getGetApiV1BackupsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV1Backups>>,
+  TError = ResponseEmpty | void,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Backups>>, TError, TData>>;
+  request?: SecondParameter<typeof apiClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetApiV1BackupsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV1Backups>>> = ({ signal }) =>
+    getApiV1Backups({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV1Backups>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiV1BackupsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV1Backups>>>;
+export type GetApiV1BackupsQueryError = ResponseEmpty | void;
+
+export function useGetApiV1Backups<
+  TData = Awaited<ReturnType<typeof getApiV1Backups>>,
+  TError = ResponseEmpty | void,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Backups>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Backups>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Backups>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1Backups<
+  TData = Awaited<ReturnType<typeof getApiV1Backups>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Backups>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiV1Backups>>,
+          TError,
+          Awaited<ReturnType<typeof getApiV1Backups>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiV1Backups<
+  TData = Awaited<ReturnType<typeof getApiV1Backups>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Backups>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List backup coverage across every reachable server
+ */
+
+export function useGetApiV1Backups<
+  TData = Awaited<ReturnType<typeof getApiV1Backups>>,
+  TError = ResponseEmpty | void,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV1Backups>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV1BackupsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Returns one page of the stack's backup run summaries, newest first, with the total run count and whether backups are configured on the agent; full component detail comes from the single-backup endpoint
