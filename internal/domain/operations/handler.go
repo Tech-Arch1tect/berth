@@ -59,15 +59,23 @@ func backupEventMetadata(command string, options []string, operationID, stacknam
 	}
 	if command == "create-backup" {
 		stopMode := "none"
-		for _, option := range options {
-			if option == "--stop" {
+		label := ""
+		for i := 0; i < len(options); i++ {
+			if options[i] == "--stop" {
 				stopMode = "stop"
 			}
-			if option == "--pause" {
+			if options[i] == "--pause" {
 				stopMode = "pause"
+			}
+			if options[i] == "--label" && i+1 < len(options) {
+				i++
+				label = options[i]
 			}
 		}
 		metadata["stack_state_during_backup"] = stopMode
+		if label != "" {
+			metadata["backup_label"] = label
+		}
 		return metadata
 	}
 

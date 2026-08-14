@@ -33,6 +33,7 @@ type Run struct {
 	StartedAt     time.Time      `json:"started_at"`
 	FinishedAt    *time.Time     `json:"finished_at,omitempty"`
 	Status        string         `json:"status"`
+	Label         string         `json:"label,omitempty"`
 	StopMode      string         `json:"stop_mode,omitempty"`
 	ResticVersion string         `json:"restic_version,omitempty"`
 	Verified      *bool          `json:"verified,omitempty"`
@@ -49,6 +50,7 @@ type RunSummary struct {
 	StartedAt            time.Time  `json:"started_at"`
 	FinishedAt           *time.Time `json:"finished_at,omitempty"`
 	Status               string     `json:"status"`
+	Label                string     `json:"label,omitempty"`
 	StopMode             string     `json:"stop_mode,omitempty"`
 	Verified             *bool      `json:"verified,omitempty"`
 	RepoSizeBytes        uint64     `json:"repo_size_bytes,omitempty"`

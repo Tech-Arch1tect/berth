@@ -14,6 +14,7 @@ export interface Run {
   /** @nullable */
   finished_at?: string | null;
   id: string;
+  label?: string;
   /** @minimum 0 */
   repo_size_bytes?: number;
   restic_version?: string;
