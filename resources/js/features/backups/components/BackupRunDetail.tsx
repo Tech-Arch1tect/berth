@@ -68,6 +68,7 @@ export function BackupRunDetail({
             )}
           </div>
         </div>
+        {run.label && <p className={cn('text-sm font-medium', theme.text.strong)}>{run.label}</p>}
         <p className={cn('text-sm', theme.text.muted)}>
           Started {formatDate(run.started_at)}
           {run.finished_at ? `, finished ${formatDate(run.finished_at)}` : ''}

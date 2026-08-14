@@ -79,6 +79,9 @@ export function OrphanedStackBackups({ serverid, stackname }: OrphanedStackBacku
                 {formatRelativeTime(run.started_at)}
                 <BackupStatusBadge status={run.status} />
               </span>
+              {run.label && (
+                <span className={cn('block truncate text-xs', theme.text.muted)}>{run.label}</span>
+              )}
               <span className={cn('block text-xs', theme.text.muted)}>
                 {run.component_count} {run.component_count === 1 ? 'component' : 'components'}
                 {run.size_bytes > 0 && ` · ${formatBytes(run.size_bytes)}`}

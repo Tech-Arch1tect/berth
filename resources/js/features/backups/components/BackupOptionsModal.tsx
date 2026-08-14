@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Modal } from '../../../shared/components/Modal';
 import { cn } from '../../../shared/utils/cn';
 import { theme } from '../../../shared/theme';
-import type { StopMode } from '../utils';
+import { BACKUP_LABEL_MAX_LENGTH, isValidBackupLabel, type StopMode } from '../utils';
 
 interface BackupOptionsModalProps {
   isOpen: boolean;
   stackname: string;
   isStarting: boolean;
   onClose: () => void;
-  onConfirm: (stopMode: StopMode) => void;
+  onConfirm: (stopMode: StopMode, label: string) => void;
 }
 
 const CHOICES: Array<{ value: StopMode; label: string; description: string }> = [
@@ -41,6 +41,9 @@ export function BackupOptionsModal({
   onConfirm,
 }: BackupOptionsModalProps) {
   const [stopMode, setStopMode] = useState<StopMode>('');
+  const [label, setLabel] = useState('');
+  const trimmed = label.trim();
+  const labelValid = isValidBackupLabel(label);
 
   return (
     <Modal
@@ -66,8 +69,8 @@ export function BackupOptionsModal({
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(stopMode)}
-            disabled={isStarting}
+            onClick={() => onConfirm(stopMode, label)}
+            disabled={isStarting || !labelValid}
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium min-h-[44px]',
               'bg-teal-600 text-white hover:bg-teal-500 disabled:opacity-50'
@@ -78,6 +81,37 @@ export function BackupOptionsModal({
         </div>
       }
     >
+      <div className="mb-5">
+        <label
+          htmlFor="backup-label"
+          className={cn('mb-1 block text-sm font-medium', theme.text.strong)}
+        >
+          Description (optional)
+        </label>
+        <input
+          id="backup-label"
+          type="text"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          maxLength={BACKUP_LABEL_MAX_LENGTH}
+          placeholder="e.g. pre upgrade to v1.2.3"
+          className={cn(
+            'min-h-[44px] w-full rounded-lg border px-3 text-sm',
+            'border-zinc-300 bg-white text-zinc-900 placeholder:text-zinc-400',
+            'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
+          )}
+        />
+        {!labelValid && (
+          <p className={cn('mt-1 text-xs', theme.text.danger)}>
+            Letters, numbers, spaces and . , _ - + ( ) / : ' only, starting with a letter or number.
+          </p>
+        )}
+        {labelValid && trimmed.length > 0 && (
+          <p className={cn('mt-1 text-xs', theme.text.muted)}>
+            Shown next to the backup in the list.
+          </p>
+        )}
+      </div>
       <fieldset className="space-y-2">
         <legend className={cn('text-sm font-medium mb-2', theme.text.strong)}>
           While the backup runs

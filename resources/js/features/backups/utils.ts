@@ -2,10 +2,25 @@ import type { Component, Run, RunSummary } from '../../api/generated/models';
 
 export type StopMode = '' | 'stop' | 'pause';
 
-export function buildCreateBackupOptions(stopMode: StopMode): string[] {
-  if (stopMode === 'stop') return ['--stop'];
-  if (stopMode === 'pause') return ['--pause'];
-  return [];
+export const BACKUP_LABEL_MAX_LENGTH = 100;
+
+const backupLabelPattern = /^[A-Za-z0-9][A-Za-z0-9 .,_+()/:'-]*$/;
+
+export function isValidBackupLabel(label: string): boolean {
+  const trimmed = label.trim();
+  return (
+    trimmed === '' ||
+    (trimmed.length <= BACKUP_LABEL_MAX_LENGTH && backupLabelPattern.test(trimmed))
+  );
+}
+
+export function buildCreateBackupOptions(stopMode: StopMode, label = ''): string[] {
+  const options: string[] = [];
+  if (stopMode === 'stop') options.push('--stop');
+  if (stopMode === 'pause') options.push('--pause');
+  const trimmed = label.trim();
+  if (trimmed) options.push('--label', trimmed);
+  return options;
 }
 
 export function describeComponent(component: Component): { label: string; detail: string } {

@@ -89,13 +89,13 @@ export function BackupsPanel({
   const restoreRunning =
     operations.operationStatus.isRunning && operations.operationStatus.command === 'restore-backup';
 
-  const startBackup = async (stopMode: StopMode) => {
+  const startBackup = async (stopMode: StopMode, label: string) => {
     setIsStarting(true);
     setStartError(null);
     try {
       await operations.startOperation({
         command: 'create-backup',
-        options: buildCreateBackupOptions(stopMode),
+        options: buildCreateBackupOptions(stopMode, label),
         services: [],
       });
       setOptionsOpen(false);
@@ -150,6 +150,17 @@ export function BackupsPanel({
           )}
         </div>
       ),
+    },
+    {
+      key: 'label',
+      header: 'Description',
+      className: 'max-w-[16rem]',
+      render: (run) =>
+        run.label ? (
+          <span className={cn('block truncate text-sm', theme.text.standard)} title={run.label}>
+            {run.label}
+          </span>
+        ) : null,
     },
     {
       key: 'started',
@@ -351,6 +362,9 @@ export function BackupsPanel({
                   {formatRelativeTime(run.started_at)}
                 </span>
               </div>
+              {run.label && (
+                <div className={cn('truncate text-sm', theme.text.strong)}>{run.label}</div>
+              )}
               <div className={cn('text-xs', theme.text.muted)}>
                 {run.component_count} {run.component_count === 1 ? 'component' : 'components'} ·{' '}
                 {formatBytes(run.size_bytes)} · {formatBytes(run.added_bytes)} added
@@ -421,7 +435,7 @@ export function BackupsPanel({
           onClose={() => setDeleteOpen(false)}
           onConfirm={() => deleteMutation.mutate({ serverid, stackname, backupid: selectedRun.id })}
           title="Delete backup"
-          message={`Delete the backup of ${stackname} from ${formatDate(selectedRun.started_at)}? Its snapshots are removed from the repository and cannot be restored afterwards.`}
+          message={`Delete the backup${selectedRun.label ? ` "${selectedRun.label}"` : ''} of ${stackname} from ${formatDate(selectedRun.started_at)}? Its snapshots are removed from the repository and cannot be restored afterwards.`}
           confirmText="Delete backup"
           variant="danger"
           isLoading={deleteMutation.isPending}
