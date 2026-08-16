@@ -1,6 +1,6 @@
 FROM node:24.15.0-trixie-slim
 
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION=1.26.6
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
