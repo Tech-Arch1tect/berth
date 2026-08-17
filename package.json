@@ -14,7 +14,7 @@
     "lint:fix": "eslint resources/ frontend-e2e/ --fix",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "api:generate": "go build -o berth-tmp && ./berth-tmp openapi > openapi.json && orval && rm berth-tmp",
+    "api:generate": "go run ./cmd/openapi > openapi.json && orval",
     "api:generate-only": "orval",
     "test:e2e": "playwright test --config frontend-e2e/playwright.config.ts",
     "test:e2e:ui": "playwright test --config frontend-e2e/playwright.config.ts --ui",

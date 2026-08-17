@@ -1,9 +1,25 @@
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS api-spec
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 go run ./cmd/openapi > openapi.json
+
 FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend-builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
+
+COPY --from=api-spec /app/openapi.json ./openapi.json
+COPY orval.config.ts ./
+COPY resources/js/api/client.ts ./resources/js/api/client.ts
+RUN npm run api:generate-only
 
 COPY resources ./resources
 COPY utils ./utils
