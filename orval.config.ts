@@ -16,10 +16,6 @@ export default defineConfig({
           path: './resources/js/api/client.ts',
           name: 'apiClient',
         },
-        query: {
-          useQuery: true,
-          useMutation: true,
-        },
         fetch: {
           includeHttpResponseReturnType: false,
         },
