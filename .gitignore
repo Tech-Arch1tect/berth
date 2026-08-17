@@ -125,3 +125,5 @@ frontend-e2e/.playwright/
 /test-results
 
 resources/js/routeTree.gen.ts
+# api client
+resources/js/api/generated
