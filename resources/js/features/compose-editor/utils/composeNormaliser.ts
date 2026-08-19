@@ -328,8 +328,7 @@ export function normaliseServiceConfig(service: unknown): ComposeServiceConfig {
     healthcheck: s.healthcheck as ComposeHealthcheck | undefined,
     deploy: s.deploy as ComposeDeploy | undefined,
     networks: s.networks as
-      | Record<string, { aliases?: string[]; ipv4_address?: string } | null>
-      | undefined,
+      Record<string, { aliases?: string[]; ipv4_address?: string } | null> | undefined,
     labels: normaliseLabels(s.labels),
     restart: s.restart ? String(s.restart) : undefined,
     working_dir: s.working_dir ? String(s.working_dir) : undefined,

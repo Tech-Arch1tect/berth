@@ -17,14 +17,7 @@ import {
 } from '../../compose-editor/utils/generateStackDocumentation';
 
 export type StackTab =
-  | 'services'
-  | 'networks'
-  | 'volumes'
-  | 'environment'
-  | 'images'
-  | 'stats'
-  | 'logs'
-  | 'files';
+  'services' | 'networks' | 'volumes' | 'environment' | 'images' | 'stats' | 'logs' | 'files';
 
 export interface UseStackDetailsPageOptions {
   serverid: number;

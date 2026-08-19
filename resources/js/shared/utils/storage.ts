@@ -14,12 +14,7 @@ interface StorageValue {
   preferred_tab: string;
   stacks_layout: 'compact' | 'normal';
   stacks_sort:
-    | 'name-asc'
-    | 'name-desc'
-    | 'health-asc'
-    | 'health-desc'
-    | 'containers-asc'
-    | 'containers-desc';
+    'name-asc' | 'name-desc' | 'health-asc' | 'health-desc' | 'containers-asc' | 'containers-desc';
   stacks_negative_filters_history: string;
 }
 

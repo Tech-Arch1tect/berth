@@ -35,13 +35,7 @@ export type ContainerState =
   | 'unknown';
 
 export type ContainerDisplayStatus =
-  | 'running'
-  | 'stopped'
-  | 'error'
-  | 'paused'
-  | 'restarting'
-  | 'not-created'
-  | 'unknown';
+  'running' | 'stopped' | 'error' | 'paused' | 'restarting' | 'not-created' | 'unknown';
 
 export interface ContainerStatusInfo {
   status: ContainerDisplayStatus;
@@ -145,12 +139,7 @@ export const getContainerStatus = (container: Container): ContainerStatusInfo =>
 };
 
 export type ServiceDisplayStatus =
-  | 'running'
-  | 'stopped'
-  | 'error'
-  | 'partial'
-  | 'not-created'
-  | 'no-containers';
+  'running' | 'stopped' | 'error' | 'partial' | 'not-created' | 'no-containers';
 
 export interface ServiceStatusInfo {
   status: ServiceDisplayStatus;
