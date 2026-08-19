@@ -185,46 +185,24 @@ func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, s
 		return nil
 	}
 
-	var duration int
-
+	effectiveEnd := endTime
 	if endTime.IsZero() || endTime.Before(log.StartTime) {
-		s.logger.Warn("invalid end time for operation",
+		s.logger.Warn("operation ended before its recorded start time; recording the start time as the end time",
 			zap.Uint("operation_log_id", operationLogID),
 			zap.Time("end_time", endTime),
 			zap.Time("start_time", log.StartTime),
 			zap.Bool("end_time_is_zero", endTime.IsZero()),
-			zap.Int64("end_time_unix_nano", endTime.UnixNano()),
-			zap.Int64("start_time_unix_nano", log.StartTime.UnixNano()),
 		)
-
-		duration = 0
-	} else {
-		duration = int(endTime.Sub(log.StartTime).Milliseconds())
+		effectiveEnd = log.StartTime
 	}
 
-	s.logger.Debug("calculated operation duration",
-		zap.Uint("operation_log_id", operationLogID),
-		zap.Int("duration_ms", duration),
-		zap.Time("start_time", log.StartTime),
-		zap.Time("end_time", endTime),
-		zap.Bool("valid_end_time", !endTime.IsZero() && !endTime.Before(log.StartTime)),
-	)
+	duration := int(effectiveEnd.Sub(log.StartTime).Milliseconds())
 
 	updates := map[string]any{
 		"success":   success,
 		"exit_code": exitCode,
-	}
-
-	if !endTime.IsZero() && !endTime.Before(log.StartTime) {
-		updates["end_time"] = endTime
-		updates["duration"] = duration
-	} else {
-
-		updates["duration"] = nil
-		s.logger.Warn("skipping end_time update due to invalid time",
-			zap.Uint("operation_log_id", operationLogID),
-			zap.Time("invalid_end_time", endTime),
-		)
+		"end_time":  effectiveEnd,
+		"duration":  duration,
 	}
 
 	var messages []operationlogs.OperationLogMessage
