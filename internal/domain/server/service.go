@@ -6,6 +6,7 @@ import (
 	berthcrypto "berth/internal/pkg/crypto"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +17,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
+
+var ErrServerInactive = errors.New("server is not active")
 
 type serverAuthorizer interface {
 	ReachableServerIDs(p authz.Principal) ([]uint, error)
@@ -121,7 +124,7 @@ func (s *Service) GetActiveServerForUser(ctx context.Context, id uint, p authz.P
 			zap.String("server_name", server.Name),
 			zap.Uint("user_id", p.UserID()),
 		)
-		return nil, fmt.Errorf("server is not active")
+		return nil, ErrServerInactive
 	}
 
 	serverIDs, err := s.authzSvc.ReachableServerIDs(p)

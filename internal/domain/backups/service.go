@@ -13,6 +13,7 @@ import (
 	"berth/internal/domain/server"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var ErrBackupNotFound = errors.New("backup not found")
@@ -298,13 +299,16 @@ type agentOverview struct {
 	Stacks     []StackBackupSummary `json:"stacks"`
 }
 
-func (s *Service) serverOverview(ctx context.Context, p authz.Principal, serverID uint) ServerBackups {
+func (s *Service) serverOverview(ctx context.Context, p authz.Principal, serverID uint) (ServerBackups, bool) {
 	entry := ServerBackups{ServerID: serverID, Stacks: []StackBackupSummary{}}
 
 	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
+		if errors.Is(err, server.ErrServerInactive) || errors.Is(err, gorm.ErrRecordNotFound) {
+			return entry, false
+		}
 		entry.Error = "this server could not be reached"
-		return entry
+		return entry, true
 	}
 	entry.ServerName = srv.Name
 	entry.Enabled = srv.BackupsEnabled
@@ -312,19 +316,19 @@ func (s *Service) serverOverview(ctx context.Context, p authz.Principal, serverI
 	resp, err := s.agentSvc.MakeRequest(ctx, srv, "GET", "/backups", nil)
 	if err != nil {
 		entry.Error = "the agent could not be reached"
-		return entry
+		return entry, true
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		entry.Error = fmt.Sprintf("the agent returned status %d", resp.StatusCode)
-		return entry
+		return entry, true
 	}
 
 	var overview agentOverview
 	if err := json.NewDecoder(resp.Body).Decode(&overview); err != nil {
 		entry.Error = "the agent returned a response that could not be read"
-		return entry
+		return entry, true
 	}
 
 	entry.Configured = overview.Configured
@@ -335,7 +339,7 @@ func (s *Service) serverOverview(ctx context.Context, p authz.Principal, serverI
 		}
 		entry.Stacks = append(entry.Stacks, stack)
 	}
-	return entry
+	return entry, true
 }
 
 func (s *Service) ListAllBackups(ctx context.Context, p authz.Principal, scope authz.ScopeSet) (*OverviewResponse, error) {
@@ -349,7 +353,11 @@ func (s *Service) ListAllBackups(ctx context.Context, p authz.Principal, scope a
 		if !allowed {
 			continue
 		}
-		overview.Servers = append(overview.Servers, s.serverOverview(ctx, p, serverID))
+		entry, present := s.serverOverview(ctx, p, serverID)
+		if !present {
+			continue
+		}
+		overview.Servers = append(overview.Servers, entry)
 	}
 
 	return overview, nil
