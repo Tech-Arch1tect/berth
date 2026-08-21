@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArchiveBoxIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, ArrowPathIcon, WrenchIcon } from '@heroicons/react/24/outline';
 import {
   useDeleteApiV1ServersServeridStacksStacknameBackupsBackupid,
   useGetApiV1ServersServeridStacksStacknameBackups,
   useGetApiV1ServersServeridStacksStacknameBackupsBackupid,
+  usePostApiV1ServersServeridStacksStacknameBackupsRebuild,
 } from '../../../api/generated/backups/backups';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
+import { Modal } from '../../../shared/components/Modal';
 import { formatDate } from '../../../shared/utils/formatters';
-import type { RunSummary } from '../../../api/generated/models';
+import type { RebuildResult, RunSummary } from '../../../api/generated/models';
 import { useOperations } from '../../operations/hooks/useOperations';
 import { RecordList, RecordListColumn } from '../../../shared/components/RecordList';
 import { EmptyState } from '../../../shared/components/EmptyState';
@@ -17,6 +19,7 @@ import { formatBytes, formatRelativeTime } from '../../../shared/utils/formatter
 import {
   buildCreateBackupOptions,
   buildRestoreOptions,
+  describeRebuildResult,
   latestRepoSizeBytes,
   StopMode,
 } from '../utils';
@@ -49,6 +52,8 @@ export function BackupsPanel({
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [rebuildOpen, setRebuildOpen] = useState(false);
+  const [rebuildResult, setRebuildResult] = useState<RebuildResult | null>(null);
   const [browseTarget, setBrowseTarget] = useState<{ id: string; label: string } | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -116,6 +121,20 @@ export function BackupsPanel({
       onError: (error) => {
         setDeleteOpen(false);
         setStartError(messageFromApiError(error, 'Failed to delete the backup'));
+      },
+    },
+  });
+
+  const rebuildMutation = usePostApiV1ServersServeridStacksStacknameBackupsRebuild({
+    mutation: {
+      onSuccess: (response) => {
+        setRebuildOpen(false);
+        setRebuildResult(response.data);
+        backupsQuery.refetch();
+      },
+      onError: (error) => {
+        setRebuildOpen(false);
+        setStartError(messageFromApiError(error, 'Failed to rebuild the backup history'));
       },
     },
   });
@@ -282,6 +301,23 @@ export function BackupsPanel({
           {canManage && (
             <button
               type="button"
+              onClick={() => setRebuildOpen(true)}
+              aria-label="Rebuild backup history"
+              title="Rebuild backup history"
+              disabled={rebuildMutation.isPending}
+              className={cn(
+                'p-2.5 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center',
+                theme.surface.muted,
+                theme.text.standard,
+                'disabled:opacity-50'
+              )}
+            >
+              <WrenchIcon className={cn('w-5 h-5', rebuildMutation.isPending && 'animate-pulse')} />
+            </button>
+          )}
+          {canManage && (
+            <button
+              type="button"
               onClick={() => setOptionsOpen(true)}
               disabled={backupOperationRunning}
               className={cn(
@@ -441,6 +477,39 @@ export function BackupsPanel({
           isLoading={deleteMutation.isPending}
         />
       )}
+      <ConfirmationModal
+        isOpen={rebuildOpen}
+        onClose={() => setRebuildOpen(false)}
+        onConfirm={() => rebuildMutation.mutate({ serverid, stackname })}
+        title="Rebuild backup history"
+        message={`Read the backup repository of ${stackname} and add any backup runs that are missing from the history? The existing history is kept; nothing in the repository is changed.`}
+        confirmText="Rebuild history"
+        variant="info"
+        isLoading={rebuildMutation.isPending}
+      />
+      <Modal
+        isOpen={rebuildResult !== null}
+        onClose={() => setRebuildResult(null)}
+        title="Backup history rebuilt"
+        size="md"
+      >
+        <div className="space-y-3">
+          <p className={cn('text-sm', theme.text.standard)}>
+            {rebuildResult ? describeRebuildResult(rebuildResult) : ''}
+          </p>
+          {rebuildResult && rebuildResult.output.length > 0 && (
+            <pre
+              className={cn(
+                'max-h-60 overflow-auto rounded-lg p-3 text-xs font-mono whitespace-pre-wrap',
+                theme.surface.muted,
+                theme.text.standard
+              )}
+            >
+              {rebuildResult.output.join('\n')}
+            </pre>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Component, Run, RunSummary } from '../../api/generated/models';
+import type { Component, RebuildResult, Run, RunSummary } from '../../api/generated/models';
 
 export type StopMode = '' | 'stop' | 'pause';
 
@@ -78,4 +78,14 @@ export function latestRepoSizeBytes(summaries: RunSummary[]): number | null {
     }
   }
   return null;
+}
+
+export function describeRebuildResult(result: RebuildResult): string {
+  if (result.runs_added === 0) {
+    return `The repository holds ${result.runs_in_repository} backup runs; the history already knew about all of them.`;
+  }
+  if (result.runs_added === 1) {
+    return `The repository holds ${result.runs_in_repository} backup runs; 1 run was missing from the history and has been rebuilt.`;
+  }
+  return `The repository holds ${result.runs_in_repository} backup runs; ${result.runs_added} runs were missing from the history and have been rebuilt.`;
 }
