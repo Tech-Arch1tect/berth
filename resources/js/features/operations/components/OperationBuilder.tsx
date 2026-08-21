@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { DockerOperationRequest } from '../types';
+import {
+  buildOptionsPayload,
+  commandOptionCatalog,
+  optionValueIsValid,
+  type CommandOptionSpec,
+} from '../utils/operationOptions';
 import { theme } from '../../../shared/theme';
 import { cn } from '../../../shared/utils/cn';
 
@@ -10,15 +16,6 @@ interface OperationBuilderProps {
   services?: Array<{ name: string; service_name?: string }>;
 }
 
-const commandOptions: Record<DockerOperationRequest['command'], string[]> = {
-  up: ['--build', '--force-recreate', '--no-recreate', '--remove-orphans', '--pull', '--wait'],
-  down: ['--remove-orphans', '--volumes', '-t', '--timeout'],
-  start: [],
-  stop: ['-t', '--timeout'],
-  restart: ['-t', '--timeout', '--no-deps'],
-  pull: ['-q', '--quiet', '--ignore-pull-failures'],
-};
-
 const commandDescriptions: Record<DockerOperationRequest['command'], string> = {
   up: 'Create and start containers',
   down: 'Stop and remove containers, networks',
@@ -28,20 +25,18 @@ const commandDescriptions: Record<DockerOperationRequest['command'], string> = {
   pull: 'Pull service images from registry',
 };
 
-const optionDescriptions: Record<string, string> = {
-  '--build': 'Build images before starting',
-  '--force-recreate': 'Recreate containers even if unchanged',
-  '--no-recreate': "Don't recreate existing containers",
-  '--remove-orphans': 'Remove containers not in compose file',
-  '--pull': 'Pull images before starting',
-  '--wait': 'Wait for services to be running/healthy',
-  '--volumes': 'Remove named and anonymous volumes',
-  '-t': 'Shutdown timeout',
-  '--timeout': 'Shutdown timeout',
-  '--no-deps': "Don't restart dependent services",
-  '-q': 'Pull without progress information',
-  '--quiet': 'Pull without progress information',
-  '--ignore-pull-failures': 'Continue despite pull failures',
+const optionValueId = (command: string, flag: string) => `option-value-${command}-${flag}`;
+
+const invalidValueHint = (spec: CommandOptionSpec) => {
+  if (spec.value.kind === 'scale') {
+    return 'Use the form service=2';
+  }
+  if (spec.value.kind === 'number') {
+    return spec.value.max
+      ? `Enter a whole number between ${spec.value.min} and ${spec.value.max}`
+      : `Enter a whole number of at least ${spec.value.min}`;
+  }
+  return 'Enter a value';
 };
 
 export const OperationBuilder: React.FC<OperationBuilderProps> = ({
@@ -52,8 +47,8 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
 }) => {
   const [command, setCommand] = useState<DockerOperationRequest['command']>('up');
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [optionValues, setOptionValues] = useState<Record<string, string>>({});
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [timeoutValue, setTimeoutValue] = useState('30');
   const [prevCommand, setPrevCommand] = useState(command);
 
   if (command !== prevCommand) {
@@ -73,28 +68,35 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
     );
   };
 
-  const buildOperation = () => {
-    let finalOptions = [...selectedOptions];
+  const availableOptions = commandOptionCatalog[command] || [];
 
-    if (
-      ['down', 'stop', 'restart'].includes(command) &&
-      selectedOptions.some((opt) => opt === '-t' || opt === '--timeout')
-    ) {
-      finalOptions = finalOptions.filter((opt) => opt !== '-t' && opt !== '--timeout');
-      finalOptions.push('--timeout', timeoutValue);
+  const valueFor = (spec: CommandOptionSpec) =>
+    optionValues[spec.flag] ??
+    (spec.value.kind === 'enum' || spec.value.kind === 'number' ? spec.value.defaultValue : '');
+
+  const hasInvalidValue = availableOptions.some(
+    (spec) =>
+      selectedOptions.includes(spec.flag) &&
+      spec.value.kind !== 'none' &&
+      !optionValueIsValid(spec, valueFor(spec))
+  );
+
+  const buildOperation = () => {
+    const initialValues: Record<string, string> = {};
+    for (const spec of availableOptions) {
+      if (spec.value.kind !== 'none') {
+        initialValues[spec.flag] = valueFor(spec);
+      }
     }
 
     const operation: DockerOperationRequest = {
       command,
-      options: finalOptions,
+      options: buildOptionsPayload(command, selectedOptions, initialValues),
       services: selectedServices,
     };
 
     onOperationBuild(operation);
   };
-
-  const availableOptions = commandOptions[command] || [];
-  const needsTimeout = ['down', 'stop', 'restart'].includes(command);
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -119,63 +121,99 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
         </div>
       </div>
 
-      {/* Common Options */}
+      {/* Options */}
       {availableOptions.length > 0 && (
         <div>
           <label className={cn(theme.forms.label, 'mb-2')}>Options</label>
           <div className="space-y-2">
-            {availableOptions
-              .filter((option) => !['--timeout', '-t'].includes(option))
-              .map((option) => (
+            {availableOptions.map((spec) => {
+              const isSelected = selectedOptions.includes(spec.flag);
+              const value = valueFor(spec);
+              const invalid =
+                isSelected && spec.value.kind !== 'none' && !optionValueIsValid(spec, value);
+
+              return (
                 <label
-                  key={option}
+                  key={spec.flag}
                   className="flex items-start gap-3 rounded px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <input
                     type="checkbox"
-                    checked={selectedOptions.includes(option)}
-                    onChange={() => handleOptionToggle(option)}
+                    checked={isSelected}
+                    onChange={() => handleOptionToggle(spec.flag)}
                     disabled={disabled}
                     className={cn('mt-1', theme.forms.checkbox)}
                   />
-                  <div>
-                    <div className={cn('text-sm font-medium', theme.text.strong)}>{option}</div>
-                    <div className={cn('text-xs', theme.text.subtle)}>
-                      {optionDescriptions[option] || 'No description available'}
-                    </div>
+                  <div className="flex-1">
+                    <div className={cn('text-sm font-medium', theme.text.strong)}>{spec.flag}</div>
+                    <div className={cn('text-xs', theme.text.subtle)}>{spec.description}</div>
+
+                    {isSelected && spec.value.kind === 'enum' && (
+                      <select
+                        id={optionValueId(command, spec.flag)}
+                        value={value}
+                        onChange={(e) =>
+                          setOptionValues((prev) => ({ ...prev, [spec.flag]: e.target.value }))
+                        }
+                        disabled={disabled}
+                        className={cn(theme.forms.input, 'mt-2 w-32 px-2 py-1 text-sm')}
+                      >
+                        {spec.value.choices.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {isSelected && spec.value.kind === 'number' && (
+                      <input
+                        id={optionValueId(command, spec.flag)}
+                        type="number"
+                        value={value}
+                        onChange={(e) =>
+                          setOptionValues((prev) => ({ ...prev, [spec.flag]: e.target.value }))
+                        }
+                        disabled={disabled}
+                        min={spec.value.min}
+                        max={spec.value.max}
+                        aria-invalid={invalid}
+                        className={cn(
+                          theme.forms.input,
+                          'mt-2 w-24 px-2 py-1 text-sm',
+                          invalid && 'border-red-500'
+                        )}
+                      />
+                    )}
+
+                    {isSelected && spec.value.kind === 'scale' && (
+                      <input
+                        id={optionValueId(command, spec.flag)}
+                        type="text"
+                        value={value}
+                        placeholder="service=2"
+                        onChange={(e) =>
+                          setOptionValues((prev) => ({ ...prev, [spec.flag]: e.target.value }))
+                        }
+                        disabled={disabled}
+                        aria-invalid={invalid}
+                        className={cn(
+                          theme.forms.input,
+                          'mt-2 w-40 px-2 py-1 text-sm font-mono',
+                          invalid && 'border-red-500'
+                        )}
+                      />
+                    )}
+
+                    {invalid && (
+                      <div className={cn('mt-1 text-xs', theme.text.danger)}>
+                        {invalidValueHint(spec)}
+                      </div>
+                    )}
                   </div>
                 </label>
-              ))}
-
-            {/* Timeout Option */}
-            {needsTimeout && (
-              <label className="flex items-start gap-3 rounded px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
-                <input
-                  type="checkbox"
-                  checked={selectedOptions.includes('-t') || selectedOptions.includes('--timeout')}
-                  onChange={() => handleOptionToggle('--timeout')}
-                  disabled={disabled}
-                  className={cn('mt-1', theme.forms.checkbox)}
-                />
-                <div className="flex-1">
-                  <div className={cn('text-sm font-medium', theme.text.strong)}>--timeout</div>
-                  <div className={cn('mb-2 text-xs', theme.text.subtle)}>
-                    Shutdown timeout in seconds
-                  </div>
-                  {(selectedOptions.includes('-t') || selectedOptions.includes('--timeout')) && (
-                    <input
-                      type="number"
-                      value={timeoutValue}
-                      onChange={(e) => setTimeoutValue(e.target.value)}
-                      disabled={disabled}
-                      min="1"
-                      max="300"
-                      className={cn(theme.forms.input, 'w-20 px-2 py-1 text-sm')}
-                    />
-                  )}
-                </div>
-              </label>
-            )}
+              );
+            })}
           </div>
         </div>
       )}
@@ -236,8 +274,11 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
       <div className="flex justify-end">
         <button
           onClick={buildOperation}
-          disabled={disabled}
-          className={cn(theme.buttons.primary, disabled && 'cursor-not-allowed opacity-60')}
+          disabled={disabled || hasInvalidValue}
+          className={cn(
+            theme.buttons.primary,
+            (disabled || hasInvalidValue) && 'cursor-not-allowed opacity-60'
+          )}
         >
           Run Operation
         </button>
