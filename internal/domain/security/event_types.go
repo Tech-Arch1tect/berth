@@ -91,6 +91,7 @@ const (
 	EventBackupRestored       = "backup.restored"
 	EventBackupDeleted        = "backup.deleted"
 	EventBackupFileDownloaded = "backup.file_downloaded"
+	EventBackupIndexRebuilt   = "backup.index_rebuilt"
 )
 
 const (
@@ -146,7 +147,7 @@ func GetEventCategory(eventType string) string {
 	case EventFileUploaded, EventFileDownloaded, EventFileDeleted, EventFileRenamed:
 		return "file"
 
-	case EventBackupCreated, EventBackupRestored, EventBackupDeleted, EventBackupFileDownloaded:
+	case EventBackupCreated, EventBackupRestored, EventBackupDeleted, EventBackupFileDownloaded, EventBackupIndexRebuilt:
 		return "backup"
 
 	case EventRegistryCredentialCreated, EventRegistryCredentialUpdated, EventRegistryCredentialDeleted:
@@ -177,7 +178,7 @@ func GetEventSeverity(eventType string) string {
 		EventAuthorizationDenied:
 		return "high"
 
-	case EventBackupRestored, EventBackupDeleted:
+	case EventBackupRestored, EventBackupDeleted, EventBackupIndexRebuilt:
 		return "high"
 
 	case EventAuthPasswordResetRequested, EventAuthPasswordResetCompleted,

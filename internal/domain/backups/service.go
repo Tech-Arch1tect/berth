@@ -200,6 +200,49 @@ func (s *Service) handleAgentError(resp *http.Response) error {
 	return fmt.Errorf("agent returned status %d", resp.StatusCode)
 }
 
+type rebuildRequest struct {
+	BackupPassword string `json:"backup_password"`
+}
+
+type RebuildResult struct {
+	RunsInRepository int      `json:"runs_in_repository"`
+	RunsAdded        int      `json:"runs_added"`
+	Output           []string `json:"output"`
+}
+
+func (s *Service) RebuildBackupIndex(ctx context.Context, p authz.Principal, serverID uint, stackname string) (*RebuildResult, error) {
+	if err := s.checkManagePermission(p, serverID, stackname); err != nil {
+		return nil, err
+	}
+
+	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	if !srv.BackupsEnabled || srv.BackupPassword == "" {
+		return nil, ErrBackupsNotEnabled
+	}
+
+	endpoint := fmt.Sprintf("/stacks/%s/backups/rebuild", url.PathEscape(stackname))
+
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "POST", endpoint, rebuildRequest{BackupPassword: srv.BackupPassword})
+	if err != nil {
+		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, s.handleAgentError(resp)
+	}
+
+	var result RebuildResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode agent response: %w", err)
+	}
+	return &result, nil
+}
+
 func (s *Service) checkBrowsePermission(p authz.Principal, serverID uint, stackname string) error {
 	for _, permission := range []string{permnames.BackupsRead, permnames.FilesRead} {
 		allowed, err := s.authzSvc.HasStackPermission(p, serverID, stackname, permission)

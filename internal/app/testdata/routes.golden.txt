@@ -74,6 +74,7 @@ DELETE	/api/v1/servers/:serverid/stacks/:stackname/backups/:backupid	internal/do
 GET	/api/v1/servers/:serverid/stacks/:stackname/backups/:backupid	internal/domain/backups.(*APIHandler).GetBackup-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/backups/:backupid/download	internal/domain/backups.(*APIHandler).DownloadBackupFiles-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/backups/:backupid/files	internal/domain/backups.(*APIHandler).ListBackupFiles-fm
+POST	/api/v1/servers/:serverid/stacks/:stackname/backups/rebuild	internal/domain/backups.(*APIHandler).RebuildBackupIndex-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/compose	internal/domain/stack.(*APIHandler).GetComposeConfig-fm
 PATCH	/api/v1/servers/:serverid/stacks/:stackname/compose	internal/domain/stack.(*APIHandler).UpdateCompose-fm
 GET	/api/v1/servers/:serverid/stacks/:stackname/containers/:containerName/logs	internal/domain/logs.(*Handler).GetContainerLogs-fm

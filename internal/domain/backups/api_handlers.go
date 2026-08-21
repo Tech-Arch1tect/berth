@@ -115,6 +115,42 @@ func (h *APIHandler) DeleteBackup(c echo.Context) error {
 	return response.OK(c, DeleteResponse{Message: "backup deleted"})
 }
 
+func (h *APIHandler) RebuildBackupIndex(c echo.Context) error {
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
+	}
+
+	serverID, stackname, err := echoparams.GetServerIDAndStackName(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.RebuildBackupIndex(c.Request().Context(), p, serverID, stackname)
+	if err != nil {
+		if errors.Is(err, ErrBackupsNotEnabled) {
+			return response.Conflict(c, err.Error())
+		}
+		return response.Internal(c, err.Error())
+	}
+
+	_ = h.securityLog.LogBackupEvent(
+		security.EventBackupIndexRebuilt,
+		p.UserID(),
+		session.ResolveUsername(c),
+		serverID,
+		stackname,
+		"",
+		c.RealIP(),
+		map[string]any{
+			"runs_in_repository": result.RunsInRepository,
+			"runs_added":         result.RunsAdded,
+		},
+	)
+
+	return response.OK(c, *result)
+}
+
 func (h *APIHandler) browseParams(c echo.Context) (p authz.Principal, serverID uint, stackname, backupID, componentID string, err error) {
 	p, err = authz.RequirePrincipal(c)
 	if err != nil {
