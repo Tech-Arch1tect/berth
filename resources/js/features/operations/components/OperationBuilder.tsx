@@ -70,6 +70,10 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
 
   const availableOptions = commandOptionCatalog[command] || [];
 
+  const selectedValueSpecs = availableOptions.filter(
+    (spec) => spec.value.kind !== 'none' && selectedOptions.includes(spec.flag)
+  );
+
   const valueFor = (spec: CommandOptionSpec) =>
     optionValues[spec.flag] ??
     (spec.value.kind === 'enum' || spec.value.kind === 'number' ? spec.value.defaultValue : '');
@@ -125,30 +129,46 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
       {availableOptions.length > 0 && (
         <div>
           <label className={cn(theme.forms.label, 'mb-2')}>Options</label>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
             {availableOptions.map((spec) => {
               const isSelected = selectedOptions.includes(spec.flag);
-              const value = valueFor(spec);
-              const invalid =
-                isSelected && spec.value.kind !== 'none' && !optionValueIsValid(spec, value);
 
               return (
-                <label
+                <button
                   key={spec.flag}
-                  className="flex items-start gap-3 rounded px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                  type="button"
+                  title={spec.description}
+                  aria-label={`${spec.flag}: ${spec.description}`}
+                  aria-pressed={isSelected}
+                  onClick={() => handleOptionToggle(spec.flag)}
+                  disabled={disabled}
+                  className={cn(
+                    theme.selectable.tileBase,
+                    isSelected ? theme.selectable.tileActive : theme.selectable.tileInactive,
+                    disabled ? theme.selectable.tileDisabled : 'cursor-pointer'
+                  )}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => handleOptionToggle(spec.flag)}
-                    disabled={disabled}
-                    className={cn('mt-1', theme.forms.checkbox)}
-                  />
-                  <div className="flex-1">
-                    <div className={cn('text-sm font-medium', theme.text.strong)}>{spec.flag}</div>
-                    <div className={cn('text-xs', theme.text.subtle)}>{spec.description}</div>
+                  <span className="font-mono text-xs font-medium leading-snug break-words">
+                    {spec.flag}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-                    {isSelected && spec.value.kind === 'enum' && (
+          {selectedValueSpecs.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {selectedValueSpecs.map((spec) => {
+                const value = valueFor(spec);
+                const invalid = !optionValueIsValid(spec, value);
+
+                return (
+                  <div key={spec.flag} className="flex flex-wrap items-center gap-2">
+                    <span className={cn('font-mono text-xs font-medium', theme.text.strong)}>
+                      {spec.flag}
+                    </span>
+
+                    {spec.value.kind === 'enum' && (
                       <select
                         id={optionValueId(command, spec.flag)}
                         value={value}
@@ -156,7 +176,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                           setOptionValues((prev) => ({ ...prev, [spec.flag]: e.target.value }))
                         }
                         disabled={disabled}
-                        className={cn(theme.forms.input, 'mt-2 w-32 px-2 py-1 text-sm')}
+                        className={cn(theme.forms.input, 'w-32 px-2 py-1 text-sm')}
                       >
                         {spec.value.choices.map((choice) => (
                           <option key={choice} value={choice}>
@@ -166,7 +186,7 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                       </select>
                     )}
 
-                    {isSelected && spec.value.kind === 'number' && (
+                    {spec.value.kind === 'number' && (
                       <input
                         id={optionValueId(command, spec.flag)}
                         type="number"
@@ -180,13 +200,13 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                         aria-invalid={invalid}
                         className={cn(
                           theme.forms.input,
-                          'mt-2 w-24 px-2 py-1 text-sm',
-                          invalid && 'border-red-500'
+                          'w-24 px-2 py-1 text-sm',
+                          invalid && 'border-red-500! dark:border-red-500!'
                         )}
                       />
                     )}
 
-                    {isSelected && spec.value.kind === 'scale' && (
+                    {spec.value.kind === 'scale' && (
                       <input
                         id={optionValueId(command, spec.flag)}
                         type="text"
@@ -199,22 +219,22 @@ export const OperationBuilder: React.FC<OperationBuilderProps> = ({
                         aria-invalid={invalid}
                         className={cn(
                           theme.forms.input,
-                          'mt-2 w-40 px-2 py-1 text-sm font-mono',
-                          invalid && 'border-red-500'
+                          'w-40 px-2 py-1 text-sm font-mono',
+                          invalid && 'border-red-500! dark:border-red-500!'
                         )}
                       />
                     )}
 
                     {invalid && (
-                      <div className={cn('mt-1 text-xs', theme.text.danger)}>
+                      <span className={cn('text-xs', theme.text.danger)}>
                         {invalidValueHint(spec)}
-                      </div>
+                      </span>
                     )}
                   </div>
-                </label>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
