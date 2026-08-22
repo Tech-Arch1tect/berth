@@ -67,6 +67,7 @@ const (
 	TargetTypeRegistryCredential = "registry_credential"
 	TargetTypeAPIKey             = "api_key"
 	TargetTypeAPIKeyScope        = "api_key_scope"
+	TargetTypeS3Bucket           = "s3_bucket"
 )
 
 func (l *SecurityAuditLog) BeforeCreate(tx *gorm.DB) error {

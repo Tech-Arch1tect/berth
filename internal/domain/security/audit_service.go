@@ -205,6 +205,20 @@ func (s *AuditService) LogBackupEvent(eventType string, actorUserID uint, actorU
 	})
 }
 
+func (s *AuditService) LogS3BucketEvent(eventType string, actorUserID uint, actorUsername string, bucketID uint, label string, ip string, metadata map[string]any) error {
+	return s.Log(LogEvent{
+		EventType:     eventType,
+		Success:       true,
+		ActorUserID:   &actorUserID,
+		ActorUsername: actorUsername,
+		ActorIP:       ip,
+		TargetType:    TargetTypeS3Bucket,
+		TargetID:      &bucketID,
+		TargetName:    label,
+		Metadata:      metadata,
+	})
+}
+
 func (s *AuditService) LogAPIKeyEvent(eventType string, actorUserID uint, actorUsername string, apiKeyID uint, apiKeyName string, ip string, metadata map[string]any) error {
 	return s.Log(LogEvent{
 		EventType:     eventType,

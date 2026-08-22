@@ -15,6 +15,11 @@ PUT	/api/v1/admin/roles/:id	internal/domain/rbac.(*APIHandler).UpdateRole-fm
 GET	/api/v1/admin/roles/:roleId/stack-permissions	internal/domain/rbac.(*APIHandler).ListRoleServerStackPermissions-fm
 POST	/api/v1/admin/roles/:roleId/stack-permissions	internal/domain/rbac.(*APIHandler).CreateRoleStackPermission-fm
 DELETE	/api/v1/admin/roles/:roleId/stack-permissions/:permissionId	internal/domain/rbac.(*APIHandler).DeleteRoleStackPermission-fm
+GET	/api/v1/admin/s3-buckets	internal/domain/s3buckets.(*APIHandler).ListBuckets-fm
+POST	/api/v1/admin/s3-buckets	internal/domain/s3buckets.(*APIHandler).CreateBucket-fm
+DELETE	/api/v1/admin/s3-buckets/:id	internal/domain/s3buckets.(*APIHandler).DeleteBucket-fm
+GET	/api/v1/admin/s3-buckets/:id	internal/domain/s3buckets.(*APIHandler).GetBucket-fm
+PUT	/api/v1/admin/s3-buckets/:id	internal/domain/s3buckets.(*APIHandler).UpdateBucket-fm
 GET	/api/v1/admin/security-audit-logs	internal/domain/security.(*Handler).ListLogs-fm
 GET	/api/v1/admin/security-audit-logs/:id	internal/domain/security.(*Handler).GetLog-fm
 GET	/api/v1/admin/security-audit-logs/stats	internal/domain/security.(*Handler).GetStats-fm

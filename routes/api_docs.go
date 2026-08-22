@@ -15,6 +15,7 @@ import (
 	"berth/internal/domain/maintenance"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/registry"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
@@ -675,6 +676,65 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Build()
 
 	// Files
+	apiDoc.Document("GET", "/api/v1/admin/s3-buckets").
+		Tags("s3-buckets").
+		Summary("List S3 bucket configurations").
+		Description("Returns every configured S3 bucket for backup storage. The secret access key is never included").
+		Response(http.StatusOK, response.Response[[]s3buckets.BucketResponse]{}, "List of bucket configurations").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("POST", "/api/v1/admin/s3-buckets").
+		Tags("s3-buckets").
+		Summary("Create an S3 bucket configuration").
+		Description("Stores an S3 endpoint, bucket name and credentials for backup storage; the secret access key is encrypted at rest and never returned").
+		Body(s3buckets.CreateRequest{}, "Bucket configuration including the secret access key").
+		Response(http.StatusOK, response.Response[s3buckets.BucketResponse]{}, "Created bucket configuration").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("PUT", "/api/v1/admin/s3-buckets/{id}").
+		Tags("s3-buckets").
+		Summary("Update an S3 bucket configuration").
+		Description("Updates the bucket configuration; an empty secret access key keeps the stored one").
+		PathParam("id", "Bucket configuration ID").TypeInt().Required().
+		Body(s3buckets.UpdateRequest{}, "Bucket configuration; empty secret access key keeps the stored secret").
+		Response(http.StatusOK, response.Response[s3buckets.BucketResponse]{}, "Updated bucket configuration").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Bucket configuration not found").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("DELETE", "/api/v1/admin/s3-buckets/{id}").
+		Tags("s3-buckets").
+		Summary("Delete an S3 bucket configuration").
+		Description("Deletes the stored credentials and settings; the bucket and its contents in S3 are untouched").
+		PathParam("id", "Bucket configuration ID").TypeInt().Required().
+		Response(http.StatusOK, response.ErrorResponseBody{}, "Bucket configuration deleted").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Bucket configuration not found").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
+	apiDoc.Document("GET", "/api/v1/admin/s3-buckets/{id}").
+		Tags("s3-buckets").
+		Summary("Get an S3 bucket configuration").
+		PathParam("id", "Bucket configuration ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[s3buckets.BucketResponse]{}, "Bucket configuration").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Bucket configuration not found").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/servers/{serverid}/stacks/{stackname}/backups/rebuild").
 		Tags("backups").
 		Summary("Rebuild a stack's backup history from its repository").

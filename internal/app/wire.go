@@ -23,6 +23,7 @@ import (
 	"berth/internal/domain/operations"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/registry"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
@@ -102,6 +103,7 @@ type Graph struct {
 	SetupSvc               *setup.Service
 	ServerSvc              *server.Service
 	ServerAPIHandler       *server.APIHandler
+	S3BucketsAPIHandler    *s3buckets.APIHandler
 	ServerUserAPIHandler   *server.UserAPIHandler
 	StackSvc               *stack.Service
 	StackAPIHandler        *stack.APIHandler
@@ -225,6 +227,7 @@ func Build(
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.AuthzEngine, g.RBACSvc, g.AgentSvc, logger)
 	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc, g.SecurityAuditSvc)
+	g.S3BucketsAPIHandler = s3buckets.NewAPIHandler(s3buckets.NewService(db, g.Crypto, logger), g.SecurityAuditSvc)
 	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)

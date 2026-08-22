@@ -20,6 +20,7 @@ import (
 	"berth/internal/domain/operations"
 	"berth/internal/domain/rbac"
 	"berth/internal/domain/registry"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/stack"
@@ -89,7 +90,7 @@ func registerRoutes(g *Graph) {
 		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
 		g.RBACAPIHandler, g.OperationLogsHandler,
-		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, authzEngine)
+		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, g.S3BucketsAPIHandler, authzEngine)
 	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc, g.WSHandler, g.WSEventsHandler, g.OperationsStreamHandler, authzEngine)
 
 	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
@@ -191,7 +192,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 
 func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor,
 	rbacAPIHandler *rbac.APIHandler, operationLogsHandler *operationlogs.Handler,
-	serverAPIHandler *server.APIHandler, migrationHandler *dataexport.Handler, securityHandler *security.Handler,
+	serverAPIHandler *server.APIHandler, migrationHandler *dataexport.Handler, securityHandler *security.Handler, s3BucketsHandler *s3buckets.APIHandler,
 	authzEngine *authzengine.Engine) *authz.Registrar {
 
 	if rbacAPIHandler == nil {
@@ -217,6 +218,9 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	}
 	if securityHandler != nil {
 		securityHandler.RegisterAdminAPIRoutes(adminRegistrar)
+	}
+	if s3BucketsHandler != nil {
+		s3BucketsHandler.RegisterAdminAPIRoutes(adminRegistrar)
 	}
 
 	return adminRegistrar

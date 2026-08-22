@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/auth/totp"
 	"berth/internal/domain/imageupdates"
 	"berth/internal/domain/operationlogs"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
@@ -16,6 +17,7 @@ import (
 func Models() []any {
 	return append(seeds.RBACModels(),
 		&server.ServerRegistryCredential{},
+		&s3buckets.S3Bucket{},
 		&server.AgentAuthority{},
 		&operationlogs.OperationLog{}, &operationlogs.OperationLogMessage{},
 		&security.SecurityAuditLog{},
