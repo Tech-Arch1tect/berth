@@ -5,6 +5,7 @@ import {
   MoonIcon,
   HomeIcon,
   ServerIcon,
+  CloudArrowUpIcon,
   UsersIcon,
   ShieldCheckIcon,
   UserCircleIcon,
@@ -93,6 +94,12 @@ const adminNavigation: NavItem[] = [
     href: '/admin/servers',
     icon: ServerIcon,
     isActive: (p) => p.startsWith('/admin/servers'),
+  },
+  {
+    name: 'S3 Buckets',
+    href: '/admin/s3-buckets',
+    icon: CloudArrowUpIcon,
+    isActive: (p) => p.startsWith('/admin/s3-buckets'),
   },
   {
     name: 'Users',
