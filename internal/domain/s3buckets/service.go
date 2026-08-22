@@ -13,6 +13,45 @@ import (
 
 var ErrBucketNotFound = errors.New("bucket configuration not found")
 
+type S3Repository struct {
+	URL         string `json:"url"`
+	AccessKeyID string `json:"access_key_id"`
+	SecretKey   string `json:"secret_access_key"`
+	Region      string `json:"region,omitempty"`
+}
+
+func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*S3Repository, error) {
+	var bucketID *uint
+	if err := s.db.WithContext(ctx).
+		Table("servers").
+		Where("id = ?", serverID).
+		Select("s3_bucket_id").
+		Scan(&bucketID).Error; err != nil {
+		return nil, fmt.Errorf("failed to read the server's bucket assignment: %w", err)
+	}
+	if bucketID == nil || *bucketID == 0 {
+		return nil, nil
+	}
+
+	bucket, err := s.find(ctx, *bucketID)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := s.crypto.Decrypt(bucket.SecretKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt the bucket's secret access key: %w", err)
+	}
+
+	repository := &S3Repository{
+		URL:         fmt.Sprintf("s3:%s/%s/servers/%d/stacks/%s", bucket.Endpoint, bucket.BucketName, serverID, stackName),
+		AccessKeyID: bucket.AccessKeyID,
+		SecretKey:   secret,
+		Region:      bucket.Region,
+	}
+	return repository, nil
+}
+
 type Service struct {
 	db     *gorm.DB
 	crypto *crypto.Crypto
@@ -105,6 +144,17 @@ func (s *Service) Delete(ctx context.Context, id uint) error {
 	bucket, err := s.find(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	var assigned int64
+	if err := s.db.WithContext(ctx).
+		Table("servers").
+		Where("s3_bucket_id = ?", bucket.ID).
+		Count(&assigned).Error; err != nil {
+		return fmt.Errorf("failed to check whether the bucket configuration is in use: %w", err)
+	}
+	if assigned > 0 {
+		return ErrBucketInUse
 	}
 
 	if err := s.db.WithContext(ctx).Delete(bucket).Error; err != nil {

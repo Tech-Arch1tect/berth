@@ -10,6 +10,7 @@ import (
 
 	"berth/internal/domain/authz"
 	"berth/internal/domain/rbac/permnames"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/server"
 
 	"go.uber.org/zap"
@@ -22,9 +23,11 @@ var ErrBackupsNotEnabled = errors.New("backups are not enabled for this server; 
 var ErrAccessDenied = errors.New("access denied")
 
 const backupPasswordHeader = "X-Backup-Password"
+const backupS3RepositoryHeader = "X-Backup-S3-Repository"
 
 type agentDeleteRequest struct {
-	BackupPassword string `json:"backup_password"`
+	BackupPassword string                  `json:"backup_password"`
+	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
 }
 
 type agentErrorBody struct {
@@ -46,20 +49,49 @@ type backupsAuthorizer interface {
 	HasServerPermission(p authz.Principal, serverID uint, permission string) (bool, error)
 }
 
+type backupsBucketResolver interface {
+	RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*s3buckets.S3Repository, error)
+}
+
 type Service struct {
 	agentSvc  backupsAgentClient
 	serverSvc backupsServerProvider
 	authzSvc  backupsAuthorizer
+	bucketSvc backupsBucketResolver
 	logger    *zap.Logger
 }
 
-func NewService(agentSvc backupsAgentClient, serverSvc backupsServerProvider, authzSvc backupsAuthorizer, logger *zap.Logger) *Service {
+func NewService(agentSvc backupsAgentClient, serverSvc backupsServerProvider, authzSvc backupsAuthorizer, bucketSvc backupsBucketResolver, logger *zap.Logger) *Service {
 	return &Service{
 		agentSvc:  agentSvc,
 		serverSvc: serverSvc,
 		authzSvc:  authzSvc,
+		bucketSvc: bucketSvc,
 		logger:    logger,
 	}
+}
+
+func (s *Service) repositoryFor(ctx context.Context, serverID uint, stackname string) (*s3buckets.S3Repository, error) {
+	if s.bucketSvc == nil {
+		return nil, nil
+	}
+	return s.bucketSvc.RepositoryForServer(ctx, serverID, stackname)
+}
+
+func (s *Service) headersFor(ctx context.Context, srv *server.Server, stackname string) (map[string]string, error) {
+	headers := map[string]string{backupPasswordHeader: srv.BackupPassword}
+	repository, err := s.repositoryFor(ctx, srv.ID, stackname)
+	if err != nil {
+		return nil, err
+	}
+	if repository != nil {
+		encoded, marshalErr := json.Marshal(repository)
+		if marshalErr != nil {
+			return nil, fmt.Errorf("failed to encode the server's s3 repository: %w", marshalErr)
+		}
+		headers[backupS3RepositoryHeader] = string(encoded)
+	}
+	return headers, nil
 }
 
 func (s *Service) checkReadPermission(p authz.Principal, serverID uint, stackname string) error {
@@ -163,6 +195,11 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 
 	endpoint := fmt.Sprintf("/stacks/%s/backups/%s", url.PathEscape(stackname), url.PathEscape(backupID))
 
+	repository, err := s.repositoryFor(ctx, serverID, stackname)
+	if err != nil {
+		return nil, err
+	}
+
 	var deleted *Run
 	if detail, err := s.agentSvc.MakeRequest(ctx, srv, "GET", endpoint, nil); err == nil {
 		if detail.StatusCode == http.StatusOK {
@@ -174,7 +211,7 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 		_ = detail.Body.Close()
 	}
 
-	resp, err := s.agentSvc.MakeRequest(ctx, srv, "DELETE", endpoint, agentDeleteRequest{BackupPassword: srv.BackupPassword})
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "DELETE", endpoint, agentDeleteRequest{BackupPassword: srv.BackupPassword, S3Repository: repository})
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -201,7 +238,8 @@ func (s *Service) handleAgentError(resp *http.Response) error {
 }
 
 type rebuildRequest struct {
-	BackupPassword string `json:"backup_password"`
+	BackupPassword string                  `json:"backup_password"`
+	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
 }
 
 type RebuildResult struct {
@@ -226,7 +264,12 @@ func (s *Service) RebuildBackupIndex(ctx context.Context, p authz.Principal, ser
 
 	endpoint := fmt.Sprintf("/stacks/%s/backups/rebuild", url.PathEscape(stackname))
 
-	resp, err := s.agentSvc.MakeRequest(ctx, srv, "POST", endpoint, rebuildRequest{BackupPassword: srv.BackupPassword})
+	repository, err := s.repositoryFor(ctx, serverID, stackname)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.agentSvc.MakeRequest(ctx, srv, "POST", endpoint, rebuildRequest{BackupPassword: srv.BackupPassword, S3Repository: repository})
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -278,7 +321,11 @@ func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, server
 
 	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/files?component=%s&path=%s",
 		url.PathEscape(stackname), url.PathEscape(backupID), url.QueryEscape(componentID), url.QueryEscape(path))
-	resp, err := s.agentSvc.MakeReadRequestWithHeaders(ctx, srv, "GET", endpoint, nil, map[string]string{backupPasswordHeader: srv.BackupPassword})
+	headers, err := s.headersFor(ctx, srv, stackname)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.agentSvc.MakeReadRequestWithHeaders(ctx, srv, "GET", endpoint, nil, headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -317,7 +364,11 @@ func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, se
 	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/download?%s",
 		url.PathEscape(stackname), url.PathEscape(backupID), query.Encode())
 
-	resp, err := s.agentSvc.MakeStreamRequestWithHeaders(ctx, srv, "GET", endpoint, map[string]string{backupPasswordHeader: srv.BackupPassword})
+	headers, err := s.headersFor(ctx, srv, stackname)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.agentSvc.MakeStreamRequestWithHeaders(ctx, srv, "GET", endpoint, headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}

@@ -103,6 +103,7 @@ type Graph struct {
 	SetupSvc               *setup.Service
 	ServerSvc              *server.Service
 	ServerAPIHandler       *server.APIHandler
+	S3BucketsSvc           *s3buckets.Service
 	S3BucketsAPIHandler    *s3buckets.APIHandler
 	ServerUserAPIHandler   *server.UserAPIHandler
 	StackSvc               *stack.Service
@@ -227,7 +228,8 @@ func Build(
 
 	g.ServerSvc = server.NewService(db, g.Crypto, g.AuthzEngine, g.RBACSvc, g.AgentSvc, logger)
 	g.ServerAPIHandler = server.NewAPIHandler(g.ServerSvc, g.SecurityAuditSvc)
-	g.S3BucketsAPIHandler = s3buckets.NewAPIHandler(s3buckets.NewService(db, g.Crypto, logger), g.SecurityAuditSvc)
+	g.S3BucketsSvc = s3buckets.NewService(db, g.Crypto, logger)
+	g.S3BucketsAPIHandler = s3buckets.NewAPIHandler(g.S3BucketsSvc, g.SecurityAuditSvc)
 	g.ServerUserAPIHandler = server.NewUserAPIHandler(g.ServerSvc)
 
 	g.StackSvc = stack.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
@@ -239,7 +241,7 @@ func Build(
 	g.FilesSvc = files.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.FilesAPIHandler = files.NewAPIHandler(g.FilesSvc, g.SecurityAuditSvc)
 
-	g.BackupsSvc = backups.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
+	g.BackupsSvc = backups.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, g.S3BucketsSvc, logger)
 	g.BackupsAPIHandler = backups.NewAPIHandler(g.BackupsSvc, g.SecurityAuditSvc)
 
 	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
@@ -262,6 +264,7 @@ func Build(
 	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.AuthzEngine, g.SecurityAuditSvc)
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.AuthzEngine, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
+	g.OperationsSvc.SetBucketResolver(g.S3BucketsSvc)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc, g.SecurityAuditSvc)
 

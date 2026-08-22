@@ -296,7 +296,7 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 		updates.BackupPassword = encryptedBackupPassword
 	}
 
-	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active", "backups_enabled", "backup_password").Updates(updates).Error; err != nil {
+	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active", "backups_enabled", "backup_password", "s3_bucket_id").Updates(updates).Error; err != nil {
 		s.logger.Error("failed to update server in database",
 			zap.Error(err),
 			zap.Uint("server_id", id),

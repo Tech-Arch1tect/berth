@@ -16,6 +16,7 @@ import {
   usePostApiV1AdminServersIdTest,
   getGetApiV1AdminServersQueryKey,
 } from '../../../../api/generated/admin/admin';
+import { useGetApiV1AdminS3Buckets } from '../../../../api/generated/s3-buckets/s3-buckets';
 import type { ServerInfo } from '../../../../api/generated/models';
 import {
   AgentAuthorityPanel,
@@ -33,6 +34,7 @@ interface ServerForm {
   is_active: boolean;
   backups_enabled: boolean;
   backup_password: string;
+  s3_bucket_id: number | null;
 }
 
 const EMPTY_FORM: ServerForm = {
@@ -45,6 +47,7 @@ const EMPTY_FORM: ServerForm = {
   is_active: true,
   backups_enabled: false,
   backup_password: '',
+  s3_bucket_id: null,
 };
 
 export default function AdminServers() {
@@ -63,6 +66,8 @@ export default function AdminServers() {
 
   const { data: serversResponse, isLoading: serversLoading } = useGetApiV1AdminServers();
   const servers = serversResponse?.data?.servers ?? [];
+  const { data: bucketsResponse } = useGetApiV1AdminS3Buckets();
+  const buckets = bucketsResponse?.data ?? [];
   const editingServer = servers.find((server) => server.id === editingServerId) ?? null;
 
   const invalidateServers = () =>
@@ -108,6 +113,7 @@ export default function AdminServers() {
       is_active: server.is_active,
       backups_enabled: server.backups_enabled,
       backup_password: '',
+      s3_bucket_id: server.s3_bucket_id ?? null,
     });
     setFormError(null);
     setShowForm(true);
@@ -531,6 +537,34 @@ export default function AdminServers() {
                     stacks with existing backups (new backups, restores, browsing and deletion) is
                     refused until the matching password is restored. Keep the old password safe.
                   </p>
+                  <div className="mt-4">
+                    <label htmlFor="server-s3-bucket" className={theme.forms.label}>
+                      Backup storage
+                    </label>
+                    <select
+                      id="server-s3-bucket"
+                      value={data.s3_bucket_id ?? ''}
+                      onChange={(e) =>
+                        setData(
+                          's3_bucket_id',
+                          e.target.value === '' ? null : Number(e.target.value)
+                        )
+                      }
+                      className={cn('mt-1', theme.forms.input)}
+                    >
+                      <option value="">On the agent (local disk)</option>
+                      {buckets.map((bucket) => (
+                        <option key={bucket.id} value={bucket.id}>
+                          {bucket.label} ({bucket.bucket_name} at {bucket.endpoint})
+                        </option>
+                      ))}
+                    </select>
+                    <p className={cn('mt-2 text-sm', theme.text.subtle)}>
+                      Assigned buckets hold this server's backup repositories under servers/
+                      {editingServer?.id ?? '...'} in the bucket; each stack gets its own
+                      repository.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -6,6 +6,7 @@ import (
 	"berth/internal/domain/compose"
 	"berth/internal/domain/files"
 	"berth/internal/domain/registry"
+	"berth/internal/domain/s3buckets"
 	"berth/internal/domain/server"
 	"berth/internal/pkg/agentpki"
 	"berth/internal/pkg/agentsign"
@@ -43,6 +44,10 @@ type opsFileReader interface {
 	ReadFile(ctx context.Context, p authz.Principal, serverID uint, stackname, path string) (*files.FileContent, error)
 }
 
+type opsBucketResolver interface {
+	RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*s3buckets.S3Repository, error)
+}
+
 type opsSignerProvider interface {
 	ClientSigner() (*agentsign.Signer, error)
 	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
@@ -55,11 +60,16 @@ type Service struct {
 	auditSvc    *AuditService
 	registrySvc opsRegistryProvider
 	filesSvc    opsFileReader
+	bucketSvc   opsBucketResolver
 	logger      *zap.Logger
 }
 
 func (s *Service) SetSignerProvider(provider opsSignerProvider) {
 	s.signers = provider
+}
+
+func (s *Service) SetBucketResolver(resolver opsBucketResolver) {
+	s.bucketSvc = resolver
 }
 
 func NewService(serverSvc opsServerProvider, authzSvc opsAuthorizer, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
@@ -145,6 +155,20 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 			return nil, backups.ErrBackupsNotEnabled
 		}
 		agentReq.BackupPassword = serverModel.BackupPassword
+		if s.bucketSvc != nil {
+			repository, err := s.bucketSvc.RepositoryForServer(ctx, serverID, stackname)
+			if err != nil {
+				s.logger.Error("backup operation refused: the server's s3 bucket could not be resolved",
+					zap.Uint("user_id", p.UserID()),
+					zap.Uint("server_id", serverID),
+					zap.String("stack_name", stackname),
+					zap.String("operation_command", req.Command),
+					zap.Error(err),
+				)
+				return nil, err
+			}
+			agentReq.S3Repository = repository
+		}
 	}
 
 	endpoint := fmt.Sprintf("/api/stacks/%s/operations", url.PathEscape(stackname))

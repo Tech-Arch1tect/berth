@@ -33,6 +33,7 @@ type Server struct {
 	IsActive            bool   `json:"is_active" gorm:"default:true"`
 	BackupsEnabled      bool   `json:"backups_enabled" gorm:"not null;default:false"`
 	BackupPassword      string `json:"-"`
+	S3BucketID          *uint  `json:"s3_bucket_id,omitempty" gorm:"index"`
 
 	AgentCertFingerprint          string     `json:"-"`
 	AgentCertAuthorityFingerprint string     `json:"-"`
@@ -51,6 +52,7 @@ type ServerInfo struct {
 	SkipSSLVerification           bool   `json:"skip_ssl_verification"`
 	IsActive                      bool   `json:"is_active"`
 	BackupsEnabled                bool   `json:"backups_enabled"`
+	S3BucketID                    *uint  `json:"s3_bucket_id,omitempty"`
 	AgentCertFingerprint          string `json:"agent_cert_fingerprint,omitempty"`
 	AgentCertAuthorityFingerprint string `json:"agent_cert_authority_fingerprint,omitempty"`
 	AgentCertIssuedAt             string `json:"agent_cert_issued_at,omitempty"`
@@ -98,6 +100,7 @@ type ServerUpdateRequest struct {
 	IsActive            bool   `json:"is_active,omitempty"`
 	BackupsEnabled      bool   `json:"backups_enabled,omitempty"`
 	BackupPassword      string `json:"backup_password,omitempty"`
+	S3BucketID          *uint  `json:"s3_bucket_id,omitempty"`
 }
 
 func (r *ServerUpdateRequest) Validate() error {
@@ -138,6 +141,7 @@ func (r *ServerUpdateRequest) ToServer() *Server {
 		IsActive:            r.IsActive,
 		BackupsEnabled:      r.BackupsEnabled,
 		BackupPassword:      r.BackupPassword,
+		S3BucketID:          r.S3BucketID,
 	}
 }
 
@@ -179,6 +183,7 @@ func (s *Server) ToResponse() ServerInfo {
 		SkipSSLVerification:           skipSSL,
 		IsActive:                      s.IsActive,
 		BackupsEnabled:                s.BackupsEnabled,
+		S3BucketID:                    s.S3BucketID,
 		AgentCertFingerprint:          s.AgentCertFingerprint,
 		AgentCertAuthorityFingerprint: s.AgentCertAuthorityFingerprint,
 		AgentCertIssuedAt:             formatTimestamp(s.AgentCertIssuedAt),
