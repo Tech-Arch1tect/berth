@@ -9,13 +9,14 @@ import (
 )
 
 var (
-	ErrLabelRequired     = errors.New("a label is required")
-	ErrEndpointInvalid   = errors.New("the endpoint must be an http or https URL including the port, for example https://s3.example.com:443")
-	ErrBucketNameInvalid = errors.New("the bucket name must be 3 to 63 characters of lowercase letters, numbers, dots and hyphens")
-	ErrAccessKeyRequired = errors.New("an access key id is required")
-	ErrSecretKeyRequired = errors.New("a secret access key is required")
-	ErrBucketInUse       = errors.New("this bucket configuration is assigned to a server")
-	ErrBucketBusy        = errors.New("backup storage assignments are changing; try again once they finish")
+	ErrLabelRequired            = errors.New("a label is required")
+	ErrEndpointInvalid          = errors.New("the endpoint must be an http or https URL including the port, for example https://s3.example.com:443")
+	ErrBucketNameInvalid        = errors.New("the bucket name must be 3 to 63 characters of lowercase letters, numbers, dots and hyphens")
+	ErrAccessKeyRequired        = errors.New("an access key id is required")
+	ErrSecretKeyRequired        = errors.New("a secret access key is required")
+	ErrBucketInUse              = errors.New("this bucket configuration is assigned to a server")
+	ErrBucketBusy               = errors.New("backup storage assignments are changing; try again once they finish")
+	ErrBucketStorageUnavailable = errors.New("backup storage status is unavailable")
 )
 
 var bucketNameRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`)

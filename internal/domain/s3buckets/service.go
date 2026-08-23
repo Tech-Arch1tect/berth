@@ -22,6 +22,8 @@ type S3Repository struct {
 
 type backupStorageTopology interface {
 	ReserveBackupStorageTopologyWrite() (func(), error)
+	ReserveBackupStorageWrites(serverIDs []uint) (func(), error)
+	RequireEmptyBackupStorage(ctx context.Context, serverID uint) error
 }
 
 func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*S3Repository, error) {
@@ -131,9 +133,35 @@ func (s *Service) Create(ctx context.Context, req CreateRequest) (*BucketRespons
 }
 
 func (s *Service) Update(ctx context.Context, id uint, req UpdateRequest) (*BucketResponse, error) {
+	if s.backupStorage == nil {
+		return nil, ErrBucketStorageUnavailable
+	}
+	releaseTopology, err := s.backupStorage.ReserveBackupStorageTopologyWrite()
+	if err != nil {
+		return nil, ErrBucketBusy
+	}
+	defer releaseTopology()
+
 	bucket, err := s.find(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	identityChanged := bucket.Endpoint != req.Endpoint || bucket.BucketName != req.BucketName
+	if identityChanged {
+		serverIDs, err := s.assignedServerIDs(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		releaseServers, err := s.backupStorage.ReserveBackupStorageWrites(serverIDs)
+		if err != nil {
+			return nil, err
+		}
+		defer releaseServers()
+		for _, serverID := range serverIDs {
+			if err := s.backupStorage.RequireEmptyBackupStorage(ctx, serverID); err != nil {
+				return nil, fmt.Errorf("server %d prevents the bucket identity change: %w", serverID, err)
+			}
+		}
 	}
 
 	bucket.Label = req.Label
@@ -155,6 +183,18 @@ func (s *Service) Update(ctx context.Context, id uint, req UpdateRequest) (*Buck
 
 	response := responseFrom(bucket)
 	return &response, nil
+}
+
+func (s *Service) assignedServerIDs(ctx context.Context, bucketID uint) ([]uint, error) {
+	var serverIDs []uint
+	if err := s.db.WithContext(ctx).
+		Table("servers").
+		Where("s3_bucket_id = ?", bucketID).
+		Order("id ASC").
+		Pluck("id", &serverIDs).Error; err != nil {
+		return nil, fmt.Errorf("failed to list servers assigned to the bucket configuration: %w", err)
+	}
+	return serverIDs, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id uint) error {

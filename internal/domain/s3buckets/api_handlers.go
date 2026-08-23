@@ -5,6 +5,7 @@ import (
 
 	"berth/internal/domain/authz"
 	"berth/internal/domain/security"
+	"berth/internal/domain/server"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -114,10 +115,16 @@ func (h *APIHandler) UpdateBucket(c echo.Context) error {
 
 	result, err := h.service.Update(c.Request().Context(), id, req)
 	if err != nil {
-		if errors.Is(err, ErrBucketNotFound) {
+		switch {
+		case errors.Is(err, ErrBucketNotFound):
 			return response.NotFound(c, "bucket configuration not found")
+		case errors.Is(err, ErrBucketBusy), errors.Is(err, server.ErrBackupStorageBusy), errors.Is(err, server.ErrBackupStorageHasHistory):
+			return response.Conflict(c, err.Error())
+		case errors.Is(err, ErrBucketStorageUnavailable), errors.Is(err, server.ErrBackupStorageUnavailable):
+			return response.ServiceUnavailable(c, err.Error())
+		default:
+			return response.Internal(c, err.Error())
 		}
-		return response.Internal(c, err.Error())
 	}
 
 	h.audit(c, p, security.EventS3BucketUpdated, result.ID, result.Label, map[string]any{

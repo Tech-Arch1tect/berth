@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"sync"
 
 	"berth/internal/domain/server"
@@ -68,6 +69,32 @@ func (s *Service) ReserveBackupStorageWrite(serverID uint) (func(), error) {
 		return nil, server.ErrBackupStorageBusy
 	}
 	return lock.Unlock, nil
+}
+
+func (s *Service) ReserveBackupStorageWrites(serverIDs []uint) (func(), error) {
+	ids := append([]uint(nil), serverIDs...)
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	releases := make([]func(), 0, len(ids))
+	var previous uint
+	for index, serverID := range ids {
+		if index > 0 && serverID == previous {
+			continue
+		}
+		previous = serverID
+		release, err := s.ReserveBackupStorageWrite(serverID)
+		if err != nil {
+			for i := len(releases) - 1; i >= 0; i-- {
+				releases[i]()
+			}
+			return nil, err
+		}
+		releases = append(releases, release)
+	}
+	return func() {
+		for i := len(releases) - 1; i >= 0; i-- {
+			releases[i]()
+		}
+	}, nil
 }
 
 func (s *Service) RequireEmptyBackupStorage(ctx context.Context, serverID uint) error {

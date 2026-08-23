@@ -701,7 +701,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("PUT", "/api/v1/admin/s3-buckets/{id}").
 		Tags("s3-buckets").
 		Summary("Update an S3 bucket configuration").
-		Description("Updates the bucket configuration; an empty secret access key keeps the stored one").
+		Description("Updates the bucket configuration. Endpoint or bucket-name changes require exact empty backup history on every assigned server; an empty secret access key keeps the stored one").
 		PathParam("id", "Bucket configuration ID").TypeInt().Required().
 		Body(s3buckets.UpdateRequest{}, "Bucket configuration; empty secret access key keeps the stored secret").
 		Response(http.StatusOK, response.Response[s3buckets.BucketResponse]{}, "Updated bucket configuration").
@@ -709,6 +709,9 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Bucket configuration not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Assigned server history remains, backup activity is running, or another storage assignment or bucket mutation is active").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "An assigned server's backup storage status could not be established").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
