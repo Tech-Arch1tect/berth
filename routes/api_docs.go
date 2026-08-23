@@ -1407,12 +1407,14 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("DELETE", "/api/v1/admin/servers/{id}").
 		Tags("admin").
 		Summary("Delete a server").
-		Description("Delete a server connection. Requires admin access.").
+		Description("Delete a server connection after confirming its agent-local backup history is empty. Backup repository data is never deleted by this action. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
 		Response(http.StatusOK, response.Response[server.MessageData]{}, "Server deleted").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
 		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backup history remains or backup activity is running").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Backup storage status could not be established").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
 		Build()

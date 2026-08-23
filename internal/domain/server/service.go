@@ -447,27 +447,52 @@ func sameS3BucketID(left, right *uint) bool {
 	return *left == *right
 }
 
-func (s *Service) DeleteServer(id uint) error {
+func (s *Service) DeleteServer(ctx context.Context, id uint) (*Server, error) {
 	s.logger.Info("deleting server",
 		zap.Uint("server_id", id),
 	)
 
+	if s.backupStorage == nil {
+		return nil, ErrBackupStorageUnavailable
+	}
+	releaseTopology, err := s.backupStorage.ReserveBackupStorageTopologyRead()
+	if err != nil {
+		return nil, err
+	}
+	defer releaseTopology()
+	releaseServer, err := s.backupStorage.ReserveBackupStorageWrite(id)
+	if err != nil {
+		return nil, err
+	}
+	defer releaseServer()
+
 	var server Server
-	if err := s.db.First(&server, id).Error; err != nil {
+	if err := s.db.WithContext(ctx).First(&server, id).Error; err != nil {
 		s.logger.Error("failed to find server for deletion",
 			zap.Error(err),
 			zap.Uint("server_id", id),
 		)
-		return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrServerNotFound
+		}
+		return nil, err
+	}
+	if err := s.backupStorage.RequireEmptyBackupStorage(ctx, id); err != nil {
+		return nil, err
 	}
 
-	if err := s.db.Delete(&server).Error; err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&server).Update("s3_bucket_id", nil).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&server).Error
+	}); err != nil {
 		s.logger.Error("failed to delete server from database",
 			zap.Error(err),
 			zap.Uint("server_id", id),
 			zap.String("server_name", server.Name),
 		)
-		return err
+		return nil, err
 	}
 
 	s.logger.Info("server deleted successfully",
@@ -479,7 +504,8 @@ func (s *Service) DeleteServer(id uint) error {
 		s.agentLife.DisconnectAgent(id)
 	}
 
-	return nil
+	server.S3BucketID = nil
+	return &server, nil
 }
 
 func (s *Service) TestServerConnection(ctx context.Context, server *Server) error {

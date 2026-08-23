@@ -124,16 +124,21 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 		return err
 	}
 
-	var name string
-	if srv, err := h.service.GetServer(id); err == nil {
-		name = srv.Name
+	deleted, err := h.service.DeleteServer(c.Request().Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrServerNotFound):
+			return response.NotFound(c, err.Error())
+		case errors.Is(err, ErrBackupStorageBusy), errors.Is(err, ErrBackupStorageHasHistory):
+			return response.Conflict(c, err.Error())
+		case errors.Is(err, ErrBackupStorageUnavailable):
+			return response.ServiceUnavailable(c, err.Error())
+		default:
+			return response.Internal(c, "Failed to delete server")
+		}
 	}
 
-	if err := h.service.DeleteServer(id); err != nil {
-		return response.Internal(c, "Failed to delete server")
-	}
-
-	h.audit(c, security.EventServerDeleted, id, name, true, "")
+	h.audit(c, security.EventServerDeleted, id, deleted.Name, true, "")
 
 	return response.OK(c, MessageData{Message: "Server deleted successfully"})
 }
