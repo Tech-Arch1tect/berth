@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -21,6 +22,8 @@ var ErrBackupNotFound = errors.New("backup not found")
 var ErrRepositoryBusy = errors.New("the backup repository is in use by another operation; try again once it finishes")
 var ErrBackupsNotEnabled = errors.New("backups are not enabled for this server; an administrator can enable them and set an encryption password in the server settings")
 var ErrAccessDenied = errors.New("access denied")
+var ErrBackupStorageUnavailable = errors.New("backup storage status is unavailable")
+var ErrServerNotFound = errors.New("server not found")
 
 const backupPasswordHeader = "X-Backup-Password"
 const backupS3RepositoryHeader = "X-Backup-S3-Repository"
@@ -36,11 +39,13 @@ type agentErrorBody struct {
 
 type backupsAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeReadRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, payload any, headers map[string]string) (*http.Response, error)
 	MakeStreamRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, headers map[string]string) (*http.Response, error)
 }
 
 type backupsServerProvider interface {
+	GetServer(id uint) (*server.Server, error)
 	GetActiveServerForUser(ctx context.Context, id uint, p authz.Principal) (*server.Server, error)
 }
 
@@ -92,6 +97,62 @@ func (s *Service) headersFor(ctx context.Context, srv *server.Server, stackname 
 		headers[backupS3RepositoryHeader] = string(encoded)
 	}
 	return headers, nil
+}
+
+func (s *Service) BackupStorageStatus(ctx context.Context, serverID uint) (*HistoryState, error) {
+	srv, err := s.serverSvc.GetServer(serverID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrServerNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	resp, err := s.agentSvc.MakeReadRequest(ctx, srv, http.MethodGet, "/backups/history", nil)
+	if err != nil {
+		s.logger.Warn("failed to read backup storage status from agent",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent request failed", ErrBackupStorageUnavailable)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusConflict {
+		return nil, ErrRepositoryBusy
+	}
+	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent refused backup storage status request",
+			zap.Uint("server_id", serverID),
+			zap.Int("status_code", resp.StatusCode),
+		)
+		return nil, fmt.Errorf("%w: agent returned status %d", ErrBackupStorageUnavailable, resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	var wireState agentHistoryState
+	if err := decoder.Decode(&wireState); err != nil {
+		s.logger.Warn("failed to decode backup storage status from agent",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent response could not be decoded", ErrBackupStorageUnavailable)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		s.logger.Warn("rejected trailing data in backup storage status from agent",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent response contained trailing data", ErrBackupStorageUnavailable)
+	}
+	state, valid := wireState.state()
+	if !valid {
+		s.logger.Warn("rejected inconsistent backup storage status from agent",
+			zap.Uint("server_id", serverID),
+		)
+		return nil, fmt.Errorf("%w: agent response was inconsistent", ErrBackupStorageUnavailable)
+	}
+	return &state, nil
 }
 
 func (s *Service) checkReadPermission(p authz.Principal, serverID uint, stackname string) error {

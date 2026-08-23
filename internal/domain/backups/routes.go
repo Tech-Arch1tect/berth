@@ -5,6 +5,10 @@ import (
 	"berth/internal/domain/rbac/permnames"
 )
 
+func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
+	reg.GET("/servers/:id/backup-storage", h.GetBackupStorageStatus, authz.Admin(permnames.AdminServersRead))
+}
+
 func (h *APIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {
 	reg.GET("/backups", h.ListAllBackups, authz.Authenticated().WithListScope().RequireAPIKeyScope(permnames.BackupsRead))
 	reg.GET("/servers/:serverid/stacks/:stackname/backups", h.ListBackups, authz.Stack(permnames.BackupsRead))

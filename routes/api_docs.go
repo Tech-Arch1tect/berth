@@ -1360,6 +1360,22 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("GET", "/api/v1/admin/servers/{id}/backup-storage").
+		Tags("backups").
+		Summary("Read a server's backup storage history status").
+		Description("Returns exact agent-local backup history counts for storage lifecycle decisions. Requires admin server read access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[backups.HistoryState]{}, "Authoritative backup storage history status").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin server read access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backup activity is running").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "Backup storage status could not be established").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/servers").
 		Tags("admin").
 		Summary("Create a new server").

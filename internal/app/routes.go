@@ -90,7 +90,7 @@ func registerRoutes(g *Graph) {
 		g.ImageUpdatesAPIHandler, g.APIKeyHandler, g.VersionHandler, g.RegistryAPIHandler)
 	adminRegistrar := registerAdminAPIRoutes(api, generalApiRateLimit, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc,
 		g.RBACAPIHandler, g.OperationLogsHandler,
-		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, g.S3BucketsAPIHandler, authzEngine)
+		g.ServerAPIHandler, g.DataExportHandler, g.SecurityHandler, g.S3BucketsAPIHandler, g.BackupsAPIHandler, authzEngine)
 	wsRegistrar := registerAPIWebSocketRoutes(e, g.JWTSvc, g.APIKeySvc, g.AuthUserProv, g.SecurityAuditSvc, g.WSHandler, g.WSEventsHandler, g.OperationsStreamHandler, authzEngine)
 
 	auditRegistrars := []*authz.Registrar{publicRegistrar, protectedRegistrar, adminRegistrar}
@@ -193,7 +193,7 @@ func registerProtectedAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middle
 func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.MiddlewareFunc, jwtSvc *tokens.Service, apiKeySvc *apikey.Service, userProvider auth.UserProvider, auditor auth.APIKeyAuthAuditor,
 	rbacAPIHandler *rbac.APIHandler, operationLogsHandler *operationlogs.Handler,
 	serverAPIHandler *server.APIHandler, migrationHandler *dataexport.Handler, securityHandler *security.Handler, s3BucketsHandler *s3buckets.APIHandler,
-	authzEngine *authzengine.Engine) *authz.Registrar {
+	backupsAPIHandler *backups.APIHandler, authzEngine *authzengine.Engine) *authz.Registrar {
 
 	if rbacAPIHandler == nil {
 		return nil
@@ -221,6 +221,9 @@ func registerAdminAPIRoutes(api *echo.Group, generalApiRateLimit echo.Middleware
 	}
 	if s3BucketsHandler != nil {
 		s3BucketsHandler.RegisterAdminAPIRoutes(adminRegistrar)
+	}
+	if backupsAPIHandler != nil {
+		backupsAPIHandler.RegisterAdminAPIRoutes(adminRegistrar)
 	}
 
 	return adminRegistrar

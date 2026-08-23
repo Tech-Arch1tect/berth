@@ -28,6 +28,27 @@ func NewAPIHandler(service *Service, securityLog backupSecurityAuditor) *APIHand
 	return &APIHandler{service: service, securityLog: securityLog}
 }
 
+func (h *APIHandler) GetBackupStorageStatus(c echo.Context) error {
+	serverID, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	state, err := h.service.BackupStorageStatus(c.Request().Context(), serverID)
+	switch {
+	case errors.Is(err, ErrServerNotFound):
+		return response.NotFound(c, "server not found")
+	case errors.Is(err, ErrRepositoryBusy):
+		return response.Conflict(c, err.Error())
+	case errors.Is(err, ErrBackupStorageUnavailable):
+		return response.ServiceUnavailable(c, "backup storage status could not be read from the agent")
+	case err != nil:
+		return response.Internal(c, err.Error())
+	default:
+		return response.OK(c, *state)
+	}
+}
+
 func (h *APIHandler) ListBackups(c echo.Context) error {
 	p, err := authz.RequirePrincipal(c)
 	if err != nil {

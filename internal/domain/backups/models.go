@@ -103,3 +103,40 @@ type ServerBackups struct {
 type OverviewResponse struct {
 	Servers []ServerBackups `json:"servers"`
 }
+
+type HistoryState struct {
+	Empty                 bool `json:"empty"`
+	StackCount            int  `json:"stack_count"`
+	RecordCount           int  `json:"record_count"`
+	UnreadableRecordCount int  `json:"unreadable_record_count"`
+}
+
+type agentHistoryState struct {
+	Empty                 *bool `json:"empty"`
+	StackCount            *int  `json:"stack_count"`
+	RecordCount           *int  `json:"record_count"`
+	UnreadableRecordCount *int  `json:"unreadable_record_count"`
+}
+
+func (s agentHistoryState) state() (HistoryState, bool) {
+	if s.Empty == nil || s.StackCount == nil || s.RecordCount == nil || s.UnreadableRecordCount == nil {
+		return HistoryState{}, false
+	}
+	state := HistoryState{
+		Empty:                 *s.Empty,
+		StackCount:            *s.StackCount,
+		RecordCount:           *s.RecordCount,
+		UnreadableRecordCount: *s.UnreadableRecordCount,
+	}
+	return state, state.valid()
+}
+
+func (s HistoryState) valid() bool {
+	if s.StackCount < 0 || s.RecordCount < 0 || s.UnreadableRecordCount < 0 {
+		return false
+	}
+	if s.StackCount > s.RecordCount || s.UnreadableRecordCount > s.RecordCount {
+		return false
+	}
+	return s.Empty == (s.RecordCount == 0)
+}
