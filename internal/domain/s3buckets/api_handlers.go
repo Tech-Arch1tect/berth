@@ -142,7 +142,7 @@ func (h *APIHandler) DeleteBucket(c echo.Context) error {
 		if errors.Is(err, ErrBucketNotFound) {
 			return response.NotFound(c, "bucket configuration not found")
 		}
-		if errors.Is(err, ErrBucketInUse) {
+		if errors.Is(err, ErrBucketInUse) || errors.Is(err, ErrBucketBusy) {
 			return response.Conflict(c, err.Error())
 		}
 		return response.Internal(c, err.Error())

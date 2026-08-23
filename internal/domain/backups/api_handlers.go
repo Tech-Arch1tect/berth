@@ -149,7 +149,7 @@ func (h *APIHandler) RebuildBackupIndex(c echo.Context) error {
 
 	result, err := h.service.RebuildBackupIndex(c.Request().Context(), p, serverID, stackname)
 	if err != nil {
-		if errors.Is(err, ErrBackupsNotEnabled) {
+		if errors.Is(err, ErrBackupsNotEnabled) || errors.Is(err, ErrRepositoryBusy) {
 			return response.Conflict(c, err.Error())
 		}
 		return response.Internal(c, err.Error())

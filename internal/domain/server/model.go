@@ -16,6 +16,10 @@ var (
 	ErrServerAccessTokenRequired    = errors.New("access token is required")
 	ErrServerBackupPasswordRequired = errors.New("a backup encryption password is required when backups are enabled")
 	ErrServerS3BucketIDInvalid      = errors.New("s3 bucket id must be greater than 0")
+	ErrServerS3BucketNotFound       = errors.New("s3 bucket configuration not found")
+	ErrBackupStorageBusy            = errors.New("backup storage is in use by another operation; try again once it finishes")
+	ErrBackupStorageHasHistory      = errors.New("backup storage cannot change while backup history remains")
+	ErrBackupStorageUnavailable     = errors.New("backup storage status is unavailable")
 	ErrServerNotFound               = errors.New("server not found")
 )
 

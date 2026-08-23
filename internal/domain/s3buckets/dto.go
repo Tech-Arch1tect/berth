@@ -15,6 +15,7 @@ var (
 	ErrAccessKeyRequired = errors.New("an access key id is required")
 	ErrSecretKeyRequired = errors.New("a secret access key is required")
 	ErrBucketInUse       = errors.New("this bucket configuration is assigned to a server")
+	ErrBucketBusy        = errors.New("backup storage assignments are changing; try again once they finish")
 )
 
 var bucketNameRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`)

@@ -91,15 +91,20 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	tokenRotated := req.AccessToken != ""
 	backupPasswordChanged := req.BackupPassword != ""
 
-	server, err := h.service.UpdateServer(id, &req)
+	server, err := h.service.UpdateServer(c.Request().Context(), id, &req)
 	if err != nil {
-		if errors.Is(err, ErrServerNotFound) {
+		switch {
+		case errors.Is(err, ErrServerNotFound):
 			return response.NotFound(c, err.Error())
-		}
-		if errors.Is(err, ErrServerBackupPasswordRequired) {
+		case errors.Is(err, ErrServerBackupPasswordRequired), errors.Is(err, ErrServerS3BucketNotFound):
 			return response.BadRequest(c, err.Error())
+		case errors.Is(err, ErrBackupStorageBusy), errors.Is(err, ErrBackupStorageHasHistory):
+			return response.Conflict(c, err.Error())
+		case errors.Is(err, ErrBackupStorageUnavailable):
+			return response.ServiceUnavailable(c, err.Error())
+		default:
+			return response.Internal(c, "Failed to update server")
 		}
-		return response.Internal(c, "Failed to update server")
 	}
 
 	h.audit(c, security.EventServerUpdated, server.ID, server.Name, true, "")

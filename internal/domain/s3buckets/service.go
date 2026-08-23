@@ -20,6 +20,10 @@ type S3Repository struct {
 	Region      string `json:"region,omitempty"`
 }
 
+type backupStorageTopology interface {
+	ReserveBackupStorageTopologyWrite() (func(), error)
+}
+
 func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*S3Repository, error) {
 	var bucketID *uint
 	if err := s.db.WithContext(ctx).
@@ -53,13 +57,26 @@ func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackN
 }
 
 type Service struct {
-	db     *gorm.DB
-	crypto *crypto.Crypto
-	logger *zap.Logger
+	db            *gorm.DB
+	crypto        *crypto.Crypto
+	backupStorage backupStorageTopology
+	logger        *zap.Logger
 }
 
 func NewService(db *gorm.DB, cryptoSvc *crypto.Crypto, logger *zap.Logger) *Service {
 	return &Service{db: db, crypto: cryptoSvc, logger: logger}
+}
+
+func (s *Service) SetBackupStorageTopology(storage backupStorageTopology) {
+	s.backupStorage = storage
+}
+
+func (s *Service) Exists(ctx context.Context, id uint) (bool, error) {
+	var count int64
+	if err := s.db.WithContext(ctx).Model(&S3Bucket{}).Where("id = ?", id).Count(&count).Error; err != nil {
+		return false, fmt.Errorf("failed to check s3 bucket configuration: %w", err)
+	}
+	return count == 1, nil
 }
 
 func (s *Service) List(ctx context.Context) (*ListResponse, error) {
@@ -141,6 +158,15 @@ func (s *Service) Update(ctx context.Context, id uint, req UpdateRequest) (*Buck
 }
 
 func (s *Service) Delete(ctx context.Context, id uint) error {
+	if s.backupStorage == nil {
+		return ErrBucketBusy
+	}
+	release, err := s.backupStorage.ReserveBackupStorageTopologyWrite()
+	if err != nil {
+		return ErrBucketBusy
+	}
+	defer release()
+
 	bucket, err := s.find(ctx, id)
 	if err != nil {
 		return err

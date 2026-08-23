@@ -59,20 +59,23 @@ type backupsBucketResolver interface {
 }
 
 type Service struct {
-	agentSvc  backupsAgentClient
-	serverSvc backupsServerProvider
-	authzSvc  backupsAuthorizer
-	bucketSvc backupsBucketResolver
-	logger    *zap.Logger
+	agentSvc        backupsAgentClient
+	serverSvc       backupsServerProvider
+	authzSvc        backupsAuthorizer
+	bucketSvc       backupsBucketResolver
+	storageTopology storageTopology
+	storageLocks    *storageLockTable
+	logger          *zap.Logger
 }
 
 func NewService(agentSvc backupsAgentClient, serverSvc backupsServerProvider, authzSvc backupsAuthorizer, bucketSvc backupsBucketResolver, logger *zap.Logger) *Service {
 	return &Service{
-		agentSvc:  agentSvc,
-		serverSvc: serverSvc,
-		authzSvc:  authzSvc,
-		bucketSvc: bucketSvc,
-		logger:    logger,
+		agentSvc:     agentSvc,
+		serverSvc:    serverSvc,
+		authzSvc:     authzSvc,
+		bucketSvc:    bucketSvc,
+		storageLocks: newStorageLockTable(),
+		logger:       logger,
 	}
 }
 
@@ -244,6 +247,11 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 	if err := s.checkManagePermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
+	release, err := s.ReserveBackupStorageRead(serverID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 
 	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
@@ -313,6 +321,11 @@ func (s *Service) RebuildBackupIndex(ctx context.Context, p authz.Principal, ser
 	if err := s.checkManagePermission(p, serverID, stackname); err != nil {
 		return nil, err
 	}
+	release, err := s.ReserveBackupStorageRead(serverID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 
 	srv, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {
@@ -375,6 +388,12 @@ func (s *Service) browseServer(ctx context.Context, p authz.Principal, serverID 
 }
 
 func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID, componentID, path string) (*BackupFileListing, error) {
+	release, err := s.ReserveBackupStorageRead(serverID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
 	srv, err := s.browseServer(ctx, p, serverID, stackname)
 	if err != nil {
 		return nil, err
@@ -413,6 +432,17 @@ func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, server
 }
 
 func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, serverID uint, stackname, backupID, componentID string, paths []string) (*http.Response, error) {
+	release, err := s.ReserveBackupStorageRead(serverID)
+	if err != nil {
+		return nil, err
+	}
+	held := true
+	defer func() {
+		if held {
+			release()
+		}
+	}()
+
 	srv, err := s.browseServer(ctx, p, serverID, stackname)
 	if err != nil {
 		return nil, err
@@ -436,6 +466,8 @@ func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, se
 
 	switch resp.StatusCode {
 	case http.StatusOK:
+		resp.Body = &storageReadCloser{ReadCloser: resp.Body, release: release}
+		held = false
 		return resp, nil
 	case http.StatusNotFound:
 		_ = resp.Body.Close()

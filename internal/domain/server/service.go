@@ -39,17 +39,30 @@ type agentLifecycle interface {
 	DisconnectAgent(serverID uint)
 }
 
+type backupStorageGuard interface {
+	ReserveBackupStorageTopologyRead() (func(), error)
+	ReserveBackupStorageRead(serverID uint) (func(), error)
+	ReserveBackupStorageWrite(serverID uint) (func(), error)
+	RequireEmptyBackupStorage(ctx context.Context, serverID uint) error
+}
+
+type s3BucketValidator interface {
+	Exists(ctx context.Context, id uint) (bool, error)
+}
+
 type Service struct {
-	db             *gorm.DB
-	crypto         *berthcrypto.Crypto
-	authzSvc       serverAuthorizer
-	patternSvc     stackPatternProvider
-	agentSvc       serverAgentClient
-	agentLife      agentLifecycle
-	logger         *zap.Logger
-	authorityMutex sync.Mutex
-	signerMutex    sync.Mutex
-	signer         *agentsign.Signer
+	db              *gorm.DB
+	crypto          *berthcrypto.Crypto
+	authzSvc        serverAuthorizer
+	patternSvc      stackPatternProvider
+	agentSvc        serverAgentClient
+	agentLife       agentLifecycle
+	backupStorage   backupStorageGuard
+	bucketValidator s3BucketValidator
+	logger          *zap.Logger
+	authorityMutex  sync.Mutex
+	signerMutex     sync.Mutex
+	signer          *agentsign.Signer
 }
 
 func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthorizer, patternSvc stackPatternProvider, agentSvc serverAgentClient, logger *zap.Logger) *Service {
@@ -65,6 +78,14 @@ func NewService(db *gorm.DB, crypto *berthcrypto.Crypto, authzSvc serverAuthoriz
 
 func (s *Service) SetAgentLifecycle(a agentLifecycle) {
 	s.agentLife = a
+}
+
+func (s *Service) SetBackupStorageGuard(guard backupStorageGuard) {
+	s.backupStorage = guard
+}
+
+func (s *Service) SetS3BucketValidator(validator s3BucketValidator) {
+	s.bucketValidator = validator
 }
 
 func (s *Service) ListServers() ([]ServerInfo, error) {
@@ -253,23 +274,69 @@ func (s *Service) CreateServer(server *Server) error {
 	return nil
 }
 
-func (s *Service) UpdateServer(id uint, request *ServerUpdateRequest) (*Server, error) {
+func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpdateRequest) (*Server, error) {
 	s.logger.Info("updating server",
 		zap.Uint("server_id", id),
 		zap.String("name", request.Name),
 		zap.String("host", request.Host),
 	)
 
-	var server Server
-	if err := s.db.First(&server, id).Error; err != nil {
-		s.logger.Error("failed to find server for update",
-			zap.Error(err),
-			zap.Uint("server_id", id),
-		)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrServerNotFound
+	if s.backupStorage == nil {
+		return nil, ErrBackupStorageUnavailable
+	}
+	if request.s3BucketIDSet {
+		releaseTopology, err := s.backupStorage.ReserveBackupStorageTopologyRead()
+		if err != nil {
+			return nil, err
 		}
+		defer releaseTopology()
+	}
+
+	releaseServer, err := s.backupStorage.ReserveBackupStorageRead(id)
+	if err != nil {
 		return nil, err
+	}
+	defer func() {
+		if releaseServer != nil {
+			releaseServer()
+		}
+	}()
+
+	server, err := s.loadServerForUpdate(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if serverUpdateNeedsWrite(&server, request) {
+		releaseServer()
+		releaseServer = nil
+		releaseWrite, err := s.backupStorage.ReserveBackupStorageWrite(id)
+		if err != nil {
+			return nil, err
+		}
+		releaseServer = releaseWrite
+		server, err = s.loadServerForUpdate(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	storageChanged := request.s3BucketIDSet && !sameS3BucketID(server.S3BucketID, request.S3BucketID)
+	if storageChanged {
+		if request.S3BucketID != nil {
+			if s.bucketValidator == nil {
+				return nil, ErrBackupStorageUnavailable
+			}
+			exists, err := s.bucketValidator.Exists(ctx, *request.S3BucketID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to validate s3 bucket configuration: %w", err)
+			}
+			if !exists {
+				return nil, ErrServerS3BucketNotFound
+			}
+		}
+		if err := s.backupStorage.RequireEmptyBackupStorage(ctx, id); err != nil {
+			return nil, err
+		}
 	}
 
 	updates := map[string]any{
@@ -316,7 +383,7 @@ func (s *Service) UpdateServer(id uint, request *ServerUpdateRequest) (*Server, 
 		}
 	}
 
-	if err := s.db.Model(&server).Updates(updates).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(&server).Updates(updates).Error; err != nil {
 		s.logger.Error("failed to update server in database",
 			zap.Error(err),
 			zap.Uint("server_id", id),
@@ -341,6 +408,43 @@ func (s *Service) UpdateServer(id uint, request *ServerUpdateRequest) (*Server, 
 	)
 
 	return updated, nil
+}
+
+func (s *Service) loadServerForUpdate(ctx context.Context, id uint) (Server, error) {
+	var server Server
+	if err := s.db.WithContext(ctx).First(&server, id).Error; err != nil {
+		s.logger.Error("failed to find server for update",
+			zap.Error(err),
+			zap.Uint("server_id", id),
+		)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return Server{}, ErrServerNotFound
+		}
+		return Server{}, err
+	}
+	return server, nil
+}
+
+func serverUpdateNeedsWrite(current *Server, request *ServerUpdateRequest) bool {
+	return current.Host != request.Host ||
+		current.Port != request.Port ||
+		!sameBoolPointer(current.SkipSSLVerification, request.SkipSSLVerification) ||
+		request.AccessToken != "" ||
+		request.s3BucketIDSet && !sameS3BucketID(current.S3BucketID, request.S3BucketID)
+}
+
+func sameBoolPointer(left, right *bool) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
+func sameS3BucketID(left, right *uint) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
 }
 
 func (s *Service) DeleteServer(id uint) error {

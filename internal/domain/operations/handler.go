@@ -7,6 +7,7 @@ import (
 	"berth/internal/domain/authz"
 	"berth/internal/domain/backups"
 	"berth/internal/domain/security"
+	"berth/internal/domain/server"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
@@ -123,10 +124,14 @@ func (h *Handler) StartOperation(c echo.Context) error {
 
 	resp, err := h.service.StartOperation(c.Request().Context(), p, serverID, stackname, req)
 	if err != nil {
-		if errors.Is(err, backups.ErrBackupsNotEnabled) {
+		switch {
+		case errors.Is(err, backups.ErrBackupsNotEnabled), errors.Is(err, backups.ErrRepositoryBusy):
 			return response.Conflict(c, err.Error())
+		case errors.Is(err, server.ErrBackupStorageUnavailable):
+			return response.ServiceUnavailable(c, err.Error())
+		default:
+			return response.Internal(c, err.Error())
 		}
-		return response.Internal(c, err.Error())
 	}
 
 	startTime := time.Now()

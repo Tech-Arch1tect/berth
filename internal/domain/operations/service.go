@@ -53,15 +53,20 @@ type opsSignerProvider interface {
 	ResponseVerifier(target *server.Server) (*agentsign.ResponseVerifier, error)
 }
 
+type opsBackupStorage interface {
+	ReserveBackupStorageRead(serverID uint) (func(), error)
+}
+
 type Service struct {
-	serverSvc   opsServerProvider
-	signers     opsSignerProvider
-	authzSvc    opsAuthorizer
-	auditSvc    *AuditService
-	registrySvc opsRegistryProvider
-	filesSvc    opsFileReader
-	bucketSvc   opsBucketResolver
-	logger      *zap.Logger
+	serverSvc     opsServerProvider
+	signers       opsSignerProvider
+	authzSvc      opsAuthorizer
+	auditSvc      *AuditService
+	registrySvc   opsRegistryProvider
+	filesSvc      opsFileReader
+	bucketSvc     opsBucketResolver
+	backupStorage opsBackupStorage
+	logger        *zap.Logger
 }
 
 func (s *Service) SetSignerProvider(provider opsSignerProvider) {
@@ -70,6 +75,10 @@ func (s *Service) SetSignerProvider(provider opsSignerProvider) {
 
 func (s *Service) SetBucketResolver(resolver opsBucketResolver) {
 	s.bucketSvc = resolver
+}
+
+func (s *Service) SetBackupStorage(storage opsBackupStorage) {
+	s.backupStorage = storage
 }
 
 func NewService(serverSvc opsServerProvider, authzSvc opsAuthorizer, auditSvc *AuditService, registrySvc opsRegistryProvider, filesSvc opsFileReader, logger *zap.Logger) *Service {
@@ -90,6 +99,17 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 		zap.String("stack_name", stackname),
 		zap.String("operation_command", req.Command),
 	)
+
+	if req.Command == "create-backup" || req.Command == "restore-backup" {
+		if s.backupStorage == nil {
+			return nil, server.ErrBackupStorageUnavailable
+		}
+		release, err := s.backupStorage.ReserveBackupStorageRead(serverID)
+		if err != nil {
+			return nil, err
+		}
+		defer release()
+	}
 
 	serverModel, err := s.serverSvc.GetActiveServerForUser(ctx, serverID, p)
 	if err != nil {

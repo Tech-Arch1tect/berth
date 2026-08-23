@@ -243,6 +243,9 @@ func Build(
 
 	g.BackupsSvc = backups.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, g.S3BucketsSvc, logger)
 	g.BackupsAPIHandler = backups.NewAPIHandler(g.BackupsSvc, g.SecurityAuditSvc)
+	g.ServerSvc.SetBackupStorageGuard(g.BackupsSvc)
+	g.ServerSvc.SetS3BucketValidator(g.S3BucketsSvc)
+	g.S3BucketsSvc.SetBackupStorageTopology(g.BackupsSvc)
 
 	g.LogsSvc = logs.NewService(g.AgentSvc, g.ServerSvc, g.AuthzEngine, logger)
 	g.LogsHandler = logs.NewHandler(g.LogsSvc)
@@ -265,6 +268,7 @@ func Build(
 
 	g.OperationsSvc = operations.NewService(g.ServerSvc, g.AuthzEngine, g.OperationsAuditSvc, g.RegistrySvc, g.FilesSvc, logger)
 	g.OperationsSvc.SetBucketResolver(g.S3BucketsSvc)
+	g.OperationsSvc.SetBackupStorage(g.BackupsSvc)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
 	g.OperationsHandler = operations.NewHandler(g.OperationsSvc, g.SecurityAuditSvc)
 
