@@ -253,11 +253,11 @@ func (s *Service) CreateServer(server *Server) error {
 	return nil
 }
 
-func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
+func (s *Service) UpdateServer(id uint, request *ServerUpdateRequest) (*Server, error) {
 	s.logger.Info("updating server",
 		zap.Uint("server_id", id),
-		zap.String("name", updates.Name),
-		zap.String("host", updates.Host),
+		zap.String("name", request.Name),
+		zap.String("host", request.Host),
 	)
 
 	var server Server
@@ -266,11 +266,24 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 			zap.Error(err),
 			zap.Uint("server_id", id),
 		)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrServerNotFound
+		}
 		return nil, err
 	}
 
-	if updates.AccessToken != "" {
-		encryptedToken, err := s.crypto.Encrypt(updates.AccessToken)
+	updates := map[string]any{
+		"name":                  request.Name,
+		"description":           request.Description,
+		"host":                  request.Host,
+		"port":                  request.Port,
+		"skip_ssl_verification": request.SkipSSLVerification,
+		"is_active":             request.IsActive,
+		"backups_enabled":       request.BackupsEnabled,
+	}
+
+	if request.AccessToken != "" {
+		encryptedToken, err := s.crypto.Encrypt(request.AccessToken)
 		if err != nil {
 			s.logger.Error("failed to encrypt updated access token",
 				zap.Error(err),
@@ -278,14 +291,14 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 			)
 			return nil, fmt.Errorf("failed to encrypt access token: %w", err)
 		}
-		updates.AccessToken = encryptedToken
+		updates["access_token"] = encryptedToken
 	}
 
-	if updates.BackupsEnabled && updates.BackupPassword == "" {
+	if request.BackupsEnabled && request.BackupPassword == "" && server.BackupPassword == "" {
 		return nil, ErrServerBackupPasswordRequired
 	}
-	if updates.BackupPassword != "" {
-		encryptedBackupPassword, err := s.crypto.Encrypt(updates.BackupPassword)
+	if request.BackupPassword != "" {
+		encryptedBackupPassword, err := s.crypto.Encrypt(request.BackupPassword)
 		if err != nil {
 			s.logger.Error("failed to encrypt updated backup password",
 				zap.Error(err),
@@ -293,45 +306,41 @@ func (s *Service) UpdateServer(id uint, updates *Server) (*Server, error) {
 			)
 			return nil, fmt.Errorf("failed to encrypt backup password: %w", err)
 		}
-		updates.BackupPassword = encryptedBackupPassword
+		updates["backup_password"] = encryptedBackupPassword
+	}
+	if request.s3BucketIDSet {
+		if request.S3BucketID == nil {
+			updates["s3_bucket_id"] = nil
+		} else {
+			updates["s3_bucket_id"] = *request.S3BucketID
+		}
 	}
 
-	if err := s.db.Model(&server).Select("name", "description", "host", "port", "skip_ssl_verification", "access_token", "is_active", "backups_enabled", "backup_password", "s3_bucket_id").Updates(updates).Error; err != nil {
+	if err := s.db.Model(&server).Updates(updates).Error; err != nil {
 		s.logger.Error("failed to update server in database",
 			zap.Error(err),
 			zap.Uint("server_id", id),
-			zap.String("name", updates.Name),
+			zap.String("name", request.Name),
 		)
 		return nil, err
 	}
 
-	decryptedToken, err := s.crypto.Decrypt(server.AccessToken)
+	updated, err := s.GetServer(id)
 	if err != nil {
-		s.logger.Error("failed to decrypt access token after update",
+		s.logger.Error("failed to load server after update",
 			zap.Error(err),
 			zap.Uint("server_id", id),
 		)
-		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+		return nil, err
 	}
-	server.AccessToken = decryptedToken
-
-	decryptedBackupPassword, err := s.crypto.Decrypt(server.BackupPassword)
-	if err != nil {
-		s.logger.Error("failed to decrypt backup password after update",
-			zap.Error(err),
-			zap.Uint("server_id", id),
-		)
-		return nil, fmt.Errorf("failed to decrypt backup password: %w", err)
-	}
-	server.BackupPassword = decryptedBackupPassword
 
 	s.logger.Info("server updated successfully",
 		zap.Uint("server_id", id),
-		zap.String("name", server.Name),
-		zap.String("host", server.Host),
+		zap.String("name", updated.Name),
+		zap.String("host", updated.Host),
 	)
 
-	return &server, nil
+	return updated, nil
 }
 
 func (s *Service) DeleteServer(id uint) error {

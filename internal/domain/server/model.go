@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -14,6 +15,8 @@ var (
 	ErrServerPortRequired           = errors.New("port must be greater than 0")
 	ErrServerAccessTokenRequired    = errors.New("access token is required")
 	ErrServerBackupPasswordRequired = errors.New("a backup encryption password is required when backups are enabled")
+	ErrServerS3BucketIDInvalid      = errors.New("s3 bucket id must be greater than 0")
+	ErrServerNotFound               = errors.New("server not found")
 )
 
 type StackStatistics struct {
@@ -101,6 +104,22 @@ type ServerUpdateRequest struct {
 	BackupsEnabled      bool   `json:"backups_enabled,omitempty"`
 	BackupPassword      string `json:"backup_password,omitempty"`
 	S3BucketID          *uint  `json:"s3_bucket_id,omitempty"`
+	s3BucketIDSet       bool
+}
+
+func (r *ServerUpdateRequest) UnmarshalJSON(data []byte) error {
+	type requestAlias ServerUpdateRequest
+	var decoded requestAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	*r = ServerUpdateRequest(decoded)
+	_, r.s3BucketIDSet = fields["s3_bucket_id"]
+	return nil
 }
 
 func (r *ServerUpdateRequest) Validate() error {
@@ -112,6 +131,9 @@ func (r *ServerUpdateRequest) Validate() error {
 	}
 	if r.Port <= 0 {
 		return ErrServerPortRequired
+	}
+	if r.s3BucketIDSet && r.S3BucketID != nil && *r.S3BucketID == 0 {
+		return ErrServerS3BucketIDInvalid
 	}
 	return nil
 }
@@ -127,21 +149,6 @@ func (r *ServerCreateRequest) ToServer() *Server {
 		IsActive:            r.IsActive,
 		BackupsEnabled:      r.BackupsEnabled,
 		BackupPassword:      r.BackupPassword,
-	}
-}
-
-func (r *ServerUpdateRequest) ToServer() *Server {
-	return &Server{
-		Name:                r.Name,
-		Description:         r.Description,
-		Host:                r.Host,
-		Port:                r.Port,
-		SkipSSLVerification: r.SkipSSLVerification,
-		AccessToken:         r.AccessToken,
-		IsActive:            r.IsActive,
-		BackupsEnabled:      r.BackupsEnabled,
-		BackupPassword:      r.BackupPassword,
-		S3BucketID:          r.S3BucketID,
 	}
 }
 

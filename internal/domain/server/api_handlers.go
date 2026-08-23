@@ -88,25 +88,14 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		return err
 	}
 
-	updates := req.ToServer()
+	tokenRotated := req.AccessToken != ""
+	backupPasswordChanged := req.BackupPassword != ""
 
-	tokenRotated := updates.AccessToken != ""
-	backupPasswordChanged := updates.BackupPassword != ""
-	if !tokenRotated || !backupPasswordChanged {
-		existing, err := h.service.GetServer(id)
-		if err != nil {
-			return response.NotFound(c, "Server not found")
-		}
-		if !tokenRotated {
-			updates.AccessToken = existing.AccessToken
-		}
-		if !backupPasswordChanged {
-			updates.BackupPassword = existing.BackupPassword
-		}
-	}
-
-	server, err := h.service.UpdateServer(id, updates)
+	server, err := h.service.UpdateServer(id, &req)
 	if err != nil {
+		if errors.Is(err, ErrServerNotFound) {
+			return response.NotFound(c, err.Error())
+		}
 		if errors.Is(err, ErrServerBackupPasswordRequired) {
 			return response.BadRequest(c, err.Error())
 		}
