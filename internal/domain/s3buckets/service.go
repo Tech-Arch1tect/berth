@@ -27,6 +27,16 @@ type backupStorageTopology interface {
 }
 
 func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*S3Repository, error) {
+	base, err := s.RepositoryBaseForServer(ctx, serverID)
+	if err != nil || base == nil {
+		return base, err
+	}
+	repository := *base
+	repository.URL += "/stacks/" + stackName
+	return &repository, nil
+}
+
+func (s *Service) RepositoryBaseForServer(ctx context.Context, serverID uint) (*S3Repository, error) {
 	var bucketID *uint
 	if err := s.db.WithContext(ctx).
 		Table("servers").
@@ -43,19 +53,16 @@ func (s *Service) RepositoryForServer(ctx context.Context, serverID uint, stackN
 	if err != nil {
 		return nil, err
 	}
-
 	secret, err := s.crypto.Decrypt(bucket.SecretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt the bucket's secret access key: %w", err)
 	}
-
-	repository := &S3Repository{
-		URL:         fmt.Sprintf("s3:%s/%s/servers/%d/stacks/%s", bucket.Endpoint, bucket.BucketName, serverID, stackName),
+	return &S3Repository{
+		URL:         fmt.Sprintf("s3:%s/%s/servers/%d", bucket.Endpoint, bucket.BucketName, serverID),
 		AccessKeyID: bucket.AccessKeyID,
 		SecretKey:   secret,
 		Region:      bucket.Region,
-	}
-	return repository, nil
+	}, nil
 }
 
 type Service struct {

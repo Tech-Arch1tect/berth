@@ -23,6 +23,7 @@ var ErrRepositoryBusy = errors.New("the backup repository is in use by another o
 var ErrBackupsNotEnabled = errors.New("backups are not enabled for this server; an administrator can enable them and set an encryption password in the server settings")
 var ErrAccessDenied = errors.New("access denied")
 var ErrBackupStorageUnavailable = errors.New("backup storage status is unavailable")
+var ErrBackupPasswordUnavailable = errors.New("a backup encryption password is not configured for this server")
 var ErrServerNotFound = errors.New("server not found")
 
 const backupPasswordHeader = "X-Backup-Password"
@@ -33,12 +34,18 @@ type agentDeleteRequest struct {
 	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
 }
 
+type agentDeleteAllRequest struct {
+	BackupPassword   string                  `json:"backup_password"`
+	S3RepositoryBase *s3buckets.S3Repository `json:"s3_repository_base,omitempty"`
+}
+
 type agentErrorBody struct {
 	Error string `json:"error"`
 }
 
 type backupsAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
+	MakeLongRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeReadRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, payload any, headers map[string]string) (*http.Response, error)
 	MakeStreamRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, headers map[string]string) (*http.Response, error)
@@ -56,6 +63,7 @@ type backupsAuthorizer interface {
 
 type backupsBucketResolver interface {
 	RepositoryForServer(ctx context.Context, serverID uint, stackName string) (*s3buckets.S3Repository, error)
+	RepositoryBaseForServer(ctx context.Context, serverID uint) (*s3buckets.S3Repository, error)
 }
 
 type Service struct {
@@ -86,6 +94,13 @@ func (s *Service) repositoryFor(ctx context.Context, serverID uint, stackname st
 	return s.bucketSvc.RepositoryForServer(ctx, serverID, stackname)
 }
 
+func (s *Service) repositoryBaseFor(ctx context.Context, serverID uint) (*s3buckets.S3Repository, error) {
+	if s.bucketSvc == nil {
+		return nil, errors.New("backup storage repository resolution is unavailable")
+	}
+	return s.bucketSvc.RepositoryBaseForServer(ctx, serverID)
+}
+
 func (s *Service) headersFor(ctx context.Context, srv *server.Server, stackname string) (map[string]string, error) {
 	headers := map[string]string{backupPasswordHeader: srv.BackupPassword}
 	repository, err := s.repositoryFor(ctx, srv.ID, stackname)
@@ -103,6 +118,18 @@ func (s *Service) headersFor(ctx context.Context, srv *server.Server, stackname 
 }
 
 func (s *Service) BackupStorageStatus(ctx context.Context, serverID uint) (*HistoryState, error) {
+	release, err := s.ReserveBackupStorageWrite(serverID)
+	if err != nil {
+		if errors.Is(err, server.ErrBackupStorageBusy) {
+			return nil, ErrRepositoryBusy
+		}
+		return nil, ErrBackupStorageUnavailable
+	}
+	defer release()
+	return s.backupStorageStatusWhileWriteLocked(ctx, serverID)
+}
+
+func (s *Service) backupStorageStatusWhileWriteLocked(ctx context.Context, serverID uint) (*HistoryState, error) {
 	srv, err := s.serverSvc.GetServer(serverID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrServerNotFound
@@ -133,6 +160,7 @@ func (s *Service) BackupStorageStatus(ctx context.Context, serverID uint) (*Hist
 	}
 
 	decoder := json.NewDecoder(resp.Body)
+	decoder.DisallowUnknownFields()
 	var wireState agentHistoryState
 	if err := decoder.Decode(&wireState); err != nil {
 		s.logger.Warn("failed to decode backup storage status from agent",
@@ -156,6 +184,83 @@ func (s *Service) BackupStorageStatus(ctx context.Context, serverID uint) (*Hist
 		return nil, fmt.Errorf("%w: agent response was inconsistent", ErrBackupStorageUnavailable)
 	}
 	return &state, nil
+}
+
+func (s *Service) DeleteAllBackups(ctx context.Context, serverID uint) (*DeleteAllResult, error) {
+	release, err := s.ReserveBackupStorageWrite(serverID)
+	if err != nil {
+		if errors.Is(err, server.ErrBackupStorageBusy) {
+			return nil, ErrRepositoryBusy
+		}
+		return nil, err
+	}
+	defer release()
+
+	srv, err := s.serverSvc.GetServer(serverID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrServerNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+	if srv.BackupPassword == "" {
+		return nil, ErrBackupPasswordUnavailable
+	}
+	repositoryBase, err := s.repositoryBaseFor(ctx, serverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve the server's backup repository: %w", err)
+	}
+
+	request := agentDeleteAllRequest{BackupPassword: srv.BackupPassword, S3RepositoryBase: repositoryBase}
+	resp, err := s.agentSvc.MakeLongRequest(ctx, srv, http.MethodDelete, "/backups", request)
+	if err != nil {
+		s.logger.Warn("failed to delete all backups through the agent",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent request failed", ErrBackupStorageUnavailable)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusConflict {
+		return nil, ErrRepositoryBusy
+	}
+	if resp.StatusCode != http.StatusOK {
+		s.logger.Warn("agent refused the delete-all backup request",
+			zap.Uint("server_id", serverID),
+			zap.Int("status_code", resp.StatusCode),
+		)
+		return nil, fmt.Errorf("%w: agent returned status %d", ErrBackupStorageUnavailable, resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	decoder.DisallowUnknownFields()
+	var wireResult agentDeleteAllResult
+	if err := decoder.Decode(&wireResult); err != nil {
+		s.logger.Warn("failed to decode the delete-all backup result",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent response could not be decoded", ErrBackupStorageUnavailable)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		s.logger.Warn("rejected trailing data in the delete-all backup result",
+			zap.Uint("server_id", serverID),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("%w: agent response contained trailing data", ErrBackupStorageUnavailable)
+	}
+	secrets := []string{srv.BackupPassword, srv.AccessToken}
+	if repositoryBase != nil {
+		secrets = append(secrets, repositoryBase.AccessKeyID, repositoryBase.SecretKey)
+	}
+	result, valid := wireResult.result(secrets)
+	if !valid {
+		s.logger.Warn("rejected an inconsistent delete-all backup result",
+			zap.Uint("server_id", serverID),
+		)
+		return nil, fmt.Errorf("%w: agent response was inconsistent", ErrBackupStorageUnavailable)
+	}
+	return &result, nil
 }
 
 func (s *Service) checkReadPermission(p authz.Principal, serverID uint, stackname string) error {

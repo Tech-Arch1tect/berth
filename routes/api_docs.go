@@ -1379,6 +1379,22 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/backup-storage/delete-all").
+		Tags("backups").
+		Summary("Delete every backup for a server").
+		Description("Attempts every stack repository using the server's stored backup password and storage assignment. Returns exact full or partial results; an HTTP 200 does not mean every backup was deleted. Requires admin server write access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[backups.DeleteAllResult]{}, "Authoritative full or partial deletion result").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID or non-empty request body").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin server write access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backup activity is running or no backup password is configured").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "A signed authoritative deletion result could not be established").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/servers").
 		Tags("admin").
 		Summary("Create a new server").

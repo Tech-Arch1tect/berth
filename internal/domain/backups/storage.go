@@ -98,7 +98,7 @@ func (s *Service) ReserveBackupStorageWrites(serverIDs []uint) (func(), error) {
 }
 
 func (s *Service) RequireEmptyBackupStorage(ctx context.Context, serverID uint) error {
-	state, err := s.BackupStorageStatus(ctx, serverID)
+	state, err := s.backupStorageStatusWhileWriteLocked(ctx, serverID)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrRepositoryBusy):

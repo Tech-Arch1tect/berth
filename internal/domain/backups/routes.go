@@ -7,6 +7,7 @@ import (
 
 func (h *APIHandler) RegisterAdminAPIRoutes(reg *authz.Registrar) {
 	reg.GET("/servers/:id/backup-storage", h.GetBackupStorageStatus, authz.Admin(permnames.AdminServersRead))
+	reg.POST("/servers/:id/backup-storage/delete-all", h.DeleteAllBackups, authz.Admin(permnames.AdminServersWrite))
 }
 
 func (h *APIHandler) RegisterProtectedAPIRoutes(reg *authz.Registrar) {

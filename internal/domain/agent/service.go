@@ -96,6 +96,9 @@ func (s *Service) getClient(server *server.Server, timeout time.Duration) *http.
 func (s *Service) MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
 	return s.doRequest(ctx, server, method, endpoint, payload, s.operationTimeout, nil)
 }
+func (s *Service) MakeLongRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
+	return s.doRequest(ctx, server, method, endpoint, payload, 0, nil)
+}
 func (s *Service) MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error) {
 	return s.doRequest(ctx, server, method, endpoint, payload, s.readTimeout, nil)
 }

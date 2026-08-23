@@ -17,6 +17,7 @@ import (
 
 type backupSecurityAuditor interface {
 	LogBackupEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName string, backupID string, ip string, metadata map[string]any) error
+	LogServerEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, serverName string, ip string, success bool, failureReason string, metadata map[string]any) error
 }
 
 type APIHandler struct {
@@ -47,6 +48,51 @@ func (h *APIHandler) GetBackupStorageStatus(c echo.Context) error {
 	default:
 		return response.OK(c, *state)
 	}
+}
+
+func (h *APIHandler) DeleteAllBackups(c echo.Context) error {
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
+	}
+	serverID, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+	var body [1]byte
+	read, readErr := c.Request().Body.Read(body[:])
+	if read != 0 || (readErr != nil && !errors.Is(readErr, io.EOF)) {
+		return response.BadRequest(c, "request body must be empty")
+	}
+
+	result, err := h.service.DeleteAllBackups(c.Request().Context(), serverID)
+	switch {
+	case errors.Is(err, ErrServerNotFound):
+		return response.NotFound(c, "server not found")
+	case errors.Is(err, ErrRepositoryBusy), errors.Is(err, ErrBackupPasswordUnavailable):
+		return response.Conflict(c, err.Error())
+	case errors.Is(err, ErrBackupStorageUnavailable):
+		return response.ServiceUnavailable(c, "backup deletion could not be completed through the agent")
+	case err != nil:
+		return response.Internal(c, err.Error())
+	}
+
+	failureReason := ""
+	if !result.Complete {
+		failureReason = "backup deletion incomplete"
+	}
+	_ = h.securityLog.LogServerEvent(
+		security.EventBackupStorageDeleteAll,
+		p.UserID(),
+		session.ResolveUsername(c),
+		serverID,
+		"",
+		c.RealIP(),
+		result.Complete,
+		failureReason,
+		result.auditMetadata(),
+	)
+	return response.OK(c, *result)
 }
 
 func (h *APIHandler) ListBackups(c echo.Context) error {

@@ -30,6 +30,7 @@ GET	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).GetServer-fm
 PUT	/api/v1/admin/servers/:id	internal/domain/server.(*APIHandler).UpdateServer-fm
 POST	/api/v1/admin/servers/:id/agent-bundle	internal/domain/server.(*APIHandler).IssueAgentBundle-fm
 GET	/api/v1/admin/servers/:id/backup-storage	internal/domain/backups.(*APIHandler).GetBackupStorageStatus-fm
+POST	/api/v1/admin/servers/:id/backup-storage/delete-all	internal/domain/backups.(*APIHandler).DeleteAllBackups-fm
 POST	/api/v1/admin/servers/:id/test	internal/domain/server.(*APIHandler).TestConnection-fm
 GET	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).ListUsers-fm
 POST	/api/v1/admin/users	internal/domain/rbac.(*APIHandler).CreateUser-fm
