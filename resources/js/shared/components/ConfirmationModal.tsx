@@ -43,7 +43,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title=""
+      size="sm"
+      showCloseButton={!isLoading}
+      closeOnOverlayClick={!isLoading}
+    >
       <div className="text-center">
         <ExclamationTriangleIcon className={cn('w-16 h-16 mx-auto mb-4', iconClasses[variant])} />
         <h3 className={cn('text-lg font-medium mb-2', theme.text.strong)}>{title}</h3>
