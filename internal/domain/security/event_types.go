@@ -45,6 +45,7 @@ const (
 	EventAgentClientCertificateReissued = "agent_authority.client_certificate.reissued"
 	EventAgentAuthorityRotated          = "agent_authority.rotated"
 	EventServerBackupPasswordChanged    = "server.backup_password.changed"
+	EventServerBackupStorageChanged     = "server.backup_storage.changed"
 	EventServerConnectionTestSuccess    = "server.connection.test_success"
 	EventServerConnectionTestFailure    = "server.connection.test_failure"
 )
@@ -125,7 +126,7 @@ func GetEventCategory(eventType string) string {
 		return "rbac"
 
 	case EventServerCreated, EventServerUpdated, EventServerDeleted,
-		EventServerAccessTokenRegenerated, EventServerBackupPasswordChanged,
+		EventServerAccessTokenRegenerated, EventServerBackupPasswordChanged, EventServerBackupStorageChanged,
 		EventServerAgentCertificateIssued, EventAgentClientCertificateReissued,
 		EventAgentAuthorityRotated,
 		EventServerConnectionTestSuccess, EventServerConnectionTestFailure:
@@ -175,7 +176,7 @@ func GetEventSeverity(eventType string) string {
 	case EventAuthLoginFailure, EventTOTPVerificationFailure, EventAPIAuthFailed,
 		EventUserCreated, EventUserRoleAssigned, EventUserRoleRevoked,
 		EventRoleCreated, EventRoleUpdated, EventPermissionAdded, EventPermissionRemoved,
-		EventServerCreated, EventServerUpdated, EventServerBackupPasswordChanged,
+		EventServerCreated, EventServerUpdated, EventServerBackupPasswordChanged, EventServerBackupStorageChanged,
 		EventAgentClientCertificateReissued,
 		EventTOTPEnabled, EventTOTPDisabled,
 		EventAPIKeyCreated, EventAPIKeyScopeAdded, EventAPIKeyScopeRemoved,

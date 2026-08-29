@@ -50,6 +50,12 @@ type s3BucketValidator interface {
 	Exists(ctx context.Context, id uint) (bool, error)
 }
 
+type ServerUpdateResult struct {
+	Server               *Server
+	BackupStorageChanged bool
+	PreviousS3BucketID   *uint
+}
+
 type Service struct {
 	db              *gorm.DB
 	crypto          *berthcrypto.Crypto
@@ -103,8 +109,12 @@ func (s *Service) ListServers() ([]ServerInfo, error) {
 }
 
 func (s *Service) GetServer(id uint) (*Server, error) {
+	return s.getServer(s.db, id)
+}
+
+func (s *Service) getServer(db *gorm.DB, id uint) (*Server, error) {
 	var server Server
-	if err := s.db.First(&server, id).Error; err != nil {
+	if err := db.First(&server, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -274,7 +284,7 @@ func (s *Service) CreateServer(server *Server) error {
 	return nil
 }
 
-func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpdateRequest) (*Server, error) {
+func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpdateRequest) (*ServerUpdateResult, error) {
 	s.logger.Info("updating server",
 		zap.Uint("server_id", id),
 		zap.String("name", request.Name),
@@ -306,6 +316,7 @@ func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpda
 	if err != nil {
 		return nil, err
 	}
+	var previousS3BucketID *uint
 	if serverUpdateNeedsWrite(&server, request) {
 		releaseServer()
 		releaseServer = nil
@@ -318,10 +329,14 @@ func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpda
 		if err != nil {
 			return nil, err
 		}
+		if server.S3BucketID != nil {
+			bucketID := *server.S3BucketID
+			previousS3BucketID = &bucketID
+		}
 	}
 
-	storageChanged := request.s3BucketIDSet && !sameS3BucketID(server.S3BucketID, request.S3BucketID)
-	if storageChanged {
+	storageChangeRequested := request.s3BucketIDSet && !sameS3BucketID(server.S3BucketID, request.S3BucketID)
+	if storageChangeRequested {
 		if request.S3BucketID != nil {
 			if s.bucketValidator == nil {
 				return nil, ErrBackupStorageUnavailable
@@ -383,21 +398,27 @@ func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpda
 		}
 	}
 
-	if err := s.db.WithContext(ctx).Model(&server).Updates(updates).Error; err != nil {
-		s.logger.Error("failed to update server in database",
-			zap.Error(err),
-			zap.Uint("server_id", id),
-			zap.String("name", request.Name),
-		)
-		return nil, err
-	}
+	var updated *Server
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&server).Updates(updates).Error; err != nil {
+			s.logger.Error("failed to update server in database",
+				zap.Error(err),
+				zap.Uint("server_id", id),
+				zap.String("name", request.Name),
+			)
+			return err
+		}
 
-	updated, err := s.GetServer(id)
-	if err != nil {
-		s.logger.Error("failed to load server after update",
-			zap.Error(err),
-			zap.Uint("server_id", id),
-		)
+		var err error
+		updated, err = s.getServer(tx, id)
+		if err != nil {
+			s.logger.Error("failed to load server after update",
+				zap.Error(err),
+				zap.Uint("server_id", id),
+			)
+		}
+		return err
+	}); err != nil {
 		return nil, err
 	}
 
@@ -407,7 +428,11 @@ func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpda
 		zap.String("host", updated.Host),
 	)
 
-	return updated, nil
+	return &ServerUpdateResult{
+		Server:               updated,
+		BackupStorageChanged: storageChangeRequested && !sameS3BucketID(previousS3BucketID, updated.S3BucketID),
+		PreviousS3BucketID:   previousS3BucketID,
+	}, nil
 }
 
 func (s *Service) loadServerForUpdate(ctx context.Context, id uint) (Server, error) {

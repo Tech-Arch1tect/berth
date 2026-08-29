@@ -31,11 +31,15 @@ func NewAPIHandler(service *Service, auditService serverAuditLogger) *APIHandler
 }
 
 func (h *APIHandler) audit(c echo.Context, eventType string, serverID uint, serverName string, success bool, failureReason string) {
+	h.auditWithMetadata(c, eventType, serverID, serverName, success, failureReason, nil)
+}
+
+func (h *APIHandler) auditWithMetadata(c echo.Context, eventType string, serverID uint, serverName string, success bool, failureReason string, metadata map[string]any) {
 	if h.auditService == nil {
 		return
 	}
 	actorID, _ := session.GetCurrentUserID(c)
-	_ = h.auditService.LogServerEvent(eventType, actorID, session.ResolveUsername(c), serverID, serverName, c.RealIP(), success, failureReason, nil)
+	_ = h.auditService.LogServerEvent(eventType, actorID, session.ResolveUsername(c), serverID, serverName, c.RealIP(), success, failureReason, metadata)
 }
 
 func (h *APIHandler) ListServers(c echo.Context) error {
@@ -91,7 +95,7 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 	tokenRotated := req.AccessToken != ""
 	backupPasswordChanged := req.BackupPassword != ""
 
-	server, err := h.service.UpdateServer(c.Request().Context(), id, &req)
+	result, err := h.service.UpdateServer(c.Request().Context(), id, &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrServerNotFound):
@@ -107,7 +111,14 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		}
 	}
 
+	server := result.Server
 	h.audit(c, security.EventServerUpdated, server.ID, server.Name, true, "")
+	if result.BackupStorageChanged {
+		h.auditWithMetadata(c, security.EventServerBackupStorageChanged, server.ID, server.Name, true, "", map[string]any{
+			"previous_s3_bucket_id": result.PreviousS3BucketID,
+			"new_s3_bucket_id":      server.S3BucketID,
+		})
+	}
 	if tokenRotated {
 		h.audit(c, security.EventServerAccessTokenRegenerated, server.ID, server.Name, true, "")
 	}
