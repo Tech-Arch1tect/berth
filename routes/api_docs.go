@@ -1379,6 +1379,22 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Security("bearerAuth", "apiKey", "session").
 		Build()
 
+	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/backup-storage/abandon").
+		Tags("backups").
+		Summary("Abandon a server's backup history").
+		Description("Removes the agent-local backup history used by Berth without reading or deleting repository data. Returns exact full or partial results; an HTTP 200 does not mean every history entry was removed. The request body must contain zero bytes. Requires admin server write access.").
+		PathParam("id", "Server ID").TypeInt().Required().
+		Response(http.StatusOK, response.Response[backups.AbandonBackupStorageResult]{}, "Authoritative full or partial abandonment result").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid server ID or non-empty request body").
+		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin server write access required").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Server not found").
+		Response(http.StatusConflict, response.ErrorResponseBody{}, "Backup activity is running").
+		Response(http.StatusServiceUnavailable, response.ErrorResponseBody{}, "A signed authoritative abandonment result could not be established").
+		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
+		Security("bearerAuth", "apiKey", "session").
+		Build()
+
 	apiDoc.Document("POST", "/api/v1/admin/servers/{id}/backup-storage/delete-all").
 		Tags("backups").
 		Summary("Delete every backup for a server").

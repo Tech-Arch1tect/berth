@@ -95,6 +95,51 @@ func (h *APIHandler) DeleteAllBackups(c echo.Context) error {
 	return response.OK(c, *result)
 }
 
+func (h *APIHandler) AbandonBackupStorage(c echo.Context) error {
+	p, err := authz.RequirePrincipal(c)
+	if err != nil {
+		return err
+	}
+	serverID, err := echoparams.ParseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+	var body [1]byte
+	read, readErr := c.Request().Body.Read(body[:])
+	if read != 0 || !errors.Is(readErr, io.EOF) {
+		return response.BadRequest(c, "request body must be empty")
+	}
+
+	result, err := h.service.AbandonBackupStorage(c.Request().Context(), serverID)
+	switch {
+	case errors.Is(err, ErrServerNotFound):
+		return response.NotFound(c, "server not found")
+	case errors.Is(err, ErrRepositoryBusy):
+		return response.Conflict(c, err.Error())
+	case errors.Is(err, ErrBackupStorageUnavailable):
+		return response.ServiceUnavailable(c, "backup history could not be abandoned through the agent")
+	case err != nil:
+		return response.Internal(c, "backup history could not be abandoned")
+	}
+
+	failureReason := ""
+	if !result.Complete {
+		failureReason = "backup history abandonment incomplete"
+	}
+	_ = h.securityLog.LogServerEvent(
+		security.EventBackupStorageAbandoned,
+		p.UserID(),
+		session.ResolveUsername(c),
+		serverID,
+		"",
+		c.RealIP(),
+		result.Complete,
+		failureReason,
+		result.auditMetadata(),
+	)
+	return response.OK(c, *result)
+}
+
 func (h *APIHandler) ListBackups(c echo.Context) error {
 	p, err := authz.RequirePrincipal(c)
 	if err != nil {
