@@ -26,10 +26,12 @@ var ErrBackupStorageUnavailable = errors.New("backup storage status is unavailab
 var ErrBackupPasswordUnavailable = errors.New("a backup encryption password is not configured for this server")
 var ErrServerNotFound = errors.New("server not found")
 
-const backupPasswordHeader = "X-Backup-Password"
-const backupS3RepositoryHeader = "X-Backup-S3-Repository"
-
 type agentDeleteRequest struct {
+	BackupPassword string                  `json:"backup_password"`
+	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
+}
+
+type agentBrowseRequest struct {
 	BackupPassword string                  `json:"backup_password"`
 	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
 }
@@ -47,8 +49,7 @@ type backupsAgentClient interface {
 	MakeRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeLongRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 	MakeReadRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
-	MakeReadRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, payload any, headers map[string]string) (*http.Response, error)
-	MakeStreamRequestWithHeaders(ctx context.Context, server *server.Server, method, endpoint string, headers map[string]string) (*http.Response, error)
+	MakeStreamRequest(ctx context.Context, server *server.Server, method, endpoint string, payload any) (*http.Response, error)
 }
 
 type backupsServerProvider interface {
@@ -101,20 +102,12 @@ func (s *Service) repositoryBaseFor(ctx context.Context, serverID uint) (*s3buck
 	return s.bucketSvc.RepositoryBaseForServer(ctx, serverID)
 }
 
-func (s *Service) headersFor(ctx context.Context, srv *server.Server, stackname string) (map[string]string, error) {
-	headers := map[string]string{backupPasswordHeader: srv.BackupPassword}
+func (s *Service) browseRequestFor(ctx context.Context, srv *server.Server, stackname string) (agentBrowseRequest, error) {
 	repository, err := s.repositoryFor(ctx, srv.ID, stackname)
 	if err != nil {
-		return nil, err
+		return agentBrowseRequest{}, err
 	}
-	if repository != nil {
-		encoded, marshalErr := json.Marshal(repository)
-		if marshalErr != nil {
-			return nil, fmt.Errorf("failed to encode the server's s3 repository: %w", marshalErr)
-		}
-		headers[backupS3RepositoryHeader] = string(encoded)
-	}
-	return headers, nil
+	return agentBrowseRequest{BackupPassword: srv.BackupPassword, S3Repository: repository}, nil
 }
 
 func (s *Service) BackupStorageStatus(ctx context.Context, serverID uint) (*HistoryState, error) {
@@ -504,13 +497,13 @@ func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, server
 		return nil, err
 	}
 
-	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/files?component=%s&path=%s",
+	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/files/list?component=%s&path=%s",
 		url.PathEscape(stackname), url.PathEscape(backupID), url.QueryEscape(componentID), url.QueryEscape(path))
-	headers, err := s.headersFor(ctx, srv, stackname)
+	request, err := s.browseRequestFor(ctx, srv, stackname)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.agentSvc.MakeReadRequestWithHeaders(ctx, srv, "GET", endpoint, nil, headers)
+	resp, err := s.agentSvc.MakeReadRequest(ctx, srv, http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -523,7 +516,7 @@ func (s *Service) ListBackupFiles(ctx context.Context, p authz.Principal, server
 	case http.StatusConflict:
 		return nil, ErrRepositoryBusy
 	default:
-		return nil, s.handleAgentError(resp)
+		return nil, errors.New("backup files could not be listed")
 	}
 
 	var listing BackupFileListing
@@ -557,14 +550,14 @@ func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, se
 	for _, path := range paths {
 		query.Add("path", path)
 	}
-	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/download?%s",
+	endpoint := fmt.Sprintf("/stacks/%s/backups/%s/files/download?%s",
 		url.PathEscape(stackname), url.PathEscape(backupID), query.Encode())
 
-	headers, err := s.headersFor(ctx, srv, stackname)
+	request, err := s.browseRequestFor(ctx, srv, stackname)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.agentSvc.MakeStreamRequestWithHeaders(ctx, srv, "GET", endpoint, headers)
+	resp, err := s.agentSvc.MakeStreamRequest(ctx, srv, http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to communicate with agent: %w", err)
 	}
@@ -581,8 +574,8 @@ func (s *Service) DownloadBackupFiles(ctx context.Context, p authz.Principal, se
 		_ = resp.Body.Close()
 		return nil, ErrRepositoryBusy
 	default:
-		defer func() { _ = resp.Body.Close() }()
-		return nil, s.handleAgentError(resp)
+		_ = resp.Body.Close()
+		return nil, errors.New("backup files could not be downloaded")
 	}
 }
 
