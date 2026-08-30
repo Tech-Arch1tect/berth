@@ -88,8 +88,12 @@ const (
 )
 
 const (
+	EventBackupCreateRequested  = "backup.create.requested"
 	EventBackupCreated          = "backup.created"
+	EventBackupCreateFailed     = "backup.create.failed"
+	EventBackupRestoreRequested = "backup.restore.requested"
 	EventBackupRestored         = "backup.restored"
+	EventBackupRestoreFailed    = "backup.restore.failed"
 	EventBackupDeleted          = "backup.deleted"
 	EventBackupFileDownloaded   = "backup.file_downloaded"
 	EventBackupIndexRebuilt     = "backup.index_rebuilt"
@@ -153,7 +157,9 @@ func GetEventCategory(eventType string) string {
 	case EventFileUploaded, EventFileDownloaded, EventFileDeleted, EventFileRenamed:
 		return "file"
 
-	case EventBackupCreated, EventBackupRestored, EventBackupDeleted, EventBackupFileDownloaded, EventBackupIndexRebuilt, EventBackupStorageDeleteAll, EventBackupStorageAbandoned,
+	case EventBackupCreateRequested, EventBackupCreated, EventBackupCreateFailed,
+		EventBackupRestoreRequested, EventBackupRestored, EventBackupRestoreFailed,
+		EventBackupDeleted, EventBackupFileDownloaded, EventBackupIndexRebuilt, EventBackupStorageDeleteAll, EventBackupStorageAbandoned,
 		EventS3BucketCreated, EventS3BucketUpdated, EventS3BucketDeleted:
 		return "backup"
 
@@ -185,7 +191,8 @@ func GetEventSeverity(eventType string) string {
 		EventAuthorizationDenied:
 		return "high"
 
-	case EventBackupRestored, EventBackupDeleted, EventBackupIndexRebuilt, EventBackupStorageDeleteAll, EventBackupStorageAbandoned,
+	case EventBackupRestoreRequested, EventBackupRestored, EventBackupRestoreFailed,
+		EventBackupDeleted, EventBackupIndexRebuilt, EventBackupStorageDeleteAll, EventBackupStorageAbandoned,
 		EventS3BucketCreated, EventS3BucketUpdated, EventS3BucketDeleted:
 		return "high"
 
@@ -201,7 +208,8 @@ func GetEventSeverity(eventType string) string {
 		EventTOTPVerificationSuccess, EventTOTPSetupInitiated,
 		EventAPITokenIssued, EventAPITokenRefreshed, EventAPITokenRevoked,
 		EventServerConnectionTestSuccess,
-		EventFileUploaded, EventFileDownloaded, EventBackupCreated,
+		EventFileUploaded, EventFileDownloaded,
+		EventBackupCreateRequested, EventBackupCreated, EventBackupCreateFailed,
 		EventBackupFileDownloaded:
 		return "low"
 

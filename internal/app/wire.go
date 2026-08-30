@@ -262,6 +262,7 @@ func Build(
 	}
 	g.addHook("operation log audit logger", nil, closeHook("operation log audit logger", logger, g.OperationsAuditLogger))
 	g.OperationsAuditSvc = operations.NewAuditService(db, logger, g.OperationsSummaryParser)
+	g.OperationsAuditSvc.SetSecurityAuditor(g.SecurityAuditSvc)
 
 	g.RegistrySvc = registry.NewService(db, g.Crypto, logger)
 	g.RegistryAPIHandler = registry.NewAPIHandler(g.RegistrySvc, g.AuthzEngine, g.SecurityAuditSvc)
@@ -270,7 +271,7 @@ func Build(
 	g.OperationsSvc.SetBucketResolver(g.S3BucketsSvc)
 	g.OperationsSvc.SetBackupStorage(g.BackupsSvc)
 	g.OperationsStreamHandler = operations.NewStreamHandler(g.OperationsSvc, g.OriginCheck, logger)
-	g.OperationsHandler = operations.NewHandler(g.OperationsSvc, g.SecurityAuditSvc)
+	g.OperationsHandler = operations.NewHandler(g.OperationsSvc)
 
 	g.OperationLogsSvc = operationlogs.NewService(db, logger)
 	g.OperationLogsHandler = operationlogs.NewHandler(db, g.OperationLogsSvc, logger, cfg.Custom.OperationTimeoutSeconds)

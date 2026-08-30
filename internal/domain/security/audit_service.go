@@ -43,7 +43,10 @@ type LogEvent struct {
 }
 
 func (s *AuditService) Log(event LogEvent) error {
+	return s.LogWithDB(s.db, event)
+}
 
+func (s *AuditService) LogWithDB(db *gorm.DB, event LogEvent) error {
 	var metadataJSON string
 	if len(event.Metadata) > 0 {
 		bytes, err := json.Marshal(event.Metadata)
@@ -86,7 +89,7 @@ func (s *AuditService) Log(event LogEvent) error {
 		SessionID: event.SessionID,
 	}
 
-	if err := s.db.Create(&auditLog).Error; err != nil {
+	if err := db.Create(&auditLog).Error; err != nil {
 		s.logger.Error("failed to create security audit log",
 			zap.String("event_type", event.EventType),
 			zap.Error(err),

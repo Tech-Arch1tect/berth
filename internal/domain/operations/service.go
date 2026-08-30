@@ -259,7 +259,7 @@ func (s *Service) StartOperation(ctx context.Context, p authz.Principal, serverI
 	return &response, nil
 }
 
-func (s *Service) RecordStartAndPersist(p authz.Principal, serverID uint, stackname string, operationID string, req OperationRequest, startTime time.Time) {
+func (s *Service) RecordStartAndPersist(p authz.Principal, serverID uint, stackname string, operationID string, req OperationRequest, startTime time.Time, backupCtx *backupAuditContext) {
 	operationLog, err := s.auditSvc.LogOperationStart(p.UserID(), serverID, stackname, operationID, req, startTime)
 	if err != nil || operationLog == nil {
 		s.logger.Error("failed to record operation start; output will not be persisted",
@@ -268,12 +268,18 @@ func (s *Service) RecordStartAndPersist(p authz.Principal, serverID uint, stackn
 		)
 		return
 	}
-	s.PersistOperation(p, serverID, stackname, operationID, operationLog.ID)
+	if err := s.auditSvc.LogBackupRequested(backupCtx); err != nil {
+		s.logger.Error("failed to record requested backup operation security event",
+			zap.String("operation_id", operationID),
+			zap.String("command", req.Command),
+		)
+	}
+	s.PersistOperation(p, serverID, stackname, operationID, operationLog.ID, backupCtx)
 }
 
-func (s *Service) PersistOperation(p authz.Principal, serverID uint, stackname string, operationID string, operationLogID uint) {
+func (s *Service) PersistOperation(p authz.Principal, serverID uint, stackname string, operationID string, operationLogID uint, backupCtx *backupAuditContext) {
 	go func() {
-		writer := NewAuditWriter(s.auditSvc, operationLogID)
+		writer := NewAuditWriter(s.auditSvc, operationLogID, backupCtx)
 		if err := s.StreamOperationToWriter(context.Background(), p, serverID, stackname, operationID, writer); err != nil {
 			s.logger.Warn("operation output persister stopped early",
 				zap.Error(err),
@@ -553,19 +559,21 @@ func (s *Service) makeAgentRequest(ctx context.Context, serverModel *server.Serv
 
 type operationLogSink interface {
 	LogOperationMessage(operationLogID uint, messageType string, messageData string, timestamp time.Time, sequenceNumber int) error
-	LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error
+	CompleteOperation(operationLogID uint, backupCtx *backupAuditContext, completion operationCompletion) error
 }
 
 type AuditWriter struct {
 	sink           operationLogSink
 	operationLogID uint
+	backupCtx      *backupAuditContext
 	sequenceNumber int
 }
 
-func NewAuditWriter(sink operationLogSink, operationLogID uint) *AuditWriter {
+func NewAuditWriter(sink operationLogSink, operationLogID uint, backupCtx *backupAuditContext) *AuditWriter {
 	return &AuditWriter{
 		sink:           sink,
 		operationLogID: operationLogID,
+		backupCtx:      backupCtx,
 		sequenceNumber: 0,
 	}
 }
@@ -586,27 +594,36 @@ func (w *AuditWriter) Write(p []byte) (n int, err error) {
 			if json.Unmarshal([]byte(jsonData), &streamMsg) == nil {
 				w.sequenceNumber++
 
-				_ = w.sink.LogOperationMessage(
+				if err := w.sink.LogOperationMessage(
 					w.operationLogID,
 					streamMsg.Type,
 					streamMsg.Data,
 					streamMsg.Timestamp,
 					w.sequenceNumber,
-				)
+				); err != nil {
+					return 0, err
+				}
 
 				if streamMsg.Type == "complete" {
-					success := streamMsg.Success != nil && *streamMsg.Success
+					if streamMsg.Success == nil {
+						return 0, errors.New("operation completion frame omitted success")
+					}
 					exitCode := 0
 					if streamMsg.ExitCode != nil {
 						exitCode = *streamMsg.ExitCode
 					}
 
-					_ = w.sink.LogOperationEnd(
+					if err := w.sink.CompleteOperation(
 						w.operationLogID,
-						streamMsg.Timestamp,
-						success,
-						exitCode,
-					)
+						w.backupCtx,
+						operationCompletion{
+							Timestamp: streamMsg.Timestamp,
+							Success:   *streamMsg.Success,
+							ExitCode:  exitCode,
+						},
+					); err != nil {
+						return 0, err
+					}
 				}
 			}
 		}

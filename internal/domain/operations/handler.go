@@ -6,7 +6,6 @@ import (
 
 	"berth/internal/domain/authz"
 	"berth/internal/domain/backups"
-	"berth/internal/domain/security"
 	"berth/internal/domain/server"
 	"berth/internal/domain/session"
 	"berth/internal/pkg/echoparams"
@@ -16,31 +15,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type backupSecurityAuditor interface {
-	LogBackupEvent(eventType string, actorUserID uint, actorUsername string, serverID uint, stackName string, backupID string, ip string, metadata map[string]any) error
-}
-
 type Handler struct {
-	service     *Service
-	securityLog backupSecurityAuditor
+	service *Service
 }
 
-func NewHandler(service *Service, securityLog backupSecurityAuditor) *Handler {
-	return &Handler{
-		service:     service,
-		securityLog: securityLog,
-	}
-}
-
-func backupSecurityEvent(command string) (string, bool) {
-	switch command {
-	case "create-backup":
-		return security.EventBackupCreated, true
-	case "restore-backup":
-		return security.EventBackupRestored, true
-	default:
-		return "", false
-	}
+func NewHandler(service *Service) *Handler {
+	return &Handler{service: service}
 }
 
 func backupIDFromOptions(options []string) string {
@@ -101,6 +81,31 @@ func backupEventMetadata(command string, options []string, operationID, stacknam
 	return metadata
 }
 
+func newBackupAuditContext(command string, options, services []string, operationID string, actorUserID uint, actorUsername, actorIP, actorUserAgent string, serverID uint, stackName string) *backupAuditContext {
+	if !isBackupCommand(command) {
+		return nil
+	}
+	safeOptions := operationLogFields(OperationRequest{Command: command, Options: options, Services: services}).Options
+	metadata := backupEventMetadata(command, safeOptions, operationID, stackName, serverID)
+	for key, value := range metadata {
+		if values, ok := value.([]string); ok {
+			metadata[key] = append([]string(nil), values...)
+		}
+	}
+	return &backupAuditContext{
+		Command:        command,
+		OperationID:    operationID,
+		ActorUserID:    actorUserID,
+		ActorUsername:  actorUsername,
+		ActorIP:        actorIP,
+		ActorUserAgent: actorUserAgent,
+		ServerID:       serverID,
+		StackName:      stackName,
+		BackupID:       backupIDFromOptions(safeOptions),
+		Metadata:       metadata,
+	}
+}
+
 func (h *Handler) StartOperation(c echo.Context) error {
 	p, err := authz.RequirePrincipal(c)
 	if err != nil {
@@ -135,20 +140,19 @@ func (h *Handler) StartOperation(c echo.Context) error {
 	}
 
 	startTime := time.Now()
-	h.service.RecordStartAndPersist(p, serverID, stackname, resp.OperationID, req, startTime)
-
-	if eventType, isBackup := backupSecurityEvent(req.Command); isBackup {
-		_ = h.securityLog.LogBackupEvent(
-			eventType,
-			p.UserID(),
-			session.ResolveUsername(c),
-			serverID,
-			stackname,
-			backupIDFromOptions(req.Options),
-			c.RealIP(),
-			backupEventMetadata(req.Command, req.Options, resp.OperationID, stackname, serverID),
-		)
-	}
+	backupCtx := newBackupAuditContext(
+		req.Command,
+		req.Options,
+		req.Services,
+		resp.OperationID,
+		p.UserID(),
+		session.ResolveUsername(c),
+		c.RealIP(),
+		c.Request().UserAgent(),
+		serverID,
+		stackname,
+	)
+	h.service.RecordStartAndPersist(p, serverID, stackname, resp.OperationID, req, startTime, backupCtx)
 
 	return response.OK(c, *resp)
 }
