@@ -17,12 +17,13 @@ import {
   getGetApiV1AdminServersQueryKey,
 } from '../../../../api/generated/admin/admin';
 import { useGetApiV1AdminS3Buckets } from '../../../../api/generated/s3-buckets/s3-buckets';
-import type { ServerInfo } from '../../../../api/generated/models';
+import type { ServerCreateRequest, ServerInfo } from '../../../../api/generated/models';
 import {
   AgentAuthorityPanel,
   AgentCertificateBadge,
   AgentCertificateSection,
 } from '../components/AgentCertificates';
+import { BackupStorageLifecycleSection } from '../components/BackupStorageLifecycleSection';
 
 interface ServerForm {
   name: string;
@@ -59,6 +60,8 @@ export default function AdminServers() {
   const [deleteConfirm, setDeleteConfirm] = useState<ServerInfo | null>(null);
   const [deactivateConfirm, setDeactivateConfirm] = useState<ServerInfo | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [backupStorageAssignmentChangeAllowed, setBackupStorageAssignmentChangeAllowed] =
+    useState(false);
   const [resultModal, setResultModal] = useState<{
     title: string;
     message: string;
@@ -98,6 +101,7 @@ export default function AdminServers() {
     setEditingServerId(null);
     setFormData(EMPTY_FORM);
     setFormError(null);
+    setBackupStorageAssignmentChangeAllowed(false);
     setShowForm(true);
   };
 
@@ -116,6 +120,7 @@ export default function AdminServers() {
       s3_bucket_id: server.s3_bucket_id ?? null,
     });
     setFormError(null);
+    setBackupStorageAssignmentChangeAllowed(false);
     setShowForm(true);
   };
 
@@ -124,6 +129,7 @@ export default function AdminServers() {
     setEditingServerId(null);
     setFormData(EMPTY_FORM);
     setFormError(null);
+    setBackupStorageAssignmentChangeAllowed(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -141,9 +147,29 @@ export default function AdminServers() {
     };
 
     if (editingServer) {
+      if (
+        (editingServer.s3_bucket_id ?? null) !== data.s3_bucket_id &&
+        !backupStorageAssignmentChangeAllowed
+      ) {
+        setFormError(
+          'Backup storage cannot change until a successful current status confirms that backup history is empty.'
+        );
+        return;
+      }
       updateServerMutation.mutate({ id: editingServer.id, data }, { onSuccess, onError });
     } else {
-      createServerMutation.mutate({ data }, { onSuccess, onError });
+      const createData: ServerCreateRequest = {
+        access_token: data.access_token,
+        backup_password: data.backup_password,
+        backups_enabled: data.backups_enabled,
+        description: data.description,
+        host: data.host,
+        is_active: data.is_active,
+        name: data.name,
+        port: data.port,
+        skip_ssl_verification: data.skip_ssl_verification,
+      };
+      createServerMutation.mutate({ data: createData }, { onSuccess, onError });
     }
   };
 
@@ -537,34 +563,6 @@ export default function AdminServers() {
                     stacks with existing backups (new backups, restores, browsing and deletion) is
                     refused until the matching password is restored. Keep the old password safe.
                   </p>
-                  <div className="mt-4">
-                    <label htmlFor="server-s3-bucket" className={theme.forms.label}>
-                      Backup storage
-                    </label>
-                    <select
-                      id="server-s3-bucket"
-                      value={data.s3_bucket_id ?? ''}
-                      onChange={(e) =>
-                        setData(
-                          's3_bucket_id',
-                          e.target.value === '' ? null : Number(e.target.value)
-                        )
-                      }
-                      className={cn('mt-1', theme.forms.input)}
-                    >
-                      <option value="">On the agent (local disk)</option>
-                      {buckets.map((bucket) => (
-                        <option key={bucket.id} value={bucket.id}>
-                          {bucket.label} ({bucket.bucket_name} at {bucket.endpoint})
-                        </option>
-                      ))}
-                    </select>
-                    <p className={cn('mt-2 text-sm', theme.text.subtle)}>
-                      Assigned buckets hold this server's backup repositories under servers/
-                      {editingServer?.id ?? '...'} in the bucket; each stack gets its own
-                      repository.
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
@@ -592,6 +590,17 @@ export default function AdminServers() {
               )}
             </div>
           </div>
+          {editingServer && (
+            <BackupStorageLifecycleSection
+              key={editingServer.id}
+              active={showForm}
+              server={editingServer}
+              buckets={buckets}
+              selectedBucketId={data.s3_bucket_id}
+              onAssignmentChange={(bucketId) => setData('s3_bucket_id', bucketId)}
+              onAssignmentChangeAllowed={setBackupStorageAssignmentChangeAllowed}
+            />
+          )}
           {editingServer && (
             <AgentCertificateSection
               server={editingServer}
