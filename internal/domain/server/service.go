@@ -455,6 +455,7 @@ func serverUpdateNeedsWrite(current *Server, request *ServerUpdateRequest) bool 
 		current.Port != request.Port ||
 		!sameBoolPointer(current.SkipSSLVerification, request.SkipSSLVerification) ||
 		request.AccessToken != "" ||
+		request.BackupPassword != "" ||
 		request.s3BucketIDSet && !sameS3BucketID(current.S3BucketID, request.S3BucketID)
 }
 
