@@ -27,6 +27,8 @@ import { theme } from '../../../../shared/theme';
 
 interface BackupStorageLifecycleSectionProps {
   active: boolean;
+  bucketListUnavailable: boolean;
+  bucketListError: string | null;
   buckets: BucketResponse[];
   onAssignmentChange: (bucketId: number | null) => void;
   onAssignmentChangeAllowed: (allowed: boolean) => void;
@@ -217,6 +219,8 @@ function AbandonResultContent({ result }: { result: AbandonBackupStorageResult }
 
 export function BackupStorageLifecycleSection({
   active,
+  bucketListUnavailable,
+  bucketListError,
   buckets,
   onAssignmentChange,
   onAssignmentChangeAllowed,
@@ -247,17 +251,22 @@ export function BackupStorageLifecycleSection({
     currentStatus?.empty &&
     !statusUnavailable &&
     !statusQuery.isLoading &&
+    !bucketListUnavailable &&
     !refreshing &&
     !mutating
   );
-  const disableReason = historyReason(
-    active,
-    currentStatus,
-    statusUnavailable,
-    statusQuery.isLoading,
-    refreshing,
-    mutating
-  );
+  const disableReason = bucketListError
+    ? 'Backup storage cannot change because the list of S3 buckets is unavailable.'
+    : bucketListUnavailable
+      ? 'Backup storage cannot change until the list of S3 buckets is loaded.'
+      : historyReason(
+          active,
+          currentStatus,
+          statusUnavailable,
+          statusQuery.isLoading,
+          refreshing,
+          mutating
+        );
   const controlsDisabled = refreshing || mutating || statusUnavailable;
 
   useEffect(() => {
@@ -402,7 +411,7 @@ export function BackupStorageLifecycleSection({
         </p>
       </div>
 
-      {(statusError || actionError) && (
+      {(statusError || actionError || bucketListError) && (
         <div
           role="alert"
           className={cn(
@@ -412,7 +421,7 @@ export function BackupStorageLifecycleSection({
             theme.intent.danger.textStrong
           )}
         >
-          {actionError ?? statusError}
+          {actionError ?? bucketListError ?? statusError}
         </div>
       )}
 
@@ -434,6 +443,12 @@ export function BackupStorageLifecycleSection({
           className={cn('mt-1 min-h-[44px]', theme.forms.input)}
         >
           <option value="">On the agent (local disk)</option>
+          {selectedBucketId !== null &&
+            !buckets.some((bucket) => bucket.id === selectedBucketId) && (
+              <option value={selectedBucketId}>
+                Assigned bucket (ID {selectedBucketId}; label unavailable)
+              </option>
+            )}
           {buckets.map((bucket) => (
             <option key={bucket.id} value={bucket.id}>
               {bucket.label} ({bucket.bucket_name} at {bucket.endpoint})

@@ -6,6 +6,7 @@ import { Table } from '../../../../shared/components/Table';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
+import { messageFromApiError } from '../../../../shared/utils/api-errors';
 import { theme } from '../../../../shared/theme';
 import { PlusIcon, ServerStackIcon } from '@heroicons/react/24/outline';
 import {
@@ -69,8 +70,16 @@ export default function AdminServers() {
 
   const { data: serversResponse, isLoading: serversLoading } = useGetApiV1AdminServers();
   const servers = serversResponse?.data?.servers ?? [];
-  const { data: bucketsResponse } = useGetApiV1AdminS3Buckets();
+  const {
+    data: bucketsResponse,
+    error: bucketsError,
+    isLoading: bucketsLoading,
+  } = useGetApiV1AdminS3Buckets();
   const buckets = bucketsResponse?.data ?? [];
+  const bucketListUnavailable = bucketsLoading || bucketsError != null;
+  const bucketListError = bucketsError
+    ? messageFromApiError(bucketsError, 'Failed to load S3 buckets')
+    : null;
   const editingServer = servers.find((server) => server.id === editingServerId) ?? null;
 
   const invalidateServers = () =>
@@ -594,6 +603,8 @@ export default function AdminServers() {
             <BackupStorageLifecycleSection
               key={editingServer.id}
               active={showForm}
+              bucketListUnavailable={bucketListUnavailable}
+              bucketListError={bucketListError}
               server={editingServer}
               buckets={buckets}
               selectedBucketId={data.s3_bucket_id}
