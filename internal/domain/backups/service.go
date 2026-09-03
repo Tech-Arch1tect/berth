@@ -26,6 +26,9 @@ var ErrBackupStorageUnavailable = errors.New("backup storage status is unavailab
 var ErrBackupPasswordUnavailable = errors.New("a backup encryption password is not configured for this server")
 var ErrServerNotFound = errors.New("server not found")
 
+var errAgentDeleteFailed = errors.New("the backup could not be deleted through the agent")
+var errAgentRebuildFailed = errors.New("the backup index could not be rebuilt through the agent")
+
 type agentDeleteRequest struct {
 	BackupPassword string                  `json:"backup_password"`
 	S3Repository   *s3buckets.S3Repository `json:"s3_repository,omitempty"`
@@ -244,7 +247,7 @@ func (s *Service) DeleteAllBackups(ctx context.Context, serverID uint) (*DeleteA
 	}
 	secrets := []string{srv.BackupPassword, srv.AccessToken}
 	if repositoryBase != nil {
-		secrets = append(secrets, repositoryBase.AccessKeyID, repositoryBase.SecretKey)
+		secrets = append(secrets, repositoryBase.AccessKeyID, repositoryBase.SecretKey, repositoryBase.URL)
 	}
 	result, valid := wireResult.result(secrets)
 	if !valid {
@@ -392,7 +395,7 @@ func (s *Service) DeleteBackup(ctx context.Context, p authz.Principal, serverID 
 	case http.StatusConflict:
 		return nil, ErrRepositoryBusy
 	default:
-		return nil, s.handleAgentError(resp)
+		return nil, errAgentDeleteFailed
 	}
 }
 
@@ -448,7 +451,7 @@ func (s *Service) RebuildBackupIndex(ctx context.Context, p authz.Principal, ser
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, s.handleAgentError(resp)
+		return nil, errAgentRebuildFailed
 	}
 
 	var result RebuildResult
