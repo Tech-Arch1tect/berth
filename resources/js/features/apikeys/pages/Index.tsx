@@ -2,13 +2,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
-import { fieldErrorsFromApiError } from '../../../shared/utils/api-errors';
 import {
   KeyIcon,
   PlusIcon,
   TrashIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
   InformationCircleIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
@@ -20,61 +17,23 @@ import { Modal } from '../../../shared/components/Modal';
 import { ConfirmationModal } from '../../../shared/components/ConfirmationModal';
 import {
   useGetApiV1ApiKeys,
-  usePostApiV1ApiKeys,
   useDeleteApiV1ApiKeysId,
   getGetApiV1ApiKeysQueryKey,
 } from '../../../api/generated/api-keys/api-keys';
 import { useQueryClient } from '@tanstack/react-query';
 import type { APIKeyInfo } from '../../../api/generated/models';
-
-interface NewAPIKeyForm {
-  name: string;
-  expires_at: string;
-}
-
-const EMPTY_FORM: NewAPIKeyForm = { name: '', expires_at: '' };
+import { CreateApiKeyModal } from '../components/CreateApiKeyModal';
 
 export default function APIKeysIndex() {
   useDocumentTitle('API Keys');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newKeyData, setNewKeyData] = useState<{ key: string; name: string } | null>(null);
-  const [copiedKey, setCopiedKey] = useState(false);
   const [keyToRevoke, setKeyToRevoke] = useState<{ id: number; name: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState<NewAPIKeyForm>(EMPTY_FORM);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const setData = <K extends keyof NewAPIKeyForm>(field: K, value: NewAPIKeyForm[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-  const reset = () => {
-    setFormData(EMPTY_FORM);
-    setErrors({});
-  };
 
   const { data: apiKeysResponse, isLoading: loading } = useGetApiV1ApiKeys();
   const apiKeys = apiKeysResponse?.data ?? [];
-
-  const createMutation = usePostApiV1ApiKeys({
-    mutation: {
-      onSuccess: (response) => {
-        setNewKeyData({
-          key: response.data.plain_key,
-          name: response.data.api_key.name,
-        });
-        setShowCreateModal(false);
-        reset();
-        queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
-      },
-      onError: (error: unknown) => {
-        console.error('Failed to create API key:', error);
-        setErrors(fieldErrorsFromApiError(error));
-        setErrorMessage((error as { message?: string })?.message || 'Failed to create API key');
-      },
-    },
-  });
 
   const revokeMutation = useDeleteApiV1ApiKeysId({
     mutation: {
@@ -89,17 +48,6 @@ export default function APIKeysIndex() {
     },
   });
 
-  const createAPIKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const payload: { name: string; expires_at?: string } = { name: formData.name };
-    if (formData.expires_at) {
-      payload.expires_at = new Date(formData.expires_at).toISOString();
-    }
-
-    createMutation.mutate({ data: payload });
-  };
-
   const handleRevokeClick = (id: number, name: string) => {
     setKeyToRevoke({ id, name });
   };
@@ -107,12 +55,6 @@ export default function APIKeysIndex() {
   const confirmRevoke = async () => {
     if (!keyToRevoke) return;
     revokeMutation.mutate({ id: keyToRevoke.id });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -136,123 +78,15 @@ export default function APIKeysIndex() {
               </button>
             </div>
 
-            {/* New Key Display Modal */}
-            <Modal
-              isOpen={!!newKeyData}
-              onClose={() => setNewKeyData(null)}
-              title="API Key Created Successfully"
-              subtitle={newKeyData?.name}
-              size="lg"
-              footer={
-                <button onClick={() => setNewKeyData(null)} className={theme.buttons.primary}>
-                  Done
-                </button>
-              }
-            >
-              <div className={cn(theme.intent.warning.surface, 'rounded-lg p-4 mb-4')}>
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <InformationCircleIcon className={cn('h-5 w-5', theme.intent.warning.icon)} />
-                  </div>
-                  <div className="ml-3">
-                    <p className={cn('text-sm', theme.intent.warning.textStrong)}>
-                      <strong>Important:</strong> Copy this API key now. You won't be able to see it
-                      again!
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className={cn(theme.forms.label, 'mb-2')}>API Key</label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={newKeyData?.key || ''}
-                    readOnly
-                    className={cn(
-                      theme.forms.input,
-                      theme.surface.code,
-                      'flex-1 font-mono text-sm'
-                    )}
-                  />
-                  <button
-                    onClick={() => copyToClipboard(newKeyData?.key || '')}
-                    aria-label={copiedKey ? 'Copied' : 'Copy API key to clipboard'}
-                    className={cn(theme.buttons.ghost, 'p-3')}
-                  >
-                    {copiedKey ? (
-                      <CheckIcon className={cn('h-5 w-5', theme.text.success)} />
-                    ) : (
-                      <ClipboardDocumentIcon className={cn('h-5 w-5', theme.text.muted)} />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </Modal>
-
-            {/* Create Modal */}
-            <Modal
+            <CreateApiKeyModal
               isOpen={showCreateModal}
-              onClose={() => {
-                setShowCreateModal(false);
-                reset();
+              onClose={() => setShowCreateModal(false)}
+              onCreated={() => {
+                queryClient.invalidateQueries({ queryKey: getGetApiV1ApiKeysQueryKey() });
               }}
-              title="Create New API Key"
-              size="md"
-              footer={
-                <div className="flex justify-end space-x-3 w-full">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      reset();
-                    }}
-                    className={theme.buttons.secondary}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    form="create-api-key-form"
-                    disabled={createMutation.isPending}
-                    className={cn(theme.buttons.primary, createMutation.isPending && 'opacity-50')}
-                  >
-                    Create
-                  </button>
-                </div>
-              }
-            >
-              <form id="create-api-key-form" onSubmit={createAPIKey}>
-                <div className="mb-4">
-                  <label className={cn(theme.forms.label, 'mb-2')}>Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setData('name', e.target.value)}
-                    className={cn('w-full', theme.forms.input)}
-                    placeholder="My API Key"
-                    required
-                  />
-                  {errors.name && (
-                    <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.name}</p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <label className={cn(theme.forms.label, 'mb-2')}>Expires At (Optional)</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.expires_at}
-                    onChange={(e) => setData('expires_at', e.target.value)}
-                    className={cn('w-full', theme.forms.input)}
-                  />
-                  {errors.expires_at && (
-                    <p className={cn('mt-1 text-sm', theme.text.danger)}>{errors.expires_at}</p>
-                  )}
-                </div>
-              </form>
-            </Modal>
+              onError={setErrorMessage}
+            />
 
-            {/* API Keys List */}
             {loading ? (
               <LoadingSpinner size="lg" text="Loading API keys..." />
             ) : apiKeys.length === 0 ? (
@@ -367,7 +201,6 @@ export default function APIKeysIndex() {
         </div>
       </div>
 
-      {/* Revoke Confirmation Modal */}
       <ConfirmationModal
         isOpen={!!keyToRevoke}
         onClose={() => setKeyToRevoke(null)}
@@ -379,7 +212,6 @@ export default function APIKeysIndex() {
         isLoading={revokeMutation.isPending}
       />
 
-      {/* Error Modal */}
       <Modal
         isOpen={!!errorMessage}
         onClose={() => setErrorMessage(null)}
