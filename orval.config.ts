@@ -9,6 +9,7 @@ export default defineConfig({
       mode: 'tags-split',
       target: './resources/js/api/generated',
       schemas: './resources/js/api/generated/models',
+      tsconfig: './tsconfig.node.json',
       client: 'react-query',
       httpClient: 'fetch',
       override: {
