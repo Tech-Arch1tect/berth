@@ -209,6 +209,11 @@ func TestServerCRUDOperations(t *testing.T) {
 
 	var createdServerID uint
 
+	crudAgent := NewMockAgent()
+	t.Cleanup(crudAgent.Close)
+	crudHost, crudPort, err := AgentHostAndPort(crudAgent.URL)
+	require.NoError(t, err)
+
 	t.Run("POST /api/v1/admin/servers creates a new server", func(t *testing.T) {
 		TagTest(t, "POST", "/api/v1/admin/servers", e2etesting.CategoryHappyPath, e2etesting.ValueHigh)
 		resp, err := app.HTTPClient.Request(&e2etesting.RequestOptions{
@@ -221,8 +226,8 @@ func TestServerCRUDOperations(t *testing.T) {
 			Body: map[string]interface{}{
 				"name":                  "new-test-server",
 				"description":           "A test server",
-				"host":                  "test.example.com",
-				"port":                  8080,
+				"host":                  crudHost,
+				"port":                  crudPort,
 				"skip_ssl_verification": true,
 				"access_token":          "test-token",
 				"is_active":             true,
@@ -237,6 +242,7 @@ func TestServerCRUDOperations(t *testing.T) {
 		assert.Equal(t, "new-test-server", serverResp.Data.Server.Name)
 		assert.Equal(t, "A test server", serverResp.Data.Server.Description)
 		createdServerID = serverResp.Data.Server.ID
+		app.SignMockAgentResponsesForServer(t, crudAgent, createdServerID)
 	})
 
 	t.Run("PUT /api/v1/admin/servers/:id updates a server", func(t *testing.T) {
@@ -253,9 +259,9 @@ func TestServerCRUDOperations(t *testing.T) {
 			Body: map[string]interface{}{
 				"name":                  "updated-test-server",
 				"description":           "Updated description",
-				"host":                  "test.example.com",
-				"port":                  9090,
-				"skip_ssl_verification": false,
+				"host":                  crudHost,
+				"port":                  crudPort,
+				"skip_ssl_verification": true,
 				"is_active":             false,
 			},
 		})
@@ -267,7 +273,7 @@ func TestServerCRUDOperations(t *testing.T) {
 		assert.True(t, serverResp.Success)
 		assert.Equal(t, "updated-test-server", serverResp.Data.Server.Name)
 		assert.Equal(t, "Updated description", serverResp.Data.Server.Description)
-		assert.Equal(t, 9090, serverResp.Data.Server.Port)
+		assert.Equal(t, crudPort, serverResp.Data.Server.Port)
 	})
 
 	t.Run("DELETE /api/v1/admin/servers/:id deletes a server", func(t *testing.T) {

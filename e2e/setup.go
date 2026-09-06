@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"net"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -234,6 +235,26 @@ func (a *TestApp) CreateTestServerWithAgent(t *testing.T, name string) (*MockAge
 	srv := a.CreateTestServer(t, name, mockAgent.URL)
 	mockAgent.SignResponsesWith(issueAgentIdentity(t, a.DB, srv))
 	return mockAgent, srv
+}
+
+func AgentHostAndPort(agentURL string) (string, int, error) {
+	host, port, err := net.SplitHostPort(strings.TrimPrefix(agentURL, "https://"))
+	if err != nil {
+		return "", 0, err
+	}
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		return "", 0, err
+	}
+	return host, portNumber, nil
+}
+
+func (a *TestApp) SignMockAgentResponsesForServer(t *testing.T, mockAgent *MockAgent, serverID uint) {
+	t.Helper()
+	ensureAgentAuthority(t, a.DB, crypto.NewCrypto("test-encryption-secret-key-32chars!!"))
+	target := &server.Server{}
+	target.ID = serverID
+	mockAgent.SignResponsesWith(issueAgentIdentity(t, a.DB, target))
 }
 
 func (a *TestApp) CreateAdminTestUser(t *testing.T, u *e2etesting.TestUser) {

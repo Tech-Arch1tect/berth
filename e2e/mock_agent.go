@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"berth/internal/domain/backups"
 	"berth/internal/domain/testsupport"
 )
 
@@ -30,6 +31,7 @@ type AgentCall struct {
 
 func NewMockAgent() *MockAgent {
 	ma := &MockAgent{MockAgent: testsupport.NewMockAgent()}
+	ma.RegisterJSONHandler("/api/backups/history", backups.HistoryState{Empty: true})
 	ma.Intercept(ma.recordAndMaybeFail)
 	return ma
 }

@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"net/http"
 	"testing"
 
 	"berth/internal/domain/auth"
@@ -44,11 +45,16 @@ func TestAuditServerLifecycle(t *testing.T) {
 		return resp
 	}
 
+	mockAgent := NewMockAgent()
+	t.Cleanup(mockAgent.Close)
+	agentHost, agentPort, err := AgentHostAndPort(mockAgent.URL)
+	require.NoError(t, err)
+
 	var serverID uint
 
 	t.Run("create records server.created", func(t *testing.T) {
 		resp := auth("POST", "/api/v1/admin/servers", map[string]any{
-			"name": "audit-srv", "host": "test.invalid", "port": 8080,
+			"name": "audit-srv", "host": agentHost, "port": agentPort,
 			"skip_ssl_verification": true, "access_token": "tok", "is_active": true,
 		})
 		require.Equal(t, 201, resp.StatusCode)
@@ -57,13 +63,15 @@ func TestAuditServerLifecycle(t *testing.T) {
 		serverID = created.Data.Server.ID
 		require.NotZero(t, serverID)
 
+		app.SignMockAgentResponsesForServer(t, mockAgent, serverID)
+
 		assert.Equal(t, int64(1), countAuditEvents(t, app.DB, security.EventServerCreated))
 	})
 
 	t.Run("update with a new token records server.updated and access_token.regenerated", func(t *testing.T) {
 		require.NotZero(t, serverID)
 		resp := auth("PUT", "/api/v1/admin/servers/"+Itoa(serverID), map[string]any{
-			"name": "audit-srv-2", "host": "test.invalid", "port": 8080,
+			"name": "audit-srv-2", "host": agentHost, "port": agentPort,
 			"skip_ssl_verification": true, "access_token": "rotated-tok", "is_active": true,
 		})
 		require.Equal(t, 200, resp.StatusCode)
@@ -76,7 +84,7 @@ func TestAuditServerLifecycle(t *testing.T) {
 	t.Run("update without a token does not record another regeneration", func(t *testing.T) {
 		require.NotZero(t, serverID)
 		resp := auth("PUT", "/api/v1/admin/servers/"+Itoa(serverID), map[string]any{
-			"name": "audit-srv-3", "host": "test.invalid", "port": 8080,
+			"name": "audit-srv-3", "host": agentHost, "port": agentPort,
 			"skip_ssl_verification": true, "is_active": true,
 		})
 		require.Equal(t, 200, resp.StatusCode)
@@ -88,6 +96,8 @@ func TestAuditServerLifecycle(t *testing.T) {
 
 	t.Run("failed connection test records connection.test_failure", func(t *testing.T) {
 		require.NotZero(t, serverID)
+		mockAgent.SetError(http.StatusInternalServerError, "forced connection test failure")
+		defer mockAgent.ClearError()
 		resp := auth("POST", "/api/v1/admin/servers/"+Itoa(serverID)+"/test", map[string]any{})
 		require.Equal(t, 503, resp.StatusCode, "unreachable host must fail the connection test")
 
