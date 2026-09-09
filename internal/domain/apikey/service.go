@@ -208,19 +208,27 @@ func (s *Service) RevokeAPIKey(apiKeyID uint, userID uint) error {
 		zap.Uint("user_id", userID),
 	)
 
-	result := s.db.Delete(&APIKey{}, "id = ? AND user_id = ?", apiKeyID, userID)
-
-	if result.Error != nil {
+	var apiKey APIKey
+	err := s.db.Where("id = ? AND user_id = ?", apiKeyID, userID).First(&apiKey).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("API key not found")
+		}
 		s.logger.Error("failed to revoke API key",
-			zap.Error(result.Error),
+			zap.Error(err),
 			zap.Uint("api_key_id", apiKeyID),
 			zap.Uint("user_id", userID),
 		)
-		return result.Error
+		return err
 	}
 
-	if result.RowsAffected == 0 {
-		return errors.New("API key not found")
+	if err := s.db.Delete(&apiKey).Error; err != nil {
+		s.logger.Error("failed to revoke API key",
+			zap.Error(err),
+			zap.Uint("api_key_id", apiKeyID),
+			zap.Uint("user_id", userID),
+		)
+		return err
 	}
 
 	s.logger.Info("API key revoked successfully",
