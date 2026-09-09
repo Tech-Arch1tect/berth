@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"time"
 
 	"berth/internal/platform/db"
@@ -21,10 +20,9 @@ type User struct {
 
 func (u *User) BeforeDelete(tx *gorm.DB) error {
 	if u.DeletedAt.Time.IsZero() {
-		timestamp := time.Now().Unix()
 		return tx.Model(u).Updates(map[string]interface{}{
-			"username": fmt.Sprintf("%s-deleted-%d", u.Username, timestamp),
-			"email":    fmt.Sprintf("%s-deleted-%d", u.Email, timestamp),
+			"username": db.TombstoneValue(u.ID, u.Username),
+			"email":    db.TombstoneValue(u.ID, u.Email),
 		}).Error
 	}
 	return nil

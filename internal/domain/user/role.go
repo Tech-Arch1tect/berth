@@ -1,9 +1,6 @@
 package user
 
 import (
-	"fmt"
-	"time"
-
 	"berth/internal/platform/db"
 
 	"gorm.io/gorm"
@@ -18,9 +15,7 @@ type Role struct {
 
 func (r *Role) BeforeDelete(tx *gorm.DB) error {
 	if r.DeletedAt.Time.IsZero() {
-		timestamp := time.Now().Unix()
-		newName := fmt.Sprintf("%s-deleted-%d", r.Name, timestamp)
-		return tx.Model(r).Update("name", newName).Error
+		return tx.Model(r).Update("name", db.TombstoneValue(r.ID, r.Name)).Error
 	}
 	return nil
 }

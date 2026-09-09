@@ -1,9 +1,6 @@
 package server
 
 import (
-	"fmt"
-	"time"
-
 	"berth/internal/platform/db"
 
 	"gorm.io/gorm"
@@ -22,9 +19,7 @@ type ServerRegistryCredential struct {
 
 func (s *ServerRegistryCredential) BeforeDelete(tx *gorm.DB) error {
 	if s.DeletedAt.Time.IsZero() {
-		timestamp := time.Now().Unix()
-		newStackPattern := fmt.Sprintf("%s-deleted-%d", s.StackPattern, timestamp)
-		return tx.Model(s).Update("stack_pattern", newStackPattern).Error
+		return tx.Model(s).Update("stack_pattern", db.TombstoneValue(s.ID, s.StackPattern)).Error
 	}
 	return nil
 }
