@@ -310,6 +310,9 @@ func (h *APIHandler) CreateRole(c echo.Context) error {
 
 	role, err := h.rbacSvc.CreateRole(req.Name, req.Description)
 	if err != nil {
+		if errors.Is(err, ErrRoleNameTaken) {
+			return response.Conflict(c, err.Error())
+		}
 		return response.Internal(c, "Failed to create role")
 	}
 
@@ -349,6 +352,9 @@ func (h *APIHandler) UpdateRole(c echo.Context) error {
 
 	role, err := h.rbacSvc.UpdateRole(roleID, req.Name, req.Description)
 	if err != nil {
+		if errors.Is(err, ErrRoleNameTaken) {
+			return response.Conflict(c, err.Error())
+		}
 		return response.Internal(c, "Failed to update role")
 	}
 

@@ -133,7 +133,10 @@ func (h *APIHandler) CreateCredential(c echo.Context) error {
 
 	credential, err := h.service.CreateCredential(serverID, req.StackPattern, req.RegistryURL, req.ImagePattern, req.Username, req.Password)
 	if err != nil {
-		return response.BadRequest(c, err.Error())
+		if errors.Is(err, ErrCredentialExists) {
+			return response.BadRequest(c, ErrCredentialExists.Error())
+		}
+		return response.Internal(c, "Failed to create registry credential")
 	}
 
 	h.service.Logger().Info("registry credential created",

@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var ErrCredentialExists = errors.New("registry credential already exists for this server/stack/registry combination")
+
 type Service struct {
 	db     *gorm.DB
 	crypto *crypto.Crypto
@@ -66,7 +68,7 @@ func (s *Service) CreateCredential(serverID uint, stackPattern, registryURL, ima
 			zap.String("stack_pattern", stackPattern),
 			zap.String("registry_url", registryURL),
 		)
-		return nil, errors.New("registry credential already exists for this server/stack/registry combination")
+		return nil, ErrCredentialExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		s.logger.Error("failed to check existing credential",

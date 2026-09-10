@@ -13,7 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrLastAdmin = errors.New("operation would leave the system without an administrator")
+var (
+	ErrLastAdmin     = errors.New("operation would leave the system without an administrator")
+	ErrRoleNameTaken = errors.New("role with this name already exists")
+)
 
 type Service struct {
 	db     *gorm.DB
@@ -311,7 +314,7 @@ func (s *Service) CreateRole(name, description string) (*usermodel.Role, error) 
 			zap.String("name", name),
 			zap.Uint("existing_role_id", existingRole.ID),
 		)
-		return nil, errors.New("role with this name already exists")
+		return nil, ErrRoleNameTaken
 	}
 
 	role := usermodel.Role{
@@ -353,7 +356,7 @@ func (s *Service) UpdateRole(roleID uint, name, description string) (*usermodel.
 	if role.Name != name {
 		var existingRole usermodel.Role
 		if err := s.db.Where("name = ? AND id != ?", name, roleID).First(&existingRole).Error; err == nil {
-			return nil, errors.New("role with this name already exists")
+			return nil, ErrRoleNameTaken
 		}
 	}
 
