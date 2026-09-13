@@ -10,7 +10,7 @@ import (
 
 var (
 	ErrLabelRequired            = errors.New("a label is required")
-	ErrEndpointInvalid          = errors.New("the endpoint must be an http or https URL including the port, for example https://s3.example.com:443")
+	ErrEndpointInvalid          = errors.New("the endpoint must be an http or https URL with a host, for example https://s3.example.com")
 	ErrBucketNameInvalid        = errors.New("the bucket name must be 3 to 63 characters of lowercase letters, numbers, dots and hyphens")
 	ErrAccessKeyRequired        = errors.New("an access key id is required")
 	ErrSecretKeyRequired        = errors.New("a secret access key is required")
@@ -36,7 +36,7 @@ type UpdateRequest struct {
 	Region      string `json:"region"`
 	BucketName  string `json:"bucket_name"`
 	AccessKeyID string `json:"access_key_id"`
-	SecretKey   string `json:"secret_access_key"`
+	SecretKey   string `json:"secret_access_key,omitempty"`
 }
 
 type BucketResponse struct {

@@ -720,7 +720,7 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Delete an S3 bucket configuration").
 		Description("Deletes the stored credentials and settings; the bucket and its contents in S3 are untouched").
 		PathParam("id", "Bucket configuration ID").TypeInt().Required().
-		Response(http.StatusOK, response.ErrorResponseBody{}, "Bucket configuration deleted").
+		Response(http.StatusOK, response.Response[s3buckets.DeleteResponse]{}, "Bucket configuration deleted").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Insufficient permissions").
 		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Bucket configuration not found").
