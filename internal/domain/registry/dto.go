@@ -10,6 +10,7 @@ import (
 var (
 	ErrCredentialFieldsRequired       = errors.New("registry_url, username, and password are required")
 	ErrCredentialUpdateFieldsRequired = errors.New("registry_url and username are required")
+	ErrCredentialStackPatternTooLong  = errors.New("stack_pattern must be 160 characters or fewer")
 )
 
 type CreateCredentialRequest struct {
@@ -23,6 +24,9 @@ type CreateCredentialRequest struct {
 func (r *CreateCredentialRequest) Validate() error {
 	if r.RegistryURL == "" || r.Username == "" || r.Password == "" {
 		return ErrCredentialFieldsRequired
+	}
+	if len(r.StackPattern) > 160 {
+		return ErrCredentialStackPatternTooLong
 	}
 	return nil
 }
@@ -38,6 +42,9 @@ type UpdateCredentialRequest struct {
 func (r *UpdateCredentialRequest) Validate() error {
 	if r.RegistryURL == "" || r.Username == "" {
 		return ErrCredentialUpdateFieldsRequired
+	}
+	if len(r.StackPattern) > 160 {
+		return ErrCredentialStackPatternTooLong
 	}
 	return nil
 }

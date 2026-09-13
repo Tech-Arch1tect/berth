@@ -9,7 +9,10 @@ import (
 var (
 	ErrCreateUserFieldsRequired      = errors.New("username, email and password are required")
 	ErrCreateUserPasswordMismatch    = errors.New("passwords do not match")
+	ErrUsernameTooLong               = errors.New("username must be 160 characters or fewer")
+	ErrEmailTooLong                  = errors.New("email must be 160 characters or fewer")
 	ErrRoleNameRequired              = errors.New("name is required")
+	ErrRoleNameTooLong               = errors.New("name must be 160 characters or fewer")
 	ErrStackPermissionFieldsRequired = errors.New("server_id and permission_id are required")
 	ErrRoleAssignmentFieldsRequired  = errors.New("user_id and role_id are required")
 )
@@ -24,6 +27,12 @@ type CreateUserRequest struct {
 func (r *CreateUserRequest) Validate() error {
 	if r.Username == "" || r.Email == "" || r.Password == "" {
 		return ErrCreateUserFieldsRequired
+	}
+	if len(r.Username) > 160 {
+		return ErrUsernameTooLong
+	}
+	if len(r.Email) > 160 {
+		return ErrEmailTooLong
 	}
 	if r.Password != r.PasswordConfirm {
 		return ErrCreateUserPasswordMismatch
@@ -64,6 +73,9 @@ func (r *CreateRoleRequest) Validate() error {
 	if r.Name == "" {
 		return ErrRoleNameRequired
 	}
+	if len(r.Name) > 160 {
+		return ErrRoleNameTooLong
+	}
 	return nil
 }
 
@@ -75,6 +87,9 @@ type UpdateRoleRequest struct {
 func (r *UpdateRoleRequest) Validate() error {
 	if r.Name == "" {
 		return ErrRoleNameRequired
+	}
+	if len(r.Name) > 160 {
+		return ErrRoleNameTooLong
 	}
 	return nil
 }
