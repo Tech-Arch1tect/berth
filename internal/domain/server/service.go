@@ -232,6 +232,15 @@ func (s *Service) CreateServer(server *Server) error {
 		return ErrServerAccessTokenRequired
 	}
 
+	var existing Server
+	if err := s.db.Where("name = ?", server.Name).First(&existing).Error; err == nil {
+		s.logger.Warn("server creation failed: name already exists",
+			zap.String("name", server.Name),
+			zap.Uint("existing_server_id", existing.ID),
+		)
+		return ErrServerNameTaken
+	}
+
 	encryptedToken, err := s.crypto.Encrypt(server.AccessToken)
 	if err != nil {
 		s.logger.Error("failed to encrypt server access token",
@@ -327,6 +336,15 @@ func (s *Service) UpdateServer(ctx context.Context, id uint, request *ServerUpda
 	server, err := s.loadServerForUpdate(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	var existing Server
+	if err := s.db.Where("name = ? AND id != ?", request.Name, id).First(&existing).Error; err == nil {
+		s.logger.Warn("server update failed: name already exists",
+			zap.String("name", request.Name),
+			zap.Uint("server_id", id),
+			zap.Uint("existing_server_id", existing.ID),
+		)
+		return nil, ErrServerNameTaken
 	}
 	var previousS3BucketID *uint
 	if serverUpdateNeedsWrite(&server, request) {

@@ -73,6 +73,9 @@ func (h *APIHandler) CreateServer(c echo.Context) error {
 
 	server := req.ToServer()
 	if err := h.service.CreateServer(server); err != nil {
+		if errors.Is(err, ErrServerNameTaken) {
+			return response.Conflict(c, err.Error())
+		}
 		return response.Internal(c, "Failed to create server")
 	}
 
@@ -100,6 +103,8 @@ func (h *APIHandler) UpdateServer(c echo.Context) error {
 		switch {
 		case errors.Is(err, ErrServerNotFound):
 			return response.NotFound(c, err.Error())
+		case errors.Is(err, ErrServerNameTaken):
+			return response.Conflict(c, err.Error())
 		case errors.Is(err, ErrServerBackupPasswordRequired), errors.Is(err, ErrServerS3BucketNotFound):
 			return response.BadRequest(c, err.Error())
 		case errors.Is(err, ErrBackupStorageBusy), errors.Is(err, ErrBackupStorageHasHistory):
