@@ -493,11 +493,18 @@ func (s *Service) PollScan(ctx context.Context, scan *ImageScan) error {
 
 		if agentResp.Status == "completed" {
 			scan.FullCoverage = isFullCoverage(scan.ServiceFilter, &agentResp)
-			if err := s.storeScanResults(scan, &agentResp); err != nil {
+			err := s.db.Transaction(func(tx *gorm.DB) error {
+				if err := s.storeScanResults(tx, scan, &agentResp); err != nil {
+					return err
+				}
+				return tx.Save(scan).Error
+			})
+			if err != nil {
 				s.logger.Error("failed to store scan results",
 					zap.Error(err),
 					zap.Uint("scan_id", scan.ID),
 				)
+				return err
 			}
 		}
 	}
@@ -542,7 +549,17 @@ func isFullCoverage(serviceFilter string, agentResp *AgentScanResponse) bool {
 	return true
 }
 
-func (s *Service) storeScanResults(scan *ImageScan, agentResp *AgentScanResponse) error {
+func (s *Service) storeScanResults(tx *gorm.DB, scan *ImageScan, agentResp *AgentScanResponse) error {
+	if err := tx.Unscoped().Where("scan_id = ?", scan.ID).Delete(&ScanServiceImage{}).Error; err != nil {
+		return fmt.Errorf("failed to clear previous scan service images: %w", err)
+	}
+	if err := tx.Unscoped().Where("scan_id = ?", scan.ID).Delete(&ScanScope{}).Error; err != nil {
+		return fmt.Errorf("failed to clear previous scan scopes: %w", err)
+	}
+	if err := tx.Unscoped().Where("scan_id = ?", scan.ID).Delete(&ImageVulnerability{}).Error; err != nil {
+		return fmt.Errorf("failed to clear previous scan vulnerabilities: %w", err)
+	}
+
 	results := agentResp.Results
 
 	serviceImages := make([]ScanServiceImage, 0, len(agentResp.ServiceImages))
@@ -555,11 +572,8 @@ func (s *Service) storeScanResults(scan *ImageScan, agentResp *AgentScanResponse
 		})
 	}
 	if len(serviceImages) > 0 {
-		if err := s.db.CreateInBatches(serviceImages, 100).Error; err != nil {
-			s.logger.Warn("failed to store scan service images",
-				zap.Uint("scan_id", scan.ID),
-				zap.Error(err),
-			)
+		if err := tx.CreateInBatches(serviceImages, 100).Error; err != nil {
+			return fmt.Errorf("failed to store scan service images: %w", err)
 		}
 	}
 
@@ -601,31 +615,25 @@ func (s *Service) storeScanResults(scan *ImageScan, agentResp *AgentScanResponse
 	}
 
 	if len(scopes) > 0 {
-		if err := s.db.CreateInBatches(scopes, 100).Error; err != nil {
-			s.logger.Warn("failed to store scan scopes",
-				zap.Uint("scan_id", scan.ID),
-				zap.Error(err),
-			)
-		} else {
-			s.logger.Debug("stored scan scopes",
-				zap.Uint("scan_id", scan.ID),
-				zap.Int("count", len(scopes)),
-			)
+		if err := tx.CreateInBatches(scopes, 100).Error; err != nil {
+			return fmt.Errorf("failed to store scan scopes: %w", err)
 		}
+		s.logger.Debug("stored scan scopes",
+			zap.Uint("scan_id", scan.ID),
+			zap.Int("count", len(scopes)),
+		)
 	}
 
-	if len(vulns) == 0 {
-		return nil
-	}
+	if len(vulns) > 0 {
+		if err := tx.CreateInBatches(vulns, 100).Error; err != nil {
+			return fmt.Errorf("failed to store vulnerabilities: %w", err)
+		}
 
-	if err := s.db.CreateInBatches(vulns, 100).Error; err != nil {
-		return fmt.Errorf("failed to store vulnerabilities: %w", err)
+		s.logger.Info("stored vulnerabilities",
+			zap.Uint("scan_id", scan.ID),
+			zap.Int("count", len(vulns)),
+		)
 	}
-
-	s.logger.Info("stored vulnerabilities",
-		zap.Uint("scan_id", scan.ID),
-		zap.Int("count", len(vulns)),
-	)
 
 	return nil
 }
