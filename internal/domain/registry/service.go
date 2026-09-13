@@ -164,6 +164,25 @@ func (s *Service) UpdateCredential(credID uint, stackPattern, registryURL, image
 		credential.Password = encryptedPassword
 	}
 
+	var existing server.ServerRegistryCredential
+	err := s.db.Where("server_id = ? AND stack_pattern = ? AND registry_url = ? AND id != ?", credential.ServerID, credential.StackPattern, credential.RegistryURL, credential.ID).First(&existing).Error
+	if err == nil {
+		s.logger.Warn("registry credential already exists",
+			zap.Uint("credential_id", credID),
+			zap.Uint("server_id", credential.ServerID),
+			zap.String("stack_pattern", credential.StackPattern),
+			zap.String("registry_url", credential.RegistryURL),
+		)
+		return nil, ErrCredentialExists
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		s.logger.Error("failed to check existing credential",
+			zap.Error(err),
+			zap.Uint("credential_id", credID),
+		)
+		return nil, err
+	}
+
 	if err := s.db.Save(&credential).Error; err != nil {
 		s.logger.Error("failed to update registry credential",
 			zap.Error(err),
