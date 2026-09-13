@@ -214,7 +214,7 @@ func (h *APIHandler) UpdateCredential(c echo.Context) error {
 
 	credential, err := h.service.UpdateCredential(credID, req.StackPattern, req.RegistryURL, req.ImagePattern, req.Username, req.Password)
 	if err != nil {
-		return response.BadRequest(c, err.Error())
+		return response.Internal(c, "Failed to update registry credential")
 	}
 
 	h.service.Logger().Info("registry credential updated",
