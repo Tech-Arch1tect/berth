@@ -16,6 +16,8 @@ import (
 var (
 	ErrLastAdmin     = errors.New("operation would leave the system without an administrator")
 	ErrRoleNameTaken = errors.New("role with this name already exists")
+
+	errRolePermissionCleanup = errors.New("failed to clean up role permissions")
 )
 
 type Service struct {
@@ -410,20 +412,24 @@ func (s *Service) DeleteRole(roleID uint) error {
 		return errors.New("cannot delete role that is assigned to users")
 	}
 
-	if err := s.db.Where("role_id = ?", roleID).Delete(&usermodel.ServerRoleStackPermission{}).Error; err != nil {
-		s.logger.Error("failed to clean up role permissions",
-			zap.Error(err),
-			zap.Uint("role_id", roleID),
-		)
-		return errors.New("failed to clean up role permissions")
-	}
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&usermodel.ServerRoleStackPermission{}).Error; err != nil {
+			s.logger.Error("failed to clean up role permissions",
+				zap.Error(err),
+				zap.Uint("role_id", roleID),
+			)
+			return errRolePermissionCleanup
+		}
 
-	if err := s.db.Delete(&role).Error; err != nil {
-		s.logger.Error("failed to delete role from database",
-			zap.Error(err),
-			zap.Uint("role_id", roleID),
-			zap.String("role_name", role.Name),
-		)
+		return tx.Delete(&role).Error
+	}); err != nil {
+		if !errors.Is(err, errRolePermissionCleanup) {
+			s.logger.Error("failed to delete role from database",
+				zap.Error(err),
+				zap.Uint("role_id", roleID),
+				zap.String("role_name", role.Name),
+			)
+		}
 		return err
 	}
 
