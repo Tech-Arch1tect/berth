@@ -13,7 +13,7 @@
         "description": "",
         "host": "10.0.0.99",
         "id": "\u003c\u003cID\u003e\u003e",
-        "is_active": true,
+        "is_active": false,
         "name": "snap-api-created-server",
         "port": "\u003c\u003cPORT\u003e\u003e",
         "skip_ssl_verification": true,

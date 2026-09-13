@@ -255,6 +255,7 @@ func (s *Service) CreateServer(server *Server) error {
 	}
 	server.BackupPassword = encryptedBackupPassword
 
+	requestedInactive := !server.IsActive
 	if err := s.db.Create(server).Error; err != nil {
 		s.logger.Error("failed to create server in database",
 			zap.Error(err),
@@ -262,6 +263,17 @@ func (s *Service) CreateServer(server *Server) error {
 			zap.String("host", server.Host),
 		)
 		return err
+	}
+
+	if requestedInactive {
+		if err := s.db.Model(server).Update("is_active", false).Error; err != nil {
+			s.logger.Error("failed to store the inactive state of a new server",
+				zap.Error(err),
+				zap.Uint("server_id", server.ID),
+				zap.String("name", server.Name),
+			)
+			return err
+		}
 	}
 
 	s.logger.Info("server created successfully",
