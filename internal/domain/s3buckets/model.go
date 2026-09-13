@@ -11,5 +11,5 @@ type S3Bucket struct {
 	Region      string `json:"region" gorm:"not null;default:us-east-1"`
 	BucketName  string `json:"bucket_name" gorm:"not null"`
 	AccessKeyID string `json:"access_key_id" gorm:"not null"`
-	SecretKey   string `json:"secret_key" gorm:"not null"`
+	SecretKey   string `json:"-" gorm:"not null"`
 }
