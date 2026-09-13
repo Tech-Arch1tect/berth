@@ -503,7 +503,7 @@ func sameS3BucketID(left, right *uint) bool {
 	return *left == *right
 }
 
-func (s *Service) DeleteServer(ctx context.Context, id uint) (*Server, error) {
+func (s *Service) DeleteServer(ctx context.Context, id uint, force bool) (*Server, error) {
 	s.logger.Info("deleting server",
 		zap.Uint("server_id", id),
 	)
@@ -534,7 +534,9 @@ func (s *Service) DeleteServer(ctx context.Context, id uint) (*Server, error) {
 		return nil, err
 	}
 	if err := s.backupStorage.RequireEmptyBackupStorage(ctx, id); err != nil {
-		return nil, err
+		if !(force && errors.Is(err, ErrBackupStorageUnavailable)) {
+			return nil, err
+		}
 	}
 
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

@@ -1447,6 +1447,8 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 		Summary("Delete a server").
 		Description("Delete a server connection after confirming its agent-local backup history is empty. Backup repository data is never deleted by this action. Requires admin access.").
 		PathParam("id", "Server ID").TypeInt().Required().
+		QueryParam("force", "Set to true to delete even when backup storage status cannot be verified. A known remaining backup history or a running backup that the agent reports still blocks the delete. The backup repository data is left in place and the encryption password stored with the server row is lost.").
+		TypeBool().Optional().
 		Response(http.StatusOK, response.Response[server.MessageData]{}, "Server deleted").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").

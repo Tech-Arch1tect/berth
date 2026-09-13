@@ -140,7 +140,9 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 		return err
 	}
 
-	deleted, err := h.service.DeleteServer(c.Request().Context(), id)
+	force := c.QueryParam("force") == "true"
+
+	deleted, err := h.service.DeleteServer(c.Request().Context(), id, force)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrServerNotFound):
@@ -154,7 +156,14 @@ func (h *APIHandler) DeleteServer(c echo.Context) error {
 		}
 	}
 
-	h.audit(c, security.EventServerDeleted, id, deleted.Name, true, "")
+	if force {
+		h.auditWithMetadata(c, security.EventServerDeleted, id, deleted.Name, true, "", map[string]any{
+			"forced":                    true,
+			"backup_history_unverified": true,
+		})
+	} else {
+		h.audit(c, security.EventServerDeleted, id, deleted.Name, true, "")
+	}
 
 	return response.OK(c, MessageData{Message: "Server deleted successfully"})
 }
