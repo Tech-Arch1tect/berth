@@ -499,12 +499,39 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 		req.StackPattern = "*"
 	}
 
+	var roleToValidate usermodel.Role
+	if err := h.db.First(&roleToValidate, uint(roleID)).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "role not found")
+		}
+		return response.Internal(c, "failed to load role")
+	}
+
+	if roleToValidate.IsAdmin {
+		return response.BadRequest(c, "cannot manage server permissions for admin role")
+	}
+
+	var permissionToValidate usermodel.Permission
+	if err := h.db.First(&permissionToValidate, req.PermissionID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "permission not found")
+		}
+		return response.Internal(c, "failed to load permission")
+	}
+
+	if permissionToValidate.IsAPIKeyOnly {
+		return response.BadRequest(c, "API-key-only permissions cannot be assigned to roles")
+	}
+
 	var existing usermodel.ServerRoleStackPermission
 	result := h.db.Where("server_id = ? AND role_id = ? AND permission_id = ? AND stack_pattern = ?",
 		req.ServerID, roleID, req.PermissionID, req.StackPattern).First(&existing)
 
 	if result.Error == nil {
 		return response.BadRequest(c, "Permission already exists for this server and stack pattern")
+	}
+	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return response.Internal(c, "failed to check existing role stack permission")
 	}
 
 	permission := usermodel.ServerRoleStackPermission{

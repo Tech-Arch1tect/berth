@@ -1302,12 +1302,13 @@ func RegisterAPIDocs(apiDoc *apidocs.OpenAPI) {
 	apiDoc.Document("POST", "/api/v1/admin/roles/{roleId}/stack-permissions").
 		Tags("admin").
 		Summary("Create a role stack permission").
-		Description("Creates a new permission rule for a role on a server with a stack pattern. Requires admin permissions.").
+		Description("Creates a new rule for a role-eligible permission on a server with a stack pattern. Requires admin permissions.").
 		PathParam("roleId", "Role ID").TypeInt().Required().
 		Body(rbac.CreateStackPermissionRequest{}, "Permission rule details").
 		Response(http.StatusCreated, response.Response[rbac.MessageData]{}, "Permission rule created").
-		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request or permission already exists").
+		Response(http.StatusBadRequest, response.ErrorResponseBody{}, "Invalid request, administrator role, duplicate rule, or API-key-only permission").
 		Response(http.StatusUnauthorized, response.ErrorResponseBody{}, "Not authenticated").
+		Response(http.StatusNotFound, response.ErrorResponseBody{}, "Role or permission not found").
 		Response(http.StatusForbidden, response.ErrorResponseBody{}, "Admin access required").
 		Response(http.StatusInternalServerError, response.ErrorResponseBody{}, "Internal server error").
 		Security("bearerAuth", "apiKey", "session").
