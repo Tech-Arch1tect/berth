@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { useDocumentTitle } from '../../../../shared/hooks/useDocumentTitle';
 import { cn } from '../../../../shared/utils/cn';
 import { messageFromApiError } from '../../../../shared/utils/api-errors';
+import { isApiError } from '../../../../api/client';
 import { theme } from '../../../../shared/theme';
 import { PlusIcon, ServerStackIcon } from '@heroicons/react/24/outline';
 import {
@@ -59,6 +60,7 @@ export default function AdminServers() {
   const [editingServerId, setEditingServerId] = useState<number | null>(null);
   const [testingConnection, setTestingConnection] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<ServerInfo | null>(null);
+  const [forceDeleteConfirm, setForceDeleteConfirm] = useState<ServerInfo | null>(null);
   const [deactivateConfirm, setDeactivateConfirm] = useState<ServerInfo | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [backupStorageAssignmentChangeAllowed, setBackupStorageAssignmentChangeAllowed] =
@@ -182,23 +184,57 @@ export default function AdminServers() {
     }
   };
 
+  const openDeleteConfirmation = (server: ServerInfo) => {
+    setForceDeleteConfirm(null);
+    setResultModal(null);
+    setDeleteConfirm(server);
+  };
+
+  const finishDelete = () => {
+    invalidateServers();
+    setDeleteConfirm(null);
+    setForceDeleteConfirm(null);
+  };
+
   const confirmDelete = () => {
     if (!deleteConfirm) return;
 
     deleteServerMutation.mutate(
       { id: deleteConfirm.id },
       {
-        onSuccess: () => {
-          invalidateServers();
-          setDeleteConfirm(null);
-        },
+        onSuccess: finishDelete,
         onError: (error) => {
-          const errorData = error as { message?: string; error?: string };
+          if (isApiError(error) && error.status === 503) {
+            setDeleteConfirm(null);
+            setResultModal(null);
+            setForceDeleteConfirm(deleteConfirm);
+            return;
+          }
+          setDeleteConfirm(null);
+          setForceDeleteConfirm(null);
           setResultModal({
             title: 'Delete Failed',
-            message: `Failed to delete server: ${errorData.message || errorData.error || 'Unknown error'}`,
+            message: `Failed to delete server: ${messageFromApiError(error, error instanceof Error ? error.message : 'Unknown error')}`,
           });
+        },
+      }
+    );
+  };
+
+  const confirmForceDelete = () => {
+    if (!forceDeleteConfirm) return;
+
+    deleteServerMutation.mutate(
+      { id: forceDeleteConfirm.id, params: { force: true } },
+      {
+        onSuccess: finishDelete,
+        onError: (error) => {
           setDeleteConfirm(null);
+          setForceDeleteConfirm(null);
+          setResultModal({
+            title: 'Force Delete Failed',
+            message: `Failed to force delete server: ${messageFromApiError(error, error instanceof Error ? error.message : 'Unknown error')}`,
+          });
         },
       }
     );
@@ -327,7 +363,7 @@ export default function AdminServers() {
         </button>
       )}
       <button
-        onClick={() => setDeleteConfirm(server)}
+        onClick={() => openDeleteConfirmation(server)}
         aria-label={`Delete server ${server.name}`}
         className={cn('inline-flex min-h-[44px] items-center text-sm', theme.buttons.danger)}
       >
@@ -642,6 +678,18 @@ export default function AdminServers() {
         confirmText="Delete"
         variant="danger"
         isLoading={deleteServerMutation.isPending}
+      />
+
+      <ConfirmationModal
+        isOpen={!!forceDeleteConfirm}
+        onClose={() => setForceDeleteConfirm(null)}
+        onConfirm={confirmForceDelete}
+        title="Force Delete Server"
+        message={`The agent could not verify backup history for "${forceDeleteConfirm?.name}". Backup repository data remains, but the backup encryption password will be lost. This action cannot be undone. Known backup history or a running backup reported by the agent still blocks deletion, even with force.`}
+        confirmText="Force delete"
+        variant="danger"
+        isLoading={deleteServerMutation.isPending}
+        showWarning={false}
       />
 
       <ConfirmationModal
