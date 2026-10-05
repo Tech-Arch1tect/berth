@@ -168,13 +168,15 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 				return
 			}
 
-			if messageType == websocket.MessageText {
-				forward, ok := h.prepareTerminalMessage(ctx, userID, serverID, stackName, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime)
-				if !ok {
-					continue
-				}
-				message = forward
+			if messageType != websocket.MessageText {
+				h.sendTerminalError(ctx, clientConn, "Terminal messages must use JSON text frames", clientType)
+				return
 			}
+			forward, ok := h.prepareTerminalMessage(ctx, userID, serverID, stackName, message, &sessionStackName, clientType, clientConn, &operationLogID, sessionStartTime)
+			if !ok {
+				continue
+			}
+			message = forward
 
 			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
 			err = agentFrames.SendTyped(byte(messageType), message, func(frame []byte) error {
