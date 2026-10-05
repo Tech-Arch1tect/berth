@@ -244,14 +244,8 @@ func (h *Handler) prepareTerminalMessage(ctx context.Context, userID int, server
 			return nil, false
 		}
 
-		var raw map[string]any
-		if err := json.Unmarshal(message, &raw); err != nil {
-
-			h.sendTerminalError(ctx, clientConn, "Invalid terminal_start message format", clientType)
-			return nil, false
-		}
-		raw["stack_name"] = urlStack
-		forward, err := json.Marshal(raw)
+		startMsg.StackName = urlStack
+		forward, err := json.Marshal(&startMsg)
 		if err != nil {
 
 			h.sendTerminalError(ctx, clientConn, "Invalid terminal_start message format", clientType)
