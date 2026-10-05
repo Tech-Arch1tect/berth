@@ -191,9 +191,16 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 
 	go func() {
 		defer cancel()
+		closeStatus := websocket.StatusInternalError
+		defer func() {
+			_ = clientConn.Close(closeStatus, "proxy ended")
+		}()
 		for {
 			_, framed, err := agentConn.Read(ctx)
 			if err != nil {
+				if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+					closeStatus = websocket.StatusNormalClosure
+				}
 				return
 			}
 			kind, message, unwrapErr := agentUnframe.UnwrapTyped(framed)
