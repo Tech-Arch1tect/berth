@@ -314,15 +314,20 @@ func (s *AuditService) LogBackupRequested(ctx *backupAuditContext) error {
 	return s.securityAuditor.LogWithDB(s.db, backupSecurityEvent(ctx, "requested", true, 0, time.Time{}))
 }
 
-func (s *AuditService) LogOperationEnd(operationLogID uint, endTime time.Time, success bool, exitCode int) error {
-	return s.CompleteOperation(operationLogID, nil, operationCompletion{
-		Timestamp: endTime,
-		Success:   success,
-		ExitCode:  exitCode,
-	})
+func (s *AuditService) LogTerminalEnd(operationLogID uint, endTime time.Time, exitCode *int) error {
+	completion := operationCompletion{Timestamp: endTime}
+	if exitCode != nil {
+		completion.Success = *exitCode == 0
+		completion.ExitCode = *exitCode
+	}
+	return s.completeOperation(operationLogID, nil, completion, exitCode == nil)
 }
 
 func (s *AuditService) CompleteOperation(operationLogID uint, backupCtx *backupAuditContext, completion operationCompletion) error {
+	return s.completeOperation(operationLogID, backupCtx, completion, false)
+}
+
+func (s *AuditService) completeOperation(operationLogID uint, backupCtx *backupAuditContext, completion operationCompletion, unknownTerminalOutcome bool) error {
 	if backupCtx != nil && !isBackupCommand(backupCtx.Command) {
 		return errors.New("unsupported backup operation command")
 	}
@@ -330,11 +335,17 @@ func (s *AuditService) CompleteOperation(operationLogID uint, backupCtx *backupA
 	s.persistenceMu.Lock()
 	defer s.persistenceMu.Unlock()
 
+	success := any(completion.Success)
+	exitCode := any(completion.ExitCode)
+	if unknownTerminalOutcome {
+		success = nil
+		exitCode = nil
+	}
 	s.logger.Debug("logging operation end",
 		zap.Uint("operation_log_id", operationLogID),
 		zap.Time("end_time", completion.Timestamp),
-		zap.Bool("success", completion.Success),
-		zap.Int("exit_code", completion.ExitCode),
+		zap.Any("success", success),
+		zap.Any("exit_code", exitCode),
 	)
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
@@ -353,19 +364,23 @@ func (s *AuditService) CompleteOperation(operationLogID uint, backupCtx *backupA
 		duration := int(effectiveEnd.Sub(log.StartTime).Milliseconds())
 
 		updates := map[string]any{
-			"success":   completion.Success,
-			"exit_code": completion.ExitCode,
+			"success":   success,
+			"exit_code": exitCode,
 			"end_time":  effectiveEnd,
 			"duration":  duration,
 		}
 
-		var messages []operationlogs.OperationLogMessage
-		if err := tx.Where("operation_log_id = ?", operationLogID).
-			Order("sequence_number ASC").
-			Find(&messages).Error; err != nil {
-			return err
+		if unknownTerminalOutcome {
+			updates["summary"] = "Terminal session ended without a verified exit code"
+		} else {
+			var messages []operationlogs.OperationLogMessage
+			if err := tx.Where("operation_log_id = ?", operationLogID).
+				Order("sequence_number ASC").
+				Find(&messages).Error; err != nil {
+				return err
+			}
+			updates["summary"] = s.summaryParser.GenerateSummary(log.Command, completion.Success, completion.ExitCode, messages)
 		}
-		updates["summary"] = s.summaryParser.GenerateSummary(log.Command, completion.Success, completion.ExitCode, messages)
 
 		result := tx.Model(&operationlogs.OperationLog{}).
 			Where("id = ? AND end_time IS NULL", operationLogID).
@@ -391,8 +406,8 @@ func (s *AuditService) CompleteOperation(operationLogID uint, backupCtx *backupA
 			zap.Uint("operation_log_id", operationLogID),
 			zap.String("operation_id", log.OperationID),
 			zap.String("command", log.Command),
-			zap.Bool("success", completion.Success),
-			zap.Int("exit_code", completion.ExitCode),
+			zap.Any("success", success),
+			zap.Any("exit_code", exitCode),
 			zap.Int("duration_ms", duration),
 		)
 		return nil

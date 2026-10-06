@@ -28,7 +28,7 @@ type TerminalCloseMessage struct {
 	Type      string `json:"type" doc:"Always terminal_close"`
 	SessionID string `json:"session_id"`
 	Timestamp string `json:"timestamp,omitempty"`
-	ExitCode  int    `json:"exit_code,omitempty"`
+	ExitCode  *int   `json:"exit_code,omitempty"`
 }
 
 type TerminalOutputMessage struct {

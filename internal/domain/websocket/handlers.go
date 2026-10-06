@@ -2,12 +2,14 @@ package websocket
 
 import (
 	"berth/internal/pkg/agentsign"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"berth/internal/domain/auth"
@@ -192,7 +194,12 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 		}
 	}()
 
+	agentReadDone := make(chan struct{})
+	var exitCode *int
 	go func() {
+		defer close(agentReadDone)
+		sessionID := ""
+		closeSeen := false
 		defer cancel()
 		closeStatus := websocket.StatusInternalError
 		defer func() {
@@ -210,11 +217,51 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 			if unwrapErr != nil {
 				return
 			}
+			var acknowledgedSession string
+			var measuredCode *int
+			if websocket.MessageType(kind) == websocket.MessageText {
+				var baseMsg BaseMessage
+				if json.Unmarshal(message, &baseMsg) != nil {
+					return
+				}
+				if baseMsg.Type == "success" || baseMsg.Type == "terminal_close" {
+					fields, valid := terminalResultFields(message)
+					if !valid {
+						return
+					}
+					switch baseMsg.Type {
+					case "success":
+						if sessionID != "" || json.Unmarshal(fields["session_id"], &acknowledgedSession) != nil || acknowledgedSession == "" {
+							return
+						}
+					case "terminal_close":
+						var closeSessionID string
+						if closeSeen || json.Unmarshal(fields["session_id"], &closeSessionID) != nil ||
+							sessionID == "" || closeSessionID != sessionID {
+							return
+						}
+						if rawCode, present := fields["exit_code"]; present && string(rawCode) != "null" {
+							var code int
+							if json.Unmarshal(rawCode, &code) != nil {
+								return
+							}
+							measuredCode = new(code)
+						}
+						closeSeen = true
+					}
+				}
+			}
 			writeCtx, writeCancel := context.WithTimeout(ctx, terminalWriteWait)
 			err = clientConn.Write(writeCtx, websocket.MessageType(kind), message)
 			writeCancel()
 			if err != nil {
 				return
+			}
+			if acknowledgedSession != "" {
+				sessionID = acknowledgedSession
+			}
+			if measuredCode != nil && exitCode == nil {
+				exitCode = measuredCode
 			}
 		}
 	}()
@@ -222,13 +269,50 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	<-ctx.Done()
 
 	<-clientReadDone
+	<-agentReadDone
 
 	if operationLogID != nil {
-		endTime := time.Now()
-		_ = h.auditService.LogOperationEnd(*operationLogID, endTime, true, 0)
+		_ = h.auditService.LogTerminalEnd(*operationLogID, time.Now(), exitCode)
 	}
 
 	return nil
+}
+
+func terminalResultFields(message []byte) (map[string]json.RawMessage, bool) {
+	decoder := json.NewDecoder(bytes.NewReader(message))
+	token, err := decoder.Token()
+	if err != nil || token != json.Delim('{') {
+		return nil, false
+	}
+	fields := make(map[string]json.RawMessage)
+	for decoder.More() {
+		token, err := decoder.Token()
+		if err != nil {
+			return nil, false
+		}
+		name, ok := token.(string)
+		if !ok {
+			return nil, false
+		}
+		if _, duplicate := fields[name]; duplicate ||
+			strings.EqualFold(name, "type") && name != "type" ||
+			strings.EqualFold(name, "session_id") && name != "session_id" ||
+			strings.EqualFold(name, "exit_code") && name != "exit_code" {
+			return nil, false
+		}
+		var value json.RawMessage
+		if decoder.Decode(&value) != nil {
+			return nil, false
+		}
+		fields[name] = value
+	}
+	if token, err = decoder.Token(); err != nil || token != json.Delim('}') {
+		return nil, false
+	}
+	if len(bytes.TrimSpace(message[decoder.InputOffset():])) != 0 {
+		return nil, false
+	}
+	return fields, true
 }
 
 func (h *Handler) prepareTerminalMessage(ctx context.Context, userID int, serverID int, urlStack string, message []byte, sessionStackName *string, clientType string, clientConn *websocket.Conn, operationLogID **uint, sessionStartTime time.Time) ([]byte, bool) {

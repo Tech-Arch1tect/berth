@@ -36,6 +36,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   const [isInitialised, setIsInitialised] = useState(false);
   const [ctrlArmed, setCtrlArmed] = useState(false);
   const ctrlArmedRef = useRef(false);
+  const errorShownRef = useRef(false);
 
   const armCtrl = useCallback((armed: boolean) => {
     ctrlArmedRef.current = armed;
@@ -65,6 +66,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const handleConnect = useCallback(
     (sessionId: string) => {
+      errorShownRef.current = false;
       toast.success(`Terminal session started: ${sessionId.substring(0, 8)}...`);
       if (xtermRef.current) {
         xtermRef.current.clear();
@@ -82,15 +84,14 @@ export const Terminal: React.FC<TerminalProps> = ({
       exitCode !== undefined
         ? `Terminal session ended (exit code: ${exitCode})`
         : 'Terminal session disconnected';
-
-    toast.error(message);
-
-    if (xtermRef.current) {
-      xtermRef.current.writeln(`\x1b[31m✗ ${message}\x1b[0m`);
-    }
+    if (exitCode !== 0 && (exitCode !== undefined || !errorShownRef.current)) toast.error(message);
+    xtermRef.current?.writeln(
+      exitCode === 0 ? `\x1b[32m✓ ${message}\x1b[0m` : `\x1b[31m✗ ${message}\x1b[0m`
+    );
   }, []);
 
   const handleError = useCallback((error: string) => {
+    errorShownRef.current = true;
     toast.error(`Terminal error: ${error}`);
     if (xtermRef.current) {
       xtermRef.current.writeln(`\x1b[31mError: ${error}\x1b[0m`);
@@ -109,14 +110,11 @@ export const Terminal: React.FC<TerminalProps> = ({
     onError: handleError,
   });
 
-  const sessionRef = useRef(session);
-
   // Moving to useEffect breaks terminal session persistence across page navigations.
   /* eslint-disable react-hooks/refs */
   sendInputRef.current = sendInput;
   resizeTerminalRef.current = resizeTerminal;
   closeTerminalRef.current = closeTerminal;
-  sessionRef.current = session;
   /* eslint-enable react-hooks/refs */
 
   useEffect(() => {
@@ -243,9 +241,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   useEffect(() => {
     return () => {
-      if (sessionRef.current.isConnected) {
-        closeTerminalRef.current?.();
-      }
+      closeTerminalRef.current();
     };
   }, []);
 

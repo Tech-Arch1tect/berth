@@ -33,7 +33,11 @@ export const useTerminal = ({
     containerName,
   });
 
-  const sessionStartedRef = useRef(false);
+  const sessionIdRef = useRef('');
+  const sessionActiveRef = useRef(false);
+  const sessionEndedRef = useRef(false);
+  const errorReportedRef = useRef(false);
+  const deliberateCloseRef = useRef(false);
   const terminalRef = useRef<{ cols: number; rows: number }>({ cols: 80, rows: 24 });
 
   const handleMessage = useCallback(
@@ -42,7 +46,10 @@ export const useTerminal = ({
       switch (message.type) {
         case 'success': {
           const successEvent = message as TerminalSuccessMessage;
-          if (successEvent.session_id) {
+          if (successEvent.session_id && !sessionEndedRef.current && !deliberateCloseRef.current) {
+            sessionIdRef.current = successEvent.session_id;
+            sessionActiveRef.current = true;
+            errorReportedRef.current = false;
             setSession((prev) => ({
               ...prev,
               id: successEvent.session_id,
@@ -57,7 +64,11 @@ export const useTerminal = ({
 
         case 'terminal_output': {
           const outputEvent = message as TerminalOutputMessage;
-          if (outputEvent.session_id === session.id) {
+          if (
+            outputEvent.session_id === sessionIdRef.current &&
+            !sessionEndedRef.current &&
+            !deliberateCloseRef.current
+          ) {
             const binaryString = atob(outputEvent.output);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) {
@@ -70,52 +81,69 @@ export const useTerminal = ({
 
         case 'terminal_close': {
           const closeEvent = message as TerminalCloseMessage;
-          if (closeEvent.session_id === session.id) {
+          if (
+            closeEvent.session_id === sessionIdRef.current &&
+            !sessionEndedRef.current &&
+            !deliberateCloseRef.current
+          ) {
+            sessionActiveRef.current = false;
+            sessionEndedRef.current = true;
             setSession((prev) => ({
               ...prev,
               isConnected: false,
               isConnecting: false,
             }));
-            onDisconnect?.(closeEvent.exit_code);
+            onDisconnect?.(
+              typeof closeEvent.exit_code === 'number' ? closeEvent.exit_code : undefined
+            );
           }
           break;
         }
 
         case 'error': {
+          if (sessionEndedRef.current || deliberateCloseRef.current) break;
           const errorMessage = (message as TerminalErrorMessage).error || 'Unknown terminal error';
-          setSession(
-            (prev) =>
-              ({
-                ...prev,
-                isConnected: false,
-                isConnecting: false,
-                error: errorMessage,
-              }) as TerminalSession
-          );
-          if (onError) {
-            onError(errorMessage);
+          errorReportedRef.current = true;
+          if (!sessionActiveRef.current) {
+            setSession((prev) => ({
+              ...prev,
+              isConnected: false,
+              isConnecting: false,
+              error: errorMessage,
+            }));
           }
+          onError?.(errorMessage);
           break;
         }
       }
     },
-    [session.id, onOutput, onConnect, onDisconnect, onError]
+    [onOutput, onConnect, onDisconnect, onError]
   );
 
   const handleConnect = useCallback(() => {
     setSession((prev) => ({ ...prev, error: undefined }));
-    sessionStartedRef.current = false;
+    sessionIdRef.current = '';
+    sessionActiveRef.current = false;
+    sessionEndedRef.current = false;
+    errorReportedRef.current = false;
+    deliberateCloseRef.current = false;
   }, []);
 
   const handleDisconnect = useCallback(() => {
+    const notify =
+      !sessionEndedRef.current &&
+      !deliberateCloseRef.current &&
+      (sessionActiveRef.current || !errorReportedRef.current);
+    sessionIdRef.current = '';
+    sessionActiveRef.current = false;
+    sessionEndedRef.current = true;
     setSession((prev) => ({
       ...prev,
       id: '',
       isConnected: false,
       isConnecting: false,
     }));
-    sessionStartedRef.current = false;
-    onDisconnect?.();
+    if (notify) onDisconnect?.();
   }, [onDisconnect]);
 
   const {
@@ -132,7 +160,13 @@ export const useTerminal = ({
 
   const startTerminal = useCallback(
     (cols: number = 80, rows: number = 24) => {
-      if (!wsConnected || session.isConnecting || session.isConnected) {
+      if (
+        !wsConnected ||
+        session.isConnecting ||
+        sessionActiveRef.current ||
+        sessionEndedRef.current ||
+        deliberateCloseRef.current
+      ) {
         return;
       }
 
@@ -151,19 +185,12 @@ export const useTerminal = ({
         setSession((prev) => ({ ...prev, isConnecting: true }));
       }
     },
-    [
-      wsConnected,
-      session.isConnecting,
-      session.isConnected,
-      serviceName,
-      containerName,
-      sendMessage,
-    ]
+    [wsConnected, session.isConnecting, serviceName, containerName, sendMessage]
   );
 
   const sendInput = useCallback(
     (input: string | Uint8Array) => {
-      if (!session.isConnected || !session.id) {
+      if (!sessionActiveRef.current || !sessionIdRef.current) {
         return false;
       }
 
@@ -172,18 +199,18 @@ export const useTerminal = ({
       const inputMessage: TerminalInputMessage = {
         type: 'terminal_input',
         timestamp: new Date().toISOString(),
-        session_id: session.id,
+        session_id: sessionIdRef.current,
         input: Array.from(inputData),
       };
 
       return sendMessage(inputMessage);
     },
-    [session.isConnected, session.id, sendMessage]
+    [sendMessage]
   );
 
   const resizeTerminal = useCallback(
     (cols: number, rows: number) => {
-      if (!session.isConnected || !session.id) {
+      if (!sessionActiveRef.current || !sessionIdRef.current) {
         return false;
       }
 
@@ -192,36 +219,44 @@ export const useTerminal = ({
       const resizeMessage: TerminalResizeMessage = {
         type: 'terminal_resize',
         timestamp: new Date().toISOString(),
-        session_id: session.id,
+        session_id: sessionIdRef.current,
         cols,
         rows,
       };
 
       return sendMessage(resizeMessage);
     },
-    [session.isConnected, session.id, sendMessage]
+    [sendMessage]
   );
 
   const closeTerminal = useCallback(() => {
-    if (!session.id) {
+    if (!sessionActiveRef.current || !sessionIdRef.current) {
       return;
     }
+    deliberateCloseRef.current = true;
 
     const closeMessage: TerminalCloseMessage = {
       type: 'terminal_close',
       timestamp: new Date().toISOString(),
-      session_id: session.id,
-      exit_code: 0,
+      session_id: sessionIdRef.current,
     };
 
-    const messageSent = sendMessage(closeMessage);
-    if (!messageSent) {
-      onDisconnect?.(0);
+    try {
+      sendMessage(closeMessage);
+    } catch {
+      return;
     }
-  }, [session.id, sendMessage, onDisconnect]);
+  }, [sendMessage]);
 
   useEffect(() => {
-    if (enabled && wsConnected && !session.isConnecting && !session.isConnected && !session.error) {
+    if (
+      enabled &&
+      wsConnected &&
+      !session.isConnecting &&
+      !session.isConnected &&
+      !session.error &&
+      !sessionEndedRef.current
+    ) {
       const timer = setTimeout(() => {
         startTerminal(terminalRef.current.cols, terminalRef.current.rows);
       }, 100);
