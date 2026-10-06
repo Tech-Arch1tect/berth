@@ -149,6 +149,9 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 				agentErr := agentConn.Ping(pingCtx)
 				pingCancel()
 				if clientErr != nil || agentErr != nil {
+					if clientErr == nil {
+						_ = clientConn.Close(websocket.StatusInternalError, "proxy ended")
+					}
 					cancel()
 					return
 				}
