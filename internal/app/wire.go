@@ -354,6 +354,7 @@ func Build(
 
 	httpSvr := newHTTPServer(e, cfg, ssl, logger)
 	g.addHook("http server", httpSvr.start, httpSvr.stop)
+	g.addHook("terminal sessions", nil, g.WSHandler.Stop)
 
 	return g, nil
 }

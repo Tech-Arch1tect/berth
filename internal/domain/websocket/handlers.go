@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"berth/internal/domain/auth"
@@ -28,6 +29,9 @@ type Handler struct {
 	serverService *server.Service
 	auditService  *operations.AuditService
 	checkOrigin   origin.CheckOriginFunc
+	terminalMu    sync.Mutex
+	terminals     map[chan struct{}]context.CancelFunc
+	stopping      bool
 }
 
 func NewHandler(serverService *server.Service, auditService *operations.AuditService, checkOrigin origin.CheckOriginFunc) *Handler {
@@ -35,7 +39,28 @@ func NewHandler(serverService *server.Service, auditService *operations.AuditSer
 		serverService: serverService,
 		auditService:  auditService,
 		checkOrigin:   checkOrigin,
+		terminals:     make(map[chan struct{}]context.CancelFunc),
 	}
+}
+
+func (h *Handler) Stop(ctx context.Context) error {
+	h.terminalMu.Lock()
+	h.stopping = true
+	done := make([]chan struct{}, 0, len(h.terminals))
+	for finished, cancel := range h.terminals {
+		cancel()
+		done = append(done, finished)
+	}
+	h.terminalMu.Unlock()
+
+	for _, finished := range done {
+		select {
+		case <-finished:
+		case <-ctx.Done():
+			return fmt.Errorf("stop terminal sessions: %w", ctx.Err())
+		}
+	}
+	return nil
 }
 
 const terminalPath = "/ws/terminal"
@@ -75,6 +100,22 @@ const (
 )
 
 func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackName string, clientType string, userID int) error {
+	h.terminalMu.Lock()
+	if h.stopping {
+		h.terminalMu.Unlock()
+		return response.ServiceUnavailable(c, "Terminal service is shutting down")
+	}
+	ctx, cancel := context.WithCancel(c.Request().Context())
+	done := make(chan struct{})
+	h.terminals[done] = cancel
+	h.terminalMu.Unlock()
+	defer cancel()
+	defer func() {
+		h.terminalMu.Lock()
+		delete(h.terminals, done)
+		close(done)
+		h.terminalMu.Unlock()
+	}()
 
 	server, err := h.serverService.GetServer(uint(serverID))
 	if err != nil {
@@ -88,7 +129,7 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 
 	agentWSURL := fmt.Sprintf("wss://%s:%d/ws/terminal", server.Host, server.Port)
 
-	dialCtx, dialCancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
+	dialCtx, dialCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer dialCancel()
 
 	headers := make(http.Header)
@@ -131,9 +172,6 @@ func (h *Handler) proxyTerminalConnection(c echo.Context, serverID int, stackNam
 	}
 	defer clientConn.Close(websocket.StatusInternalError, "proxy ended")
 	clientConn.SetReadLimit(terminalReadLimit)
-
-	ctx, cancel := context.WithCancel(c.Request().Context())
-	defer cancel()
 
 	sessionStackName := ""
 	var operationLogID *uint
