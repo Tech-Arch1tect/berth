@@ -1,12 +1,13 @@
 package websocket
 
 type TerminalStartMessage struct {
-	Type          string `json:"type" doc:"Always terminal_start"`
-	StackName     string `json:"stack_name,omitempty" doc:"Optional; must match the URL stack when set"`
-	ServiceName   string `json:"service_name"`
-	ContainerName string `json:"container_name,omitempty"`
-	Cols          int    `json:"cols,omitempty"`
-	Rows          int    `json:"rows,omitempty"`
+	Type          string   `json:"type" doc:"Always terminal_start"`
+	StackName     string   `json:"stack_name,omitempty" doc:"Optional; must match the URL stack when set"`
+	ServiceName   string   `json:"service_name"`
+	ContainerName string   `json:"container_name,omitempty"`
+	Command       []string `json:"command,omitempty" doc:"Optional command arguments executed directly on the PTY; omitted or empty starts the default interactive shell"`
+	Cols          int      `json:"cols,omitempty"`
+	Rows          int      `json:"rows,omitempty"`
 }
 
 type TerminalInputMessage struct {
