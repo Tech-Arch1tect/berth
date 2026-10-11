@@ -582,19 +582,34 @@ func (h *APIHandler) CreateRoleStackPermission(c echo.Context) error {
 }
 
 func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
+	roleID, err := echoparams.ParseUintParam(c, "roleId")
+	if err != nil {
+		return err
+	}
+
 	permissionID, err := echoparams.ParseUintParam(c, "permissionId")
 	if err != nil {
 		return err
 	}
 
-	var stackPerm usermodel.ServerRoleStackPermission
-	h.db.Preload("Role").Preload("Permission").First(&stackPerm, permissionID)
+	var role usermodel.Role
+	if err := h.db.First(&role, roleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "role not found")
+		}
+		return response.Internal(c, "failed to load role")
+	}
 
-	var srv server.Server
-	h.db.First(&srv, stackPerm.ServerID)
+	if role.IsAdmin {
+		return response.BadRequest(c, "cannot manage server permissions for admin role")
+	}
 
-	if err := h.rbacSvc.DeleteRoleStackPermission(permissionID); err != nil {
-		return response.Internal(c, "Failed to delete role stack permission")
+	stackPermission, err := h.rbacSvc.DeleteRoleStackPermission(roleID, permissionID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "permission rule not found")
+		}
+		return response.Internal(c, "failed to delete role stack permission")
 	}
 
 	actorUserID, _ := session.GetCurrentUserID(c)
@@ -604,25 +619,20 @@ func (h *APIHandler) DeleteRoleStackPermission(c echo.Context) error {
 		actorUsername = actorUser.Username
 	}
 
-	permName := ""
-	if stackPerm.Permission.Name != "" {
-		permName = stackPerm.Permission.Name
-	}
-
 	h.auditService.LogRBACEvent(
 		security.EventPermissionRemoved,
 		actorUserID,
 		actorUsername,
 		security.TargetTypePermission,
-		permissionID,
-		permName,
+		stackPermission.Rule.ID,
+		stackPermission.Rule.Permission.Name,
 		c.RealIP(),
 		map[string]any{
-			"role_id":       stackPerm.RoleID,
-			"role_name":     stackPerm.Role.Name,
-			"server_id":     stackPerm.ServerID,
-			"server_name":   srv.Name,
-			"stack_pattern": stackPerm.StackPattern,
+			"role_id":       role.ID,
+			"role_name":     role.Name,
+			"server_id":     stackPermission.Rule.ServerID,
+			"server_name":   stackPermission.ServerName,
+			"stack_pattern": stackPermission.Rule.StackPattern,
 		},
 	)
 

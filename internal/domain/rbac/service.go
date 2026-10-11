@@ -17,8 +17,16 @@ var (
 	ErrLastAdmin     = errors.New("operation would leave the system without an administrator")
 	ErrRoleNameTaken = errors.New("role with this name already exists")
 
-	errRolePermissionCleanup = errors.New("failed to clean up role permissions")
+	errRolePermissionCleanup                        = errors.New("failed to clean up role permissions")
+	errRoleStackPermissionPermissionSnapshotMissing = errors.New("role stack permission audit snapshot missing")
 )
+
+const unknownServerName = "unknown"
+
+type DeletedRoleStackPermission struct {
+	Rule       usermodel.ServerRoleStackPermission
+	ServerName string
+}
 
 type Service struct {
 	db     *gorm.DB
@@ -499,8 +507,48 @@ func (s *Service) CreateRoleStackPermission(roleID uint, serverID uint, stacknam
 	return nil
 }
 
-func (s *Service) DeleteRoleStackPermission(permissionID uint) error {
-	return s.db.Delete(&usermodel.ServerRoleStackPermission{}, permissionID).Error
+func (s *Service) DeleteRoleStackPermission(roleID, permissionID uint) (*DeletedRoleStackPermission, error) {
+	deletedPermission := &DeletedRoleStackPermission{ServerName: unknownServerName}
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Preload("Permission").Where("id = ? AND role_id = ?", permissionID, roleID).First(&deletedPermission.Rule).Error; err != nil {
+			return err
+		}
+
+		if deletedPermission.Rule.Permission.ID != deletedPermission.Rule.PermissionID {
+			return errRoleStackPermissionPermissionSnapshotMissing
+		}
+
+		var serverSnapshot struct {
+			Name string
+		}
+		result := tx.Unscoped().Table("servers").Select("name").Where("id = ?", deletedPermission.Rule.ServerID).Limit(1).Find(&serverSnapshot)
+		if result.Error != nil {
+			s.logger.Warn("failed to load role stack permission server snapshot",
+				zap.Error(result.Error),
+				zap.Uint("role_id", roleID),
+				zap.Uint("permission_id", permissionID),
+				zap.Uint("server_id", deletedPermission.Rule.ServerID),
+			)
+		} else if result.RowsAffected == 1 {
+			deletedPermission.ServerName = serverSnapshot.Name
+		}
+
+		result = tx.Where("id = ? AND role_id = ?", permissionID, roleID).Delete(&usermodel.ServerRoleStackPermission{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return gorm.ErrRecordNotFound
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return deletedPermission, nil
 }
 
 func (s *Service) GetUserAccessibleStackPatterns(userID uint, serverID uint) ([]string, error) {
