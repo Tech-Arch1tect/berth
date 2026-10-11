@@ -40,51 +40,58 @@ export default function TOTPVerify() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className={cn('text-2xl font-bold', theme.text.strong)}>Two-Factor Authentication</h2>
-        <p className={cn('mt-2 text-sm', theme.text.muted)}>
-          Enter the 6-digit code from your authenticator app
-        </p>
-      </div>
-
-      <form className="space-y-6" onSubmit={submit}>
-        <div>
-          <label htmlFor="code" className="sr-only">
-            Authentication Code
-          </label>
-          <input
-            id="code"
-            name="code"
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className={cn('text-center text-2xl tracking-widest', theme.forms.input)}
-            placeholder="123456"
-            maxLength={6}
-            pattern="[0-9]{6}"
-            autoComplete="one-time-code"
-            required
-          />
-          {codeError && <div className={cn('mt-2 text-sm', theme.text.danger)}>{codeError}</div>}
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className={cn('w-full flex justify-center', theme.buttons.primary)}
-          >
-            {submitting ? 'Verifying...' : 'Verify Code'}
-          </button>
-        </div>
-
+    <div
+      className={cn(
+        theme.layout.authShell,
+        'flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8'
+      )}
+    >
+      <div className={cn('w-full max-w-md space-y-6', theme.cards.auth)}>
         <div className="text-center">
-          <p className={cn('text-sm', theme.text.muted)}>
-            Having trouble? Contact support for assistance.
+          <h2 className={cn('text-2xl font-bold', theme.text.strong)}>Two-Factor Authentication</h2>
+          <p className={cn('mt-2 text-sm', theme.text.muted)}>
+            Enter the 6-digit code from your authenticator app
           </p>
         </div>
-      </form>
+
+        <form className="space-y-6" onSubmit={submit}>
+          <div>
+            <label htmlFor="code" className="sr-only">
+              Authentication Code
+            </label>
+            <input
+              id="code"
+              name="code"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className={cn('text-center text-2xl tracking-widest', theme.forms.input)}
+              placeholder="123456"
+              maxLength={6}
+              pattern="[0-9]{6}"
+              autoComplete="one-time-code"
+              required
+            />
+            {codeError && <div className={cn('mt-2 text-sm', theme.text.danger)}>{codeError}</div>}
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className={cn('w-full flex justify-center', theme.buttons.primary)}
+            >
+              {submitting ? 'Verifying...' : 'Verify Code'}
+            </button>
+          </div>
+
+          <div className="text-center">
+            <p className={cn('text-sm', theme.text.muted)}>
+              Having trouble? Contact support for assistance.
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
