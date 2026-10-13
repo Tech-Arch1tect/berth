@@ -8,7 +8,7 @@ type OperationLogInfo struct {
 	IsIncomplete    bool   `json:"is_incomplete"`
 	FormattedDate   string `json:"formatted_date"`
 	MessageCount    int64  `json:"message_count"`
-	PartialDuration *int   `json:"partial_duration_ms,omitempty"`
+	PartialDuration *int64 `json:"partial_duration_ms,omitempty"`
 }
 
 type OperationLogDetailData struct {

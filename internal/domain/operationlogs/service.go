@@ -59,7 +59,7 @@ func (s *Service) DeleteOldOperationLogs(retentionDays int) (int64, error) {
 	return deleted, nil
 }
 
-func (s *Service) calculatePartialDuration(log OperationLog) *int {
+func (s *Service) calculatePartialDuration(log OperationLog) *int64 {
 	if log.EndTime != nil {
 		return nil
 	}
@@ -70,13 +70,13 @@ func (s *Service) calculatePartialDuration(log OperationLog) *int {
 		First(&lastMessage).Error
 
 	if err != nil {
-		duration := int(time.Since(log.StartTime).Milliseconds())
+		duration := time.Since(log.StartTime).Milliseconds()
 		return &duration
 	}
 
-	duration := int(lastMessage.Timestamp.Sub(log.StartTime).Milliseconds())
+	duration := lastMessage.Timestamp.Sub(log.StartTime).Milliseconds()
 	if duration < 0 {
-		duration = int(time.Since(log.StartTime).Milliseconds())
+		duration = time.Since(log.StartTime).Milliseconds()
 	}
 	return &duration
 }
