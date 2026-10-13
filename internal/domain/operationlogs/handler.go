@@ -1,7 +1,9 @@
 package operationlogs
 
 import (
-	"berth/internal/domain/session"
+	"net/http"
+
+	"berth/internal/domain/authz"
 	"berth/internal/pkg/echoparams"
 	"berth/internal/pkg/response"
 
@@ -37,7 +39,7 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 		"status":     c.QueryParam("status"),
 	})
 
-	logs, total, err := h.service.ListOperationLogs(params)
+	logs, total, err := h.service.ListOperationLogs(params, nil)
 	if err != nil {
 		h.logger.Error("failed to list operation logs", zap.Error(err))
 		return response.Internal(c, "Failed to retrieve operation logs")
@@ -47,9 +49,13 @@ func (h *Handler) ListOperationLogs(c echo.Context) error {
 }
 
 func (h *Handler) ListUserOperationLogs(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
+	}
+	userID := principal.UserID()
+	if userID == 0 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
 	}
 
 	params := NewListOperationLogsParamsFromQuery(map[string]string{
@@ -63,7 +69,7 @@ func (h *Handler) ListUserOperationLogs(c echo.Context) error {
 	})
 	params.UserID = userID
 
-	logs, total, err := h.service.ListOperationLogs(params)
+	logs, total, err := h.service.ListOperationLogs(params, principal.Key())
 	if err != nil {
 		h.logger.Error("failed to list user operation logs", zap.Error(err), zap.Uint("user_id", userID))
 		return response.Internal(c, "Failed to retrieve operation logs")
@@ -87,7 +93,7 @@ func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.GetOperationLogDetails(logID, nil)
+	result, err := h.service.GetOperationLogDetails(logID, nil, nil)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return response.NotFound(c, "Operation log not found")
@@ -100,9 +106,13 @@ func (h *Handler) GetOperationLogDetails(c echo.Context) error {
 }
 
 func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
+	}
+	userID := principal.UserID()
+	if userID == 0 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
 	}
 
 	logID, err := echoparams.ParseUintParam(c, "id")
@@ -110,7 +120,7 @@ func (h *Handler) GetUserOperationLogDetails(c echo.Context) error {
 		return err
 	}
 
-	result, err := h.service.GetOperationLogDetails(logID, &userID)
+	result, err := h.service.GetOperationLogDetails(logID, &userID, principal.Key())
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return response.NotFound(c, "Operation log not found")
@@ -133,12 +143,16 @@ func (h *Handler) GetOperationLogsStats(c echo.Context) error {
 }
 
 func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
+	userID := principal.UserID()
+	if userID == 0 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
+	}
 
-	stats, err := h.service.GetUserOperationLogsStats(userID)
+	stats, err := h.service.GetUserOperationLogsStats(userID, principal.Key())
 	if err != nil {
 		h.logger.Error("failed to get user operation logs stats", zap.Error(err), zap.Uint("user_id", userID))
 		return response.Internal(c, "Failed to retrieve operation logs statistics")
@@ -148,12 +162,16 @@ func (h *Handler) GetUserOperationLogsStats(c echo.Context) error {
 }
 
 func (h *Handler) GetRunningOperations(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
 	}
+	userID := principal.UserID()
+	if userID == 0 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
+	}
 
-	operations, err := h.service.GetRunningOperations(userID)
+	operations, err := h.service.GetRunningOperations(userID, principal.Key())
 	if err != nil {
 		h.logger.Error("failed to get running operations", zap.Error(err), zap.Uint("user_id", userID))
 		return response.Internal(c, "Failed to retrieve running operations")
@@ -163,9 +181,13 @@ func (h *Handler) GetRunningOperations(c echo.Context) error {
 }
 
 func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
-	userID, err := session.GetCurrentUserID(c)
+	principal, err := authz.RequirePrincipal(c)
 	if err != nil {
 		return err
+	}
+	userID := principal.UserID()
+	if userID == 0 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User not authenticated")
 	}
 
 	operationID := c.Param("operationId")
@@ -173,7 +195,7 @@ func (h *Handler) GetOperationLogDetailsByOperationID(c echo.Context) error {
 		return response.BadRequest(c, "Operation ID is required")
 	}
 
-	result, err := h.service.GetOperationLogDetailsByOperationID(operationID, &userID)
+	result, err := h.service.GetOperationLogDetailsByOperationID(operationID, &userID, principal.Key())
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return response.NotFound(c, "Operation log not found")

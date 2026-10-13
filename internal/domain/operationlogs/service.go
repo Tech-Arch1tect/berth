@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"berth/internal/domain/authz"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -79,7 +81,7 @@ func (s *Service) calculatePartialDuration(log OperationLog) *int {
 	return &duration
 }
 
-func (s *Service) ListOperationLogs(params ListOperationLogsParams) ([]OperationLogInfo, int64, error) {
+func (s *Service) ListOperationLogs(params ListOperationLogsParams, key *authz.KeyDescriptor) ([]OperationLogInfo, int64, error) {
 	offset := (params.Page - 1) * params.PageSize
 
 	query := s.db.Model(&OperationLog{}).
@@ -90,6 +92,7 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) ([]Operation
 	if params.UserID != 0 {
 		query = query.Where("user_id = ?", params.UserID)
 	}
+	query = applyOperationLogKeyScope(query, key)
 
 	if params.SearchTerm != "" {
 		query = query.Where("stack_name LIKE ? OR command LIKE ? OR operation_id LIKE ?",
@@ -170,12 +173,13 @@ func (s *Service) ListOperationLogs(params ListOperationLogsParams) ([]Operation
 	return response, total, nil
 }
 
-func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*OperationLogDetailData, error) {
+func (s *Service) GetOperationLogDetails(logID uint, userID *uint, key *authz.KeyDescriptor) (*OperationLogDetailData, error) {
 	query := s.db.Preload("User").Preload("Server")
 
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
+	query = applyOperationLogKeyScope(query, key)
 
 	var log OperationLog
 	if err := query.First(&log, logID).Error; err != nil {
@@ -223,12 +227,13 @@ func (s *Service) GetOperationLogDetails(logID uint, userID *uint) (*OperationLo
 	}, nil
 }
 
-func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID *uint) (*OperationLogDetailData, error) {
+func (s *Service) GetOperationLogDetailsByOperationID(operationID string, userID *uint, key *authz.KeyDescriptor) (*OperationLogDetailData, error) {
 	query := s.db.Preload("User").Preload("Server").Where("operation_id = ?", operationID)
 
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
+	query = applyOperationLogKeyScope(query, key)
 
 	var log OperationLog
 	if err := query.First(&log).Error; err != nil {
@@ -308,31 +313,32 @@ func (s *Service) GetOperationLogsStats() (*OperationLogStatsData, error) {
 	return &stats, nil
 }
 
-func (s *Service) GetUserOperationLogsStats(userID uint) (*OperationLogStatsData, error) {
+func (s *Service) GetUserOperationLogsStats(userID uint, key *authz.KeyDescriptor) (*OperationLogStatsData, error) {
 	var stats OperationLogStatsData
+	query := applyOperationLogKeyScope(s.db.Model(&OperationLog{}).Where("user_id = ?", userID), key)
 
-	if err := s.db.Model(&OperationLog{}).Where("user_id = ?", userID).Count(&stats.TotalOperations).Error; err != nil {
+	if err := query.Session(&gorm.Session{}).Count(&stats.TotalOperations).Error; err != nil {
 		s.logger.Error("failed to count user total operations", zap.Error(err), zap.Uint("user_id", userID))
 		return nil, err
 	}
 
-	if err := s.db.Model(&OperationLog{}).Where("user_id = ? AND end_time IS NULL", userID).Count(&stats.IncompleteOperations).Error; err != nil {
+	if err := query.Session(&gorm.Session{}).Where("end_time IS NULL").Count(&stats.IncompleteOperations).Error; err != nil {
 		s.logger.Error("failed to count user incomplete operations", zap.Error(err), zap.Uint("user_id", userID))
 		return nil, err
 	}
 
-	if err := s.db.Model(&OperationLog{}).Where("user_id = ? AND success = ? AND end_time IS NOT NULL", userID, false).Count(&stats.FailedOperations).Error; err != nil {
+	if err := query.Session(&gorm.Session{}).Where("success = ? AND end_time IS NOT NULL", false).Count(&stats.FailedOperations).Error; err != nil {
 		s.logger.Error("failed to count user failed operations", zap.Error(err), zap.Uint("user_id", userID))
 		return nil, err
 	}
 
-	if err := s.db.Model(&OperationLog{}).Where("user_id = ? AND success = ? AND end_time IS NOT NULL", userID, true).Count(&stats.SuccessfulOperations).Error; err != nil {
+	if err := query.Session(&gorm.Session{}).Where("success = ? AND end_time IS NOT NULL", true).Count(&stats.SuccessfulOperations).Error; err != nil {
 		s.logger.Error("failed to count user successful operations", zap.Error(err), zap.Uint("user_id", userID))
 		return nil, err
 	}
 
 	yesterday := time.Now().Add(-24 * time.Hour)
-	if err := s.db.Model(&OperationLog{}).Where("user_id = ? AND created_at > ?", userID, yesterday).Count(&stats.RecentOperations).Error; err != nil {
+	if err := query.Session(&gorm.Session{}).Where("created_at > ?", yesterday).Count(&stats.RecentOperations).Error; err != nil {
 		s.logger.Error("failed to count user recent operations", zap.Error(err), zap.Uint("user_id", userID))
 		return nil, err
 	}
@@ -340,14 +346,14 @@ func (s *Service) GetUserOperationLogsStats(userID uint) (*OperationLogStatsData
 	return &stats, nil
 }
 
-func (s *Service) GetRunningOperations(userID uint) ([]OperationLogInfo, error) {
+func (s *Service) GetRunningOperations(userID uint, key *authz.KeyDescriptor) ([]OperationLogInfo, error) {
 	heartbeatTimeout := time.Now().Add(-5 * time.Minute)
 
 	var logs []OperationLog
-	err := s.db.Model(&OperationLog{}).
+	err := applyOperationLogKeyScope(s.db.Model(&OperationLog{}).
 		Preload("User").
 		Preload("Server").
-		Where("user_id = ?", userID).
+		Where("user_id = ?", userID), key).
 		Where("end_time IS NULL").
 		Where("(last_message_at IS NOT NULL AND last_message_at > ?) OR (last_message_at IS NULL AND start_time > ?)", heartbeatTimeout, heartbeatTimeout).
 		Order("start_time DESC").
