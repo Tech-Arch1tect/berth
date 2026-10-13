@@ -25,7 +25,9 @@ jobs:
         with:
           generator: go
           openapi-file: openapi.json
-          command-args: --additional-properties=packageName=berth --git-user-id=tech-arch1tect --git-repo-id=berth-go-api-client
+          config-file: .github/openapi/go-client.yaml
+          template-dir: .github/openapi/go
+          command-args: --additional-properties=packageName=berth --type-mappings=integer+uint64=uint64 --git-user-id=tech-arch1tect --git-repo-id=berth-go-api-client
 
       - name: Clone and update berth-go-api-client
         env:

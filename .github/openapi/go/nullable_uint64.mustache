@@ -1,0 +1,39 @@
+package {{packageName}}
+
+import "encoding/json"
+
+type NullableUint64 struct {
+	value *uint64
+	isSet bool
+}
+
+func (v NullableUint64) Get() *uint64 {
+	return v.value
+}
+
+func (v *NullableUint64) Set(val *uint64) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullableUint64) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullableUint64) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullableUint64(val *uint64) *NullableUint64 {
+	return &NullableUint64{value: val, isSet: true}
+}
+
+func (v NullableUint64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullableUint64) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
+}

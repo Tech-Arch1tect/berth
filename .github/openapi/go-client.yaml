@@ -1,0 +1,4 @@
+files:
+  nullable_uint64.mustache:
+    templateType: SupportingFiles
+    destinationFilename: nullable_uint64.go

@@ -296,7 +296,9 @@ func (o *OpenAPI) generateSchemaFromType(t reflect.Type, visited map[string]bool
 		return &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}, Format: "int64"}}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 		return &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}}}
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint64:
+		return &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}, Format: "uint64", Min: ptr(0.0)}}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
 		return &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}, Min: ptr(0.0)}}
 	case reflect.Float32, reflect.Float64:
 		return &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"number"}}}
