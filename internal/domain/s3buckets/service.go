@@ -53,6 +53,10 @@ func (s *Service) RepositoryBaseForServer(ctx context.Context, serverID uint) (*
 	if err != nil {
 		return nil, err
 	}
+	endpoint, err := normaliseEndpoint(bucket.Endpoint)
+	if err != nil || endpoint != bucket.Endpoint {
+		return nil, errors.New("the saved S3 endpoint is not in the required format; edit and save the bucket configuration with an http or https S3 API endpoint, without user information, a query, a fragment or a non-root path")
+	}
 	secret, err := s.crypto.Decrypt(bucket.SecretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt the bucket's secret access key: %w", err)
@@ -111,6 +115,9 @@ func (s *Service) Get(ctx context.Context, id uint) (*BucketResponse, error) {
 }
 
 func (s *Service) Create(ctx context.Context, req CreateRequest) (*BucketResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
 	secret, err := s.crypto.Encrypt(req.SecretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to protect the secret access key: %w", err)
@@ -140,6 +147,9 @@ func (s *Service) Create(ctx context.Context, req CreateRequest) (*BucketRespons
 }
 
 func (s *Service) Update(ctx context.Context, id uint, req UpdateRequest) (*BucketResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
 	if s.backupStorage == nil {
 		return nil, ErrBucketStorageUnavailable
 	}

@@ -2,15 +2,17 @@ package s3buckets
 
 import (
 	"errors"
-	"fmt"
+	"net/netip"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
 )
 
 var (
 	ErrLabelRequired            = errors.New("a label is required")
-	ErrEndpointInvalid          = errors.New("the endpoint must be an http or https URL with a host, for example https://s3.example.com")
+	ErrEndpointInvalid          = errors.New("the endpoint must be an http or https S3 API URL with a valid host and no user information, query, fragment or non-root path")
 	ErrBucketNameInvalid        = errors.New("the bucket name must be 3 to 63 characters of lowercase letters, numbers, dots and hyphens")
 	ErrAccessKeyRequired        = errors.New("an access key id is required")
 	ErrSecretKeyRequired        = errors.New("a secret access key is required")
@@ -60,9 +62,11 @@ func (r *CreateRequest) Validate() error {
 	if strings.TrimSpace(r.Label) == "" {
 		return ErrLabelRequired
 	}
-	if err := validateEndpoint(r.Endpoint); err != nil {
+	endpoint, err := normaliseEndpoint(r.Endpoint)
+	if err != nil {
 		return err
 	}
+	r.Endpoint = endpoint
 	if r.Region == "" {
 		r.Region = "us-east-1"
 	}
@@ -82,9 +86,11 @@ func (r *UpdateRequest) Validate() error {
 	if strings.TrimSpace(r.Label) == "" {
 		return ErrLabelRequired
 	}
-	if err := validateEndpoint(r.Endpoint); err != nil {
+	endpoint, err := normaliseEndpoint(r.Endpoint)
+	if err != nil {
 		return err
 	}
+	r.Endpoint = endpoint
 	if r.Region == "" {
 		r.Region = "us-east-1"
 	}
@@ -97,15 +103,55 @@ func (r *UpdateRequest) Validate() error {
 	return nil
 }
 
-func validateEndpoint(raw string) error {
-	parsed, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return ErrEndpointInvalid
+func normaliseEndpoint(raw string) (string, error) {
+	if strings.ContainsFunc(raw, unicode.IsControl) {
+		return "", ErrEndpointInvalid
 	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return fmt.Errorf("%w; got scheme %q", ErrEndpointInvalid, parsed.Scheme)
+	raw = strings.TrimSpace(raw)
+	parsed, err := url.Parse(raw)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return "", ErrEndpointInvalid
 	}
-	return nil
+	if parsed.User != nil || parsed.RawQuery != "" || parsed.ForceQuery || strings.Contains(raw, "#") {
+		return "", ErrEndpointInvalid
+	}
+	if path := parsed.EscapedPath(); path != "" && path != "/" {
+		return "", ErrEndpointInvalid
+	}
+
+	host := parsed.Hostname()
+	if host == "" || strings.HasSuffix(parsed.Host, ":") {
+		return "", ErrEndpointInvalid
+	}
+	if port := parsed.Port(); port != "" {
+		if _, err := strconv.ParseUint(port, 10, 16); err != nil {
+			return "", ErrEndpointInvalid
+		}
+	}
+	if strings.HasPrefix(parsed.Host, "[") {
+		if address, err := netip.ParseAddr(host); err != nil || !address.Is6() {
+			return "", ErrEndpointInvalid
+		}
+	} else {
+		host = strings.TrimSuffix(host, ".")
+		if len(host) == 0 || len(host) > 253 {
+			return "", ErrEndpointInvalid
+		}
+		for label := range strings.SplitSeq(host, ".") {
+			if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
+				return "", ErrEndpointInvalid
+			}
+			for _, char := range label {
+				if (char < 'a' || char > 'z') && (char < 'A' || char > 'Z') && (char < '0' || char > '9') && char != '-' {
+					return "", ErrEndpointInvalid
+				}
+			}
+		}
+	}
+	if strings.EqualFold(host, "console.aws.amazon.com") || strings.EqualFold(host, "s3.console.aws.amazon.com") {
+		return "", ErrEndpointInvalid
+	}
+	return strings.TrimSuffix(raw, "/"), nil
 }
 
 func responseFrom(bucket *S3Bucket) BucketResponse {
